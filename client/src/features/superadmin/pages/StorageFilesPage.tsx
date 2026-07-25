@@ -1020,11 +1020,12 @@ export function StorageFilesPage() {
                     key: "name",
                     header: "Name",
                     accent: true,
+                    width: "w-[45%]",
                     render: (_: any, row: any) => {
                       const isRenaming = fileToRename?.key === row.key;
                       return (
                         <div
-                          className={`flex items-center gap-3 ${row.isFolder || row.isUpDir ? "cursor-pointer hover:underline font-medium" : ""} overflow-hidden w-full`}
+                          className={`flex items-center gap-3 ${row.isFolder || row.isUpDir ? "cursor-pointer hover:underline font-medium" : ""} w-full`}
                           onClick={() => {
                             if (isRenaming) return;
                             if (row.isUpDir) {
@@ -1057,7 +1058,7 @@ export function StorageFilesPage() {
                               )}
                             </div>
                           ) : (
-                            <span className="truncate block flex-1 min-w-0" title={row.name}>{row.name}</span>
+                            <span className="break-all flex-1" title={row.name}>{row.name}</span>
                           )}
                         </div>
                       );
@@ -1066,11 +1067,13 @@ export function StorageFilesPage() {
                   {
                     key: "size",
                     header: "Size",
+                    width: "w-[15%]",
                     render: (size: number) => size ? formatBytes(size) : "-"
                   },
                   {
                     key: "type",
                     header: "Type",
+                    width: "w-[15%]",
                     render: (type: string, row: any) => {
                       if (row.isUpDir) return null;
                       if (type === "Folder") return <Badge variant="neutral">Dir</Badge>;
@@ -1083,6 +1086,7 @@ export function StorageFilesPage() {
                   {
                     key: "lastModified",
                     header: "Last Modified",
+                    width: "w-[20%]",
                     render: (date: string) => date ? format(new Date(date), "MMM d, yyyy h:mm a") : "-"
                   },
                   {
