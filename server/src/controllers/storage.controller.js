@@ -29,6 +29,7 @@ import {
     getStorageAnalyticsSnapshot,
     invalidateStorageAnalyticsCache,
 } from "../services/storage-management.service.js";
+import { getIO } from "../services/socket.service.js";
 
 export {
     MAX_STORAGE_UPLOAD_SIZE_BYTES,
@@ -141,6 +142,17 @@ function auditStorageAction(req, action, keys, status = "success") {
     console.log(
         `[Storage] userId=${getUserId(req)} action=${action} status=${status} keys=${JSON.stringify(affectedKeys)}`,
     );
+}
+
+function emitStorageUpdated(action) {
+    try {
+        getIO().to("superadmin:storage").emit("storage_updated", {
+            action,
+            timestamp: Date.now(),
+        });
+    } catch (error) {
+        console.warn("[Storage] storage_updated socket emit skipped:", error.message);
+    }
 }
 
 function handleControllerError(req, res, operation, error, affectedKeys = []) {
@@ -666,6 +678,7 @@ export async function uploadFile(req, res) {
 
         invalidateStorageAnalyticsCache();
         auditStorageAction(req, "upload", key);
+        emitStorageUpdated("upload");
         return sendSuccess(res, "File uploaded successfully.", {
             key,
             cdnUrl: buildCdnUrl(key),
@@ -727,6 +740,7 @@ export async function deleteObject(req, res) {
 
         invalidateStorageAnalyticsCache();
         auditStorageAction(req, "delete", key);
+        emitStorageUpdated("delete");
         return sendSuccess(res, "File or folder deleted successfully.", {
             deletedKey: key,
         });
@@ -785,6 +799,7 @@ export async function deleteObjects(req, res) {
         const deletedCount = (result.Deleted?.length ?? fileKeys.length) + folderKeys.length;
         invalidateStorageAnalyticsCache();
         auditStorageAction(req, "bulk-delete", keys);
+        emitStorageUpdated("bulk-delete");
         return sendSuccess(res, "Files or folders deleted successfully.", {
             deletedCount,
         });
@@ -810,6 +825,8 @@ export async function createFolder(req, res) {
         }));
 
         invalidateStorageAnalyticsCache();
+        auditStorageAction(req, "create-folder", folderKey);
+        emitStorageUpdated("create-folder");
         return sendSuccess(res, "Folder created successfully.", {
             folderKey,
         });
@@ -936,6 +953,7 @@ export async function renameObject(req, res) {
 
         invalidateStorageAnalyticsCache();
         auditStorageAction(req, "rename", [sourceKey, destinationKey]);
+        emitStorageUpdated("rename");
         
         return sendSuccess(res, "File or folder renamed successfully.", {
             newKey: destinationKey,

@@ -39,6 +39,11 @@ import {
 } from "../queries/useStorage";
 import { storageApi } from "../services/storageApi";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  getSocket,
+  joinSuperadminStorage,
+  leaveSuperadminStorage
+} from "@/lib/socketClient";
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return '0 Bytes';
@@ -448,6 +453,24 @@ export function StorageFilesPage() {
   const deleteObjectsMutation = useDeleteObjects();
   const renameObjectMutation = useRenameObject();
   const uploadFileMutation = useUploadFile();
+
+  React.useEffect(() => {
+    const socket = getSocket();
+
+    joinSuperadminStorage();
+
+    const handleStorageUpdated = () => {
+      queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+    };
+
+    socket?.on("storage_updated", handleStorageUpdated);
+
+    return () => {
+      socket?.off("storage_updated", handleStorageUpdated);
+      leaveSuperadminStorage();
+    };
+  }, [queryClient]);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {

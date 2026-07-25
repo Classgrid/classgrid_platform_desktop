@@ -116,6 +116,20 @@ export function joinSuperadminSupport() {
 }
 
 /**
+ * Join superadmin storage room.
+ */
+export function joinSuperadminStorage() {
+  socket?.emit("join_superadmin_storage");
+}
+
+/**
+ * Leave superadmin storage room.
+ */
+export function leaveSuperadminStorage() {
+  socket?.emit("leave_superadmin_storage");
+}
+
+/**
  * Initiate a video/voice call.
  */
 export function initiateCall(targetId: string, channelName: string, type: "video" | "voice", callerName: string) {
@@ -176,6 +190,8 @@ export default {
   joinOrgSupport,
   joinSupportThread,
   joinSuperadminSupport,
+  joinSuperadminStorage,
+  leaveSuperadminStorage,
   initiateCall,
   answerCall,
   endCall,

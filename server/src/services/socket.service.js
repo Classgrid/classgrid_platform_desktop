@@ -134,6 +134,14 @@ export const initSocket = (server) => {
             console.log(`Super admin socket ${socket.userId} joined superadmin:support`);
         });
 
+        socket.on("join_superadmin_storage", () => {
+            socket.join("superadmin:storage");
+        });
+
+        socket.on("leave_superadmin_storage", () => {
+            socket.leave("superadmin:storage");
+        });
+
         socket.on("leave_classroom", (classroomId) => {
             const roomName = `${orgId}:${classroomId}`;
             socket.leave(roomName);
