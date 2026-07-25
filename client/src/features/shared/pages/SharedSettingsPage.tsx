@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { DeleteOrgCard } from "../../org/components/settings/DeleteOrgCard";
 import { SettingsChangePasswordCard } from "../components/settings/SettingsChangePasswordCard";
 import { SettingsDeleteAccountCard } from "../components/settings/SettingsDeleteAccountCard";
+import { SettingsRoleRequestCard } from "../components/settings/SettingsRoleRequestCard";
 
 export function SharedSettingsPage() {
   const { data: profileData, isLoading: isProfileLoading } = useUserProfile();
@@ -117,6 +118,7 @@ export function SharedSettingsPage() {
 
       {profileData?.role !== "org_admin" && (
         <>
+          <SettingsRoleRequestCard />
           <SettingsChangePasswordCard />
           {profileData?.role !== "super_admin" && <SettingsDeleteAccountCard />}
         </>
@@ -134,6 +136,7 @@ export function SharedSettingsPage() {
           <OrgBrandingCard />
           <CustomDomainCard />
           <OrgCodesCard />
+          <SettingsRoleRequestCard />
           <SettingsChangePasswordCard />
           <DeleteOrgCard />
         </>

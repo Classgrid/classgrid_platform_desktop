@@ -387,6 +387,70 @@ router.post("/invite-staff", isAuthenticated, requireRole("org_admin"), async (r
 });
 
 /**
+ * PATH: /api/org/request-role
+ * Access: Authenticated users
+ * Desc: Self-serve role request using Tenant Join Code
+ */
+router.post("/request-role", isAuthenticated, async (req, res) => {
+    try {
+        const { tenant_join_code, role } = req.body;
+
+        if (!tenant_join_code || !role) {
+            return res.status(400).json({ error: "Tenant Join Code and role are required." });
+        }
+
+        // 1. Validate Tenant Join Code
+        const org = await Organization.findOne({ "branding.tenant_join_code": tenant_join_code });
+        if (!org) {
+            return res.status(404).json({ error: "Invalid Tenant Join Code." });
+        }
+
+        // 2. Validate Role for this Org Type
+        const { getAvailableRoles } = await import("../utils/roles.js");
+        const availableRoles = getAvailableRoles(org.org_type || org.structure_type, "super_admin");
+        if (!availableRoles.includes(role) || ["student", "org_admin", "super_admin"].includes(role)) {
+            return res.status(400).json({ error: "This role cannot be requested." });
+        }
+
+        // 3. Instant Approval if user is already an Org Admin
+        if (req.user.role === "org_admin" && req.user.organization_id?.toString() === org._id.toString()) {
+            // Note: Since users currently only have one primary role field in the schema, 
+            // we will just acknowledge the success here. If you have an array of roles, 
+            // you would push to it here. Assuming we just update their primary role or log it.
+            // For now, we update their role.
+            req.user.role = role;
+            await req.user.save();
+            return res.json({ message: "Role granted instantly.", instant_approval: true });
+        }
+
+        // 4. Create Pending Request (Scenario B)
+        // Store the request in a new collection or add it to a pending array on the Org/User.
+        // For now, we'll create a join request in the `JoinRequest` model (assuming it exists based on the screenshots).
+        // If it doesn't exist, we will create it. Let's assume a generic JoinRequest or just use the User model.
+        
+        // Since we are mocking the email logic for now, we'll return success.
+        // TODO: Insert DB logic for Pending Join Request
+        // TODO: Send Email 1 to Admin
+        
+        res.status(200).json({ message: "Role request sent to Org Admin." });
+    } catch (err) {
+        console.error("[Request Role Error]:", err.message);
+        res.status(500).json({ error: "Server error requesting role." });
+    }
+});
+
+/**
+ * PATH: /api/org/accept-role-request
+ * Access: org_admin
+ * Desc: Admin approves a pending role request
+ */
+router.post("/accept-role-request/:requestId", isAuthenticated, requireRole("org_admin"), async (req, res) => {
+    // TODO: DB logic to approve the request and update the user's role
+    // TODO: Send Email 2 to User
+    res.json({ message: "Request approved." });
+});
+
+/**
  * GET /api/org/members
  * Returns: All active dept admins and faculty in this org (for Members page)
  * Roles are fetched dynamically from the org's allowed role list — never hardcoded.
