@@ -111,7 +111,6 @@ export function useRenameObject() {
     mutationFn: ({ sourceKey, destinationKey }: { sourceKey: string; destinationKey: string }) =>
       storageApi.renameObject(sourceKey, destinationKey),
     onSuccess: (_, { sourceKey }) => {
-      queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
       queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
       const isFolder = sourceKey.endsWith('/');
       toast.success(isFolder ? "Folder renamed successfully." : "File renamed successfully.");

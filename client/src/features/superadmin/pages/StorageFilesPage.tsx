@@ -461,6 +461,8 @@ export function StorageFilesPage() {
     joinSuperadminStorage();
 
     const handleStorageUpdated = () => {
+      if (renameObjectMutation.isPending) return;
+
       queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
       queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
     };
@@ -471,7 +473,7 @@ export function StorageFilesPage() {
       socket?.off("storage_updated", handleStorageUpdated);
       leaveSuperadminStorage();
     };
-  }, [queryClient]);
+  }, [queryClient, renameObjectMutation.isPending]);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -811,6 +813,41 @@ export function StorageFilesPage() {
 
     renameObjectMutation.mutate({ sourceKey: oldFileToRename.key, destinationKey: newKey }, {
       onSuccess: () => {
+        const updateRenamedItem = (oldData: any) => {
+          if (!oldData) return oldData;
+
+          if (isFolder) {
+            return {
+              ...oldData,
+              folders: oldData.folders.map((folder: any) => (
+                folder.prefix === oldFileToRename.key
+                  ? { ...folder, prefix: newKey, name: finalName }
+                  : folder
+              )),
+            };
+          }
+
+          return {
+            ...oldData,
+            files: oldData.files.map((file: any) => (
+              file.key === oldFileToRename.key
+                ? {
+                    ...file,
+                    key: newKey,
+                    name: finalName,
+                    lastModified: nowIso,
+                    cdnUrl: generateNewCdnUrl(file.cdnUrl, newKey),
+                  }
+                : file
+            )),
+          };
+        };
+
+        queryClient.setQueryData(storageKeys.list(parentPrefix), updateRenamedItem);
+        if (debouncedSearch) {
+          queryClient.setQueryData(storageKeys.list(parentPrefix, debouncedSearch), updateRenamedItem);
+        }
+
         // Keep the active file open in the preview pane
         if (activeFile?.key === oldFileToRename.key) {
           setActiveFile({
@@ -855,6 +892,7 @@ export function StorageFilesPage() {
 
     renameObjectMutation.mutate({ sourceKey: fileToMove.key, destinationKey: newKey }, {
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
         setFileToMove(null);
         setMoveDestinationPrefix("");
         if (activeFile?.key === fileToMove.key) {
