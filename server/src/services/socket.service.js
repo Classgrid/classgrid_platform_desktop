@@ -19,6 +19,11 @@ if (!isDev) {
     pubClient = new IORedis(REDIS_URL, { maxRetriesPerRequest: null });
     subClient = pubClient.duplicate();
     redisClient = pubClient.duplicate();
+    
+    // Prevent missing Redis from crashing the server
+    pubClient.on("error", (err) => console.warn("[Socket] pubClient Redis error:", err.message));
+    subClient.on("error", (err) => console.warn("[Socket] subClient Redis error:", err.message));
+    redisClient.on("error", (err) => console.warn("[Socket] redisClient Redis error:", err.message));
 }
 
 export let io;

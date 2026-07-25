@@ -5,6 +5,7 @@ import IORedis from 'ioredis';
 const connection = new IORedis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', {
   maxRetriesPerRequest: null,
 });
+connection.on('error', (err) => console.warn('[EmailService] Redis error:', err.message));
 
 // Reuse the same queue name as the worker
 const provisioningQueue = new Queue('EmailProvisioningQueue', { connection });

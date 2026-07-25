@@ -499,6 +499,7 @@ export const healthCheck = async (req, res) => {
                 maxRetriesPerRequest: 1,
                 connectTimeout: 5000
             });
+            redis.on('error', () => {}); // Prevent unhandled event crash
             await redis.ping();
             const ms = Math.round(performance.now() - startRedis);
             health.services.redis = { status: "UP", ping: `${ms}ms` };
