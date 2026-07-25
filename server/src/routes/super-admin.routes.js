@@ -1195,19 +1195,57 @@ router.get("/users", async (req, res) => {
             User.countDocuments(filter),
         ]);
 
-        // Attach org names
+        // Attach org data
         const orgIds = [...new Set(users.map(u => u.organization_id?.toString()).filter(Boolean))];
-        const orgs = await Organization.find({ _id: { $in: orgIds } }).select("name").lean();
-        const orgMap = Object.fromEntries(orgs.map(o => [o._id.toString(), o.name]));
+        const orgs = await Organization.find({ _id: { $in: orgIds } }).select("name logo_url org_type").lean();
+        const orgMap = Object.fromEntries(orgs.map(o => [o._id.toString(), o]));
 
-        const enriched = users.map(u => ({
-            ...u,
-            organizationName: u.organization_id ? orgMap[u.organization_id.toString()] ?? "Unknown" : null,
-        }));
+        const enriched = users.map(u => {
+            const org = u.organization_id ? orgMap[u.organization_id.toString()] : null;
+            return {
+                ...u,
+                organizationName: org ? org.name : "Unknown",
+                organizationLogo: org ? org.logo_url : null,
+                orgType: org ? org.org_type : null,
+            };
+        });
 
         res.json({ success: true, data: enriched, total, page: parseInt(page), limit: parseInt(limit) });
     } catch (err) {
         console.error("[SuperAdmin] global-users error:", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+// Get full user details (including all profile data and org details)
+router.get("/users/:id/full", async (req, res) => {
+    try {
+        const User = (await import("../models/User.js")).default;
+        
+        // Find user and populate organization with all fields
+        const user = await User.findById(req.params.id)
+            .populate("organization_id")
+            .lean();
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // Clean sensitive fields
+        delete user.password;
+        if (user.tokens) delete user.tokens;
+        if (user.zoom_tokens) delete user.zoom_tokens;
+        if (user.webex_tokens) delete user.webex_tokens;
+
+        res.json({
+            success: true,
+            data: {
+                user,
+                organization: user.organization_id || null
+            }
+        });
+    } catch (err) {
+        console.error("[SuperAdmin] get user full error:", err.message);
         res.status(500).json({ success: false, message: "Server error" });
     }
 });

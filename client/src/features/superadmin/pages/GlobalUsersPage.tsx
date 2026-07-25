@@ -1,186 +1,251 @@
-import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Users, ShieldAlert, CheckCircle, RefreshCw, Ban, LogOut, Key, UserCheck } from "lucide-react";
-import type { ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
+import React, { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { Users, Search } from "lucide-react";
 
-import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
-import { StatCard } from "@/components/marketing_ui/StatCard";
-import { Badge } from "@/components/marketing_ui/badge";
-import { Button } from "@/components/marketing_ui/button";
+import { Card, CardContent } from "@/components/marketing_ui/card";
 import { DataTable } from "@/components/marketing_ui/data-table";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/marketing_ui/avatar";
+import { Badge } from "@/components/marketing_ui/badge";
+import { Input } from "@/components/marketing_ui/input";
+import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
+import { RefreshButton } from "@/components/marketing_ui/refresh-button";
+import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/marketing_ui/dialog";
 import { apiClient } from "@/lib/apiClient";
 import { formatDate } from "@/utils/dateUtils";
-import { RefreshButton } from "@/components/marketing_ui/refresh-button";
 
+// ── Types & Constants ────────────────────────────────────────────────────────
 
 const ROLE_OPTIONS = [
-  { label: "All Roles", value: "" }, { label: "Student", value: "student" },
-  { label: "Faculty", value: "faculty" }, { label: "Org Admin", value: "org_admin" },
+  { label: "All Roles", value: "" },
+  { label: "Student", value: "student" },
+  { label: "Faculty", value: "faculty" },
+  { label: "Org Admin", value: "org_admin" },
   { label: "Super Admin", value: "super_admin" },
+  { label: "Principal", value: "principal" },
+  { label: "HOD", value: "hod" },
 ];
+
+const ORG_TYPE_OPTIONS = [
+  { label: "All Org Types", value: "" },
+  { label: "Engineering", value: "engineering" },
+  { label: "School", value: "school" },
+  { label: "Junior College", value: "junior_college" },
+  { label: "Coaching", value: "coaching" },
+  { label: "Diploma", value: "diploma" },
+  { label: "Other", value: "other" },
+];
+
 const STATUS_OPTIONS = [
-  { label: "All Status", value: "" }, { label: "Active", value: "active" },
+  { label: "All Statuses", value: "" },
+  { label: "Active", value: "active" },
   { label: "Suspended", value: "suspended" },
 ];
 
-type Action = "ban" | "unban" | "force-logout" | "reset-password" | "change-role";
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export function GlobalUsersPage() {
-  const qc = useQueryClient();
+  const navigate = useNavigate();
+  
+  // Filters state
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [confirm, setConfirm] = useState<{ user: any; action: Action } | null>(null);
-  const [newRole, setNewRole] = useState("");
+  const [orgTypeFilter, setOrgTypeFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
 
+  // Fetch users from our newly enriched API
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["global-users", search, roleFilter, statusFilter],
-    queryFn: () => apiClient.get<any>("/api/super-admin/users", { params: { q: search, role: roleFilter || undefined, status: statusFilter || undefined, limit: 100 } }).then(r => r.data),
+    queryFn: () => apiClient.get<any>("/api/super-admin/users", { 
+        params: { 
+            q: search, 
+            role: roleFilter || undefined, 
+            status: statusFilter || undefined, 
+            limit: 200 
+        } 
+    }).then(r => r.data),
     staleTime: 30_000,
   });
 
-  const users: any[] = data?.data ?? [];
+  const allUsers: any[] = data?.data ?? [];
   const total: number = data?.total ?? 0;
 
-  const banMut = useMutation({ mutationFn: (id: string) => apiClient.patch(`/api/super-admin/users/${id}/ban`), onSuccess: () => { qc.invalidateQueries({ queryKey: ["global-users"] }); toast.success("User banned."); setConfirm(null); } });
-  const unbanMut = useMutation({ mutationFn: (id: string) => apiClient.patch(`/api/super-admin/users/${id}/unban`), onSuccess: () => { qc.invalidateQueries({ queryKey: ["global-users"] }); toast.success("Reactivated."); setConfirm(null); } });
-  const logoutMut = useMutation({ mutationFn: (id: string) => apiClient.post(`/api/super-admin/users/${id}/force-logout`), onSuccess: () => { toast.success("Force-logged out."); setConfirm(null); } });
-  const resetMut = useMutation({ mutationFn: (id: string) => apiClient.post(`/api/super-admin/users/${id}/reset-password`), onSuccess: () => { toast.success("Reset email sent."); setConfirm(null); } });
-  const roleMut = useMutation({ mutationFn: ({ id, role }: { id: string; role: string }) => apiClient.patch(`/api/super-admin/users/${id}/role`, { role }), onSuccess: () => { qc.invalidateQueries({ queryKey: ["global-users"] }); toast.success("Role updated."); setConfirm(null); } });
-
-  const isPending = banMut.isPending || unbanMut.isPending || logoutMut.isPending || resetMut.isPending || roleMut.isPending;
-
-  const columns: ColumnDef<any>[] = useMemo(() => [
-    {
-      accessorKey: "name", header: "User", size: 220,
-      cell: ({ row }) => {
-        const u = row.original;
-        return (
-          <div >
-            <Avatar className="w-8 h-8"><AvatarFallback>{u.name?.charAt(0)}</AvatarFallback></Avatar>
-            <div>
-              <div >{u.name}</div>
-              <div >{u.email}</div>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "role", header: "Role", size: 130,
-      cell: ({ getValue }) => {
-        const r = getValue<string>();
-        return <Badge variant={r === "super_admin" ? "danger" : r === "org_admin" ? "info" : "neutral"}>{r.replace(/_/g, " ")}</Badge>;
-      },
-    },
-    {
-      accessorKey: "organizationName", header: "Organization", size: 170,
-      cell: ({ getValue }) => getValue<string>() || <span >Platform</span>,
-    },
-    {
-      accessorKey: "status", header: "Status", size: 110,
-      cell: ({ getValue }) => {
-        const s = getValue<string>() ?? "active";
-        if (s === "active") return <Badge variant="success" dot>Active</Badge>;
-        return <Badge variant="danger">{s}</Badge>;
-      },
-    },
-    {
-      accessorKey: "createdAt", header: "Joined", size: 120,
-      cell: ({ getValue }) => <span >{formatDate(getValue<string>())}</span>,
-    },
-    {
-      id: "actions", header: "Actions", size: 200,
-      cell: ({ row }) => {
-        const u = row.original;
-        const isBanned = u.status === "suspended";
-        return (
-          <div >
-            {isBanned
-              ? <Button size="sm" variant="outline" onClick={() => setConfirm({ user: u, action: "unban" })}><UserCheck size={12} /> Unban</Button>
-              : <Button size="sm" variant="destructive" onClick={() => setConfirm({ user: u, action: "ban" })}><Ban size={12} /> Ban</Button>
+  // Client-side filtering for Org Type & Date (since API doesn't filter them natively yet)
+  const filteredUsers = useMemo(() => {
+    return allUsers.filter(u => {
+        if (orgTypeFilter && u.orgType !== orgTypeFilter) return false;
+        
+        if (dateFilter) {
+            const joinedDate = new Date(u.createdAt);
+            // Simple date match by Day/Month/Year
+            if (joinedDate.toDateString() !== dateFilter.toDateString()) {
+                return false;
             }
-            <Button size="sm" variant="outline" onClick={() => setConfirm({ user: u, action: "force-logout" })}><LogOut size={12} /> Logout</Button>
-            <Button size="sm" variant="outline" onClick={() => setConfirm({ user: u, action: "reset-password" })}><Key size={12} /> Reset</Button>
-            <Button size="sm" variant="outline" onClick={() => { setNewRole(u.role); setConfirm({ user: u, action: "change-role" }); }}>Role</Button>
-          </div>
-        );
-      },
-    },
-  ], []);
+        }
+        return true;
+    });
+  }, [allUsers, orgTypeFilter, dateFilter]);
 
-  function executeAction() {
-    if (!confirm) return;
-    const { user, action } = confirm;
-    if (action === "ban") banMut.mutate(user._id);
-    else if (action === "unban") unbanMut.mutate(user._id);
-    else if (action === "force-logout") logoutMut.mutate(user._id);
-    else if (action === "reset-password") resetMut.mutate(user._id);
-    else if (action === "change-role") roleMut.mutate({ id: user._id, role: newRole });
-  }
-
-  const actionLabels: Record<Action, string> = {
-    ban: "Ban User", unban: "Unban User", "force-logout": "Force Logout",
-    "reset-password": "Send Password Reset", "change-role": "Change Role",
-  };
-
-  return (
-    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-12">
-      <div
-        title="Global User Control"
-        description="Search and manage any user across all organizations. All actions are logged."
-        actions={<RefreshButton onClick={() => refetch()} isFetching={isFetching} />}
-      />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Users" value={isLoading ? "—" : total} icon={<Users size={15} />} />
-        <StatCard title="Active" value={isLoading ? "—" : users.filter(u => u.status === "active").length} icon={<CheckCircle size={15} />} />
-        <StatCard title="Banned" value={isLoading ? "—" : users.filter(u => u.status === "suspended").length} icon={<ShieldAlert size={15} />} />
-      </div>
-      <div >
-        <SectionPanel title="All Users" description={`Showing ${users.length} of ${total}`} noPadding>
-          <div >
-            <div >
-              <div searchValue={search} onSearchChange={setSearch} searchPlaceholder="Search name or email…" />
-            </div>
-            <div value={roleFilter} onValueChange={setRoleFilter} options={ROLE_OPTIONS} />
-            <div value={statusFilter} onValueChange={setStatusFilter} options={STATUS_OPTIONS} />
-          </div>
-          <DataTable columns={columns} data={users} isLoading={isLoading} pageSize={50}
-            emptyIcon={<Users size={32} />} emptyTitle="No users found" emptyDescription="Try different filters." emptyMessage="No users." />
-        </SectionPanel>
-      </div>
-
-      <Dialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{confirm ? actionLabels[confirm.action] : ""}</DialogTitle>
-            <DialogDescription>
-              {confirm?.action === "change-role"
-                ? `Update role for ${confirm?.user?.name}`
-                : `Perform "${confirm ? actionLabels[confirm.action] : ""}" on ${confirm?.user?.name}?`}
-            </DialogDescription>
-          </DialogHeader>
-          {confirm?.action === "change-role" && (
-            <div >
-              <div value={newRole} onValueChange={setNewRole} options={ROLE_OPTIONS.filter(r => r.value !== "")} />
+  // Table Columns
+  const columns = useMemo(() => [
+    {
+      key: "user",
+      header: "User",
+      width: "w-full min-w-[220px]",
+      render: (_: any, u: any) => (
+        <div className="flex items-center gap-3 py-1">
+          {u.profilePicture ? (
+            <img src={u.profilePicture} alt={u.name} className="h-8 w-8 rounded-full object-cover border border-border flex-shrink-0" />
+          ) : (
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-medium text-xs">
+              {u.name?.substring(0, 2).toUpperCase() || "??"}
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirm(null)}>Cancel</Button>
-            <Button
-              variant={confirm?.action === "ban" ? "destructive" : "default"}
-              isLoading={isPending}
-              onClick={executeAction}
-              disabled={confirm?.action === "change-role" && !newRole}
-            >Confirm</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <div className="flex flex-col min-w-0">
+            <span className="font-medium text-sm text-foreground truncate group-hover:text-primary transition-colors">{u.name}</span>
+            <span className="text-muted-foreground text-xs truncate">{u.email}</span>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: "status",
+      header: "Status",
+      width: "w-[120px]",
+      render: (_: any, u: any) => {
+        const s = u.status ?? "active";
+        return (
+          <Badge variant={s === "active" ? "success" : "danger"} dot>
+            {s === "active" ? "Ready" : "Suspended"}
+          </Badge>
+        );
+      }
+    },
+    {
+      key: "role",
+      header: "Role",
+      width: "w-[150px]",
+      render: (_: any, u: any) => {
+        const r = u.role ?? "user";
+        return (
+          <Badge variant={r.includes("admin") ? "danger" : r === "faculty" ? "warning" : "info"} className="whitespace-nowrap">
+            {r.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}
+          </Badge>
+        );
+      }
+    },
+    {
+      key: "organizationName",
+      header: "Organization",
+      width: "w-[200px]",
+      render: (_: any, u: any) => (
+        <div className="flex items-center gap-2 max-w-[200px]">
+          {u.organizationLogo ? (
+            <img src={u.organizationLogo} alt="org" className="h-5 w-5 rounded object-cover flex-shrink-0" />
+          ) : (
+             <div className="h-5 w-5 rounded bg-muted/50 border border-border flex-shrink-0" />
+          )}
+          <span className="text-sm font-medium text-muted-foreground truncate">{u.organizationName || "Platform User"}</span>
+        </div>
+      )
+    },
+    {
+      key: "joined",
+      header: "Joined",
+      width: "w-[130px]",
+      render: (_: any, u: any) => (
+        <span className="text-sm text-muted-foreground flex items-center gap-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
+            {formatDate(u.createdAt)}
+        </span>
+      )
+    }
+  ], []);
+
+  return (
+    <div className="flex flex-col gap-6 w-full max-w-[1200px] mx-auto p-4 sm:p-6 lg:p-8 pb-12">
+      
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Global Users</h1>
+            <p className="text-sm text-muted-foreground mt-1">Manage all users across every organization on the platform.</p>
+        </div>
+        <RefreshButton onClick={() => refetch()} isFetching={isFetching} />
+      </div>
+
+      <Card className="border-border shadow-sm overflow-hidden bg-background">
+        
+        {/* Vercel-style Filter Bar */}
+        <div className="flex flex-wrap items-center gap-3 p-4 border-b border-border bg-muted/10">
+            <div className="w-full sm:w-[220px]">
+                <NikhilTimeCalendar 
+                    value={dateFilter} 
+                    onChange={setDateFilter} 
+                    placeholder="Select Date" 
+                    className="h-9 w-full bg-background" 
+                />
+            </div>
+            <div className="relative w-full sm:w-[240px]">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input 
+                    className="pl-8 h-9 w-full bg-background border-border text-sm" 
+                    placeholder="Search by name or email..." 
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+            </div>
+            <div className="w-full sm:w-auto">
+                <ResponsiveSelect
+                    className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground focus-visible:outline-none min-w-[140px]"
+                    value={orgTypeFilter}
+                    onChange={(e) => setOrgTypeFilter(e.target.value)}
+                >
+                    {ORG_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </ResponsiveSelect>
+            </div>
+            <div className="w-full sm:w-auto">
+                <ResponsiveSelect
+                    className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground focus-visible:outline-none min-w-[140px]"
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value)}
+                >
+                    {ROLE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </ResponsiveSelect>
+            </div>
+            <div className="w-full sm:w-auto">
+                <ResponsiveSelect
+                    className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground focus-visible:outline-none min-w-[140px]"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                    {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </ResponsiveSelect>
+            </div>
+        </div>
+
+        {/* Data Table */}
+        <CardContent className="p-0">
+          <DataTable
+            columns={columns}
+            rows={filteredUsers}
+            isLoading={isLoading}
+            onRowClick={(row) => navigate(`/superadmin/global-users/${row._id}`)}
+            emptyMessage={search ? "No users found matching your search." : "No users found."}
+            className="border-none rounded-none group"
+          />
+        </CardContent>
+      </Card>
+      
+      {/* Footer Stats Summary */}
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Showing {filteredUsers.length} of {total} total users</span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-success"></span> All systems operational
+          </span>
+      </div>
+
     </div>
   );
 }
