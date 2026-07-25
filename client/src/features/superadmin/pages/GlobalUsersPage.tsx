@@ -187,78 +187,74 @@ export function GlobalUsersPage() {
   ], []);
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-[1200px] mx-auto p-4 sm:p-6 lg:p-8 pb-12">
+    <div className="flex flex-col w-full pb-12 animate-in fade-in">
       
-      <Card className="border-border shadow-sm overflow-hidden bg-background">
-        
-        {/* Vercel-style Filter Bar */}
-        <div className="flex flex-wrap items-center gap-3 p-4 border-b border-border bg-muted/10">
-            <div className="w-full sm:w-[220px]">
-                <NikhilTimeCalendar 
-                    value={dateFilter} 
-                    onChange={setDateFilter} 
-                    placeholder="Select Date" 
-                    className="h-9 w-full bg-background" 
-                />
-            </div>
-            <div className="relative w-full sm:w-[240px]">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input 
-                    className="pl-8 h-9 w-full bg-background border-border text-sm" 
-                    placeholder="Search by name or email..." 
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
-            </div>
-            <div className="w-full sm:w-auto">
-                <ResponsiveSelect
-                    className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground focus-visible:outline-none min-w-[140px]"
-                    value={orgTypeFilter}
-                    onChange={(e) => setOrgTypeFilter(e.target.value)}
-                >
-                    {ORG_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </ResponsiveSelect>
-            </div>
-            <div className="w-full sm:w-auto">
-                <ResponsiveSelect
-                    className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground focus-visible:outline-none min-w-[140px]"
-                    value={roleFilter}
-                    onChange={(e) => setRoleFilter(e.target.value)}
-                >
-                    {ROLE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </ResponsiveSelect>
-            </div>
-            <div className="w-full sm:w-auto">
-                <ResponsiveSelect
-                    className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground focus-visible:outline-none min-w-[140px]"
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                    {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </ResponsiveSelect>
-            </div>
-        </div>
-
-        {/* Data Table */}
-        <CardContent className="p-0">
-          <DataTable
-            columns={columns}
-            rows={filteredUsers}
-            isLoading={isLoading}
-            emptyMessage={search ? "No users found matching your search." : "No users found."}
-            className="border-none rounded-none group"
-          />
-        </CardContent>
-      </Card>
-      
-      {/* Footer Stats Summary */}
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Showing {filteredUsers.length} of {total} total users</span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-success"></span> All systems operational
-          </span>
+      {/* Vercel-style Filter Bar (Flush, no outer card) */}
+      <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8 py-3 border-b border-border bg-background overflow-x-auto no-scrollbar whitespace-nowrap">
+          <div className="w-[200px] shrink-0">
+              <NikhilTimeCalendar 
+                  value={dateFilter} 
+                  onChange={setDateFilter} 
+                  placeholder="Select Date Range" 
+                  className="h-8 w-full bg-background" 
+              />
+          </div>
+          <div className="relative w-[240px] shrink-0">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input 
+                  className="pl-8 h-8 w-full bg-background border-border text-sm shadow-sm" 
+                  placeholder="Search by name or email..." 
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+              />
+          </div>
+          <div className="w-[140px] shrink-0">
+              <ResponsiveSelect
+                  className="h-8 w-full rounded-md border border-border shadow-sm bg-background px-3 py-1 text-sm text-foreground focus-visible:outline-none"
+                  value={orgTypeFilter}
+                  onChange={(e) => setOrgTypeFilter(e.target.value)}
+              >
+                  {ORG_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </ResponsiveSelect>
+          </div>
+          <div className="w-[140px] shrink-0">
+              <ResponsiveSelect
+                  className="h-8 w-full rounded-md border border-border shadow-sm bg-background px-3 py-1 text-sm text-foreground focus-visible:outline-none"
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+              >
+                  {ROLE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </ResponsiveSelect>
+          </div>
+          <div className="w-[140px] shrink-0">
+              <ResponsiveSelect
+                  className="h-8 w-full rounded-md border border-border shadow-sm bg-background px-3 py-1 text-sm text-foreground focus-visible:outline-none"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                  {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </ResponsiveSelect>
+          </div>
       </div>
 
+      {/* Data Table */}
+      <div className="px-4 sm:px-6 lg:px-8">
+        <DataTable
+          columns={columns}
+          rows={filteredUsers}
+          isLoading={isLoading}
+          emptyMessage={search ? "No users found matching your search." : "No users found."}
+          className="border-none rounded-none group"
+        />
+        
+        {/* Footer Stats Summary */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground mt-4 pt-4 border-t border-border/50">
+            <span>Showing {filteredUsers.length} of {total} total users</span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-success"></span> All systems operational
+            </span>
+        </div>
+      </div>
     </div>
   );
 }
