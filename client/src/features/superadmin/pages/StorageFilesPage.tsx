@@ -734,20 +734,50 @@ export function StorageFilesPage() {
     }
 
     const newKey = fileToRename.key.substring(0, fileToRename.key.lastIndexOf('/') + 1) + finalName;
-    renameObjectMutation.mutate({ sourceKey: fileToRename.key, destinationKey: newKey }, {
-      onSuccess: () => {
-        setFileToRename(null);
-        setNewFileName("");
-        if (activeFile?.key === fileToRename.key) {
-          setActiveFile({
-            ...activeFile,
-            key: newKey,
-            name: finalName,
-            cdnUrl: activeFile.cdnUrl ? activeFile.cdnUrl.replace(encodeURIComponent(fileToRename.name), encodeURIComponent(finalName)) : activeFile.cdnUrl
-          });
-        }
+    const parentPrefix = fileToRename.key.substring(0, fileToRename.key.lastIndexOf('/') + 1);
+
+    const oldFileToRename = fileToRename;
+
+    // Optimistically update activeFile instantly
+    if (activeFile?.key === oldFileToRename.key) {
+      setActiveFile({
+        ...activeFile,
+        key: newKey,
+        name: finalName,
+        cdnUrl: activeFile.cdnUrl ? activeFile.cdnUrl.replace(encodeURIComponent(oldFileToRename.name), encodeURIComponent(finalName)) : activeFile.cdnUrl
+      });
+    }
+
+    // Optimistically update list instantly
+    const updateCache = (oldData: any) => {
+      if (!oldData) return oldData;
+      if (isFolder) {
+        return {
+          ...oldData,
+          folders: oldData.folders.map((f: any) => f.prefix === oldFileToRename.key ? { ...f, prefix: newKey, name: finalName } : f).sort((a: any, b: any) => a.name.localeCompare(b.name))
+        };
+      } else {
+        return {
+          ...oldData,
+          files: oldData.files.map((f: any) => f.key === oldFileToRename.key ? { 
+            ...f, 
+            key: newKey, 
+            name: finalName, 
+            cdnUrl: f.cdnUrl ? f.cdnUrl.replace(encodeURIComponent(oldFileToRename.name), encodeURIComponent(finalName)) : f.cdnUrl 
+          } : f).sort((a: any, b: any) => a.name.localeCompare(b.name))
+        };
       }
-    });
+    };
+
+    queryClient.setQueryData(storageKeys.list(parentPrefix), updateCache);
+    if (debouncedSearch) {
+      queryClient.setQueryData(storageKeys.list(parentPrefix, debouncedSearch), updateCache);
+    }
+
+    setFileToRename(null);
+    setNewFileName("");
+
+    renameObjectMutation.mutate({ sourceKey: oldFileToRename.key, destinationKey: newKey });
   };
 
   const handleMoveFile = () => {
