@@ -3,7 +3,8 @@ import {
   Folder, FileText, Image as ImageIcon, Video, FileArchive,
   File, UploadCloud, FolderPlus, MoreHorizontal, Download,
   Trash2, Edit2, Link as LinkIcon, Search, RefreshCw, Columns, X,
-  ChevronRight, List, Check
+  Trash2, Edit2, Link as LinkIcon, Search, RefreshCw, Columns, X,
+  ChevronRight, List, Check, Maximize
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
@@ -46,6 +47,8 @@ import {
   leaveSuperadminStorage
 } from "@/lib/socketClient";
 
+import FilePreviewModal, { type FilePreviewSource } from "@/app/support/components/FilePreviewModal";
+
 function formatBytes(bytes: number) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -77,7 +80,7 @@ export interface UploadingFile {
   xhr?: XMLHttpRequest; // For cancellation, although fetch/axios cancellation is usually AbortController. We'll just fake cancellation for UI purposes if needed, or implement it if API supports it.
 }
 
-const FilePreviewPane = ({ activeFile, onClose, onDelete, onRename }: { activeFile: any, onClose: () => void, onDelete: () => void, onRename?: () => void }) => {
+const FilePreviewPane = ({ activeFile, onClose, onDelete, onRename, onFullScreen }: { activeFile: any, onClose: () => void, onDelete: () => void, onRename?: () => void, onFullScreen: () => void }) => {
   if (!activeFile) return null;
   return (
     <div className="w-[320px] sm:w-[350px] shrink-0 border-l border-border bg-card flex flex-col h-full animate-in slide-in-from-right-2">
@@ -137,6 +140,9 @@ const FilePreviewPane = ({ activeFile, onClose, onDelete, onRename }: { activeFi
               }
             }}>
               <Download className="mr-2 h-3.5 w-3.5" /> Download
+            </Button>
+            <Button variant="outline" className="text-xs h-9 px-4" onClick={onFullScreen}>
+              <Maximize className="mr-2 h-3.5 w-3.5" /> Full Screen
             </Button>
             <Button variant="outline" className="text-xs h-9 px-4" onClick={() => {
               navigator.clipboard.writeText(activeFile.cdnUrl);
@@ -457,6 +463,9 @@ export function StorageFilesPage() {
   // Miller Columns state
   const [openFolders, setOpenFolders] = useState<string[]>([""]); // "" is root
   
+  // Full-screen file preview modal
+  const [previewFile, setPreviewFile] = useState<FilePreviewSource | null>(null);
+
   // The effective prefix is the last opened folder
   const currentPrefix = openFolders[openFolders.length - 1];
 
@@ -1148,14 +1157,12 @@ export function StorageFilesPage() {
                 <FilePreviewPane 
                   activeFile={activeFile} 
                   onClose={() => setActiveFile(null)} 
-                  onDelete={() => setFileToDelete(activeFile?.key)}
+                  onDelete={() => setFileToDelete(activeFile.key)}
                   onRename={() => {
-                    const isFolder = activeFile.key.endsWith('/');
-                    const lastDotIndex = !isFolder && activeFile.name.lastIndexOf('.') > 0 ? activeFile.name.lastIndexOf('.') : -1;
-                    const baseName = lastDotIndex > 0 ? activeFile.name.substring(0, lastDotIndex) : activeFile.name;
-                    setFileToRename({ key: activeFile.key, name: activeFile.name });
-                    setNewFileName(baseName);
+                    setFileToRename(activeFile);
+                    setNewFileName(activeFile.name);
                   }}
+                  onFullScreen={() => setPreviewFile({ name: activeFile.name, src: activeFile.cdnUrl, mimeType: activeFile.type })}
                 />
               </div>
             </>
@@ -1411,6 +1418,14 @@ export function StorageFilesPage() {
         onConfirm={handleBulkDelete}
         isLoading={deleteObjectsMutation.isPending}
       />
+
+      {/* Full-Screen File Preview Modal */}
+      {previewFile && (
+        <FilePreviewModal
+          file={previewFile}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
 
       {/* Floating Upload Progress Toast */}
       {uploadingFiles.length > 0 && (
