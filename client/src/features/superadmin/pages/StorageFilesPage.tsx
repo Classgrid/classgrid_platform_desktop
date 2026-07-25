@@ -104,12 +104,7 @@ const FilePreviewPane = ({ activeFile, onClose, onDelete, onRename }: { activeFi
           </div>
           
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Added on</p>
-            <p className="text-sm">{(activeFile.createdAt || activeFile.lastModified) ? new Date(activeFile.createdAt || activeFile.lastModified).toLocaleString() : "-"}</p>
-          </div>
-          
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Last modified</p>
+            <p className="text-xs text-muted-foreground">Uploaded / Modified</p>
             <p className="text-sm">{activeFile.lastModified ? new Date(activeFile.lastModified).toLocaleString() : "-"}</p>
           </div>
           
