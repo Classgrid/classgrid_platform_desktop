@@ -1003,7 +1003,7 @@ export function StorageFilesPage() {
                   {
                     key: "select",
                     header: "",
-                    width: "40px",
+                    width: "w-[5%] min-w-[40px]",
                     render: (_: any, row: any) => {
                       if (row.isUpDir) return null;
                       return (
@@ -1073,7 +1073,7 @@ export function StorageFilesPage() {
                   {
                     key: "type",
                     header: "Type",
-                    width: "w-[15%]",
+                    width: "w-[10%]",
                     render: (type: string, row: any) => {
                       if (row.isUpDir) return null;
                       if (type === "Folder") return <Badge variant="neutral">Dir</Badge>;
@@ -1086,19 +1086,19 @@ export function StorageFilesPage() {
                   {
                     key: "lastModified",
                     header: "Last Modified",
-                    width: "w-[20%]",
+                    width: "w-[15%]",
                     render: (date: string) => date ? format(new Date(date), "MMM d, yyyy h:mm a") : "-"
                   },
                   {
                     key: "actions",
                     header: "",
-                    width: "50px",
+                    width: "w-[10%] text-right pr-6",
                     render: (_: any, row: any) => {
                       if (row.isUpDir) return null;
                       return (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground mr-2 float-right">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
