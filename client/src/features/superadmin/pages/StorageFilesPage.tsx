@@ -12,6 +12,7 @@ import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { Badge } from "@/components/marketing_ui/badge";
 import { DataTable } from "@/components/marketing_ui/data-table";
+import { Skeleton } from "@/components/marketing_ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -272,7 +273,11 @@ const StorageColumn = ({
         )}
 
         {isLoading ? (
-          <div className="p-4 text-sm text-muted-foreground text-center">Loading...</div>
+          <div className="p-2 space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full rounded-md bg-muted/60" />
+            ))}
+          </div>
         ) : items.length === 0 && (creatingFolderIn !== prefix) && uploadingFiles.filter((u: any) => u.prefix === prefix).length === 0 ? (
           <div className="p-8 text-center text-muted-foreground flex flex-col items-center gap-3">
             <Folder className="h-10 w-10 opacity-20" />
