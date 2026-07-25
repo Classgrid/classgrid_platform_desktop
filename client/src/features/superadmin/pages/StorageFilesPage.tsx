@@ -90,7 +90,7 @@ const FilePreviewPane = ({ activeFile, onClose, onDelete, onRename, onFullScreen
           <X className="h-4 w-4" />
         </Button>
       </div>
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 pb-24 space-y-6">
         {/* Preview Box */}
         <div className="w-full aspect-square bg-muted/30 rounded-lg border border-border flex items-center justify-center overflow-hidden">
           {activeFile.type?.startsWith("image/") ? (
