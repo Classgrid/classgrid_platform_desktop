@@ -245,11 +245,6 @@ export function GlobalUsersPage() {
         emptyMessage={search ? "No users found matching your search." : "No users found."}
         className="shadow-sm" // Keeps the default rounded-md border from DataTable
       />
-      
-      {/* Footer Stats Summary */}
-      <div className="flex items-center text-xs text-muted-foreground mt-4 pt-4 border-t border-border/50">
-          <span>Showing {filteredUsers.length} of {total} total users</span>
-      </div>
     </div>
   );
 }
