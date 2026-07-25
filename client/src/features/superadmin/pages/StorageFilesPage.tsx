@@ -446,6 +446,7 @@ export function StorageFilesPage() {
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const hasActiveUploadsRef = React.useRef<boolean>(false);
 
   // Miller Columns state
   const [openFolders, setOpenFolders] = useState<string[]>([""]); // "" is root
