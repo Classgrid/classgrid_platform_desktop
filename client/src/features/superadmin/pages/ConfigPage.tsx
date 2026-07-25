@@ -228,11 +228,11 @@ export function ConfigPage() {
     }
   };
 
-  const isDiskCritical = (healthData?.osMetrics?.disk?.usagePct || 0) > 80;
+  const isDiskCritical = (healthData?.osMetrics?.disk?.usagePct || 0) > 90;
   const isRamCritical = (healthData?.osMetrics?.ram?.usagePct || 0) > 90;
   const hardwareCardStyle = (isDiskCritical || isRamCritical) 
     ? "border-destructive/50 shadow-[0_0_15px_rgba(239,68,68,0.15)] bg-destructive/5" 
-    : "border-border bg-card";
+    : "border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.15)] bg-green-500/5";
 
   return (
     <>
@@ -244,9 +244,9 @@ export function ConfigPage() {
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">System Config</h1>
             {healthData?.status === 'HEALTHY' ? (
-              <Badge variant="success" className="bg-green-500/10 text-green-500 border-green-500/20">All Systems Operational</Badge>
+              <Badge variant="success" dot className="bg-green-500/10 text-green-500 border-green-500/20">All Systems Operational</Badge>
             ) : (
-              <Badge variant="danger" className="bg-destructive/10 text-destructive border-destructive/20">Degraded Performance</Badge>
+              <Badge variant="danger" dot className="bg-destructive/10 text-destructive border-destructive/20">Degraded Performance</Badge>
             )}
           </div>
           <p className="text-muted-foreground mt-1 text-sm">
