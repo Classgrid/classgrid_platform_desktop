@@ -13,25 +13,39 @@
  * category: "staff" = teaching staff, "dept_admin" = department-level admin, "leadership" = principal/VP
  */
 export const ROLE_DEFINITIONS = {
-    student:              { label: "Student",                       category: "student",    description: "Enrolled student" },
-    teacher:              { label: "Teacher",                       category: "staff",      description: "Teaching staff" },
-    faculty:              { label: "Faculty",                       category: "staff",      description: "Teaching faculty member" },
-    org_admin:            { label: "Organization Admin",            category: "admin",      description: "Full organization administrator" },
-    super_admin:          { label: "Super Admin",                   category: "system",     description: "Platform-level super administrator" },
-    principal:            { label: "Principal",                     category: "leadership", description: "Head of the institution" },
-    vice_principal:       { label: "Vice Principal",                category: "leadership", description: "Deputy head of institution" },
-    hod:                  { label: "Head of Department (HOD)",      category: "dept_admin", description: "Manages a specific academic department" },
-    coordinator:          { label: "Academic Coordinator",          category: "dept_admin", description: "Coordinates academic activities" },
-    exam_controller:      { label: "Examination Controller",        category: "dept_admin", description: "Manages examinations and results" },
-    fee_manager:          { label: "Fees & Accounts Manager",       category: "dept_admin", description: "Manages fee collection, billing, accounts" },
-    admission_head:       { label: "Admissions Department Head",    category: "dept_admin", description: "Heads the admissions department" },
-    admission_verifier:   { label: "Admission Verifier",            category: "dept_admin", description: "Verifies admission documents and eligibility" },
-    admission_counselor:  { label: "Admission Counselor",           category: "dept_admin", description: "Guides students through admission process" },
-    admission_clerk:      { label: "Admission Clerk",               category: "dept_admin", description: "Handles admission paperwork and data entry" },
-    library_manager:      { label: "Library Manager",               category: "dept_admin", description: "Manages library resources and circulation" },
-    tpo_officer:          { label: "Training & Placement Officer",  category: "dept_admin", description: "Manages placements, internships, and recruitment" },
-    transport_manager:    { label: "Transport Manager",             category: "dept_admin", description: "Manages buses, routes, and transport logistics" },
-    counselor:            { label: "Student Counselor",             category: "dept_admin", description: "Handles student counseling and well-being" },
+    student:              { label: "Student",                       category: "student",    dashboard: "student",          description: "Enrolled student" },
+    teacher:              { label: "Teacher",                       category: "staff",      dashboard: "faculty",          description: "Teaching staff" },
+    faculty:              { label: "Faculty",                       category: "staff",      dashboard: "faculty",          description: "Teaching faculty member" },
+    org_admin:            { label: "Organization Admin",            category: "admin",      dashboard: "org_admin",        description: "Full organization administrator" },
+    super_admin:          { label: "Super Admin",                   category: "system",     dashboard: "super_admin",      description: "Platform-level super administrator" },
+    
+    // Leadership & Academics all share the Org Admin Dashboard (with specific RBAC inside)
+    principal:            { label: "Principal",                     category: "leadership", dashboard: "org_admin",        description: "Head of the institution" },
+    vice_principal:       { label: "Vice Principal",                category: "leadership", dashboard: "org_admin",        description: "Deputy head of institution" },
+    hod:                  { label: "Head of Department (HOD)",      category: "dept_admin", dashboard: "org_admin",        description: "Manages a specific academic department" },
+    coordinator:          { label: "Academic Coordinator",          category: "dept_admin", dashboard: "org_admin",        description: "Coordinates academic activities" },
+    
+    // Core Department Dashboards
+    exam_controller:      { label: "Examination Controller",        category: "dept_admin", dashboard: "examination",      description: "Manages examinations and results" },
+    fee_manager:          { label: "Fees & Accounts Manager",       category: "dept_admin", dashboard: "fees",             description: "Manages fee collection, billing, accounts" },
+    library_manager:      { label: "Library Manager",               category: "dept_admin", dashboard: "library",          description: "Manages library resources and circulation" },
+    library_admin:        { label: "Library Admin",                 category: "dept_admin", dashboard: "library",          description: "Assists with library operations" },
+    attendance_admin:     { label: "Attendance Admin",              category: "dept_admin", dashboard: "attendance",       description: "Manages attendance records and tracking" },
+    hr_admin:             { label: "HR & Payroll Admin",            category: "dept_admin", dashboard: "hr_payroll",       description: "Manages staff HR and payroll" },
+    
+    // Admissions Team shares the Admissions Dashboard
+    admission_head:       { label: "Admissions Department Head",    category: "dept_admin", dashboard: "admissions",       description: "Heads the admissions department" },
+    admission_verifier:   { label: "Admission Verifier",            category: "dept_admin", dashboard: "admissions",       description: "Verifies admission documents and eligibility" },
+    admission_counselor:  { label: "Admission Counselor",           category: "dept_admin", dashboard: "admissions",       description: "Guides students through admission process" },
+    admission_clerk:      { label: "Admission Clerk",               category: "dept_admin", dashboard: "admissions",       description: "Handles admission paperwork and data entry" },
+    
+    // Logistics Team shares the Hostel & Transport Dashboard
+    transport_manager:    { label: "Transport Manager",             category: "dept_admin", dashboard: "hostel_transport", description: "Manages buses, routes, and transport logistics" },
+    hostel_manager:       { label: "Hostel Manager",                category: "dept_admin", dashboard: "hostel_transport", description: "Manages hostel accommodation and operations" },
+    
+    // Others
+    tpo_officer:          { label: "Training & Placement Officer",  category: "dept_admin", dashboard: "org_admin",        description: "Manages placements, internships, and recruitment" },
+    counselor:            { label: "Student Counselor",             category: "dept_admin", dashboard: "faculty",          description: "Handles student counseling and well-being" },
 };
 
 /**
@@ -70,32 +84,37 @@ export const ORG_ROLE_MAPPING = {
     school: [
         "student", "teacher", "faculty", "org_admin",
         "principal", "vice_principal", "coordinator",
-        "exam_controller", "fee_manager", "library_manager", "transport_manager", "counselor",
-        "admission_head", "admission_counselor", "admission_verifier", "admission_clerk"
+        "exam_controller", "fee_manager", "library_manager", "library_admin", "transport_manager", "hostel_manager", "counselor",
+        "admission_head", "admission_counselor", "admission_verifier", "admission_clerk",
+        "attendance_admin", "hr_admin"
     ],
     junior_college: [
         "student", "teacher", "faculty", "org_admin",
         "principal", "vice_principal", "hod", "coordinator",
-        "exam_controller", "fee_manager", "library_manager", "transport_manager", "counselor",
-        "admission_head", "admission_counselor", "admission_verifier", "admission_clerk"
+        "exam_controller", "fee_manager", "library_manager", "library_admin", "transport_manager", "hostel_manager", "counselor",
+        "admission_head", "admission_counselor", "admission_verifier", "admission_clerk",
+        "attendance_admin", "hr_admin"
     ],
     engineering: [
         "student", "teacher", "faculty", "org_admin",
         "principal", "vice_principal", "hod", "coordinator",
-        "exam_controller", "fee_manager", "library_manager", "transport_manager", "counselor", "tpo_officer",
-        "admission_head", "admission_counselor", "admission_verifier", "admission_clerk"
+        "exam_controller", "fee_manager", "library_manager", "library_admin", "transport_manager", "hostel_manager", "counselor", "tpo_officer",
+        "admission_head", "admission_counselor", "admission_verifier", "admission_clerk",
+        "attendance_admin", "hr_admin"
     ],
     diploma: [
         "student", "teacher", "faculty", "org_admin",
         "principal", "vice_principal", "hod", "coordinator",
-        "exam_controller", "fee_manager", "library_manager", "transport_manager", "counselor", "tpo_officer",
-        "admission_head", "admission_counselor", "admission_verifier", "admission_clerk"
+        "exam_controller", "fee_manager", "library_manager", "library_admin", "transport_manager", "hostel_manager", "counselor", "tpo_officer",
+        "admission_head", "admission_counselor", "admission_verifier", "admission_clerk",
+        "attendance_admin", "hr_admin"
     ],
     coaching: [
         "student", "teacher", "faculty", "org_admin",
         "hod", "coordinator",
         "fee_manager", "counselor",
-        "admission_head", "admission_counselor", "admission_clerk"
+        "admission_head", "admission_counselor", "admission_clerk",
+        "attendance_admin", "hr_admin"
     ]
 };
 
@@ -104,7 +123,8 @@ export const SUPER_ADMIN_ROLES = [
     "student", "teacher", "faculty", "org_admin", "super_admin",
     "hod", "principal", "vice_principal", "exam_controller", "fee_manager", 
     "admission_head", "admission_verifier", "admission_counselor", "admission_clerk",
-    "tpo_officer", "library_manager", "transport_manager", "counselor", "coordinator"
+    "tpo_officer", "library_manager", "library_admin", "transport_manager", "hostel_manager", "counselor", "coordinator",
+    "attendance_admin", "hr_admin"
 ];
 
 /**

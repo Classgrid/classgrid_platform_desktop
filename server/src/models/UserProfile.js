@@ -4,18 +4,45 @@ import mongoose from "mongoose";
 const userProfileSchema = new mongoose.Schema(
   {
     organization_id: {
+
+
+
+
+
+
+
+
+
         type: mongoose.Schema.Types.ObjectId,
         ref: "Organization",
         required: true,
         index: true
     },
     user: {
+
+
+
+
+
+
+
+
+
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
       unique: true, // One profile per user
     },
     organization: {
+
+
+
+
+
+
+
+
+
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
       required: true,
@@ -23,6 +50,15 @@ const userProfileSchema = new mongoose.Schema(
 
     // ── Section 1: Personal Details ──────────────────────────────
     identity: {
+
+
+
+
+
+
+
+
+
       first_name: { type: String, default: "" },
       middle_name: { type: String, default: "" },
       last_name: { type: String, default: "" },
@@ -35,28 +71,95 @@ const userProfileSchema = new mongoose.Schema(
       pan_number: { type: String, default: "" },
       birth_place: { type: String, default: "" },
       native_place: { type: String, default: "" },
+      student_id: { type: String, default: "" },
+      gender: { type: String, default: "" },
+      date_of_birth: { type: Date, default: null },
+      employee_id: { type: String, default: "" },
+      qualification: { type: String, default: "" },
+      specialization: { type: String, default: "" },
+      teacher_training_certificate: { type: String, default: "" },
+      tet_qualified: { type: Boolean, default: false },
+      tet_score: { type: Number, default: 0 },
+      recruitment_type: { type: String, default: "" },
+      date_of_joining: { type: Date, default: null },
+      educational_qualifications: { type: String, default: "" },
+      professional_memberships: { type: String, default: "" },
+      certifications: { type: String, default: "" },
+      confirmation_status: { type: Boolean, default: false },
+      department: { type: String, default: "" },
+      designation: { type: String, default: "" },
+      employee_category: { type: String, default: "" },
+      date_of_retirement: { type: Date, default: null },
+      pay_scale: { type: Number, default: 0 },
+      reporting_to: { type: String, default: "" },
+      supervisory_roles: { type: String, default: "" },
     },
     religion_details: {
+
+
+
+
+
+
+
+
+
       religion: { type: String, default: "" },
       caste: { type: String, default: "" },
       sub_caste: { type: String, default: "" },
       creamy_layer: { type: Boolean, default: false },
     },
     handicap_details: {
+
+
+
+
+
+
+
+
+
       physically_handicapped: { type: Boolean, default: false },
       ph_type: { type: String, default: "" },
       ph_percentage: { type: Number, default: 0 },
     },
     minority_details: {
+
+
+
+
+
+
+
+
+
       belongs_to_minority: { type: Boolean, default: false },
       minority_type: { type: String, default: "" },
     },
     passport_details: {
+
+
+
+
+
+
+
+
+
       passport_number: { type: String, default: "" },
       passport_valid_upto: { type: Date, default: null },
       visa_number: { type: String, default: "" },
     },
     admission_details: {
+
+
+
+
+
+
+
+
+
       admission_main_category: { type: String, default: "" },
       seat_type: { type: String, default: "" },
       cap_round: { type: String, default: "" },
@@ -65,6 +168,15 @@ const userProfileSchema = new mongoose.Schema(
 
     // ── Section 2: Contact Details ───────────────────────────────
     contact: {
+
+
+
+
+
+
+
+
+
       permanent_address: { type: String, default: "" },
       permanent_state: { type: String, default: "" },
       permanent_city: { type: String, default: "" },
@@ -77,10 +189,28 @@ const userProfileSchema = new mongoose.Schema(
       emergency_contact_name: { type: String, default: "" },
       emergency_contact_mobile: { type: String, default: "" },
       emergency_contact_relation: { type: String, default: "" },
+      personal_email: { type: String, default: "" },
+      work_email: { type: String, default: "" },
+      alternate_phone: { type: String, default: "" },
+      whatsapp_number: { type: String, default: "" },
+      permanent_country: { type: Number, default: 0 },
+      current_country: { type: Number, default: 0 },
+      official_phone: { type: String, default: "" },
+      office_extension: { type: String, default: "" },
+      primary_contact_for: { type: String, default: "" },
     },
 
     // ── Section 3: Family Details ────────────────────────────────
     family: {
+
+
+
+
+
+
+
+
+
       father_occupation: { type: String, default: "" },
       mother_occupation: { type: String, default: "" },
       father_income: { type: Number, default: 0 },
@@ -94,10 +224,43 @@ const userProfileSchema = new mongoose.Schema(
       local_guardian_name: { type: String, default: "" },
       local_guardian_mobile: { type: String, default: "" },
       local_guardian_address: { type: String, default: "" },
+      spouse_name: { type: String, default: "" },
+      spouse_occupation: { type: String, default: "" },
+      spouse_contact: { type: String, default: "" },
+      number_of_children: { type: Number, default: 0 },
+      undergraduate_degree: { type: String, default: "" },
+      undergraduate_specialization: { type: String, default: "" },
+      undergraduate_percentage: { type: Number, default: 0 },
+      undergraduate_university: { type: String, default: "" },
+      undergraduate_year: { type: Date, default: null },
+      postgraduate_degree: { type: String, default: "" },
+      postgraduate_specialization: { type: String, default: "" },
+      postgraduate_percentage: { type: Number, default: 0 },
+      postgraduate_university: { type: String, default: "" },
+      postgraduate_year: { type: Date, default: null },
+      b_ed_degree: { type: String, default: "" },
+      b_ed_percentage: { type: Number, default: 0 },
+      b_ed_university: { type: String, default: "" },
+      b_ed_year: { type: Date, default: null },
+      phd: { type: String, default: "" },
+      phd_specialization: { type: String, default: "" },
+      phd_university: { type: String, default: "" },
+      phd_year: { type: Date, default: null },
+      net_qualified: { type: Boolean, default: false },
+      slet_qualified: { type: Boolean, default: false },
     },
 
     // ── Section 4: Education Details ─────────────────────────────
     education: {
+
+
+
+
+
+
+
+
+
       tenth_board: { type: String, default: "" }, // 10th
       tenth_percentage: { type: Number, default: 0 },
       twelfth_board: { type: String, default: "" }, // 12th
@@ -115,16 +278,40 @@ const userProfileSchema = new mongoose.Schema(
 
     // ── Section 5: Bank Details ──────────────────────────────────
     bank: {
+
+
+
+
+
+
+
+
+
       bank_account_number: { type: String, default: "" },
       bank_ifsc_code: { type: String, default: "" },
       bank_name: { type: String, default: "" },
       bank_branch: { type: String, default: "" },
       bank_micr_code: { type: String, default: "" },
+      account_holder_name: { type: Number, default: 0 },
+      uan_number: { type: String, default: "" },
+      pf_number: { type: String, default: "" },
+      nominee_name: { type: String, default: "" },
+      nominee_relation: { type: String, default: "" },
+      financial_authorization: { type: String, default: "" },
     },
 
     // ── Section 6: Documents ─────────────────────────────────────
     documents: [{
-      document_name: { type: String, required: true },
+      document_name: {
+
+
+
+
+
+
+
+
+ type: String, required: true },
       file_url: { type: String, required: true },
       uploaded_at: { type: Date, default: Date.now }
     }],
@@ -133,18 +320,61 @@ const userProfileSchema = new mongoose.Schema(
     experience: {
       experience_years: { type: Number, default: 0 },
       experience_details: { type: String, default: "" },
+      total_years_teaching: { type: Date, default: null },
+      years_in_current_school: { type: Date, default: null },
+      previous_schools: { type: String, default: "" },
+      administrative_roles_held: { type: String, default: "" },
+      board_experience: { type: String, default: "" },
+      ncert_expert_panel: { type: String, default: "" },
+      textbook_committee: { type: String, default: "" },
+      subjects_taught: { type: String, default: "" },
+      curriculum_development_experience: { type: String, default: "" },
+      teacher_training_conducted: { type: String, default: "" },
+      affiliation_experience: { type: String, default: "" },
+      school_inspection_experience: { type: String, default: "" },
+      responsibilities: { type: String, default: "" },
+      work_shift: { type: String, default: "" },
+      parent_teacher_meetings_conducted: { type: String, default: "" },
     },
 
     // ── Section 8: Awards / Participation ────────────────────────
     awards_participation: {
+
+
+
+
+
+
+
+
+
       awards: { type: String, default: "" },
       participation: { type: String, default: "" },
       sports: { type: String, default: "" },
       cultural_activities: { type: String, default: "" },
+      best_teacher_award: { type: String, default: "" },
+      national_seminar_attended: { type: String, default: "" },
+      workshop_attended: { type: String, default: "" },
+      publications: { type: String, default: "" },
+      patents: { type: String, default: "" },
+      best_principal_award: { type: String, default: "" },
+      national_awards: { type: String, default: "" },
+      state_awards: { type: String, default: "" },
+      research_articles: { type: String, default: "" },
+      workshop_conducted: { type: String, default: "" },
     },
 
     // ── Section 9: Student Activity ──────────────────────────────
     activity: {
+
+
+
+
+
+
+
+
+
       clubs_joined: { type: String, default: "" },
       committees: { type: String, default: "" },
       nss_ncc: { type: String, default: "" },
@@ -154,31 +384,89 @@ const userProfileSchema = new mongoose.Schema(
 
     // ── Section 10: Social Details ───────────────────────────────
     social: {
+
+
+
+
+
+
+
+
+
       instagram_url: { type: String, default: "" },
       facebook_url: { type: String, default: "" },
       linkedin_url: { type: String, default: "" },
       github_url: { type: String, default: "" },
       portfolio_url: { type: String, default: "" },
+      professional_blog: { type: String, default: "" },
+      research_gate: { type: String, default: "" },
+      google_scholar: { type: String, default: "" },
+      orcid_id: { type: String, default: "" },
+      educational_forum_memberships: { type: String, default: "" },
     },
 
     // ── Section 12: Medical Details ──────────────────────────────
     medical: {
+
+
+
+
+
+
+
+
+
       medical_conditions: { type: String, default: "" },
       allergies: { type: String, default: "" },
       disability_type: { type: String, default: "" },
       medical_insurance: { type: String, default: "" },
+      blood_group: { type: String, default: "" },
+      emergency_medical_contact: { type: String, default: "" },
+      last_health_checkup_date: { type: Date, default: null },
     },
 
     // ── Section 13: Person Skill & Interest ──────────────────────
     skills_interests: {
+
+
+
+
+
+
+
+
+
       skills: { type: String, default: "" },
       interests: { type: String, default: "" },
       languages_known: { type: String, default: "" },
       career_goal: { type: String, default: "" },
+      technical_skills: { type: String, default: "" },
+      soft_skills: { type: String, default: "" },
+      pedagogical_skills: { type: String, default: "" },
+      classroom_management_skills: { type: String, default: "" },
+      multi_lingual_skills: { type: String, default: "" },
+      cpd_courses_completed: { type: String, default: "" },
+      leadership_skills: { type: String, default: "" },
+      financial_management_skills: { type: String, default: "" },
+      hr_management_skills: { type: String, default: "" },
+      communication_skills: { type: String, default: "" },
+      negotiation_skills: { type: String, default: "" },
+      technology_proficiency: { type: String, default: "" },
+      data_analysis_skills: { type: Boolean, default: false },
+      lms_proficiency: { type: String, default: "" },
     },
 
     // ── Section 14: Anti-Ragging Details ─────────────────────────
     anti_ragging: {
+
+
+
+
+
+
+
+
+
       anti_ragging_link: { type: String, default: "" },
       anti_ragging_date: { type: Date, default: null },
     },

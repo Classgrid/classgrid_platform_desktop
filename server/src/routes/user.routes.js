@@ -8,9 +8,23 @@ import { attachInstitutionProfile } from "../middleware/institution-profile.midd
 import { getChatSb } from "../config/supabaseClient.js";
 import { generateR2UploadUrl } from "../services/r2.service.js";
 
-import redis from "../config/redis.js";
+import { getProfileSchema } from "../utils/profile-schemas.js";
 
 const router = express.Router();
+
+// =======================
+// GET PROFILE SCHEMA
+// =======================
+router.get("/profile-schema", isAuthenticated, async (req, res) => {
+  try {
+    const role = req.user.role;
+    const schema = getProfileSchema(role);
+    res.json({ schema });
+  } catch (error) {
+    console.error("SCHEMA ERROR:", error.message);
+    res.status(500).json({ message: "Server error getting schema" });
+  }
+});
 
 const normalizePushNotifications = (pushNotifications) => {
   const p = pushNotifications || {};

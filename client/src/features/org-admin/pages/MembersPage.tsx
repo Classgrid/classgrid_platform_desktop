@@ -1,27 +1,16 @@
-import { useState } from "react";
-import {
-  Card,
-  Title,
-  Text,
-  TabGroup,
-  TabList,
-  Tab,
-  TabPanels,
-  TabPanel,
-  Button,
-  TextInput,
-  Select,
-  SelectItem,
-  Table,
-  TableHead,
-  TableRow,
-  TableHeaderCell,
-  TableBody,
-  TableCell,
-  Badge,
-  Flex,
-} from "@tremor/react";
-import { Search, UserPlus, Mail, Trash2, Send } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Search, Trash2, Plus, X, BadgeCheck, Send } from "lucide-react";
+import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/marketing_ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/marketing_ui/tabs";
+import { DataTable } from "@/components/marketing_ui/data-table";
+import { Button } from "@/components/marketing_ui/button";
+import { Input } from "@/components/marketing_ui/input";
+import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
+import { Badge } from "@/components/marketing_ui/badge";
+import { RefreshButton } from "@/components/marketing_ui/refresh-button";
+import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import {
   useMembers,
   usePendingMembers,
@@ -30,285 +19,389 @@ import {
   useResendInvite,
   useOrgRoles,
 } from "../queries/useOrgAdminMembers";
-import { format } from "date-fns";
+import { Member, PendingMember } from "../services/orgAdminMembersApi";
+
+function fmtDate(iso?: string) {
+  if (!iso) return "Never";
+  return new Date(iso).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+}
+
+const EMPTY_FORM = { name: "", email: "", role: "" };
 
 export function MembersPage() {
-  const [search, setSearch] = useState("");
-  const [selectedRole, setSelectedRole] = useState<string>("all");
-
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteName, setInviteName] = useState("");
-  const [inviteRole, setInviteRole] = useState("faculty");
-  const [inviteDept, setInviteDept] = useState("");
-
-  const { data: membersData, isLoading: loadingMembers } = useMembers({
-    search: search !== "" ? search : undefined,
-    role: selectedRole !== "all" ? selectedRole : undefined,
-  });
-
-  const { data: pendingData, isLoading: loadingPending } = usePendingMembers();
+  const qc = useQueryClient();
+  const [forms, setForms] = useState([EMPTY_FORM]);
+  const [errors, setErrors] = useState<Array<Partial<typeof EMPTY_FORM>>>([]);
+  const [formResult, setFormResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [activeTab, setActiveTab] = useState("team-members");
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [memberToDelete, setMemberToDelete] = useState<Member | PendingMember | null>(null);
 
   const { data: rolesData, isLoading: loadingRoles } = useOrgRoles();
   const roles = rolesData?.roles || [];
+
+  const { data: membersData, isLoading: loadingMembers, refetch: refetchMembers, isFetching: fetchingMembers } = useMembers();
+  const { data: pendingData, isLoading: loadingPending, refetch: refetchPending, isFetching: fetchingPending } = usePendingMembers();
 
   const inviteMutation = useInviteStaff();
   const removeMutation = useRemoveMember();
   const resendMutation = useResendInvite();
 
-  const handleInvite = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inviteEmail || !inviteName || !inviteRole) return;
-    inviteMutation.mutate(
-      { email: inviteEmail, name: inviteName, role: inviteRole, department: inviteDept },
-      {
-        onSuccess: () => {
-          setInviteEmail("");
-          setInviteName("");
-          setInviteDept("");
-        },
-      }
-    );
-  };
+  const isFetching = fetchingMembers || fetchingPending;
 
   const getRoleLabel = (roleValue: string) => {
     return roles.find((r) => r.value === roleValue)?.label || roleValue;
   };
 
+  const activeMembers = useMemo(() => {
+    const list = membersData?.members || [];
+    return list.filter((m) => {
+      const matchesSearch = !searchQuery || m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.email.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesRole = roleFilter === "all" || m.role === roleFilter;
+      return matchesSearch && matchesRole;
+    });
+  }, [membersData, searchQuery, roleFilter]);
+
+  const pendingMembersList = useMemo(() => {
+    const list = pendingData?.pending || [];
+    return list.filter((m) => {
+      const matchesSearch = !searchQuery || m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.email.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesRole = roleFilter === "all" || m.role === roleFilter;
+      return matchesSearch && matchesRole;
+    });
+  }, [pendingData, searchQuery, roleFilter]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormResult(null);
+
+    const newErrors: Array<Partial<typeof EMPTY_FORM>> = [];
+    let hasError = false;
+
+    forms.forEach((f, i) => {
+        const err: Partial<typeof EMPTY_FORM> = {};
+        if (!f.name.trim()) {
+            err.name = "Name is required.";
+            hasError = true;
+        }
+        if (!f.email.trim()) {
+            err.email = "Email is required.";
+            hasError = true;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) {
+            err.email = "Invalid email format.";
+            hasError = true;
+        }
+        if (!f.role) {
+            err.role = "Role is required.";
+            hasError = true;
+        }
+        newErrors[i] = err as any;
+    });
+
+    if (hasError) {
+        setErrors(newErrors);
+        return;
+    }
+
+    setErrors([]);
+    
+    try {
+        await Promise.all(forms.map(f => 
+            inviteMutation.mutateAsync({
+                name: f.name,
+                email: f.email,
+                role: f.role
+            })
+        ));
+        
+        toast.success("Invitations sent successfully!");
+        setFormResult({ success: true, message: "Invitations sent successfully! Welcome emails have been dispatched." });
+        setForms([{ ...EMPTY_FORM, role: roles[0]?.value || "" }]);
+        setActiveTab("pending-invitations");
+        setTimeout(() => setFormResult(null), 5000);
+    } catch (err: any) {
+        toast.error(err?.response?.data?.message || err?.message || "Failed to invite members.");
+        setFormResult({ success: false, message: err?.response?.data?.message || err?.message || "Failed to invite members." });
+    }
+  };
+
+  const handleAddMore = () => {
+    setForms([...forms, { ...EMPTY_FORM, role: roles[0]?.value || "" }]);
+  };
+
+  const getColumns = (isPending: boolean) => [
+    {
+      key: "user",
+      header: "Member",
+      width: "w-full min-w-[250px]",
+      render: (_: any, row: any) => (
+        <div className="flex items-center gap-3 py-2 w-full min-w-[250px]">
+          {row.profilePicture ? (
+            <img 
+                src={row.profilePicture} 
+                alt={row.name} 
+                className="h-8 w-8 rounded-full object-cover border border-border"
+            />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-medium text-xs">
+              {row.name.substring(0, 2).toUpperCase()}
+            </div>
+          )}
+          <div className="flex flex-col min-w-0">
+            <span className="font-medium text-sm truncate">{row.name}</span>
+            <span className="text-muted-foreground text-xs truncate">{row.email}</span>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: "role",
+      header: "Role",
+      width: "w-[180px]",
+      render: (_: any, row: any) => (
+        <div className="pr-4">
+          <Badge variant="secondary" className="font-medium text-xs">{getRoleLabel(row.role)}</Badge>
+        </div>
+      )
+    },
+    {
+      key: "date",
+      header: isPending ? "Invited On" : "Joined",
+      width: "w-[140px]",
+      render: (_: any, row: any) => (
+        <span className="text-sm text-muted-foreground">{fmtDate(row.createdAt)}</span>
+      )
+    },
+    {
+      key: "actions",
+      header: "",
+      width: "w-[120px]",
+      render: (_: any, row: any) => {
+        return (
+          <div className="flex justify-end gap-1">
+              {isPending && (
+                <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 h-8 px-2 rounded-md flex items-center"
+                    onClick={() => {
+                        resendMutation.mutate(row._id, {
+                            onSuccess: () => toast.success("Invitation resent successfully!")
+                        });
+                    }}
+                    title="Resend Invite"
+                    disabled={resendMutation.isPending}
+                >
+                    <Send size={14} />
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 h-8 px-2 rounded-md flex items-center"
+                onClick={() => setMemberToDelete(row)}
+                title={isPending ? "Revoke Invite" : "Remove Member"}
+              >
+                <Trash2 size={14} />
+              </Button>
+          </div>
+        );
+      }
+    }
+  ];
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto space-y-8">
-      <div>
-        <Title className="text-2xl font-semibold text-gray-900 dark:text-gray-50">Members</Title>
-        <Text>Manage team members and invitations</Text>
+    <div className="flex flex-col gap-8 w-full max-w-[1000px] mx-auto p-4 sm:p-6 lg:p-8 pb-12">
+      
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Members</h1>
+            <p className="text-sm text-muted-foreground mt-1">Manage team members and invitations</p>
+        </div>
+        <RefreshButton onClick={() => { refetchMembers(); refetchPending(); }} isFetching={isFetching} />
       </div>
 
-      <TabGroup>
-        <TabList className="mb-6">
-          <Tab>Team Members</Tab>
-          <Tab>Pending Invitations</Tab>
-        </TabList>
-
-        <TabPanels>
-          {/* TEAM MEMBERS TAB */}
-          <TabPanel>
-            {/* INVITE SECTION */}
-            <Card className="mb-8">
-              <Title className="mb-2">Invite Members</Title>
-              <Text className="mb-6">
-                Add new members to your team by entering their details and assigning a role.
-              </Text>
-              
-              <form onSubmit={handleInvite}>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                  <TextInput
-                    placeholder="Full Name"
-                    value={inviteName}
-                    onChange={(e) => setInviteName(e.target.value)}
-                    required
-                  />
-                  <TextInput
-                    placeholder="Email Address"
-                    type="email"
-                    icon={Mail}
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    required
-                  />
-                  <Select
-                    value={inviteRole}
-                    onValueChange={setInviteRole}
-                    enableClear={false}
-                    disabled={loadingRoles}
-                  >
-                    {roles.map((role) => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.label}
-                      </SelectItem>
-                    ))}
-                  </Select>
-                  <TextInput
-                    placeholder="Department (Optional)"
-                    value={inviteDept}
-                    onChange={(e) => setInviteDept(e.target.value)}
-                  />
-                </div>
-                <Flex justifyContent="end">
-                  <Button
-                    type="submit"
-                    icon={UserPlus}
-                    loading={inviteMutation.isPending}
-                  >
-                    Send Invitation
-                  </Button>
-                </Flex>
-              </form>
-            </Card>
-
-            {/* MEMBERS LIST */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="w-full sm:max-w-xs">
-                <TextInput
-                  icon={Search}
-                  placeholder="Filter by name or email..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-              <div className="w-full sm:max-w-xs">
-                <Select
-                  value={selectedRole}
-                  onValueChange={setSelectedRole}
-                  enableClear={false}
-                  disabled={loadingRoles}
-                >
-                  <SelectItem value="all">All Roles</SelectItem>
-                  {roles.map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
-                      {role.label}
-                    </SelectItem>
-                  ))}
-                </Select>
-              </div>
+      {/* Invite Members Card (Vercel Style) */}
+      <Card className="border-border shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-border bg-muted/20 pb-4">
+          <CardTitle className="text-lg">Invite Members</CardTitle>
+          <CardDescription>
+            Add new members to your organization by entering their email address and assigning a role
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <form onSubmit={handleSubmit} className="flex flex-col">
+            <div className="p-6 pb-4">
+                {formResult && (
+                    <div className={`mb-4 p-3 rounded-md text-sm border ${formResult.success ? "bg-success/10 border-success/20 text-success" : "bg-danger/10 border-danger/20 text-danger"}`}>
+                        {formResult.message}
+                    </div>
+                )}
+                
+                {forms.map((f, index) => (
+                    <div key={index} className="mb-6 last:mb-0">
+                        {index > 0 && <hr className="border-border mb-4" />}
+                        <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm font-semibold text-muted-foreground">Member {index + 1}</span>
+                            {forms.length > 1 && (
+                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-danger flex-shrink-0" onClick={() => {
+                                    setForms(forms.filter((_, i) => i !== index));
+                                    setErrors(errors.filter((_, i) => i !== index));
+                                }}>
+                                    <X size={14} />
+                                </Button>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Name */}
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-foreground">Full Name</label>
+                                <Input
+                                    type="text"
+                                    placeholder="e.g. Jane Doe"
+                                    className={(errors[index] as any)?.name ? "border-danger focus-visible:ring-danger bg-background" : "bg-background"}
+                                    value={f.name}
+                                    onChange={(e) => {
+                                        const newForms = [...forms];
+                                        newForms[index] = { ...newForms[index], name: e.target.value };
+                                        setForms(newForms);
+                                    }}
+                                />
+                                {(errors[index] as any)?.name && <span className="text-xs font-medium text-danger">{(errors[index] as any)?.name}</span>}
+                            </div>
+                            {/* Email */}
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-foreground">Email Address</label>
+                                <Input
+                                    type="email"
+                                    placeholder="e.g. member@school.edu"
+                                    className={(errors[index] as any)?.email ? "border-danger focus-visible:ring-danger bg-background" : "bg-background"}
+                                    value={f.email}
+                                    onChange={(e) => {
+                                        const newForms = [...forms];
+                                        newForms[index] = { ...newForms[index], email: e.target.value };
+                                        setForms(newForms);
+                                    }}
+                                />
+                                {(errors[index] as any)?.email && <span className="text-xs font-medium text-danger">{(errors[index] as any)?.email}</span>}
+                            </div>
+                            {/* Role */}
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-foreground">Role</label>
+                                <ResponsiveSelect
+                                    className={`flex h-10 w-full rounded-md border ${(errors[index] as any)?.role ? "border-danger" : "border-input"} bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
+                                    value={f.role}
+                                    onChange={(e) => {
+                                        const newForms = [...forms];
+                                        newForms[index] = { ...newForms[index], role: e.target.value };
+                                        setForms(newForms);
+                                    }}
+                                    disabled={loadingRoles}
+                                >
+                                    <option value="" disabled>Select a role...</option>
+                                    {roles.map((r) => (
+                                        <option key={r.value} value={r.value}>{r.label}</option>
+                                    ))}
+                                </ResponsiveSelect>
+                                {(errors[index] as any)?.role && <span className="text-xs font-medium text-danger">{(errors[index] as any)?.role}</span>}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+                
+                <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 text-muted-foreground mt-2" onClick={handleAddMore}>
+                    <Plus size={14} /> Add more
+                </Button>
             </div>
 
-            <Card>
-              {loadingMembers ? (
-                <div className="py-10 text-center text-gray-500">Loading members...</div>
-              ) : membersData?.members && membersData.members.length > 0 ? (
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableHeaderCell>User</TableHeaderCell>
-                      <TableHeaderCell>Role</TableHeaderCell>
-                      <TableHeaderCell>Department</TableHeaderCell>
-                      <TableHeaderCell>Joined</TableHeaderCell>
-                      <TableHeaderCell className="text-right">Action</TableHeaderCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {membersData.members.map((member) => (
-                      <TableRow key={member._id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
-                              {member.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900 dark:text-gray-100">{member.name}</p>
-                              <p className="text-xs text-gray-500">{member.email}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge color="blue">{getRoleLabel(member.role)}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          {member.department || <span className="text-gray-400">-</span>}
-                        </TableCell>
-                        <TableCell>
-                          <Text>{format(new Date(member.createdAt), "MMM d, yyyy")}</Text>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            size="xs"
-                            variant="light"
-                            color="red"
-                            icon={Trash2}
-                            onClick={() => {
-                              if (confirm(`Remove ${member.name} from the organization?`)) {
-                                removeMutation.mutate(member._id);
-                              }
-                            }}
-                            loading={removeMutation.isPending && removeMutation.variables === member._id}
-                          >
-                            Remove
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="py-10 text-center text-gray-500">
-                  No members found.
-                </div>
-              )}
-            </Card>
-          </TabPanel>
+            <div className="bg-muted/30 border-t border-border px-6 py-4 flex items-center justify-end">
+                <Button type="submit" isLoading={inviteMutation.isPending} className="bg-primary text-primary-foreground font-medium w-[120px]">
+                    Send Invite
+                </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
-          {/* PENDING INVITATIONS TAB */}
-          <TabPanel>
-            <Card>
-              {loadingPending ? (
-                <div className="py-10 text-center text-gray-500">Loading invitations...</div>
-              ) : pendingData?.pending && pendingData.pending.length > 0 ? (
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableHeaderCell>Invited User</TableHeaderCell>
-                      <TableHeaderCell>Role</TableHeaderCell>
-                      <TableHeaderCell>Department</TableHeaderCell>
-                      <TableHeaderCell>Invited On</TableHeaderCell>
-                      <TableHeaderCell className="text-right">Action</TableHeaderCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {pendingData.pending.map((member) => (
-                      <TableRow key={member._id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">{member.name}</p>
-                            <p className="text-xs text-gray-500">{member.email}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge color="blue">{getRoleLabel(member.role)}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          {member.department || <span className="text-gray-400">-</span>}
-                        </TableCell>
-                        <TableCell>
-                          <Text>{format(new Date(member.createdAt), "MMM d, yyyy")}</Text>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              size="xs"
-                              variant="secondary"
-                              icon={Send}
-                              onClick={() => resendMutation.mutate(member._id)}
-                              loading={resendMutation.isPending && resendMutation.variables === member._id}
-                            >
-                              Resend
-                            </Button>
-                            <Button
-                              size="xs"
-                              variant="light"
-                              color="red"
-                              icon={Trash2}
-                              onClick={() => {
-                                if (confirm(`Cancel invitation for ${member.name}?`)) {
-                                  removeMutation.mutate(member._id);
-                                }
-                              }}
-                              loading={removeMutation.isPending && removeMutation.variables === member._id}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+      {/* Tabs & Data Table */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="team-members">Team Members</TabsTrigger>
+          <TabsTrigger value="pending-invitations">Pending Invitations</TabsTrigger>
+        </TabsList>
+        
+        {/* Filter Bar */}
+        <div className="flex flex-col sm:flex-row items-center gap-2 mb-4 w-full">
+            <div className="relative flex-1 w-full max-w-[400px]">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input 
+                    className="pl-9 h-10 w-full bg-background" 
+                    placeholder="Filter by name or email..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 sm:ml-auto">
+                <ResponsiveSelect
+                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none w-[180px]"
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value)}
+                >
+                    <option value="all">All Roles</option>
+                    {roles.map(r => (
+                        <option key={r.value} value={r.value}>{r.label}</option>
                     ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="py-10 text-center text-gray-500">
-                  No pending invitations.
-                </div>
-              )}
-            </Card>
-          </TabPanel>
-        </TabPanels>
-      </TabGroup>
+                </ResponsiveSelect>
+            </div>
+        </div>
+
+        <TabsContent value="team-members" className="m-0 border border-border rounded-md overflow-hidden bg-background">
+          <DataTable
+            columns={getColumns(false)}
+            rows={activeMembers}
+            isLoading={loadingMembers}
+            emptyMessage="No active members found."
+          />
+        </TabsContent>
+        
+        <TabsContent value="pending-invitations" className="m-0 border border-border rounded-md overflow-hidden bg-background">
+          <DataTable
+            columns={getColumns(true)}
+            rows={pendingMembersList}
+            isLoading={loadingPending}
+            emptyMessage="No pending invitations."
+          />
+        </TabsContent>
+      </Tabs>
+
+      <DangerConfirmDialog
+        open={!!memberToDelete}
+        onOpenChange={(open) => !open && setMemberToDelete(null)}
+        title={memberToDelete && 'status' in memberToDelete ? "Remove Member" : "Revoke Invitation"}
+        description={
+            <>
+                Are you sure you want to remove <strong className="text-foreground">{memberToDelete?.name}</strong> ({memberToDelete?.email}) from this organization? 
+                They will lose access to their dashboard and data.
+            </>
+        }
+        warningMessage="This action cannot be undone."
+        actionLabel={memberToDelete && 'status' in memberToDelete ? "Remove Member" : "Revoke Invitation"}
+        isLoading={removeMutation.isPending}
+        onConfirm={() => {
+            if (memberToDelete) {
+                removeMutation.mutate(memberToDelete._id, {
+                    onSuccess: () => {
+                        toast.success("Successfully removed.");
+                        setMemberToDelete(null);
+                    }
+                });
+            }
+        }}
+      />
     </div>
   );
 }
+
