@@ -178,7 +178,6 @@ export const MASTER_PROFILE_SECTION_POOL = {
     icon: "User",
     sub_tabs: ["identity", "birth_details"],
     fields: [
-      { key: "profilePicture", label: "Profile Photo", type: "image", sub_tab: "identity" },
       { key: "first_name", label: "First Name", type: "text", sub_tab: "identity", required: true },
       { key: "middle_name", label: "Middle Name", type: "text", sub_tab: "identity" },
       { key: "last_name", label: "Last Name", type: "text", sub_tab: "identity", required: true },
