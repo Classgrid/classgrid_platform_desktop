@@ -583,7 +583,7 @@ export function StorageFilesPage() {
 
         const processUpload = async (upload: typeof newUploads[0]) => {
           try {
-            await storageApi.uploadFile(upload.file, upload.prefix, (progressEvent) => {
+            const result = await storageApi.uploadFile(upload.file, upload.prefix, (progressEvent) => {
               if (progressEvent.total) {
                 const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                 setUploadingFiles(prev => prev.map(u => u.id === upload.id ? { ...u, progress: percentCompleted } : u));
@@ -594,12 +594,12 @@ export function StorageFilesPage() {
             
             // Instantly inject THIS file into the cache so it shows up without waiting for other files!
             const newFile = {
-              key: `${upload.prefix}${upload.name}`,
+              key: result.key || `${upload.prefix}${upload.name}`,
               name: upload.name,
-              size: upload.file.size,
-              contentType: upload.file.type,
+              size: result.size || upload.file.size,
+              contentType: result.contentType || upload.file.type,
               lastModified: new Date().toISOString(),
-              cdnUrl: ""
+              cdnUrl: result.cdnUrl || ""
             };
             
             const updateCache = (oldData: any) => {
