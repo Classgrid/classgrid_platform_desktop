@@ -110,7 +110,7 @@ export function OnboardingWizardPage() {
     {
       id: "verification",
       title: "Verification & Security",
-      subtitle: "Secure your account with dual verification.",
+      subtitle: "Set up your login details.",
       icon: ShieldCheck,
       type: "fixed_verification"
     },
@@ -185,7 +185,7 @@ export function OnboardingWizardPage() {
 
   return (
     <div className="h-screen bg-slate-50 dark:bg-background flex flex-col font-sans overflow-hidden">
-      {/* ── TOP DEBUG PANEL (Development Only) ── */}
+      {/* Debug Panel */}
       <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-3 flex flex-wrap items-center justify-center gap-6 text-sm z-50 shrink-0">
         <span className="font-semibold text-yellow-600 dark:text-yellow-500 flex items-center gap-2">
           <PlaySquare className="size-4" /> LOCAL DEBUG MODE
@@ -218,20 +218,20 @@ export function OnboardingWizardPage() {
         </div>
       </div>
 
-      {/* FULL SCREEN LAYOUT */}
+      {/* Main Layout */}
       <div className="flex-1 flex overflow-hidden">
 
-        {/* LEFT SIDEBAR (Fixed Width) */}
+        {/* Sidebar */}
         <div className="hidden lg:flex w-[260px] bg-white dark:bg-card border-r border-border/50 flex-col p-6 z-10 shadow-xl overflow-y-auto">
           <div className="flex items-center gap-3 mb-8 shrink-0">
-            {/* Mock College Logo */}
+            {/* Org Logo */}
             <div className="size-10 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-md">
               <GraduationCap className="size-5 text-white" />
             </div>
-            {/* Mock College Name */}
+            {/* Org Name */}
             <h2 className="font-extrabold text-lg leading-tight tracking-tight text-foreground">
-              EduPlus<br />
-              <span className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">Engineering College</span>
+              Classgrid<br />
+              <span className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">Platform</span>
             </h2>
           </div>
 
@@ -280,24 +280,24 @@ export function OnboardingWizardPage() {
           </div>
 
           <div className="mt-auto pt-6 border-t border-border flex items-center justify-center">
-            <div className="bg-secondary/50 rounded-full p-1.5 flex items-center shadow-inner">
+            <div className="bg-secondary/50 rounded-full p-1 flex items-center shadow-inner">
               <button 
                 onClick={() => setTheme("light")}
-                className={cn("p-2.5 px-4 rounded-full transition-all", theme === "light" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground")}
+                className={cn("p-2 px-3 rounded-full transition-all", theme === "light" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
               >
-                <Sun className="size-5" />
+                <Sun className="size-4" />
               </button>
               <button 
                 onClick={() => setTheme("dark")}
-                className={cn("p-2.5 px-4 rounded-full transition-all", theme === "dark" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground")}
+                className={cn("p-2 px-3 rounded-full transition-all", theme === "dark" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
               >
-                <Moon className="size-5" />
+                <Moon className="size-4" />
               </button>
             </div>
           </div>
         </div>
 
-        {/* RIGHT CONTENT AREA */}
+        {/* Content Area */}
         <div className="flex-1 flex flex-col relative bg-slate-50/50 dark:bg-background overflow-hidden">
 
           {/* Scrollable Content */}
@@ -324,10 +324,10 @@ export function OnboardingWizardPage() {
                     </div>
                   )}
 
-                  {/* ── RENDER PHASE 1: ALL VERIFICATIONS ON ONE MASSIVE SCREEN ── */}
+                  {/* Verification Step */}
                   {currentStepData.type === "fixed_verification" && (
                     <div className="space-y-6">
-                      {/* Block 1: Email Verification */}
+                      {/* Email Verification */}
                       <div className="bg-white dark:bg-card p-6 rounded-2xl shadow-sm border border-border/60">
                         <div className="flex items-center gap-3 mb-4">
                           <div className="size-10 bg-blue-500/10 text-blue-600 rounded-xl flex items-center justify-center">
@@ -617,11 +617,7 @@ export function OnboardingWizardPage() {
                 >
                   <ChevronLeft className="mr-1 size-4" /> Back
                 </Button>
-                {currentStep > 0 && (
-                  <Button variant="ghost" size="sm" className="h-10 text-sm font-medium text-muted-foreground hidden sm:flex">
-                    Save as Draft
-                  </Button>
-                )}
+
               </div>
 
               <Button

@@ -24,6 +24,7 @@ import { Spinner } from "@/components/marketing_ui/spinner";
 import { toast } from "sonner";
 import { OnlineStatusDot } from "./OnlineStatusDot";
 import { apiClient } from "@/lib/apiClient";
+import { useDynamicDropdowns } from "@/hooks/useDynamicDropdowns";
 
 // ── SUB-COMPONENT FOR DATE FIELD TO HANDLE LOCAL STATE ──
 function DateField({ field, value, onChange, disabled }: { field: any, value: string, onChange: (val: string) => void, disabled?: boolean }) {
@@ -239,6 +240,13 @@ export function ContextualProfile({
     ...(profileData || {}),
     ...(profileData?.metadata || {})
   });
+  
+  // Use dynamic dropdowns hook
+  const { departments, designations, isLoadingDepartments, isLoadingDesignations } = useDynamicDropdowns(
+    formData["identity.organization_type"],
+    formData["identity.role_category"],
+    formData["identity.department"]
+  );
 
   // Sync form data if profileData arrives asynchronously
   React.useEffect(() => {
@@ -590,18 +598,41 @@ export function ContextualProfile({
               }
 
               if (field.type === "dropdown") {
+                let options = field.options || [];
+                
+                // Inject dynamic options if they belong to department/designation
+                if (field.key === "identity.department") {
+                  options = departments.map(d => d.name);
+                } else if (field.key === "identity.designation") {
+                  options = designations.map(d => d.name);
+                }
+
                 return (
                   <>
                     <Select 
                       value={formData[field.key] || ""} 
-                      onValueChange={(val) => handleInputChange(field.key, val)}
+                      onValueChange={(val) => {
+                         handleInputChange(field.key, val);
+                         // If changing organization type or role category, clear downstream fields
+                         if (field.key === "identity.organization_type" || field.key === "identity.role_category") {
+                           handleInputChange("identity.department", "");
+                           handleInputChange("identity.designation", "");
+                         }
+                         if (field.key === "identity.department") {
+                           handleInputChange("identity.designation", "");
+                         }
+                      }}
                       disabled={!isEditing}
                     >
                       <SelectTrigger className={cn("w-full transition-all", isEditing ? "bg-background border-input" : "bg-muted/30 border-input text-foreground cursor-not-allowed opacity-70")}>
-                        <SelectValue placeholder={`Select ${field.label}...`} />
+                        <SelectValue placeholder={
+                          (field.key === "identity.department" && isLoadingDepartments) ? "Loading..." :
+                          (field.key === "identity.designation" && isLoadingDesignations) ? "Loading..." :
+                          `Select ${field.label}...`
+                        } />
                       </SelectTrigger>
                       <SelectContent>
-                        {field.options?.map((opt: string) => (
+                        {options.map((opt: string) => (
                           <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                         ))}
                         <SelectItem value="Other">Other (Please specify)</SelectItem>
