@@ -16,11 +16,11 @@ export function SettingsRoleRequestCard() {
   
   const [tenantCode, setTenantCode] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
-  const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const roles = rolesData?.roles || [];
   const isAdmin = profile?.role === "org_admin";
+  const userEmail = profile?.email || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +43,7 @@ export function SettingsRoleRequestCard() {
     setIsSubmitting(true);
     try {
       const res = await api.post("/org/request-role", {
-        email: email.trim(),
+        email: userEmail,
         tenant_join_code: tenantCode.trim(),
         role: selectedRole
       });
@@ -60,7 +60,6 @@ export function SettingsRoleRequestCard() {
       
       setTenantCode("");
       setSelectedRole("");
-      setEmail("");
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Failed to process role request.");
     } finally {
@@ -89,11 +88,10 @@ export function SettingsRoleRequestCard() {
             <label className="text-sm font-medium text-foreground">Email Address</label>
             <Input
               type="email"
-              placeholder="user@example.com"
-              className="bg-background"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              className="bg-muted text-muted-foreground cursor-not-allowed"
+              value={userEmail}
+              disabled
+              readOnly
             />
           </div>
 
