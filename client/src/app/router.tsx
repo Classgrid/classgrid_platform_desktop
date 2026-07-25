@@ -23,31 +23,6 @@ import { UsagePage } from "@/features/org-admin/pages/UsagePage";
 import { BillingPage } from "@/features/org-admin/pages/BillingPage";
 import { LeadsPage } from "@/features/superadmin/pages/LeadsPage";
 import { LeadDetailsPage } from "@/features/superadmin/pages/LeadDetailsPage";
-/**
- * ==============================================================================
- * 🛑 AI AGENT WARNING: DO NOT MODIFY THE 5 LOGIN PAGES ROUTING 🛑
- * ==============================================================================
- * This application intentionally uses 5 distinct login pages:
- * 1. SuperAdminLoginPage.tsx (Super Admin)
- * 2. ClassgridSubdomainUserLoginPage.tsx (Subdomain Users)
- * 3. ClassgridSubdomainAdminLoginPage.tsx (Subdomain Admins)
- * 4. CustomDomainUserLoginPage.tsx (Custom Domain Users)
- * 5. CustomDomainAdminLoginPage.tsx (Custom Domain Admins)
- * 
- * DO NOT attempt to "simplify" or consolidate these login routes.
- * DO NOT overwrite the dynamic subdomain routing logic.
- * ==============================================================================
- */
-import { Navigate, Route, Routes } from "react-router-dom";
-import { CandidatePortalPage } from "@/features/admission-portal/pages/CandidatePortalPage";
-import { ParentTrackerPage } from "@/features/admission-portal/pages/ParentTrackerPage";
-
-import { DashboardHomePage } from "@/features/superadmin/pages/DashboardHomePage";
-import { OrgAdminDashboard } from "@/features/org-admin/components/OrgAdminDashboard";
-import { UsagePage } from "@/features/org-admin/pages/UsagePage";
-import { BillingPage } from "@/features/org-admin/pages/BillingPage";
-import { LeadsPage } from "@/features/superadmin/pages/LeadsPage";
-import { LeadDetailsPage } from "@/features/superadmin/pages/LeadDetailsPage";
 import { SupportTicketsPage } from "@/features/superadmin/pages/SupportTicketsPage";
 import { ReviewsPage } from "@/features/superadmin/pages/ReviewsPage";
 import { ChangelogPage } from "@/features/superadmin/pages/ChangelogPage";
@@ -90,6 +65,158 @@ import { SandboxPage } from "@/features/superadmin/pages/SandboxPage";
 import { StorageLayout } from "@/components/layout/StorageLayout";
 import { StorageFilesPage } from "@/features/superadmin/pages/StorageFilesPage";
 import { StorageAnalyticsPage } from "@/features/superadmin/pages/StorageAnalyticsPage";
+import { StorageS3ConfigPage } from "@/features/superadmin/pages/StorageS3ConfigPage";
+import { SharedSettingsPage } from "@/features/shared/pages/SharedSettingsPage";
+import { ClassroomsPage } from "@/features/classrooms/pages/ClassroomsPage";
+import ClassroomDetailPage from "@/features/classrooms/pages/ClassroomDetailPage";
+import { DiscoverClassroomsPage } from "@/features/classrooms/pages/DiscoverClassroomsPage";
+import { WebsiteCMSPage } from "@/features/website_cms/pages/WebsiteCMSPage";
+import { JoinRequestPage } from "@/features/chat/pages/JoinRequestPage";
+
+import { StudentHomePage } from "@/features/student/pages/StudentHomePage";
+import { StudentWorkPage } from "@/features/student/pages/StudentWorkPage";
+import { FacultyHomePage } from "@/features/faculty/pages/FacultyHomePage";
+import { FacultyWorkPage } from "@/features/faculty/pages/FacultyWorkPage";
+import { AdmissionDashboardRouter } from "@/features/admissions/pages/AdmissionDashboardRouter";
+import { AllApplicationsPage } from "@/features/admissions/pages/AllApplicationsPage";
+import { ApplicationDetailsPage } from "@/features/admissions/pages/ApplicationDetailsPage";
+import { DocumentVerificationPage } from "@/features/admissions/pages/DocumentVerificationPage";
+import { MeritListPage } from "@/features/admissions/pages/MeritListPage"; // Keep old placeholder if I didn't build it
+import { EnrollmentPage } from "@/features/admissions/pages/EnrollmentPage";
+import { AdmissionConfigPage } from "@/features/admissions/pages/AdmissionConfigPage";
+import { NewApplicationPage } from "@/features/admissions/pages/NewApplicationPage";
+import { AdmissionSchedulePage } from "@/features/admissions/pages/AdmissionSchedulePage";
+import { FeeStructurePage } from "@/features/admissions/pages/FeeStructurePage";
+import AdmissionAnalyticsPage from "@/features/admissions/pages/AdmissionAnalyticsPage";
+import { ExportDataPage } from "@/features/admissions/pages/ExportDataPage";
+import { CETReportsPage } from "@/features/admissions/pages/CETReportsPage";
+import { FormBuilderPage } from "@/features/admissions/pages/FormBuilderPage";
+import { CETImportPage } from "@/features/admissions/pages/CETImportPage";
+import { RLAReportingPage } from "@/features/admissions/pages/RLAReportingPage";
+import { CAPUpgradePage } from "@/features/admissions/pages/CAPUpgradePage";
+import { VacancyTrackerPage } from "@/features/admissions/pages/VacancyTrackerPage";
+import { LeadTrackingPage } from "@/features/admissions/pages/LeadTrackingPage";
+import { CommunicationPage } from "@/features/admissions/pages/CommunicationPage";
+import { BulkSmsPage } from "@/features/admissions/pages/BulkSmsPage";
+import { FeesDashboardRouter } from "@/features/fees/pages/FeesDashboardRouter";
+import { ExamsDashboardRouter } from "@/features/exams/pages/ExamsDashboardRouter";
+import { ResultsProcessingPage } from "@/features/results/pages/ResultsProcessingPage";
+import { ResultsPage } from "@/features/results/pages/ResultsPage";
+import { ExamGradingPage } from "@/features/exams/pages/ExamGradingPage";
+import { LibraryDashboardRouter } from "@/features/library/pages/LibraryDashboardRouter";
+import { AttendanceDashboardRouter } from "@/features/attendance/pages/AttendanceDashboardRouter";
+import { HRDashboardRouter } from "@/features/hr/pages/HRDashboardRouter";
+import { HostelDashboardPage } from "@/features/hostel/pages/HostelDashboardPage";
+import { SupportPage } from "@/features/support/pages/SupportPage";
+import { GenericPage } from "@/features/system/pages/GenericPage";
+import { GlobeDemoPage } from "@/features/system/pages/GlobeDemoPage";
+import { NotFoundPage } from "@/features/system/pages/NotFoundPage";
+import { AdminLoginRouter } from "@/features/auth/pages/AdminLoginRouter";
+import { UserLoginRouter } from "@/features/auth/pages/UserLoginRouter";
+import { SuperAdminLoginPage } from "@/features/auth/pages/SuperAdminLoginPage";
+import { TestFullScreenLoginPage } from "@/features/auth/pages/TestFullScreenLoginPage";
+
+
+import { ResetPasswordPage } from "@/features/auth/pages/ResetPasswordPage";
+import { RequiredPasswordResetPage } from "@/features/auth/pages/RequiredPasswordResetPage";
+import { EnterOrganizationCodePage } from "@/features/auth/pages/EnterOrganizationCodePage";
+import { RequireAuth } from "@/features/auth/components/RequireAuth";
+import { getRedirectPath, isInstitutionAdminRole } from "@/features/auth/auth-helpers";
+import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
+
+import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
+import { OrgAdminLayout } from "@/components/layout/OrgAdminLayout";
+import { DynamicRoleLayout } from "@/components/layout/DynamicRoleLayout";
+import { ComingSoonPage } from "@/features/system/pages/ComingSoonPage";
+import { PlatformHubPage } from "@/features/system/pages/PlatformHubPage";
+
+
+
+export function AppRouter() {
+  // ── SUBDOMAIN DETECTION ──
+  const hostname = window.location.hostname;
+  const isCustomDomain =
+    hostname !== "localhost" &&
+    hostname !== "classgrid.in" &&
+    !hostname.endsWith(".classgrid.in");
+  const subdomain = hostname.split(".")[0];
+  const isSuperAdmin = subdomain === "superadmin";
+
+  return (
+    <Routes>
+      <Route path="/test-full-login" element={<TestFullScreenLoginPage />} />
+      <Route path="/sandbox-profile" element={<SandboxProfilePage />} />
+      <Route path="/sandbox/datetime" element={<DateTimePickerSandbox />} />
+
+      <Route path="/logout" element={<LogoutPage />} />
+      {/* ── DYNAMIC AUTH ROUTES (Based on Subdomain) ── */}
+      <Route 
+        path="/login" 
+        element={
+          subdomain === "app" 
+            ? <PlatformHubPage /> 
+            : (isSuperAdmin ? <SuperAdminLoginPage /> : <UserLoginRouter />)
+        } 
+      />
+      <Route path="/auth/user" element={<UserLoginRouter />} />
+      <Route path="/student/login" element={<UserLoginRouter preferredRole="student" />} />
+      <Route path="/faculty/login" element={<UserLoginRouter preferredRole="teacher" />} />
+      <Route path="/admin-login" element={<AdminLoginRouter />} />
+      <Route path="/admin/login" element={<AdminLoginRouter />} />
+      <Route path="/org/login" element={<AdminLoginRouter />} />
+      <Route path="/auth/admin" element={<AdminLoginRouter />} />
+      {/* ── Department-specific login portals ── */}
+      <Route path="/dept/admissions/login" element={<AdminLoginRouter />} />
+      <Route path="/dept/fees/login" element={<AdminLoginRouter />} />
+      <Route path="/dept/exams/login" element={<AdminLoginRouter />} />
+      <Route path="/dept/attendance/login" element={<AdminLoginRouter />} />
+      <Route path="/dept/hr/login" element={<AdminLoginRouter />} />
+      <Route path="/dept/hostel/login" element={<AdminLoginRouter />} />
+      <Route path="/dept/library/login" element={<AdminLoginRouter />} />
+      <Route path="/superadmin" element={<SuperAdminLoginPage />} />
+      <Route path="/superadmin/login" element={<SuperAdminLoginPage />} />
+      <Route path="/terms" element={<GenericPage title="Terms of Service" />} />
+      <Route path="/privacy" element={<GenericPage title="Privacy Policy" />} />
+      <Route path="/privacy-policy" element={<GenericPage title="Privacy Policy" />} />
+      {/* TODO: Build ForgotPasswordPage */}
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/demo/globe" element={<GlobeDemoPage />} />
+
+      {/* ── CANDIDATE PORTAL ROUTES ── */}
+      <Route path="/apply/:orgId" element={<CandidatePortalPage />} />
+      <Route path="/parent/:orgId" element={<ParentTrackerPage />} />
+
+      {/* ── DASHBOARD ROUTES ── */}
+      <Route element={<RequireAuth />}>
+        <Route path="/required-password-reset" element={<RequiredPasswordResetPage />} />
+        <Route path="/enter-org-code" element={<EnterOrganizationCodePage />} />
+        
+        {/* NEW SUPER ADMIN SHELL */}
+        <Route element={<SuperAdminLayout />}>
+          <Route path="/superadmin/dashboard" element={<DashboardHomePage />} />
+          <Route path="/superadmin/analytics" element={<AnalyticsPage />} />
+          <Route path="/superadmin/audit-logs" element={<AuditLogsPage />} />
+          <Route path="/superadmin/orgs" element={<OrganizationsPage />} />
+          <Route path="/superadmin/orgs/:id" element={<OrgDetailPage />} />
+          <Route path="/superadmin/domains" element={<CustomDomainsPage />} />
+          <Route path="/superadmin/domains/:orgId" element={<OrgDetailsPage />} />
+          <Route path="/superadmin/onboard" element={<OnboardPage />} />
+          <Route path="/superadmin/direct-onboard" element={<DirectOnboardPage />} />
+          <Route path="/superadmin/leads" element={<LeadsPage />} />
+          <Route path="/superadmin/leads/:id" element={<LeadDetailsPage />} />
+          <Route path="/superadmin/billing" element={<BillingPage />} />
+          <Route path="/superadmin/revenue" element={<RevenuePage />} />
+          <Route path="/superadmin/transactions" element={<TransactionsPage />} />
+          <Route path="/superadmin/failed-payments" element={<FailedPaymentsPage />} />
+          <Route path="/superadmin/users" element={<UsersPage />} />
+          <Route path="/superadmin/global-users" element={<GlobalUsersPage />} />
+          <Route path="/superadmin/global-users/:userId" element={<UserDetailPage />} />
+          <Route path="/superadmin/activity-log" element={<ActivityLogPage />} />
+          <Route path="/superadmin/announcements" element={<PlatformAnnouncementsPage />} />
+          <Route path="/superadmin/config" element={<ConfigPage />} />
+          <Route path="/superadmin/support" element={<SupportTicketsPage />} />
+          <Route path="/superadmin/feedback" element={<FeedbackPage />} />
+          <Route path="/superadmin/reviews" element={<ReviewsPage />} />
           <Route path="/superadmin/talk" element={<ClassgridTalkPage />} />
           <Route path="/superadmin/classgrid-talk" element={<ClassgridTalkPage />} />
           <Route path="/superadmin/system-health" element={<SystemHealthPage />} />
