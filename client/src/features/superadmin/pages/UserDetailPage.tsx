@@ -123,8 +123,29 @@ export function UserDetailPage() {
   }, [setBreadcrumbs, user?.name]);
 
   const getFieldValue = (key: string, type?: string): string => {
-    const value = getNestedValue(profile, key);
+    // 1. Try flat key in user.metadata (where ContextualProfile saves new data)
+    let value = user?.metadata?.[key];
+    
+    // 2. Try nested key in profile (legacy UserProfile)
+    if (value === undefined || value === null || value === "") {
+      value = getNestedValue(profile, key);
+    }
+    
+    // 3. Try flat key in profile
+    if (value === undefined || value === null || value === "") {
+      value = profile?.[key];
+    }
+
+    // 4. Try root user properties as fallback for essential fields
+    if (value === undefined || value === null || value === "") {
+       if (key === "contact.personal_email") value = user?.email;
+       if (key === "contact.mobile_number") value = user?.phoneNumber;
+       if (key === "identity.first_name") value = user?.name?.split(" ")[0];
+       if (key === "identity.last_name") value = user?.name?.split(" ").slice(1).join(" ");
+    }
+
     if (value === undefined || value === null || value === "") return "";
+    
     if (Array.isArray(value)) return value.filter(Boolean).join(", ");
     if (typeof value === "boolean") return value ? "Yes" : "No";
     if (type === "date" || key.toLowerCase().includes("date")) return formatDateValue(value);
@@ -140,7 +161,7 @@ export function UserDetailPage() {
           fields: section.fields.filter((field) => getFieldValue(field.key, field.type)),
         }))
         .filter((section) => section.fields.length > 0),
-    [schema, profile]
+    [schema, profile, user]
   );
 
   const renderFieldRows = (fields: ProfileField[]) => {
