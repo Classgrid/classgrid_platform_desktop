@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, Mail, Smartphone, Key, User,
-  Upload, School, GraduationCap, Building2, Briefcase, PlaySquare, Eye, EyeOff, Moon, Sun
+  Upload, School, GraduationCap, Building2, Briefcase, PlaySquare, Eye, EyeOff, Moon, Sun, ChevronDown
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/marketing_ui/button";
@@ -651,47 +651,232 @@ function getIconComponent(iconName: string) {
   return map[iconName] || CheckCircle2;
 }
 
-function DatePickerField({ value, onChange }: { value?: Date; onChange?: (date?: Date) => void }) {
-  const [internalDate, setInternalDate] = React.useState<Date | undefined>(value);
-  
-  // Sync if value changes externally
-  React.useEffect(() => {
-    setInternalDate(value);
-  }, [value]);
+// Completely custom Select component that perfectly matches the styling
+// but uses absolutely zero portals, guaranteeing no Base UI / Radix conflicts
+function CustomSelect({
+  value,
+  onValueChange,
+  options,
+  placeholder,
+  className,
+  dropdownClassName,
+  dropUp = false
+}: {
+  value: string;
+  onValueChange: (val: string) => void;
+  options: { label: string; value: string }[];
+  placeholder?: string;
+  className?: string;
+  dropdownClassName?: string;
+  dropUp?: boolean;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
-  const handleSelect = (d: Date | undefined) => {
-    setInternalDate(d);
-    onChange?.(d);
-  };
+  React.useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick, true);
+    return () => document.removeEventListener("mousedown", onClick, true);
+  }, [open]);
+
+  const selectedOption = options.find((o) => o.value === value);
 
   return (
-    <Popover.Root>
+    <div ref={containerRef} className="relative w-full text-sm">
+      <button
+        type="button"
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          setOpen(!open);
+        }}
+        className={cn(
+          "flex w-full items-center justify-between rounded-md px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:ring-1 focus:ring-ring",
+          className
+        )}
+      >
+        <span>{selectedOption ? selectedOption.label : placeholder}</span>
+        <ChevronDown className="h-4 w-4 opacity-50" />
+      </button>
+
+      {open && (
+        <div 
+          className={cn(
+            "absolute z-[1000] max-h-56 w-full overflow-auto rounded-md border border-border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95",
+            dropUp ? "bottom-full mb-1 origin-bottom" : "top-full mt-1 origin-top",
+            dropdownClassName
+          )}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div className="p-1">
+            {options.map((opt) => (
+              <div
+                key={opt.value}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  onValueChange(opt.value);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                  value === opt.value ? "bg-accent/50 text-accent-foreground font-medium" : ""
+                )}
+              >
+                {value === opt.value && (
+                  <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                    <CheckCircle2 className="size-3.5" />
+                  </span>
+                )}
+                {opt.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DatePickerField({ value, onChange }: { value?: Date; onChange?: (date?: Date) => void }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [internalDate, setInternalDate] = React.useState<Date | undefined>(value);
+  const [viewMonth, setViewMonth] = React.useState<Date>(value || new Date());
+  
+  const currentYear = new Date().getFullYear();
+  const [selectedMonth, setSelectedMonth] = React.useState((value || new Date()).getMonth().toString());
+  const [selectedYear, setSelectedYear] = React.useState((value || new Date()).getFullYear().toString());
+  
+  React.useEffect(() => {
+    setInternalDate(value);
+    if (value) {
+      setViewMonth(value);
+      setSelectedMonth(value.getMonth().toString());
+      setSelectedYear(value.getFullYear().toString());
+    }
+  }, [value, isOpen]); // Reset internal date when reopening
+
+  const handleSelect = (d: Date | undefined) => {
+    if (d) {
+      setInternalDate(d);
+      setViewMonth(d);
+      setSelectedMonth(d.getMonth().toString());
+      setSelectedYear(d.getFullYear().toString());
+    }
+  };
+
+  const handleMonthChange = (val: string) => {
+    setSelectedMonth(val);
+    const newMonth = new Date(parseInt(selectedYear), parseInt(val), 1);
+    setViewMonth(newMonth);
+  };
+
+  const handleYearChange = (val: string) => {
+    setSelectedYear(val);
+    const newMonth = new Date(parseInt(val), parseInt(selectedMonth), 1);
+    setViewMonth(newMonth);
+  };
+
+  const handleNavMonthChange = (newMonth: Date) => {
+    setViewMonth(newMonth);
+    setSelectedMonth(newMonth.getMonth().toString());
+    setSelectedYear(newMonth.getFullYear().toString());
+  };
+
+  const handleApply = () => {
+    if (internalDate) {
+      onChange?.(internalDate);
+    }
+    setIsOpen(false);
+  };
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June", "July",
+    "August", "September", "October", "November", "December",
+  ];
+  const monthOptions = monthNames.map((m, i) => ({ label: m, value: i.toString() }));
+  
+  const yearOptions = Array.from({ length: 100 }, (_, i) => {
+    const v = (currentYear - i).toString();
+    return { label: v, value: v };
+  });
+
+  return (
+    <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
       <Popover.Trigger
         render={
           <button
             type="button"
             className={cn(
               "h-10 w-full flex items-center justify-start text-left font-normal rounded-lg border border-input bg-background px-3 text-sm hover:bg-muted/50",
-              !internalDate && "text-muted-foreground"
+              !value && "text-muted-foreground"
             )}
           />
         }
       >
         <CalendarIcon className="mr-2 h-4 w-4" />
-        {internalDate ? format(internalDate, "PPP") : <span>Pick a date</span>}
+        {value ? format(value, "PPP") : <span>Pick a date</span>}
       </Popover.Trigger>
       
       <Popover.Portal>
         <Popover.Positioner alignment="start" sideOffset={4}>
           <Popover.Popup 
-            className="z-[1050] w-auto p-0 rounded-lg bg-popover text-popover-foreground text-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
+            className="z-[1050] w-[320px] p-0 flex flex-col rounded-xl bg-popover text-popover-foreground text-foreground shadow-2xl border border-border outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
           >
-            <Calendar
-              mode="single"
-              selected={internalDate}
-              onSelect={handleSelect}
-              initialFocus
-            />
+            {/* Custom Month/Year Header */}
+            <div className="flex items-center gap-2 p-3 pb-0">
+              <div className="flex-1">
+                <CustomSelect 
+                  value={selectedMonth} 
+                  onValueChange={handleMonthChange} 
+                  options={monthOptions}
+                  className="h-8 border-none bg-accent/50 hover:bg-accent font-semibold"
+                  dropdownClassName="w-40 -ml-2"
+                />
+              </div>
+              <div className="flex-1">
+                <CustomSelect 
+                  value={selectedYear} 
+                  onValueChange={handleYearChange} 
+                  options={yearOptions}
+                  className="h-8 border-none bg-accent/50 hover:bg-accent font-semibold"
+                  dropdownClassName="w-32"
+                />
+              </div>
+            </div>
+
+            <div className="px-3 pb-3">
+              <Calendar
+                mode="single"
+                month={viewMonth}
+                onMonthChange={handleNavMonthChange}
+                selected={internalDate}
+                fixedWeeks={true}
+                showOutsideDays={true}
+                onSelect={handleSelect}
+                className="bg-transparent p-0 mt-3 flex justify-center"
+                classNames={{
+                  months: "bg-transparent",
+                  month: "bg-transparent",
+                  caption_label: "hidden",
+                  table: "w-full border-collapse space-y-1 mx-auto",
+                }}
+              />
+            </div>
+
+            {/* Action Button exactly like NikhilTimeCalendar */}
+            <div className="p-3 bg-muted/20 border-t border-border rounded-b-xl">
+              <Button
+                type="button"
+                className="w-full bg-foreground text-background hover:bg-foreground/90 font-medium"
+                onClick={handleApply}
+              >
+                Apply Date
+              </Button>
+            </div>
           </Popover.Popup>
         </Popover.Positioner>
       </Popover.Portal>
