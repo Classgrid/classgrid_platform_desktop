@@ -266,8 +266,11 @@ export function ContextualProfile({
         // Pre-populate photo from profilePicture if no metadata photo
         profile_photo: profileData.metadata?.profile_photo || profileData.profilePicture || profileData.photoURL || prev.profile_photo || "",
         // Pre-populate name fields from user.name if not set in metadata
-        first_name: profileData.metadata?.first_name || profileData.first_name || inferredFirstName || prev.first_name || "",
-        last_name: profileData.metadata?.last_name || profileData.last_name || inferredLastName || prev.last_name || "",
+        "identity.first_name": profileData.metadata?.["identity.first_name"] || profileData.metadata?.first_name || profileData.first_name || inferredFirstName || prev["identity.first_name"] || "",
+        "identity.last_name": profileData.metadata?.["identity.last_name"] || profileData.metadata?.last_name || profileData.last_name || inferredLastName || prev["identity.last_name"] || "",
+        // Map verified credentials to contact fields if empty
+        "contact.personal_email": profileData.metadata?.["contact.personal_email"] || profileData.email || prev["contact.personal_email"] || "",
+        "contact.mobile_number": profileData.metadata?.["contact.mobile_number"] || profileData.phoneNumber || prev["contact.mobile_number"] || "",
       }));
     }
   }, [profileData]);
@@ -413,7 +416,11 @@ export function ContextualProfile({
               // Handle dependsOn dynamic fields (e.g. Other Gender, Other Nationality)
               if (field.dependsOn) {
                 const dependentFieldValue = formData[field.dependsOn.field];
-                if (dependentFieldValue !== field.dependsOn.value) {
+                if (field.dependsOn.isNotEmpty) {
+                   if (!dependentFieldValue || String(dependentFieldValue).trim() === "") {
+                      return null;
+                   }
+                } else if (dependentFieldValue !== field.dependsOn.value) {
                   return null;
                 }
               }
@@ -456,6 +463,28 @@ export function ContextualProfile({
                 )
               }
 
+              if (field.key === "contact.whatsapp_same_as_mobile") {
+                return (
+                   <label className="flex items-center gap-2 text-sm cursor-pointer mt-2 text-foreground">
+                      <input 
+                         type="checkbox" 
+                         className="accent-primary w-4 h-4"
+                         checked={formData["contact.whatsapp_same_as_mobile"] === "true" || formData["contact.whatsapp_same_as_mobile"] === true}
+                         onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            handleInputChange("contact.whatsapp_same_as_mobile", isChecked ? "true" : "false");
+                            if (isChecked) {
+                               // Copy from the Mobile Number field (or fallback to verified phoneNumber)
+                               handleInputChange("contact.whatsapp_number", formData["contact.mobile_number"] || formData.phoneNumber || "");
+                            }
+                         }}
+                         disabled={!isEditing}
+                      />
+                      Same as Mobile Number
+                   </label>
+                )
+              }
+
               if (field.type === "checkbox") {
                  return (
                    <label className="flex items-center gap-2 text-sm cursor-pointer mt-2 text-foreground">
@@ -476,20 +505,33 @@ export function ContextualProfile({
                  return null;
               }
 
-              // Handle Autocomplete/Datalist for Universities — using ResponsiveSelect with search
               if (field.key === "ug_university" || field.key === "pg_university" || field.key === "phd_university" || field.key === "bed_university") {
                 return (
-                  <ResponsiveSelect
-                    value={formData[field.key] || ""}
-                    onChange={(e: any) => isEditing && handleInputChange(field.key, e.target.value)}
-                    disabled={!isEditing}
-                    placeholder={`Select ${field.label}...`}
-                    className={cn("w-full transition-all", !isEditing && "bg-muted/30 border-input text-foreground cursor-not-allowed opacity-70")}
-                  >
-                    <option value="">Select University...</option>
-                    {ERPUNIVERSITYLIST.map((u: string) => <option key={u} value={u}>{u}</option>)}
-                    <option value="Other">Other (Please specify)</option>
-                  </ResponsiveSelect>
+                  <>
+                    <ResponsiveSelect
+                      value={formData[field.key] || ""}
+                      onChange={(e: any) => isEditing && handleInputChange(field.key, e.target.value)}
+                      disabled={!isEditing}
+                      placeholder={`Select ${field.label}...`}
+                      className={cn("w-full transition-all", !isEditing && "bg-muted/30 border-input text-foreground cursor-not-allowed opacity-70")}
+                    >
+                      <option value="">Select University...</option>
+                      {ERPUNIVERSITYLIST.map((u: string) => <option key={u} value={u}>{u}</option>)}
+                      <option value="Other">Other (Please specify)</option>
+                    </ResponsiveSelect>
+                    {formData[field.key] === "Other" && (
+                      <div className="mt-2 animate-in fade-in slide-in-from-top-1">
+                        <input 
+                          type="text" 
+                          placeholder={isEditing ? `Enter custom ${field.label}...` : ""}
+                          className={cn("w-full p-2.5 rounded-md text-sm outline-none transition-all", isEditing ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70")}
+                          value={formData[field.key + "_other"] || ""}
+                          onChange={(e) => isEditing && handleInputChange(field.key + "_other", e.target.value)}
+                          readOnly={!isEditing}
+                        />
+                      </div>
+                    )}
+                  </>
                 );
               }
 
@@ -740,13 +782,13 @@ export function ContextualProfile({
                   placeholder={isEditing && !field.key.includes('same_as_permanent') ? `Enter ${field.label}...` : ""}
                   className={cn(
                     "w-full p-2.5 rounded-md text-sm outline-none transition-all",
-                    isEditing 
+                    (isEditing && !(field.key === "contact.whatsapp_number" && formData["contact.whatsapp_same_as_mobile"] === "true"))
                       ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" 
                       : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70"
                   )}
                   value={formData[field.key] || ""}
                   onChange={(e) => isEditing && handleInputChange(field.key, e.target.value)}
-                  readOnly={!isEditing}
+                  readOnly={!isEditing || (field.key === "contact.whatsapp_number" && formData["contact.whatsapp_same_as_mobile"] === "true")}
                 />
               );
             };
