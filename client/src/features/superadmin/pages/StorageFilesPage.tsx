@@ -1030,21 +1030,65 @@ export function StorageFilesPage() {
     }))
   ];
 
+    const renderBreadcrumbs = () => {
+      const parts = currentPrefix.split("/").filter(Boolean);
+      let cumulative = "";
+      
+      return (
+        <div className="flex items-center gap-1.5 text-sm font-medium flex-wrap max-w-full overflow-hidden shrink-0">
+          <span 
+            className={`${!currentPrefix ? "text-foreground" : "text-muted-foreground hover:text-foreground cursor-pointer transition-colors"}`}
+            onClick={() => setOpenFolders([""])}
+          >
+            Root
+          </span>
+          {parts.map((part, idx) => {
+            cumulative += part + "/";
+            const isLast = idx === parts.length - 1;
+            
+            const newOpenFolders = [""];
+            let temp = "";
+            for (let i = 0; i <= idx; i++) {
+              temp += parts[i] + "/";
+              newOpenFolders.push(temp);
+            }
+            
+            return (
+              <React.Fragment key={cumulative}>
+                <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+                <span
+                  className={`truncate max-w-[150px] ${isLast ? "text-foreground" : "text-muted-foreground hover:text-foreground cursor-pointer transition-colors"}`}
+                  onClick={isLast ? undefined : () => setOpenFolders(newOpenFolders)}
+                  title={part}
+                >
+                  {part}
+                </span>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      );
+    };
+
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
       <div className="flex flex-col flex-1 w-full border-t border-border overflow-hidden bg-card">
         <div className="flex items-center justify-between p-3 border-b border-border bg-muted/20">
-          <div className="relative w-[300px]">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search in root directory..."
-              className="pl-9 h-9 bg-background border-border shadow-sm text-sm"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
+          
+          <div className="flex items-center flex-1 mr-4 overflow-hidden">
+            {renderBreadcrumbs()}
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="relative w-[220px] mr-2">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search..."
+                className="pl-9 h-9 bg-background border-border shadow-sm text-sm"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+            </div>
             <Button
               variant="outline"
               size="icon"
@@ -1326,7 +1370,7 @@ export function StorageFilesPage() {
             
             {/* Sticky Bulk Action Bar for both views */}
             {selectedKeys.size > 0 && (
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-card border border-border shadow-lg rounded-full px-6 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-5">
+              <div className="absolute z-50 bottom-6 left-1/2 -translate-x-1/2 bg-card border border-border shadow-lg rounded-full px-6 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-5">
                 <span className="text-sm font-medium">
                   <span className="text-primary mr-1">{selectedKeys.size}</span> items selected
                 </span>
