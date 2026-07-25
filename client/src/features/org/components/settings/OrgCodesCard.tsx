@@ -188,11 +188,6 @@ export function OrgCodesCard() {
                 </tbody>
               </table>
             </div>
-            <p className="mt-2 text-[11px] text-muted-foreground/60">
-              Labels are served by{" "}
-              <code className="bg-muted px-1 rounded text-[10px]">GET /api/hierarchy/terminology</code>.
-              Never hardcode "Semester", "Division", etc. in UI — always use this API.
-            </p>
           </div>
         )}
       </div>
