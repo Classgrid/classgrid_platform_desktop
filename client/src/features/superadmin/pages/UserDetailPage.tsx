@@ -114,7 +114,7 @@ export function UserDetailPage() {
 
   useEffect(() => {
     setBreadcrumbs([
-      { label: "Global Users", path: "/superadmin/global-users" },
+      { label: "Global Users", href: "/superadmin/global-users" },
       { label: user?.name || "User Details" }
     ]);
     return () => setBreadcrumbs([]);
