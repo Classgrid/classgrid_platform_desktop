@@ -49,13 +49,15 @@ function formatBytes(bytes: number) {
 }
 
 function getFileIcon(type?: string) {
-  if (!type) return <File size={16} className="text-muted-foreground" />;
-  if (type === "Folder") return <Folder size={16} className="text-yellow-500 fill-yellow-500/20" />;
-  if (type.startsWith("image/")) return <ImageIcon size={16} className="text-blue-500" />;
-  if (type.startsWith("video/")) return <Video size={16} className="text-purple-500" />;
-  if (type.includes("pdf")) return <FileText size={16} className="text-red-500" />;
-  if (type.includes("zip") || type.includes("tar") || type.includes("rar")) return <FileArchive size={16} className="text-orange-500" />;
-  return <File size={16} className="text-muted-foreground" />;
+  const size = 18;
+  const baseWrapper = "flex items-center justify-center rounded-lg p-2 shrink-0 border shadow-sm";
+  if (!type) return <div className={`${baseWrapper} bg-muted/50 border-border/50 text-muted-foreground`}><File size={size} /></div>;
+  if (type === "Folder") return <div className={`${baseWrapper} bg-yellow-500/10 border-yellow-500/20 text-yellow-600`}><Folder size={size} className="fill-yellow-500/20" /></div>;
+  if (type.startsWith("image/")) return <div className={`${baseWrapper} bg-blue-500/10 border-blue-500/20 text-blue-600`}><ImageIcon size={size} /></div>;
+  if (type.startsWith("video/")) return <div className={`${baseWrapper} bg-purple-500/10 border-purple-500/20 text-purple-600`}><Video size={size} /></div>;
+  if (type.includes("pdf")) return <div className={`${baseWrapper} bg-red-500/10 border-red-500/20 text-red-600`}><FileText size={size} /></div>;
+  if (type.includes("zip") || type.includes("tar") || type.includes("rar")) return <div className={`${baseWrapper} bg-orange-500/10 border-orange-500/20 text-orange-600`}><FileArchive size={size} /></div>;
+  return <div className={`${baseWrapper} bg-muted/50 border-border/50 text-muted-foreground`}><File size={size} /></div>;
 }
 
 // Global upload state to share between the page and columns
@@ -321,7 +323,7 @@ const StorageColumn = ({
                     </div>
                   </div>
                   
-                  {item.isFolder ? <Folder size={18} className="text-yellow-500 fill-yellow-500/20 shrink-0" /> : getFileIcon(item.type)}
+                  {getFileIcon(item.isFolder ? "Folder" : item.type)}
                   
                   {fileToRename?.key === item.key ? (
                     <div className="flex items-center flex-1 min-w-0 max-w-full" onClick={e => e.stopPropagation()}>
@@ -1022,7 +1024,7 @@ export function StorageFilesPage() {
                       const isRenaming = fileToRename?.key === row.key;
                       return (
                         <div
-                          className={`flex items-center gap-3 ${row.isFolder || row.isUpDir ? "cursor-pointer hover:underline font-medium" : ""}`}
+                          className={`flex items-center gap-3 ${row.isFolder || row.isUpDir ? "cursor-pointer hover:underline font-medium" : ""} overflow-hidden w-full`}
                           onClick={() => {
                             if (isRenaming) return;
                             if (row.isUpDir) {
@@ -1055,7 +1057,7 @@ export function StorageFilesPage() {
                               )}
                             </div>
                           ) : (
-                            <span>{row.name}</span>
+                            <span className="truncate block flex-1 min-w-0" title={row.name}>{row.name}</span>
                           )}
                         </div>
                       );
