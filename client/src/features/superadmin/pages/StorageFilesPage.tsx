@@ -587,7 +587,11 @@ export function StorageFilesPage() {
       }
       
       const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024; // 2 GB
-      const validFiles = files.filter(f => f.size <= MAX_FILE_SIZE);
+      const validFiles = files.filter(f => f.size <= MAX_FILE_SIZE).map(f => {
+        // Sanitize filename to replace spaces with underscores to avoid %20 in URLs
+        const sanitizedName = f.name.replace(/\s+/g, '_');
+        return sanitizedName === f.name ? f : new File([f], sanitizedName, { type: f.type, lastModified: f.lastModified });
+      });
       const invalidFiles = files.filter(f => f.size > MAX_FILE_SIZE);
 
       if (invalidFiles.length > 0) {
