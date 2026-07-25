@@ -185,6 +185,18 @@ export function OnboardingWizardPage() {
 
   return (
     <div className="h-screen bg-slate-50 dark:bg-background flex flex-col font-sans overflow-hidden">
+      {/* ── TOP DEBUG PANEL (Development Only) ── */}
+      <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-3 flex flex-wrap items-center justify-center gap-6 text-sm z-50 shrink-0">
+        <span className="font-semibold text-yellow-600 dark:text-yellow-500 flex items-center gap-2">
+          <PlaySquare className="size-4" /> LOCAL DEBUG MODE
+        </span>
+        <div className="flex items-center gap-2">
+          <label className="text-muted-foreground font-medium">Test Role:</label>
+          <select
+            value={debugRole}
+            onChange={e => { setDebugRole(e.target.value); setCurrentStep(0); }}
+            className="bg-background border rounded px-3 py-1.5 font-medium"
+          >
             <option value="student">Student</option>
             <option value="faculty">Faculty</option>
             <option value="org_admin">Org Admin</option>
@@ -204,15 +216,6 @@ export function OnboardingWizardPage() {
             <option value="coaching">Coaching Center</option>
           </select>
         </div>
-        </div>
-        
-        <button 
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-background hover:bg-secondary transition-colors shrink-0"
-        >
-          {theme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
-          <span className="font-semibold">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-        </button>
       </div>
 
       {/* FULL SCREEN LAYOUT */}
@@ -276,8 +279,21 @@ export function OnboardingWizardPage() {
             </div>
           </div>
 
-          <div className="mt-auto pt-6 border-t border-border">
-            <p className="text-xs text-muted-foreground">© Classgrid 2026. All rights reserved.</p>
+          <div className="mt-auto pt-6 border-t border-border flex items-center justify-center">
+            <div className="bg-secondary/50 rounded-full p-1.5 flex items-center shadow-inner">
+              <button 
+                onClick={() => setTheme("light")}
+                className={cn("p-2.5 px-4 rounded-full transition-all", theme === "light" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground")}
+              >
+                <Sun className="size-5" />
+              </button>
+              <button 
+                onClick={() => setTheme("dark")}
+                className={cn("p-2.5 px-4 rounded-full transition-all", theme === "dark" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground")}
+              >
+                <Moon className="size-5" />
+              </button>
+            </div>
           </div>
         </div>
 

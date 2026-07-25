@@ -226,7 +226,6 @@ export const MASTER_PROFILE_SECTION_POOL = {
     label: "Basic Profile",
     icon: "User",
     fields: [
-      { key: "identity.profile_photo_url", label: "Profile Photo", type: "image" },
       { key: "identity.first_name", label: "First Name", type: "text", required: true },
       { key: "identity.middle_name", label: "Middle Name", type: "text" },
       { key: "identity.last_name", label: "Last Name", type: "text", required: true },
