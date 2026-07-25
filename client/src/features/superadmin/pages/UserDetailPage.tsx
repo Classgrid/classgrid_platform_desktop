@@ -220,7 +220,7 @@ export function UserDetailPage() {
                 { label: "Qualification", value: user.qualification },
                 { label: "Eligibility Number", value: user.eligibilityNo },
                 { label: "Exam Pattern", value: user.pattern },
-                { label: "Subjects Assigned", value: user.subjectsAssigned?.join(", ") },
+                { label: "Subjects Assigned", value: Array.isArray(user.subjectsAssigned) ? user.subjectsAssigned.join(", ") : user.subjectsAssigned },
             ]} />
 
             <Section title="Admission & Compliance" fields={[
@@ -255,7 +255,7 @@ export function UserDetailPage() {
 
             <Section title="System Information" fields={[
                 { label: "Primary Role", value: user.role },
-                { label: "Additional Roles", value: user.additional_roles?.join(", ") },
+                { label: "Additional Roles", value: Array.isArray(user.additional_roles) ? user.additional_roles.join(", ") : user.additional_roles },
                 { label: "Joined At", value: formatDate(user.createdAt) },
                 { label: "Last Updated", value: formatDate(user.updatedAt) },
                 { label: "Last Login At", value: user.lastLoginAt ? formatDate(user.lastLoginAt) : null },
