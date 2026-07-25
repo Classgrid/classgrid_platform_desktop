@@ -774,6 +774,17 @@ export function StorageFilesPage() {
 
     const oldFileToRename = fileToRename;
 
+    const generateNewCdnUrl = (oldUrl: string | undefined | null, newKey: string) => {
+      if (!oldUrl) return oldUrl;
+      try {
+        const urlObj = new URL(oldUrl);
+        const encodedNewKey = newKey.split('/').map(segment => encodeURIComponent(segment)).join('/');
+        return `${urlObj.protocol}//${urlObj.host}/${encodedNewKey}`;
+      } catch {
+        return oldUrl;
+      }
+    };
+
     // Optimistically update activeFile instantly (including lastModified)
     if (activeFile?.key === oldFileToRename.key) {
       setActiveFile({
@@ -781,7 +792,7 @@ export function StorageFilesPage() {
         key: newKey,
         name: finalName,
         lastModified: nowIso,
-        cdnUrl: activeFile.cdnUrl ? activeFile.cdnUrl.replace(encodeURIComponent(oldFileToRename.name), encodeURIComponent(finalName)) : activeFile.cdnUrl
+        cdnUrl: generateNewCdnUrl(activeFile.cdnUrl, newKey)
       });
     }
 
@@ -801,7 +812,7 @@ export function StorageFilesPage() {
             key: newKey, 
             name: finalName, 
             lastModified: nowIso,
-            cdnUrl: f.cdnUrl ? f.cdnUrl.replace(encodeURIComponent(oldFileToRename.name), encodeURIComponent(finalName)) : f.cdnUrl 
+            cdnUrl: generateNewCdnUrl(f.cdnUrl, newKey)
           } : f).sort((a: any, b: any) => a.name.localeCompare(b.name))
         };
       }
