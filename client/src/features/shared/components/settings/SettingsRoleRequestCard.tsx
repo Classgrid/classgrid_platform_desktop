@@ -73,11 +73,11 @@ export function SettingsRoleRequestCard() {
       <div className="flex flex-col gap-2 border-b border-border pb-4">
         <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-primary" />
-          {isAdmin ? "Assign a Role (Instant)" : "Request a Role"}
+          {isAdmin ? "Add a Role" : "Request a Role"}
         </h3>
         <p className="text-sm text-muted-foreground">
           {isAdmin 
-            ? "Instantly grant a role to a user by entering their email and your organization's Tenant ID." 
+            ? "Enter an email and your organization's Tenant ID to add a role."
             : "Need access to a specific dashboard? Enter your email and organization's Tenant ID to request a role."}
         </p>
       </div>
@@ -135,7 +135,7 @@ export function SettingsRoleRequestCard() {
             ) : (
               <Send className="h-4 w-4" />
             )}
-            {isAdmin ? "Assign Role" : "Submit Request"}
+            {isAdmin ? "Add Role" : "Submit Request"}
           </Button>
         </div>
       </form>
