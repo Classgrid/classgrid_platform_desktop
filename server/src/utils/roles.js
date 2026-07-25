@@ -82,35 +82,35 @@ const ORG_LABEL_OVERRIDES = {
  */
 export const ORG_ROLE_MAPPING = {
     school: [
-        "student", "teacher", "faculty", "org_admin",
+        "student", "faculty", "org_admin",
         "principal", "vice_principal", "coordinator",
-        "exam_controller", "fee_manager", "library_manager", "library_admin", "transport_manager", "hostel_manager", "counselor",
+        "exam_controller", "fee_manager", "library_manager", "transport_manager", "hostel_manager", "counselor",
         "admission_head", "admission_counselor", "admission_verifier", "admission_clerk",
         "attendance_admin", "hr_admin"
     ],
     junior_college: [
-        "student", "teacher", "faculty", "org_admin",
+        "student", "faculty", "org_admin",
         "principal", "vice_principal", "hod", "coordinator",
-        "exam_controller", "fee_manager", "library_manager", "library_admin", "transport_manager", "hostel_manager", "counselor",
+        "exam_controller", "fee_manager", "library_manager", "transport_manager", "hostel_manager", "counselor",
         "admission_head", "admission_counselor", "admission_verifier", "admission_clerk",
         "attendance_admin", "hr_admin"
     ],
     engineering: [
-        "student", "teacher", "faculty", "org_admin",
+        "student", "faculty", "org_admin",
         "principal", "vice_principal", "hod", "coordinator",
-        "exam_controller", "fee_manager", "library_manager", "library_admin", "transport_manager", "hostel_manager", "counselor", "tpo_officer",
+        "exam_controller", "fee_manager", "library_manager", "transport_manager", "hostel_manager", "tpo_officer", "counselor",
         "admission_head", "admission_counselor", "admission_verifier", "admission_clerk",
         "attendance_admin", "hr_admin"
     ],
     diploma: [
-        "student", "teacher", "faculty", "org_admin",
+        "student", "faculty", "org_admin",
         "principal", "vice_principal", "hod", "coordinator",
-        "exam_controller", "fee_manager", "library_manager", "library_admin", "transport_manager", "hostel_manager", "counselor", "tpo_officer",
+        "exam_controller", "fee_manager", "library_manager", "transport_manager", "hostel_manager", "tpo_officer", "counselor",
         "admission_head", "admission_counselor", "admission_verifier", "admission_clerk",
         "attendance_admin", "hr_admin"
     ],
     coaching: [
-        "student", "teacher", "faculty", "org_admin",
+        "student", "faculty", "org_admin",
         "hod", "coordinator",
         "fee_manager", "counselor",
         "admission_head", "admission_counselor", "admission_clerk",
