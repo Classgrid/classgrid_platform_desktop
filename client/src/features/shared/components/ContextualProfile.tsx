@@ -6,7 +6,12 @@ import {
   Eye, ExternalLink, X, File as FileIcon
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/marketing_ui/dialog";
-import { getResolvedProfileStrategy } from "../lib/profile-strategy-selector";
+import { 
+  getResolvedProfileStrategy, 
+  UG_DEGREE_OPTIONS, UG_SPECIALIZATION_MAP, 
+  PG_DEGREE_OPTIONS, PG_SPECIALIZATION_MAP, 
+  PHD_SPECIALIZATION_OPTIONS, SEED_UNIVERSITIES 
+} from "../lib/profile-strategy-selector";
 import { ScrollArea } from "@/components/marketing_ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
 import { Calendar } from "@/components/marketing_ui/nikhil_calendar";
@@ -401,6 +406,75 @@ export function ContextualProfile({
                 
                 {/* Form Input Renderer */}
                 {(() => {
+                  // Hide fields conditionally based on PhD Yes/No
+                  if ((field.key === "phd_specialization" || field.key === "phd_university" || field.key === "phd_year") && formData.phd_qualified !== "yes") {
+                    return null;
+                  }
+
+                  // Handle Autocomplete/Datalist for Universities
+                  if (field.key === "ug_university" || field.key === "pg_university" || field.key === "phd_university" || field.key === "bed_university") {
+                    return (
+                      <div className="relative w-full">
+                        <input 
+                          list={`${field.key}-list`}
+                          type="text"
+                          placeholder={isEditing ? `Enter or select ${field.label}...` : ""}
+                          className={cn(
+                            "w-full p-2.5 rounded-md text-sm outline-none transition-all",
+                            isEditing 
+                              ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" 
+                              : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70"
+                          )}
+                          value={formData[field.key] || ""}
+                          onChange={(e) => isEditing && handleInputChange(field.key, e.target.value)}
+                          readOnly={!isEditing}
+                        />
+                        <datalist id={`${field.key}-list`}>
+                          {SEED_UNIVERSITIES.map(u => <option key={u} value={u} />)}
+                        </datalist>
+                      </div>
+                    );
+                  }
+
+                  // Handle dynamic dropdowns for Degrees and Specializations
+                  if (field.key === "ug_degree" || field.key === "pg_degree" || field.key === "ug_specialization" || field.key === "pg_specialization" || field.key === "phd_specialization") {
+                    let options: string[] = [];
+                    if (field.key === "ug_degree") options = UG_DEGREE_OPTIONS;
+                    else if (field.key === "pg_degree") options = PG_DEGREE_OPTIONS;
+                    else if (field.key === "ug_specialization") options = UG_SPECIALIZATION_MAP[formData.ug_degree] || ["Other"];
+                    else if (field.key === "pg_specialization") options = PG_SPECIALIZATION_MAP[formData.pg_degree] || ["Other"];
+                    else if (field.key === "phd_specialization") options = PHD_SPECIALIZATION_OPTIONS;
+
+                    return (
+                      <>
+                        <Select 
+                          value={formData[field.key] || ""} 
+                          onValueChange={(val) => handleInputChange(field.key, val)}
+                          disabled={!isEditing}
+                        >
+                          <SelectTrigger className={cn("w-full transition-all", isEditing ? "bg-background border-input" : "bg-muted/30 border-input text-foreground cursor-not-allowed opacity-70")}>
+                            <SelectValue placeholder={`Select ${field.label}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {options.map((opt: string) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        {formData[field.key] === "Other" && (
+                          <div className="mt-2 animate-in fade-in slide-in-from-top-1">
+                            <input 
+                              type="text" 
+                              placeholder={isEditing ? `Enter custom ${field.label}...` : ""}
+                              className={cn("w-full p-2.5 rounded-md text-sm outline-none transition-all", isEditing ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70")}
+                              value={formData[field.key + "_other"] || ""}
+                              onChange={(e) => isEditing && handleInputChange(field.key + "_other", e.target.value)}
+                              readOnly={!isEditing}
+                            />
+                          </div>
+                        )}
+                      </>
+                    );
+                  }
+
                   // India Locations Cascading Logic
                   if (field.key === "permanent_state" || field.key === "current_state") {
                     const states = Object.keys(indiaLocations.states);

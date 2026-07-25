@@ -28,6 +28,55 @@ import {
   GOVERNMENTSCHEMELIST
 } from "./erp-large-options";
 
+export const UG_DEGREE_OPTIONS = [
+  "B.A. (Bachelor of Arts)", "B.Sc. (Bachelor of Science)", "B.Com. (Bachelor of Commerce)",
+  "B.E. (Bachelor of Engineering)", "B.Tech. (Bachelor of Technology)", "B.C.A. (Bachelor of Computer Applications)",
+  "B.B.A. (Bachelor of Business Administration)", "B.C.S. (Bachelor of Computer Science)", "B.Sc. (IT)",
+  "B.Lib.Sc. (Bachelor of Library Science)", "B.P.Ed. (Bachelor of Physical Education)",
+  "B.F.A. (Bachelor of Fine Arts)", "B.Arch. (Bachelor of Architecture)", "B.Pharm. (Bachelor of Pharmacy)",
+  "LL.B. (Bachelor of Laws)", "Other"
+];
+
+export const UG_SPECIALIZATION_MAP: Record<string, string[]> = {
+  "B.A. (Bachelor of Arts)": ["English", "History", "Political Science", "Economics", "Psychology", "Sociology", "Geography", "Hindi / Marathi / Regional Language"],
+  "B.Sc. (Bachelor of Science)": ["Physics", "Chemistry", "Mathematics", "Biology / Zoology / Botany", "Computer Science", "Electronics", "Statistics"],
+  "B.Com. (Bachelor of Commerce)": ["Accounting & Finance", "Banking & Insurance", "Business Administration", "Economics"],
+  "B.E. (Bachelor of Engineering)": ["Computer Engineering", "Information Technology", "Mechanical Engineering", "Civil Engineering", "Electrical Engineering", "Electronics & Telecommunication"],
+  "B.Tech. (Bachelor of Technology)": ["Computer Engineering", "Information Technology", "Mechanical Engineering", "Civil Engineering", "Electrical Engineering", "Electronics & Telecommunication"],
+};
+
+export const PG_DEGREE_OPTIONS = [
+  "M.A. (Master of Arts)", "M.Sc. (Master of Science)", "M.Com. (Master of Commerce)",
+  "M.E. (Master of Engineering)", "M.Tech. (Master of Technology)", "M.C.A. (Master of Computer Applications)",
+  "M.B.A. (Master of Business Administration)", "M.Ed. (Master of Education)", "M.Lib.Sc. (Master of Library Science)",
+  "M.P.Ed. (Master of Physical Education)", "M.Phil. (Master of Philosophy)", "LL.M. (Master of Laws)", "Other"
+];
+
+export const PG_SPECIALIZATION_MAP: Record<string, string[]> = {
+  "M.A. (Master of Arts)": ["English", "History", "Political Science", "Economics", "Psychology", "Sociology"],
+  "M.Sc. (Master of Science)": ["Physics", "Chemistry", "Mathematics", "Biology / Zoology / Botany", "Computer Science", "Electronics"],
+  "M.Com. (Master of Commerce)": ["Accounting & Finance", "Business Administration"],
+  "M.Tech. (Master of Technology)": ["Computer Engineering", "Mechanical", "Civil", "Electrical", "Electronics & Telecom"],
+  "M.E. (Master of Engineering)": ["Computer Engineering", "Mechanical", "Civil", "Electrical", "Electronics & Telecom"]
+};
+
+export const PHD_SPECIALIZATION_OPTIONS = [
+  "Physics", "Chemistry", "Mathematics", "Computer Science", "English", "Commerce", "Education", "Engineering", "Other"
+];
+
+export const SEED_UNIVERSITIES = [
+  "Savitribai Phule Pune University (SPPU)",
+  "University of Mumbai",
+  "Shivaji University, Kolhapur",
+  "SNDT Women's University",
+  "Dr. Babasaheb Ambedkar Marathwada University",
+  "Rashtrasant Tukadoji Maharaj Nagpur University",
+  "North Maharashtra University",
+  "Symbiosis International University",
+  "Amity University",
+  "Other"
+];
+
 export const MASTER_PROFILE_SECTION_POOL = {
 
   staff_common_details: {
@@ -330,7 +379,7 @@ export const MASTER_PROFILE_SECTION_POOL = {
       { key: "pg_university", label: "Postgraduate University", type: "text" },
       { key: "pg_percentage", label: "Postgraduate Percentage", type: "number" },
       { key: "pg_year", label: "Postgraduate Year", type: "number" },
-      { key: "bed_degree", label: "B.Ed Degree", type: "text" },
+      { key: "bed_degree", label: "B.Ed Degree", type: "dropdown", options: ["B.Ed Completed", "B.Ed Pursuing", "B.Ed Not Applicable"] },
       { key: "bed_university", label: "B.Ed University", type: "text" },
       { key: "bed_percentage", label: "B.Ed Percentage", type: "number" },
       { key: "bed_year", label: "B.Ed Year", type: "number" },
@@ -353,7 +402,7 @@ export const MASTER_PROFILE_SECTION_POOL = {
       { key: "pg_degree", label: "Postgraduate Degree", type: "text" },
       { key: "pg_specialization", label: "Postgraduate Specialization", type: "text" },
       { key: "pg_university", label: "Postgraduate University", type: "text" },
-      { key: "bed_degree", label: "B.Ed Degree", type: "text" },
+      { key: "bed_degree", label: "B.Ed Degree", type: "dropdown", options: ["B.Ed Completed", "B.Ed Pursuing", "B.Ed Not Applicable"] },
       { key: "phd_qualified", label: "PhD (Yes/No)", type: "boolean" },
       { key: "phd_specialization", label: "PhD Specialization", type: "text" },
       { key: "phd_university", label: "PhD University", type: "text" },
