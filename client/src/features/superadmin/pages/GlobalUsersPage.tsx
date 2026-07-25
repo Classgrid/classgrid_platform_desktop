@@ -247,11 +247,8 @@ export function GlobalUsersPage() {
       />
       
       {/* Footer Stats Summary */}
-      <div className="flex items-center justify-between text-xs text-muted-foreground mt-4 pt-4 border-t border-border/50">
+      <div className="flex items-center text-xs text-muted-foreground mt-4 pt-4 border-t border-border/50">
           <span>Showing {filteredUsers.length} of {total} total users</span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-success"></span> All systems operational
-          </span>
       </div>
     </div>
   );
