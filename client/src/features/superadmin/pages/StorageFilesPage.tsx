@@ -98,8 +98,8 @@ const FilePreviewPane = ({ activeFile, onClose, onDelete, onRename, onFullScreen
             <video src={activeFile.cdnUrl} controls className="max-w-full max-h-full" />
           ) : (
             <div className="flex flex-col items-center justify-center text-muted-foreground">
-              <File className="h-16 w-16 mb-2 opacity-50" />
-              <span className="text-xs">No preview available</span>
+              <FileIcon className="h-16 w-16 mb-2 opacity-50" />
+              <span className="text-sm font-medium">No preview available</span>
             </div>
           )}
         </div>
