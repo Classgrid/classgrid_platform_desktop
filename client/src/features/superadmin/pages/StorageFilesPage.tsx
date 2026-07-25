@@ -709,10 +709,22 @@ export function StorageFilesPage() {
     if (selectedKeys.size === 1) {
       const key = Array.from(selectedKeys)[0];
       const file = data?.files?.find(f => f.key === key);
+      const folder = data?.folders?.find((f: any) => f.prefix === key);
       if (file) {
+        const lastDotIndex = file.name.lastIndexOf('.') > 0 ? file.name.lastIndexOf('.') : -1;
+        const baseName = lastDotIndex > 0 ? file.name.substring(0, lastDotIndex) : file.name;
         setFileToRename({ key: file.key, name: file.name });
-        setNewFileName(file.name);
+        setNewFileName(baseName);
+      } else if (folder) {
+        setFileToRename({ key: folder.prefix, name: folder.name });
+        setNewFileName(folder.name);
       }
+    } else if (selectedKeys.size === 0 && activeFile) {
+      // If no checkbox selected but a file is open in preview, rename that
+      const lastDotIndex = activeFile.name.lastIndexOf('.') > 0 ? activeFile.name.lastIndexOf('.') : -1;
+      const baseName = lastDotIndex > 0 ? activeFile.name.substring(0, lastDotIndex) : activeFile.name;
+      setFileToRename({ key: activeFile.key, name: activeFile.name });
+      setNewFileName(baseName);
     }
   };
 
@@ -737,15 +749,17 @@ export function StorageFilesPage() {
 
     const newKey = fileToRename.key.substring(0, fileToRename.key.lastIndexOf('/') + 1) + finalName;
     const parentPrefix = fileToRename.key.substring(0, fileToRename.key.lastIndexOf('/') + 1);
+    const nowIso = new Date().toISOString();
 
     const oldFileToRename = fileToRename;
 
-    // Optimistically update activeFile instantly
+    // Optimistically update activeFile instantly (including lastModified)
     if (activeFile?.key === oldFileToRename.key) {
       setActiveFile({
         ...activeFile,
         key: newKey,
         name: finalName,
+        lastModified: nowIso,
         cdnUrl: activeFile.cdnUrl ? activeFile.cdnUrl.replace(encodeURIComponent(oldFileToRename.name), encodeURIComponent(finalName)) : activeFile.cdnUrl
       });
     }
@@ -765,6 +779,7 @@ export function StorageFilesPage() {
             ...f, 
             key: newKey, 
             name: finalName, 
+            lastModified: nowIso,
             cdnUrl: f.cdnUrl ? f.cdnUrl.replace(encodeURIComponent(oldFileToRename.name), encodeURIComponent(finalName)) : f.cdnUrl 
           } : f).sort((a: any, b: any) => a.name.localeCompare(b.name))
         };
@@ -886,9 +901,9 @@ export function StorageFilesPage() {
               variant="outline"
               size="icon"
               className="h-9 w-9 bg-background shadow-sm"
-              disabled={selectedKeys.size !== 1}
+              disabled={selectedKeys.size !== 1 && !activeFile}
               onClick={handleRenameSelection}
-              title="Rename"
+              title="Rename selected file"
             >
               <Edit2 size={16} />
             </Button>
