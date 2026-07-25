@@ -449,6 +449,11 @@ export function StorageFilesPage() {
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const hasActiveUploadsRef = React.useRef<boolean>(false);
 
+  // Drag-to-scroll state for Miller Columns
+  const isDraggingRef = React.useRef(false);
+  const startXRef = React.useRef(0);
+  const scrollLeftRef = React.useRef(0);
+
   // Miller Columns state
   const [openFolders, setOpenFolders] = useState<string[]>([""]); // "" is root
   
@@ -705,6 +710,29 @@ export function StorageFilesPage() {
     setOpenFolders(newOpenFolders);
     setIsNavigateModalOpen(false);
     setNavigatePath("");
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollContainerRef.current) return;
+    isDraggingRef.current = true;
+    startXRef.current = e.pageX - scrollContainerRef.current.offsetLeft;
+    scrollLeftRef.current = scrollContainerRef.current.scrollLeft;
+  };
+
+  const handleMouseLeave = () => {
+    isDraggingRef.current = false;
+  };
+
+  const handleMouseUp = () => {
+    isDraggingRef.current = false;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingRef.current || !scrollContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startXRef.current) * 1.5; // Scroll speed multiplier
+    scrollContainerRef.current.scrollLeft = scrollLeftRef.current - walk;
   };
 
   const handleCreateFolder = (folderName: string, targetPrefix: string) => {
@@ -1075,6 +1103,10 @@ export function StorageFilesPage() {
         <div 
           ref={scrollContainerRef}
           className="flex flex-1 overflow-x-auto overflow-y-hidden bg-background relative custom-scrollbar pb-2 cursor-grab active:cursor-grabbing"
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
         >
 
           {viewMode === 'columns' ? (
