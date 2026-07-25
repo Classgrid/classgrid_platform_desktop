@@ -407,6 +407,14 @@ export function ContextualProfile({
 
           {(() => {
             const renderFieldInput = (field: any) => {
+              // Handle dependsOn dynamic fields (e.g. Other Gender, Other Nationality)
+              if (field.dependsOn) {
+                const dependentFieldValue = formData[field.dependsOn.field];
+                if (dependentFieldValue !== field.dependsOn.value) {
+                  return null;
+                }
+              }
+
               // Hide fields conditionally based on PhD Yes/No
               if ((field.key === "phd_specialization" || field.key === "phd_university" || field.key === "phd_year") && formData.phd_qualified !== "yes") {
                 return null;
@@ -432,6 +440,7 @@ export function ContextualProfile({
                                handleInputChange("contact.current_country", formData["contact.permanent_country"]);
                                handleInputChange("contact.current_state", formData["contact.permanent_state"]);
                                handleInputChange("contact.current_district", formData["contact.permanent_district"]);
+                               handleInputChange("contact.current_taluka", formData["contact.permanent_taluka"]);
                                handleInputChange("contact.current_city", formData["contact.permanent_city"]);
                                handleInputChange("contact.current_address", formData["contact.permanent_address"]);
                                handleInputChange("contact.current_pincode", formData["contact.permanent_pincode"]);
@@ -606,6 +615,32 @@ export function ContextualProfile({
                 } else if (field.key === "identity.designation") {
                   options = designations.map(d => d.name);
                 }
+                
+                // --- Location Cascading Logic ---
+                const allStates = [...Object.keys(indiaLocations.states), ...Object.keys(indiaLocations.unionTerritories)].sort();
+                if (field.key.endsWith("_state")) {
+                  options = allStates;
+                } else if (field.key.endsWith("_district")) {
+                  const prefix = field.key.split("_district")[0];
+                  const stateVal = formData[`${prefix}_state`];
+                  if (stateVal && (indiaLocations.states[stateVal as keyof typeof indiaLocations.states] || indiaLocations.unionTerritories[stateVal as keyof typeof indiaLocations.unionTerritories])) {
+                    const stateObj = indiaLocations.states[stateVal as keyof typeof indiaLocations.states] || indiaLocations.unionTerritories[stateVal as keyof typeof indiaLocations.unionTerritories] as any;
+                    options = Object.keys(stateObj).sort();
+                  } else {
+                    options = [];
+                  }
+                } else if (field.key.endsWith("_taluka")) {
+                  const prefix = field.key.split("_taluka")[0];
+                  const stateVal = formData[`${prefix}_state`];
+                  const distVal = formData[`${prefix}_district`];
+                  if (stateVal && distVal) {
+                    const stateObj = indiaLocations.states[stateVal as keyof typeof indiaLocations.states] || indiaLocations.unionTerritories[stateVal as keyof typeof indiaLocations.unionTerritories] as any;
+                    options = stateObj?.[distVal] || [];
+                  } else {
+                    options = [];
+                  }
+                }
+                // --- End Location Logic ---
 
                 return (
                   <>
@@ -620,6 +655,16 @@ export function ContextualProfile({
                          }
                          if (field.key === "identity.department") {
                            handleInputChange("identity.designation", "");
+                         }
+                         // Clear dependent location fields
+                         if (field.key.endsWith("_state")) {
+                           const prefix = field.key.split("_state")[0];
+                           handleInputChange(`${prefix}_district`, "");
+                           handleInputChange(`${prefix}_taluka`, "");
+                         }
+                         if (field.key.endsWith("_district")) {
+                           const prefix = field.key.split("_district")[0];
+                           handleInputChange(`${prefix}_taluka`, "");
                          }
                       }}
                       disabled={!isEditing}

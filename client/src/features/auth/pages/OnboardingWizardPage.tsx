@@ -520,6 +520,13 @@ export function OnboardingWizardPage() {
                           </div>
                           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
                             {section.fields.map((field: any, fieldIdx: number) => {
+                              if (field.dependsOn) {
+                                // Extract the relative field name since the data is nested under section.key
+                                const parentKey = field.dependsOn.field.split('.').pop()!;
+                                const parentValue = formData[section.key]?.[parentKey];
+                                if (parentValue !== field.dependsOn.value) return null;
+                              }
+                              
                               const isFullWidth = (field.type === 'text' && field.label.includes('Address')) || field.type === 'image';
                               return (
                                 <div key={fieldIdx} className={`grid gap-1.5 ${isFullWidth ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
