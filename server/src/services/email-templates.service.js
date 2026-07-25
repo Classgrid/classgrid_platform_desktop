@@ -2406,3 +2406,180 @@ This user has permanently deleted their account from the platform.
     `.trim();
 };
 
+// =========================================================
+// ERP INTERNAL EMAILS (DARK MODE SUPPORT & NO CLASSGRID BRANDING)
+// =========================================================
+
+const erpBaseTemplate = ({ content, title = "Notification", orgName = "Institution" }) => {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title} - ${orgName}</title>
+  <style>
+    :root {
+      --bg: #f9fafb;
+      --card-bg: #ffffff;
+      --text: #111827;
+      --text-muted: #4b5563;
+      --border: #e5e7eb;
+      --btn-bg: #111827;
+      --btn-text: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111827;
+        --card-bg: #1f2937;
+        --text: #f9fafb;
+        --text-muted: #9ca3af;
+        --border: #374151;
+        --btn-bg: #ffffff;
+        --btn-text: #111827;
+      }
+    }
+    body, html {
+      margin: 0; padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper {
+      padding: 40px 20px;
+      width: 100%;
+      background-color: var(--bg);
+      box-sizing: border-box;
+    }
+    .card {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .content {
+      padding: 32px;
+      line-height: 1.6;
+      font-size: 15px;
+      color: var(--text);
+    }
+    .footer {
+      padding: 24px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    h2 {
+      margin-top: 0;
+      color: var(--text);
+    }
+    p {
+      margin: 0 0 16px;
+    }
+    ul {
+      margin: 0 0 16px 20px;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    .btn {
+      display: inline-block;
+      background-color: var(--btn-bg);
+      color: var(--btn-text) !important;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: 600;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    .text-muted {
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <div class="content">
+        ${content}
+      </div>
+      <div class="footer">
+        <p>Regards,<br><strong>${orgName}</strong><br>ERP Administration Team</p>
+        <p>This is an automated email. Please do not reply.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+};
+
+export const getErpRoleInvitationHtml = (recipientName, roleTitle, orgName, setupLink, expiryDate) => {
+  const content = \`
+    <h2>Official Notice: Role Assignment at \${orgName}</h2>
+    <p>Dear \${recipientName},</p>
+    <p>You have been officially assigned the role of <strong>\${roleTitle}</strong> at <strong>\${orgName}</strong>.</p>
+    <p>To activate your account and access the institution's ERP portal, please click the button below and complete your portal setup.</p>
+    <p><a href="\${setupLink}" class="btn">Set Up Portal Access</a></p>
+    <p class="text-muted">This invitation link will expire on \${expiryDate}.</p>
+    <p>For security reasons, do not share this email or activation link with anyone.</p>
+    <p class="text-muted">If the button does not work, copy and paste the following link into your browser:<br>\${setupLink}</p>
+  \`;
+  return erpBaseTemplate({ content, title: "Role Assignment", orgName });
+};
+
+export const getErpRoleRequestAdminHtml = (adminName, requesterName, requesterEmail, requestedRole, orgName, requestDate, reviewLink) => {
+  const content = \`
+    <h2>Access Request Pending Approval</h2>
+    <p>Dear \${adminName},</p>
+    <p>A new role-access request has been submitted for <strong>\${orgName}</strong>.</p>
+    <ul>
+      <li><strong>Requester Name:</strong> \${requesterName}</li>
+      <li><strong>Requester Email:</strong> \${requesterEmail}</li>
+      <li><strong>Requested Role:</strong> \${requestedRole}</li>
+      <li><strong>Request Date:</strong> \${requestDate}</li>
+    </ul>
+    <p>Please review the request and approve or deny it through the ERP portal.</p>
+    <p><a href="\${reviewLink}" class="btn">Review Request in ERP</a></p>
+    <p class="text-muted">For security and accountability, please verify the requester's identity and role requirements before approving access.</p>
+    <p class="text-muted">If the button does not work, copy and paste the following link into your browser:<br>\${reviewLink}</p>
+  \`;
+  return erpBaseTemplate({ content, title: "Access Request", orgName });
+};
+
+export const getErpRoleApprovedHtml = (recipientName, roleTitle, orgName, dashboardLink) => {
+  const content = \`
+    <h2>Access Request Approved</h2>
+    <p>Dear \${recipientName},</p>
+    <p>Your request for the <strong>\${roleTitle}</strong> role at <strong>\${orgName}</strong> has been officially approved by the administration.</p>
+    <p>Your assigned role is now active, and your dashboard is ready for access.</p>
+    <p><a href="\${dashboardLink}" class="btn">Access Your Dashboard</a></p>
+    <p class="text-muted">Please use your registered email address to sign in. Do not share your account credentials or portal access with anyone.</p>
+    <p class="text-muted">If the button does not work, copy and paste the following link into your browser:<br>\${dashboardLink}</p>
+  \`;
+  return erpBaseTemplate({ content, title: "Access Approved", orgName });
+};
+
+export const getErpRoleInstantlyGrantedHtml = (recipientName, roleTitle, orgName, updateDate, dashboardLink) => {
+  const content = \`
+    <h2>Security Notice: Administrative Privileges Updated</h2>
+    <p>Dear \${recipientName},</p>
+    <p>This is an automated security notice confirming that <strong>\${roleTitle}</strong> administrative privileges have been successfully added to your profile for <strong>\${orgName}</strong>.</p>
+    <ul>
+      <li><strong>Updated Role:</strong> \${roleTitle}</li>
+      <li><strong>Updated By:</strong> System / Self-Service</li>
+      <li><strong>Updated On:</strong> \${updateDate}</li>
+    </ul>
+    <p>You can review your updated administrative access through the ERP portal.</p>
+    <p><a href="\${dashboardLink}" class="btn">Review Your Administrative Access</a></p>
+    <p class="text-muted">Administrative privileges may provide access to sensitive institutional information. Please use them only for authorized institutional activities and never share your account credentials.</p>
+    <p class="text-muted">If you did not request or expect this change, contact IT Administration immediately.</p>
+    <p class="text-muted">If the button does not work, copy and paste the following link into your browser:<br>\${dashboardLink}</p>
+  \`;
+  return erpBaseTemplate({ content, title: "Privileges Updated", orgName });
+};
+

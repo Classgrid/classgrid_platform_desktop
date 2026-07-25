@@ -7,7 +7,7 @@ import { Input } from "@/components/marketing_ui/input";
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { useOrgRoles } from "@/features/org-admin/queries/useOrgAdminMembers";
 import { useUserProfile } from "@/features/shared/queries/useUserProfile";
-import { api } from "@/lib/api";
+import { apiClient as api } from "@/lib/apiClient";
 
 export function SettingsRoleRequestCard() {
   const qc = useQueryClient();
