@@ -485,6 +485,38 @@ export function ContextualProfile({
                 )
               }
 
+              if (field.key === "contact.use_parent_guardian_as_emergency" || field.key === "contact.use_family_member_as_emergency") {
+                return (
+                   <label className="flex items-center gap-2 text-sm cursor-pointer mt-2 text-foreground">
+                      <input 
+                         type="checkbox" 
+                         className="accent-primary w-4 h-4"
+                         checked={formData[field.key] === "true" || formData[field.key] === true}
+                         onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            handleInputChange(field.key, isChecked ? "true" : "false");
+                            if (isChecked) {
+                               // Default to Father, fallback to Mother or Local Guardian if Father is not present
+                               let name = formData["family.father_name"] || formData["family.mother_name"] || formData["family.local_guardian_name"] || "";
+                               let mobile = formData["family.father_mobile"] || formData["family.mother_mobile"] || formData["family.local_guardian_mobile"] || "";
+                               let email = formData["family.father_email"] || formData["family.mother_email"] || "";
+                               let relation = formData["family.father_name"] ? "Father" : formData["family.mother_name"] ? "Mother" : formData["family.local_guardian_name"] ? "Guardian" : "";
+
+                               if (name) handleInputChange("contact.emergency_contact_name", name);
+                               if (mobile) handleInputChange("contact.emergency_contact_mobile", mobile);
+                               if (email) handleInputChange("contact.emergency_contact_email", email);
+                               // Auto-fill student's primary email from parent email if not yet filled
+                               if (email && !formData["contact.personal_email"]) handleInputChange("contact.personal_email", email);
+                               if (relation) handleInputChange("contact.emergency_contact_relation", relation);
+                            }
+                         }}
+                         disabled={!isEditing}
+                      />
+                      {field.label}
+                   </label>
+                )
+              }
+
               if (field.type === "checkbox") {
                  return (
                    <label className="flex items-center gap-2 text-sm cursor-pointer mt-2 text-foreground">
@@ -782,13 +814,13 @@ export function ContextualProfile({
                   placeholder={isEditing && !field.key.includes('same_as_permanent') ? `Enter ${field.label}...` : ""}
                   className={cn(
                     "w-full p-2.5 rounded-md text-sm outline-none transition-all",
-                    (isEditing && !(field.key === "contact.whatsapp_number" && formData["contact.whatsapp_same_as_mobile"] === "true"))
+                    (isEditing && !(field.key === "contact.whatsapp_number" && formData["contact.whatsapp_same_as_mobile"] === "true") && field.key !== "contact.personal_email")
                       ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" 
                       : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70"
                   )}
                   value={formData[field.key] || ""}
                   onChange={(e) => isEditing && handleInputChange(field.key, e.target.value)}
-                  readOnly={!isEditing || (field.key === "contact.whatsapp_number" && formData["contact.whatsapp_same_as_mobile"] === "true")}
+                  readOnly={!isEditing || (field.key === "contact.whatsapp_number" && formData["contact.whatsapp_same_as_mobile"] === "true") || field.key === "contact.personal_email"}
                 />
               );
             };
