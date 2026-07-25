@@ -673,8 +673,6 @@ export const MASTER_PROFILE_SECTION_POOL = {
     label: "Role Assignment",
     icon: "Briefcase",
     fields: [
-      { key: "identity.organization_type", label: "Organization Type", type: "dropdown", options: ["School", "Junior College", "Degree College", "Engineering College", "Polytechnic College", "Coaching Institute", "Training Institute", "University", "Education Group", "Other"], required: true },
-      { key: "identity.role_category", label: "Role Category", type: "dropdown", options: ["Org Admin", "Admissions", "Fees", "Examination", "Library", "Attendance", "HR & Payroll", "Hostel & Transport", "Faculty"], required: true },
       { key: "identity.department", label: "Department", type: "dropdown", required: true },
       { key: "identity.designation", label: "Designation", type: "dropdown", required: true },
       { key: "identity.employee_id", label: "Employee ID", type: "text", required: true },

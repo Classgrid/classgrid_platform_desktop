@@ -243,8 +243,8 @@ export function ContextualProfile({
   
   // Use dynamic dropdowns hook
   const { departments, designations, isLoadingDepartments, isLoadingDesignations } = useDynamicDropdowns(
-    formData["identity.organization_type"],
-    formData["identity.role_category"],
+    orgType,
+    targetRole,
     formData["identity.department"]
   );
 

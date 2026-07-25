@@ -7,6 +7,7 @@ import { isAuthenticated } from "../middleware/auth.middleware.js";
 import { attachInstitutionProfile } from "../middleware/institution-profile.middleware.js";
 import { getChatSb } from "../config/supabaseClient.js";
 import { generateR2UploadUrl } from "../services/r2.service.js";
+import redis from "../config/redis.js";
 
 import { getProfileSchema } from "../utils/profile-schemas.js";
 
@@ -408,7 +409,11 @@ router.put("/update", isAuthenticated, attachInstitutionProfile({ required: fals
       user.password = undefined; // Do not send password back
     }
 
-    await redis.del(`user:profile:${req.user._id}`);
+    try {
+      await redis.del(`user:profile:${req.user._id}`);
+    } catch (e) {
+      console.warn("Redis del failed for user profile:", e.message);
+    }
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
