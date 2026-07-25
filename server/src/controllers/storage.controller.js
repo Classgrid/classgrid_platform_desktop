@@ -461,18 +461,24 @@ async function mapWithConcurrency(items, concurrency, mapper) {
     return results;
 }
 
-async function getListedObjectContentType(key) {
+async function getListedObjectMetadata(key) {
     try {
         const metadata = await s3Client.send(new HeadObjectCommand({
             Bucket: BUCKET_NAME,
             Key: key,
         }));
-        return metadata.ContentType || inferContentType(key);
+        return {
+            contentType: metadata.ContentType || inferContentType(key),
+            createdAt: metadata.Metadata?.["created-at"] || null
+        };
     } catch (error) {
         console.warn(
             `[Storage] metadata lookup failed for key=${JSON.stringify(key)}; using inferred content type (${error?.name || "UnknownError"}).`,
         );
-        return inferContentType(key);
+        return {
+            contentType: inferContentType(key),
+            createdAt: null
+        };
     }
 }
 
@@ -481,6 +487,9 @@ async function multipartUpload({ key, buffer, contentType }) {
         Bucket: BUCKET_NAME,
         Key: key,
         ContentType: contentType,
+        Metadata: {
+            "created-at": new Date().toISOString()
+        }
     }));
 
     const uploadId = createdUpload.UploadId;
@@ -597,11 +606,15 @@ export async function listObjects(req, res) {
         const files = await mapWithConcurrency(
             listedFiles,
             METADATA_CONCURRENCY,
-            async (file) => ({
-                ...file,
-                contentType: await getListedObjectContentType(file.key),
-                cdnUrl: buildCdnUrl(file.key),
-            }),
+            async (file) => {
+                const meta = await getListedObjectMetadata(file.key);
+                return {
+                    ...file,
+                    contentType: meta.contentType,
+                    createdAt: meta.createdAt,
+                    cdnUrl: buildCdnUrl(file.key),
+                };
+            }
         );
 
         return sendSuccess(res, "Files and folders retrieved successfully.", {
@@ -645,6 +658,9 @@ export async function uploadFile(req, res) {
                 Body: req.file.buffer,
                 ContentType: contentType,
                 ContentLength: req.file.size,
+                Metadata: {
+                    "created-at": new Date().toISOString()
+                }
             }));
         }
 
