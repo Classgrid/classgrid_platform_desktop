@@ -816,6 +816,55 @@ export const VIEWER_ACCESS_MATRIX = {
   },
 };
 
+export const ORG_DEPARTMENTS_CONFIG: Record<string, string[]> = {
+  school: ["Administration", "Academics (Primary)", "Academics (Secondary)", "Admissions", "Fees & Accounts", "Examination", "Library", "HR & Payroll", "Hostel", "Transport", "Sports", "Arts & Culture"],
+  junior_college: ["Administration", "Science Stream", "Commerce Stream", "Arts Stream", "Admissions", "Fees & Accounts", "Examination", "Library", "HR & Payroll", "Hostel", "Transport"],
+  engineering: ["Administration", "Computer Science / IT", "Mechanical Engineering", "Civil Engineering", "Electrical Engineering", "Electronics & Communication", "Applied Sciences (First Year)", "Training & Placement", "Admissions", "Fees & Accounts", "Examination", "Library", "HR & Payroll", "Hostel", "Transport"],
+  diploma: ["Administration", "Computer Science / IT", "Mechanical Engineering", "Civil Engineering", "Electrical Engineering", "Electronics & Communication", "Applied Sciences (First Year)", "Training & Placement", "Admissions", "Fees & Accounts", "Examination", "Library", "HR & Payroll", "Hostel", "Transport"],
+  coaching: ["Administration", "JEE/NEET Faculty", "Foundation Batch Faculty", "Admissions", "Fees & Accounts", "HR & Payroll"],
+  other: ["Administration", "Academics", "Admissions", "Fees & Accounts", "Examination", "Library", "HR & Payroll"]
+};
+
+export const DASHBOARD_DESIGNATIONS_CONFIG: Record<string, string[]> = {
+  org_admin: ["Organization Admin", "Principal", "Vice Principal", "Head of Department (HOD)", "Academic Coordinator", "Training & Placement Officer"],
+  admissions: ["Admissions Department Head", "Admission Verifier", "Admission Counselor", "Admission Clerk"],
+  fees: ["Fees & Accounts Manager"],
+  examination: ["Examination Controller"],
+  library: ["Library Manager", "Library Admin"],
+  attendance: ["Attendance Admin"],
+  hr_payroll: ["HR & Payroll Manager"],
+  hostel_transport: ["Hostel Manager", "Transport Manager"],
+  faculty: ["Teacher", "Lecturer", "Faculty", "Mentor", "Student Counselor"],
+  student: ["Student"]
+};
+
+export const ORG_TYPE_DESIGNATION_OVERRIDES: Record<string, Record<string, string[]>> = {
+  school: { faculty: ["Teacher", "Student Counselor"] },
+  junior_college: {
+    org_admin: ["Organization Admin", "Principal", "Vice Principal", "Head of Department (HOD)", "Academic Coordinator"],
+    faculty: ["Lecturer", "Student Counselor"]
+  },
+  engineering: { faculty: ["Faculty", "Student Counselor"] },
+  diploma: { faculty: ["Faculty", "Student Counselor"] },
+  coaching: {
+    org_admin: ["Organization Admin", "Head of Department (HOD)", "Academic Coordinator"],
+    faculty: ["Mentor", "Student Counselor"]
+  }
+};
+
+export function getDashboardGroupForRole(role: string): string {
+  if (["org_admin", "principal", "vice_principal", "hod", "tpo_officer", "coordinator"].includes(role)) return "org_admin";
+  if (["admission_head", "admission_verifier", "admission_counselor", "admission_clerk"].includes(role)) return "admissions";
+  if (["fee_manager"].includes(role)) return "fees";
+  if (["exam_controller"].includes(role)) return "examination";
+  if (["library_manager", "library_admin"].includes(role)) return "library";
+  if (["attendance_admin"].includes(role)) return "attendance";
+  if (["hr_dept"].includes(role)) return "hr_payroll";
+  if (["hostel_dept", "transport_manager"].includes(role)) return "hostel_transport";
+  if (["faculty", "teacher"].includes(role)) return "faculty";
+  return "student";
+}
+
 export function getResolvedProfileStrategy({
   targetRole,
   viewerRole,
@@ -863,10 +912,24 @@ export function getResolvedProfileStrategy({
       fields = fields.filter(f => {
         const resolvedLabel = labels[f.key as keyof typeof labels];
         return resolvedLabel !== null;
-      }).map(f => ({
-        ...f,
-        label: labels[f.key as keyof typeof labels] !== undefined ? labels[f.key as keyof typeof labels] : f.label,
-      }));
+      }).map(f => {
+        const fieldClone = { ...f, label: labels[f.key as keyof typeof labels] !== undefined ? labels[f.key as keyof typeof labels] : f.label };
+        
+        if (fieldClone.key === "department") {
+          fieldClone.type = "dropdown";
+          fieldClone.options = ORG_DEPARTMENTS_CONFIG[baseOrgType] || ORG_DEPARTMENTS_CONFIG.other;
+        }
+        
+        if (fieldClone.key === "designation") {
+          fieldClone.type = "dropdown";
+          const dashboardGroup = getDashboardGroupForRole(targetRole);
+          const defaultDesignations = DASHBOARD_DESIGNATIONS_CONFIG[dashboardGroup] || [];
+          const overrides = ORG_TYPE_DESIGNATION_OVERRIDES[baseOrgType]?.[dashboardGroup];
+          fieldClone.options = overrides || defaultDesignations;
+        }
+
+        return fieldClone;
+      });
 
       if (!viewerAccess.show_sensitive) {
         fields = fields.filter(f => !f.sensitive);
