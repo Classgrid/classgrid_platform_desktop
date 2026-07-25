@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import {
   Folder, FileText, Image as ImageIcon, Video, FileArchive,
-  File, UploadCloud, FolderPlus, MoreHorizontal, Download,
-  Trash2, Edit2, Link as LinkIcon, Search, RefreshCw, Columns, X,
+  File as FileIcon, UploadCloud, FolderPlus, MoreHorizontal, Download,
   Trash2, Edit2, Link as LinkIcon, Search, RefreshCw, Columns, X,
   ChevronRight, List, Check, Maximize
 } from "lucide-react";
@@ -60,13 +59,13 @@ function formatBytes(bytes: number) {
 function getFileIcon(type?: string) {
   const size = 18;
   const baseWrapper = "flex items-center justify-center rounded-lg p-2 shrink-0 border shadow-sm";
-  if (!type) return <div className={`${baseWrapper} bg-muted/50 border-border/50 text-muted-foreground`}><File size={size} /></div>;
+  if (!type) return <div className={`${baseWrapper} bg-muted/50 border-border/50 text-muted-foreground`}><FileIcon size={size} /></div>;
   if (type === "Folder") return <div className={`${baseWrapper} bg-yellow-500/10 border-yellow-500/20 text-yellow-600`}><Folder size={size} className="fill-yellow-500/20" /></div>;
   if (type.startsWith("image/")) return <div className={`${baseWrapper} bg-blue-500/10 border-blue-500/20 text-blue-600`}><ImageIcon size={size} /></div>;
   if (type.startsWith("video/")) return <div className={`${baseWrapper} bg-purple-500/10 border-purple-500/20 text-purple-600`}><Video size={size} /></div>;
   if (type.includes("pdf")) return <div className={`${baseWrapper} bg-red-500/10 border-red-500/20 text-red-600`}><FileText size={size} /></div>;
   if (type.includes("zip") || type.includes("tar") || type.includes("rar")) return <div className={`${baseWrapper} bg-orange-500/10 border-orange-500/20 text-orange-600`}><FileArchive size={size} /></div>;
-  return <div className={`${baseWrapper} bg-muted/50 border-border/50 text-muted-foreground`}><File size={size} /></div>;
+  return <div className={`${baseWrapper} bg-muted/50 border-border/50 text-muted-foreground`}><FileIcon size={size} /></div>;
 }
 
 // Global upload state to share between the page and columns
