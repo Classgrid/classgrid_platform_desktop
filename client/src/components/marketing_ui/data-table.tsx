@@ -1,5 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/marketing_ui/table";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
+import { cn } from "@/lib/utils";
 import React from "react";
 
 type Column = { key: string; header: string; width?: string; accent?: boolean; render?: (value: any, row: any) => React.ReactNode };
@@ -33,7 +34,7 @@ export function DataTable({ columns, rows, isLoading, skeletonLines = 5, emptyMe
   }
 
   return (
-    <div className={`rounded-md border bg-card ${className || "overflow-hidden"}`}>
+    <div className={cn("rounded-md border bg-card overflow-hidden", className)}>
       <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow>
