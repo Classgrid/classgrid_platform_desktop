@@ -504,12 +504,17 @@ export async function fetchChatAuditLogs() {
 // ── Join Requests ──
 export interface JoinRequest {
   id: string;
-  group_id: string;
+  type?: 'role_request'; // Added for role requests
+  group_id: string; // Used as orgId if it's a role request
   user_id: string;
   user_name: string;
   user_avatar: string;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
+  group?: {
+    name: string;
+    avatar: string | null;
+  }
 }
 
 export async function requestToJoinGroup(groupId: string) {
@@ -524,6 +529,12 @@ export async function fetchJoinRequests(groupId: string) {
 
 export async function processJoinRequest(groupId: string, requestId: string, status: 'approved' | 'rejected') {
   const res = await apiClient.patch(`/api/group-chat/${groupId}/join-requests/${requestId}`, { status });
+  return res.data;
+}
+
+export async function processRoleRequest(requestId: string, status: 'approved' | 'rejected') {
+  const endpoint = status === 'approved' ? 'accept-role-request' : 'reject-role-request';
+  const res = await apiClient.post(`/api/org/${endpoint}/${requestId}`);
   return res.data;
 }
 

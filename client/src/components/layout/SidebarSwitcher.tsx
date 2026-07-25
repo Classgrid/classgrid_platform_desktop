@@ -1,5 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { apiClient as api } from "@/lib/apiClient";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ChevronsUpDown,
   Check,
@@ -18,6 +21,8 @@ import { SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from "@/c
 
 export function SidebarSwitcher({ user }: { user: { role?: string; name?: string; sidebar_name?: string; additional_roles?: string[]; organization?: { sidebar_name?: string; name?: string; logo_url?: string; sidebar_logo_url?: string } } | null }) {
   const { isMobile } = useSidebar();
+  const queryClient = useQueryClient();
+  const [isSwitching, setIsSwitching] = useState(false);
 
   // 1. Resolve Organization Branding from Backend User Object
   const currentRole = user?.role || "super_admin";
@@ -35,6 +40,21 @@ export function SidebarSwitcher({ user }: { user: { role?: string; name?: string
 
   const formatRole = (role: string) => {
     return role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
+  const handleSwitchRole = async (targetRole: string) => {
+    if (targetRole === currentRole || isSwitching) return;
+    
+    setIsSwitching(true);
+    try {
+      await api.post("/org/switch-role", { targetRole });
+      toast.success(`Switched to ${formatRole(targetRole)} dashboard`);
+      queryClient.invalidateQueries(); // invalidate all to re-fetch the user context
+      window.location.reload(); // Hard reload to fully reset app state
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Failed to switch role");
+      setIsSwitching(false);
+    }
   };
 
   return (
@@ -92,7 +112,12 @@ export function SidebarSwitcher({ user }: { user: { role?: string; name?: string
               Switch Roles
             </DropdownMenuLabel>
             {allRoles.map((role) => (
-              <DropdownMenuItem key={role} className="gap-3 p-2 cursor-pointer rounded-md">
+              <DropdownMenuItem 
+                key={role} 
+                className="gap-3 p-2 cursor-pointer rounded-md"
+                onClick={() => handleSwitchRole(role)}
+                disabled={isSwitching}
+              >
                 <div className="flex size-5 items-center justify-center shrink-0">
                   {role === currentRole ? (
                     <Check className="size-4 text-blue-500 font-bold" />

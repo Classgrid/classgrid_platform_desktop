@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchUnifiedRequests, processJoinRequest } from "../services/chatApi";
+import { fetchUnifiedRequests, processJoinRequest, processRoleRequest } from "../services/chatApi";
 import { ArrowLeft, Check, X, Users, Search, Clock, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { DEFAULT_USER_AVATAR } from "@/lib/constants";
@@ -19,8 +19,12 @@ export function JoinRequestPage() {
   });
 
   const { mutate: processRequest, isPending: isProcessing } = useMutation({
-    mutationFn: ({ groupId, requestId, status }: { groupId: string; requestId: string; status: 'approved' | 'rejected' }) => 
-      processJoinRequest(groupId, requestId, status),
+    mutationFn: ({ type, groupId, requestId, status }: { type?: string; groupId: string; requestId: string; status: 'approved' | 'rejected' }) => {
+      if (type === 'role_request') {
+        return processRoleRequest(requestId, status);
+      }
+      return processJoinRequest(groupId, requestId, status);
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["join-requests", "unified"] });
       toast.success(`Request ${variables.status}`);
@@ -114,14 +118,14 @@ export function JoinRequestPage() {
 
                   <div className="flex items-center gap-2 self-start sm:self-center">
                     <button
-                      onClick={() => processRequest({ groupId: req.group_id, requestId: req.id, status: 'approved' })}
+                      onClick={() => processRequest({ type: req.type, groupId: req.group_id, requestId: req.id, status: 'approved' })}
                       disabled={isProcessing}
                       className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500 text-white hover:bg-emerald-600 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium shadow-sm"
                     >
                       <Check className="w-4 h-4" /> Accept
                     </button>
                     <button
-                      onClick={() => processRequest({ groupId: req.group_id, requestId: req.id, status: 'rejected' })}
+                      onClick={() => processRequest({ type: req.type, groupId: req.group_id, requestId: req.id, status: 'rejected' })}
                       disabled={isProcessing}
                       className="flex items-center gap-2 px-3 py-1.5 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-medium"
                     >

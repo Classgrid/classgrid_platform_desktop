@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import User from '../models/User.js';
 import Organization from '../models/Organization.js';
+import RoleRequest from '../models/RoleRequest.js';
 import { primarySupabaseClient, studentNotesClient } from '../config/supabaseClient.js';
 import { broadcastToChannel } from '../services/realtimeBroadcast.js';
 import { uploadBufferToR2, deleteFromR2, getPresignedUploadUrl } from "../config/r2Client.js";
@@ -325,7 +326,62 @@ router.get('/join-requests/unified', isAuthenticated, async (req, res) => {
        }
     }
     
-    res.json({ incoming, outgoing: outgoing || [] });
+    // --- Fetch Role Requests from MongoDB ---
+    const orgId = req.user.organization_id;
+    let roleIncoming = [];
+    let roleOutgoing = [];
+    
+    // Outgoing Role Requests
+    const myRoleRequests = await RoleRequest.find({ user_id: userId }).lean();
+    if (myRoleRequests.length > 0) {
+        const orgIds = myRoleRequests.map(r => r.organization_id);
+        const orgs = await Organization.find({ _id: { $in: orgIds } }).select('name logo_url').lean();
+        const orgMap = {};
+        orgs.forEach(o => { orgMap[o._id.toString()] = o; });
+        
+        roleOutgoing = myRoleRequests.map(r => ({
+            id: r._id.toString(), // format it for UI
+            type: 'role_request',
+            group_id: r.organization_id.toString(), // for UI compat
+            status: r.status,
+            created_at: r.createdAt,
+            group: {
+                name: `Role: ${r.role} at ${orgMap[r.organization_id.toString()]?.name || 'Organization'}`,
+                avatar: orgMap[r.organization_id.toString()]?.logo_url || null
+            }
+        }));
+    }
+
+    // Incoming Role Requests (only if org_admin)
+    if (req.user.role === 'org_admin' && orgId) {
+        const pendingRoleRequests = await RoleRequest.find({ organization_id: orgId, status: 'pending' }).lean();
+        if (pendingRoleRequests.length > 0) {
+            const requesterIds = pendingRoleRequests.map(r => r.user_id);
+            const requesters = await User.find({ _id: { $in: requesterIds } }).select('name profilePicture').lean();
+            const userMap = {};
+            requesters.forEach(u => { userMap[u._id.toString()] = u; });
+            
+            roleIncoming = pendingRoleRequests.map(r => ({
+                id: r._id.toString(), // format it for UI
+                type: 'role_request',
+                group_id: r.organization_id.toString(),
+                status: r.status,
+                created_at: r.createdAt,
+                user_name: userMap[r.user_id.toString()]?.name || r.email || 'Unknown User',
+                user_avatar: userMap[r.user_id.toString()]?.profilePicture || null,
+                group: {
+                    name: `Role: ${r.role}`,
+                    avatar: null
+                }
+            }));
+        }
+    }
+
+    // Merge and sort
+    const finalIncoming = [...incoming, ...roleIncoming].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const finalOutgoing = [...(outgoing || []), ...roleOutgoing].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    res.json({ incoming: finalIncoming, outgoing: finalOutgoing });
   } catch (err) {
     console.error('Unified requests error:', err);
     res.status(500).json({ error: err.message });

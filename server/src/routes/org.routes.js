@@ -3,6 +3,7 @@ import { isAuthenticated, requireOrganization, requireRole } from "../middleware
 import { attachInstitutionProfile } from "../middleware/institution-profile.middleware.js";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
+import RoleRequest from "../models/RoleRequest.js";
 import Classroom from "../models/Classroom.js";
 import { logAdminAction } from "../services/auditLog.service.js";
 import { getChatSb } from "../config/supabaseClient.js";
@@ -393,7 +394,7 @@ router.post("/invite-staff", isAuthenticated, requireRole("org_admin"), async (r
  */
 router.post("/request-role", isAuthenticated, async (req, res) => {
     try {
-        const { tenant_join_code, role } = req.body;
+        const { tenant_join_code, role, email } = req.body;
 
         if (!tenant_join_code || !role) {
             return res.status(400).json({ error: "Tenant Join Code and role are required." });
@@ -414,25 +415,50 @@ router.post("/request-role", isAuthenticated, async (req, res) => {
             return res.status(400).json({ error: "This role cannot be requested." });
         }
 
-        // 3. Instant Approval if user is already an Org Admin
+        // 3. Admin Instant Assignment
         if (req.user.role === "org_admin" && req.user.organization_id?.toString() === org._id.toString()) {
-            // Note: Since users currently only have one primary role field in the schema, 
-            // we will just acknowledge the success here. If you have an array of roles, 
-            // you would push to it here. Assuming we just update their primary role or log it.
-            // For now, we update their role.
-            req.user.role = role;
-            await req.user.save();
+            let targetUser = await User.findOne({ email });
+            
+            if (targetUser) {
+                // If user exists, add role to additional_roles
+                if (!targetUser.additional_roles.includes(role) && targetUser.role !== role) {
+                    targetUser.additional_roles.push(role);
+                    await targetUser.save();
+                }
+            } else {
+                // Shell account creation logic could go here if needed, 
+                // but for now we just fail if user doesn't exist
+                return res.status(404).json({ error: "User with this email not found. They must sign up first." });
+            }
+            
             return res.json({ message: "Role granted instantly.", instant_approval: true });
         }
 
-        // 4. Create Pending Request (Scenario B)
-        // Store the request in a new collection or add it to a pending array on the Org/User.
-        // For now, we'll create a join request in the `JoinRequest` model (assuming it exists based on the screenshots).
-        // If it doesn't exist, we will create it. Let's assume a generic JoinRequest or just use the User model.
+        // 4. Normal User Request (Self-serve)
+        let targetUser = await User.findOne({ email: req.user.email });
+        if (!targetUser) return res.status(404).json({ error: "User not found." });
+
+        const existingReq = await RoleRequest.findOne({ 
+            user_id: targetUser._id, 
+            organization_id: org._id, 
+            role, 
+            status: "pending" 
+        });
         
-        // Since we are mocking the email logic for now, we'll return success.
-        // TODO: Insert DB logic for Pending Join Request
-        // TODO: Send Email 1 to Admin
+        if (existingReq) {
+            return res.status(400).json({ error: "A pending request for this role already exists." });
+        }
+
+        await RoleRequest.create({
+            user_id: targetUser._id,
+            organization_id: org._id,
+            email: targetUser.email,
+            role,
+            status: "pending"
+        });
+        
+        // TODO: Send Email to Admin (Optional)
+
         
         res.status(200).json({ message: "Role request sent to Org Admin." });
     } catch (err) {
@@ -447,9 +473,56 @@ router.post("/request-role", isAuthenticated, async (req, res) => {
  * Desc: Admin approves a pending role request
  */
 router.post("/accept-role-request/:requestId", isAuthenticated, requireRole("org_admin"), async (req, res) => {
-    // TODO: DB logic to approve the request and update the user's role
-    // TODO: Send Email 2 to User
-    res.json({ message: "Request approved." });
+    try {
+        const { requestId } = req.params;
+        const request = await RoleRequest.findOne({ _id: requestId, organization_id: req.user.organization_id });
+        
+        if (!request) return res.status(404).json({ error: "Request not found or unauthorized." });
+        if (request.status !== "pending") return res.status(400).json({ error: "Request is already processed." });
+
+        const targetUser = await User.findById(request.user_id);
+        if (!targetUser) return res.status(404).json({ error: "User no longer exists." });
+
+        // Update role
+        if (!targetUser.additional_roles.includes(request.role) && targetUser.role !== request.role) {
+            targetUser.additional_roles.push(request.role);
+            await targetUser.save();
+        }
+
+        request.status = "approved";
+        request.processed_by = req.user._id;
+        await request.save();
+
+        // TODO: Send Approval Email to targetUser
+        
+        res.json({ message: "Role request approved." });
+    } catch (err) {
+        console.error("[Accept Role Error]:", err.message);
+        res.status(500).json({ error: "Server error approving role request." });
+    }
+});
+
+/**
+ * PATH: /api/org/reject-role-request
+ * Access: org_admin
+ */
+router.post("/reject-role-request/:requestId", isAuthenticated, requireRole("org_admin"), async (req, res) => {
+    try {
+        const { requestId } = req.params;
+        const request = await RoleRequest.findOne({ _id: requestId, organization_id: req.user.organization_id });
+        
+        if (!request) return res.status(404).json({ error: "Request not found." });
+        if (request.status !== "pending") return res.status(400).json({ error: "Request is already processed." });
+
+        request.status = "rejected";
+        request.processed_by = req.user._id;
+        await request.save();
+
+        res.json({ message: "Role request rejected." });
+    } catch (err) {
+        console.error("[Reject Role Error]:", err.message);
+        res.status(500).json({ error: "Server error rejecting role request." });
+    }
 });
 
 /**
@@ -3060,5 +3133,44 @@ router.patch("/branding", isAuthenticated, requireRole("org_admin"), async (req,
         res.status(500).json({ message: "Server error updating branding." });
     }
 });
+/**
+ * PATH: /api/org/switch-role
+ * Access: Authenticated users
+ * Desc: Switch active role context
+ */
+router.post("/switch-role", isAuthenticated, async (req, res) => {
+    try {
+        const { targetRole } = req.body;
+        
+        if (!targetRole) return res.status(400).json({ error: "Target role is required." });
+
+        if (req.user.role === targetRole) {
+            return res.json({ message: "Role is already active." });
+        }
+
+        if (!req.user.additional_roles.includes(targetRole) && req.user.role !== "super_admin") {
+            // Super admins can switch to any role for testing/context
+            // But normal users can only switch to roles they possess
+            if (!req.user.additional_roles.includes(targetRole)) {
+                return res.status(403).json({ error: "You do not have permission to switch to this role." });
+            }
+        }
+
+        // Swap the roles
+        const oldRole = req.user.role;
+        req.user.role = targetRole;
+        if (!req.user.additional_roles.includes(oldRole) && oldRole !== 'super_admin') {
+            req.user.additional_roles.push(oldRole);
+        }
+
+        await req.user.save();
+
+        res.json({ message: "Active role switched successfully." });
+    } catch (err) {
+        console.error("[Switch Role Error]:", err.message);
+        res.status(500).json({ error: "Server error switching role." });
+    }
+});
+
 export default router;
 
