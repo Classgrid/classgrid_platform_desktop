@@ -809,48 +809,33 @@ export function StorageFilesPage() {
       }
     };
 
-    // Optimistically update activeFile instantly (including lastModified)
-    if (activeFile?.key === oldFileToRename.key) {
-      setActiveFile({
-        ...activeFile,
-        key: newKey,
-        name: finalName,
-        lastModified: nowIso,
-        cdnUrl: generateNewCdnUrl(activeFile.cdnUrl, newKey)
-      });
-    }
-
-    // Optimistically update list instantly
-    const updateCache = (oldData: any) => {
-      if (!oldData) return oldData;
-      if (isFolder) {
-        return {
-          ...oldData,
-          folders: oldData.folders.map((f: any) => f.prefix === oldFileToRename.key ? { ...f, prefix: newKey, name: finalName } : f).sort((a: any, b: any) => a.name.localeCompare(b.name))
-        };
-      } else {
-        return {
-          ...oldData,
-          files: oldData.files.map((f: any) => f.key === oldFileToRename.key ? { 
-            ...f, 
-            key: newKey, 
-            name: finalName, 
+    renameObjectMutation.mutate({ sourceKey: oldFileToRename.key, destinationKey: newKey }, {
+      onSuccess: () => {
+        // Keep the active file open in the preview pane
+        if (activeFile?.key === oldFileToRename.key) {
+          setActiveFile({
+            ...activeFile,
+            key: newKey,
+            name: finalName,
             lastModified: nowIso,
-            cdnUrl: generateNewCdnUrl(f.cdnUrl, newKey)
-          } : f).sort((a: any, b: any) => a.name.localeCompare(b.name))
-        };
+            cdnUrl: generateNewCdnUrl(activeFile.cdnUrl, newKey)
+          });
+        }
+
+        // Keep the file checked if it was checked
+        if (selectedKeys.has(oldFileToRename.key)) {
+          setSelectedKeys(prev => {
+            const next = new Set(prev);
+            next.delete(oldFileToRename.key);
+            next.add(newKey);
+            return next;
+          });
+        }
+
+        setFileToRename(null);
+        setNewFileName("");
       }
-    };
-
-    queryClient.setQueryData(storageKeys.list(parentPrefix), updateCache);
-    if (debouncedSearch) {
-      queryClient.setQueryData(storageKeys.list(parentPrefix, debouncedSearch), updateCache);
-    }
-
-    setFileToRename(null);
-    setNewFileName("");
-
-    renameObjectMutation.mutate({ sourceKey: oldFileToRename.key, destinationKey: newKey });
+    });
   };
 
   const handleMoveFile = () => {
