@@ -684,7 +684,7 @@ function DatePickerField({ value, onChange }: { value?: Date; onChange?: (date?:
       <Popover.Portal>
         <Popover.Positioner alignment="start" sideOffset={4}>
           <Popover.Popup 
-            className="z-[1050] w-auto p-0 rounded-lg bg-popover shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
+            className="z-[1050] w-auto p-0 rounded-lg bg-popover text-popover-foreground text-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
           >
             <Calendar
               mode="single"
