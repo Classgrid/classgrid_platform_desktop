@@ -1253,9 +1253,10 @@ export function StorageFilesPage() {
                       if (row.isUpDir) return null;
                       if (type === "Folder") return <Badge variant="neutral">Dir</Badge>;
                       const fileExt = type?.split("/").pop()?.toUpperCase() || "FILE";
-                      if (type?.startsWith("image/")) return <Badge variant="info">{fileExt}</Badge>;
-                      if (type?.startsWith("video/")) return <Badge variant="secondary">{fileExt}</Badge>;
-                      return <Badge variant="outline">{fileExt}</Badge>;
+                      const content = <span className="block max-w-[100px] truncate" title={fileExt}>{fileExt}</span>;
+                      if (type?.startsWith("image/")) return <Badge variant="info">{content}</Badge>;
+                      if (type?.startsWith("video/")) return <Badge variant="secondary">{content}</Badge>;
+                      return <Badge variant="outline">{content}</Badge>;
                     }
                   },
                   {
