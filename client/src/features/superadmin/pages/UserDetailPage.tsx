@@ -4,6 +4,8 @@ import { ArrowLeft, Printer } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { apiClient } from "@/lib/apiClient";
+import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
+import { useEffect } from "react";
 
 type ProfileField = {
   key: string;
@@ -108,6 +110,16 @@ export function UserDetailPage() {
   const schema = data?.data?.schema ?? [];
   const recordAcademicYear = getRecordAcademicYear(organization, profile);
 
+  const { setBreadcrumbs } = useBreadcrumbStore();
+
+  useEffect(() => {
+    setBreadcrumbs([
+      { label: "Global Users", path: "/superadmin/global-users" },
+      { label: user?.name || "User Details" }
+    ]);
+    return () => setBreadcrumbs([]);
+  }, [setBreadcrumbs, user?.name]);
+
   const getFieldValue = (key: string, type?: string): string => {
     const value = getNestedValue(profile, key);
     if (value === undefined || value === null || value === "") return "";
@@ -164,19 +176,15 @@ export function UserDetailPage() {
   }
 
   return (
-    <div className="user-detail-page bg-white text-slate-950">
+    <div className="flex flex-col w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 animate-in fade-in user-detail-page">
       <style>{`
-        .user-detail-page {
-          min-height: 100vh;
-          padding: 24px;
-        }
-
         .document-actions {
           display: flex;
           justify-content: space-between;
           align-items: center;
           max-width: 980px;
           margin: 0 auto 16px;
+          width: 100%;
         }
 
         .document-actions button {
@@ -189,12 +197,26 @@ export function UserDetailPage() {
           font-size: 14px;
           font-weight: 600;
           padding: 8px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .document-actions button:hover {
+          background: #f3f4f6;
+        }
+
+        .record-container {
+          width: 100%;
+          max-width: 980px;
+          margin: 0 auto;
+          background: #ffffff;
+          color: #020617; /* slate-950 */
+          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
 
         .record-table {
           width: 100%;
-          max-width: 980px;
-          margin: 0 auto;
           border-collapse: collapse;
           font-size: 13px;
           line-height: 1.4;
@@ -241,7 +263,7 @@ export function UserDetailPage() {
         }
 
         .org-address {
-          color: #374151;
+          color: hsl(var(--muted-foreground));
           white-space: pre-wrap;
         }
 
@@ -249,6 +271,7 @@ export function UserDetailPage() {
           text-align: center;
           font-weight: 700;
           padding: 10px;
+          color: hsl(var(--foreground));
         }
 
         .photo-cell {
@@ -263,7 +286,7 @@ export function UserDetailPage() {
           width: 132px;
           height: 176px;
           object-fit: cover;
-          border: 1px solid #d1d5db;
+          border: 1px solid hsl(var(--border));
         }
 
         .photo-placeholder {
@@ -272,30 +295,36 @@ export function UserDetailPage() {
           height: 176px;
           align-items: center;
           justify-content: center;
-          border: 1px solid #d1d5db;
-          color: #6b7280;
+          border: 1px solid hsl(var(--border));
+          color: hsl(var(--muted-foreground));
           font-weight: 600;
         }
 
         .section-header {
-          background: #e5e7eb;
+          background: hsl(var(--muted));
+          color: hsl(var(--foreground));
           text-align: center;
           font-weight: 700;
           padding: 10px;
+          text-transform: uppercase;
+          font-size: 12px;
+          letter-spacing: 0.05em;
         }
 
         .label-cell {
           font-weight: 600;
-          background: #f9fafb;
+          background: hsl(var(--muted) / 0.5);
+          color: hsl(var(--foreground));
           width: 25%;
-          padding: 8px 12px;
+          padding: 10px 14px;
           vertical-align: top;
         }
 
         .value-cell {
-          padding: 8px 12px;
+          padding: 10px 14px;
           vertical-align: top;
           word-break: break-word;
+          color: hsl(var(--foreground));
         }
 
         @media print {
@@ -305,30 +334,31 @@ export function UserDetailPage() {
 
           body {
             margin: 0;
+            background: white !important;
           }
 
           .user-detail-page {
-            padding: 0;
+            padding: 0 !important;
+            max-width: none !important;
           }
 
-          .record-table {
+          .record-container {
             max-width: none;
+            box-shadow: none;
+            border: none;
           }
         }
       `}</style>
 
-      <div className="document-actions no-print">
-        <button type="button" onClick={() => navigate("/superadmin/global-users")}>
-          <ArrowLeft size={16} />
-          Back to Global Users
-        </button>
+      <div className="document-actions no-print" style={{ justifyContent: "flex-end" }}>
         <button type="button" onClick={() => window.print()}>
           <Printer size={16} />
           Print
         </button>
       </div>
 
-      <table className="record-table">
+      <div className="record-container border border-border sm:rounded-md">
+        <table className="record-table">
         <tbody>
           <tr>
             <td className="org-logo-cell">
@@ -381,6 +411,7 @@ export function UserDetailPage() {
           </tbody>
         ))}
       </table>
+      </div>
     </div>
   );
 }
