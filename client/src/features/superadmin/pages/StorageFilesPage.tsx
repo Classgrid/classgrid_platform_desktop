@@ -747,8 +747,29 @@ export function StorageFilesPage() {
       return;
     }
 
-    const newKey = fileToRename.key.substring(0, fileToRename.key.lastIndexOf('/') + 1) + finalName;
-    const parentPrefix = fileToRename.key.substring(0, fileToRename.key.lastIndexOf('/') + 1);
+    let newKey = "";
+    let parentPrefix = "";
+    
+    if (isFolder) {
+      // For folders, key ends with '/'. E.g. 'folderA/' or 'folderA/folderB/'
+      const withoutTrailingSlash = fileToRename.key.slice(0, -1);
+      const lastSlashIndex = withoutTrailingSlash.lastIndexOf('/');
+      if (lastSlashIndex >= 0) {
+        parentPrefix = withoutTrailingSlash.substring(0, lastSlashIndex + 1);
+      } else {
+        parentPrefix = ""; // Root level folder
+      }
+      newKey = parentPrefix + finalName + '/';
+    } else {
+      const lastSlashIndex = fileToRename.key.lastIndexOf('/');
+      if (lastSlashIndex >= 0) {
+        parentPrefix = fileToRename.key.substring(0, lastSlashIndex + 1);
+      } else {
+        parentPrefix = "";
+      }
+      newKey = parentPrefix + finalName;
+    }
+
     const nowIso = new Date().toISOString();
 
     const oldFileToRename = fileToRename;
