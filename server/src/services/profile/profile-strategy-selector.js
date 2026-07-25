@@ -157,6 +157,168 @@ const MASTER_PROFILE_SECTION_POOL = {
   },
 
   // ── Section 5: Bank Details ──────────────────────────────────
+    faculty_education_details: {
+    key: "faculty_education_details",
+    label: "Education Details",
+    icon: "GraduationCap",
+    fields: [
+      { key: "ug_degree", label: "Undergraduate Degree", type: "text" },
+      { key: "ug_specialization", label: "Undergraduate Specialization", type: "text" },
+      { key: "ug_university", label: "Undergraduate University", type: "text" },
+      { key: "ug_percentage", label: "Undergraduate Percentage", type: "number" },
+      { key: "ug_year", label: "Undergraduate Year", type: "number" },
+      { key: "pg_degree", label: "Postgraduate Degree", type: "text" },
+      { key: "pg_specialization", label: "Postgraduate Specialization", type: "text" },
+      { key: "pg_university", label: "Postgraduate University", type: "text" },
+      { key: "pg_percentage", label: "Postgraduate Percentage", type: "number" },
+      { key: "pg_year", label: "Postgraduate Year", type: "number" },
+      { key: "bed_degree", label: "B.Ed Degree", type: "text" },
+      { key: "bed_university", label: "B.Ed University", type: "text" },
+      { key: "bed_percentage", label: "B.Ed Percentage", type: "number" },
+      { key: "bed_year", label: "B.Ed Year", type: "number" },
+      { key: "phd_qualified", label: "PhD (Yes/No)", type: "boolean" },
+      { key: "phd_specialization", label: "PhD Specialization", type: "text" },
+      { key: "phd_university", label: "PhD University", type: "text" },
+      { key: "phd_year", label: "PhD Year", type: "number" },
+      { key: "net_qualified", label: "NET Qualified", type: "boolean" },
+      { key: "slet_qualified", label: "SLET Qualified", type: "boolean" },
+    ],
+  },
+  admin_education_details: {
+    key: "admin_education_details",
+    label: "Education Details",
+    icon: "GraduationCap",
+    fields: [
+      { key: "ug_degree", label: "Undergraduate Degree", type: "text" },
+      { key: "ug_specialization", label: "Undergraduate Specialization", type: "text" },
+      { key: "ug_university", label: "Undergraduate University", type: "text" },
+      { key: "pg_degree", label: "Postgraduate Degree", type: "text" },
+      { key: "pg_specialization", label: "Postgraduate Specialization", type: "text" },
+      { key: "pg_university", label: "Postgraduate University", type: "text" },
+      { key: "bed_degree", label: "B.Ed Degree", type: "text" },
+      { key: "phd_qualified", label: "PhD (Yes/No)", type: "boolean" },
+      { key: "phd_specialization", label: "PhD Specialization", type: "text" },
+      { key: "phd_university", label: "PhD University", type: "text" },
+    ],
+  },
+  staff_education_details: {
+    key: "staff_education_details",
+    label: "Education Details",
+    icon: "GraduationCap",
+    fields: [
+      { key: "ug_degree", label: "Undergraduate Degree", type: "text" },
+      { key: "ug_specialization", label: "Undergraduate Specialization", type: "text" },
+      { key: "ug_university", label: "Undergraduate University", type: "text" },
+    ],
+  },
+  faculty_documents: {
+    key: "faculty_documents",
+    label: "Upload Documents",
+    icon: "FileUp",
+    fields: [
+      { key: "doc_aadhar", label: "Aadhar Card", type: "file_list" },
+      { key: "doc_pan", label: "PAN Card", type: "file_list" },
+      { key: "doc_highest_degree", label: "Highest Degree Certificate", type: "file_list" },
+      { key: "doc_bed", label: "B.Ed Certificate", type: "file_list" },
+      { key: "doc_experience", label: "Experience/Relieving Letter", type: "file_list" },
+      { key: "doc_appointment", label: "Appointment Letter", type: "file_list" },
+      { key: "doc_net_slet", label: "NET/SLET Certificate", type: "file_list" },
+      { key: "doc_police_verification", label: "Police Verification Certificate", type: "file_list" },
+    ],
+  },
+  admin_documents: {
+    key: "admin_documents",
+    label: "Upload Documents",
+    icon: "FileUp",
+    fields: [
+      { key: "doc_aadhar", label: "Aadhar Card", type: "file_list" },
+      { key: "doc_pan", label: "PAN Card", type: "file_list" },
+      { key: "doc_highest_degree", label: "Highest Degree Certificate", type: "file_list" },
+      { key: "doc_experience", label: "Experience/Relieving Letter", type: "file_list" },
+      { key: "doc_appointment", label: "Appointment Letter", type: "file_list" },
+      { key: "doc_police_verification", label: "Police Verification Certificate", type: "file_list" },
+    ],
+  },
+  staff_documents: {
+    key: "staff_documents",
+    label: "Upload Documents",
+    icon: "FileUp",
+    fields: [
+      { key: "doc_aadhar", label: "Aadhar Card", type: "file_list" },
+      { key: "doc_pan", label: "PAN Card", type: "file_list" },
+      { key: "doc_highest_degree", label: "Highest Qualification Certificate", type: "file_list" },
+      { key: "doc_experience", label: "Experience/Relieving Letter", type: "file_list" },
+      { key: "doc_appointment", label: "Appointment Letter", type: "file_list" },
+    ],
+  },
+  transport_documents: {
+    key: "transport_documents",
+    label: "Upload Documents",
+    icon: "FileUp",
+    fields: [
+      { key: "doc_aadhar", label: "Aadhar Card", type: "file_list" },
+      { key: "doc_pan", label: "PAN Card", type: "file_list" },
+      { key: "doc_highest_degree", label: "Highest Qualification Certificate", type: "file_list" },
+      { key: "doc_experience", label: "Experience/Relieving Letter", type: "file_list" },
+      { key: "doc_appointment", label: "Appointment Letter", type: "file_list" },
+      { key: "doc_driving_license", label: "Driving License", type: "file_list" },
+      { key: "doc_heavy_vehicle_permit", label: "Heavy Vehicle Permit", type: "file_list" },
+      { key: "doc_puc", label: "PUC Certificate", type: "file_list" },
+    ],
+  },
+  faculty_experience_details: {
+    key: "faculty_experience_details",
+    label: "Experience Details",
+    icon: "Briefcase",
+    fields: [
+      { key: "qualification", label: "Qualification", type: "text" },
+      { key: "department", label: "Department", type: "text" },
+      { key: "designation", label: "Designation", type: "text" },
+      { key: "subjectsAssigned", label: "Subjects Assigned", type: "text" },
+      { key: "subject", label: "Primary Subject", type: "text" },
+      { key: "experience_years", label: "Experience (Years)", type: "number" },
+      { key: "experience_details", label: "Experience Details", type: "text" },
+    ],
+  },
+  admin_experience_details: {
+    key: "admin_experience_details",
+    label: "Experience Details",
+    icon: "Briefcase",
+    fields: [
+      { key: "qualification", label: "Qualification", type: "text" },
+      { key: "department", label: "Department", type: "text" },
+      { key: "designation", label: "Designation", type: "text" },
+      { key: "experience_years", label: "Experience (Years)", type: "number" },
+      { key: "experience_details", label: "Experience Details", type: "text" },
+      { key: "responsibilities", label: "Responsibilities", type: "text" },
+    ],
+  },
+  staff_experience_details: {
+    key: "staff_experience_details",
+    label: "Experience Details",
+    icon: "Briefcase",
+    fields: [
+      { key: "qualification", label: "Qualification", type: "text" },
+      { key: "department", label: "Department", type: "text" },
+      { key: "designation", label: "Designation", type: "text" },
+      { key: "experience_years", label: "Experience (Years)", type: "number" },
+      { key: "experience_details", label: "Experience Details", type: "text" },
+    ],
+  },
+  exam_controller_experience_details: {
+    key: "exam_controller_experience_details",
+    label: "Experience Details",
+    icon: "Briefcase",
+    fields: [
+      { key: "qualification", label: "Qualification", type: "text" },
+      { key: "department", label: "Department", type: "text" },
+      { key: "designation", label: "Designation", type: "text" },
+      { key: "experience_years", label: "Experience (Years)", type: "number" },
+      { key: "experience_details", label: "Experience Details", type: "text" },
+      { key: "board_affiliation_experience", label: "Board/Affiliation Experience", type: "text" },
+    ],
+  },
+
   bank_details: {
     key: "bank_details",
     label: "Bank Details",
@@ -193,7 +355,7 @@ const MASTER_PROFILE_SECTION_POOL = {
       { key: "subject",            label: "Primary Subject",          type: "text" },
       { key: "experience_years",   label: "Experience (Years)",       type: "number" },
       { key: "experience_details", label: "Experience Details",       type: "text" },
-      { key: "biometricId",        label: "Biometric ID",             type: "text" },
+      
     ],
   },
 
@@ -333,7 +495,7 @@ const MASTER_PROFILE_SECTION_POOL = {
       { key: "payroll_salary_mode",     label: "Salary Mode",         type: "dropdown", options: ["hourly", "monthly", "none"], sensitive: true },
       { key: "payroll_hourly_rate",     label: "Hourly Rate",         type: "number",   sensitive: true },
       { key: "payroll_base_salary",     label: "Base Monthly Salary", type: "number",   sensitive: true },
-      { key: "biometricId",            label: "Biometric ID",         type: "text" },
+      
     ],
   },
 };
@@ -440,23 +602,7 @@ const ROLE_PROFILE_CONFIGS = {
 
   // ── STUDENT — Full academic profile ──────────────────────────
   student: {
-    sections: [
-      "personal_details",
-      "academic_placement",
-      "contact_details",
-      "family_details",
-      "education_details",
-      "bank_details",
-      "upload_documents",
-      "awards_participation",
-      "student_activity",
-      "social_details",
-      "id_card_photos",
-      "medical_details",
-      "skills_interest",
-      "anti_ragging",
-      "platform_metadata",
-    ],
+    sections: ["personal_details", "academic_placement", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "awards_participation", "student_activity", "social_details", "id_card_photos", "medical_details", "skills_interest", "anti_ragging", "platform_metadata"],
     // Academic placement fields that are relevant per org type
     academic_placement_fields: {
       engineering:      ["prn", "degree", "department", "branch", "year", "semester", "division", "batch"],
@@ -470,17 +616,7 @@ const ROLE_PROFILE_CONFIGS = {
 
   // ── FACULTY / TEACHER — Professional profile ─────────────────
   faculty: {
-    sections: [
-      "personal_details",
-      "experience_details",
-      "contact_details",
-      "education_details",
-      "social_details",
-      "id_card_photos",
-      "awards_participation",
-      "skills_interest",
-      "platform_metadata",
-    ],
+    sections: ["personal_details", "faculty_experience_details", "contact_details", "faculty_education_details", "social_details", "id_card_photos", "awards_participation", "skills_interest", "platform_metadata", "faculty_documents"],
     academic_placement_fields: null, // Faculty don't have academic placement
   },
 
@@ -489,28 +625,14 @@ const ROLE_PROFILE_CONFIGS = {
 
   // ── ORG ADMIN — Administrative profile ───────────────────────
   org_admin: {
-    sections: [
-      "personal_details",
-      "experience_details",
-      "contact_details",
-      "social_details",
-      "id_card_photos",
-      "platform_metadata",
-    ],
+    sections: ["personal_details", "admin_experience_details", "contact_details", "social_details", "id_card_photos", "platform_metadata", "admin_education_details", "admin_documents"],
     academic_placement_fields: null,
   },
 
   // ── DEPARTMENT ADMINS — Similar to org_admin but with dept context ──
   // All 7 dept admin roles share this config
   admission_head: {
-    sections: [
-      "personal_details",
-      "experience_details",
-      "contact_details",
-      "social_details",
-      "id_card_photos",
-      "platform_metadata",
-    ],
+    sections: ["personal_details", "staff_experience_details", "contact_details", "social_details", "id_card_photos", "platform_metadata", "staff_education_details", "staff_documents"],
     academic_placement_fields: null,
   },
 
@@ -528,30 +650,13 @@ const ROLE_PROFILE_CONFIGS = {
 
   // ── HOD — Same as faculty + department context ───────────────
   hod: {
-    sections: [
-      "personal_details",
-      "experience_details",
-      "contact_details",
-      "education_details",
-      "social_details",
-      "id_card_photos",
-      "awards_participation",
-      "skills_interest",
-      "platform_metadata",
-    ],
+    sections: ["personal_details", "admin_experience_details", "contact_details", "admin_education_details", "social_details", "id_card_photos", "awards_participation", "skills_interest", "platform_metadata", "admin_documents"],
     academic_placement_fields: null,
   },
 
   // ── PRINCIPAL / VICE PRINCIPAL ───────────────────────────────
   principal: {
-    sections: [
-      "personal_details",
-      "experience_details",
-      "contact_details",
-      "social_details",
-      "id_card_photos",
-      "platform_metadata",
-    ],
+    sections: ["personal_details", "admin_experience_details", "contact_details", "social_details", "id_card_photos", "platform_metadata", "admin_education_details", "admin_documents"],
     academic_placement_fields: null,
   },
 };

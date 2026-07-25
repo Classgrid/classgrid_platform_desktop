@@ -316,6 +316,168 @@ export const MASTER_PROFILE_SECTION_POOL = {
       { key: "university_prn_number", label: "University PRN", type: "text" },
     ],
   },
+    faculty_education_details: {
+    key: "faculty_education_details",
+    label: "Education Details",
+    icon: "GraduationCap",
+    fields: [
+      { key: "ug_degree", label: "Undergraduate Degree", type: "text" },
+      { key: "ug_specialization", label: "Undergraduate Specialization", type: "text" },
+      { key: "ug_university", label: "Undergraduate University", type: "text" },
+      { key: "ug_percentage", label: "Undergraduate Percentage", type: "number" },
+      { key: "ug_year", label: "Undergraduate Year", type: "number" },
+      { key: "pg_degree", label: "Postgraduate Degree", type: "text" },
+      { key: "pg_specialization", label: "Postgraduate Specialization", type: "text" },
+      { key: "pg_university", label: "Postgraduate University", type: "text" },
+      { key: "pg_percentage", label: "Postgraduate Percentage", type: "number" },
+      { key: "pg_year", label: "Postgraduate Year", type: "number" },
+      { key: "bed_degree", label: "B.Ed Degree", type: "text" },
+      { key: "bed_university", label: "B.Ed University", type: "text" },
+      { key: "bed_percentage", label: "B.Ed Percentage", type: "number" },
+      { key: "bed_year", label: "B.Ed Year", type: "number" },
+      { key: "phd_qualified", label: "PhD (Yes/No)", type: "boolean" },
+      { key: "phd_specialization", label: "PhD Specialization", type: "text" },
+      { key: "phd_university", label: "PhD University", type: "text" },
+      { key: "phd_year", label: "PhD Year", type: "number" },
+      { key: "net_qualified", label: "NET Qualified", type: "boolean" },
+      { key: "slet_qualified", label: "SLET Qualified", type: "boolean" },
+    ],
+  },
+  admin_education_details: {
+    key: "admin_education_details",
+    label: "Education Details",
+    icon: "GraduationCap",
+    fields: [
+      { key: "ug_degree", label: "Undergraduate Degree", type: "text" },
+      { key: "ug_specialization", label: "Undergraduate Specialization", type: "text" },
+      { key: "ug_university", label: "Undergraduate University", type: "text" },
+      { key: "pg_degree", label: "Postgraduate Degree", type: "text" },
+      { key: "pg_specialization", label: "Postgraduate Specialization", type: "text" },
+      { key: "pg_university", label: "Postgraduate University", type: "text" },
+      { key: "bed_degree", label: "B.Ed Degree", type: "text" },
+      { key: "phd_qualified", label: "PhD (Yes/No)", type: "boolean" },
+      { key: "phd_specialization", label: "PhD Specialization", type: "text" },
+      { key: "phd_university", label: "PhD University", type: "text" },
+    ],
+  },
+  staff_education_details: {
+    key: "staff_education_details",
+    label: "Education Details",
+    icon: "GraduationCap",
+    fields: [
+      { key: "ug_degree", label: "Undergraduate Degree", type: "text" },
+      { key: "ug_specialization", label: "Undergraduate Specialization", type: "text" },
+      { key: "ug_university", label: "Undergraduate University", type: "text" },
+    ],
+  },
+  faculty_documents: {
+    key: "faculty_documents",
+    label: "Upload Documents",
+    icon: "FileUp",
+    fields: [
+      { key: "doc_aadhar", label: "Aadhar Card", type: "file_list" },
+      { key: "doc_pan", label: "PAN Card", type: "file_list" },
+      { key: "doc_highest_degree", label: "Highest Degree Certificate", type: "file_list" },
+      { key: "doc_bed", label: "B.Ed Certificate", type: "file_list" },
+      { key: "doc_experience", label: "Experience/Relieving Letter", type: "file_list" },
+      { key: "doc_appointment", label: "Appointment Letter", type: "file_list" },
+      { key: "doc_net_slet", label: "NET/SLET Certificate", type: "file_list" },
+      { key: "doc_police_verification", label: "Police Verification Certificate", type: "file_list" },
+    ],
+  },
+  admin_documents: {
+    key: "admin_documents",
+    label: "Upload Documents",
+    icon: "FileUp",
+    fields: [
+      { key: "doc_aadhar", label: "Aadhar Card", type: "file_list" },
+      { key: "doc_pan", label: "PAN Card", type: "file_list" },
+      { key: "doc_highest_degree", label: "Highest Degree Certificate", type: "file_list" },
+      { key: "doc_experience", label: "Experience/Relieving Letter", type: "file_list" },
+      { key: "doc_appointment", label: "Appointment Letter", type: "file_list" },
+      { key: "doc_police_verification", label: "Police Verification Certificate", type: "file_list" },
+    ],
+  },
+  staff_documents: {
+    key: "staff_documents",
+    label: "Upload Documents",
+    icon: "FileUp",
+    fields: [
+      { key: "doc_aadhar", label: "Aadhar Card", type: "file_list" },
+      { key: "doc_pan", label: "PAN Card", type: "file_list" },
+      { key: "doc_highest_degree", label: "Highest Qualification Certificate", type: "file_list" },
+      { key: "doc_experience", label: "Experience/Relieving Letter", type: "file_list" },
+      { key: "doc_appointment", label: "Appointment Letter", type: "file_list" },
+    ],
+  },
+  transport_documents: {
+    key: "transport_documents",
+    label: "Upload Documents",
+    icon: "FileUp",
+    fields: [
+      { key: "doc_aadhar", label: "Aadhar Card", type: "file_list" },
+      { key: "doc_pan", label: "PAN Card", type: "file_list" },
+      { key: "doc_highest_degree", label: "Highest Qualification Certificate", type: "file_list" },
+      { key: "doc_experience", label: "Experience/Relieving Letter", type: "file_list" },
+      { key: "doc_appointment", label: "Appointment Letter", type: "file_list" },
+      { key: "doc_driving_license", label: "Driving License", type: "file_list" },
+      { key: "doc_heavy_vehicle_permit", label: "Heavy Vehicle Permit", type: "file_list" },
+      { key: "doc_puc", label: "PUC Certificate", type: "file_list" },
+    ],
+  },
+  faculty_experience_details: {
+    key: "faculty_experience_details",
+    label: "Experience Details",
+    icon: "Briefcase",
+    fields: [
+      { key: "qualification", label: "Qualification", type: "text" },
+      { key: "department", label: "Department", type: "text" },
+      { key: "designation", label: "Designation", type: "text" },
+      { key: "subjectsAssigned", label: "Subjects Assigned", type: "text" },
+      { key: "subject", label: "Primary Subject", type: "text" },
+      { key: "experience_years", label: "Experience (Years)", type: "number" },
+      { key: "experience_details", label: "Experience Details", type: "text" },
+    ],
+  },
+  admin_experience_details: {
+    key: "admin_experience_details",
+    label: "Experience Details",
+    icon: "Briefcase",
+    fields: [
+      { key: "qualification", label: "Qualification", type: "text" },
+      { key: "department", label: "Department", type: "text" },
+      { key: "designation", label: "Designation", type: "text" },
+      { key: "experience_years", label: "Experience (Years)", type: "number" },
+      { key: "experience_details", label: "Experience Details", type: "text" },
+      { key: "responsibilities", label: "Responsibilities", type: "text" },
+    ],
+  },
+  staff_experience_details: {
+    key: "staff_experience_details",
+    label: "Experience Details",
+    icon: "Briefcase",
+    fields: [
+      { key: "qualification", label: "Qualification", type: "text" },
+      { key: "department", label: "Department", type: "text" },
+      { key: "designation", label: "Designation", type: "text" },
+      { key: "experience_years", label: "Experience (Years)", type: "number" },
+      { key: "experience_details", label: "Experience Details", type: "text" },
+    ],
+  },
+  exam_controller_experience_details: {
+    key: "exam_controller_experience_details",
+    label: "Experience Details",
+    icon: "Briefcase",
+    fields: [
+      { key: "qualification", label: "Qualification", type: "text" },
+      { key: "department", label: "Department", type: "text" },
+      { key: "designation", label: "Designation", type: "text" },
+      { key: "experience_years", label: "Experience (Years)", type: "number" },
+      { key: "experience_details", label: "Experience Details", type: "text" },
+      { key: "board_affiliation_experience", label: "Board/Affiliation Experience", type: "text" },
+    ],
+  },
+
   bank_details: {
     key: "bank_details",
     label: "Bank Details",
@@ -356,7 +518,7 @@ export const MASTER_PROFILE_SECTION_POOL = {
       { key: "subject", label: "Primary Subject", type: "text" },
       { key: "experience_years", label: "Experience (Years)", type: "number" },
       { key: "experience_details", label: "Experience Details", type: "text" },
-      { key: "biometricId", label: "Biometric ID", type: "text" },
+      
     ],
   },
   awards_participation: {
@@ -461,7 +623,7 @@ export const MASTER_PROFILE_SECTION_POOL = {
       { key: "payroll_salary_mode", label: "Salary Mode", type: "dropdown", options: ["hourly", "monthly", "none"], sensitive: true },
       { key: "payroll_hourly_rate", label: "Hourly Rate", type: "number", sensitive: true },
       { key: "payroll_base_salary", label: "Base Monthly Salary", type: "number", sensitive: true },
-      { key: "biometricId", label: "Biometric ID", type: "text" },
+      
     ],
   },
 };
@@ -501,58 +663,55 @@ export const ORG_TYPE_LABEL_MAP = {
 
 export const ROLE_PROFILE_CONFIGS = {
   student: {
-    sections: [
-      "personal_details", "academic_placement", "contact_details", "family_details",
-      "category_minority", "international_student"
-    ],
+    sections: ["personal_details", "academic_placement", "contact_details", "family_details", "category_minority", "international_student", "education_details", "upload_documents"],
     academic_placement_fields: null, // Now generic and simplified
   },
   faculty: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "awards_participation", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "faculty_specific_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "faculty_education_details", "bank_details", "faculty_documents", "faculty_experience_details", "awards_participation", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "faculty_specific_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   org_admin: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "admin_education_details", "bank_details", "admin_documents", "admin_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   department_admin: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   fee_manager: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "fees_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "fees_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   hr_dept: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "payroll_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "payroll_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   admission_head: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   admission_verifier: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   admission_counselor: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   admission_clerk: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   hod: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "admin_education_details", "bank_details", "admin_documents", "admin_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   principal: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "admin_education_details", "bank_details", "admin_documents", "admin_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   vice_principal: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "admin_education_details", "bank_details", "admin_documents", "admin_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   super_admin: {
@@ -560,39 +719,39 @@ export const ROLE_PROFILE_CONFIGS = {
     academic_placement_fields: null,
   },
   exam_controller: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "exam_controller_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   library_manager: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   library_admin: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   attendance_admin: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   hostel_dept: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   transport_manager: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "transport_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   tpo_officer: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   counselor: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   coordinator: {
-    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "admin_education_details", "bank_details", "admin_documents", "admin_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
     academic_placement_fields: null,
   },
 };
