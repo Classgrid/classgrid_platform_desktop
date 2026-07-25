@@ -102,7 +102,7 @@ export function SettingsRoleRequestCard() {
             <label className="text-sm font-medium text-foreground">Tenant ID</label>
             <Input
               type="text"
-              placeholder="e.g. ORG-XYZ-123"
+              placeholder="e.g. VHSIKZIREQM"
               className="bg-background"
               value={tenantCode}
               onChange={(e) => setTenantCode(e.target.value)}

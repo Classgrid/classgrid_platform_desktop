@@ -399,10 +399,12 @@ router.post("/request-role", isAuthenticated, async (req, res) => {
             return res.status(400).json({ error: "Tenant Join Code and role are required." });
         }
 
-        // 1. Validate Tenant Join Code
-        const org = await Organization.findOne({ "branding.tenant_join_code": tenant_join_code });
+        // 1. Validate Tenant ID (organizationCode)
+        const org = await Organization.findOne({ 
+            $or: [{ organizationCode: tenant_join_code }, { private_code: tenant_join_code }] 
+        });
         if (!org) {
-            return res.status(404).json({ error: "Invalid Tenant Join Code." });
+            return res.status(404).json({ error: "Invalid Tenant ID." });
         }
 
         // 2. Validate Role for this Org Type
