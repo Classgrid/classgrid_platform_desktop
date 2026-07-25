@@ -445,6 +445,7 @@ export function StorageFilesPage() {
   // Custom upload state
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
   // Miller Columns state
   const [openFolders, setOpenFolders] = useState<string[]>([""]); // "" is root
@@ -460,13 +461,31 @@ export function StorageFilesPage() {
   const renameObjectMutation = useRenameObject();
   const uploadFileMutation = useUploadFile();
 
+  // Auto-scroll to the rightmost edge whenever a folder or file is opened
+  React.useEffect(() => {
+    if (viewMode === 'columns' && scrollContainerRef.current) {
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTo({
+            left: scrollContainerRef.current.scrollWidth,
+            behavior: 'smooth'
+          });
+        }
+      }, 50);
+    }
+  }, [openFolders.length, activeFile, viewMode]);
+
+  React.useEffect(() => {
+    hasActiveUploadsRef.current = uploadingFiles.some(file => file.status === 'uploading');
+  }, [uploadingFiles]);
+
   React.useEffect(() => {
     const socket = getSocket();
 
     joinSuperadminStorage();
 
     const handleStorageUpdated = () => {
-      if (renameObjectMutation.isPending) return;
+      if (renameObjectMutation.isPending || hasActiveUploadsRef.current) return;
 
       queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
       queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
@@ -1049,7 +1068,10 @@ export function StorageFilesPage() {
           </div>
         </div>
 
-        <div className="flex flex-1 overflow-hidden bg-background relative">
+        <div 
+          ref={scrollContainerRef}
+          className="flex flex-1 overflow-x-auto overflow-y-hidden bg-background relative custom-scrollbar pb-2"
+        >
 
           {viewMode === 'columns' ? (
             <>
@@ -1061,8 +1083,14 @@ export function StorageFilesPage() {
                   selectedChildKey={openFolders[i + 1]}
                   selectedKeys={selectedKeys}
                   toggleSelection={toggleSelection}
-                  onSelectFolder={(key: string) => setOpenFolders([...openFolders.slice(0, i + 1), key])}
-                  onSelectFile={(file: any) => setActiveFile(file)}
+                  onSelectFolder={(key: string) => {
+                    setOpenFolders([...openFolders.slice(0, i + 1), key]);
+                    setActiveFile(null);
+                  }}
+                  onSelectFile={(file: any) => {
+                    setOpenFolders(openFolders.slice(0, i + 1));
+                    setActiveFile(file);
+                  }}
                   creatingFolderIn={creatingFolderIn}
                   setCreatingFolderIn={setCreatingFolderIn}
                   isCreatingFolderPending={createFolderMutation.isPending}
