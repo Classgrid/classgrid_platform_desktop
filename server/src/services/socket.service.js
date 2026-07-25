@@ -9,13 +9,13 @@ import GoLive from "../models/GoLive.js";
 import { dispatchNotification } from "./notification.service.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
-const REDIS_URL = process.env.REDIS_URL || "redis://127.0.0.1:6379";
+const REDIS_URL = process.env.REDIS_URL; // No default localhost fallback to avoid forcing Redis
 
 const isDev = process.env.NODE_ENV !== "production";
 
 let pubClient, subClient, redisClient;
 
-if (!isDev) {
+if (!isDev && REDIS_URL) {
     pubClient = new IORedis(REDIS_URL, { maxRetriesPerRequest: null });
     subClient = pubClient.duplicate();
     redisClient = pubClient.duplicate();
