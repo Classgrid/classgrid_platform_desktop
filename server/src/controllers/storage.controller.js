@@ -849,6 +849,48 @@ export async function getObjectMetadata(req, res) {
     }
 }
 
+async function recursiveRenamePrefix(sourcePrefix, destinationPrefix) {
+    let isTruncated = true;
+    let continuationToken = undefined;
+
+    while (isTruncated) {
+        const listResponse = await s3Client.send(new ListObjectsV2Command({
+            Bucket: BUCKET_NAME,
+            Prefix: sourcePrefix,
+            ContinuationToken: continuationToken
+        }));
+
+        if (listResponse.Contents && listResponse.Contents.length > 0) {
+            // 1. Copy all objects to the new prefix
+            const copyPromises = listResponse.Contents.map(obj => {
+                const newKey = destinationPrefix + obj.Key.substring(sourcePrefix.length);
+                return s3Client.send(new CopyObjectCommand({
+                    Bucket: BUCKET_NAME,
+                    CopySource: encodeCopySource(obj.Key),
+                    Key: newKey,
+                }));
+            });
+            await Promise.all(copyPromises);
+
+            // 2. Delete the old objects
+            const keysToDelete = listResponse.Contents.map(obj => ({ Key: obj.Key }));
+            for (let i = 0; i < keysToDelete.length; i += 1000) {
+                const batch = keysToDelete.slice(i, i + 1000);
+                await s3Client.send(new DeleteObjectsCommand({
+                    Bucket: BUCKET_NAME,
+                    Delete: {
+                        Objects: batch,
+                        Quiet: true
+                    }
+                }));
+            }
+        }
+
+        isTruncated = listResponse.IsTruncated;
+        continuationToken = listResponse.NextContinuationToken;
+    }
+}
+
 export async function renameObject(req, res) {
     let sourceKey = "";
     let destinationKey = "";
@@ -862,19 +904,23 @@ export async function renameObject(req, res) {
         }
         assertDeletable(sourceKey);
 
-        await s3Client.send(new CopyObjectCommand({
-            Bucket: BUCKET_NAME,
-            CopySource: encodeCopySource(sourceKey),
-            Key: destinationKey,
-        }));
+        if (sourceKey.endsWith("/")) {
+            await recursiveRenamePrefix(sourceKey, destinationKey);
+        } else {
+            await s3Client.send(new CopyObjectCommand({
+                Bucket: BUCKET_NAME,
+                CopySource: encodeCopySource(sourceKey),
+                Key: destinationKey,
+            }));
+            await s3Client.send(new DeleteObjectCommand({
+                Bucket: BUCKET_NAME,
+                Key: sourceKey,
+            }));
+        }
+
         invalidateStorageAnalyticsCache();
-
-        await s3Client.send(new DeleteObjectCommand({
-            Bucket: BUCKET_NAME,
-            Key: sourceKey,
-        }));
-
         auditStorageAction(req, "rename", [sourceKey, destinationKey]);
+        
         return sendSuccess(res, "File or folder renamed successfully.", {
             newKey: destinationKey,
             cdnUrl: buildCdnUrl(destinationKey),
