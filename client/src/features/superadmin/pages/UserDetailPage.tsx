@@ -4,6 +4,8 @@ import { ArrowLeft, Printer } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { apiClient } from "@/lib/apiClient";
+import { Table, TableBody, TableCell, TableRow } from "@/components/marketing_ui/table";
+import { Card } from "@/components/marketing_ui/card";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { useEffect } from "react";
 
@@ -149,18 +151,26 @@ export function UserDetailPage() {
       const secondField = fields[index + 1];
 
       rows.push(
-        <tr key={firstField.key}>
-          <td className="label-cell">{firstField.label}{firstField.private ? " [private]" : ""}</td>
-          <td className="value-cell">{getFieldValue(firstField.key, firstField.type)}</td>
+        <TableRow key={firstField.key}>
+          <TableCell className="bg-muted/20 font-medium text-muted-foreground w-[25%] border-r border-border/50">
+            {firstField.label}{firstField.private ? " [private]" : ""}
+          </TableCell>
+          <TableCell className="w-[25%] border-r border-border/50">
+            {getFieldValue(firstField.key, firstField.type)}
+          </TableCell>
           {secondField ? (
             <>
-              <td className="label-cell">{secondField.label}{secondField.private ? " [private]" : ""}</td>
-              <td className="value-cell">{getFieldValue(secondField.key, secondField.type)}</td>
+              <TableCell className="bg-muted/20 font-medium text-muted-foreground w-[25%] border-r border-border/50">
+                {secondField.label}{secondField.private ? " [private]" : ""}
+              </TableCell>
+              <TableCell className="w-[25%]">
+                {getFieldValue(secondField.key, secondField.type)}
+              </TableCell>
             </>
           ) : (
-            <td colSpan={3} className="value-cell" />
+            <TableCell colSpan={3} />
           )}
-        </tr>
+        </TableRow>
       );
     }
 
@@ -211,32 +221,6 @@ export function UserDetailPage() {
           width: 100%;
           max-width: 980px;
           margin: 0 auto;
-          background: hsl(var(--card));
-          color: hsl(var(--card-foreground));
-          border-radius: 12px;
-          border: 1px solid hsl(var(--border));
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
-          overflow: hidden;
-        }
-
-        .record-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 14px;
-          line-height: 1.5;
-        }
-
-        .record-table td {
-          border-bottom: 1px solid hsl(var(--border));
-          border-right: 1px solid hsl(var(--border));
-        }
-        
-        .record-table td:last-child {
-          border-right: none;
-        }
-        
-        .record-table tr:last-child td {
-          border-bottom: none;
         }
 
         .org-logo-cell {
@@ -328,35 +312,7 @@ export function UserDetailPage() {
           font-weight: 500;
         }
 
-        .section-header {
-          background: hsl(var(--muted) / 0.5);
-          color: hsl(var(--muted-foreground));
-          text-align: left;
-          font-weight: 600;
-          padding: 12px 24px;
-          text-transform: uppercase;
-          font-size: 11px;
-          letter-spacing: 0.08em;
-          border-top: 1px solid hsl(var(--border));
-        }
-
-        .label-cell {
-          font-weight: 500;
-          background: hsl(var(--muted) / 0.15);
-          color: hsl(var(--muted-foreground));
-          width: 25%;
-          padding: 14px 24px;
-          vertical-align: top;
-          font-size: 13px;
-        }
-
-        .value-cell {
-          padding: 14px 24px;
-          vertical-align: top;
-          word-break: break-word;
-          color: hsl(var(--foreground));
-          font-weight: 500;
-        }
+        /* Cleaned up custom CSS since we are using Shadcn Table components now */
 
         @media print {
           .no-print {
@@ -388,57 +344,57 @@ export function UserDetailPage() {
         </button>
       </div>
 
-      <div className="record-container border border-border sm:rounded-md">
-        <table className="record-table">
-        <tbody>
-          <tr>
-            <td className="org-logo-cell">
+      <Card className="record-container overflow-hidden">
+        <Table>
+        <TableBody>
+          <TableRow className="hover:bg-transparent">
+            <TableCell className="w-[130px] p-6 text-center align-middle bg-muted/10 border-r border-border/50">
               {organization?.logo_url ? (
-                <img src={organization.logo_url} alt={`${organization?.name || "Organization"} logo`} />
+                <img src={organization.logo_url} alt={`${organization?.name || "Organization"} logo`} className="max-w-[80px] max-h-[80px] object-contain mx-auto" />
               ) : (
-                <span className="org-logo-placeholder">LOGO</span>
+                <span className="org-logo-placeholder mx-auto">LOGO</span>
               )}
-            </td>
-            <td colSpan={3} className="org-title-cell">
+            </TableCell>
+            <TableCell colSpan={3} className="p-6 align-middle bg-muted/10">
               <div className="org-title">{organization?.name || "Platform Organization"}</div>
               <div className="org-address">{organization?.address || organization?.location || ""}</div>
-            </td>
-          </tr>
-          <tr>
-            <td colSpan={4} className="record-title">
+            </TableCell>
+          </TableRow>
+          <TableRow className="hover:bg-transparent bg-muted/30">
+            <TableCell colSpan={4} className="text-center font-semibold py-4 text-foreground/80 text-[13px] tracking-wide">
               ACADEMIC YEAR - {recordAcademicYear}<br />
               USER RECORD FOR ACADEMIC YEAR {recordAcademicYear}
-            </td>
-          </tr>
-          <tr>
-            <td className="label-cell">Role</td>
-            <td className="value-cell">{formatLabel(user.role)}</td>
-            <td rowSpan={2} colSpan={2} className="photo-cell">
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="bg-muted/20 font-medium text-muted-foreground w-[25%] border-r border-border/50">Role</TableCell>
+            <TableCell className="w-[25%] border-r border-border/50">{formatLabel(user.role)}</TableCell>
+            <TableCell rowSpan={2} colSpan={2} className="w-[50%] p-4 text-center align-middle">
               {user.profilePicture ? (
-                <img src={user.profilePicture} alt={user.name || "User photo"} />
+                <img src={user.profilePicture} alt={user.name || "User photo"} className="w-[120px] h-[160px] object-cover rounded-md shadow-sm border border-border/50 mx-auto" />
               ) : (
-                <span className="photo-placeholder">PHOTO</span>
+                <span className="photo-placeholder mx-auto">PHOTO</span>
               )}
-            </td>
-          </tr>
-          <tr>
-            <td className="label-cell">Org Type</td>
-            <td className="value-cell">{formatLabel(organization?.org_type)}</td>
-          </tr>
-        </tbody>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="bg-muted/20 font-medium text-muted-foreground w-[25%] border-r border-border/50">Org Type</TableCell>
+            <TableCell className="w-[25%] border-r border-border/50">{formatLabel(organization?.org_type)}</TableCell>
+          </TableRow>
+        </TableBody>
 
         {sectionsWithData.map((section) => (
-          <tbody key={section.sectionId}>
-            <tr>
-              <td colSpan={4} className="section-header">
+          <TableBody key={section.sectionId}>
+            <TableRow className="bg-muted/40 hover:bg-muted/40">
+              <TableCell colSpan={4} className="font-semibold text-muted-foreground uppercase text-xs tracking-wider py-3">
                 {section.sectionTitle}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
             {renderFieldRows(section.fields)}
-          </tbody>
+          </TableBody>
         ))}
-      </table>
-      </div>
+      </Table>
+      </Card>
     </div>
   );
 }
