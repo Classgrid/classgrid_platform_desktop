@@ -176,7 +176,7 @@ export function UserDetailPage() {
           <TableCell className="bg-muted/20 font-medium text-muted-foreground w-[25%] border-r border-border/50">
             {firstField.label}{firstField.private ? " [private]" : ""}
           </TableCell>
-          <TableCell className="w-[25%] border-r border-border/50">
+          <TableCell className="w-[25%] border-r border-border/50 break-words">
             {getFieldValue(firstField.key, firstField.type)}
           </TableCell>
           {secondField ? (
@@ -184,7 +184,7 @@ export function UserDetailPage() {
               <TableCell className="bg-muted/20 font-medium text-muted-foreground w-[25%] border-r border-border/50">
                 {secondField.label}{secondField.private ? " [private]" : ""}
               </TableCell>
-              <TableCell className="w-[25%]">
+              <TableCell className="w-[25%] break-words">
                 {getFieldValue(secondField.key, secondField.type)}
               </TableCell>
             </>
@@ -366,17 +366,17 @@ export function UserDetailPage() {
       </div>
 
       <Card className="record-container overflow-hidden">
-        <Table>
+        <Table className="table-fixed w-full">
         <TableBody>
           <TableRow className="hover:bg-transparent">
-            <TableCell className="w-[130px] p-6 text-center align-middle bg-muted/10 border-r border-border/50">
+            <TableCell className="w-[25%] p-6 text-center align-middle bg-muted/10 border-r border-border/50">
               {organization?.logo_url ? (
                 <img src={organization.logo_url} alt={`${organization?.name || "Organization"} logo`} className="max-w-[80px] max-h-[80px] object-contain mx-auto" />
               ) : (
                 <span className="org-logo-placeholder mx-auto">LOGO</span>
               )}
             </TableCell>
-            <TableCell colSpan={3} className="p-6 align-middle bg-muted/10">
+            <TableCell colSpan={3} className="w-[75%] p-6 align-middle bg-muted/10">
               <div className="org-title">{organization?.name || "Platform Organization"}</div>
               <div className="org-address">{organization?.address || organization?.location || ""}</div>
             </TableCell>
