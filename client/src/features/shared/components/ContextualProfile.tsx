@@ -128,10 +128,20 @@ export function ContextualProfile({
   // Sync form data if profileData arrives asynchronously
   React.useEffect(() => {
     if (profileData) {
+      // Split name into first/last if not already set
+      const nameParts = (profileData.name || "").trim().split(/\s+/);
+      const inferredFirstName = nameParts[0] || "";
+      const inferredLastName = nameParts.slice(1).join(" ") || "";
+
       setFormData(prev => ({
         ...prev,
         ...profileData,
-        ...(profileData.metadata || {})
+        ...(profileData.metadata || {}),
+        // Pre-populate photo from profilePicture if no metadata photo
+        profile_photo: profileData.metadata?.profile_photo || profileData.profilePicture || profileData.photoURL || prev.profile_photo || "",
+        // Pre-populate name fields from user.name if not set in metadata
+        first_name: profileData.metadata?.first_name || profileData.first_name || inferredFirstName || prev.first_name || "",
+        last_name: profileData.metadata?.last_name || profileData.last_name || inferredLastName || prev.last_name || "",
       }));
     }
   }, [profileData]);
@@ -146,18 +156,22 @@ export function ContextualProfile({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Direct API call using static apiClient
-      await apiClient.put("/api/user/update", { ...formData, metadata: formData });
-      
-      // Update global context/cache if needed here or rely on the parent page
+      // Only send the metadata object — never send raw system fields like abc_id, prn etc.
+      // Those are managed separately by the onboarding wizard / admin.
+      const metadataPayload: Record<string, any> = {};
+      const knownSystemKeys = new Set(["_id", "id", "name", "email", "role", "phoneNumber", "profilePicture", "profileBanner", "photoURL", "prn", "abc_id", "branch", "batch", "department", "organization_id", "organization", "metadata", "createdAt", "lastLoginAt", "profile_completed", "verification_status", "pushNotifications", "fcmTokens"]);
+      for (const [key, value] of Object.entries(formData)) {
+        if (!knownSystemKeys.has(key)) {
+          metadataPayload[key] = value;
+        }
+      }
+      await apiClient.put("/api/user/update", { metadata: metadataPayload });
       toast.success("Profile details updated successfully");
       setIsEditing(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Failed to save profile details");
+      toast.error(error?.response?.data?.message || "Failed to save profile details");
     } finally {
-      setIsSaving(true);
-      // Let it spin a tiny bit more for UX, then disable
       setTimeout(() => setIsSaving(false), 500);
     }
   };
@@ -405,6 +419,15 @@ export function ContextualProfile({
                   }
                   
                   if (field.type === "file_list" || field.type === "image") {
+                    const existingUrl = formData[field.key] || formData.profile_photo || formData.profilePicture || formData.photoURL || "";
+                    if (!isEditing && existingUrl) {
+                      return (
+                        <div className="w-full flex items-center gap-3 p-3 border border-border rounded-md bg-muted/20">
+                          <img src={existingUrl} alt={field.label} className="w-14 h-14 rounded-full object-cover border border-border shadow-sm" />
+                          <span className="text-sm text-foreground font-medium">{field.label} uploaded</span>
+                        </div>
+                      );
+                    }
                     return (
                       <div className={cn("w-full p-4 border-2 border-dashed rounded-md bg-muted/20 text-center text-sm text-muted-foreground flex flex-col items-center justify-center gap-2 transition-colors", isEditing ? "cursor-pointer hover:bg-muted/50 hover:border-primary/50" : "opacity-70 cursor-not-allowed pointer-events-none bg-muted/30 border-input")}>
                         <UploadCloud className="w-6 h-6 text-primary/70" />
