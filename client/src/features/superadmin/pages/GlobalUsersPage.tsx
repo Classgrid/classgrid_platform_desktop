@@ -103,7 +103,7 @@ export function GlobalUsersPage() {
             </div>
           )}
           <div className="flex flex-col min-w-0">
-            <span className="font-medium text-sm text-foreground truncate group-hover:text-primary transition-colors">{u.name}</span>
+            <span className="font-medium text-sm text-foreground truncate transition-colors">{u.name}</span>
             <span className="text-muted-foreground text-xs truncate">{u.email}</span>
           </div>
         </div>
@@ -166,15 +166,6 @@ export function GlobalUsersPage() {
   return (
     <div className="flex flex-col gap-6 w-full max-w-[1200px] mx-auto p-4 sm:p-6 lg:p-8 pb-12">
       
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Global Users</h1>
-            <p className="text-sm text-muted-foreground mt-1">Manage all users across every organization on the platform.</p>
-        </div>
-        <RefreshButton onClick={() => refetch()} isFetching={isFetching} />
-      </div>
-
       <Card className="border-border shadow-sm overflow-hidden bg-background">
         
         {/* Vercel-style Filter Bar */}
@@ -222,6 +213,9 @@ export function GlobalUsersPage() {
                 >
                     {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </ResponsiveSelect>
+            </div>
+            <div className="w-full sm:w-auto ml-auto">
+                <RefreshButton onClick={() => refetch()} isFetching={isFetching} />
             </div>
         </div>
 

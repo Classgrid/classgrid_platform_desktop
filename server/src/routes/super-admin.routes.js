@@ -1187,7 +1187,7 @@ router.get("/users", async (req, res) => {
 
         const [users, total] = await Promise.all([
             User.find(filter)
-                .select("name email role status isEmailVerified organization_id createdAt lastLoginAt")
+                .select("name email role status isEmailVerified organization_id createdAt lastLoginAt profilePicture")
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
