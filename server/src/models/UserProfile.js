@@ -62,18 +62,31 @@ const userProfileSchema = new mongoose.Schema(
       first_name: { type: String, default: "" },
       middle_name: { type: String, default: "" },
       last_name: { type: String, default: "" },
+      date_of_birth: { type: Date, default: null },
+      gender: { type: String, default: "" },
+      gender_other: { type: String, default: "" },
       blood_group: { type: String, default: "" },
       nationality: { type: String, default: "Indian" },
-      domicile: { type: String, default: "" },
+      other_nationality: { type: String, default: "" },
       mother_tongue: { type: String, default: "" },
+      other_mother_tongue: { type: String, default: "" },
+      government_id_type: { type: String, default: "" },
+      government_id_number: { type: String, default: "" },
+      birth_country: { type: String, default: "" },
+      birth_state: { type: String, default: "" },
+      birth_place: { type: String, default: "" },
+      profile_photo_url: { type: String, default: "" },
+      
+      organization_type: { type: String, default: "" },
+      role_category: { type: String, default: "" },
+      academic_departments_handled: { type: String, default: "" },
+      
+      domicile: { type: String, default: "" },
       marital_status: { type: String, default: "Single" },
       aadhar_number: { type: String, default: "" },
       pan_number: { type: String, default: "" },
-      birth_place: { type: String, default: "" },
       native_place: { type: String, default: "" },
       student_id: { type: String, default: "" },
-      gender: { type: String, default: "" },
-      date_of_birth: { type: Date, default: null },
       employee_id: { type: String, default: "" },
       qualification: { type: String, default: "" },
       specialization: { type: String, default: "" },
@@ -202,28 +215,25 @@ const userProfileSchema = new mongoose.Schema(
 
     // ── Section 3: Family Details ────────────────────────────────
     family: {
-
-
-
-
-
-
-
-
-
+      father_name: { type: String, default: "" },
       father_occupation: { type: String, default: "" },
-      mother_occupation: { type: String, default: "" },
       father_income: { type: Number, default: 0 },
-      mother_income: { type: Number, default: 0 },
       father_mobile: { type: String, default: "" },
-      mother_mobile: { type: String, default: "" },
       father_email: { type: String, default: "" },
-      mother_email: { type: String, default: "" },
       father_education: { type: String, default: "" },
+      
+      mother_name: { type: String, default: "" },
+      mother_occupation: { type: String, default: "" },
+      mother_income: { type: Number, default: 0 },
+      mother_mobile: { type: String, default: "" },
+      mother_email: { type: String, default: "" },
       mother_education: { type: String, default: "" },
+      
+      has_local_guardian: { type: String, enum: ["Yes", "No", ""], default: "" },
       local_guardian_name: { type: String, default: "" },
       local_guardian_mobile: { type: String, default: "" },
       local_guardian_address: { type: String, default: "" },
+      
       spouse_name: { type: String, default: "" },
       spouse_occupation: { type: String, default: "" },
       spouse_contact: { type: String, default: "" },
@@ -302,16 +312,13 @@ const userProfileSchema = new mongoose.Schema(
 
     // ── Section 6: Documents ─────────────────────────────────────
     documents: [{
-      document_name: {
-
-
-
-
-
-
-
-
- type: String, required: true },
+      document_name: { type: String, required: true },
+      document_type: { type: String, default: "" },
+      document_number: { type: String, default: "" },
+      issued_date: { type: Date, default: null },
+      expiry_date: { type: Date, default: null },
+      verified_status: { type: String, enum: ["Pending", "Verified", "Rejected"], default: "Pending" },
+      verified_by: { type: String, default: "" },
       file_url: { type: String, required: true },
       uploaded_at: { type: Date, default: Date.now }
     }],

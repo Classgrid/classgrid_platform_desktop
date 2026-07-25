@@ -225,21 +225,24 @@ export const MASTER_PROFILE_SECTION_POOL = {
     key: "personal_details",
     label: "Basic Profile",
     icon: "User",
-    sub_tabs: ["identity", "birth_details"],
     fields: [
-      { key: "first_name", label: "First Name", type: "text", sub_tab: "identity", required: true },
-      { key: "middle_name", label: "Middle Name", type: "text", sub_tab: "identity" },
-      { key: "last_name", label: "Last Name", type: "text", sub_tab: "identity", required: true },
-      { key: "dob", label: "Date of Birth", type: "date", sub_tab: "identity", required: true, sensitive: true },
-      { key: "gender", label: "Gender", type: "dropdown", sub_tab: "identity", options: GENDERLIST, required: true, sensitive: true },
-      { key: "blood_group", label: "Blood Group", type: "dropdown", sub_tab: "identity", options: BLOODGROUPLIST, sensitive: true },
-      { key: "nationality", label: "Nationality", type: "dropdown", sub_tab: "identity", options: NATIONALITYLIST, required: true },
-      { key: "mother_tongue", label: "Mother Tongue", type: "dropdown", sub_tab: "identity", options: MOTHERTOUNGELIST },
-      { key: "aadhar_number", label: "Aadhar Number", type: "text", sub_tab: "identity", sensitive: true },
-      
-      { key: "birth_country", label: "Birth Country", type: "dropdown", sub_tab: "birth_details", options: BIRTHCOUNTRYLIST, sensitive: true },
-      { key: "birth_state", label: "Birth State", type: "dropdown", sub_tab: "birth_details", options: INDIA_STATES, sensitive: true },
-      { key: "birth_place", label: "Birth Place", type: "text", sub_tab: "birth_details", sensitive: true },
+      { key: "identity.profile_photo_url", label: "Profile Photo", type: "image" },
+      { key: "identity.first_name", label: "First Name", type: "text", required: true },
+      { key: "identity.middle_name", label: "Middle Name", type: "text" },
+      { key: "identity.last_name", label: "Last Name", type: "text", required: true },
+      { key: "identity.date_of_birth", label: "Date of Birth", type: "date", required: true, sensitive: true },
+      { key: "identity.gender", label: "Gender", type: "dropdown", options: ["Male", "Female", "Non-Binary", "Prefer Not to Say", "Other"], required: true, sensitive: true },
+      { key: "identity.gender_other", label: "Other Gender", type: "text", sensitive: true },
+      { key: "identity.blood_group", label: "Blood Group", type: "dropdown", options: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Unknown", "Prefer Not to Disclose"], sensitive: true },
+      { key: "identity.nationality", label: "Nationality", type: "dropdown", options: ["Indian", "American", "British", "Canadian", "Australian", "Nepalese", "Bangladeshi", "Sri Lankan", "Other"], required: true },
+      { key: "identity.other_nationality", label: "Other Nationality", type: "text" },
+      { key: "identity.mother_tongue", label: "Mother Tongue", type: "dropdown", options: ["Marathi", "Hindi", "English", "Gujarati", "Bengali", "Tamil", "Telugu", "Kannada", "Malayalam", "Punjabi", "Urdu", "Nepali", "Other"] },
+      { key: "identity.other_mother_tongue", label: "Other Mother Tongue", type: "text" },
+      { key: "identity.government_id_type", label: "Government ID Type", type: "dropdown", options: ["Aadhaar", "PAN", "Passport", "Voter ID", "Other Government ID"], sensitive: true },
+      { key: "identity.government_id_number", label: "Government ID Number", type: "text", sensitive: true },
+      { key: "identity.birth_country", label: "Birth Country", type: "dropdown", options: ["India"], sensitive: true },
+      { key: "identity.birth_state", label: "Birth State / Province", type: "dropdown", options: INDIA_STATES, sensitive: true },
+      { key: "identity.birth_place", label: "Birth Place", type: "text", sensitive: true },
     ],
   },
   contact_details: {
@@ -247,26 +250,42 @@ export const MASTER_PROFILE_SECTION_POOL = {
     label: "Contact Details",
     icon: "Phone",
     fields: [
-      { key: "email", label: "Email", type: "text", required: true },
-      { key: "alternateEmail", label: "Alternate Email", type: "text" },
-      { key: "phoneNumber", label: "Mobile Number", type: "text", required: true, sensitive: true },
-      
-      { key: "permanent_address", label: "Permanent Address", type: "text", sensitive: true },
-      { key: "permanent_state", label: "State", type: "dropdown", options: INDIA_STATES, sensitive: true },
-      { key: "permanent_district", label: "District", type: "dropdown", options: INDIA_DISTRICTS, sensitive: true },
-      { key: "permanent_city", label: "City / Village", type: "text", sensitive: true },
-      { key: "permanent_pincode", label: "Pincode", type: "text", sensitive: true },
-      
-      { key: "same_as_permanent", label: "Same as Permanent Address", type: "boolean" },
+      // Primary Contact
+      { key: "contact.personal_email", label: "Primary Email", type: "text", required: true, sensitive: true },
+      { key: "contact.alternate_email", label: "Alternate Email", type: "text", sensitive: true },
+      { key: "contact.mobile_number", label: "Mobile Number", type: "text", required: true, sensitive: true },
+      { key: "contact.whatsapp_number", label: "WhatsApp Number", type: "text", sensitive: true },
+      { key: "contact.whatsapp_same_as_mobile", label: "Same as Mobile Number", type: "checkbox", sensitive: true },
 
-      { key: "current_address", label: "Current Address", type: "text", sensitive: true },
-      { key: "current_state", label: "Current State", type: "dropdown", options: INDIA_STATES, sensitive: true },
-      { key: "current_city", label: "Current City / Village", type: "text", sensitive: true },
-      { key: "current_pincode", label: "Current Pincode", type: "text", sensitive: true },
+      // Official Contact (staff only)
+      { key: "contact.work_email", label: "Official Email", type: "text", sensitive: true },
+      { key: "contact.official_phone", label: "Official Phone", type: "text", sensitive: true },
+      { key: "contact.office_extension", label: "Office Extension", type: "text", sensitive: true },
+
+      // Permanent Address
+      { key: "contact.permanent_country", label: "Permanent Country", type: "dropdown", options: ["India"], required: true, sensitive: true },
+      { key: "contact.permanent_state", label: "Permanent State / Province", type: "dropdown", options: INDIA_STATES, required: true, sensitive: true },
+      { key: "contact.permanent_district", label: "Permanent District / County", type: "dropdown", options: INDIA_DISTRICTS, sensitive: true },
+      { key: "contact.permanent_city", label: "Permanent City / Village", type: "text", required: true, sensitive: true },
+      { key: "contact.permanent_address", label: "Permanent Address", type: "text", required: true, sensitive: true },
+      { key: "contact.permanent_pincode", label: "Permanent Pincode / Postal Code", type: "text", required: true, sensitive: true },
       
-      { key: "emergency_contact_name", label: "Emergency Contact Name", type: "text", sensitive: true },
-      { key: "emergency_contact_mobile", label: "Emergency Contact Mobile", type: "text", sensitive: true },
-      { key: "emergency_contact_relation", label: "Relation", type: "dropdown", options: RELATIONTYPELIST, sensitive: true },
+      { key: "contact.same_as_permanent_address", label: "Same as Permanent Address", type: "checkbox", sensitive: true },
+
+      // Current Address
+      { key: "contact.current_country", label: "Current Country", type: "dropdown", options: ["India"], required: true, sensitive: true },
+      { key: "contact.current_state", label: "Current State / Province", type: "dropdown", options: INDIA_STATES, required: true, sensitive: true },
+      { key: "contact.current_district", label: "Current District / County", type: "dropdown", options: INDIA_DISTRICTS, sensitive: true },
+      { key: "contact.current_city", label: "Current City / Village", type: "text", required: true, sensitive: true },
+      { key: "contact.current_address", label: "Current Address", type: "text", required: true, sensitive: true },
+      { key: "contact.current_pincode", label: "Current Pincode / Postal Code", type: "text", required: true, sensitive: true },
+      
+      // Emergency Contact
+      { key: "contact.use_parent_guardian_as_emergency", label: "Use Parent / Guardian as Emergency Contact", type: "checkbox", sensitive: true },
+      { key: "contact.emergency_contact_name", label: "Emergency Contact Name", type: "text", required: true, sensitive: true },
+      { key: "contact.emergency_contact_mobile", label: "Emergency Contact Mobile", type: "text", required: true, sensitive: true },
+      { key: "contact.emergency_contact_relation", label: "Emergency Contact Relation", type: "dropdown", options: ["Father", "Mother", "Parent", "Spouse", "Brother", "Sister", "Son", "Daughter", "Guardian", "Local Guardian", "Relative", "Friend", "Colleague", "Manager", "Other"], required: true, sensitive: true },
+      { key: "contact.emergency_contact_other_relation", label: "Other Relation", type: "text", sensitive: true },
     ],
   },
   family_details: {
@@ -274,20 +293,20 @@ export const MASTER_PROFILE_SECTION_POOL = {
     label: "Family Details",
     icon: "Users",
     fields: [
-      { key: "fatherName", label: "Father's Name", type: "text", required: true, sensitive: true },
-      { key: "father_occupation", label: "Father's Occupation", type: "text", sensitive: true },
-      { key: "father_mobile", label: "Father's Mobile", type: "text", sensitive: true },
-      { key: "father_email", label: "Father's Email", type: "text", sensitive: true },
+      { key: "family.father_name", label: "Father's Name", type: "text", required: true, sensitive: true },
+      { key: "family.father_occupation", label: "Father's Occupation", type: "text", sensitive: true },
+      { key: "family.father_mobile", label: "Father's Mobile", type: "text", sensitive: true },
+      { key: "family.father_email", label: "Father's Email", type: "text", sensitive: true },
       
-      { key: "motherName", label: "Mother's Name", type: "text", required: true, sensitive: true },
-      { key: "mother_occupation", label: "Mother's Occupation", type: "text", sensitive: true },
-      { key: "mother_mobile", label: "Mother's Mobile", type: "text", sensitive: true },
-      { key: "mother_email", label: "Mother's Email", type: "text", sensitive: true },
+      { key: "family.mother_name", label: "Mother's Name", type: "text", required: true, sensitive: true },
+      { key: "family.mother_occupation", label: "Mother's Occupation", type: "text", sensitive: true },
+      { key: "family.mother_mobile", label: "Mother's Mobile", type: "text", sensitive: true },
+      { key: "family.mother_email", label: "Mother's Email", type: "text", sensitive: true },
       
-      { key: "has_local_guardian", label: "I have a local guardian", type: "boolean" },
-      { key: "local_guardian_name", label: "Local Guardian Name", type: "text", sensitive: true },
-      { key: "local_guardian_mobile", label: "Local Guardian Mobile", type: "text", sensitive: true },
-      { key: "local_guardian_address", label: "Local Guardian Address", type: "text", sensitive: true },
+      { key: "family.has_local_guardian", label: "Do you have a local guardian?", type: "dropdown", options: ["Yes", "No"], sensitive: true },
+      { key: "family.local_guardian_name", label: "Local Guardian Name", type: "text", sensitive: true },
+      { key: "family.local_guardian_mobile", label: "Local Guardian Mobile", type: "text", sensitive: true },
+      { key: "family.local_guardian_address", label: "Local Guardian Address", type: "text", sensitive: true },
     ],
   },
   category_minority: {
@@ -650,6 +669,118 @@ export const MASTER_PROFILE_SECTION_POOL = {
       { key: "anti_ragging_date", label: "Undertaking Date", type: "date" },
     ],
   },
+  role_assignment: {
+    key: "role_assignment",
+    label: "Role Assignment",
+    icon: "Briefcase",
+    fields: [
+      { key: "identity.organization_type", label: "Organization Type", type: "dropdown", options: ["School", "Junior College", "Degree College", "Engineering College", "Polytechnic College", "Coaching Institute", "Training Institute", "University", "Education Group", "Other"], required: true },
+      { key: "identity.role_category", label: "Role Category", type: "dropdown", options: ["Org Admin", "Admissions", "Fees", "Examination", "Library", "Attendance", "HR & Payroll", "Hostel & Transport", "Faculty"], required: true },
+      { key: "identity.department", label: "Department", type: "dropdown", required: true },
+      { key: "identity.designation", label: "Designation", type: "dropdown", required: true },
+      { key: "identity.employee_id", label: "Employee ID", type: "text", required: true },
+    ]
+  },
+  qualification_and_experience: {
+    key: "qualification_and_experience",
+    label: "Qualification & Experience",
+    icon: "GraduationCap",
+    fields: [
+      { key: "identity.qualification", label: "Qualification", type: "dropdown", options: ["10th / SSC", "12th / HSC", "Certificate", "ITI", "Diploma", "D.Ed", "D.El.Ed", "B.Ed", "M.Ed", "B.P.Ed", "Bachelor of Arts", "Master of Arts", "Bachelor of Commerce", "Master of Commerce", "BBA", "MBA", "BCA", "MCA", "Bachelor of Science", "Master of Science", "BE", "B.Tech", "ME", "M.Tech", "B.Arch", "M.Arch", "B.Lib", "M.Lib", "LLB", "LLM", "CA", "CMA", "CS", "PhD", "Other"], required: true },
+      { key: "identity.specialization", label: "Specialization", type: "dropdown", options: ["Administration", "Academic Administration", "Human Resources", "Finance", "Accounting", "Commerce", "Computer Science", "Information Technology", "Artificial Intelligence", "Data Science", "Mechanical Engineering", "Civil Engineering", "Electrical Engineering", "Electronics Engineering", "Mathematics", "Physics", "Chemistry", "Biology", "English", "Marathi", "Hindi", "Library Science", "Physical Education", "Psychology", "Counseling", "Other"] },
+      { key: "experience.experience_years", label: "Experience", type: "dropdown", options: ["Fresher", "Less than 1 Year", "1–2 Years", "2–3 Years", "3–5 Years", "5–7 Years", "7–10 Years", "10–15 Years", "15–20 Years", "More than 20 Years"] },
+      { key: "experience.experience_details", label: "Experience Details", type: "text" },
+    ]
+  },
+  employment_details: {
+    key: "employment_details",
+    label: "Employment Details",
+    icon: "Briefcase",
+    fields: [
+      { key: "identity.recruitment_type", label: "Employment Type", type: "dropdown", options: ["Permanent", "Probation", "Full-Time", "Part-Time", "Contract", "Temporary", "Visiting", "Guest", "Consultant", "Intern", "Volunteer", "Other"], required: true },
+      { key: "identity.date_of_joining", label: "Date of Joining", type: "date", required: true },
+      { key: "identity.reporting_to", label: "Reporting To", type: "dropdown" },
+      { key: "experience.responsibilities", label: "Responsibilities", type: "dropdown" },
+      { key: "experience.work_shift", label: "Work Shift", type: "dropdown", options: ["General Shift", "Morning Shift", "Afternoon Shift", "Evening Shift", "Night Shift", "Rotational Shift", "Flexible", "Not Applicable"] },
+      { key: "identity.employment_status", label: "Employment Status", type: "dropdown", options: ["Active", "Onboarding", "On Leave", "Suspended", "Notice Period", "Inactive", "Resigned", "Retired", "Contract Completed"], required: true },
+      
+      { key: "identity.academic_departments_handled", label: "Academic Departments Handled", type: "text" },
+      { key: "experience.subjects_taught", label: "Subjects Taught", type: "text" },
+      { key: "experience.classes_taught", label: "Classes Taught", type: "text" },
+      { key: "experience.grade_handled", label: "Grade Handled", type: "text" },
+      { key: "experience.is_hod", label: "Is HOD?", type: "boolean" },
+      { key: "experience.is_class_teacher", label: "Is Class Teacher?", type: "boolean" },
+      
+      { key: "identity.supervisory_roles", label: "Supervisory Roles", type: "text" },
+      
+      { key: "experience.contract_start_date", label: "Contract Start Date", type: "date" },
+      { key: "experience.contract_end_date", label: "Contract End Date", type: "date" },
+    ]
+  },
+
+  
+  engineering_education: {
+    key: "engineering_education",
+    label: "Engineering Education & Admission",
+    icon: "GraduationCap",
+    fields: [
+      { key: "education.tenth_board", label: "10th Board", type: "text", sensitive: true },
+      { key: "education.tenth_percentage", label: "10th Percentage", type: "number", sensitive: true },
+      { key: "education.twelfth_board", label: "12th Board", type: "text", sensitive: true },
+      { key: "education.twelfth_percentage", label: "12th Percentage", type: "number", sensitive: true },
+      { key: "education.pcm_percentage", label: "PCM Percentage", type: "number", sensitive: true },
+      { key: "education.diploma_percentage", label: "Diploma Percentage", type: "number", sensitive: true },
+      { key: "education.en_number", label: "EN Number", type: "text", sensitive: true },
+      { key: "education.cet_score", label: "CET Score", type: "number", sensitive: true },
+      { key: "education.jee_score", label: "JEE Score", type: "number", sensitive: true },
+      { key: "education.university_prn_number", label: "University PRN Number", type: "text", sensitive: true },
+      { key: "education.undergraduate_degree", label: "Undergraduate Degree", type: "dropdown", options: UG_DEGREE_OPTIONS },
+      { key: "education.undergraduate_specialization", label: "Undergraduate Specialization", type: "dropdown" },
+      { key: "admission_details.admission_main_category", label: "Admission Category", type: "dropdown", options: ERPSTUDENTADMISSIONMAINCATEGORYLIST, sensitive: true },
+      { key: "admission_details.seat_type", label: "Seat Type", type: "text", sensitive: true },
+      { key: "admission_details.lateral_entry", label: "Lateral Entry?", type: "boolean", sensitive: true },
+      { key: "admission_details.admission_date", label: "Admission Date", type: "date", sensitive: true }
+    ]
+  },
+  medical_and_disability: {
+    key: "medical_and_disability",
+    label: "Medical & Disability Details",
+    icon: "HeartPulse",
+    fields: [
+      { key: "handicap_details.physically_handicapped", label: "Physically Handicapped?", type: "boolean", sensitive: true },
+      { key: "handicap_details.ph_type", label: "PH Type", type: "text", sensitive: true },
+      { key: "handicap_details.ph_percentage", label: "PH Percentage", type: "number", sensitive: true },
+      { key: "medical.medical_conditions", label: "Medical Conditions", type: "text", sensitive: true },
+      { key: "medical.allergies", label: "Allergies", type: "text", sensitive: true },
+      { key: "medical.prescription_details", label: "Prescription Details", type: "text", sensitive: true }
+    ]
+  },
+  passport_and_visa: {
+    key: "passport_and_visa",
+    label: "Passport & Visa Details",
+    icon: "Plane",
+    fields: [
+      { key: "passport_details.passport_number", label: "Passport Number", type: "text", sensitive: true },
+      { key: "passport_details.passport_valid_upto", label: "Passport Valid Upto", type: "date", sensitive: true },
+      { key: "passport_details.visa_number", label: "Visa Number", type: "text", sensitive: true }
+    ]
+  },
+  skills_and_projects: {
+    key: "skills_and_projects",
+    label: "Skills, Projects & Professional",
+    icon: "Lightbulb",
+    fields: [
+      { key: "skills_interests.skills", label: "Skills", type: "text" },
+      { key: "skills_interests.interests", label: "Interests", type: "text" },
+      { key: "skills_interests.languages_known", label: "Languages Known", type: "text" },
+      { key: "skills_interests.career_goal", label: "Career Goal", type: "text" },
+      { key: "skills_interests.technical_skills", label: "Technical Skills", type: "text" },
+      { key: "activity.internships", label: "Internships", type: "text" },
+      { key: "activity.projects", label: "Projects", type: "text" },
+      { key: "social.linkedin_url", label: "LinkedIn URL", type: "text" },
+      { key: "social.github_url", label: "GitHub URL", type: "text" }
+    ]
+  },
 
   platform_metadata: {
     key: "platform_metadata",
@@ -711,75 +842,75 @@ export const ORG_TYPE_LABEL_MAP = {
 
 export const ROLE_PROFILE_CONFIGS = {
   student: {
-    sections: ["personal_details", "id_card_photos", "academic_placement", "contact_details", "family_details", "category_minority", "international_student", "education_details", "upload_documents"],
+    sections: ["personal_details", "contact_details", "family_details", "engineering_education", "medical_and_disability", "bank_details", "passport_and_visa", "upload_documents", "skills_and_projects", "anti_ragging"],
     academic_placement_fields: null, // Now generic and simplified
   },
   faculty: {
-    sections: ["personal_details", "contact_details", "family_details", "faculty_education_details", "bank_details", "faculty_documents", "faculty_experience_details", "awards_participation", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "faculty_specific_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "faculty_documents", "awards_participation", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   org_admin: {
-    sections: ["personal_details", "contact_details", "family_details", "admin_education_details", "bank_details", "admin_documents", "admin_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "admin_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   department_admin: {
-    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "staff_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   fee_manager: {
-    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "fees_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "staff_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   hr_dept: {
-    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "payroll_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "staff_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   admission_head: {
-    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "staff_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   admission_verifier: {
-    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "staff_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   admission_counselor: {
-    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "staff_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   admission_clerk: {
-    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "staff_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   hod: {
-    sections: ["personal_details", "contact_details", "family_details", "admin_education_details", "bank_details", "admin_documents", "admin_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "admin_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   principal: {
-    sections: ["personal_details", "contact_details", "family_details", "admin_education_details", "bank_details", "admin_documents", "admin_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "admin_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   vice_principal: {
-    sections: ["personal_details", "contact_details", "family_details", "admin_education_details", "bank_details", "admin_documents", "admin_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "admin_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   super_admin: {
-    sections: ["personal_details", "contact_details", "family_details", "social_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "social_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   exam_controller: {
-    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "exam_controller_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "staff_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   library_manager: {
-    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "staff_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   library_admin: {
-    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "staff_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   attendance_admin: {
-    sections: ["personal_details", "contact_details", "family_details", "staff_education_details", "bank_details", "staff_documents", "staff_experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "staff_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   hostel_dept: {

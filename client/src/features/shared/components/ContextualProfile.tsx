@@ -397,231 +397,73 @@ export function ContextualProfile({
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {section.fields.map(field => (
-              <div key={field.key} className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  {field.label} {field.required && <span className="text-destructive">*</span>}
-                </label>
-                
-                {/* Form Input Renderer */}
-                {(() => {
-                  // Hide fields conditionally based on PhD Yes/No
-                  if ((field.key === "phd_specialization" || field.key === "phd_university" || field.key === "phd_year") && formData.phd_qualified !== "yes") {
-                    return null;
-                  }
+          {(() => {
+            const renderFieldInput = (field: any) => {
+              // Hide fields conditionally based on PhD Yes/No
+              if ((field.key === "phd_specialization" || field.key === "phd_university" || field.key === "phd_year") && formData.phd_qualified !== "yes") {
+                return null;
+              }
 
-                  // Handle Autocomplete/Datalist for Universities
-                  if (field.key === "ug_university" || field.key === "pg_university" || field.key === "phd_university" || field.key === "bed_university") {
-                    return (
-                      <div className="relative w-full">
-                        <input 
-                          list={`${field.key}-list`}
-                          type="text"
-                          placeholder={isEditing ? `Enter or select ${field.label}...` : ""}
-                          className={cn(
-                            "w-full p-2.5 rounded-md text-sm outline-none transition-all",
-                            isEditing 
-                              ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" 
-                              : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70"
-                          )}
-                          value={formData[field.key] || ""}
-                          onChange={(e) => isEditing && handleInputChange(field.key, e.target.value)}
-                          readOnly={!isEditing}
-                        />
-                        <datalist id={`${field.key}-list`}>
-                          {SEED_UNIVERSITIES.map(u => <option key={u} value={u} />)}
-                        </datalist>
-                      </div>
-                    );
-                  }
+              // Hide Official Contact fields for students
+              if (targetRole === "student" && (field.key === "contact.work_email" || field.key === "contact.official_phone" || field.key === "contact.office_extension")) {
+                return null;
+              }
 
-                  // Handle dynamic dropdowns for Degrees and Specializations
-                  if (field.key === "ug_degree" || field.key === "pg_degree" || field.key === "ug_specialization" || field.key === "pg_specialization" || field.key === "phd_specialization") {
-                    let options: string[] = [];
-                    if (field.key === "ug_degree") options = UG_DEGREE_OPTIONS;
-                    else if (field.key === "pg_degree") options = PG_DEGREE_OPTIONS;
-                    else if (field.key === "ug_specialization") options = UG_SPECIALIZATION_MAP[formData.ug_degree] || ["Other"];
-                    else if (field.key === "pg_specialization") options = PG_SPECIALIZATION_MAP[formData.pg_degree] || ["Other"];
-                    else if (field.key === "phd_specialization") options = PHD_SPECIALIZATION_OPTIONS;
-
-                    return (
-                      <>
-                        <Select 
-                          value={formData[field.key] || ""} 
-                          onValueChange={(val) => handleInputChange(field.key, val)}
-                          disabled={!isEditing}
-                        >
-                          <SelectTrigger className={cn("w-full transition-all", isEditing ? "bg-background border-input" : "bg-muted/30 border-input text-foreground cursor-not-allowed opacity-70")}>
-                            <SelectValue placeholder={`Select ${field.label}`} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {options.map((opt: string) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                        {formData[field.key] === "Other" && (
-                          <div className="mt-2 animate-in fade-in slide-in-from-top-1">
-                            <input 
-                              type="text" 
-                              placeholder={isEditing ? `Enter custom ${field.label}...` : ""}
-                              className={cn("w-full p-2.5 rounded-md text-sm outline-none transition-all", isEditing ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70")}
-                              value={formData[field.key + "_other"] || ""}
-                              onChange={(e) => isEditing && handleInputChange(field.key + "_other", e.target.value)}
-                              readOnly={!isEditing}
-                            />
-                          </div>
-                        )}
-                      </>
-                    );
-                  }
-
-                  // India Locations Cascading Logic
-                  if (field.key === "permanent_state" || field.key === "current_state") {
-                    const states = Object.keys(indiaLocations.states);
-                    return (
-                      <>
-                      <Select 
-                        value={formData[field.key] || ""} 
-                        onValueChange={(val) => handleInputChange(field.key, val)}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger className={cn("w-full transition-all", isEditing ? "bg-background border-input" : "bg-muted/30 border-input text-foreground cursor-not-allowed opacity-70")}>
-                          <SelectValue placeholder="Select State..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {states.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
-                          <SelectItem value="Other (Please specify)">Other (Please specify)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {formData[field.key] === "Other (Please specify)" && (
-                        <div className="mt-2 animate-in fade-in slide-in-from-top-1">
-                          <input 
-                            type="text" 
-                            placeholder={isEditing ? `ENTER YOUR ${field.label.toUpperCase()}` : ""}
-                            className={cn("w-full p-2.5 rounded-md text-sm outline-none transition-all", isEditing ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70")}
-                            value={formData[field.key + "_other"] || ""}
-                            onChange={(e) => isEditing && handleInputChange(field.key + "_other", e.target.value)}
-                            readOnly={!isEditing}
-                          />
-                        </div>
-                      )}
-                    </>
-                  );
-                }
-                  if (field.key === "permanent_district" || field.key === "current_district") {
-                    const stateKey = field.key === "permanent_district" ? "permanent_state" : "current_state";
-                    const selectedState = formData[stateKey];
-                    // @ts-ignore
-                    const districts = selectedState ? Object.keys(indiaLocations.states[selectedState] || {}) : [];
-                    return (
-                      <>
-                        <Select 
-                        value={formData[field.key] || ""} 
-                        onValueChange={(val) => handleInputChange(field.key, val)}
-                        disabled={!selectedState || !isEditing}
-                      >
-                        <SelectTrigger className={cn("w-full transition-all", isEditing ? "bg-background border-input" : "bg-muted/30 border-input text-foreground cursor-not-allowed opacity-70")}>
-                          <SelectValue placeholder="Select District..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                          <SelectItem value="Other (Please specify)">Other (Please specify)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {formData[field.key] === "Other (Please specify)" && (
-                        <div className="mt-2 animate-in fade-in slide-in-from-top-1">
-                          <input 
-                            type="text" 
-                            placeholder={isEditing ? `ENTER YOUR ${field.label.toUpperCase()}` : ""}
-                            className={cn("w-full p-2.5 rounded-md text-sm outline-none transition-all", isEditing ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70")}
-                            value={formData[field.key + "_other"] || ""}
-                            onChange={(e) => isEditing && handleInputChange(field.key + "_other", e.target.value)}
-                            readOnly={!isEditing}
-                          />
-                        </div>
-                      )}
-                    </>
-                  );
-                }
-
-                if (field.type === "dropdown") {
-                  return (
-                    <>
-                      <Select 
-                        value={formData[field.key] || ""} 
-                        onValueChange={(val) => handleInputChange(field.key, val)}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger className={cn("w-full transition-all", isEditing ? "bg-background border-input" : "bg-muted/30 border-input text-foreground cursor-not-allowed opacity-70")}>
-                          <SelectValue placeholder={`Select ${field.label}...`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {field.options?.map((opt: string) => (
-                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                          ))}
-                          <SelectItem value="Other (Please specify)">Other (Please specify)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {formData[field.key] === "Other (Please specify)" && (
-                        <div className="mt-2 animate-in fade-in slide-in-from-top-1">
-                          <input 
-                            type="text" 
-                            placeholder={isEditing ? `ENTER YOUR ${field.label.toUpperCase()}` : ""}
-                            className={cn("w-full p-2.5 rounded-md text-sm outline-none transition-all", isEditing ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70")}
-                            value={formData[field.key + "_other"] || ""}
-                            onChange={(e) => isEditing && handleInputChange(field.key + "_other", e.target.value)}
-                            readOnly={!isEditing}
-                          />
-                        </div>
-                      )}
-                    </>
-                  );
-                }
-                  
-                  if (field.type === "date") {
-                    return (
-                      <DateField 
-                        field={field} 
-                        value={formData[field.key] || ""} 
-                        onChange={(val) => handleInputChange(field.key, val)}
-                        disabled={!isEditing}
+              // Same as Permanent Address Logic
+              if (field.key === "contact.same_as_permanent_address") {
+                return (
+                   <label className="flex items-center gap-2 text-sm cursor-pointer mt-2 text-foreground">
+                      <input 
+                         type="checkbox" 
+                         className="accent-primary w-4 h-4"
+                         checked={formData["contact.same_as_permanent_address"] === "true"}
+                         onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            handleInputChange("contact.same_as_permanent_address", isChecked ? "true" : "false");
+                            if (isChecked) {
+                               handleInputChange("contact.current_country", formData["contact.permanent_country"]);
+                               handleInputChange("contact.current_state", formData["contact.permanent_state"]);
+                               handleInputChange("contact.current_district", formData["contact.permanent_district"]);
+                               handleInputChange("contact.current_city", formData["contact.permanent_city"]);
+                               handleInputChange("contact.current_address", formData["contact.permanent_address"]);
+                               handleInputChange("contact.current_pincode", formData["contact.permanent_pincode"]);
+                            }
+                         }}
+                         disabled={!isEditing}
                       />
-                    );
-                  }
-                  
-                  if (field.type === "boolean") {
-                    return (
-                      <div className={cn("flex items-center gap-4 mt-2 transition-all", !isEditing && "opacity-70 cursor-not-allowed pointer-events-none")}>
-                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input type="radio" name={field.key} value="yes" className="accent-primary w-4 h-4" disabled={!isEditing} /> Yes
-                        </label>
-                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input type="radio" name={field.key} value="no" className="accent-primary w-4 h-4" defaultChecked disabled={!isEditing} /> No
-                        </label>
-                      </div>
-                    );
-                  }
-                  
-                  if (field.type === "file_list" || field.type === "image") {
-                    let existingUrl = formData[field.key] || "";
-                    if (!existingUrl && (field.key === "profilePicture" || field.key === "profile_photo")) {
-                       existingUrl = formData.profile_photo || formData.profilePicture || formData.photoURL || "";
-                    }
-                    
-                    return (
-                      <FileUploadField 
-                        field={field}
-                        value={existingUrl}
-                        onChange={(val) => handleInputChange(field.key, val)}
-                        disabled={!isEditing}
+                      Same as Permanent Address
+                   </label>
+                )
+              }
+
+              if (field.type === "checkbox") {
+                 return (
+                   <label className="flex items-center gap-2 text-sm cursor-pointer mt-2 text-foreground">
+                      <input 
+                         type="checkbox" 
+                         className="accent-primary w-4 h-4"
+                         checked={formData[field.key] === "true" || formData[field.key] === true}
+                         onChange={(e) => isEditing && handleInputChange(field.key, e.target.checked ? "true" : "false")}
+                         disabled={!isEditing}
                       />
-                    );
-                  }
-                  
-                  return (
+                      {field.label}
+                   </label>
+                 )
+              }
+
+              // Handle Current Address hiding when same_as_permanent_address is true
+              if (field.key.startsWith("contact.current_") && formData["contact.same_as_permanent_address"] === "true") {
+                 return null;
+              }
+
+              // Handle Autocomplete/Datalist for Universities
+              if (field.key === "ug_university" || field.key === "pg_university" || field.key === "phd_university" || field.key === "bed_university") {
+                return (
+                  <div className="relative w-full">
                     <input 
-                      type={field.type === "number" ? "number" : "text"}
-                      placeholder={isEditing ? `Enter ${field.label}...` : ""}
+                      list={`${field.key}-list`}
+                      type="text"
+                      placeholder={isEditing ? `Enter or select ${field.label}...` : ""}
                       className={cn(
                         "w-full p-2.5 rounded-md text-sm outline-none transition-all",
                         isEditing 
@@ -632,11 +474,317 @@ export function ContextualProfile({
                       onChange={(e) => isEditing && handleInputChange(field.key, e.target.value)}
                       readOnly={!isEditing}
                     />
-                  );
-                })()}
+                    <datalist id={`${field.key}-list`}>
+                      {SEED_UNIVERSITIES.map(u => <option key={u} value={u} />)}
+                    </datalist>
+                  </div>
+                );
+              }
+
+              // Handle dynamic dropdowns for Degrees and Specializations
+              if (field.key === "ug_degree" || field.key === "pg_degree" || field.key === "ug_specialization" || field.key === "pg_specialization" || field.key === "phd_specialization") {
+                let options: string[] = [];
+                if (field.key === "ug_degree") options = UG_DEGREE_OPTIONS;
+                else if (field.key === "pg_degree") options = PG_DEGREE_OPTIONS;
+                else if (field.key === "ug_specialization") options = UG_SPECIALIZATION_MAP[formData.ug_degree] || ["Other"];
+                else if (field.key === "pg_specialization") options = PG_SPECIALIZATION_MAP[formData.pg_degree] || ["Other"];
+                else if (field.key === "phd_specialization") options = PHD_SPECIALIZATION_OPTIONS;
+
+                return (
+                  <>
+                    <Select 
+                      value={formData[field.key] || ""} 
+                      onValueChange={(val) => handleInputChange(field.key, val)}
+                      disabled={!isEditing}
+                    >
+                      <SelectTrigger className={cn("w-full transition-all", isEditing ? "bg-background border-input" : "bg-muted/30 border-input text-foreground cursor-not-allowed opacity-70")}>
+                        <SelectValue placeholder={`Select ${field.label}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {options.map((opt: string) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    {formData[field.key] === "Other" && (
+                      <div className="mt-2 animate-in fade-in slide-in-from-top-1">
+                        <input 
+                          type="text" 
+                          placeholder={isEditing ? `Enter custom ${field.label}...` : ""}
+                          className={cn("w-full p-2.5 rounded-md text-sm outline-none transition-all", isEditing ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70")}
+                          value={formData[field.key + "_other"] || ""}
+                          onChange={(e) => isEditing && handleInputChange(field.key + "_other", e.target.value)}
+                          readOnly={!isEditing}
+                        />
+                      </div>
+                    )}
+                  </>
+                );
+              }
+
+              // India Locations Cascading Logic
+              if (field.key === "permanent_state" || field.key === "current_state" || field.key === "contact.permanent_state" || field.key === "contact.current_state") {
+                const states = Object.keys(indiaLocations.states);
+                return (
+                  <>
+                  <Select 
+                    value={formData[field.key] || ""} 
+                    onValueChange={(val) => handleInputChange(field.key, val)}
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger className={cn("w-full transition-all", isEditing ? "bg-background border-input" : "bg-muted/30 border-input text-foreground cursor-not-allowed opacity-70")}>
+                      <SelectValue placeholder="Select State / Province..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {states.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
+                      <SelectItem value="Other (Please specify)">Other (Please specify)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formData[field.key] === "Other (Please specify)" && (
+                    <div className="mt-2 animate-in fade-in slide-in-from-top-1">
+                      <input 
+                        type="text" 
+                        placeholder={isEditing ? `ENTER YOUR STATE / PROVINCE` : ""}
+                        className={cn("w-full p-2.5 rounded-md text-sm outline-none transition-all", isEditing ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70")}
+                        value={formData[field.key + "_other"] || ""}
+                        onChange={(e) => isEditing && handleInputChange(field.key + "_other", e.target.value)}
+                        readOnly={!isEditing}
+                      />
+                    </div>
+                  )}
+                </>
+                );
+              }
+              if (field.key === "permanent_district" || field.key === "current_district" || field.key === "contact.permanent_district" || field.key === "contact.current_district") {
+                const stateKey = field.key.includes("permanent") ? (field.key.includes("contact.") ? "contact.permanent_state" : "permanent_state") : (field.key.includes("contact.") ? "contact.current_state" : "current_state");
+                const selectedState = formData[stateKey];
+                // @ts-ignore
+                const districts = selectedState ? Object.keys(indiaLocations.states[selectedState] || {}) : [];
+                return (
+                  <>
+                    <Select 
+                    value={formData[field.key] || ""} 
+                    onValueChange={(val) => handleInputChange(field.key, val)}
+                    disabled={!selectedState || !isEditing}
+                  >
+                    <SelectTrigger className={cn("w-full transition-all", isEditing ? "bg-background border-input" : "bg-muted/30 border-input text-foreground cursor-not-allowed opacity-70")}>
+                      <SelectValue placeholder="Select District / County..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                      <SelectItem value="Other (Please specify)">Other (Please specify)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formData[field.key] === "Other (Please specify)" && (
+                    <div className="mt-2 animate-in fade-in slide-in-from-top-1">
+                      <input 
+                        type="text" 
+                        placeholder={isEditing ? `ENTER YOUR DISTRICT / COUNTY` : ""}
+                        className={cn("w-full p-2.5 rounded-md text-sm outline-none transition-all", isEditing ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70")}
+                        value={formData[field.key + "_other"] || ""}
+                        onChange={(e) => isEditing && handleInputChange(field.key + "_other", e.target.value)}
+                        readOnly={!isEditing}
+                      />
+                    </div>
+                  )}
+                </>
+                );
+              }
+
+              if (field.type === "dropdown") {
+                return (
+                  <>
+                    <Select 
+                      value={formData[field.key] || ""} 
+                      onValueChange={(val) => handleInputChange(field.key, val)}
+                      disabled={!isEditing}
+                    >
+                      <SelectTrigger className={cn("w-full transition-all", isEditing ? "bg-background border-input" : "bg-muted/30 border-input text-foreground cursor-not-allowed opacity-70")}>
+                        <SelectValue placeholder={`Select ${field.label}...`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {field.options?.map((opt: string) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                        <SelectItem value="Other">Other (Please specify)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {formData[field.key] === "Other" && (
+                      <div className="mt-2 animate-in fade-in slide-in-from-top-1">
+                        <input 
+                          type="text" 
+                          placeholder={isEditing ? `Enter ${field.label.toUpperCase()}` : ""}
+                          className={cn("w-full p-2.5 rounded-md text-sm outline-none transition-all", isEditing ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70")}
+                          value={formData[field.key + "_other"] || ""}
+                          onChange={(e) => isEditing && handleInputChange(field.key + "_other", e.target.value)}
+                          readOnly={!isEditing}
+                        />
+                      </div>
+                    )}
+                  </>
+                );
+              }
+                
+              if (field.type === "date") {
+                return (
+                  <DateField 
+                    field={field} 
+                    value={formData[field.key] || ""} 
+                    onChange={(val) => handleInputChange(field.key, val)}
+                    disabled={!isEditing}
+                  />
+                );
+              }
+                
+              if (field.type === "boolean") {
+                return (
+                  <div className={cn("flex items-center gap-4 mt-2 transition-all", !isEditing && "opacity-70 cursor-not-allowed pointer-events-none")}>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="radio" name={field.key} value="yes" className="accent-primary w-4 h-4" disabled={!isEditing} /> Yes
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="radio" name={field.key} value="no" className="accent-primary w-4 h-4" defaultChecked disabled={!isEditing} /> No
+                    </label>
+                  </div>
+                );
+              }
+                
+              if (field.type === "file_list" || field.type === "image") {
+                let existingUrl = formData[field.key] || "";
+                if (!existingUrl && (field.key === "profilePicture" || field.key === "profile_photo")) {
+                    existingUrl = formData.profile_photo || formData.profilePicture || formData.photoURL || "";
+                }
+                
+                return (
+                  <FileUploadField 
+                    field={field}
+                    value={existingUrl}
+                    onChange={(val) => handleInputChange(field.key, val)}
+                    disabled={!isEditing}
+                  />
+                );
+              }
+                
+              return (
+                <input 
+                  type={field.type === "number" ? "number" : "text"}
+                  placeholder={isEditing && !field.key.includes('same_as_permanent') ? `Enter ${field.label}...` : ""}
+                  className={cn(
+                    "w-full p-2.5 rounded-md text-sm outline-none transition-all",
+                    isEditing 
+                      ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" 
+                      : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70"
+                  )}
+                  value={formData[field.key] || ""}
+                  onChange={(e) => isEditing && handleInputChange(field.key, e.target.value)}
+                  readOnly={!isEditing}
+                />
+              );
+            };
+
+            const renderFieldWrapper = (field: any) => {
+              const input = renderFieldInput(field);
+              if (!input) return null;
+              return (
+                <div key={field.key} className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    {field.label} {field.required && <span className="text-destructive">*</span>}
+                  </label>
+                  {input}
+                </div>
+              );
+            };
+
+            if (section.key === "contact_details") {
+               return (
+                  <div className="space-y-6">
+                     <div className="bg-muted/10 border border-border p-5 rounded-lg space-y-4">
+                        <h3 className="font-semibold text-[15px]">Primary Contact</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           {section.fields.filter((f: any) => ["contact.personal_email", "contact.alternate_email", "contact.mobile_number", "contact.whatsapp_number", "contact.whatsapp_same_as_mobile"].includes(f.key)).map(renderFieldWrapper)}
+                        </div>
+                     </div>
+                     <div className="bg-muted/10 border border-border p-5 rounded-lg space-y-4">
+                        <h3 className="font-semibold text-[15px]">Permanent Address</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           {section.fields.filter((f: any) => f.key.includes("permanent")).map(renderFieldWrapper)}
+                        </div>
+                     </div>
+                     <div className="bg-muted/10 border border-border p-5 rounded-lg space-y-4">
+                        <h3 className="font-semibold text-[15px]">Current Address</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           {section.fields.filter((f: any) => f.key.includes("current")).map(renderFieldWrapper)}
+                        </div>
+                     </div>
+                     <div className="bg-muted/10 border border-border p-5 rounded-lg space-y-4">
+                        <h3 className="font-semibold text-[15px]">Emergency Contact</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           {section.fields.filter((f: any) => f.key.includes("emergency_contact") || f.key.includes("use_parent")).map(renderFieldWrapper)}
+                        </div>
+                     </div>
+                     {targetRole !== "student" && (
+                       <div className="bg-muted/10 border border-border p-5 rounded-lg space-y-4">
+                          <h3 className="font-semibold text-[15px]">Official Contact</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             {section.fields.filter((f: any) => ["contact.work_email", "contact.official_phone", "contact.office_extension"].includes(f.key)).map(renderFieldWrapper)}
+                          </div>
+                       </div>
+                     )}
+                  </div>
+               );
+            }
+
+            if (section.key === "personal_details") {
+               return (
+                  <div className="space-y-6">
+                     <div className="bg-muted/10 border border-border p-5 rounded-lg space-y-4">
+                        <h3 className="font-semibold text-[15px]">Basic Identity</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           {section.fields.filter((f: any) => ["identity.profile_photo_url", "identity.first_name", "identity.middle_name", "identity.last_name", "identity.date_of_birth", "identity.gender", "identity.gender_other"].includes(f.key)).map(renderFieldWrapper)}
+                        </div>
+                     </div>
+                     <div className="bg-muted/10 border border-border p-5 rounded-lg space-y-4">
+                        <h3 className="font-semibold text-[15px]">Additional Personal Details</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           {section.fields.filter((f: any) => !["identity.profile_photo_url", "identity.first_name", "identity.middle_name", "identity.last_name", "identity.date_of_birth", "identity.gender", "identity.gender_other"].includes(f.key)).map(renderFieldWrapper)}
+                        </div>
+                     </div>
+                  </div>
+               );
+            }
+
+            if (section.key === "family_details") {
+               return (
+                  <div className="space-y-6">
+                     <div className="bg-muted/10 border border-border p-5 rounded-lg space-y-4">
+                        <h3 className="font-semibold text-[15px]">Father's Details</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           {section.fields.filter((f: any) => f.key.includes("father_")).map(renderFieldWrapper)}
+                        </div>
+                     </div>
+                     <div className="bg-muted/10 border border-border p-5 rounded-lg space-y-4">
+                        <h3 className="font-semibold text-[15px]">Mother's Details</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           {section.fields.filter((f: any) => f.key.includes("mother_")).map(renderFieldWrapper)}
+                        </div>
+                     </div>
+                     <div className="bg-muted/10 border border-border p-5 rounded-lg space-y-4">
+                        <h3 className="font-semibold text-[15px]">Local Guardian</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           {section.fields.filter((f: any) => f.key.includes("local_guardian")).map((field: any) => {
+                              if (field.key !== "family.has_local_guardian" && formData["family.has_local_guardian"] !== "Yes") return null;
+                              return renderFieldWrapper(field);
+                           })}
+                        </div>
+                     </div>
+                  </div>
+               );
+            }
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {section.fields.map(renderFieldWrapper)}
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </div>
       </div>
     );

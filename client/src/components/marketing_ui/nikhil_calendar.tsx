@@ -72,14 +72,14 @@ function NikhilCalendar({
           defaultClassNames.caption_label
         ),
         table: "w-full border-collapse space-y-1",
-        head_row: "flex",
-        head_cell: "text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]",
-        weekdays: cn("flex", defaultClassNames.weekdays),
+        head_row: "",
+        head_cell: "text-muted-foreground w-8 font-normal text-[0.8rem]",
+        weekdays: cn("", defaultClassNames.weekdays),
         weekday: cn(
           "text-muted-foreground w-8 font-normal text-[0.8rem] text-center select-none",
           defaultClassNames.weekday
         ),
-        week: cn("mt-2 flex w-full", defaultClassNames.week),
+        week: cn("mt-2", defaultClassNames.week),
         day: cn(
           "group/day relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected].day-range-end)]:rounded-r-md",
           props.mode === "range"

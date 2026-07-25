@@ -1,20 +1,94 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, Mail, Smartphone, Key, User,
-  Upload, School, GraduationCap, Building2, Briefcase, PlaySquare
+  Upload, School, GraduationCap, Building2, Briefcase, PlaySquare, Eye, EyeOff, Moon, Sun
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { getResolvedProfileStrategy } from "@/features/shared/lib/profile-strategy-selector";
 import Confetti from "react-confetti";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/marketing_ui/input-otp";
+import { Calendar } from "@/components/marketing_ui/nikhil_calendar";
+import { ImageCropperModal } from "@/components/marketing_ui/ImageCropperModal";
+import { Popover } from "@base-ui/react/popover";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function OnboardingWizardPage() {
+  const { theme, setTheme } = useTheme();
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+
+  // Central form state: sectionKey -> { fieldKey: value }
+  const [formData, setFormData] = useState<Record<string, Record<string, any>>>({});
+
+  // Password UI State (Ported from ResetPasswordPage)
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+
+  const passwordRules = useMemo(() => {
+    return {
+      minLength: password.length >= 8,
+      maxLength: password.length > 0 && password.length <= 64,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[@#$%^&*!?_.\-]/.test(password),
+    };
+  }, [password]);
+
+  const passedRules = Object.values(passwordRules).filter(Boolean).length;
+
+  const strength = useMemo(() => {
+    if (!password) return "empty";
+    if (passedRules <= 3) return "weak";
+    if (passedRules <= 5) return "medium";
+    return "strong";
+  }, [password, passedRules]);
+
+  const isStrongPassword =
+    passwordRules.minLength &&
+    passwordRules.maxLength &&
+    passwordRules.uppercase &&
+    passwordRules.lowercase &&
+    passwordRules.number &&
+    passwordRules.special;
+
+  const isConfirmTouched = confirmPassword.length > 0;
+  const isPasswordMatch = password === confirmPassword && isConfirmTouched;
+
+  const strengthStyles = {
+    empty: { border: "border-input", glow: "", text: "text-muted-foreground", bar: "bg-muted-foreground/20 w-0" },
+    weak: { border: "border-red-500/70", glow: "shadow-[0_0_12px_rgba(239,68,68,0.15)]", text: "text-red-500", bar: "bg-red-500 w-1/3" },
+    medium: { border: "border-orange-500/70", glow: "shadow-[0_0_12px_rgba(249,115,22,0.15)]", text: "text-orange-500", bar: "bg-orange-500 w-2/3" },
+    strong: { border: "border-emerald-500/80", glow: "shadow-[0_0_12px_rgba(16,185,129,0.2)]", text: "text-emerald-500", bar: "bg-emerald-500 w-full" },
+  };
+
+  const current = strengthStyles[strength as keyof typeof strengthStyles];
+  
+  const confirmBorder = !isConfirmTouched
+    ? "border-input"
+    : isPasswordMatch
+    ? "border-emerald-500/80 shadow-[0_0_12px_rgba(16,185,129,0.15)]"
+    : "border-red-500/70 shadow-[0_0_12px_rgba(239,68,68,0.15)]";
+
+  const handleFieldChange = (sectionKey: string, fieldKey: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [sectionKey]: {
+        ...(prev[sectionKey] || {}),
+        [fieldKey]: value,
+      }
+    }));
+  };
 
   // -- DEBUG / DEV MODE STATE --
   const [debugRole, setDebugRole] = useState("student");
@@ -39,6 +113,13 @@ export function OnboardingWizardPage() {
       subtitle: "Secure your account with dual verification.",
       icon: ShieldCheck,
       type: "fixed_verification"
+    },
+    {
+      id: "profile_photo",
+      title: "Profile Photo",
+      subtitle: "Official passport-size portrait.",
+      icon: User,
+      type: "fixed_profile_photo"
     },
     ...dynamicSections.map((section: any) => ({
       id: section.key,
@@ -65,6 +146,7 @@ export function OnboardingWizardPage() {
       setCurrentStep(prev => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
+      console.log("FINAL SUBMITTED PROFILE DATA:", formData);
       setIsCompleted(true);
       setShowConfetti(true);
     }
@@ -79,12 +161,12 @@ export function OnboardingWizardPage() {
 
   if (isCompleted) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#0B0C10] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-50 dark:bg-background flex items-center justify-center p-4">
         {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} />}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="max-w-md w-full bg-white dark:bg-[#1A1C23] p-10 rounded-3xl shadow-2xl border border-border/50 text-center"
+          className="max-w-md w-full bg-white dark:bg-card p-10 rounded-3xl shadow-2xl border border-border/50 text-center"
         >
           <div className="mx-auto w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
             <CheckCircle2 className="size-12 text-green-500" />
@@ -102,20 +184,7 @@ export function OnboardingWizardPage() {
   }
 
   return (
-    <div className="h-screen bg-slate-50 dark:bg-[#0B0C10] flex flex-col font-sans overflow-hidden">
-
-      {/* ── TOP DEBUG PANEL (Development Only) ── */}
-      <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-3 flex flex-wrap items-center justify-center gap-6 text-sm z-50 shrink-0">
-        <span className="font-semibold text-yellow-600 dark:text-yellow-500 flex items-center gap-2">
-          <PlaySquare className="size-4" /> LOCAL DEBUG MODE
-        </span>
-        <div className="flex items-center gap-2">
-          <label className="text-muted-foreground font-medium">Test Role:</label>
-          <select
-            value={debugRole}
-            onChange={e => { setDebugRole(e.target.value); setCurrentStep(0); }}
-            className="bg-background border rounded px-3 py-1.5 font-medium"
-          >
+    <div className="h-screen bg-slate-50 dark:bg-background flex flex-col font-sans overflow-hidden">
             <option value="student">Student</option>
             <option value="faculty">Faculty</option>
             <option value="org_admin">Org Admin</option>
@@ -135,13 +204,22 @@ export function OnboardingWizardPage() {
             <option value="coaching">Coaching Center</option>
           </select>
         </div>
+        </div>
+        
+        <button 
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-background hover:bg-secondary transition-colors shrink-0"
+        >
+          {theme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
+          <span className="font-semibold">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+        </button>
       </div>
 
       {/* FULL SCREEN LAYOUT */}
       <div className="flex-1 flex overflow-hidden">
 
         {/* LEFT SIDEBAR (Fixed Width) */}
-        <div className="hidden lg:flex w-[260px] bg-white dark:bg-[#1A1C23] border-r border-border/50 flex-col p-6 z-10 shadow-xl overflow-y-auto">
+        <div className="hidden lg:flex w-[260px] bg-white dark:bg-card border-r border-border/50 flex-col p-6 z-10 shadow-xl overflow-y-auto">
           <div className="flex items-center gap-3 mb-8 shrink-0">
             {/* Mock College Logo */}
             <div className="size-10 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-md">
@@ -173,7 +251,11 @@ export function OnboardingWizardPage() {
                 const isActive = idx === currentStep;
                 const isPast = idx < currentStep;
                 return (
-                  <div key={step.id} className="flex items-center gap-4 py-3 cursor-pointer" onClick={() => idx < currentStep && setCurrentStep(idx)}>
+                  <div 
+                    key={step.id} 
+                    className={`flex items-center gap-4 py-3 ${isPast ? "cursor-pointer hover:opacity-80 transition-opacity" : isActive ? "cursor-default" : "cursor-default opacity-60"}`} 
+                    onClick={() => isPast && setCurrentStep(idx)}
+                  >
                     <div className={`size-10 rounded-full flex items-center justify-center shrink-0 border-2 transition-all duration-300 ${isActive ? "bg-primary border-primary text-primary-foreground shadow-md shadow-primary/30 scale-105" :
                         isPast ? "bg-primary border-primary text-primary-foreground" :
                           "bg-background border-muted text-muted-foreground"
@@ -200,7 +282,7 @@ export function OnboardingWizardPage() {
         </div>
 
         {/* RIGHT CONTENT AREA */}
-        <div className="flex-1 flex flex-col relative bg-slate-50/50 dark:bg-[#0B0C10] overflow-hidden">
+        <div className="flex-1 flex flex-col relative bg-slate-50/50 dark:bg-background overflow-hidden">
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto relative">
@@ -230,7 +312,7 @@ export function OnboardingWizardPage() {
                   {currentStepData.type === "fixed_verification" && (
                     <div className="space-y-6">
                       {/* Block 1: Email Verification */}
-                      <div className="bg-white dark:bg-[#1A1C23] p-6 rounded-2xl shadow-sm border border-border/60">
+                      <div className="bg-white dark:bg-card p-6 rounded-2xl shadow-sm border border-border/60">
                         <div className="flex items-center gap-3 mb-4">
                           <div className="size-10 bg-blue-500/10 text-blue-600 rounded-xl flex items-center justify-center">
                             <Mail className="size-5" />
@@ -256,7 +338,7 @@ export function OnboardingWizardPage() {
                       </div>
 
                       {/* Block 2: Phone Verification */}
-                      <div className="bg-white dark:bg-[#1A1C23] p-6 rounded-2xl shadow-sm border border-border/60">
+                      <div className="bg-white dark:bg-card p-6 rounded-2xl shadow-sm border border-border/60">
                         <div className="flex items-center gap-3 mb-2">
                           <div className="size-10 bg-indigo-500/10 text-indigo-600 rounded-xl flex items-center justify-center">
                             <Smartphone className="size-5" />
@@ -287,7 +369,7 @@ export function OnboardingWizardPage() {
                       </div>
 
                       {/* Block 3: Password Setup */}
-                      <div className="bg-white dark:bg-[#1A1C23] p-6 rounded-2xl shadow-sm border border-border/60">
+                      <div className="bg-white dark:bg-card p-6 rounded-2xl shadow-sm border border-border/60">
                         <div className="flex items-center gap-3 mb-4">
                           <div className="size-10 bg-green-500/10 text-green-600 rounded-xl flex items-center justify-center">
                             <Key className="size-5" />
@@ -295,13 +377,85 @@ export function OnboardingWizardPage() {
                           <h3 className="text-lg font-bold">3. Secure your Account</h3>
                         </div>
                         <div className="grid md:grid-cols-2 gap-6">
-                          <div>
+                          <div className="relative">
                             <label className="text-xs font-semibold text-foreground mb-1.5 block">New Password</label>
-                            <Input type="password" placeholder="••••••••" className="h-10 text-sm" />
+                            <div className="relative">
+                              <input
+                                type={showPassword ? "text" : "password"}
+                                value={password}
+                                maxLength={64}
+                                onChange={(e) => setPassword(e.target.value)}
+                                onFocus={() => setIsPasswordFocused(true)}
+                                onBlur={() => setIsPasswordFocused(false)}
+                                placeholder="Enter new password"
+                                className={`h-10 w-full rounded-lg border bg-background px-3 pr-10 text-sm text-foreground outline-none transition-all duration-300 placeholder:text-muted-foreground ${current.border} ${current.glow}`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
+                              >
+                                {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                              </button>
+                            </div>
+
+                            {/* Floating Rules Popover */}
+                            {isPasswordFocused && password.length >= 2 && (
+                              <div className="absolute left-[calc(100%+12px)] top-8 z-50 w-[240px] rounded-xl border border-border bg-popover p-3 shadow-lg hidden md:block animate-in fade-in zoom-in-95">
+                                <div className="absolute -left-1.5 top-3 h-3 w-3 rotate-45 border-b border-l border-border bg-popover" />
+                                <p className="text-[12px] font-semibold text-foreground">Password must contain:</p>
+                                <ul className="mt-2 flex flex-col gap-1 text-[11px] text-muted-foreground">
+                                  <li className="flex items-center gap-2">
+                                    <div className={`h-1.5 w-1.5 rounded-full ${passwordRules.minLength ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                                    Between 8 and 64 characters
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <div className={`h-1.5 w-1.5 rounded-full ${passwordRules.uppercase && passwordRules.lowercase ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                                    Uppercase & lowercase letters
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <div className={`h-1.5 w-1.5 rounded-full ${passwordRules.number ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                                    At least 1 number
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <div className={`h-1.5 w-1.5 rounded-full ${passwordRules.special ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                                    At least 1 special character
+                                  </li>
+                                </ul>
+                              </div>
+                            )}
+
+                            {password && (
+                              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                                <div className={`h-full rounded-full transition-all duration-300 ${current.bar}`} />
+                              </div>
+                            )}
                           </div>
+                          
                           <div>
                             <label className="text-xs font-semibold text-foreground mb-1.5 block">Confirm Password</label>
-                            <Input type="password" placeholder="••••••••" className="h-10 text-sm" />
+                            <div className="relative">
+                              <input
+                                type={showConfirmPassword ? "text" : "password"}
+                                value={confirmPassword}
+                                maxLength={64}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                placeholder="Re-enter password"
+                                className={`h-10 w-full rounded-lg border bg-background px-3 pr-10 text-sm text-foreground outline-none transition-all duration-300 placeholder:text-muted-foreground ${confirmBorder}`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
+                              >
+                                {showConfirmPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                              </button>
+                            </div>
+                            {isConfirmTouched && (
+                              <p className={`mt-1.5 text-xs font-medium ${isPasswordMatch ? "text-emerald-500" : "text-red-500"}`}>
+                                {isPasswordMatch ? "Passwords match" : "Passwords do not match"}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -310,11 +464,38 @@ export function OnboardingWizardPage() {
 
 
 
+                  {/* ── RENDER PHASE 2.5: PROFILE PHOTO (FIXED SECOND STEP) ── */}
+                  {currentStepData.type === "fixed_profile_photo" && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="bg-white dark:bg-card p-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-border/60 text-center flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                        
+                        {/* Decorative Background Pattern */}
+                        <div className="absolute inset-0 pointer-events-none opacity-20 dark:opacity-10" style={{ backgroundImage: "radial-gradient(circle at center, #10b981 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+
+                        <div className="relative z-10 flex flex-col items-center w-full max-w-md">
+                          <h2 className="text-2xl font-bold mb-3">Add Your Identity</h2>
+                          <p className="text-muted-foreground mb-10 text-sm leading-relaxed">
+                            Upload a high-quality, passport-sized photo for your official ID card. A clear front-facing picture ensures a perfect fit.
+                          </p>
+                          
+                          <div className="w-full flex justify-center mb-2">
+                            <ImageUploadField 
+                              label="Upload Photo" 
+                              value={formData["profile_photo"]?.["image"]}
+                              onChange={(base64) => handleFieldChange("profile_photo", "image", base64)}
+                              circular={true}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* ── RENDER PHASE 3: DYNAMIC GROUPS (ONE SECTION PER SCREEN) ── */}
                   {currentStepData.type === "dynamic_group" && (
                     <div className="space-y-6">
                       {currentStepData.dynamicSections?.map((section: any, idx: number) => (
-                        <div key={idx} className="bg-white dark:bg-[#1A1C23] p-6 rounded-2xl shadow-sm border border-border/60">
+                        <div key={idx} className="bg-white dark:bg-card p-6 rounded-2xl shadow-sm border border-border/60">
                           <div className="flex items-center gap-3 mb-6 border-b border-border/50 pb-3">
                             <div className="size-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center">
                               {React.createElement(getIconComponent(section.icon), { className: "size-4" })}
@@ -334,31 +515,53 @@ export function OnboardingWizardPage() {
                                   )}
 
                                   {field.type === 'dropdown' ? (
-                                    <ResponsiveSelect className="h-10 w-full rounded-lg border-input bg-background px-3 text-sm">
+                                    <ResponsiveSelect 
+                                      className="h-10 w-full rounded-lg border-input bg-background px-3 text-sm"
+                                      value={formData[section.key]?.[field.key] || ""}
+                                      onChange={(e) => handleFieldChange(section.key, field.key, e.target.value)}
+                                    >
                                       <option value="">Select...</option>
                                       {Array.isArray(field.options) ? field.options.map((opt: string) => (
                                         <option key={opt} value={opt}>{opt}</option>
                                       )) : null}
                                     </ResponsiveSelect>
                                   ) : field.type === 'date' ? (
-                                    <Input type="date" className="h-10 rounded-lg px-3 text-sm" />
+                                    <DatePickerField 
+                                      value={formData[section.key]?.[field.key]} 
+                                      onChange={(date) => handleFieldChange(section.key, field.key, date)}
+                                    />
                                   ) : field.type === 'number' ? (
-                                    <Input type="number" className="h-10 rounded-lg px-3 text-sm" placeholder="0" />
+                                    <Input 
+                                      type="number" 
+                                      className="h-10 rounded-lg px-3 text-sm" 
+                                      placeholder="0" 
+                                      value={formData[section.key]?.[field.key] || ""}
+                                      onChange={(e) => handleFieldChange(section.key, field.key, e.target.value)}
+                                    />
                                   ) : field.type === 'boolean' ? (
                                     <div className="flex items-center gap-2 h-10">
-                                      <input type="checkbox" className="size-4 rounded border-input" />
+                                      <input 
+                                        type="checkbox" 
+                                        className="size-4 rounded border-input" 
+                                        checked={!!formData[section.key]?.[field.key]}
+                                        onChange={(e) => handleFieldChange(section.key, field.key, e.target.checked)}
+                                      />
                                       <span className="text-sm font-medium">{field.label}</span>
                                     </div>
                                   ) : field.type === 'image' ? (
-                                    <div className="border-2 border-dashed border-border rounded-xl p-4 flex flex-col items-center justify-center bg-secondary/20 hover:bg-secondary/40 transition-colors cursor-pointer text-center w-full max-w-sm">
-                                      <div className="size-12 bg-background rounded-full shadow-sm flex items-center justify-center mb-3">
-                                        <Upload className="size-5 text-muted-foreground" />
-                                      </div>
-                                      <h4 className="font-semibold text-sm">Upload {field.label}</h4>
-                                      <p className="text-[10px] text-muted-foreground mt-1">JPEG, PNG up to 2MB</p>
-                                    </div>
+                                    <ImageUploadField 
+                                      label={field.label} 
+                                      value={formData[section.key]?.[field.key]}
+                                      onChange={(base64) => handleFieldChange(section.key, field.key, base64)}
+                                    />
                                   ) : (
-                                    <Input type="text" className="h-10 rounded-lg px-3 text-sm" placeholder={`Enter ${field.label.toLowerCase()}`} />
+                                    <Input 
+                                      type="text" 
+                                      className="h-10 rounded-lg px-3 text-sm" 
+                                      placeholder={`Enter ${field.label.toLowerCase()}`} 
+                                      value={formData[section.key]?.[field.key] || ""}
+                                      onChange={(e) => handleFieldChange(section.key, field.key, e.target.value)}
+                                    />
                                   )}
                                 </div>
                               );
@@ -371,7 +574,7 @@ export function OnboardingWizardPage() {
 
                   {/* ── RENDER PHASE 4: REVIEW PAGE ── */}
                   {currentStepData.type === "review" && (
-                    <div className="bg-white dark:bg-[#1A1C23] p-8 rounded-2xl shadow-sm border border-border/60 text-center">
+                    <div className="bg-white dark:bg-card p-8 rounded-2xl shadow-sm border border-border/60 text-center">
                       <div className="mx-auto size-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
                         <CheckCircle2 className="size-8" />
                       </div>
@@ -387,7 +590,7 @@ export function OnboardingWizardPage() {
             </div>
 
             {/* FIXED ACTION BAR (Footer) */}
-            <div className="bg-white dark:bg-[#1A1C23] border-t border-border/50 p-4 px-6 md:px-10 flex items-center justify-between shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] z-20">
+            <div className="bg-white dark:bg-card border-t border-border/50 p-4 px-6 md:px-10 flex items-center justify-between shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] z-20">
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
@@ -403,10 +606,6 @@ export function OnboardingWizardPage() {
                     Save as Draft
                   </Button>
                 )}
-              </div>
-
-              <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-muted-foreground tracking-wider uppercase">
-                Step {currentStep + 1} of {totalSteps} — {currentStepData.title}
               </div>
 
               <Button
@@ -438,4 +637,138 @@ function getIconComponent(iconName: string) {
     ShieldCheck: ShieldCheck
   };
   return map[iconName] || CheckCircle2;
+}
+
+function DatePickerField({ value, onChange }: { value?: Date; onChange?: (date?: Date) => void }) {
+  const [internalDate, setInternalDate] = React.useState<Date | undefined>(value);
+  
+  // Sync if value changes externally
+  React.useEffect(() => {
+    setInternalDate(value);
+  }, [value]);
+
+  const handleSelect = (d: Date | undefined) => {
+    setInternalDate(d);
+    onChange?.(d);
+  };
+
+  return (
+    <Popover.Root>
+      <Popover.Trigger
+        render={
+          <button
+            type="button"
+            className={cn(
+              "h-10 w-full flex items-center justify-start text-left font-normal rounded-lg border border-input bg-background px-3 text-sm hover:bg-muted/50",
+              !internalDate && "text-muted-foreground"
+            )}
+          />
+        }
+      >
+        <CalendarIcon className="mr-2 h-4 w-4" />
+        {internalDate ? format(internalDate, "PPP") : <span>Pick a date</span>}
+      </Popover.Trigger>
+      
+      <Popover.Portal>
+        <Popover.Positioner alignment="start" sideOffset={4}>
+          <Popover.Popup 
+            className="z-[1050] w-auto p-0 rounded-lg bg-popover shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
+          >
+            <Calendar
+              mode="single"
+              selected={internalDate}
+              onSelect={handleSelect}
+              initialFocus
+            />
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+function ImageUploadField({ label, value, onChange, circular = false }: { label: string; value?: string; onChange?: (base64: string) => void; circular?: boolean }) {
+  const [isCropOpen, setIsCropOpen] = React.useState(false);
+  const [imageSrc, setImageSrc] = React.useState("");
+  const [croppedImage, setCroppedImage] = React.useState<string | null>(value || null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Sync external value
+  React.useEffect(() => {
+    if (value) setCroppedImage(value);
+  }, [value]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        setImageSrc(reader.result?.toString() || "");
+        setIsCropOpen(true);
+      });
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+
+  const handleCropComplete = async (blob: Blob) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = () => {
+      const base64data = reader.result as string;
+      setCroppedImage(base64data);
+      onChange?.(base64data);
+    };
+  };
+
+  return (
+    <div className="w-full flex justify-center">
+      <input 
+        type="file" 
+        accept="image/*" 
+        className="hidden" 
+        ref={fileInputRef} 
+        onChange={handleFileChange} 
+      />
+      
+      {!croppedImage ? (
+        <div 
+          onClick={() => fileInputRef.current?.click()}
+          className={cn(
+            "border-2 border-dashed border-border p-4 flex flex-col items-center justify-center bg-secondary/20 hover:bg-secondary/40 transition-colors cursor-pointer text-center group",
+            circular ? "size-48 md:size-56 rounded-full" : "w-full max-w-sm rounded-xl h-32"
+          )}
+        >
+          <div className="size-10 bg-background rounded-full shadow-sm flex items-center justify-center mb-2">
+            <Upload className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </div>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
+        </div>
+      ) : (
+        <div className={cn(
+          "relative overflow-hidden shadow-lg border-2 border-border group",
+          circular ? "size-48 md:size-56 rounded-full" : "w-32 h-32 rounded-xl"
+        )}>
+          <img src={croppedImage} alt="Cropped preview" className="w-full h-full object-cover" />
+          <div 
+            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity backdrop-blur-[2px]"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <span className="text-white text-xs font-semibold tracking-wider uppercase">Change</span>
+          </div>
+        </div>
+      )}
+
+      <ImageCropperModal
+        isOpen={isCropOpen}
+        onClose={() => {
+          setIsCropOpen(false);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }}
+        imageSrc={imageSrc}
+        onCropComplete={handleCropComplete}
+        circularCrop={true}
+        aspectRatio={1}
+        title={`Crop ${label}`}
+      />
+    </div>
+  );
 }

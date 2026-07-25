@@ -2519,67 +2519,81 @@ const erpBaseTemplate = ({ content, title = "Notification", orgName = "Instituti
 };
 
 export const getErpRoleInvitationHtml = (recipientName, roleTitle, orgName, setupLink, expiryDate) => {
-  const content = `
-    <h2>Official Notice: Role Assignment at ${orgName}</h2>
-    <p>Dear ${recipientName},</p>
-    <p>You have been officially assigned the role of <strong>${roleTitle}</strong> at <strong>${orgName}</strong>.</p>
-    <p>To activate your account and access the institution's ERP portal, please click the button below and complete your portal setup.</p>
-    <p><a href="${setupLink}" class="btn">Set Up Portal Access</a></p>
-    <p class="text-muted">This invitation link will expire on ${expiryDate}.</p>
-    <p>For security reasons, do not share this email or activation link with anyone.</p>
-    <p class="text-muted">If the button does not work, copy and paste the following link into your browser:<br>${setupLink}</p>
-  `;
-  return erpBaseTemplate({ content, title: "Role Assignment", orgName });
+  return `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+  <h2>Official Notice: Role Assignment at ${orgName}</h2>
+  <p>Dear ${recipientName},</p>
+  <p>You have been officially assigned the role of <strong>${roleTitle}</strong> at <strong>${orgName}</strong>.</p>
+  <p>To activate your account and access the institution’s ERP portal, please click the button below and complete your portal setup.</p>
+  <p><a href="${setupLink}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px;">Set Up Portal Access</a></p>
+  <p>This invitation link will expire on ${expiryDate}.</p>
+  <p>For security reasons, please do not share this email or activation link with anyone.</p>
+  <p>If the button does not work, copy and paste the following link into your browser:</p>
+  <p><a href="${setupLink}">${setupLink}</a></p>
+  <p>For assistance, please contact IT Administrator/Support.</p>
+  <br/>
+  <p>Regards,<br/>${orgName}<br/>ERP Administration Team</p>
+  <p style="font-size: 12px; color: #777;">This is an automated email. Please do not reply.</p>
+</div>`;
 };
 
 export const getErpRoleRequestAdminHtml = (adminName, requesterName, requesterEmail, requestedRole, orgName, requestDate, reviewLink) => {
-  const content = `
-    <h2>Access Request Pending Approval</h2>
-    <p>Dear ${adminName},</p>
-    <p>A new role-access request has been submitted for <strong>${orgName}</strong>.</p>
-    <ul>
-      <li><strong>Requester Name:</strong> ${requesterName}</li>
-      <li><strong>Requester Email:</strong> ${requesterEmail}</li>
-      <li><strong>Requested Role:</strong> ${requestedRole}</li>
-      <li><strong>Request Date:</strong> ${requestDate}</li>
-    </ul>
-    <p>Please review the request and approve or deny it through the ERP portal.</p>
-    <p><a href="${reviewLink}" class="btn">Review Request in ERP</a></p>
-    <p class="text-muted">For security and accountability, please verify the requester's identity and role requirements before approving access.</p>
-    <p class="text-muted">If the button does not work, copy and paste the following link into your browser:<br>${reviewLink}</p>
-  `;
-  return erpBaseTemplate({ content, title: "Access Request", orgName });
+  return `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+  <h2>Access Request Pending Approval — ${orgName}</h2>
+  <p>Dear ${adminName},</p>
+  <p>A new role-access request has been submitted for <strong>${orgName}</strong>.</p>
+  <ul>
+    <li><strong>Requester Name:</strong> ${requesterName}</li>
+    <li><strong>Requester Email:</strong> ${requesterEmail}</li>
+    <li><strong>Requested Role:</strong> ${requestedRole}</li>
+    <li><strong>Request Date:</strong> ${requestDate}</li>
+  </ul>
+  <p>Please review the request and approve or deny it through the ERP portal.</p>
+  <p><a href="${reviewLink}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px;">Review Request in ERP</a></p>
+  <p>For security and accountability, please verify the requester’s identity and role requirements before approving access.</p>
+  <p>If the button does not work, copy and paste the following link into your browser:</p>
+  <p><a href="${reviewLink}">${reviewLink}</a></p>
+  <br/>
+  <p>Regards,<br/>${orgName}<br/>ERP Security Team</p>
+  <p style="font-size: 12px; color: #777;">This is an automated administrative notification. Please do not reply.</p>
+</div>`;
 };
 
 export const getErpRoleApprovedHtml = (recipientName, roleTitle, orgName, dashboardLink) => {
-  const content = `
-    <h2>Access Request Approved</h2>
-    <p>Dear ${recipientName},</p>
-    <p>Your request for the <strong>${roleTitle}</strong> role at <strong>${orgName}</strong> has been officially approved by the administration.</p>
-    <p>Your assigned role is now active, and your dashboard is ready for access.</p>
-    <p><a href="${dashboardLink}" class="btn">Access Your Dashboard</a></p>
-    <p class="text-muted">Please use your registered email address to sign in. Do not share your account credentials or portal access with anyone.</p>
-    <p class="text-muted">If the button does not work, copy and paste the following link into your browser:<br>${dashboardLink}</p>
-  `;
-  return erpBaseTemplate({ content, title: "Access Approved", orgName });
+  return `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+  <h2>Access Request Approved — ${orgName}</h2>
+  <p>Dear ${recipientName},</p>
+  <p>Your request for the <strong>${roleTitle}</strong> role at <strong>${orgName}</strong> has been officially approved by the administration.</p>
+  <p>Your assigned role is now active, and your dashboard is ready for access.</p>
+  <p><a href="${dashboardLink}" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 5px;">Access Your Dashboard</a></p>
+  <p>Please use your registered email address to sign in. Do not share your account credentials or portal access with anyone.</p>
+  <p>If the button does not work, copy and paste the following link into your browser:</p>
+  <p><a href="${dashboardLink}">${dashboardLink}</a></p>
+  <p>For assistance, please contact IT Administrator/Support.</p>
+  <br/>
+  <p>Regards,<br/>${orgName}<br/>ERP Administration Team</p>
+  <p style="font-size: 12px; color: #777;">This is an automated email. Please do not reply.</p>
+</div>`;
 };
 
-export const getErpRoleInstantlyGrantedHtml = (recipientName, roleTitle, orgName, updateDate, dashboardLink) => {
-  const content = `
-    <h2>Security Notice: Administrative Privileges Updated</h2>
-    <p>Dear ${recipientName},</p>
-    <p>This is an automated security notice confirming that <strong>${roleTitle}</strong> administrative privileges have been successfully added to your profile for <strong>${orgName}</strong>.</p>
-    <ul>
-      <li><strong>Updated Role:</strong> ${roleTitle}</li>
-      <li><strong>Updated By:</strong> System / Self-Service</li>
-      <li><strong>Updated On:</strong> ${updateDate}</li>
-    </ul>
-    <p>You can review your updated administrative access through the ERP portal.</p>
-    <p><a href="${dashboardLink}" class="btn">Review Your Administrative Access</a></p>
-    <p class="text-muted">Administrative privileges may provide access to sensitive institutional information. Please use them only for authorized institutional activities and never share your account credentials.</p>
-    <p class="text-muted">If you did not request or expect this change, contact IT Administration immediately.</p>
-    <p class="text-muted">If the button does not work, copy and paste the following link into your browser:<br>${dashboardLink}</p>
-  `;
-  return erpBaseTemplate({ content, title: "Privileges Updated", orgName });
+export const getErpRoleInstantlyGrantedHtml = (recipientName, roleTitle, orgName, updatedBy, updateDate, dashboardLink) => {
+  return `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+  <h2>Security Notice: Administrative Privileges Updated</h2>
+  <p>Dear ${recipientName},</p>
+  <p>This is an automated security notice confirming that <strong>${roleTitle}</strong> administrative privileges have been successfully added to your profile for <strong>${orgName}</strong>.</p>
+  <ul>
+    <li><strong>Updated Role:</strong> ${roleTitle}</li>
+    <li><strong>Updated By:</strong> ${updatedBy}</li>
+    <li><strong>Updated On:</strong> ${updateDate}</li>
+  </ul>
+  <p>You can review your updated administrative access through the ERP portal.</p>
+  <p><a href="${dashboardLink}" style="display: inline-block; padding: 10px 20px; background-color: #ffc107; color: #000; text-decoration: none; border-radius: 5px;">Review Your Administrative Access</a></p>
+  <p>Administrative privileges may provide access to sensitive institutional information. Please use them only for authorized institutional activities and never share your account credentials.</p>
+  <p>If you did not request or expect this change, contact IT Administration immediately.</p>
+  <p>If the button does not work, copy and paste the following link into your browser:</p>
+  <p><a href="${dashboardLink}">${dashboardLink}</a></p>
+  <br/>
+  <p>Regards,<br/>${orgName}<br/>ERP Security Team</p>
+  <p style="font-size: 12px; color: #777;">This is an automated security notification. Please do not reply.</p>
+</div>`;
 };
 
