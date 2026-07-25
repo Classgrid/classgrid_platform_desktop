@@ -337,6 +337,7 @@ const StorageColumn = ({
                         autoFocus
                         value={newFileName}
                         onChange={e => setNewFileName(e.target.value)}
+                        onBlur={() => setFileToRename(null)}
                         onKeyDown={e => {
                           if (e.key === 'Enter') handleRenameFile();
                           if (e.key === 'Escape') setFileToRename(null);
@@ -1115,6 +1116,7 @@ export function StorageFilesPage() {
                                 autoFocus
                                 value={newFileName}
                                 onChange={e => setNewFileName(e.target.value)}
+                                onBlur={() => setFileToRename(null)}
                                 onKeyDown={e => {
                                   if (e.key === 'Enter') handleRenameFile();
                                   if (e.key === 'Escape') setFileToRename(null);
