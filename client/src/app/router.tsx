@@ -31,7 +31,6 @@ import { ActivityLogPage } from "@/features/superadmin/pages/ActivityLogPage";
 import { ConfigPage } from "@/features/superadmin/pages/ConfigPage";
 import { UsersPage } from "@/features/superadmin/pages/UsersPage";
 import { GlobalUsersPage } from "@/features/superadmin/pages/GlobalUsersPage";
-import { UserDetailPage } from "@/features/superadmin/pages/UserDetailPage";
 import { GdprPage } from "@/features/superadmin/pages/GdprPage";
 import { BackupPage } from "@/features/superadmin/pages/BackupPage";
 import { CustomDomainsPage } from "@/features/superadmin/pages/CustomDomainsPage";
@@ -210,7 +209,6 @@ export function AppRouter() {
           <Route path="/superadmin/failed-payments" element={<FailedPaymentsPage />} />
           <Route path="/superadmin/users" element={<UsersPage />} />
           <Route path="/superadmin/global-users" element={<GlobalUsersPage />} />
-          <Route path="/superadmin/global-users/:userId" element={<UserDetailPage />} />
           <Route path="/superadmin/activity-log" element={<ActivityLogPage />} />
           <Route path="/superadmin/announcements" element={<PlatformAnnouncementsPage />} />
           <Route path="/superadmin/config" element={<ConfigPage />} />

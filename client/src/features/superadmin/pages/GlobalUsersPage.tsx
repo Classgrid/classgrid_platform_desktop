@@ -8,10 +8,10 @@ import { DataTable } from "@/components/marketing_ui/data-table";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Input } from "@/components/marketing_ui/input";
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
-import { RefreshButton } from "@/components/marketing_ui/refresh-button";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 
 import { apiClient } from "@/lib/apiClient";
+import { getSocket } from "@/lib/socketClient";
 import { formatDate } from "@/utils/dateUtils";
 
 // ── Types & Constants ────────────────────────────────────────────────────────
@@ -70,6 +70,29 @@ export function GlobalUsersPage() {
 
   const allUsers: any[] = data?.data ?? [];
   const total: number = data?.total ?? 0;
+
+  // Listen for real-time user updates via WebSocket
+  React.useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    // Join the superadmin room to receive system-wide updates
+    socket.emit("join_superadmin_support");
+
+    const handleUserUpdate = () => {
+      refetch();
+    };
+
+    socket.on("global_users_updated", handleUserUpdate);
+    socket.on("user_status_changed", handleUserUpdate);
+    socket.on("new_user_registered", handleUserUpdate);
+
+    return () => {
+      socket.off("global_users_updated", handleUserUpdate);
+      socket.off("user_status_changed", handleUserUpdate);
+      socket.off("new_user_registered", handleUserUpdate);
+    };
+  }, [refetch]);
 
   // Client-side filtering for Org Type & Date (since API doesn't filter them natively yet)
   const filteredUsers = useMemo(() => {
@@ -214,9 +237,6 @@ export function GlobalUsersPage() {
                     {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </ResponsiveSelect>
             </div>
-            <div className="w-full sm:w-auto ml-auto">
-                <RefreshButton onClick={() => refetch()} isFetching={isFetching} />
-            </div>
         </div>
 
         {/* Data Table */}
@@ -225,7 +245,6 @@ export function GlobalUsersPage() {
             columns={columns}
             rows={filteredUsers}
             isLoading={isLoading}
-            onRowClick={(row) => navigate(`/superadmin/global-users/${row._id}`)}
             emptyMessage={search ? "No users found matching your search." : "No users found."}
             className="border-none rounded-none group"
           />
