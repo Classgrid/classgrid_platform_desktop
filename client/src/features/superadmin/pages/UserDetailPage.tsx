@@ -189,7 +189,7 @@ export function UserDetailPage() {
               </TableCell>
             </>
           ) : (
-            <TableCell colSpan={3} />
+            <TableCell colSpan={2} />
           )}
         </TableRow>
       );
