@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { 
   User as UserIcon, Phone, Users, GraduationCap, Landmark, 
   FileUp, Briefcase, Trophy, Activity, Globe, CreditCard, 
-  HeartPulse, Sparkles, ShieldCheck, School, Clock, Wallet, UploadCloud, CalendarIcon
+  HeartPulse, Sparkles, ShieldCheck, School, Clock, Wallet, UploadCloud, CalendarIcon,
+  Eye, ExternalLink, X, File as FileIcon
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/marketing_ui/dialog";
 import { getResolvedProfileStrategy } from "../lib/profile-strategy-selector";
 import { ScrollArea } from "@/components/marketing_ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
@@ -67,6 +69,114 @@ function DateField({ field, value, onChange, disabled }: { field: any, value: st
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+// ── SUB-COMPONENT FOR FILE UPLOADS TO R2 ──
+function FileUploadField({ field, value, onChange, disabled }: { field: any, value: string, onChange: (val: string) => void, disabled?: boolean }) {
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+
+    setIsUploading(true);
+    const loadingToast = toast.loading(`Uploading ${field.label}...`);
+    try {
+      const ext = file.name.split('.').pop() || "png";
+      const fileName = `doc-${Date.now()}.${ext}`;
+
+      const res = await apiClient.post("/api/user/upload-url", {
+        fileName,
+        fileType: file.type
+      });
+
+      const { uploadUrl, publicUrl } = res.data;
+
+      await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+
+      onChange(publicUrl);
+      toast.success(`${field.label} uploaded successfully`, { id: loadingToast });
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload document", { id: loadingToast });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const isImage = field.type === "image" || (value && value.match(/\.(jpeg|jpg|gif|png)$/i) != null);
+
+  if (value) {
+    return (
+      <div className="w-full flex flex-col gap-2 p-3 border border-border rounded-md bg-muted/20 relative">
+        <div className="flex items-center gap-3">
+          {isImage ? (
+            <img src={value} alt={field.label} className="w-14 h-14 rounded-md object-cover border border-border shadow-sm cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setIsPreviewOpen(true)} />
+          ) : (
+            <div className="w-14 h-14 flex items-center justify-center bg-muted rounded-md border border-border cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => setIsPreviewOpen(true)}>
+               <FileIcon className="w-6 h-6 text-primary/70" />
+            </div>
+          )}
+          <div className="flex flex-col flex-1">
+            <span className="text-sm text-foreground font-medium">{field.label} uploaded</span>
+            <div className="flex items-center gap-3 mt-1">
+              <button type="button" onClick={() => setIsPreviewOpen(true)} className="text-xs text-primary hover:underline flex items-center gap-1"><Eye className="w-3 h-3"/> Preview</button>
+              {!disabled && (
+                <>
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">Replace</button>
+                  <button type="button" onClick={() => onChange("")} className="text-xs text-red-500 hover:text-red-600 flex items-center gap-1 transition-colors"><X className="w-3 h-3"/> Remove</button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <input type="file" ref={fileInputRef} className="hidden" accept=".pdf,image/*" onChange={handleUpload} disabled={disabled || isUploading} />
+
+        <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+          <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col p-0 overflow-hidden">
+            <DialogHeader className="px-6 py-4 border-b bg-muted/30">
+              <DialogTitle className="flex items-center justify-between">
+                <span>{field.label} Preview</span>
+                <a href={value} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1 font-normal"><ExternalLink className="w-4 h-4"/> Open Original</a>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 bg-black/5 flex items-center justify-center overflow-auto p-4 relative">
+               {isImage ? (
+                 <img src={value} alt={field.label} className="max-w-full max-h-full object-contain bg-white shadow-xl" />
+               ) : (
+                 <iframe src={value} className="w-full h-full bg-white rounded-md shadow-xl border-none" title={field.label} />
+               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
+      className={cn("w-full p-4 border-2 border-dashed rounded-md bg-muted/20 text-center text-sm text-muted-foreground flex flex-col items-center justify-center gap-2 transition-colors", !disabled && !isUploading ? "cursor-pointer hover:bg-muted/50 hover:border-primary/50" : "opacity-70 cursor-not-allowed bg-muted/30 border-input")}
+    >
+      {isUploading ? <Spinner className="w-6 h-6 text-primary" /> : <UploadCloud className="w-6 h-6 text-primary/70" />}
+      <span className="font-medium text-foreground">{isUploading ? `Uploading...` : !disabled ? `Upload ${field.label}` : 'No file uploaded'}</span>
+      {!disabled && !isUploading && <span className="text-xs">PDF, JPG, PNG up to 5MB</span>}
+      <input type="file" ref={fileInputRef} className="hidden" accept=".pdf,image/*" onChange={handleUpload} disabled={disabled || isUploading} />
+    </div>
   );
 }
 
@@ -419,21 +529,18 @@ export function ContextualProfile({
                   }
                   
                   if (field.type === "file_list" || field.type === "image") {
-                    const existingUrl = formData[field.key] || formData.profile_photo || formData.profilePicture || formData.photoURL || "";
-                    if (!isEditing && existingUrl) {
-                      return (
-                        <div className="w-full flex items-center gap-3 p-3 border border-border rounded-md bg-muted/20">
-                          <img src={existingUrl} alt={field.label} className="w-14 h-14 rounded-full object-cover border border-border shadow-sm" />
-                          <span className="text-sm text-foreground font-medium">{field.label} uploaded</span>
-                        </div>
-                      );
+                    let existingUrl = formData[field.key] || "";
+                    if (!existingUrl && (field.key === "profilePicture" || field.key === "profile_photo")) {
+                       existingUrl = formData.profile_photo || formData.profilePicture || formData.photoURL || "";
                     }
+                    
                     return (
-                      <div className={cn("w-full p-4 border-2 border-dashed rounded-md bg-muted/20 text-center text-sm text-muted-foreground flex flex-col items-center justify-center gap-2 transition-colors", isEditing ? "cursor-pointer hover:bg-muted/50 hover:border-primary/50" : "opacity-70 cursor-not-allowed pointer-events-none bg-muted/30 border-input")}>
-                        <UploadCloud className="w-6 h-6 text-primary/70" />
-                        <span className="font-medium text-foreground">{isEditing ? `Upload ${field.label}` : 'No file uploaded'}</span>
-                        {isEditing && <span className="text-xs">PDF, JPG, PNG up to 5MB</span>}
-                      </div>
+                      <FileUploadField 
+                        field={field}
+                        value={existingUrl}
+                        onChange={(val) => handleInputChange(field.key, val)}
+                        disabled={!isEditing}
+                      />
                     );
                   }
                   
