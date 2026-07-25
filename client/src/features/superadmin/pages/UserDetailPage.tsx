@@ -180,7 +180,7 @@ export function UserDetailPage() {
       <style>{`
         .document-actions {
           display: flex;
-          justify-content: space-between;
+          justify-content: flex-end;
           align-items: center;
           max-width: 980px;
           margin: 0 auto 16px;
@@ -191,140 +191,171 @@ export function UserDetailPage() {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          border: 1px solid #d1d5db;
-          background: #ffffff;
-          color: #111827;
+          border: 1px solid hsl(var(--border));
+          background: hsl(var(--background));
+          color: hsl(var(--foreground));
           font-size: 14px;
-          font-weight: 600;
-          padding: 8px 12px;
-          border-radius: 6px;
+          font-weight: 500;
+          padding: 8px 16px;
+          border-radius: 8px;
           cursor: pointer;
-          transition: background 0.2s;
+          transition: all 0.2s;
+          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
 
         .document-actions button:hover {
-          background: #f3f4f6;
+          background: hsl(var(--muted));
         }
 
         .record-container {
           width: 100%;
           max-width: 980px;
           margin: 0 auto;
-          background: #ffffff;
-          color: #020617; /* slate-950 */
-          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+          background: hsl(var(--card));
+          color: hsl(var(--card-foreground));
+          border-radius: 12px;
+          border: 1px solid hsl(var(--border));
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+          overflow: hidden;
         }
 
         .record-table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 13px;
-          line-height: 1.4;
+          font-size: 14px;
+          line-height: 1.5;
         }
 
-        .record-table td,
-        .record-table th {
-          border: 1px solid #d1d5db;
+        .record-table td {
+          border-bottom: 1px solid hsl(var(--border));
+          border-right: 1px solid hsl(var(--border));
+        }
+        
+        .record-table td:last-child {
+          border-right: none;
+        }
+        
+        .record-table tr:last-child td {
+          border-bottom: none;
         }
 
         .org-logo-cell {
           width: 130px;
           text-align: center;
           vertical-align: middle;
-          padding: 12px;
+          padding: 24px;
+          background: hsl(var(--muted) / 0.1);
         }
 
         .org-logo-cell img {
-          max-width: 90px;
-          max-height: 90px;
+          max-width: 80px;
+          max-height: 80px;
           object-fit: contain;
         }
 
         .org-logo-placeholder {
           display: inline-flex;
-          width: 90px;
-          height: 90px;
+          width: 80px;
+          height: 80px;
           align-items: center;
           justify-content: center;
-          border: 1px solid #d1d5db;
-          color: #6b7280;
-          font-weight: 700;
+          border-radius: 8px;
+          background: hsl(var(--muted) / 0.5);
+          color: hsl(var(--muted-foreground));
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.5px;
         }
 
         .org-title-cell {
-          padding: 12px 16px;
+          padding: 24px;
           vertical-align: middle;
+          background: hsl(var(--muted) / 0.1);
         }
 
         .org-title {
-          font-size: 20px;
-          font-weight: 700;
-          margin-bottom: 4px;
+          font-size: 22px;
+          font-weight: 600;
+          color: hsl(var(--foreground));
+          margin-bottom: 6px;
+          letter-spacing: -0.02em;
         }
 
         .org-address {
           color: hsl(var(--muted-foreground));
+          font-size: 14px;
           white-space: pre-wrap;
+          line-height: 1.5;
         }
 
         .record-title {
           text-align: center;
-          font-weight: 700;
-          padding: 10px;
+          font-weight: 600;
+          padding: 16px;
           color: hsl(var(--foreground));
+          background: hsl(var(--muted) / 0.3);
+          font-size: 13px;
+          letter-spacing: 0.05em;
         }
 
         .photo-cell {
           width: 150px;
-          height: 200px;
           text-align: center;
           vertical-align: middle;
-          padding: 8px;
+          padding: 16px;
         }
 
         .photo-cell img {
-          width: 132px;
-          height: 176px;
+          width: 120px;
+          height: 160px;
           object-fit: cover;
-          border: 1px solid hsl(var(--border));
+          border-radius: 6px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+          border: 1px solid hsl(var(--border) / 0.5);
         }
 
         .photo-placeholder {
           display: inline-flex;
-          width: 132px;
-          height: 176px;
+          width: 120px;
+          height: 160px;
           align-items: center;
           justify-content: center;
-          border: 1px solid hsl(var(--border));
+          border-radius: 6px;
+          background: hsl(var(--muted) / 0.3);
+          border: 1px dashed hsl(var(--border));
           color: hsl(var(--muted-foreground));
-          font-weight: 600;
+          font-size: 13px;
+          font-weight: 500;
         }
 
         .section-header {
-          background: hsl(var(--muted));
-          color: hsl(var(--foreground));
-          text-align: center;
-          font-weight: 700;
-          padding: 10px;
+          background: hsl(var(--muted) / 0.5);
+          color: hsl(var(--muted-foreground));
+          text-align: left;
+          font-weight: 600;
+          padding: 12px 24px;
           text-transform: uppercase;
-          font-size: 12px;
-          letter-spacing: 0.05em;
+          font-size: 11px;
+          letter-spacing: 0.08em;
+          border-top: 1px solid hsl(var(--border));
         }
 
         .label-cell {
-          font-weight: 600;
-          background: hsl(var(--muted) / 0.5);
-          color: hsl(var(--foreground));
+          font-weight: 500;
+          background: hsl(var(--muted) / 0.15);
+          color: hsl(var(--muted-foreground));
           width: 25%;
-          padding: 10px 14px;
+          padding: 14px 24px;
           vertical-align: top;
+          font-size: 13px;
         }
 
         .value-cell {
-          padding: 10px 14px;
+          padding: 14px 24px;
           vertical-align: top;
           word-break: break-word;
           color: hsl(var(--foreground));
+          font-weight: 500;
         }
 
         @media print {
@@ -382,7 +413,7 @@ export function UserDetailPage() {
           <tr>
             <td className="label-cell">Role</td>
             <td className="value-cell">{formatLabel(user.role)}</td>
-            <td rowSpan={3} colSpan={2} className="photo-cell">
+            <td rowSpan={2} colSpan={2} className="photo-cell">
               {user.profilePicture ? (
                 <img src={user.profilePicture} alt={user.name || "User photo"} />
               ) : (
@@ -393,10 +424,6 @@ export function UserDetailPage() {
           <tr>
             <td className="label-cell">Org Type</td>
             <td className="value-cell">{formatLabel(organization?.org_type)}</td>
-          </tr>
-          <tr>
-            <td className="label-cell">Status</td>
-            <td className="value-cell">{formatLabel(user.status || "active")}</td>
           </tr>
         </tbody>
 
