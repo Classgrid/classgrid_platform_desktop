@@ -75,7 +75,7 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
 
   // Safety filter: Super admins shouldn't see 'student' in auto-add lists to prevent massive accidental additions
   if (user?.role === 'super_admin') {
-    availableRoles = availableRoles.filter(r => r !== 'student');
+    availableRoles = availableRoles.filter((r: any) => (typeof r === 'string' ? r : r.value) !== 'student');
   }
 
   // ── Data: Org Users (for Add Member) ──
@@ -688,17 +688,19 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
                     <span className="text-sm font-medium text-foreground">Auto-Grant Admin by Role</span>
                     <span className="text-xs text-muted-foreground mb-2">Anyone inside this chat group with these roles will automatically be given Group Admin rights.</span>
                     <div className="flex flex-wrap gap-2">
-                      {availableRoles.map(role => {
+                      {availableRoles.map((roleObj: any) => {
+                        const roleValue = typeof roleObj === 'string' ? roleObj : roleObj.value;
+                        const roleLabel = typeof roleObj === 'string' ? roleObj.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : roleObj.label;
                         const currentRoles = data.group.admin_roles || [];
-                        const isSelected = currentRoles.includes(role);
+                        const isSelected = currentRoles.includes(roleValue);
                         return (
                           <button
-                            key={role}
+                            key={roleValue}
                             disabled={isUpdatingPermissions}
                             onClick={() => {
                               const newRoles = isSelected
-                                ? currentRoles.filter((r: string) => r !== role)
-                                : [...currentRoles, role];
+                                ? currentRoles.filter((r: string) => r !== roleValue)
+                                : [...currentRoles, roleValue];
                               handleUpdatePermissions({ admin_roles: newRoles });
                             }}
                             className={`px-3 py-1 text-xs rounded-full border transition-colors ${
@@ -707,7 +709,7 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
                                 : 'bg-background text-foreground border-border hover:border-primary/50'
                             }`}
                           >
-                            {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            {roleLabel}
                           </button>
                         );
                       })}

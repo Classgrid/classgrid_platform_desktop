@@ -96,7 +96,6 @@ export const dashboardConfigs: DashboardConfig[] = [
       {
         label: "⚙️ SYSTEM",
         items: [
-          { label: "System Health", to: "/superadmin/system-health", icon: Activity },
           { label: "Feature Flags", to: "/superadmin/feature-flags", icon: Zap },
           { label: "Rollback Actions", to: "/superadmin/rollback", icon: RotateCcw },
           { label: "Audit Logs", to: "/superadmin/audit-logs", icon: Shield },

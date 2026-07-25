@@ -228,7 +228,7 @@ export function ConfigPage() {
     }
   };
 
-  const isDiskCritical = (healthData?.osMetrics?.disk?.usagePct || 0) > 90;
+  const isDiskCritical = (healthData?.osMetrics?.disk?.usagePct || 0) > 80;
   const isRamCritical = (healthData?.osMetrics?.ram?.usagePct || 0) > 90;
   const hardwareCardStyle = (isDiskCritical || isRamCritical) 
     ? "border-destructive/50 shadow-[0_0_15px_rgba(239,68,68,0.15)] bg-destructive/5" 
