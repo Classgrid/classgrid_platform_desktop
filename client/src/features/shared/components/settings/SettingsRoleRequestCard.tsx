@@ -16,9 +16,11 @@ export function SettingsRoleRequestCard() {
   
   const [tenantCode, setTenantCode] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
+  const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const roles = rolesData?.roles || [];
+  const isAdmin = profile?.role === "org_admin";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,9 +35,15 @@ export function SettingsRoleRequestCard() {
       return;
     }
 
+    if (!email.trim() || !email.includes("@")) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const res = await api.post("/org/request-role", {
+        email: email.trim(),
         tenant_join_code: tenantCode.trim(),
         role: selectedRole
       });
@@ -52,8 +60,9 @@ export function SettingsRoleRequestCard() {
       
       setTenantCode("");
       setSelectedRole("");
+      setEmail("");
     } catch (err: any) {
-      toast.error(err.response?.data?.error || "Failed to request role. Please check your Tenant Join Code.");
+      toast.error(err.response?.data?.error || "Failed to process role request.");
     } finally {
       setIsSubmitting(false);
     }
@@ -64,18 +73,33 @@ export function SettingsRoleRequestCard() {
       <div className="flex flex-col gap-2 border-b border-border pb-4">
         <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-primary" />
-          Request a Role
+          {isAdmin ? "Assign a Role (Instant)" : "Request a Role"}
         </h3>
         <p className="text-sm text-muted-foreground">
-          Need access to a specific dashboard? Enter your organization's Tenant Join Code and select the role you need.
+          {isAdmin 
+            ? "Instantly grant a role to a user by entering their email and your organization's Tenant ID." 
+            : "Need access to a specific dashboard? Enter your email and organization's Tenant ID to request a role."}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Email Address */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Email Address</label>
+            <Input
+              type="email"
+              placeholder="user@example.com"
+              className="bg-background"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
           {/* Tenant Join Code */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Tenant Join Code</label>
+            <label className="text-sm font-medium text-foreground">Tenant ID</label>
             <Input
               type="text"
               placeholder="e.g. ORG-XYZ-123"
@@ -84,7 +108,7 @@ export function SettingsRoleRequestCard() {
               onChange={(e) => setTenantCode(e.target.value)}
               required
             />
-            <p className="text-xs text-muted-foreground">Ask your admin if you don't know this code.</p>
+            <p className="text-xs text-muted-foreground">Required for security verification.</p>
           </div>
 
           {/* Role Selection */}
@@ -111,7 +135,7 @@ export function SettingsRoleRequestCard() {
             ) : (
               <Send className="h-4 w-4" />
             )}
-            Submit Request
+            {isAdmin ? "Assign Role" : "Submit Request"}
           </Button>
         </div>
       </form>
