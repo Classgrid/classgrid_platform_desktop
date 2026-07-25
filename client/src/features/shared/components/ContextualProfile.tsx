@@ -10,8 +10,11 @@ import {
   getResolvedProfileStrategy, 
   UG_DEGREE_OPTIONS, UG_SPECIALIZATION_MAP, 
   PG_DEGREE_OPTIONS, PG_SPECIALIZATION_MAP, 
-  PHD_SPECIALIZATION_OPTIONS, SEED_UNIVERSITIES 
+  PHD_SPECIALIZATION_OPTIONS 
 } from "../lib/profile-strategy-selector";
+import { ERPUNIVERSITYLIST } from "../lib/erp-large-options";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/marketing_ui/accordion";
+import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { ScrollArea } from "@/components/marketing_ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
 import { Calendar } from "@/components/marketing_ui/nikhil_calendar";
@@ -473,28 +476,20 @@ export function ContextualProfile({
                  return null;
               }
 
-              // Handle Autocomplete/Datalist for Universities
+              // Handle Autocomplete/Datalist for Universities — using ResponsiveSelect with search
               if (field.key === "ug_university" || field.key === "pg_university" || field.key === "phd_university" || field.key === "bed_university") {
                 return (
-                  <div className="relative w-full">
-                    <input 
-                      list={`${field.key}-list`}
-                      type="text"
-                      placeholder={isEditing ? `Enter or select ${field.label}...` : ""}
-                      className={cn(
-                        "w-full p-2.5 rounded-md text-sm outline-none transition-all",
-                        isEditing 
-                          ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" 
-                          : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70"
-                      )}
-                      value={formData[field.key] || ""}
-                      onChange={(e) => isEditing && handleInputChange(field.key, e.target.value)}
-                      readOnly={!isEditing}
-                    />
-                    <datalist id={`${field.key}-list`}>
-                      {SEED_UNIVERSITIES.map(u => <option key={u} value={u} />)}
-                    </datalist>
-                  </div>
+                  <ResponsiveSelect
+                    value={formData[field.key] || ""}
+                    onChange={(e: any) => isEditing && handleInputChange(field.key, e.target.value)}
+                    disabled={!isEditing}
+                    placeholder={`Select ${field.label}...`}
+                    className={cn("w-full transition-all", !isEditing && "bg-muted/30 border-input text-foreground cursor-not-allowed opacity-70")}
+                  >
+                    <option value="">Select University...</option>
+                    {ERPUNIVERSITYLIST.map((u: string) => <option key={u} value={u}>{u}</option>)}
+                    <option value="Other">Other (Please specify)</option>
+                  </ResponsiveSelect>
                 );
               }
 
@@ -853,6 +848,62 @@ export function ContextualProfile({
                      </div>
                   </div>
                );
+            }
+
+            // ── Education Sections — Accordion UI ──
+            const educationSectionKeys = ["education_details", "faculty_education_details", "admin_education_details", "staff_education_details"];
+            if (educationSectionKeys.includes(section.key)) {
+              // Group education fields into logical buckets
+              const buckets: { label: string; icon: string; keys: string[]; fields: any[] }[] = [
+                { label: "Schooling (10th / 12th)", icon: "📚", keys: ["10th_", "12th_", "pcm_", "diploma_", "previous_"], fields: [] },
+                { label: "Undergraduate (UG)", icon: "🎓", keys: ["ug_"], fields: [] },
+                { label: "Postgraduate (PG)", icon: "📖", keys: ["pg_"], fields: [] },
+                { label: "B.Ed", icon: "👨‍🏫", keys: ["bed_"], fields: [] },
+                { label: "PhD / Doctorate", icon: "🔬", keys: ["phd_"], fields: [] },
+                { label: "Entrance Exams & IDs", icon: "📝", keys: ["en_number", "cet_", "jee_", "entrance_", "eligibilityNo", "abc_id", "university_prn", "net_", "slet_"], fields: [] },
+              ];
+              const ungrouped: any[] = [];
+
+              section.fields.forEach((field: any) => {
+                let placed = false;
+                for (const bucket of buckets) {
+                  if (bucket.keys.some(k => field.key.startsWith(k) || field.key === k)) {
+                    bucket.fields.push(field);
+                    placed = true;
+                    break;
+                  }
+                }
+                if (!placed) ungrouped.push(field);
+              });
+
+              const nonEmptyBuckets = buckets.filter(b => b.fields.length > 0);
+              // Expand first bucket by default
+              const defaultOpen = nonEmptyBuckets.length > 0 ? [nonEmptyBuckets[0].label] : [];
+
+              return (
+                <div className="space-y-4">
+                  <Accordion defaultValue={defaultOpen}>
+                    {nonEmptyBuckets.map((bucket) => (
+                      <AccordionItem key={bucket.label} value={bucket.label} className="border rounded-lg px-4 mb-3 bg-muted/10">
+                        <AccordionTrigger className="text-[15px] font-semibold gap-2">
+                          <span className="mr-2">{bucket.icon}</span> {bucket.label}
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">({bucket.fields.length} fields)</span>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                            {bucket.fields.map(renderFieldWrapper)}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                  {ungrouped.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {ungrouped.map(renderFieldWrapper)}
+                    </div>
+                  )}
+                </div>
+              );
             }
 
             return (

@@ -31,7 +31,6 @@ export const ERPSTUDENTADMISSIONMAINCATEGORYLIST = [
 ];
 
 export const NATIONALITYLIST = [
-  "2021-01-09T08:11:51Z",
   "Afghanistan",
   "Albania",
   "Algeria",
@@ -105,7 +104,6 @@ export const NATIONALITYLIST = [
   "Hungary",
   "Iceland",
   "India",
-  "Indian",
   "Indonesia",
   "Iran",
   "Iraq",
@@ -213,10 +211,7 @@ export const NATIONALITYLIST = [
   "Yugoslavia",
   "Zaire",
   "Zambia",
-  "Zimbabwe",
-  "afg",
-  "som",
-  "the Philippines"
+  "Zimbabwe"
 ];
 
 export const ERPAREATYPELIST = [
@@ -359,7 +354,6 @@ export const BIRTHCOUNTRYLIST = [
   "Hungary",
   "Iceland",
   "India",
-  "Indian",
   "Indonesia",
   "Iran",
   "Iraq",
@@ -467,10 +461,7 @@ export const BIRTHCOUNTRYLIST = [
   "Yugoslavia",
   "Zaire",
   "Zambia",
-  "Zimbabwe",
-  "afg",
-  "som",
-  "the Philippines"
+  "Zimbabwe"
 ];
 
 export const ERPDOMACILELIST = [

@@ -2,9 +2,10 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { NativeSelect, NativeSelectOption } from "./native-select"
-import { Popover, PopoverContent, PopoverTrigger } from "./popover"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./command"
 import { CheckIcon, ChevronDownIcon, SearchIcon } from "lucide-react"
+
+// Max items to render at once to prevent browser freezing on huge lists
+const MAX_VISIBLE_ITEMS = 200
 
 export interface ResponsiveSelectProps
   extends Omit<React.ComponentProps<"select">, "size"> {
@@ -24,11 +25,13 @@ export function ResponsiveSelect({
 }: ResponsiveSelectProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const [open, setOpen] = React.useState(false)
+  const [search, setSearch] = React.useState("")
+  const triggerRef = React.useRef<HTMLButtonElement>(null)
+  const dropdownRef = React.useRef<HTMLDivElement>(null)
 
-  // Extract options from children to use in custom select
+  // Extract options from children
   const options = React.useMemo(() => {
-    const opts: { value: string; label: React.ReactNode; color?: string }[] = []
-    
+    const opts: { value: string; label: React.ReactNode; labelStr: string; color?: string }[] = []
     const flattenChildren = (kids: any) => {
       React.Children.forEach(kids, (child) => {
         if (!React.isValidElement<any>(child)) return;
@@ -37,100 +40,156 @@ export function ResponsiveSelect({
         } else if (child.props && (child.props.value !== undefined || child.type === "option")) {
           let val = String(child.props.value !== undefined ? child.props.value : child.props.children);
           if (val === "") val = "__empty__";
+          const labelText = typeof child.props.children === "string" ? child.props.children : val;
           opts.push({
             value: val,
             label: child.props.children,
+            labelStr: labelText,
             color: child.props["data-color"]
           })
         }
       })
     }
-    
     flattenChildren(children)
     return opts
   }, [children])
 
-  // Custom Select (Desktop) - only for lists with <= 800 items to prevent browser freezing
-  if (isDesktop && options.length <= 800) {
+  const showSearch = options.length > 10
+  const isHugeList = options.length > MAX_VISIBLE_ITEMS
+
+  // Filter options based on search
+  const filteredOptions = React.useMemo(() => {
+    if (!search) {
+      if (isHugeList) return options.slice(0, MAX_VISIBLE_ITEMS)
+      return options
+    }
+    const lower = search.toLowerCase()
+    return options.filter((opt) => opt.labelStr.toLowerCase().includes(lower)).slice(0, MAX_VISIBLE_ITEMS)
+  }, [options, search, isHugeList])
+
+  // Reset search on close
+  React.useEffect(() => {
+    if (!open) setSearch("")
+  }, [open])
+
+  // Close dropdown on click outside
+  React.useEffect(() => {
+    if (!open) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false)
+      }
+    }
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false)
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("keydown", handleEsc)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("keydown", handleEsc)
+    }
+  }, [open])
+
+  // Custom Select (Desktop) — ALL dropdowns
+  if (isDesktop) {
     let displayValue = value !== undefined ? String(value) : undefined;
     if (displayValue === "") displayValue = "__empty__";
-
-    // Find the currently selected label for the value placeholder
     const selectedOption = options.find((opt) => opt.value === displayValue)
 
     return (
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            role="combobox"
-            aria-expanded={open}
-            disabled={disabled}
-            className={cn(
-              "flex w-full items-center justify-between rounded-lg border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 dark:bg-black dark:border-white/10",
-              size === "sm" ? "h-7 rounded-md px-2 text-xs" : "h-9",
-              className
-            )}
-          >
-            <div className="flex items-center gap-2 text-foreground flex-1 text-left truncate">
-              {selectedOption?.color && (
-                <span className={`shrink-0 w-2 h-2 rounded-full ${selectedOption.color}`} />
-              )}
-              <span className="truncate">{selectedOption ? selectedOption.label : (placeholder || "Select...")}</span>
-            </div>
-            <ChevronDownIcon className="h-4 w-4 shrink-0 opacity-50" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent 
-          className="w-[var(--radix-popover-trigger-width)] p-0" 
-          align="start" 
-          side="bottom"
-          sideOffset={4}
+      <div className="relative w-full">
+        <button
+          ref={triggerRef}
+          type="button"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          onClick={() => setOpen(!open)}
+          className={cn(
+            "flex w-full items-center justify-between rounded-lg border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 dark:bg-black dark:border-white/10",
+            size === "sm" ? "h-7 rounded-md px-2 text-xs" : "h-9",
+            className
+          )}
         >
-          <Command>
-            <CommandInput placeholder="Search..." className="h-9" />
-            <CommandList>
-              <CommandEmpty>No results found.</CommandEmpty>
-              <CommandGroup>
-                {options.map((opt) => (
-                  <CommandItem
-                    key={opt.value}
-                    value={opt.value}
-                    onSelect={(currentValue) => {
-                      if (onChange) {
-                        const trueVal = opt.value === "__empty__" ? "" : opt.value;
-                        const event = {
-                          target: { value: trueVal },
-                          currentTarget: { value: trueVal },
-                          preventDefault: () => {},
-                          stopPropagation: () => {},
-                        } as any;
-                        onChange(event);
-                      }
-                      setOpen(false);
-                    }}
-                  >
-                    <div className="flex items-center gap-2 flex-1">
-                      {opt.color && <span className={`shrink-0 w-2 h-2 rounded-full ${opt.color}`} />}
-                      <span>{opt.label}</span>
-                    </div>
-                    <CheckIcon
-                      className={cn(
-                        "ml-auto h-4 w-4",
-                        displayValue === opt.value ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+          <div className="flex items-center gap-2 text-foreground flex-1 text-left truncate">
+            {selectedOption?.color && (
+              <span className={`shrink-0 w-2 h-2 rounded-full ${selectedOption.color}`} />
+            )}
+            <span className="truncate">{selectedOption ? selectedOption.label : (placeholder || "Select...")}</span>
+          </div>
+          <ChevronDownIcon className="h-4 w-4 shrink-0 opacity-50" />
+        </button>
+
+        {/* Dropdown - ALWAYS opens below, NEVER repositions */}
+        {open && (
+          <div
+            ref={dropdownRef}
+            className="absolute left-0 right-0 top-full z-[1050] mt-1 rounded-lg border border-border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 duration-100"
+          >
+            {/* Search input */}
+            {showSearch && (
+              <div className="flex items-center gap-2 border-b border-border/40 px-3 py-2">
+                <SearchIcon className="size-4 shrink-0 text-muted-foreground/50" />
+                <input
+                  type="text"
+                  data-no-ring
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={isHugeList ? "Type to search..." : "Search..."}
+                  autoFocus
+                  className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground/50"
+                  style={{ outline: "none", boxShadow: "none", border: "none" }}
+                />
+              </div>
+            )}
+            {/* Options list */}
+            <div className="max-h-60 overflow-y-auto overflow-x-hidden p-1">
+              {filteredOptions.length === 0 && (
+                <div className="py-4 text-center text-sm text-muted-foreground">No results found.</div>
+              )}
+              {filteredOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={cn(
+                    "relative flex w-full cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground transition-colors",
+                    displayValue === opt.value && "bg-accent/50"
+                  )}
+                  onClick={() => {
+                    if (onChange) {
+                      const trueVal = opt.value === "__empty__" ? "" : opt.value;
+                      const event = {
+                        target: { value: trueVal },
+                        currentTarget: { value: trueVal },
+                        preventDefault: () => {},
+                        stopPropagation: () => {},
+                      } as any;
+                      onChange(event);
+                    }
+                    setOpen(false);
+                  }}
+                >
+                  <div className="flex items-center gap-2 flex-1">
+                    {opt.color && <span className={`shrink-0 w-2 h-2 rounded-full ${opt.color}`} />}
+                    <span>{opt.label}</span>
+                  </div>
+                  {displayValue === opt.value && (
+                    <CheckIcon className="ml-auto h-4 w-4 text-primary" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     )
   }
 
-  // Native Select (Mobile)
+  // Native Select (Mobile only)
   return (
     <NativeSelect
       className={className}
