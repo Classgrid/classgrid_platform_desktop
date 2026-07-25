@@ -111,7 +111,7 @@ const FilePreviewPane = ({ activeFile, onClose, onDelete, onRename }: { activeFi
           
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Added on</p>
-            <p className="text-sm">{(activeFile.createdAt || activeFile.lastModified) ? new Date(activeFile.createdAt || activeFile.lastModified).toLocaleString() : "-"}</p>
+            <p className="text-sm">{activeFile.createdAt ? new Date(activeFile.createdAt).toLocaleString() : "-"}</p>
           </div>
           
           <div className="space-y-1">
@@ -205,6 +205,7 @@ const StorageColumn = ({
       size: file.size,
       type: file.contentType,
       lastModified: file.lastModified,
+      createdAt: file.createdAt,
       cdnUrl: file.cdnUrl
     }))
   ];
@@ -619,6 +620,7 @@ export function StorageFilesPage() {
               size: result.size || upload.file.size,
               contentType: result.contentType || upload.file.type,
               lastModified: new Date().toISOString(),
+              createdAt: new Date().toISOString(),
               cdnUrl: result.cdnUrl || ""
             };
             
@@ -982,6 +984,7 @@ export function StorageFilesPage() {
       size: file.size,
       type: file.contentType,
       lastModified: file.lastModified,
+      createdAt: file.createdAt,
       cdnUrl: file.cdnUrl
     }))
   ];

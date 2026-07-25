@@ -451,6 +451,31 @@ function encodeCopySource(key) {
     return `${encodeURIComponent(BUCKET_NAME)}/${encodedKey}`;
 }
 
+async function buildCopyObjectCommand(sourceKey, destinationKey) {
+    const metadata = await s3Client.send(new HeadObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: sourceKey,
+    }));
+
+    const sourceMetadata = { ...(metadata.Metadata || {}) };
+    if (!sourceMetadata["created-at"] && metadata.LastModified) {
+        sourceMetadata["created-at"] = metadata.LastModified.toISOString();
+    }
+
+    return new CopyObjectCommand({
+        Bucket: BUCKET_NAME,
+        CopySource: encodeCopySource(sourceKey),
+        Key: destinationKey,
+        MetadataDirective: "REPLACE",
+        Metadata: sourceMetadata,
+        ...(metadata.ContentType ? { ContentType: metadata.ContentType } : {}),
+        ...(metadata.CacheControl ? { CacheControl: metadata.CacheControl } : {}),
+        ...(metadata.ContentDisposition ? { ContentDisposition: metadata.ContentDisposition } : {}),
+        ...(metadata.ContentEncoding ? { ContentEncoding: metadata.ContentEncoding } : {}),
+        ...(metadata.ContentLanguage ? { ContentLanguage: metadata.ContentLanguage } : {}),
+    });
+}
+
 async function mapWithConcurrency(items, concurrency, mapper) {
     if (items.length === 0) return [];
 
@@ -874,6 +899,7 @@ export async function getObjectMetadata(req, res) {
             size: metadata.ContentLength || 0,
             contentType: metadata.ContentType || inferContentType(key),
             lastModified: metadata.LastModified || null,
+            createdAt: metadata.Metadata?.["created-at"] || null,
             cdnUrl: buildCdnUrl(key),
             etag: metadata.ETag || null,
         });
@@ -897,11 +923,8 @@ async function recursiveRenamePrefix(sourcePrefix, destinationPrefix) {
             // 1. Copy all objects to the new prefix
             const copyPromises = listResponse.Contents.map(obj => {
                 const newKey = destinationPrefix + obj.Key.substring(sourcePrefix.length);
-                return s3Client.send(new CopyObjectCommand({
-                    Bucket: BUCKET_NAME,
-                    CopySource: encodeCopySource(obj.Key),
-                    Key: newKey,
-                }));
+                return buildCopyObjectCommand(obj.Key, newKey)
+                    .then((command) => s3Client.send(command));
             });
             await Promise.all(copyPromises);
 
@@ -940,11 +963,7 @@ export async function renameObject(req, res) {
         if (sourceKey.endsWith("/")) {
             await recursiveRenamePrefix(sourceKey, destinationKey);
         } else {
-            await s3Client.send(new CopyObjectCommand({
-                Bucket: BUCKET_NAME,
-                CopySource: encodeCopySource(sourceKey),
-                Key: destinationKey,
-            }));
+            await s3Client.send(await buildCopyObjectCommand(sourceKey, destinationKey));
             await s3Client.send(new DeleteObjectCommand({
                 Bucket: BUCKET_NAME,
                 Key: sourceKey,

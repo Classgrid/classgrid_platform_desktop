@@ -17,6 +17,7 @@ export interface StorageObject {
   name: string;
   size: number;
   lastModified: string | null;
+  createdAt?: string | null;
   contentType: string;
   cdnUrl: string;
   folder?: string;
@@ -123,6 +124,7 @@ export interface StorageObjectMetadata {
   size: number;
   contentType: string;
   lastModified: string | null;
+  createdAt: string | null;
   cdnUrl: string;
   etag: string | null;
 }
