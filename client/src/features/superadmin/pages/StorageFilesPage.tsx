@@ -1074,7 +1074,7 @@ export function StorageFilesPage() {
 
         <div 
           ref={scrollContainerRef}
-          className="flex flex-1 overflow-x-auto overflow-y-hidden bg-background relative custom-scrollbar pb-2"
+          className="flex flex-1 overflow-x-auto overflow-y-hidden bg-background relative custom-scrollbar pb-2 cursor-grab active:cursor-grabbing"
         >
 
           {viewMode === 'columns' ? (
