@@ -187,10 +187,10 @@ export function GlobalUsersPage() {
   ], []);
 
   return (
-    <div className="flex flex-col w-full pb-12 animate-in fade-in">
+    <div className="flex flex-col w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 animate-in fade-in">
       
-      {/* Vercel-style Filter Bar (Flush, no outer card) */}
-      <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8 py-3 border-b border-border bg-background overflow-x-auto no-scrollbar whitespace-nowrap">
+      {/* Vercel-style Filter Bar (No background, no border, just sitting above the table) */}
+      <div className="flex items-center gap-3 mb-4 overflow-x-auto no-scrollbar whitespace-nowrap">
           <div className="w-[200px] shrink-0">
               <NikhilTimeCalendar 
                   value={dateFilter} 
@@ -237,23 +237,21 @@ export function GlobalUsersPage() {
           </div>
       </div>
 
-      {/* Data Table */}
-      <div className="px-4 sm:px-6 lg:px-8">
-        <DataTable
-          columns={columns}
-          rows={filteredUsers}
-          isLoading={isLoading}
-          emptyMessage={search ? "No users found matching your search." : "No users found."}
-          className="border-none rounded-none group"
-        />
-        
-        {/* Footer Stats Summary */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground mt-4 pt-4 border-t border-border/50">
-            <span>Showing {filteredUsers.length} of {total} total users</span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-success"></span> All systems operational
-            </span>
-        </div>
+      {/* Data Table (Vercel wraps the list in a subtle border) */}
+      <DataTable
+        columns={columns}
+        rows={filteredUsers}
+        isLoading={isLoading}
+        emptyMessage={search ? "No users found matching your search." : "No users found."}
+        className="shadow-sm" // Keeps the default rounded-md border from DataTable
+      />
+      
+      {/* Footer Stats Summary */}
+      <div className="flex items-center justify-between text-xs text-muted-foreground mt-4 pt-4 border-t border-border/50">
+          <span>Showing {filteredUsers.length} of {total} total users</span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-success"></span> All systems operational
+          </span>
       </div>
     </div>
   );
