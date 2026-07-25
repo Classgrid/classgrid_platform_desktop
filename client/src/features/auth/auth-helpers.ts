@@ -12,6 +12,8 @@ const AUTH_STORAGE_KEY = "classgrid:last-auth-role";
 const institutionAdminRoles: InstitutionAdminRole[] = [
   "org_admin",
   "library_manager",
+  "library_admin",
+  "attendance_admin",
   "hr_dept",
   "hostel_dept",
   "hod",
@@ -36,6 +38,8 @@ const roleLabels: Record<AuthLoginRole, string> = {
   teacher: "Faculty",
   org_admin: "Organization Admin",
   library_manager: "Library Manager",
+  library_admin: "Library Admin",
+  attendance_admin: "Attendance Admin",
   hr_dept: "HR Admin",
   hostel_dept: "Hostel Admin",
   hod: "Head of Department",
@@ -59,6 +63,8 @@ const portalLabels: Record<AuthLoginRole, string> = {
   teacher: "Faculty Portal",
   org_admin: "Organization Admin Portal",
   library_manager: "Library Portal",
+  library_admin: "Library Portal",
+  attendance_admin: "Attendance Portal",
   hr_dept: "HR Portal",
   hostel_dept: "Hostel Portal",
   hod: "Department Portal",
@@ -82,8 +88,8 @@ export function normalizeAuthRole(value: string | null | undefined): AuthLoginRo
 
   if (value === "faculty") return "teacher";
   if (value === "admin") return "org_admin";
-  if (value === "faculty") return "teacher";
   if (value === "library_admin" || value === "librarian") return "library_manager";
+  if (value === "attendance_admin") return "attendance_admin";
   if (value === "hr" || value === "hr_admin" || value === "hr_manager") return "hr_dept";
   if (value === "hostel" || value === "hostel_admin" || value === "hostel_manager") return "hostel_dept";
 
@@ -164,7 +170,10 @@ export function getRedirectPath(role: string | null | undefined) {
     case "super_admin":
       return "/superadmin/dashboard";
     case "library_manager":
+    case "library_admin":
       return "/dept/library/dashboard";
+    case "attendance_admin":
+      return "/dept/attendance/dashboard";
     case "hr_dept":
       return "/dept/hr/dashboard";
     case "hostel_dept":

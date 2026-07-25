@@ -1,6 +1,8 @@
 import express from "express";
 import { isAuthenticated, requireRole } from "../middleware/auth.middleware.js";
 import { getBlogSubscribersSb } from "../config/blogSubscribersSupabaseClient.js";
+import UserProfile from "../models/UserProfile.js";
+import { getProfileSchema } from "../utils/profile-schemas.js";
 import {
     broadcastGlobal,
     emailOrgAdmins,
@@ -1237,11 +1239,17 @@ router.get("/users/:id/full", async (req, res) => {
         if (user.zoom_tokens) delete user.zoom_tokens;
         if (user.webex_tokens) delete user.webex_tokens;
 
+        const profile = await UserProfile.findOne({ user: req.params.id }).lean();
+        const orgType = user.organization_id?.org_type || "school";
+        const schema = getProfileSchema(user.role, orgType);
+
         res.json({
             success: true,
             data: {
                 user,
-                organization: user.organization_id || null
+                organization: user.organization_id || null,
+                profile,
+                schema
             }
         });
     } catch (err) {

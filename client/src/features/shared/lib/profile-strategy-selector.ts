@@ -174,57 +174,24 @@ export const MASTER_PROFILE_SECTION_POOL = {
 
   personal_details: {
     key: "personal_details",
-    label: "Personal Details",
+    label: "Basic Profile",
     icon: "User",
-    sub_tabs: ["identity", "religion", "physically_handicapped", "minority_details", "passport_details", "admission_details"],
+    sub_tabs: ["identity", "birth_details"],
     fields: [
-      { key: "name", label: "Full Name", type: "text", sub_tab: "identity" },
+      { key: "profilePicture", label: "Profile Photo", type: "image", sub_tab: "identity" },
       { key: "first_name", label: "First Name", type: "text", sub_tab: "identity", required: true },
       { key: "middle_name", label: "Middle Name", type: "text", sub_tab: "identity" },
       { key: "last_name", label: "Last Name", type: "text", sub_tab: "identity", required: true },
-      { key: "dob", label: "Date of Birth", type: "date", sub_tab: "identity", required: true },
-      { key: "gender", label: "Gender", type: "dropdown", sub_tab: "identity", options: GENDERLIST, required: true },
-      { key: "blood_group", label: "Blood Group", type: "dropdown", sub_tab: "identity", options: BLOODGROUPLIST, required: true },
+      { key: "dob", label: "Date of Birth", type: "date", sub_tab: "identity", required: true, sensitive: true },
+      { key: "gender", label: "Gender", type: "dropdown", sub_tab: "identity", options: GENDERLIST, required: true, sensitive: true },
+      { key: "blood_group", label: "Blood Group", type: "dropdown", sub_tab: "identity", options: BLOODGROUPLIST, sensitive: true },
       { key: "nationality", label: "Nationality", type: "dropdown", sub_tab: "identity", options: NATIONALITYLIST, required: true },
-      { key: "domicile", label: "Domicile", type: "dropdown", sub_tab: "identity", options: ERPDOMACILELIST },
       { key: "mother_tongue", label: "Mother Tongue", type: "dropdown", sub_tab: "identity", options: MOTHERTOUNGELIST },
-      { key: "marital_status", label: "Marital Status", type: "dropdown", sub_tab: "identity", options: ERPMARITALSTATUSLIST },
-      { key: "ex_serviceman", label: "Ex-Serviceman", type: "dropdown", sub_tab: "identity", options: EXSERVICEMANLIST },
-      { key: "fsis_number", label: "FSIS Number", type: "text", sub_tab: "identity" },
-      { key: "aadhar_number", label: "Aadhar Number", type: "text", sub_tab: "identity" },
-      { key: "pan_number", label: "PAN Number", type: "text", sub_tab: "identity" },
-      { key: "birth_country", label: "Birth Country", type: "dropdown", sub_tab: "identity", options: BIRTHCOUNTRYLIST, required: true },
-      { key: "birth_state", label: "Birth State", type: "dropdown", sub_tab: "identity", options: INDIA_STATES, required: true },
-      { key: "birth_district", label: "Birth District", type: "dropdown", sub_tab: "identity", options: INDIA_DISTRICTS, required: true },
-      { key: "birth_place", label: "Birth Place", type: "dropdown", sub_tab: "identity", options: INDIA_TALUKAS, required: true },
-      { key: "native_country", label: "Native Country", type: "dropdown", sub_tab: "identity", options: NATIONALITYLIST },
-      { key: "native_state", label: "Native State", type: "dropdown", sub_tab: "identity", options: INDIA_STATES },
-      { key: "native_district", label: "Native District", type: "dropdown", sub_tab: "identity", options: INDIA_DISTRICTS },
-      { key: "native_place", label: "Native Place", type: "dropdown", sub_tab: "identity", options: INDIA_TALUKAS },
-      { key: "religion", label: "Religion", type: "dropdown", sub_tab: "religion", options: ERPRELIGIONLIST },
-      { key: "caste", label: "Caste", type: "dropdown", sub_tab: "religion", options: ERPCASTLIST, required: true },
-      { key: "sub_caste", label: "Sub Caste", type: "dropdown", sub_tab: "religion", options: ERPSUBCASTLIST, required: true },
-      { key: "category", label: "Category", type: "dropdown", sub_tab: "religion", options: ERPSTUDENTADMISSIONMAINCATEGORYLIST, required: true },
-      { key: "creamy_layer", label: "Creamy Layer", type: "dropdown", sub_tab: "religion", options: CREAMYLAYERLIST },
-      { key: "physically_handicapped", label: "Physically Handicapped", type: "dropdown", sub_tab: "physically_handicapped", options: PHYSICALLYHANDICAPPEDLIST },
-      { key: "ph_type", label: "PH Type", type: "text", sub_tab: "physically_handicapped" },
-      { key: "ph_percentage", label: "PH Percentage", type: "number", sub_tab: "physically_handicapped" },
-      { key: "belongs_to_minority", label: "Belongs to Minority", type: "dropdown", sub_tab: "minority_details", options: ISBELONGSTOMINORITYLIST },
-      { key: "minority_type", label: "Minority Type", type: "dropdown", sub_tab: "minority_details", options: MINORITYTYPELIST },
-      { key: "passport_number", label: "Passport Number", type: "text", sub_tab: "passport_details" },
-      { key: "passport_valid_upto", label: "Passport Valid Upto", type: "date", sub_tab: "passport_details" },
-      { key: "visa_number", label: "Visa Number", type: "text", sub_tab: "passport_details" },
-      { key: "residential_permit_no", label: "Residential Permit No", type: "text", sub_tab: "passport_details" },
-      { key: "permit_issue_date", label: "Permit Issue Date", type: "date", sub_tab: "passport_details" },
-      { key: "permit_issue_upto_date", label: "Permit Issue Upto Date", type: "date", sub_tab: "passport_details" },
-      { key: "admission_type", label: "Admission Type", type: "dropdown", sub_tab: "admission_details", options: ["CAP", "Management", "Direct", "Lateral"] },
-      { key: "admission_main_category", label: "Admission Category", type: "dropdown", sub_tab: "admission_details", options: ERPSTUDENTADMISSIONMAINCATEGORYLIST, required: true },
-      { key: "seat_type", label: "Seat Type", type: "dropdown", sub_tab: "admission_details", options: ["CAP", "INSTITUTIONAL", "MANAGEMENT", "SPOT"] },
-      { key: "cap_round", label: "CAP Round", type: "text", sub_tab: "admission_details" },
-      { key: "lateral_entry", label: "Lateral Entry", type: "boolean", sub_tab: "admission_details" },
-      { key: "institute_preference_number", label: "Institute Preference Number", type: "number", sub_tab: "admission_details" },
-      { key: "government_scheme", label: "Government Scheme", type: "dropdown", sub_tab: "admission_details", options: GOVERNMENTSCHEMELIST },
-      { key: "scholarship_type", label: "Scholarship Type", type: "dropdown", sub_tab: "admission_details", options: ERPSCHOLARSHIPTYPELIST },
+      { key: "aadhar_number", label: "Aadhar Number", type: "text", sub_tab: "identity", sensitive: true },
+      
+      { key: "birth_country", label: "Birth Country", type: "dropdown", sub_tab: "birth_details", options: BIRTHCOUNTRYLIST, sensitive: true },
+      { key: "birth_state", label: "Birth State", type: "dropdown", sub_tab: "birth_details", options: INDIA_STATES, sensitive: true },
+      { key: "birth_place", label: "Birth Place", type: "text", sub_tab: "birth_details", sensitive: true },
     ],
   },
   contact_details: {
@@ -233,24 +200,25 @@ export const MASTER_PROFILE_SECTION_POOL = {
     icon: "Phone",
     fields: [
       { key: "email", label: "Email", type: "text", required: true },
-      { key: "alternateEmail", label: "Alternate Email", type: "text", required: true },
-      { key: "phoneNumber", label: "Mobile Number", type: "text", required: true },
-      { key: "permanent_address", label: "Permanent Address", type: "text" },
-      { key: "permanent_state", label: "State", type: "dropdown", options: INDIA_STATES },
-      { key: "permanent_district", label: "District", type: "dropdown", options: INDIA_DISTRICTS },
-      { key: "permanent_taluka", label: "Taluka", type: "dropdown", options: INDIA_TALUKAS },
-      { key: "permanent_city", label: "City / Village", type: "text" },
-      { key: "permanent_pincode", label: "Pincode", type: "text" },
-      { key: "native_area_type", label: "Native Area Type", type: "dropdown", options: ERPAREATYPELIST },
-      { key: "current_address", label: "Current Address", type: "text" },
-      { key: "current_state", label: "Current State", type: "dropdown", options: INDIA_STATES },
-      { key: "current_taluka", label: "Current Taluka", type: "dropdown", options: INDIA_TALUKAS },
-      { key: "current_city", label: "Current City / Village", type: "text" },
-      { key: "current_pincode", label: "Current Pincode", type: "text" },
-      { key: "area_type", label: "Current Area Type", type: "dropdown", options: ERPAREATYPELIST },
-      { key: "emergency_contact_name", label: "Emergency Contact Name", type: "text" },
-      { key: "emergency_contact_mobile", label: "Emergency Contact Mobile", type: "text" },
-      { key: "emergency_contact_relation", label: "Relation", type: "dropdown", options: RELATIONTYPELIST },
+      { key: "alternateEmail", label: "Alternate Email", type: "text" },
+      { key: "phoneNumber", label: "Mobile Number", type: "text", required: true, sensitive: true },
+      
+      { key: "permanent_address", label: "Permanent Address", type: "text", sensitive: true },
+      { key: "permanent_state", label: "State", type: "dropdown", options: INDIA_STATES, sensitive: true },
+      { key: "permanent_district", label: "District", type: "dropdown", options: INDIA_DISTRICTS, sensitive: true },
+      { key: "permanent_city", label: "City / Village", type: "text", sensitive: true },
+      { key: "permanent_pincode", label: "Pincode", type: "text", sensitive: true },
+      
+      { key: "same_as_permanent", label: "Same as Permanent Address", type: "boolean" },
+
+      { key: "current_address", label: "Current Address", type: "text", sensitive: true },
+      { key: "current_state", label: "Current State", type: "dropdown", options: INDIA_STATES, sensitive: true },
+      { key: "current_city", label: "Current City / Village", type: "text", sensitive: true },
+      { key: "current_pincode", label: "Current Pincode", type: "text", sensitive: true },
+      
+      { key: "emergency_contact_name", label: "Emergency Contact Name", type: "text", sensitive: true },
+      { key: "emergency_contact_mobile", label: "Emergency Contact Mobile", type: "text", sensitive: true },
+      { key: "emergency_contact_relation", label: "Relation", type: "dropdown", options: RELATIONTYPELIST, sensitive: true },
     ],
   },
   family_details: {
@@ -258,25 +226,74 @@ export const MASTER_PROFILE_SECTION_POOL = {
     label: "Family Details",
     icon: "Users",
     fields: [
-      { key: "fatherName", label: "Father's Name", type: "text", required: true },
-      { key: "motherName", label: "Mother's Name", type: "text", required: true },
-      { key: "earning_parent_name", label: "Earning Parent Name", type: "text", required: true },
-      { key: "earning_parent_relation", label: "Earning Parent Relation", type: "dropdown", options: RELATIONTYPELIST, required: true },
-      { key: "father_occupation", label: "Father's Occupation", type: "text" },
-      { key: "mother_occupation", label: "Mother's Occupation", type: "text" },
-      { key: "father_income", label: "Father's Income", type: "number" },
-      { key: "mother_income", label: "Mother's Income", type: "number" },
+      { key: "fatherName", label: "Father's Name", type: "text", required: true, sensitive: true },
+      { key: "father_occupation", label: "Father's Occupation", type: "text", sensitive: true },
       { key: "father_mobile", label: "Father's Mobile", type: "text", sensitive: true },
+      { key: "father_email", label: "Father's Email", type: "text", sensitive: true },
+      
+      { key: "motherName", label: "Mother's Name", type: "text", required: true, sensitive: true },
+      { key: "mother_occupation", label: "Mother's Occupation", type: "text", sensitive: true },
       { key: "mother_mobile", label: "Mother's Mobile", type: "text", sensitive: true },
-      { key: "father_email", label: "Father's Email", type: "text" },
-      { key: "mother_email", label: "Mother's Email", type: "text" },
-      { key: "father_education", label: "Father's Education", type: "text" },
-      { key: "mother_education", label: "Mother's Education", type: "text" },
-      { key: "local_guardian_name", label: "Local Guardian Name", type: "text" },
+      { key: "mother_email", label: "Mother's Email", type: "text", sensitive: true },
+      
+      { key: "has_local_guardian", label: "I have a local guardian", type: "boolean" },
+      { key: "local_guardian_name", label: "Local Guardian Name", type: "text", sensitive: true },
       { key: "local_guardian_mobile", label: "Local Guardian Mobile", type: "text", sensitive: true },
-      { key: "local_guardian_address", label: "Local Guardian Address", type: "text" },
+      { key: "local_guardian_address", label: "Local Guardian Address", type: "text", sensitive: true },
     ],
   },
+  category_minority: {
+    key: "category_minority",
+    label: "Category & Disability",
+    icon: "ShieldCheck",
+    fields: [
+      { key: "religion", label: "Religion", type: "dropdown", options: ERPRELIGIONLIST, sensitive: true },
+      { key: "category", label: "Category", type: "dropdown", options: ERPSTUDENTADMISSIONMAINCATEGORYLIST, sensitive: true },
+      { key: "caste", label: "Caste", type: "dropdown", options: ERPCASTLIST, sensitive: true },
+      { key: "sub_caste", label: "Sub Caste", type: "dropdown", options: ERPSUBCASTLIST, sensitive: true },
+      { key: "creamy_layer", label: "Creamy Layer", type: "dropdown", options: CREAMYLAYERLIST, sensitive: true },
+      
+      { key: "belongs_to_minority", label: "Belongs to Minority", type: "dropdown", options: ISBELONGSTOMINORITYLIST, sensitive: true },
+      { key: "minority_type", label: "Minority Type", type: "dropdown", options: MINORITYTYPELIST, sensitive: true },
+      
+      { key: "physically_handicapped", label: "Physically Handicapped", type: "dropdown", options: PHYSICALLYHANDICAPPEDLIST, sensitive: true },
+      { key: "ph_type", label: "PH Type", type: "text", sensitive: true },
+      { key: "ph_percentage", label: "PH Percentage", type: "number", sensitive: true },
+    ]
+  },
+  international_student: {
+    key: "international_student",
+    label: "International Details",
+    icon: "Globe",
+    fields: [
+      { key: "is_international", label: "Is International Student?", type: "boolean" },
+      { key: "passport_number", label: "Passport Number", type: "text", sensitive: true },
+      { key: "passport_valid_upto", label: "Passport Valid Upto", type: "date", sensitive: true },
+      { key: "visa_number", label: "Visa Number", type: "text", sensitive: true },
+      { key: "residential_permit_no", label: "Residential Permit Number", type: "text", sensitive: true },
+      { key: "permit_issue_date", label: "Permit Issue Date", type: "date", sensitive: true },
+      { key: "permit_issue_upto_date", label: "Permit Valid Upto", type: "date", sensitive: true },
+    ]
+  },
+  academic_placement: {
+    key: "academic_placement",
+    label: "Admission & Academic",
+    icon: "School",
+    fields: [
+      { key: "admission_type", label: "Admission Type", type: "dropdown", options: ["CAP", "Management", "Direct", "Lateral"] },
+      { key: "admission_main_category", label: "Admission Category", type: "dropdown", options: ERPSTUDENTADMISSIONMAINCATEGORYLIST, required: true, sensitive: true },
+      { key: "seat_type", label: "Seat Type", type: "dropdown", options: ["CAP", "INSTITUTIONAL", "MANAGEMENT", "SPOT"], sensitive: true },
+      { key: "cap_round", label: "CAP Round", type: "text", sensitive: true },
+      { key: "lateral_entry", label: "Lateral Entry", type: "boolean" },
+      
+      { key: "prn", label: "PRN / University Registration Number", type: "text", required: true, sensitive: true },
+      { key: "degree", label: "Degree Program", type: "dropdown", options: ["B.Tech", "M.Tech", "MBA", "B.E", "B.Sc", "Ph.D"], required: true },
+      { key: "branch", label: "Branch", type: "dropdown", options: ["Computer Science", "Mechanical", "Civil", "Electrical", "Electronics", "IT"], required: true },
+      { key: "department", label: "Department", type: "text" },
+      { key: "batch", label: "Batch (e.g. 2023-2027)", type: "text", required: true },
+    ],
+  },
+
   education_details: {
     key: "education_details",
     label: "Education Details",
@@ -423,24 +440,7 @@ export const MASTER_PROFILE_SECTION_POOL = {
       { key: "anti_ragging_date", label: "Undertaking Date", type: "date" },
     ],
   },
-  academic_placement: {
-    key: "academic_placement",
-    label: "Academic Placement",
-    icon: "School",
-    fields: [
-      { key: "prn", label: "PRN", type: "text" },
-      { key: "branch", label: "Branch", type: "text" },
-      { key: "batch", label: "Batch", type: "text" },
-      { key: "department", label: "Department", type: "text" },
-      { key: "division", label: "Division", type: "text" },
-      { key: "standard", label: "Standard", type: "text" },
-      { key: "stream", label: "Stream", type: "text" },
-      { key: "course", label: "Course", type: "text" },
-      { key: "semester", label: "Semester", type: "text" },
-      { key: "year", label: "Year", type: "text" },
-      { key: "degree", label: "Degree", type: "text" },
-    ],
-  },
+
   platform_metadata: {
     key: "platform_metadata",
     label: "Platform Info",
@@ -503,53 +503,96 @@ export const ROLE_PROFILE_CONFIGS = {
   student: {
     sections: [
       "personal_details", "academic_placement", "contact_details", "family_details",
-      "education_details", "bank_details", "upload_documents", "awards_participation",
-      "student_activity", "social_details", "id_card_photos", "medical_details",
-      "skills_interest", "anti_ragging", "platform_metadata",
+      "category_minority", "international_student"
     ],
-    academic_placement_fields: {
-      engineering: ["prn", "degree", "department", "branch", "year", "semester", "division", "batch"],
-      school: ["prn", "standard", "division", "batch"],
-      junior_college: ["prn", "stream", "standard", "division", "batch"],
-      coaching: ["prn", "course", "batch"],
-      diploma: ["prn", "department", "branch", "year", "semester", "division", "batch"],
-      other: ["prn", "department", "branch", "batch"],
-    },
+    academic_placement_fields: null, // Now generic and simplified
   },
   faculty: {
-    sections: ["personal_details", "contact_details", "education_details", "social_details", "staff_common_details", "professional_details", "faculty_specific_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "awards_participation", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "faculty_specific_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   org_admin: {
-    sections: ["personal_details", "contact_details", "education_details", "social_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   department_admin: {
-    sections: ["personal_details", "contact_details", "education_details", "social_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   fee_manager: {
-    sections: ["personal_details", "contact_details", "education_details", "social_details", "staff_common_details", "professional_details", "dept_admin_common_details", "fees_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "fees_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   hr_dept: {
-    sections: ["personal_details", "contact_details", "education_details", "social_details", "staff_common_details", "professional_details", "dept_admin_common_details", "payroll_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "payroll_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   admission_head: {
-    sections: ["personal_details", "contact_details", "education_details", "social_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
+    academic_placement_fields: null,
+  },
+  admission_verifier: {
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
+    academic_placement_fields: null,
+  },
+  admission_counselor: {
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
+    academic_placement_fields: null,
+  },
+  admission_clerk: {
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "admission_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   hod: {
-    sections: ["personal_details", "contact_details", "education_details", "social_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   principal: {
-    sections: ["personal_details", "contact_details", "education_details", "social_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
+    academic_placement_fields: null,
+  },
+  vice_principal: {
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "org_admin_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   super_admin: {
-    sections: ["personal_details", "contact_details", "social_details", "platform_metadata"],
+    sections: ["personal_details", "contact_details", "family_details", "social_details", "platform_metadata"],
+    academic_placement_fields: null,
+  },
+  exam_controller: {
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    academic_placement_fields: null,
+  },
+  library_manager: {
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    academic_placement_fields: null,
+  },
+  library_admin: {
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    academic_placement_fields: null,
+  },
+  attendance_admin: {
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    academic_placement_fields: null,
+  },
+  hostel_dept: {
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    academic_placement_fields: null,
+  },
+  transport_manager: {
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    academic_placement_fields: null,
+  },
+  tpo_officer: {
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    academic_placement_fields: null,
+  },
+  counselor: {
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
+    academic_placement_fields: null,
+  },
+  coordinator: {
+    sections: ["personal_details", "contact_details", "family_details", "education_details", "bank_details", "upload_documents", "experience_details", "social_details", "id_card_photos", "medical_details", "staff_common_details", "professional_details", "dept_admin_common_details", "platform_metadata"],
     academic_placement_fields: null,
   },
 };
@@ -570,6 +613,9 @@ export const VIEWER_ACCESS_MATRIX = {
   principal: {
     access_level: "full", can_edit: false, hidden_sections: ["hr_payroll"], show_sensitive: true, show_settings: false,
   },
+  vice_principal: {
+    access_level: "full", can_edit: false, hidden_sections: ["hr_payroll"], show_sensitive: true, show_settings: false,
+  },
   hod: {
     access_level: "professional", can_edit: false, hidden_sections: ["bank_details", "hr_payroll"], show_sensitive: false, show_settings: false,
   },
@@ -586,9 +632,21 @@ export const VIEWER_ACCESS_MATRIX = {
   library_manager: {
     access_level: "public", can_edit: false, hidden_sections: ["bank_details", "hr_payroll", "family_details", "medical_details", "education_details"], show_sensitive: false, show_settings: false,
   },
+  library_admin: {
+    access_level: "public", can_edit: false, hidden_sections: ["bank_details", "hr_payroll", "family_details", "medical_details", "education_details"], show_sensitive: false, show_settings: false,
+  },
+  attendance_admin: {
+    access_level: "professional", can_edit: false, hidden_sections: ["bank_details", "hr_payroll", "family_details", "medical_details"], show_sensitive: false, show_settings: false,
+  },
   hr_dept: {
     access_level: "full", can_edit: false, hidden_sections: [], show_sensitive: true, show_settings: false,
     section_overrides: { hr_payroll: { visible: true, show_sensitive: true } },
+  },
+  hostel_dept: {
+    access_level: "professional", can_edit: false, hidden_sections: ["bank_details", "hr_payroll"], show_sensitive: false, show_settings: false,
+  },
+  transport_manager: {
+    access_level: "professional", can_edit: false, hidden_sections: ["bank_details", "hr_payroll"], show_sensitive: false, show_settings: false,
   },
   faculty: {
     access_level: "professional", can_edit: false, hidden_sections: ["bank_details", "hr_payroll"], show_sensitive: false, show_settings: false,

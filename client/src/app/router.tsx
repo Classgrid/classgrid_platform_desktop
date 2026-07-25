@@ -32,6 +32,7 @@ import { ActivityLogPage } from "@/features/superadmin/pages/ActivityLogPage";
 import { ConfigPage } from "@/features/superadmin/pages/ConfigPage";
 import { UsersPage } from "@/features/superadmin/pages/UsersPage";
 import { GlobalUsersPage } from "@/features/superadmin/pages/GlobalUsersPage";
+import { UserDetailPage } from "@/features/superadmin/pages/UserDetailPage";
 import { GdprPage } from "@/features/superadmin/pages/GdprPage";
 import { BackupPage } from "@/features/superadmin/pages/BackupPage";
 import { CustomDomainsPage } from "@/features/superadmin/pages/CustomDomainsPage";
@@ -72,6 +73,7 @@ import ClassroomDetailPage from "@/features/classrooms/pages/ClassroomDetailPage
 import { DiscoverClassroomsPage } from "@/features/classrooms/pages/DiscoverClassroomsPage";
 import { WebsiteCMSPage } from "@/features/website_cms/pages/WebsiteCMSPage";
 import { JoinRequestPage } from "@/features/chat/pages/JoinRequestPage";
+import { OnboardingWizardPage } from "@/features/auth/pages/OnboardingWizardPage";
 
 import { StudentHomePage } from "@/features/student/pages/StudentHomePage";
 import { StudentWorkPage } from "@/features/student/pages/StudentWorkPage";
@@ -141,6 +143,15 @@ export function AppRouter() {
     !hostname.endsWith(".classgrid.in");
   const subdomain = hostname.split(".")[0];
   const isSuperAdmin = subdomain === "superadmin";
+  const isOnboarding = subdomain === "onboard" || subdomain === "onboarding" || window.location.pathname.startsWith("/onboard");
+
+  if (isOnboarding) {
+    return (
+      <Routes>
+        <Route path="/*" element={<OnboardingWizardPage />} />
+      </Routes>
+    );
+  }
 
   return (
     <Routes>
@@ -210,6 +221,7 @@ export function AppRouter() {
           <Route path="/superadmin/failed-payments" element={<FailedPaymentsPage />} />
           <Route path="/superadmin/users" element={<UsersPage />} />
           <Route path="/superadmin/global-users" element={<GlobalUsersPage />} />
+          <Route path="/superadmin/global-users/:userId" element={<UserDetailPage />} />
           <Route path="/superadmin/activity-log" element={<ActivityLogPage />} />
           <Route path="/superadmin/announcements" element={<PlatformAnnouncementsPage />} />
           <Route path="/superadmin/config" element={<ConfigPage />} />

@@ -9,6 +9,8 @@ export type AuthUserRole = "student" | "teacher";
 export type InstitutionAdminRole =
   | "org_admin"
   | "library_manager"
+  | "library_admin"
+  | "attendance_admin"
   | "hr_dept"
   | "hostel_dept"
   | "hod"
