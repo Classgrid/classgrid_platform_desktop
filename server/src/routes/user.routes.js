@@ -449,8 +449,8 @@ router.put("/update", isAuthenticated, attachInstitutionProfile({ required: fals
     });
 
   } catch (error) {
-    console.error("UPDATE PROFILE ERROR:", error.message);
-    res.status(500).json({ message: "Server error updating profile" });
+    console.error("UPDATE PROFILE ERROR:", error.message, error);
+    res.status(500).json({ message: "Server error updating profile: " + error.message, error: error.toString() });
   }
 });
 

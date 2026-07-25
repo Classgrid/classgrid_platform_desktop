@@ -662,7 +662,7 @@ export const ORG_TYPE_LABEL_MAP = {
 
 export const ROLE_PROFILE_CONFIGS = {
   student: {
-    sections: ["personal_details", "academic_placement", "contact_details", "family_details", "category_minority", "international_student", "education_details", "upload_documents"],
+    sections: ["personal_details", "id_card_photos", "academic_placement", "contact_details", "family_details", "category_minority", "international_student", "education_details", "upload_documents"],
     academic_placement_fields: null, // Now generic and simplified
   },
   faculty: {

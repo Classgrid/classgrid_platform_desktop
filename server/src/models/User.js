@@ -485,8 +485,7 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
     metadata: {
-      type: Map,
-      of: mongoose.Schema.Types.Mixed,
+      type: mongoose.Schema.Types.Mixed,
       default: {},
     }
   },
