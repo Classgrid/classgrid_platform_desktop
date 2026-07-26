@@ -11,14 +11,6 @@ interface PremiumNoteEditorProps {
 export function PremiumNoteEditor({ content, onChange, placeholder = "Start writing your note in Markdown..." }: PremiumNoteEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${Math.max(400, textareaRef.current.scrollHeight)}px`;
-    }
-  }, [content]);
-
   const insertMarkdown = (prefix: string, suffix: string = "") => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -65,10 +57,10 @@ export function PremiumNoteEditor({ content, onChange, placeholder = "Start writ
   );
 
   return (
-    <div className="flex flex-col w-full h-full border rounded-xl overflow-hidden bg-card focus-within:ring-1 focus-within:ring-emerald-500/50 transition-shadow">
+    <div className="flex flex-col w-full min-h-[500px] border rounded-xl overflow-hidden bg-card focus-within:ring-1 focus-within:ring-emerald-500/50 transition-shadow">
       
       {/* Markdown Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 p-1.5 border-b bg-muted/30">
+      <div className="flex flex-wrap items-center gap-1 p-1.5 border-b bg-muted/30 shrink-0">
         <div className="flex items-center gap-0.5 mr-2">
           <ToolbarButton icon={Bold} title="Bold" onClick={() => insertMarkdown("**", "**")} />
           <ToolbarButton icon={Italic} title="Italic" onClick={() => insertMarkdown("_", "_")} />
