@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Clock, User, Globe, Lock, Users, Calendar, Tags, History, Edit3, CheckCircle2, List } from "lucide-react";
+import { Clock, User, Globe, Lock, Users, Calendar, Tags, History, Edit3, CheckCircle2, List, Pin } from "lucide-react";
 import { Note } from "../services/notesApi";
 import { cn } from "@/lib/utils";
 import { getTagColor } from "../utils/noteColors";
@@ -14,11 +14,11 @@ interface NoteViewerProps {
   note: Note;
   onEdit: () => void;
   onRestoreVersion?: (version: any) => void;
+  onTogglePin?: () => void;
 }
 
-export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) {
+export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin }: NoteViewerProps) {
   const [showHistory, setShowHistory] = useState(false);
-  const [showTOC, setShowTOC] = useState(false);
   const { data: versions = [], isLoading: loadingVersions } = useNoteVersions(showHistory ? note._id : undefined);
 
   const VisibilityIcon = note.visibility === "Public" ? Globe : note.visibility === "Shared" ? Users : Lock;
@@ -55,6 +55,12 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
           
           {/* Header Actions */}
           <div className="flex flex-wrap justify-end gap-3 mb-6 pt-2">
+            {onTogglePin && (
+              <Button variant="outline" size="sm" onClick={onTogglePin} className={note.isPinned ? "text-amber-500 border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 hover:text-amber-600" : ""}>
+                <Pin className={cn("w-4 h-4 sm:mr-2", note.isPinned ? "fill-amber-500" : "")} />
+                <span className="hidden sm:inline">{note.isPinned ? "Unpin" : "Pin"}</span>
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)} className={showHistory ? "bg-accent" : ""}>
               <History className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">History</span>
