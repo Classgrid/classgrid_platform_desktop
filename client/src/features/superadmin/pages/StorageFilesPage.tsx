@@ -958,10 +958,8 @@ export function StorageFilesPage() {
           };
         };
 
-        queryClient.setQueryData(storageKeys.list(parentPrefix), updateRenamedItem);
-        if (debouncedSearch) {
-          queryClient.setQueryData(storageKeys.list(parentPrefix, debouncedSearch), updateRenamedItem);
-        }
+        // Always update the cache for the exact view the user is currently seeing
+        queryClient.setQueryData(storageKeys.list(parentPrefix, debouncedSearch), updateRenamedItem);
 
         // Keep the active file open in the preview pane
         if (activeFile?.key === oldFileToRename.key) {
@@ -993,15 +991,12 @@ export function StorageFilesPage() {
       onError: (err, newTodo, context) => {
         // Rollback on failure
         if (context?.previousData) {
-          queryClient.setQueryData(storageKeys.list(parentPrefix), context.previousData);
-        }
-        if (context?.previousSearchData && debouncedSearch) {
-          queryClient.setQueryData(storageKeys.list(parentPrefix, debouncedSearch), context.previousSearchData);
+          queryClient.setQueryData(storageKeys.list(parentPrefix, debouncedSearch), context.previousData);
         }
       },
       onSettled: () => {
         // Always refetch after error or success to ensure sync
-        queryClient.invalidateQueries({ queryKey: storageKeys.list(parentPrefix) });
+        queryClient.invalidateQueries({ queryKey: storageKeys.list(parentPrefix, debouncedSearch) });
       }
     });
   };
