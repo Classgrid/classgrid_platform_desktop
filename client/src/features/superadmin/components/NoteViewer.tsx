@@ -68,7 +68,7 @@ export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin, onDele
         <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12 relative">
           
           {/* Header Actions */}
-          <div className="flex flex-wrap justify-end gap-3 mb-6 pt-2">
+          <div className="flex flex-wrap gap-2.5 mb-6 pt-2">
             {onTogglePin && (
               <Button
                 variant="outline"
