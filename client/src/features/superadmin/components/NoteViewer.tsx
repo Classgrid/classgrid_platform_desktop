@@ -7,8 +7,8 @@ import { Note } from "../services/notesApi";
 import { cn } from "@/lib/utils";
 import { getTagColor } from "../utils/noteColors";
 import { Button } from "@/components/marketing_ui/button";
-import { ScrollArea } from "@/components/marketing_ui/scroll-area";
 import { useNoteVersions } from "../queries/useNotes";
+import rehypeRaw from "rehype-raw";
 
 interface NoteViewerProps {
   note: Note;
@@ -22,8 +22,17 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
 
   const VisibilityIcon = note.visibility === "Public" ? Globe : note.visibility === "Shared" ? Users : Lock;
 
+  // Clean up legacy HTML tags from rich text editor days
+  let displayContent = note.content || "";
+  if (displayContent.includes("<div>")) {
+    displayContent = displayContent
+      .replace(/<div>/g, "")
+      .replace(/<\/div>/g, "\n")
+      .replace(/<br\s*\/?>/gi, "\n");
+  }
+
   // Extract headings for Table of Contents
-  const headings = note.content
+  const headings = displayContent
     .split("\n")
     .filter((line) => line.startsWith("#"))
     .map((line) => {
@@ -34,26 +43,28 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
     .filter(Boolean) as { level: number; text: string }[];
 
   return (
-    <div className="flex w-full h-full">
-      <ScrollArea className="flex-1 h-full bg-background relative">
-        <div className="max-w-4xl mx-auto px-8 py-12 relative">
+    <div className="flex w-full h-full overflow-hidden">
+      <div className="flex-1 min-w-0 h-full overflow-y-auto bg-background relative">
+        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12 relative">
           
           {/* Header Actions */}
-          <div className="absolute top-8 right-8 flex items-center gap-2">
+          <div className="absolute top-4 right-4 sm:top-8 sm:right-8 flex flex-wrap justify-end gap-2 z-10">
             <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)} className={showHistory ? "bg-accent" : ""}>
-              <History className="w-4 h-4 mr-2" />
-              History
+              <History className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">History</span>
             </Button>
             <Button size="sm" onClick={onEdit}>
-              <Edit3 className="w-4 h-4 mr-2" />
-              Edit Note
+              <Edit3 className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Edit Note</span>
             </Button>
           </div>
 
           {/* Title Area */}
-          <div className="flex items-center gap-4 mb-8 pr-48">
-            <span className="text-5xl">{note.icon || "📄"}</span>
-            <h1 className="text-4xl font-bold tracking-tight text-foreground">{note.title}</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 pt-12 sm:pt-0 pr-0 sm:pr-48 relative min-w-0">
+            <span className="text-5xl shrink-0">{note.icon || "📄"}</span>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground break-words min-w-0" style={{ overflowWrap: 'anywhere' }}>
+              {note.title}
+            </h1>
           </div>
 
           {/* Beautiful Metadata Grid */}
@@ -104,10 +115,13 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
           <div className="flex gap-12">
             {/* Markdown Content */}
             <div className="flex-1 min-w-0 pb-32">
-              <div className="prose prose-emerald dark:prose-invert max-w-none prose-headings:scroll-mt-6 prose-img:rounded-xl">
-                {note.content ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {note.content}
+              <div className="prose prose-emerald dark:prose-invert max-w-full prose-headings:scroll-mt-6 prose-img:rounded-xl break-words" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                {displayContent ? (
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw]}
+                  >
+                    {displayContent}
                   </ReactMarkdown>
                 ) : (
                   <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-xl opacity-60">
@@ -124,8 +138,8 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
 
             {/* Table of Contents */}
             {headings.length > 0 && (
-              <div className="hidden lg:block w-64 shrink-0">
-                <div className="sticky top-8">
+              <div className="hidden xl:block w-64 shrink-0">
+                <div className="sticky top-8 max-h-[calc(100vh-120px)] overflow-y-auto">
                   <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Contents</h4>
                   <div className="flex flex-col gap-2.5 border-l-2 border-border/50">
                     {headings.map((h, i) => (
@@ -144,7 +158,7 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
             )}
           </div>
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Version History Sidebar */}
       {showHistory && (
@@ -157,7 +171,7 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
               &times;
             </Button>
           </div>
-          <ScrollArea className="flex-1 p-4">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4">
             {loadingVersions ? (
               <div className="text-sm text-muted-foreground text-center p-4">Loading history...</div>
             ) : versions.length === 0 ? (
@@ -184,7 +198,7 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
                 ))}
               </div>
             )}
-          </ScrollArea>
+          </div>
         </div>
       )}
     </div>

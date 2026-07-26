@@ -360,7 +360,10 @@ export function NotesPage() {
       {/* ══════════ LEFT: Sidebar + List ══════════ */}
       <div
         style={{ width: leftWidth, minWidth: 280, maxWidth: 600, flexShrink: 0 }}
-        className="flex h-full border-r overflow-hidden"
+        className={cn(
+          "flex h-full border-r overflow-hidden transition-all duration-300",
+          (activeNote || isEditing) ? "hidden md:flex" : "flex w-full md:w-auto"
+        )}
       >
 
         {/* Narrow Icon Sidebar */}
@@ -398,7 +401,7 @@ export function NotesPage() {
             <Star className="w-4 h-4" />
           </button>
 
-          {allCategories.slice(0, 6).map((cat, i) => (
+          {allCategories.slice(0, 6).map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(selectedCategory === cat ? undefined : cat)}
@@ -533,11 +536,33 @@ export function NotesPage() {
         </div>
       </div>
 
-      {/* Resize Handle */}
-      <ResizeHandle onDrag={handleLeftDrag} />
+      {/* Resize Handle (Hidden on small screens) */}
+      <div className={cn("hidden md:flex", (activeNote || isEditing) ? "flex" : "hidden")}>
+        <ResizeHandle onDrag={handleLeftDrag} />
+      </div>
 
       {/* ══════════ RIGHT: Viewer / Editor ══════════ */}
-      <div style={{ flex: 1, minWidth: 0 }} className="flex flex-col h-full overflow-hidden bg-card">
+      <div 
+        style={{ flex: 1, minWidth: 0 }} 
+        className={cn(
+          "flex flex-col h-full overflow-hidden bg-card",
+          (!activeNote && !isEditing) ? "hidden md:flex" : "flex w-full md:w-auto"
+        )}
+      >
+        {/* Mobile Back Button */}
+        {(activeNote || isEditing) && (
+          <div className="md:hidden flex items-center px-4 py-2 border-b bg-background/95 backdrop-blur shrink-0">
+            <button
+              onClick={() => {
+                setActiveNote(null);
+                setIsEditing(false);
+              }}
+              className="text-sm font-medium text-emerald-500 flex items-center gap-1 hover:text-emerald-600 transition-colors"
+            >
+              &larr; Back to Notes
+            </button>
+          </div>
+        )}
 
         {/* ── Empty State ── */}
         {!activeNote && !isEditing && (
@@ -702,7 +727,17 @@ export function NotesPage() {
             note={activeNote}
             onEdit={() => {
               setEditTitle(activeNote.title);
-              setEditContent(activeNote.content || "");
+              
+              // Clean up legacy HTML tags if present
+              let cleanContent = activeNote.content || "";
+              if (cleanContent.includes("<div>")) {
+                cleanContent = cleanContent
+                  .replace(/<div>/g, "")
+                  .replace(/<\/div>/g, "\n")
+                  .replace(/<br\s*\/?>/gi, "\n");
+              }
+              setEditContent(cleanContent);
+              
               setEditTags(activeNote.tags || []);
               setEditCategory(activeNote.category || "General");
               setEditIcon(activeNote.icon || "📄");
