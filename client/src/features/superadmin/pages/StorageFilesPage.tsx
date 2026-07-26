@@ -916,7 +916,18 @@ export function StorageFilesPage() {
     };
 
     renameObjectMutation.mutate({ sourceKey: oldFileToRename.key, destinationKey: newKey }, {
-      onSuccess: () => {
+      onMutate: async () => {
+        // Cancel any outgoing refetches so they don't overwrite our optimistic update
+        await queryClient.cancelQueries({ queryKey: storageKeys.list(parentPrefix) });
+        if (debouncedSearch) {
+          await queryClient.cancelQueries({ queryKey: storageKeys.list(parentPrefix, debouncedSearch) });
+        }
+
+        // Snapshot the previous value
+        const previousData = queryClient.getQueryData(storageKeys.list(parentPrefix));
+        const previousSearchData = debouncedSearch ? queryClient.getQueryData(storageKeys.list(parentPrefix, debouncedSearch)) : undefined;
+
+        // Optimistically update to the new value
         const updateRenamedItem = (oldData: any) => {
           if (!oldData) return oldData;
 
@@ -927,7 +938,7 @@ export function StorageFilesPage() {
                 folder.prefix === oldFileToRename.key
                   ? { ...folder, prefix: newKey, name: finalName }
                   : folder
-              )),
+              )).sort((a: any, b: any) => a.name.localeCompare(b.name)),
             };
           }
 
@@ -943,7 +954,7 @@ export function StorageFilesPage() {
                     cdnUrl: generateNewCdnUrl(file.cdnUrl, newKey),
                   }
                 : file
-            )),
+            )).sort((a: any, b: any) => a.name.localeCompare(b.name)),
           };
         };
 
@@ -973,8 +984,24 @@ export function StorageFilesPage() {
           });
         }
 
+        // Clear the renaming UI immediately
         setFileToRename(null);
         setNewFileName("");
+
+        return { previousData, previousSearchData };
+      },
+      onError: (err, newTodo, context) => {
+        // Rollback on failure
+        if (context?.previousData) {
+          queryClient.setQueryData(storageKeys.list(parentPrefix), context.previousData);
+        }
+        if (context?.previousSearchData && debouncedSearch) {
+          queryClient.setQueryData(storageKeys.list(parentPrefix, debouncedSearch), context.previousSearchData);
+        }
+      },
+      onSettled: () => {
+        // Always refetch after error or success to ensure sync
+        queryClient.invalidateQueries({ queryKey: storageKeys.list(parentPrefix) });
       }
     });
   };
