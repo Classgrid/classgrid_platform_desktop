@@ -698,14 +698,12 @@ export function StorageFilesPage() {
           }
         };
 
-        // Upload files in batches (e.g. 1 at a time) to be faster but not trigger rate limits and to save EC2 Nginx buffer space
+        // Upload files in batches of 5 concurrently to drastically improve speed for bulk uploads
         const uploadInBatches = async () => {
-          const BATCH_SIZE = 1;
+          const BATCH_SIZE = 5;
           for (let i = 0; i < newUploads.length; i += BATCH_SIZE) {
             const batch = newUploads.slice(i, i + BATCH_SIZE);
             await Promise.all(batch.map(upload => processUpload(upload)));
-            // Small delay between batches
-            await new Promise(resolve => setTimeout(resolve, 300));
           }
         };
 
