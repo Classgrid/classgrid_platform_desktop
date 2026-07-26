@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { Search, Plus, Pin, Trash2, Edit3, X, Tag, FileText, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/marketing_ui/nikhil_calendar";
+import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { Input } from "@/components/marketing_ui/input";
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
@@ -140,12 +140,13 @@ export function NotesPage() {
             />
           </div>
 
-          <div className="bg-background rounded-xl border border-border overflow-hidden flex justify-center">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              className="p-3"
+          <div className="bg-background rounded-xl overflow-hidden flex flex-col justify-center">
+            <NikhilTimeCalendar
+              value={selectedDate}
+              onChange={setSelectedDate}
+              placeholder="Select date & time"
+              popDirection="right"
+              className="w-full bg-accent/30 border-border shadow-sm hover:bg-accent/50"
             />
           </div>
 

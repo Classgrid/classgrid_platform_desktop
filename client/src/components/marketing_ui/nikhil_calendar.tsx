@@ -5,6 +5,7 @@ import {
   type DayButton,
   type Locale,
 } from "react-day-picker"
+import "react-day-picker/dist/style.css"
 
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/marketing_ui/button"
