@@ -683,10 +683,8 @@ export function StorageFilesPage() {
               };
             };
 
-            queryClient.setQueryData(storageKeys.list(upload.prefix), updateCache);
-            if (debouncedSearch) {
-              queryClient.setQueryData(storageKeys.list(upload.prefix, debouncedSearch), updateCache);
-            }
+            // Always update the cache for the current view (whether search is empty or not)
+            queryClient.setQueryData(storageKeys.list(upload.prefix, debouncedSearch), updateCache);
 
             // Set to completed so it can be filtered out from inline display
             setUploadingFiles(prev => prev.map(u => u.id === upload.id ? { ...u, progress: 100, status: 'completed' } : u));
@@ -813,8 +811,8 @@ export function StorageFilesPage() {
     // Instantly hide the input
     setCreatingFolderIn(null);
 
-    // Optimistically update the cache for the Miller columns view (no search term)
-    queryClient.setQueryData(storageKeys.list(targetPrefix), (oldData: any) => {
+    // Always update the cache for the current view (whether search is empty or not)
+    queryClient.setQueryData(storageKeys.list(targetPrefix, debouncedSearch), (oldData: any) => {
       if (!oldData) return oldData;
       return {
         ...oldData,
@@ -824,20 +822,6 @@ export function StorageFilesPage() {
         ].sort((a: any, b: any) => a.name.localeCompare(b.name))
       };
     });
-
-    // Also update the search view cache if the user is currently searching
-    if (debouncedSearch) {
-      queryClient.setQueryData(storageKeys.list(targetPrefix, debouncedSearch), (oldData: any) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          folders: [
-            ...oldData.folders,
-            { name: newFolderName, prefix: newPrefix }
-          ].sort((a: any, b: any) => a.name.localeCompare(b.name))
-        };
-      });
-    }
 
     createFolderMutation.mutate({ folderName: newFolderName, prefix: targetPrefix }, {
       onSuccess: () => {
