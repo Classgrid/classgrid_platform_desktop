@@ -732,7 +732,14 @@ export function NotesPage() {
                 );
               }
             }}
-            onTogglePin={() => togglePin.mutate(activeNote._id)}
+            onTogglePin={() => {
+              togglePin.mutate(activeNote._id, {
+                onSuccess: (updatedNote) => {
+                  setActiveNote(updatedNote);
+                  toast.success(updatedNote.isPinned ? "Note pinned successfully" : "Note unpinned successfully");
+                }
+              });
+            }}
           />
         )}
       </div>
