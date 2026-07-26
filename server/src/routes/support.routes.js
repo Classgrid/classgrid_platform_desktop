@@ -429,9 +429,8 @@ router.get("/public/tickets/:id", enforceStrictSession, async (req, res) => {
             return res.status(404).json({ success: false, message: "Ticket not found" });
         }
 
-        // Verify the email matches the ticket submitter
         if (ticket.submitterEmail?.toLowerCase() !== email.trim().toLowerCase()) {
-            return res.status(403).json({ success: false, message: "Email does not match ticket owner" });
+            return res.status(404).json({ success: false, message: "Ticket not found" });
         }
 
         res.json({ success: true, ticket: serializeTicket(ticket) });
