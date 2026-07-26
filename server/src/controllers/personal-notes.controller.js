@@ -39,9 +39,7 @@ export const getNotes = async (req, res) => {
         // Text search
         if (search) {
             const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            query.$or = [
-                { title: { $regex: `^${escapedSearch}`, $options: "i" } }
-            ];
+            query.title = { $regex: `^${escapedSearch}`, $options: "i" };
         }
 
         const notes = await Note.find(query)
