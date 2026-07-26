@@ -1185,8 +1185,8 @@ export function StorageFilesPage() {
 
         <div 
           ref={scrollContainerRef}
-          className={`flex flex-1 min-h-0 bg-background relative pb-2 ${
-            viewMode === 'columns' ? 'overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing' : 'overflow-hidden'
+          className={`flex flex-1 min-h-0 bg-background relative ${
+            viewMode === 'columns' ? 'overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing pb-2' : 'overflow-hidden'
           }`}
           onMouseDown={viewMode === 'columns' ? handleMouseDown : undefined}
           onMouseLeave={viewMode === 'columns' ? handleMouseLeave : undefined}
@@ -1244,7 +1244,7 @@ export function StorageFilesPage() {
               </div>
             </>
           ) : (
-            <div className="w-full h-full min-h-0 overflow-y-auto p-4 bg-card">
+            <div className="w-full h-full min-h-0 overflow-y-auto p-4 pb-24 bg-card custom-scrollbar">
               <DataTable
                 columns={[
                   {
