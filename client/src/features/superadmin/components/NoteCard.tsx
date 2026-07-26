@@ -26,7 +26,7 @@ export function NoteCard({ note, isActive, onClick }: NoteCardProps) {
     <div
       onClick={onClick}
       className={cn(
-        "p-3 rounded-xl border cursor-pointer transition-all hover:shadow-sm group",
+        "p-3 rounded-xl border cursor-pointer [&_*]:cursor-pointer transition-all hover:shadow-sm group",
         isActive
           ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-500/50 ring-1 ring-emerald-500/20"
           : "bg-card border-border hover:border-emerald-500/30"
