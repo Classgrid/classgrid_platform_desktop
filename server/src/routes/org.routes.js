@@ -2423,7 +2423,6 @@ router.get("/subdomain/check", isAuthenticated, requireRole("org_admin"), async 
 // ======================================================
 
 import dns from "dns/promises";
-import crypto from "crypto";
 import { isIP } from "node:net";
 
 const CUSTOM_DOMAIN_TYPES = new Set(["custom_domain", "erp_domain"]);
