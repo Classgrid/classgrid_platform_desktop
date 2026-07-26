@@ -115,7 +115,10 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
           <div className="flex gap-12">
             {/* Markdown Content */}
             <div className="flex-1 min-w-0 pb-32">
-              <div className="prose prose-emerald dark:prose-invert max-w-full prose-headings:scroll-mt-6 prose-img:rounded-xl break-words" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+              <div 
+                className="prose prose-emerald dark:prose-invert max-w-full prose-headings:scroll-mt-6 prose-img:rounded-xl break-words prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-base prose-p:text-sm prose-p:leading-relaxed prose-li:text-sm" 
+                style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+              >
                 {displayContent ? (
                   <ReactMarkdown 
                     remarkPlugins={[remarkGfm]}
