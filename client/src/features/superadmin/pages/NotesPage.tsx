@@ -107,10 +107,10 @@ export function NotesPage() {
   };
 
   return (
-    <div className="h-full flex flex-col md:flex-row overflow-hidden bg-background">
+    <ResizablePanelGroup direction="horizontal" className="h-full w-full overflow-hidden bg-background">
       
-      {/* ── LEFT COLUMN: Calendar & Filters (280px) ── */}
-      <div className="w-full md:w-[280px] shrink-0 border-r border-border bg-muted/20 flex flex-col h-full overflow-y-auto">
+      {/* ── LEFT COLUMN: Calendar & Filters ── */}
+      <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-muted/20 flex flex-col h-full overflow-y-auto">
         <div className="p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold tracking-tight">Filters</h2>
@@ -170,10 +170,12 @@ export function NotesPage() {
             </div>
           )}
         </div>
-      </div>
+      </ResizablePanel>
 
-      {/* ── CENTER COLUMN: Notes List (350px) ── */}
-      <div className="w-full md:w-[350px] shrink-0 border-r border-border bg-background flex flex-col h-full">
+      <ResizableHandle withHandle />
+
+      {/* ── CENTER COLUMN: Notes List ── */}
+      <ResizablePanel defaultSize={25} minSize={20} maxSize={40} className="bg-background flex flex-col h-full">
         <div className="p-3 border-b border-border flex items-center justify-between bg-muted/10 sticky top-0 z-10">
           <div className="flex flex-col">
             <span className="font-semibold">{notes.length} Notes</span>
@@ -242,10 +244,12 @@ export function NotesPage() {
             ))
           )}
         </div>
-      </div>
+      </ResizablePanel>
 
-      {/* ── RIGHT COLUMN: Note Editor/Viewer (Flex) ── */}
-      <div className="flex-1 bg-card flex flex-col h-full overflow-hidden min-w-[300px]">
+      <ResizableHandle withHandle />
+
+      {/* ── RIGHT COLUMN: Note Editor/Viewer ── */}
+      <ResizablePanel defaultSize={55} minSize={30} className="bg-card flex flex-col h-full overflow-hidden">
         {!activeNote && !isEditing ? (
           <div className="flex-1 flex flex-col items-center justify-center opacity-40 select-none">
             <FileText className="w-16 h-16 mb-4 text-muted-foreground" />
@@ -378,8 +382,8 @@ export function NotesPage() {
             </div>
           </div>
         )}
-      </div>
+      </ResizablePanel>
 
-    </div>
+    </ResizablePanelGroup>
   );
 }
