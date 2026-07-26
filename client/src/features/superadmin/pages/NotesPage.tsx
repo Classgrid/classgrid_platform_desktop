@@ -3,7 +3,7 @@ import {
   Search, Plus, FileText, Star, Folder, Tag as TagIcon, X,
   ChevronDown, Lock, Globe, Users, Pencil, Check, Hash,
   StickyNote, BookOpen, Code2, Server, Database, Cpu, Cloud,
-  ShieldCheck, Layers, FlaskConical, BrainCircuit, Zap
+  ShieldCheck, Layers, FlaskConical, BrainCircuit, Zap, Loader2
 } from "lucide-react";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { Input } from "@/components/marketing_ui/input";
@@ -325,6 +325,21 @@ export function NotesPage() {
     };
 
     if (activeNote) {
+      // Check if anything actually changed before saving
+      const hasChanged = 
+        editTitle !== activeNote.title ||
+        content !== (activeNote.content || " ") ||
+        JSON.stringify(editTags) !== JSON.stringify(activeNote.tags || []) ||
+        editCategory !== (activeNote.category || "General") ||
+        editIcon !== (activeNote.icon || "📄") ||
+        editVisibility !== (activeNote.visibility || "Private") ||
+        editStatus !== (activeNote.status || "Published");
+
+      if (!hasChanged) {
+        toast.info("No changes to save");
+        setIsEditing(false);
+        return;
+      }
       updateNote.mutate(
         { id: activeNote._id, ...payload },
         {
@@ -619,7 +634,7 @@ export function NotesPage() {
                 >
                   {createNote.isPending || updateNote.isPending ? (
                     <>
-                      <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <Loader2 className="w-3 h-3 animate-spin" />
                       Saving…
                     </>
                   ) : (
