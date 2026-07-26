@@ -123,7 +123,7 @@ export function useRenameObject() {
         queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
       }, 3000);
       const isFolder = sourceKey.endsWith('/');
-      // Removed delayed toast here to show it instantly in the UI's onMutate instead
+      toast.success(isFolder ? "Folder renamed successfully." : "File renamed successfully.");
     },
     onError: (error: unknown, { sourceKey }) => {
       const isFolder = sourceKey.endsWith('/');

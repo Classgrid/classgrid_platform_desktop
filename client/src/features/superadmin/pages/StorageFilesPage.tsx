@@ -41,7 +41,6 @@ import {
   storageKeys
 } from "../queries/useStorage";
 import { storageApi } from "../services/storageApi";
-import { useUploadStore } from "@/stores/useUploadStore";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getSocket,
@@ -612,9 +611,142 @@ export function StorageFilesPage() {
         return;
       }
       
-      // Push files to the global background upload manager
-      const { addUploads } = useUploadStore.getState();
-      addUploads(validFiles, activeUploadPrefix);
+      // Flag entire batch as in-progress to prevent socket events from wiping cache
+      hasActiveUploadsRef.current = true;
+      batchUploadInProgressRef.current = true;
+      
+      const newUploads = validFiles.map(file => ({
+        id: Math.random().toString(36).substring(7),
+        file,
+        name: file.name,
+        prefix: activeUploadPrefix,
+        progress: 0,
+        status: 'uploading' as const
+      }));
+
+      setUploadingFiles(prev => [...prev, ...newUploads]);
+      
+        let successCount = 0;
+        let errorCount = 0;
+        
+        const MAX_RETRIES = 3;
+
+        const uploadWithRetry = async (upload: typeof newUploads[0], attempt = 0): Promise<any> => {
+          try {
+            return await storageApi.uploadFile(upload.file, upload.prefix, (progressEvent) => {
+              if (progressEvent.total) {
+                const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                setUploadingFiles(prev => prev.map(u => u.id === upload.id ? { ...u, progress: Math.max(u.progress, percentCompleted) } : u));
+              }
+            });
+          } catch (error) {
+            if (attempt < MAX_RETRIES) {
+              // We do NOT reset progress to 0 here to ensure the overall progress bar never moves backwards.
+              // Exponential backoff: 1s, 2s, 4s
+              const delay = Math.pow(2, attempt) * 1000;
+              await new Promise(resolve => setTimeout(resolve, delay));
+              return uploadWithRetry(upload, attempt + 1);
+            }
+            throw error;
+          }
+        };
+
+        const processUpload = async (upload: typeof newUploads[0]) => {
+          try {
+            const result = await uploadWithRetry(upload);
+            
+            successCount++;
+            
+            // Instantly inject THIS file into the cache so it shows up without waiting for other files!
+            const newFile = {
+              key: result.key || `${upload.prefix}${upload.name}`,
+              name: upload.name,
+              size: result.size || upload.file.size,
+              contentType: result.contentType || upload.file.type,
+              lastModified: new Date().toISOString(),
+              createdAt: new Date().toISOString(),
+              cdnUrl: result.cdnUrl || ""
+            };
+            
+            const updateCache = (oldData: any) => {
+              if (!oldData) return oldData;
+              const existingKeys = new Set(oldData.files.map((f: any) => f.key));
+              if (existingKeys.has(newFile.key)) {
+                return {
+                  ...oldData,
+                  files: oldData.files.map((f: any) => f.key === newFile.key ? newFile : f)
+                };
+              }
+              return {
+                ...oldData,
+                files: [...oldData.files, newFile].sort((a: any, b: any) => a.name.localeCompare(b.name))
+              };
+            };
+
+            // Always update the cache for the current view (whether search is empty or not)
+            queryClient.setQueryData(storageKeys.list(upload.prefix, debouncedSearch), updateCache);
+
+            // Set to completed so it can be filtered out from inline display
+            setUploadingFiles(prev => prev.map(u => u.id === upload.id ? { ...u, progress: 100, status: 'completed' } : u));
+            
+            // Note: We DO NOT remove it from uploadingFiles here, otherwise the overall progress percentage will jump backwards!
+
+          } catch (error) {
+            errorCount++;
+            setUploadingFiles(prev => prev.map(u => u.id === upload.id ? { ...u, status: 'error' } : u));
+
+          }
+        };
+
+        // Upload files in batches of 5 concurrently to drastically improve speed for bulk uploads
+        const uploadInBatches = async () => {
+          const BATCH_SIZE = 5;
+          for (let i = 0; i < newUploads.length; i += BATCH_SIZE) {
+            const batch = newUploads.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(upload => processUpload(upload)));
+          }
+        };
+
+        uploadInBatches().then(() => {
+          // Mark batch as complete so socket events can refetch again
+          batchUploadInProgressRef.current = false;
+          hasActiveUploadsRef.current = false;
+
+          // Delay global invalidation to allow S3 eventual consistency to settle, preventing disappearing files
+          setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+          }, 3000);
+        
+        // Single unified toast notification
+        if (successCount > 0 && errorCount === 0) {
+          toast.success(`Successfully uploaded ${successCount} file${successCount > 1 ? 's' : ''}.`);
+        } else if (successCount > 0 && errorCount > 0) {
+          toast.warning(`Uploaded ${successCount} file(s), but ${errorCount} failed.`);
+        } else if (errorCount > 0) {
+          toast.error(`Failed to upload ${errorCount} file(s).`);
+        }
+
+        // Send browser push notification if supported and granted
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('Classgrid Storage Upload', {
+              body: successCount > 0 && errorCount === 0 
+                ? `Successfully uploaded ${successCount} files.` 
+                : (successCount > 0 ? `Uploaded ${successCount} files, ${errorCount} failed.` : `Failed to upload ${errorCount} files.`),
+              icon: '/favicon.ico'
+            });
+          } catch (e) {
+            // Some browsers require service workers for notifications, fallback gracefully
+            console.error("Failed to send push notification", e);
+          }
+        }
+
+        // Clear the upload toast after 3 seconds
+        setTimeout(() => {
+          setUploadingFiles([]);
+        }, 3000);
+      });
       
       // Clear input
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -783,8 +915,6 @@ export function StorageFilesPage() {
 
     renameObjectMutation.mutate({ sourceKey: oldFileToRename.key, destinationKey: newKey }, {
       onMutate: async () => {
-        // Show an instant optimistic toast so the user doesn't wait 45s for the backend to finish a huge folder copy
-        toast.success(isFolder ? "Folder renamed successfully." : "File renamed successfully.");
         // Cancel any outgoing refetches so they don't overwrite our optimistic update
         await queryClient.cancelQueries({ queryKey: storageKeys.list(parentPrefix) });
         if (debouncedSearch) {
