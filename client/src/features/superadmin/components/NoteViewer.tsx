@@ -71,7 +71,7 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
           </div>
 
           {/* Beautiful Metadata Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-12 p-6 rounded-2xl bg-card border shadow-sm">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 mb-12 p-6 rounded-2xl bg-card border shadow-sm">
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5" /> Created
@@ -84,16 +84,6 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
                 <Clock className="w-3.5 h-3.5" /> Last Edited
               </span>
               <span className="text-sm font-medium">{format(new Date(note.updatedAt), "h:mm a")}</span>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5" /> Visibility
-              </span>
-              <span className="text-sm font-medium flex items-center gap-1.5">
-                <VisibilityIcon className="w-3.5 h-3.5 text-emerald-500" />
-                {note.visibility || "Private"}
-              </span>
             </div>
 
             <div className="flex flex-col gap-1.5">
