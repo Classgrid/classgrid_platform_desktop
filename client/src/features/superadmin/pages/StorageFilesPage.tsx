@@ -716,9 +716,11 @@ export function StorageFilesPage() {
           batchUploadInProgressRef.current = false;
           hasActiveUploadsRef.current = false;
 
-          // Globally invalidate so ALL columns refresh in the background
-          queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
-          queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+          // Delay global invalidation to allow S3 eventual consistency to settle, preventing disappearing files
+          setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+          }, 3000);
         
         // Single unified toast notification
         if (successCount > 0 && errorCount === 0) {
@@ -800,7 +802,7 @@ export function StorageFilesPage() {
 
   const handleCreateFolder = (folderName: string, targetPrefix: string) => {
     if (createFolderMutation.isPending) return;
-    const newFolderName = folderName.trim();
+    const newFolderName = folderName.trim().replace(/\s+/g, '_');
     if (!newFolderName) {
       setCreatingFolderIn(null);
       return;

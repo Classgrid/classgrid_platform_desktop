@@ -41,8 +41,10 @@ export function useUploadFile() {
     }) =>
       storageApi.uploadFile(file, prefix, onUploadProgress),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+      }, 3000);
       toast.success("File uploaded successfully.");
     },
     onError: (error: unknown) => {
@@ -57,8 +59,10 @@ export function useCreateFolder() {
     mutationFn: ({ folderName, prefix }: { folderName: string; prefix: string }) =>
       storageApi.createFolder(folderName, prefix),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+      }, 3000);
       toast.success("Folder created successfully.");
     },
     onError: (error: unknown) => {
@@ -72,8 +76,10 @@ export function useDeleteObject() {
   return useMutation({
     mutationFn: (key: string) => storageApi.deleteObject(key),
     onSuccess: (_, key) => {
-      queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+      }, 3000);
       const isFolder = key.endsWith('/');
       toast.success(isFolder ? "Folder deleted successfully." : "File deleted successfully.");
     },
@@ -89,8 +95,10 @@ export function useDeleteObjects() {
   return useMutation({
     mutationFn: (keys: string[]) => storageApi.deleteObjects(keys),
     onSuccess: (_, keys) => {
-      queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+      }, 3000);
       const hasFiles = keys.some(k => !k.endsWith('/'));
       const hasFolders = keys.some(k => k.endsWith('/'));
       const count = keys.length;
@@ -111,7 +119,9 @@ export function useRenameObject() {
     mutationFn: ({ sourceKey, destinationKey }: { sourceKey: string; destinationKey: string }) =>
       storageApi.renameObject(sourceKey, destinationKey),
     onSuccess: (_, { sourceKey }) => {
-      queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+      }, 3000);
       const isFolder = sourceKey.endsWith('/');
       toast.success(isFolder ? "Folder renamed successfully." : "File renamed successfully.");
     },
