@@ -25,6 +25,7 @@ import { NoteCard } from "../components/NoteCard";
 import { NoteViewer } from "../components/NoteViewer";
 import { PremiumNoteEditor } from "../components/PremiumNoteEditor";
 import { getTagColor } from "../utils/noteColors";
+import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 
 /* ─────────────────────────────────────────────────────────────── */
 /* ICON PICKER                                                      */
@@ -261,6 +262,7 @@ export function NotesPage() {
   const [newTagInput, setNewTagInput] = useState("");
   const [categoryInput, setCategoryInput] = useState("");
   const [showCategoryPresets, setShowCategoryPresets] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [leftWidth, setLeftWidth] = useState(400);
@@ -759,19 +761,32 @@ export function NotesPage() {
                 }
               });
             }}
-            onDelete={() => {
-              if (confirm("Are you sure you want to delete this note? This action cannot be undone.")) {
-                deleteNote.mutate(activeNote._id, {
-                  onSuccess: () => {
-                    toast.success("Note deleted successfully");
-                    setActiveNote(null);
-                  }
-                });
-              }
-            }}
+            onDelete={() => setShowDeleteConfirm(true)}
           />
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {activeNote && (
+        <DangerConfirmDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          title={`Delete "${activeNote.title}"?`}
+          description="This note and all its version history will be permanently deleted."
+          warningMessage="This action cannot be undone."
+          actionLabel="Delete Note"
+          isLoading={deleteNote.isPending}
+          onConfirm={() => {
+            deleteNote.mutate(activeNote._id, {
+              onSuccess: () => {
+                toast.success("Note deleted successfully");
+                setActiveNote(null);
+                setShowDeleteConfirm(false);
+              }
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
