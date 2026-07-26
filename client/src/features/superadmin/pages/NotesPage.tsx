@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
-import { Search, Plus, Pin, Trash2, Edit3, X, Tag, FileText, ChevronRight } from "lucide-react";
+import { Search, Plus, Pin, Trash2, Edit3, X, Tag, FileText, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/marketing_ui/nikhil_calendar";
 import { Input } from "@/components/marketing_ui/input";
 import { Button } from "@/components/marketing_ui/button";
@@ -350,7 +350,7 @@ export function NotesPage() {
               </div>
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" />
+                  <CalendarIcon className="w-3.5 h-3.5" />
                   {activeNote ? format(new Date(activeNote.createdAt), "MMMM d, yyyy 'at' h:mm a") : ""}
                 </span>
                 {activeNote?.tags && activeNote.tags.length > 0 && (

@@ -13,7 +13,7 @@
  */
 import { io, Socket } from "socket.io-client";
 
-const BACKEND_URL = import.meta.env.VITE_API_URL || "https://api.classgrid.in";
+const BACKEND_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "" : "https://api.classgrid.in");
 
 let socket: Socket | null = null;
 

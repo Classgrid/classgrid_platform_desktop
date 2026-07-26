@@ -23,6 +23,11 @@ export default defineConfig({
       "/api": {
         target: "https://api.classgrid.in",
         changeOrigin: true
+      },
+      "/socket.io": {
+        target: "https://api.classgrid.in",
+        changeOrigin: true,
+        ws: true
       }
     }
   },
