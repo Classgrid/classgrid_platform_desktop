@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Clock, User, Globe, Lock, Users, Calendar, Tags, History, Edit3, CheckCircle2, List, Pin } from "lucide-react";
+import { Clock, User, Globe, Lock, Users, Calendar, Tags, History, Edit3, CheckCircle2, List, Pin, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { Note } from "../services/notesApi";
 import { cn } from "@/lib/utils";
 import { getTagColor } from "../utils/noteColors";
@@ -64,6 +65,13 @@ export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin }: Note
             <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)} className={showHistory ? "bg-accent" : ""}>
               <History className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">History</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => {
+              navigator.clipboard.writeText(note.textContent || note.content);
+              toast.success("Note copied to clipboard");
+            }}>
+              <Copy className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Copy</span>
             </Button>
             <Button size="sm" onClick={onEdit}>
               <Edit3 className="w-4 h-4 sm:mr-2" />
