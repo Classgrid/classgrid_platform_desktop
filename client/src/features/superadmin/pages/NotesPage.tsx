@@ -5,6 +5,7 @@ import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calend
 import { Input } from "@/components/marketing_ui/input";
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/marketing_ui/resizable";
 import RichReplyEditor, { RichReplyEditorRef } from "@/app/support/components/RichReplyEditor";
 import { useNotes, useCreateNote, useUpdateNote, useDeleteNote, useTogglePin } from "../queries/useNotes";
 import { Note } from "../services/notesApi";
