@@ -454,6 +454,7 @@ export function StorageFilesPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const hasActiveUploadsRef = React.useRef<boolean>(false);
+  const batchUploadInProgressRef = React.useRef<boolean>(false);
 
   // Drag-to-scroll state for Miller Columns
   const isDraggingRef = React.useRef(false);
@@ -501,7 +502,7 @@ export function StorageFilesPage() {
     joinSuperadminStorage();
 
     const handleStorageUpdated = () => {
-      if (renameObjectMutation.isPending || hasActiveUploadsRef.current) return;
+      if (renameObjectMutation.isPending || hasActiveUploadsRef.current || batchUploadInProgressRef.current) return;
 
       queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
       queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
@@ -603,9 +604,9 @@ export function StorageFilesPage() {
         return;
       }
       
-      // Synchronously flag that we have active uploads to prevent WebSocket events
-      // from triggering a massive wave of background refresh requests while uploading
+      // Flag entire batch as in-progress to prevent socket events from wiping cache
       hasActiveUploadsRef.current = true;
+      batchUploadInProgressRef.current = true;
       
       const newUploads = validFiles.map(file => ({
         id: Math.random().toString(36).substring(7),
@@ -707,9 +708,13 @@ export function StorageFilesPage() {
         };
 
         uploadSequentially().then(() => {
+          // Mark batch as complete so socket events can refetch again
+          batchUploadInProgressRef.current = false;
+          hasActiveUploadsRef.current = false;
+
           // Globally invalidate so ALL columns refresh in the background
-        queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
-        queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
+          queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
+          queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });
         
         // Single unified toast notification
         if (successCount > 0 && errorCount === 0) {
