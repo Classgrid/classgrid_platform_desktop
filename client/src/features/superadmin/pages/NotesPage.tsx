@@ -121,7 +121,7 @@ export function NotesPage() {
   return (
     <ResizablePanelGroup 
       direction="horizontal" 
-      autoSaveId="notes-layout-v2"
+      autoSaveId="notes-layout-v3"
       className="h-full w-full overflow-hidden bg-background"
     >
       
