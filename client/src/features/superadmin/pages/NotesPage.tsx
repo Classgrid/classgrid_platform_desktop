@@ -370,7 +370,7 @@ export function NotesPage() {
   const allCategories = Array.from(new Set(notes.map((n) => n.category).filter(Boolean)));
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-background">
+    <div className="flex h-full w-full overflow-hidden bg-background cursor-pointer [&_*]:cursor-pointer">
 
       {/* ══════════ LEFT: Sidebar + List ══════════ */}
       <div
