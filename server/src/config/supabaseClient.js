@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import WebSocket from "ws";
 
 dotenv.config();
 
@@ -43,6 +44,9 @@ export function getChatSb() {
                     'x-connection-pool': 'pgbouncer', // Signal to Supabase for pool-aware routing
                 },
             },
+            realtime: {
+                transport: WebSocket,
+            }
         });
         console.log(`✅ Supabase client initialized (PID: ${process.pid})`);
     }
