@@ -23,6 +23,64 @@ async function verifyRegisteredUser(email) {
     return user; // null if not found
 }
 
+// ──────────────────────────────────────────────────────────────
+//  Strict Session Enforcement for Public Tickets
+// ──────────────────────────────────────────────────────────────
+async function enforceStrictSession(req, res, next) {
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+        token = req.headers.authorization.split(" ")[1];
+    } else if (req.cookies && (req.cookies.token || req.cookies.jwt)) {
+        token = req.cookies.token || req.cookies.jwt;
+    }
+
+    if (token && token !== "null" && token !== "undefined") {
+        try {
+            const jwt = await import("jsonwebtoken");
+            const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
+            const decoded = jwt.default.verify(token, JWT_SECRET);
+            const user = await User.findById(decoded.id).select("email role").lean();
+            if (user && user.role !== "super_admin") {
+                req.loggedInUserEmail = user.email.toLowerCase();
+            }
+        } catch (err) {}
+    }
+
+    const email = req.query.email || req.body.email;
+    
+    // 1. If they are logged in, the email in the request MUST match their logged-in email.
+    if (email && req.loggedInUserEmail && req.loggedInUserEmail !== email.trim().toLowerCase()) {
+        return res.status(403).json({
+            success: false,
+            message: "Strict Session Enforced: You are logged in with a different account. Please log out or switch accounts to view this ticket.",
+            code: "SESSION_MISMATCH"
+        });
+    }
+    
+    // 2. If they are NOT logged in, but the email belongs to a registered user,
+    // we force them to log in to access existing tickets (prevents magic link sharing for registered users).
+    // We only enforce this for READ and UPDATE endpoints, not for creating new tickets.
+    if (email && !req.loggedInUserEmail && req.method !== "POST" && req.path === "/public/tickets") {
+        // Wait, req.path is relative to the router. It would be "/" or "/:id" 
+    }
+    if (email && !req.loggedInUserEmail && req.method !== "OPTIONS") {
+        // Only block view/reply/rate/reopen for registered users. Creating tickets is allowed.
+        const isCreating = req.method === "POST" && (req.path === "/public/tickets" || req.path === "/public/tickets/");
+        if (!isCreating) {
+            const registeredUser = await verifyRegisteredUser(email);
+            if (registeredUser) {
+                 return res.status(403).json({
+                    success: false,
+                    message: "Strict Session Enforced: This email is registered on Classgrid. You must log in to your account to access this ticket.",
+                    code: "SESSION_REQUIRED"
+                });
+            }
+        }
+    }
+
+    next();
+}
+
 function normalizeMessageRole(role) {
     const normalized = String(role || "").toLowerCase();
     return normalized === "admin" || normalized === "super_admin" || normalized.includes("admin")
@@ -125,7 +183,7 @@ function ensureInitialMessage(ticket) {
 // ──────────────────────────────────────────────────────────────
 //  POST /api/support/public/tickets — Create ticket (no login)
 // ──────────────────────────────────────────────────────────────
-router.post("/public/tickets", multipleUploads("files", 5), async (req, res) => {
+router.post("/public/tickets", enforceStrictSession, multipleUploads("files", 5), async (req, res) => {
     try {
         const { name, email, subject, message, category, priority, institution, role: submitterRoleInput } = req.body;
 
@@ -306,7 +364,7 @@ router.post("/public/tickets", multipleUploads("files", 5), async (req, res) => 
 // ──────────────────────────────────────────────────────────────
 //  GET /api/support/public/tickets?email=xxx — Lookup by email
 // ──────────────────────────────────────────────────────────────
-router.get("/public/tickets", async (req, res) => {
+router.get("/public/tickets", enforceStrictSession, async (req, res) => {
     try {
         const { email } = req.query;
         if (!email?.trim()) {
@@ -359,7 +417,7 @@ router.get("/public/tickets", async (req, res) => {
 // ──────────────────────────────────────────────────────────────
 //  GET /api/support/public/tickets/:id?email=xxx — View ticket
 // ──────────────────────────────────────────────────────────────
-router.get("/public/tickets/:id", async (req, res) => {
+router.get("/public/tickets/:id", enforceStrictSession, async (req, res) => {
     try {
         const { email } = req.query;
         if (!email?.trim()) {
@@ -388,7 +446,7 @@ router.get("/public/tickets/:id", async (req, res) => {
 // ──────────────────────────────────────────────────────────────
 //  POST /api/support/public/tickets/:id/reply — Reply (email verified)
 // ──────────────────────────────────────────────────────────────
-router.post("/public/tickets/:id/reply", multipleUploads("files", 5), async (req, res) => {
+router.post("/public/tickets/:id/reply", enforceStrictSession, multipleUploads("files", 5), async (req, res) => {
     try {
         const { email, message, name } = req.body;
         if (!email?.trim() || !message?.trim()) {
@@ -1139,7 +1197,7 @@ router.post("/admin/tickets/:id/note", isAuthenticated, requireRole("super_admin
 // ══════════════════════════════════════════════════════════════
 //  PUBLIC: POST /api/support/public/tickets/:id/reopen — Reopen ticket
 // ══════════════════════════════════════════════════════════════
-router.post("/public/tickets/:id/reopen", async (req, res) => {
+router.post("/public/tickets/:id/reopen", enforceStrictSession, async (req, res) => {
     try {
         const { email } = req.body;
         if (!email?.trim()) return res.status(400).json({ success: false, message: "Email is required" });
@@ -1181,7 +1239,7 @@ router.post("/public/tickets/:id/reopen", async (req, res) => {
 // ══════════════════════════════════════════════════════════════
 //  PUBLIC: POST /api/support/public/tickets/:id/rate — Satisfaction rating
 // ══════════════════════════════════════════════════════════════
-router.post("/public/tickets/:id/rate", async (req, res) => {
+router.post("/public/tickets/:id/rate", enforceStrictSession, async (req, res) => {
     try {
         const { email, rating, comment } = req.body;
         if (!email?.trim()) return res.status(400).json({ success: false, message: "Email is required" });
@@ -1211,7 +1269,7 @@ router.post("/public/tickets/:id/rate", async (req, res) => {
 // ══════════════════════════════════════════════════════════════
 //  PUBLIC: GET /api/support/public/tickets/:id/related — Related tickets
 // ══════════════════════════════════════════════════════════════
-router.get("/public/tickets/:id/related", async (req, res) => {
+router.get("/public/tickets/:id/related", enforceStrictSession, async (req, res) => {
     try {
         const { email } = req.query;
         if (!email?.trim()) return res.status(400).json({ success: false, message: "Email is required" });
