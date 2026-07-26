@@ -1,6 +1,7 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
 import multer from "multer";
+import os from "os";
 import { isAuthenticated } from "../middleware/auth.middleware.js";
 import {
     MAX_STORAGE_UPLOAD_SIZE_BYTES,
@@ -48,7 +49,7 @@ function storageUserKey(req) {
 }
 
 const storageUpload = multer({
-    storage: multer.memoryStorage(),
+    storage: multer.diskStorage({ dest: os.tmpdir() }),
     limits: {
         fileSize: MAX_STORAGE_UPLOAD_SIZE_BYTES,
     },

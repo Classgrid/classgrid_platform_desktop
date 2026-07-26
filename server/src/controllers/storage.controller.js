@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import {
     AbortMultipartUploadCommand,
     CompleteMultipartUploadCommand,
@@ -519,7 +520,7 @@ async function getListedObjectMetadata(key) {
     }
 }
 
-async function multipartUpload({ key, buffer, contentType }) {
+async function multipartUpload({ key, filePath, contentType }) {
     const createdUpload = await s3Client.send(new CreateMultipartUploadCommand({
         Bucket: BUCKET_NAME,
         Key: key,
@@ -535,7 +536,9 @@ async function multipartUpload({ key, buffer, contentType }) {
     }
 
     try {
-        const partCount = Math.ceil(buffer.length / MULTIPART_PART_SIZE_BYTES);
+        const stats = fs.statSync(filePath);
+        const fileSize = stats.size;
+        const partCount = Math.ceil(fileSize / MULTIPART_PART_SIZE_BYTES);
         const uploadedParts = [];
 
         for (let batchStart = 0; batchStart < partCount; batchStart += MULTIPART_CONCURRENCY) {
@@ -544,7 +547,8 @@ async function multipartUpload({ key, buffer, contentType }) {
 
             for (let partIndex = batchStart; partIndex < batchEnd; partIndex += 1) {
                 const start = partIndex * MULTIPART_PART_SIZE_BYTES;
-                const end = Math.min(start + MULTIPART_PART_SIZE_BYTES, buffer.length);
+                // fs.createReadStream `end` is inclusive
+                const end = Math.min(start + MULTIPART_PART_SIZE_BYTES - 1, fileSize - 1);
                 const partNumber = partIndex + 1;
 
                 batch.push(
@@ -553,8 +557,8 @@ async function multipartUpload({ key, buffer, contentType }) {
                         Key: key,
                         UploadId: uploadId,
                         PartNumber: partNumber,
-                        Body: buffer.subarray(start, end),
-                        ContentLength: end - start,
+                        Body: fs.createReadStream(filePath, { start, end }),
+                        ContentLength: end - start + 1,
                     })).then((result) => {
                         if (!result.ETag) {
                             throw new Error(`S3 did not return an ETag for multipart part ${partNumber}.`);
@@ -685,14 +689,14 @@ export async function uploadFile(req, res) {
         if (req.file.size > MULTIPART_THRESHOLD_BYTES) {
             await multipartUpload({
                 key,
-                buffer: req.file.buffer,
+                filePath: req.file.path,
                 contentType,
             });
         } else {
             await s3Client.send(new PutObjectCommand({
                 Bucket: BUCKET_NAME,
                 Key: key,
-                Body: req.file.buffer,
+                Body: fs.createReadStream(req.file.path),
                 ContentType: contentType,
                 ContentLength: req.file.size,
                 Metadata: {
@@ -712,6 +716,17 @@ export async function uploadFile(req, res) {
         });
     } catch (error) {
         return handleControllerError(req, res, "upload", error, key ? [key] : []);
+    } finally {
+        // Clean up the temporary file from the disk to prevent disk space exhaustion
+        if (req.file && req.file.path) {
+            try {
+                if (fs.existsSync(req.file.path)) {
+                    fs.unlinkSync(req.file.path);
+                }
+            } catch (err) {
+                console.error(`[Storage] Failed to delete temp file ${req.file.path}:`, err);
+            }
+        }
     }
 }
 
