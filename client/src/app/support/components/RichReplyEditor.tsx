@@ -24,7 +24,7 @@ import {
   Eye,
 } from "lucide-react";
 import LinkModal from "@/app/support/components/LinkModal";
-import { uploadToSupabase } from "@/lib/supabase-storage";
+import { storageApi } from "@/features/superadmin/services/storageApi";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/marketing_ui/select";
 import DOMPurify from "dompurify";
 
@@ -366,7 +366,7 @@ const RichReplyEditor = forwardRef<RichReplyEditorRef, RichReplyEditorProps>(
           });
         }, 200);
 
-        const result = await uploadToSupabase(file, "replies");
+        const result = await storageApi.uploadFile(file, "replies");
         clearInterval(interval);
 
         if (result) {
@@ -375,7 +375,7 @@ const RichReplyEditor = forwardRef<RichReplyEditorRef, RichReplyEditorProps>(
             setUploadingImage(false);
             editorRef.current?.focus();
             document.execCommand("insertHTML", false,
-              `<img src="${result.url}" alt="${file.name}" data-path="${result.path}" style="max-width:200px;max-height:200px;border-radius:8px;margin:8px 4px;cursor:pointer;" />`
+              `<img src="${result.cdnUrl}" alt="${file.name}" data-path="${result.key}" style="max-width:200px;max-height:200px;border-radius:8px;margin:8px 4px;cursor:pointer;" />`
             );
             syncContent();
           }, 300);
@@ -733,7 +733,7 @@ const RichReplyEditor = forwardRef<RichReplyEditorRef, RichReplyEditorProps>(
               </span>
             </button>
             <div className="text-[10px] text-muted-foreground/60 font-medium tracking-wide uppercase">
-              Max 10MB per file
+              Max 5 files, up to 10MB each
             </div>
           </div>
         )}
@@ -749,7 +749,7 @@ const RichReplyEditor = forwardRef<RichReplyEditorRef, RichReplyEditorProps>(
         {/* Image Preview / Delete Modal */}
         {previewImage && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-sm"
             onClick={() => setPreviewImage(null)}
           >
             {/* Top-right action buttons */}
@@ -782,7 +782,7 @@ const RichReplyEditor = forwardRef<RichReplyEditorRef, RichReplyEditorProps>(
         {/* File Preview Modal */}
         {filePreview && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-sm"
             onClick={() => { URL.revokeObjectURL(filePreview.url); setFilePreview(null); }}
           >
             {/* Top-right action buttons */}

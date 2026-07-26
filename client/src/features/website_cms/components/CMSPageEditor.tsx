@@ -26,7 +26,7 @@ import {
   Eye,
 } from "lucide-react";
 import LinkModal from "@/features/website_cms/components/CMSLinkModal";
-import { uploadToSupabase } from "@/lib/supabase-storage";
+import { storageApi } from "@/features/superadmin/services/storageApi";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/marketing_ui/select";
 
 // ── Toolbar button ──────────────────────────────────────────────
@@ -362,7 +362,7 @@ const CMSPageEditor = forwardRef<CMSPageEditorRef, CMSPageEditorProps>(
           });
         }, 200);
 
-        const result = await uploadToSupabase(file, "replies");
+        const result = await storageApi.uploadFile(file, "cms");
         clearInterval(interval);
 
         if (result) {
@@ -371,7 +371,7 @@ const CMSPageEditor = forwardRef<CMSPageEditorRef, CMSPageEditorProps>(
             setUploadingImage(false);
             editorRef.current?.focus();
             document.execCommand("insertHTML", false,
-              `<img src="${result.url}" alt="${file.name}" data-path="${result.path}" style="max-width:200px;max-height:200px;border-radius:8px;margin:8px 4px;cursor:pointer;" />`
+              `<img src="${result.cdnUrl}" alt="${file.name}" data-path="${result.key}" style="max-width:200px;max-height:200px;border-radius:8px;margin:8px 4px;cursor:pointer;" />`
             );
             syncContent();
           }, 300);
@@ -727,7 +727,7 @@ const CMSPageEditor = forwardRef<CMSPageEditorRef, CMSPageEditorProps>(
             </span>
           </button>
           <div className="text-[10px] text-muted-foreground/60 font-medium tracking-wide uppercase">
-            Max 10MB per file
+            Max 5 files, up to 10MB each
           </div>
         </div>
 
