@@ -193,7 +193,7 @@ export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin, onDele
           <div className="flex gap-12">
             {/* Markdown Content */}
             <div className="flex-1 min-w-0 pb-32">
-              <div className="prose prose-emerald dark:prose-invert max-w-full prose-headings:scroll-mt-6 prose-img:rounded-xl prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-base prose-p:text-sm prose-p:leading-relaxed prose-li:text-sm overflow-x-auto">
+              <div className="prose prose-emerald dark:prose-invert max-w-full prose-headings:scroll-mt-6 prose-img:rounded-xl prose-headings:font-semibold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg prose-p:text-base prose-p:leading-relaxed prose-li:text-base overflow-x-auto text-base">
                 {displayContent ? (
                   <ReactMarkdown 
                     remarkPlugins={[remarkGfm]}
