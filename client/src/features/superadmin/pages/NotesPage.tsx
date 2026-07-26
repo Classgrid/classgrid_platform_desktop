@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { format } from "date-fns";
-import { Search, Plus, Pin, Trash2, Edit3, X, Tag, FileText, Calendar as CalendarIcon } from "lucide-react";
+import { Search, Plus, Pin, Trash2, Edit3, X, Tag, FileText, Calendar as CalendarIcon, GripVertical } from "lucide-react";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { Input } from "@/components/marketing_ui/input";
 import { Button } from "@/components/marketing_ui/button";
@@ -22,6 +22,46 @@ const decodeHtmlEntities = (text: string | undefined) => {
     .replace(/&#39;/g, "'");
 };
 
+/* ── Custom Resize Handle ── */
+function ResizeHandle({ onDrag }: { onDrag: (delta: number) => void }) {
+  const handleRef = useRef<HTMLDivElement>(null);
+
+  const onMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+
+      const onMouseMove = (ev: MouseEvent) => {
+        onDrag(ev.clientX - startX);
+      };
+
+      const onMouseUp = () => {
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      };
+
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
+    },
+    [onDrag]
+  );
+
+  return (
+    <div
+      ref={handleRef}
+      onMouseDown={onMouseDown}
+      className="w-[6px] shrink-0 cursor-col-resize flex items-center justify-center bg-border/50 hover:bg-primary/30 active:bg-primary/50 transition-colors group relative"
+      style={{ touchAction: "none" }}
+    >
+      <div className="w-[4px] h-8 rounded-full bg-border group-hover:bg-primary/60 transition-colors" />
+    </div>
+  );
+}
+
 export function NotesPage() {
   const { data: notes = [], isLoading } = useNotes();
   const createNote = useCreateNote();
@@ -39,6 +79,12 @@ export function NotesPage() {
   const [editTags, setEditTags] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState("");
   const editorRef = useRef<RichReplyEditorRef>(null);
+
+  // Column widths (px)
+  const [leftWidth, setLeftWidth] = useState(280);
+  const [centerWidth, setCenterWidth] = useState(320);
+  const leftBase = useRef(280);
+  const centerBase = useRef(320);
 
   const allTags = Array.from(new Set(notes.flatMap((note) => note.tags)));
 
@@ -104,12 +150,41 @@ export function NotesPage() {
     setEditTags(editTags.filter((tag) => tag !== tagToRemove));
   };
 
+  // Drag handlers for the two resize handles
+  const handleLeftDrag = useCallback((delta: number) => {
+    const newW = Math.max(220, Math.min(450, leftBase.current + delta));
+    setLeftWidth(newW);
+  }, []);
+
+  const handleLeftDragEnd = useCallback(() => {
+    leftBase.current = leftWidth;
+  }, [leftWidth]);
+
+  const handleCenterDrag = useCallback((delta: number) => {
+    const newW = Math.max(260, Math.min(500, centerBase.current + delta));
+    setCenterWidth(newW);
+  }, []);
+
+  const handleCenterDragEnd = useCallback(() => {
+    centerBase.current = centerWidth;
+  }, [centerWidth]);
+
+  // Sync bases on mouseup via effect
+  useEffect(() => {
+    leftBase.current = leftWidth;
+  }, [leftWidth]);
+
+  useEffect(() => {
+    centerBase.current = centerWidth;
+  }, [centerWidth]);
+
   return (
     <div style={{ display: "flex", height: "100%", width: "100%", overflow: "hidden" }}>
+
       {/* ── LEFT: Filters ── */}
       <div
-        style={{ width: 280, minWidth: 280, maxWidth: 280, flexShrink: 0 }}
-        className="flex flex-col h-full bg-muted/20 border-r border-border overflow-y-auto"
+        style={{ width: leftWidth, minWidth: 220, maxWidth: 450, flexShrink: 0 }}
+        className="flex flex-col h-full bg-muted/20 overflow-y-auto overflow-x-hidden"
       >
         <div className="p-4 space-y-4">
           <div className="flex items-center justify-between">
@@ -173,10 +248,13 @@ export function NotesPage() {
         </div>
       </div>
 
+      {/* ── Handle 1 ── */}
+      <ResizeHandle onDrag={handleLeftDrag} />
+
       {/* ── CENTER: Notes List ── */}
       <div
-        style={{ width: 320, minWidth: 320, maxWidth: 320, flexShrink: 0 }}
-        className="flex flex-col h-full bg-background border-r border-border"
+        style={{ width: centerWidth, minWidth: 260, maxWidth: 500, flexShrink: 0 }}
+        className="flex flex-col h-full bg-background overflow-x-hidden"
       >
         <div className="p-3 border-b border-border flex items-center justify-between bg-muted/10 shrink-0">
           <div className="flex flex-col">
@@ -252,6 +330,9 @@ export function NotesPage() {
           )}
         </div>
       </div>
+
+      {/* ── Handle 2 ── */}
+      <ResizeHandle onDrag={handleCenterDrag} />
 
       {/* ── RIGHT: Editor ── */}
       <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }} className="flex flex-col h-full bg-card">
