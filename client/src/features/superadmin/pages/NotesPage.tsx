@@ -400,20 +400,6 @@ export function NotesPage() {
           >
             <Star className="w-4 h-4" />
           </button>
-
-          {allCategories.slice(0, 6).map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(selectedCategory === cat ? undefined : cat)}
-              title={cat}
-              className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center transition-colors text-xs font-bold",
-                selectedCategory === cat ? "bg-blue-500/15 text-blue-500" : "hover:bg-muted text-muted-foreground"
-              )}
-            >
-              <Folder className="w-3.5 h-3.5" />
-            </button>
-          ))}
         </div>
 
         {/* Main List Panel */}
@@ -425,7 +411,7 @@ export function NotesPage() {
               <div>
                 <h2 className="text-sm font-semibold">My Notes</h2>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  {stats?.total || 0} total · {stats?.pinned || 0} pinned · {stats?.private || 0} private
+                  {stats?.total || 0} total · {stats?.pinned || 0} pinned
                 </p>
               </div>
             </div>
