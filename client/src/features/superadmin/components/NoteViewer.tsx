@@ -47,31 +47,27 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
     })
     .filter(Boolean) as { level: number; text: string }[];
 
-  return (
-    <div className="flex w-full h-full overflow-hidden">
       <div className="flex-1 min-w-0 h-full overflow-y-auto bg-background relative">
         <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12 relative">
           
-          <div className="flex flex-col-reverse sm:flex-row justify-between sm:items-start gap-6 mb-8 pt-4 sm:pt-0 relative min-w-0">
-            {/* Title Area */}
-            <div className="flex items-center gap-4 min-w-0 flex-1">
-              <span className="text-4xl sm:text-5xl shrink-0">{note.icon || "📄"}</span>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground break-words min-w-0">
-                {note.title}
-              </h1>
-            </div>
+          {/* Header Actions */}
+          <div className="flex flex-wrap justify-end gap-3 mb-6 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)} className={showHistory ? "bg-accent" : ""}>
+              <History className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">History</span>
+            </Button>
+            <Button size="sm" onClick={onEdit}>
+              <Edit3 className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Edit Note</span>
+            </Button>
+          </div>
 
-            {/* Header Actions */}
-            <div className="flex flex-wrap justify-end gap-2 shrink-0">
-              <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)} className={showHistory ? "bg-accent" : ""}>
-                <History className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">History</span>
-              </Button>
-              <Button size="sm" onClick={onEdit}>
-                <Edit3 className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Edit Note</span>
-              </Button>
-            </div>
+          {/* Title Area - 100% width */}
+          <div className="flex items-center gap-4 min-w-0 mb-8 w-full">
+            <span className="text-4xl sm:text-5xl shrink-0">{note.icon || "📄"}</span>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground min-w-0 w-full" style={{ wordBreak: 'keep-all' }}>
+              {note.title}
+            </h1>
           </div>
 
           {/* Beautiful Metadata Grid */}
