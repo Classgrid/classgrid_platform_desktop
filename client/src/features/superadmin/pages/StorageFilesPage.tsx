@@ -636,13 +636,12 @@ export function StorageFilesPage() {
             return await storageApi.uploadFile(upload.file, upload.prefix, (progressEvent) => {
               if (progressEvent.total) {
                 const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                setUploadingFiles(prev => prev.map(u => u.id === upload.id ? { ...u, progress: percentCompleted } : u));
+                setUploadingFiles(prev => prev.map(u => u.id === upload.id ? { ...u, progress: Math.max(u.progress, percentCompleted) } : u));
               }
             });
           } catch (error) {
             if (attempt < MAX_RETRIES) {
-              // Reset progress for retry
-              setUploadingFiles(prev => prev.map(u => u.id === upload.id ? { ...u, progress: 0 } : u));
+              // We do NOT reset progress to 0 here to ensure the overall progress bar never moves backwards.
               // Exponential backoff: 1s, 2s, 4s
               const delay = Math.pow(2, attempt) * 1000;
               await new Promise(resolve => setTimeout(resolve, delay));
