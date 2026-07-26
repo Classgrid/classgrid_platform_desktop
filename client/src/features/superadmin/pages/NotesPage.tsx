@@ -9,6 +9,17 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import RichReplyEditor, { RichReplyEditorRef } from "@/app/support/components/RichReplyEditor";
 import { useNotes, useCreateNote, useUpdateNote, useDeleteNote, useTogglePin } from "../queries/useNotes";
 import { Note } from "../services/notesApi";
+
+const decodeHtmlEntities = (text: string | undefined) => {
+  if (!text) return "";
+  return text
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+};
 import { cn } from "@/lib/utils";
 import DOMPurify from "dompurify";
 
@@ -115,8 +126,8 @@ export function NotesPage() {
     >
       
       {/* ── LEFT COLUMN: Calendar & Filters ── */}
-      <ResizablePanel defaultSize={25} minSize={20} maxSize={35} className="bg-muted/20">
-        <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden w-full min-w-[250px]">
+      <ResizablePanel defaultSize={25} minSize={20} maxSize={35} className="bg-muted/20 min-w-[280px]">
+        <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden w-full">
           <div className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold tracking-tight">Filters</h2>
@@ -183,8 +194,8 @@ export function NotesPage() {
       <ResizableHandle withHandle />
 
       {/* ── CENTER COLUMN: Notes List ── */}
-      <ResizablePanel defaultSize={30} minSize={25} maxSize={45} className="bg-background">
-        <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden w-full min-w-[300px]">
+      <ResizablePanel defaultSize={30} minSize={25} maxSize={45} className="bg-background min-w-[320px]">
+        <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden w-full">
           <div className="p-3 border-b border-border flex items-center justify-between bg-muted/10 sticky top-0 z-10 shrink-0">
           <div className="flex flex-col">
             <span className="font-semibold">{notes.length} Notes</span>
@@ -230,7 +241,7 @@ export function NotesPage() {
                   {note.isPinned && <Pin className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />}
                 </div>
                 <p className="text-xs text-muted-foreground line-clamp-2 mb-2 leading-relaxed">
-                  {note.textContent || "No text content"}
+                  {decodeHtmlEntities(note.textContent) || "No text content"}
                 </p>
                 <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50">
                   <div className="flex flex-wrap gap-1">
@@ -259,7 +270,7 @@ export function NotesPage() {
       <ResizableHandle withHandle />
 
       {/* ── RIGHT COLUMN: Note Editor/Viewer ── */}
-      <ResizablePanel defaultSize={55} minSize={30} className="bg-card flex flex-col h-full overflow-hidden">
+      <ResizablePanel defaultSize={45} minSize={30} className="bg-card flex flex-col h-full overflow-hidden min-w-[400px]">
         {!activeNote && !isEditing ? (
           <div className="flex-1 flex flex-col items-center justify-center opacity-40 select-none">
             <FileText className="w-16 h-16 mb-4 text-muted-foreground" />
