@@ -12,6 +12,7 @@ import { useNotes, useCreateNote, useUpdateNote, useDeleteNote, useTogglePin } f
 import { Note } from "../services/notesApi";
 import { cn } from "@/lib/utils";
 import DOMPurify from "dompurify";
+import { toast } from "sonner";
 
 const decodeHtmlEntities = (text: string | undefined) => {
   if (!text) return "";
@@ -98,19 +99,31 @@ export function NotesPage() {
     if (!editTitle.trim()) return;
     const html = contentRef.current?.innerHTML || "";
     const text = contentRef.current?.textContent || "";
+    const content = html || " "; // backend requires content to be non-empty
     if (activeNote) {
-      updateNote.mutate({
-        id: activeNote._id,
-        updates: { title: editTitle, content: html, textContent: text, tags: editTags },
-      });
-      setIsEditing(false);
+      updateNote.mutate(
+        { id: activeNote._id, title: editTitle, content, textContent: text, tags: editTags },
+        {
+          onSuccess: () => {
+            toast.success("Note updated successfully");
+            setIsEditing(false);
+          },
+          onError: (err: any) => {
+            toast.error(err?.response?.data?.message || "Failed to update note");
+          },
+        }
+      );
     } else {
       createNote.mutate(
-        { title: editTitle, content: html, textContent: text, tags: editTags },
+        { title: editTitle, content, textContent: text, tags: editTags },
         {
           onSuccess: (newNote) => {
+            toast.success("Note created successfully");
             setActiveNote(newNote);
             setIsEditing(false);
+          },
+          onError: (err: any) => {
+            toast.error(err?.response?.data?.message || "Failed to create note");
           },
         }
       );
@@ -120,7 +133,16 @@ export function NotesPage() {
   const handleDelete = () => {
     if (!activeNote) return;
     if (confirm("Are you sure you want to delete this note?")) {
-      deleteNote.mutate(activeNote._id);
+      deleteNote.mutate(activeNote._id, {
+        onSuccess: () => {
+          toast.success("Note deleted");
+          setActiveNote(null);
+          setIsEditing(false);
+        },
+        onError: (err: any) => {
+          toast.error(err?.response?.data?.message || "Failed to delete note");
+        },
+      });
     }
   };
 
