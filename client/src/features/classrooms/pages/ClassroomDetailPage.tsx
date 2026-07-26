@@ -26,7 +26,8 @@ const ClassroomDetailPage = () => {
   const navigate = useNavigate();
   
   // Use current user's role from auth state
-  const userRole: 'faculty' | 'student' = currentUser?.role === 'faculty' ? 'faculty' : 'student';
+  const isFacultyRole = ['teacher', 'faculty', 'org_admin', 'super_admin'].includes(currentUser?.role || '');
+  const userRole: 'faculty' | 'student' = isFacultyRole ? 'faculty' : 'student';
 
   if (isLoading) {
     return (

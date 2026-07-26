@@ -35,6 +35,12 @@ export const requireClassroomMember = async (req, res, next) => {
             return next();
         }
 
+        // Allow org_admin of the same organization, or super_admin
+        if (req.user.role === 'super_admin' || (req.user.role === 'org_admin' && req.user.organization_id?.toString() === classroom.organization_id?.toString())) {
+            req.isClassroomOwner = true; // Grant full owner privileges so they can edit
+            return next();
+        }
+
         // Check if student has approved membership in Supabase (minimal select for speed)
         const { getChatSb } = await import('../config/supabaseClient.js');
         const chatSb = getChatSb();
@@ -85,9 +91,13 @@ export const requireClassroomOwner = async (req, res, next) => {
             return res.status(404).json({ message: "Classroom not found" });
         }
 
-        if (classroom.teacher.toString() !== req.user._id.toString()) {
+        const isTeacher = classroom.teacher.toString() === req.user._id.toString();
+        const isOrgAdmin = req.user.role === "org_admin" && req.user.organization_id?.toString() === classroom.organization_id?.toString();
+        const isSuperAdmin = req.user.role === "super_admin";
+
+        if (!isTeacher && !isOrgAdmin && !isSuperAdmin) {
             return res.status(403).json({
-                message: "Only the classroom owner can perform this action",
+                message: "Only the classroom owner or organization admin can perform this action",
             });
         }
 
