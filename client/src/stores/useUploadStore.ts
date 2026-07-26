@@ -26,7 +26,7 @@ interface UploadStore {
   retryUpload: (id: string) => void;
 }
 
-const CONCURRENT_UPLOADS = 5;
+const CONCURRENT_UPLOADS = 20;
 
 // Private state to track processing loop so it doesn't run multiple times
 let isProcessing = false;
