@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/apiClient";
+import axios from "axios";
 import type { AxiosProgressEvent } from "axios";
 
 export type StorageAnalyticsType =
@@ -154,6 +155,28 @@ export const storageApi = {
 
     const response = await apiClient.get<{ data: ListObjectsResponse }>(`/api/super-admin/storage/objects?${params.toString()}`);
     return response.data.data;
+  },
+
+  getPresignedUploadUrl: async (filename: string, prefix = "", contentType = "application/octet-stream") => {
+    const params = new URLSearchParams();
+    params.append("filename", filename);
+    if (prefix) params.append("prefix", prefix);
+    params.append("contentType", contentType);
+
+    const response = await apiClient.post<{ data: { presignedUrl: string, key: string, cdnUrl: string } }>(
+      `/api/super-admin/storage/upload/presign?${params.toString()}`
+    );
+    return response.data.data;
+  },
+
+  uploadFileDirect: async (presignedUrl: string, file: File, onUploadProgress?: StorageUploadProgressHandler) => {
+    // IMPORTANT: Use bare axios to avoid sending auth headers to AWS S3 which would break the signature!
+    await axios.put(presignedUrl, file, {
+      headers: {
+        "Content-Type": file.type || "application/octet-stream",
+      },
+      onUploadProgress,
+    });
   },
 
   uploadFile: async (file: File, prefix = "", onUploadProgress?: StorageUploadProgressHandler) => {
