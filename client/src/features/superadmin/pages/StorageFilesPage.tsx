@@ -1218,7 +1218,7 @@ export function StorageFilesPage() {
               </div>
             </>
           ) : (
-            <div className="flex-1 w-full flex flex-col p-4 bg-card">
+            <div className="flex-1 w-full flex flex-col p-4 bg-card overflow-y-auto">
               <DataTable
                 columns={[
                   {
