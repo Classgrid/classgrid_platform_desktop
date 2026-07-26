@@ -56,6 +56,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
     { label: "Files", to: "/superadmin/storage/files", icon: HardDrive },
     { label: "Analytics", to: "/superadmin/storage/analytics", icon: FileBarChart },
     { label: "S3 Configuration", to: "/superadmin/storage/s3", icon: Settings },
+    { label: "Notes", to: "/superadmin/storage/notes", icon: StickyNote },
   ];
 
   if (!config) {

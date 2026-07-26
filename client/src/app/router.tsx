@@ -192,7 +192,7 @@ export function AppRouter() {
       <Route path="/privacy-policy" element={<GenericPage title="Privacy Policy" />} />
       {/* TODO: Build ForgotPasswordPage */}
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/activate" element={<OnboardingWizardPage />} />
+      <Route path="/activate" element={<ResetPasswordPage />} />
       <Route path="/demo/globe" element={<GlobeDemoPage />} />
 
       {/* ── CANDIDATE PORTAL ROUTES ── */}
@@ -255,6 +255,7 @@ export function AppRouter() {
           <Route path="files" element={<StorageFilesPage />} />
           <Route path="analytics" element={<StorageAnalyticsPage />} />
           <Route path="s3" element={<StorageS3ConfigPage />} />
+          <Route path="notes" element={<NotesPage />} />
         </Route>
 
         {/* NEW ORG ADMIN SHELL */}
