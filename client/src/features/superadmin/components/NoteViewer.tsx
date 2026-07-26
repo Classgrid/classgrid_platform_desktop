@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Clock, Globe, Lock, Users, Calendar, Tags, History, Edit3, CheckCircle2, Pin, Copy, Trash2, ChevronDown, FileText, Code2 } from "lucide-react";
+import { Clock, Globe, Lock, Users, Calendar, Tags, History, Edit3, CheckCircle2, Pin, Copy, Trash2, ChevronDown, FileText, Code2, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { Note } from "../services/notesApi";
 import { cn } from "@/lib/utils";
@@ -63,8 +63,8 @@ export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin, onDele
     .filter(Boolean) as { level: number; text: string }[];
 
   return (
-    <div className="flex w-full h-full overflow-hidden">
-      <div className="flex-1 min-w-0 h-full overflow-y-auto bg-background relative">
+    <div className="flex w-full h-full overflow-hidden border-l border-border">
+      <div className="flex-1 min-w-0 h-full overflow-y-auto bg-background relative border-r border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12 relative">
           
           {/* Header Actions */}
@@ -249,7 +249,7 @@ export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin, onDele
                 {/* Arrow down from current */}
                 {versions.length > 0 && (
                   <div className="flex justify-center py-1.5">
-                    <span className="text-lg text-muted-foreground/50">↓</span>
+                    <ArrowDown className="w-5 h-5 text-muted-foreground/60" />
                   </div>
                 )}
 
@@ -281,7 +281,7 @@ export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin, onDele
                       {/* Arrow between versions */}
                       {i < versions.length - 1 && (
                         <div className="flex justify-center py-1.5">
-                          <span className="text-lg text-muted-foreground/30">↓</span>
+                          <ArrowDown className="w-5 h-5 text-muted-foreground/40" />
                         </div>
                       )}
                     </React.Fragment>
