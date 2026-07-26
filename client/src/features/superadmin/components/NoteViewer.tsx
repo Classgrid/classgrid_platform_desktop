@@ -31,6 +31,11 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
       .replace(/<br\s*\/?>/gi, "\n");
   }
 
+  // Auto-detect raw environment variable files and wrap them in a code block for perfect formatting
+  if (!displayContent.trim().startsWith("```") && displayContent.includes("MONGO_URI=")) {
+    displayContent = "```env\n" + displayContent.trim() + "\n```";
+  }
+
   // Extract headings for Table of Contents
   const headings = displayContent
     .split("\n")

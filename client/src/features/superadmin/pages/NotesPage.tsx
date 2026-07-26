@@ -736,6 +736,9 @@ export function NotesPage() {
                   .replace(/<\/div>/g, "\n")
                   .replace(/<br\s*\/?>/gi, "\n");
               }
+              if (!cleanContent.trim().startsWith("```") && cleanContent.includes("MONGO_URI=")) {
+                cleanContent = "```env\n" + cleanContent.trim() + "\n```";
+              }
               setEditContent(cleanContent);
               
               setEditTags(activeNote.tags || []);
