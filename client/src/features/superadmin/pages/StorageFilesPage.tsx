@@ -234,7 +234,7 @@ const StorageColumn = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-0.5">
+      <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {creatingFolderIn === prefix && (
           <div className="flex items-center gap-3 p-2 px-3 border-b border-border bg-primary/5">
             <div className="shrink-0 w-4 h-4" />
@@ -685,29 +685,27 @@ export function StorageFilesPage() {
             // Set to completed so it can be filtered out from inline display
             setUploadingFiles(prev => prev.map(u => u.id === upload.id ? { ...u, progress: 100, status: 'completed' } : u));
             
-            // Remove from tracking completely after 2 seconds
-            setTimeout(() => {
-              setUploadingFiles(prev => prev.filter(u => u.id !== upload.id));
-            }, 2000);
+            // Note: We DO NOT remove it from uploadingFiles here, otherwise the overall progress percentage will jump backwards!
+
           } catch (error) {
             errorCount++;
             setUploadingFiles(prev => prev.map(u => u.id === upload.id ? { ...u, status: 'error' } : u));
-            setTimeout(() => {
-              setUploadingFiles(prev => prev.filter(u => u.id !== upload.id));
-            }, 5000);
+
           }
         };
 
-        // Upload files one at a time sequentially to avoid triggering firewall rate limits
-        const uploadSequentially = async () => {
-          for (const upload of newUploads) {
-            await processUpload(upload);
-            // Small delay between uploads to prevent connection flooding
-            await new Promise(resolve => setTimeout(resolve, 200));
+        // Upload files in batches (e.g. 4 at a time) to be faster but not trigger rate limits
+        const uploadInBatches = async () => {
+          const BATCH_SIZE = 4;
+          for (let i = 0; i < newUploads.length; i += BATCH_SIZE) {
+            const batch = newUploads.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(upload => processUpload(upload)));
+            // Small delay between batches
+            await new Promise(resolve => setTimeout(resolve, 300));
           }
         };
 
-        uploadSequentially().then(() => {
+        uploadInBatches().then(() => {
           // Mark batch as complete so socket events can refetch again
           batchUploadInProgressRef.current = false;
           hasActiveUploadsRef.current = false;
@@ -724,6 +722,11 @@ export function StorageFilesPage() {
         } else if (errorCount > 0) {
           toast.error(`Failed to upload ${errorCount} file(s).`);
         }
+
+        // Clear the upload toast after 3 seconds
+        setTimeout(() => {
+          setUploadingFiles([]);
+        }, 3000);
       });
       
       // Clear input
