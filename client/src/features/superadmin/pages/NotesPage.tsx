@@ -4,7 +4,7 @@ import { Search, Plus, Pin, Trash2, Edit3, X, Tag, FileText, ChevronRight } from
 import { Calendar } from "@/components/marketing_ui/nikhil_calendar";
 import { Input } from "@/components/marketing_ui/input";
 import { Button } from "@/components/marketing_ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/marketing_ui/badge";
 import RichReplyEditor, { RichReplyEditorRef } from "@/app/support/components/RichReplyEditor";
 import { useNotes, useCreateNote, useUpdateNote, useDeleteNote, useTogglePin } from "../queries/useNotes";
 import { Note } from "../services/notesApi";
