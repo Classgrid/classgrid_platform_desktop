@@ -21,6 +21,7 @@ import {
     renameObject,
     testStorageConnection,
     uploadFile,
+    getPresignedUploadUrl,
 } from "../controllers/storage.controller.js";
 
 const router = express.Router();
@@ -174,6 +175,7 @@ router.get(
 );
 
 router.get("/objects", listObjects);
+router.post("/upload/presign", uploadRateLimiter, getPresignedUploadUrl);
 router.post("/upload", uploadRateLimiter, singleStorageUpload, uploadFile);
 router.delete("/object", deleteObject);
 router.delete("/objects", deleteObjects);

@@ -697,6 +697,45 @@ export async function uploadFile(req, res) {
     }
 }
 
+export async function getPresignedUploadUrl(req, res) {
+    try {
+        const rawFilename = req.query.filename || req.body.filename;
+        const rawPrefix = req.query.prefix || req.body.prefix || "";
+        const contentType = req.query.contentType || req.body.contentType || "application/octet-stream";
+
+        if (!rawFilename) {
+            throw new StorageRequestError(400, "filename is required for a presigned URL.");
+        }
+
+        // Sanitize and build the key
+        const sanitizedFilename = rawFilename.replace(/\s+/g, "_");
+        let sanitizedPrefix = rawPrefix.replace(/\\/g, "/").replace(/^\/+/, "");
+        if (sanitizedPrefix && !sanitizedPrefix.endsWith("/")) {
+            sanitizedPrefix += "/";
+        }
+        
+        const key = `${sanitizedPrefix}${sanitizedFilename}`;
+        assertDeletable(key); // Ensures we don't accidentally overwrite protected files
+
+        const command = new PutObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: key,
+            ContentType: contentType,
+        });
+
+        // Generate a presigned URL valid for 15 minutes
+        const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 });
+
+        return sendSuccess(res, "Presigned URL generated successfully.", {
+            presignedUrl,
+            key,
+            cdnUrl: buildCdnUrl(key)
+        });
+    } catch (error) {
+        return handleControllerError(req, res, "generate presigned URL", error);
+    }
+}
+
 async function recursiveDeletePrefix(prefix) {
     let isTruncated = true;
     let continuationToken = undefined;
