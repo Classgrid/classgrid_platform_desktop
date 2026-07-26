@@ -1,7 +1,7 @@
 import Notification from '../models/Notification.js';
 import { sendPushToDevice, sendPushToMultiple } from './firebase.service.js';
 import { primarySupabaseClient as supabase } from '../config/supabaseClient.js';
-import { sendNotificationEmail } from './notification-aws-ses.service.js';
+import { sendNotificationEmail } from './notification-email.service.js';
 import { sendPushNotification } from './push.service.js';
 
 /**

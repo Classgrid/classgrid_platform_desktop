@@ -7,7 +7,7 @@
  */
 
 import express from "express";
-import { sendDailyDigests, sendWeeklyDigests } from "../services/digest-aws-ses.service.js";
+import { sendDailyDigests, sendWeeklyDigests } from "../services/digest-email.service.js";
 
 const router = express.Router();
 

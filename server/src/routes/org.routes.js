@@ -2340,7 +2340,7 @@ router.patch("/subdomain", isAuthenticated, requireRole("org_admin"), async (req
 
         // Send email notification to admin
         try {
-            const { notifyDomainChange } = await import("../services/domain-change-aws-ses.service.js");
+            const { notifyDomainChange } = await import("../services/domain-change-email.service.js");
             await notifyDomainChange({
                 to: req.user.email,
                 orgName: updatedOrg.name,
@@ -2501,7 +2501,7 @@ async function invalidateCustomDomainCaches(orgId, ...hosts) {
 
 async function queueExternalDomainNotification(req, org, payload) {
     try {
-        const { notifyExternalDomainChange } = await import("../services/domain-change-aws-ses.service.js");
+        const { notifyExternalDomainChange } = await import("../services/domain-change-email.service.js");
         const result = await notifyExternalDomainChange({
             to: req.user.email || org.ownerEmail,
             orgName: org.name,

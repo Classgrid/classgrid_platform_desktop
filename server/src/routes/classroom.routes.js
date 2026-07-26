@@ -15,7 +15,7 @@ import {
     sendJoinRequestEmail,
     sendJoinApprovedEmail,
     sendBulkJoinApprovedEmails,
-} from "../services/notification-aws-ses.service.js";
+} from "../services/notification-email.service.js";
 
 import pdfParse from "pdf-parse";
 import { Groq } from "groq-sdk";

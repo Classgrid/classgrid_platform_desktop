@@ -24,7 +24,7 @@ transporter.verify((err) => {
 // ─────────────────────────────────────────────────
 // SEND VIA AWS SES
 // ─────────────────────────────────────────────────
-export const sendViaAWS = async ({ to, subject, html, text, fromName, fromEmail, replyTo }) => {
+export const sendEmail = async ({ to, subject, html, text, fromName, fromEmail, replyTo }) => {
   console.log(`[AWS SES] Sending to: ${to} | From: ${fromEmail}`);
 
   const info = await transporter.sendMail({

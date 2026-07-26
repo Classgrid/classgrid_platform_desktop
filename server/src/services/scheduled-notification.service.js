@@ -5,7 +5,7 @@ import Organization from "../models/Organization.js";
 import { primarySupabaseClient as supabase } from "../config/supabaseClient.js";
 import { sendPushToMultiple } from "./firebase.service.js";
 import { sendPushNotification } from "./push.service.js";
-import { sendNotificationEmail } from "./notification-aws-ses.service.js";
+import { sendNotificationEmail } from "./notification-email.service.js";
 import {
     buildUserRoleFilter,
     getUserRolesForTarget,
