@@ -55,8 +55,8 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
           <div className="flex flex-col-reverse sm:flex-row justify-between sm:items-start gap-6 mb-8 pt-4 sm:pt-0 relative min-w-0">
             {/* Title Area */}
             <div className="flex items-center gap-4 min-w-0 flex-1">
-              <span className="text-5xl shrink-0">{note.icon || "📄"}</span>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground break-words min-w-0" style={{ overflowWrap: 'anywhere' }}>
+              <span className="text-4xl sm:text-5xl shrink-0">{note.icon || "📄"}</span>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground break-words min-w-0">
                 {note.title}
               </h1>
             </div>
