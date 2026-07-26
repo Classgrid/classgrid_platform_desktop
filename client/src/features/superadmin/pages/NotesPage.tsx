@@ -109,23 +109,47 @@ function PremiumSelect({
   const [isCustom, setIsCustom] = useState(false);
   const [customValue, setCustomValue] = useState("");
 
-  const selected = options.find((o) => o.value === value);
-  const isCustomValue = allowCustom && value && !selected && value !== "";
+  // If there's a selected custom value that isn't in the presets, append it dynamically
+  // so the Radix Select can display it properly without reverting to text-input mode.
+  const hasCustomValue = allowCustom && value && !options.find((o) => o.value === value) && value !== "";
+  const displayOptions = [...options];
+  if (hasCustomValue) {
+    displayOptions.push({ value, label: value, icon: <Folder className="w-4 h-4 text-emerald-500" /> });
+  }
 
-  // If in custom mode, show a text input instead
-  if (isCustom || isCustomValue) {
+  const selected = displayOptions.find((o) => o.value === value);
+
+  // If actively typing a new custom category
+  if (isCustom) {
     return (
       <div className="flex gap-2 w-full items-center">
         <input
           autoFocus
-          value={customValue || value}
-          onChange={(e) => {
-            setCustomValue(e.target.value);
-            onChange(e.target.value);
+          value={customValue}
+          onChange={(e) => setCustomValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && customValue.trim()) {
+              onChange(customValue.trim());
+              setIsCustom(false);
+            }
           }}
-          placeholder="Type custom category..."
-          className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
+          placeholder="Type category & press Enter..."
+          className="flex-1 h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
         />
+        <button
+          type="button"
+          onClick={() => {
+            if (customValue.trim()) {
+              onChange(customValue.trim());
+            } else {
+              onChange(options[0]?.value || "");
+            }
+            setIsCustom(false);
+          }}
+          className="px-2.5 py-1.5 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] uppercase font-semibold transition-colors"
+        >
+          Add
+        </button>
         <button
           type="button"
           onClick={() => {
@@ -133,7 +157,7 @@ function PremiumSelect({
             setCustomValue("");
             onChange(options[0]?.value || "");
           }}
-          className="px-2 py-1.5 border border-input rounded-md hover:bg-muted text-[10px] uppercase font-semibold text-muted-foreground transition-colors"
+          className="px-2.5 py-1.5 border border-input rounded-md hover:bg-muted text-[10px] uppercase font-semibold text-muted-foreground transition-colors"
         >
           Cancel
         </button>
@@ -147,7 +171,8 @@ function PremiumSelect({
       onValueChange={(val) => {
         if (val === "__custom__") {
           setIsCustom(true);
-          onChange("");
+          setCustomValue("");
+          onChange(""); // Temporarily clear while typing
         } else {
           onChange(val);
         }
@@ -160,7 +185,7 @@ function PremiumSelect({
         </div>
       </SelectTrigger>
       <SelectContent>
-        {options.map((opt) => (
+        {displayOptions.map((opt) => (
           <SelectItem key={opt.value} value={opt.value} className="py-2.5 px-3">
             <div className="flex items-center gap-3">
               {opt.icon && <span className="shrink-0">{opt.icon}</span>}
@@ -172,7 +197,7 @@ function PremiumSelect({
           </SelectItem>
         ))}
         {allowCustom && (
-          <SelectItem value="__custom__" className="py-2.5 px-3 text-emerald-600 dark:text-emerald-400 font-medium">
+          <SelectItem value="__custom__" className="py-2.5 px-3 text-emerald-600 dark:text-emerald-400 font-medium border-t rounded-none mt-1">
             <div className="flex items-center gap-2">
               <Plus className="w-3.5 h-3.5" />
               <span>Custom category...</span>
