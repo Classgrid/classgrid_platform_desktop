@@ -40,6 +40,7 @@ export const getNotes = async (req, res) => {
         if (search) {
             query.$or = [
                 { title: { $regex: search, $options: "i" } },
+                { textContent: { $regex: search, $options: "i" } },
                 { tags: { $regex: search, $options: "i" } }
             ];
         }

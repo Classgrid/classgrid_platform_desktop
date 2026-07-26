@@ -208,18 +208,33 @@ function ResizeHandle({ onDrag }: { onDrag: (delta: number) => void }) {
   );
 }
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+  return debouncedValue;
+}
+
 /* ─────────────────────────────────────────────────────────────── */
 /* NOTES PAGE                                                       */
 /* ─────────────────────────────────────────────────────────────── */
 export function NotesPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
+
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTag, setSelectedTag] = useState<string | undefined>();
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
   const [filterMode, setFilterMode] = useState<"All" | "Pinned" | "Private" | "Public">("All");
 
   const { data: notes = [], isLoading } = useNotes({
-    search: searchQuery || undefined,
+    search: debouncedSearchQuery || undefined,
     date: selectedDate ? selectedDate.toISOString() : undefined,
     tag: selectedTag,
     category: selectedCategory,
