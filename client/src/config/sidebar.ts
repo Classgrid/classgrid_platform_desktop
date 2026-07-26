@@ -674,17 +674,17 @@ export const dashboardConfigs: DashboardConfig[] = [
 ];
 
 export const defaultTitlesByRole: Record<DashboardRole, string> = {
-  super_admin: "Super Admin Module",
-  org_admin: "Organization Module",
-  admission_dept: "Admissions Module",
-  fees_dept: "Fees Module",
-  exam_dept: "Examination Module",
-  library_dept: "Library Module",
-  attendance_dept: "Attendance Module",
-  hr_dept: "HR & Payroll Module",
-  hostel_dept: "Hostel & Transport Module",
-  faculty: "Faculty Module",
-  student: "Student Module"
+  super_admin: "Super Admin Dashboard",
+  org_admin: "Organization Dashboard",
+  admission_dept: "Admissions Dashboard",
+  fees_dept: "Fees Dashboard",
+  exam_dept: "Examination Dashboard",
+  library_dept: "Library Dashboard",
+  attendance_dept: "Attendance Dashboard",
+  hr_dept: "HR & Payroll Dashboard",
+  hostel_dept: "Hostel & Transport Dashboard",
+  faculty: "Faculty Dashboard",
+  student: "Student Dashboard"
 };
 
 export function resolveDashboardConfig(pathname: string): DashboardConfig {
@@ -725,9 +725,19 @@ export function resolveSidebarItem(pathname: string): SidebarItem | undefined {
   const config = resolveDashboardConfig(pathname);
 
   for (const section of config.sections) {
-    const item = section.items.find(
-      ({ to }) => pathname === to || pathname.startsWith(`${to}/`)
-    );
+    const item = section.items.find((item) => {
+      if (pathname === item.to || pathname.startsWith(`${item.to}/`)) {
+        return true;
+      }
+      if (item.hasNestedNav) {
+        // Match up to the parent directory (e.g., /superadmin/storage for /superadmin/storage/files)
+        const parentPath = item.to.substring(0, item.to.lastIndexOf('/'));
+        if (pathname.startsWith(`${parentPath}/`)) {
+          return true;
+        }
+      }
+      return false;
+    });
 
     if (item) {
       return item;
