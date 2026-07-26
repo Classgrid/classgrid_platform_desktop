@@ -1,0 +1,32 @@
+import express from "express";
+import { isAuthenticated } from "../middleware/auth.middleware.js";
+import {
+    getNotes,
+    createNote,
+    updateNote,
+    deleteNote,
+    togglePin
+} from "../controllers/personal-notes.controller.js";
+
+const router = express.Router();
+
+function isSuperAdmin(req, res, next) {
+    if (req.user?.role !== "super_admin") {
+        return res.status(403).json({
+            success: false,
+            message: "Super admin access is required."
+        });
+    }
+    return next();
+}
+
+// All personal notes routes require authentication and super admin role
+router.use(isAuthenticated, isSuperAdmin);
+
+router.get("/", getNotes);
+router.post("/", createNote);
+router.put("/:id", updateNote);
+router.delete("/:id", deleteNote);
+router.patch("/:id/pin", togglePin);
+
+export default router;

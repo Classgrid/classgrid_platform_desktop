@@ -67,6 +67,7 @@ import { StorageLayout } from "@/components/layout/StorageLayout";
 import { StorageFilesPage } from "@/features/superadmin/pages/StorageFilesPage";
 import { StorageAnalyticsPage } from "@/features/superadmin/pages/StorageAnalyticsPage";
 import { StorageS3ConfigPage } from "@/features/superadmin/pages/StorageS3ConfigPage";
+import { NotesPage } from "@/features/superadmin/pages/NotesPage";
 import { SharedSettingsPage } from "@/features/shared/pages/SharedSettingsPage";
 import { ClassroomsPage } from "@/features/classrooms/pages/ClassroomsPage";
 import ClassroomDetailPage from "@/features/classrooms/pages/ClassroomDetailPage";
@@ -253,6 +254,7 @@ export function AppRouter() {
           <Route path="files" element={<StorageFilesPage />} />
           <Route path="analytics" element={<StorageAnalyticsPage />} />
           <Route path="s3" element={<StorageS3ConfigPage />} />
+          <Route path="notes" element={<NotesPage />} />
         </Route>
 
         {/* NEW ORG ADMIN SHELL */}
