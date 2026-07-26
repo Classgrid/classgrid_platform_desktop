@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Clock, User, Globe, Lock, Users, Calendar, Tags, History, Edit3, CheckCircle2, List, Pin, Copy } from "lucide-react";
+import { Clock, Globe, Lock, Users, Calendar, Tags, History, Edit3, CheckCircle2, Pin, Copy, Trash2, ChevronDown, FileText, Code2 } from "lucide-react";
 import { toast } from "sonner";
 import { Note } from "../services/notesApi";
 import { cn } from "@/lib/utils";
@@ -16,10 +16,12 @@ interface NoteViewerProps {
   onEdit: () => void;
   onRestoreVersion?: (version: any) => void;
   onTogglePin?: () => void;
+  onDelete?: () => void;
 }
 
-export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin }: NoteViewerProps) {
+export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin, onDelete }: NoteViewerProps) {
   const [showHistory, setShowHistory] = useState(false);
+  const [showCopyMenu, setShowCopyMenu] = useState(false);
   const { data: versions = [], isLoading: loadingVersions } = useNoteVersions(showHistory ? note._id : undefined);
 
   const VisibilityIcon = note.visibility === "Public" ? Globe : note.visibility === "Shared" ? Users : Lock;
@@ -37,6 +39,17 @@ export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin }: Note
   if (!displayContent.trim().startsWith("```") && displayContent.includes("MONGO_URI=")) {
     displayContent = "```env\n" + displayContent.trim() + "\n```";
   }
+
+  // Plain text: strip markdown symbols
+  const plainText = note.textContent || displayContent
+    .replace(/```[\s\S]*?```/g, (match) => match.replace(/```\w*\n?/g, "").trim())
+    .replace(/#{1,6}\s+/g, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1")
+    .replace(/`(.+?)`/g, "$1")
+    .replace(/>/g, "")
+    .trim();
 
   // Extract headings for Table of Contents
   const headings = displayContent
@@ -57,26 +70,81 @@ export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin }: Note
           {/* Header Actions */}
           <div className="flex flex-wrap justify-end gap-3 mb-6 pt-2">
             {onTogglePin && (
-              <Button variant="outline" size="sm" onClick={onTogglePin} className={note.isPinned ? "text-amber-500 border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 hover:text-amber-600" : ""}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onTogglePin}
+                className={note.isPinned
+                  ? "text-amber-500 border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 hover:text-amber-600"
+                  : ""}
+              >
                 <Pin className={cn("w-4 h-4 sm:mr-2", note.isPinned ? "fill-amber-500" : "")} />
                 <span className="hidden sm:inline">{note.isPinned ? "Unpin" : "Pin"}</span>
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)} className={showHistory ? "bg-accent" : ""}>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className={showHistory ? "bg-accent" : ""}
+            >
               <History className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">History</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => {
-              navigator.clipboard.writeText(note.textContent || note.content);
-              toast.success("Note copied to clipboard");
-            }}>
-              <Copy className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Copy</span>
-            </Button>
+
+            {/* Copy Dropdown */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCopyMenu(!showCopyMenu)}
+                onBlur={() => setTimeout(() => setShowCopyMenu(false), 150)}
+              >
+                <Copy className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Copy</span>
+                <ChevronDown className="w-3 h-3 ml-1" />
+              </Button>
+              {showCopyMenu && (
+                <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-lg border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95 duration-100">
+                  <button
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-accent rounded-t-lg transition-colors text-left"
+                    onMouseDown={() => {
+                      navigator.clipboard.writeText(plainText);
+                      toast.success("Copied as plain text!");
+                      setShowCopyMenu(false);
+                    }}
+                  >
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    Copy as Text
+                  </button>
+                  <div className="h-px bg-border mx-2" />
+                  <button
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-accent rounded-b-lg transition-colors text-left"
+                    onMouseDown={() => {
+                      navigator.clipboard.writeText(note.content || "");
+                      toast.success("Copied as Markdown!");
+                      setShowCopyMenu(false);
+                    }}
+                  >
+                    <Code2 className="w-4 h-4 text-muted-foreground" />
+                    Copy as Markdown
+                  </button>
+                </div>
+              )}
+            </div>
+
             <Button size="sm" onClick={onEdit}>
               <Edit3 className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Edit Note</span>
             </Button>
+
+            {onDelete && (
+              <Button variant="destructive" size="sm" onClick={onDelete}>
+                <Trash2 className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Delete</span>
+              </Button>
+            )}
           </div>
 
           {/* Title Area - 100% width */}

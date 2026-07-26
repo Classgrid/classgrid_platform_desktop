@@ -16,6 +16,8 @@ import {
   useNoteStats,
   useCreateNote,
   useUpdateNote,
+  useTogglePin,
+  useDeleteNote,
 } from "../queries/useNotes";
 import { Note } from "../services/notesApi";
 import { toast } from "sonner";
@@ -244,6 +246,8 @@ export function NotesPage() {
 
   const createNote = useCreateNote();
   const updateNote = useUpdateNote();
+  const togglePin = useTogglePin();
+  const deleteNote = useDeleteNote();
 
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -754,6 +758,16 @@ export function NotesPage() {
                   toast.success(updatedNote.isPinned ? "Note pinned successfully" : "Note unpinned successfully");
                 }
               });
+            }}
+            onDelete={() => {
+              if (confirm("Are you sure you want to delete this note? This action cannot be undone.")) {
+                deleteNote.mutate(activeNote._id, {
+                  onSuccess: () => {
+                    toast.success("Note deleted successfully");
+                    setActiveNote(null);
+                  }
+                });
+              }
             }}
           />
         )}
