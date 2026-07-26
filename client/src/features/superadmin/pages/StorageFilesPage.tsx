@@ -580,13 +580,13 @@ export function StorageFilesPage() {
       
       const files = Array.from(e.target.files);
 
-      if (files.length > 7000) {
-        toast.error("You can only upload a maximum of 7000 files at once.");
+      if (files.length > 25000) {
+        toast.error("You can only upload a maximum of 25,000 files at once.");
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
       
-      const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024; // 2 GB
+      const MAX_FILE_SIZE = 500 * 1024 * 1024 * 1024; // 500 GB
       const validFiles = files.filter(f => f.size <= MAX_FILE_SIZE).map(f => {
         // Sanitize filename to replace spaces with underscores to avoid %20 in URLs
         const sanitizedName = f.name.replace(/\s+/g, '_');
@@ -595,13 +595,17 @@ export function StorageFilesPage() {
       const invalidFiles = files.filter(f => f.size > MAX_FILE_SIZE);
 
       if (invalidFiles.length > 0) {
-        toast.error(`Skipped ${invalidFiles.length} file(s) that exceed the 2 GB limit.`);
+        toast.error(`Skipped ${invalidFiles.length} file(s) that exceed the 500 GB limit.`);
       }
 
       if (validFiles.length === 0) {
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
+      
+      // Synchronously flag that we have active uploads to prevent WebSocket events
+      // from triggering a massive wave of background refresh requests while uploading
+      hasActiveUploadsRef.current = true;
       
       const newUploads = validFiles.map(file => ({
         id: Math.random().toString(36).substring(7),
@@ -617,17 +621,32 @@ export function StorageFilesPage() {
         let successCount = 0;
         let errorCount = 0;
         
-        const MAX_CONCURRENT_UPLOADS = 2;
-        let currentIndex = 0;
+        const MAX_RETRIES = 3;
 
-        const processUpload = async (upload: typeof newUploads[0]) => {
+        const uploadWithRetry = async (upload: typeof newUploads[0], attempt = 0): Promise<any> => {
           try {
-            const result = await storageApi.uploadFile(upload.file, upload.prefix, (progressEvent) => {
+            return await storageApi.uploadFile(upload.file, upload.prefix, (progressEvent) => {
               if (progressEvent.total) {
                 const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                 setUploadingFiles(prev => prev.map(u => u.id === upload.id ? { ...u, progress: percentCompleted } : u));
               }
             });
+          } catch (error) {
+            if (attempt < MAX_RETRIES) {
+              // Reset progress for retry
+              setUploadingFiles(prev => prev.map(u => u.id === upload.id ? { ...u, progress: 0 } : u));
+              // Exponential backoff: 1s, 2s, 4s
+              const delay = Math.pow(2, attempt) * 1000;
+              await new Promise(resolve => setTimeout(resolve, delay));
+              return uploadWithRetry(upload, attempt + 1);
+            }
+            throw error;
+          }
+        };
+
+        const processUpload = async (upload: typeof newUploads[0]) => {
+          try {
+            const result = await uploadWithRetry(upload);
             
             successCount++;
             
@@ -678,16 +697,16 @@ export function StorageFilesPage() {
           }
         };
 
-        const workers = Array.from({ length: Math.min(MAX_CONCURRENT_UPLOADS, newUploads.length) }).map(async () => {
-          while (currentIndex < newUploads.length) {
-            const upload = newUploads[currentIndex++];
+        // Upload files one at a time sequentially to avoid triggering firewall rate limits
+        const uploadSequentially = async () => {
+          for (const upload of newUploads) {
             await processUpload(upload);
-            // Add a small delay between uploads to prevent overwhelming the reverse proxy/firewall
-            await new Promise(resolve => setTimeout(resolve, 150));
+            // Small delay between uploads to prevent connection flooding
+            await new Promise(resolve => setTimeout(resolve, 200));
           }
-        });
+        };
 
-        Promise.all(workers).then(() => {
+        uploadSequentially().then(() => {
           // Globally invalidate so ALL columns refresh in the background
         queryClient.invalidateQueries({ queryKey: storageKeys.lists() });
         queryClient.invalidateQueries({ queryKey: storageKeys.analytics() });

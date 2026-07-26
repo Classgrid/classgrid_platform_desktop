@@ -55,7 +55,7 @@ const storageUpload = multer({
 });
 
 const uploadRateLimiter = rateLimit({
-    windowMs: 60 * 1000,
+    windowMs: 2 * 60 * 60 * 1000,
     max: STORAGE_UPLOAD_RATE_LIMIT_PER_MINUTE,
     keyGenerator: storageUserKey,
     validate: rateLimitValidation,
@@ -67,7 +67,7 @@ const uploadRateLimiter = rateLimit({
         );
         return res.status(429).json(buildStorageErrorResponse(
             req,
-            `Upload rate limit exceeded. Maximum ${STORAGE_UPLOAD_RATE_LIMIT_PER_MINUTE} uploads per minute.`,
+            `Upload rate limit exceeded. Maximum ${STORAGE_UPLOAD_RATE_LIMIT_PER_MINUTE} uploads per 2 hours.`,
         ));
     },
 });
@@ -123,7 +123,7 @@ function singleStorageUpload(req, res, next) {
         if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
             return res.status(413).json(buildStorageErrorResponse(
                 req,
-                "File size exceeds the 2 GB limit.",
+                "File size exceeds the 500 GB limit.",
             ));
         }
 

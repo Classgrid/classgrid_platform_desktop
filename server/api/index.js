@@ -193,8 +193,13 @@ app.use(extractSubdomain);
 import { generalLimiter } from "../src/middleware/rateLimiter.js";
 import { winstonMiddleware } from "../src/config/logger.js";
 
-// Global API Rate Limiting (1000 requests / min)
-app.use(generalLimiter);
+// Global API Rate Limiting (1000 requests / min) — skip storage uploads (they have their own limiter)
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/super-admin/storage/')) {
+    return next();
+  }
+  generalLimiter(req, res, next);
+});
 
 // Structured Logging via Winston
 app.use(winstonMiddleware);
