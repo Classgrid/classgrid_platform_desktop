@@ -818,8 +818,7 @@ export function StorageFilesPage() {
                     ...file,
                     key: newKey,
                     name: finalName,
-                    lastModified: nowIso,
-                    cdnUrl: generateNewCdnUrl(file.cdnUrl, newKey),
+                    lastModified: nowIso
                   }
                 : file
             )).sort((a: any, b: any) => a.name.localeCompare(b.name)),
@@ -835,8 +834,7 @@ export function StorageFilesPage() {
             ...activeFile,
             key: newKey,
             name: finalName,
-            lastModified: nowIso,
-            cdnUrl: generateNewCdnUrl(activeFile.cdnUrl, newKey)
+            lastModified: nowIso
           });
         }
 
