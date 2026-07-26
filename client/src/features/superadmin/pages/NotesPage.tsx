@@ -109,12 +109,10 @@ function PremiumSelect({
   const [isCustom, setIsCustom] = useState(false);
   const [customValue, setCustomValue] = useState("");
 
-  // If there's a selected custom value that isn't in the presets, append it dynamically
-  // so the Radix Select can display it properly without reverting to text-input mode.
   const hasCustomValue = allowCustom && value && !options.find((o) => o.value === value) && value !== "";
   const displayOptions = [...options];
   if (hasCustomValue) {
-    displayOptions.push({ value, label: value, icon: <Folder className="w-4 h-4 text-emerald-500" /> });
+    displayOptions.push({ value, label: value });
   }
 
   const selected = displayOptions.find((o) => o.value === value);
