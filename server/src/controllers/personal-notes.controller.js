@@ -21,10 +21,10 @@ export const getNotes = async (req, res) => {
         if (date) {
             const startDate = new Date(date);
             startDate.setHours(0, 0, 0, 0);
-            
+
             const endDate = new Date(date);
             endDate.setHours(23, 59, 59, 999);
-            
+
             query.createdAt = {
                 $gte: startDate,
                 $lte: endDate
@@ -172,7 +172,7 @@ export const deleteNote = async (req, res) => {
 export const togglePin = async (req, res) => {
     try {
         const { id } = req.params;
-        
+
         const note = await Note.findOne({ _id: id, createdBy: req.user._id });
         if (!note) {
             return res.status(404).json(buildErrorResponse(req, "Note not found."));
@@ -194,7 +194,7 @@ export const togglePin = async (req, res) => {
 export const getNoteVersions = async (req, res) => {
     try {
         const { id } = req.params;
-        
+
         // Make sure user owns the note
         const note = await Note.findOne({ _id: id, createdBy: req.user._id });
         if (!note) {
