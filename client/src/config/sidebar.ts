@@ -748,9 +748,21 @@ export function resolveSidebarItem(pathname: string): SidebarItem | undefined {
 }
 
 export function resolveDashboardPageTitle(pathname: string): string {
+  // Specific overrides requested for nested modules
+  if (pathname.includes("/storage/notes")) return "Super Admin Notes";
+  if (pathname.includes("/storage/s3")) return "S3 Configuration";
+
   const matchedItem = resolveSidebarItem(pathname);
 
   if (matchedItem) {
+    if (matchedItem.hasNestedNav) {
+      // Auto-format the last path segment (e.g., /storage/analytics -> "Analytics")
+      const segments = pathname.split("/").filter(Boolean);
+      const lastSegment = segments[segments.length - 1];
+      if (lastSegment && lastSegment !== matchedItem.to.split('/').pop()) {
+         return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1).replace(/-/g, " ");
+      }
+    }
     return matchedItem.label;
   }
   // Fallbacks for global non-sidebar pages
