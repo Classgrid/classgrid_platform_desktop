@@ -1158,11 +1158,13 @@ export function StorageFilesPage() {
 
         <div 
           ref={scrollContainerRef}
-          className="flex flex-1 overflow-x-auto overflow-y-hidden bg-background relative custom-scrollbar pb-2 cursor-grab active:cursor-grabbing"
-          onMouseDown={handleMouseDown}
-          onMouseLeave={handleMouseLeave}
-          onMouseUp={handleMouseUp}
-          onMouseMove={handleMouseMove}
+          className={`flex flex-1 overflow-x-auto bg-background relative custom-scrollbar pb-2 ${
+            viewMode === 'columns' ? 'overflow-y-hidden cursor-grab active:cursor-grabbing' : 'overflow-y-auto'
+          }`}
+          onMouseDown={viewMode === 'columns' ? handleMouseDown : undefined}
+          onMouseLeave={viewMode === 'columns' ? handleMouseLeave : undefined}
+          onMouseUp={viewMode === 'columns' ? handleMouseUp : undefined}
+          onMouseMove={viewMode === 'columns' ? handleMouseMove : undefined}
         >
 
           {viewMode === 'columns' ? (
@@ -1285,21 +1287,21 @@ export function StorageFilesPage() {
                   {
                     key: "size",
                     header: "Size",
-                    width: "w-[15%]",
+                    width: "w-[10%]",
                     render: (size: number) => size ? formatBytes(size) : "-"
                   },
                   {
                     key: "type",
                     header: "Type",
-                    width: "w-[10%]",
+                    width: "w-[15%]",
                     render: (type: string, row: any) => {
                       if (row.isUpDir) return null;
-                      if (type === "Folder") return <Badge variant="neutral">Dir</Badge>;
+                      if (type === "Folder") return <Badge variant="neutral" className="max-w-full">Dir</Badge>;
                       const fileExt = type?.split("/").pop()?.toUpperCase() || "FILE";
-                      const content = <span className="block max-w-[100px] truncate" title={fileExt}>{fileExt}</span>;
-                      if (type?.startsWith("image/")) return <Badge variant="info">{content}</Badge>;
-                      if (type?.startsWith("video/")) return <Badge variant="secondary">{content}</Badge>;
-                      return <Badge variant="outline">{content}</Badge>;
+                      const content = <span className="block truncate max-w-full" title={fileExt}>{fileExt}</span>;
+                      if (type?.startsWith("image/")) return <Badge variant="info" className="max-w-full">{content}</Badge>;
+                      if (type?.startsWith("video/")) return <Badge variant="secondary" className="max-w-full">{content}</Badge>;
+                      return <Badge variant="outline" className="max-w-full">{content}</Badge>;
                     }
                   },
                   {
