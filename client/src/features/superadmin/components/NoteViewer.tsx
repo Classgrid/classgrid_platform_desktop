@@ -234,26 +234,59 @@ export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin, onDele
             ) : versions.length === 0 ? (
               <div className="text-sm text-muted-foreground text-center p-4">No previous versions</div>
             ) : (
-              <div className="space-y-5">
-                <div className="relative pl-5 border-l-2 border-emerald-500/50 pb-5">
-                  <div className="absolute w-2.5 h-2.5 bg-emerald-500 rounded-full -left-[5.5px] top-1" />
-                  <div className="text-sm font-medium text-foreground">Current Version</div>
-                  <div className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Active now
+              <div className="space-y-0">
+                {/* Current Version - always on top */}
+                <div className="relative flex items-start gap-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="mt-0.5 w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Current Version</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Active now · Latest</div>
                   </div>
                 </div>
-                {versions.map((v, i) => (
-                  <div key={v._id} className={cn("relative pl-5 border-l-2", i === versions.length - 1 ? "border-transparent" : "border-border/50 pb-5")}>
-                    <div className="absolute w-2.5 h-2.5 bg-muted-foreground/30 rounded-full -left-[5.5px] top-1" />
-                    <div className="text-sm font-medium text-foreground">{format(new Date(v.createdAt), "MMM d, yyyy")}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{format(new Date(v.createdAt), "h:mm a")}</div>
-                    {onRestoreVersion && (
-                      <Button variant="link" size="sm" className="h-auto p-0 mt-2 text-xs text-emerald-500 hover:text-emerald-600 font-medium" onClick={() => onRestoreVersion(v)}>
-                        Restore this version
-                      </Button>
-                    )}
+
+                {/* Arrow down from current */}
+                {versions.length > 0 && (
+                  <div className="flex justify-center py-1.5">
+                    <span className="text-lg text-muted-foreground/50">↓</span>
                   </div>
-                ))}
+                )}
+
+                {/* Previous versions - numbered from newest to oldest */}
+                {versions.map((v, i) => {
+                  const versionNumber = versions.length - i;
+                  const ordinal = versionNumber === 1 ? "1st" : versionNumber === 2 ? "2nd" : versionNumber === 3 ? "3rd" : `${versionNumber}th`;
+                  return (
+                    <React.Fragment key={v._id}>
+                      <div className="relative flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
+                        <div className="mt-0.5 w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0 text-xs font-bold text-muted-foreground">
+                          {versionNumber}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-foreground">
+                            {ordinal} Version
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {format(new Date(v.createdAt), "MMM d, yyyy")} · {format(new Date(v.createdAt), "h:mm a")}
+                          </div>
+                          {onRestoreVersion && (
+                            <Button variant="link" size="sm" className="h-auto p-0 mt-1.5 text-xs text-emerald-500 hover:text-emerald-600 font-medium" onClick={() => onRestoreVersion(v)}>
+                              ↩ Restore this version
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Arrow between versions */}
+                      {i < versions.length - 1 && (
+                        <div className="flex justify-center py-1.5">
+                          <span className="text-lg text-muted-foreground/30">↓</span>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </div>
             )}
           </div>
