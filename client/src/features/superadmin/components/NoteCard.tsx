@@ -1,9 +1,8 @@
 import React from "react";
 import { formatDistanceToNow, format } from "date-fns";
-import { Pin, Lock, Globe, Users } from "lucide-react";
+import { Pin, Lock, Globe, Users, Folder } from "lucide-react";
 import { Note } from "../services/notesApi";
 import { cn } from "@/lib/utils";
-import { getTagColor } from "../utils/noteColors";
 
 interface NoteCardProps {
   note: Note;
@@ -19,7 +18,6 @@ const decodeHtmlEntities = (text: string | undefined) => {
 };
 
 export function NoteCard({ note, isActive, onClick }: NoteCardProps) {
-  // Determine visibility icon
   const VisibilityIcon = note.visibility === "Public" ? Globe : note.visibility === "Shared" ? Users : Lock;
 
   return (
@@ -48,10 +46,24 @@ export function NoteCard({ note, isActive, onClick }: NoteCardProps) {
       </p>
 
       <div className="flex flex-col gap-2 mt-3 pt-2 border-t border-border/50 ml-6">
+        {/* Category badge */}
+        {note.category && (
+          <div className="flex items-center gap-1">
+            <Folder className="w-2.5 h-2.5 text-muted-foreground/60" />
+            <span className="text-[10px] font-medium text-muted-foreground/80 uppercase tracking-wide">
+              {note.category}
+            </span>
+          </div>
+        )}
+
+        {/* Tags - always blue */}
         {note.tags && note.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {note.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className={cn("px-1.5 py-0.5 rounded border text-[10px] font-medium", getTagColor(tag))}>
+              <span
+                key={tag}
+                className="px-1.5 py-0.5 rounded border text-[10px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30"
+              >
                 {tag}
               </span>
             ))}
@@ -76,3 +88,4 @@ export function NoteCard({ note, isActive, onClick }: NoteCardProps) {
     </div>
   );
 }
+

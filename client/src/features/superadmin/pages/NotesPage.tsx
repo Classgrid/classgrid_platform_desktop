@@ -3,7 +3,7 @@ import {
   Search, Plus, FileText, Star, Folder, Tag as TagIcon, X,
   ChevronDown, Lock, Globe, Users, Pencil, Check, Hash,
   StickyNote, BookOpen, Code2, Server, Database, Cpu, Cloud,
-  ShieldCheck, Layers, FlaskConical, BrainCircuit, Zap
+  ShieldCheck, Layers, FlaskConical, BrainCircuit, Zap, Filter
 } from "lucide-react";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { Input } from "@/components/marketing_ui/input";
@@ -177,6 +177,141 @@ const CATEGORY_PRESETS: SelectOption[] = [
   { value: "Research", label: "Research" },
   { value: "Ideas", label: "Ideas" },
 ];
+
+/* ─────────────────────────────────────────────────────────────── */
+/* CATEGORY FILTER DROPDOWN                                         */
+/* ─────────────────────────────────────────────────────────────── */
+function CategoryFilterDropdown({
+  value,
+  onChange,
+  allCategories,
+}: {
+  value: string | undefined;
+  onChange: (v: string | undefined) => void;
+  allCategories: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [customInput, setCustomInput] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Combine presets + categories from existing notes (deduplicated)
+  const presetValues = CATEGORY_PRESETS.map((c) => c.value);
+  const extraCategories = allCategories.filter((c) => !presetValues.includes(c));
+  const allOptions = [...CATEGORY_PRESETS.map((c) => c.value), ...extraCategories];
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setShowCustomInput(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative w-full mb-2">
+      <button
+        onClick={() => { setOpen(!open); setShowCustomInput(false); }}
+        className={cn(
+          "w-full h-9 flex items-center justify-between gap-2 px-3 rounded-lg border text-xs font-medium transition-all",
+          value
+            ? "bg-blue-500/10 border-blue-500/40 text-blue-600 dark:text-blue-400"
+            : "bg-background border-input text-muted-foreground hover:border-border"
+        )}
+      >
+        <div className="flex items-center gap-1.5">
+          <Filter className="w-3.5 h-3.5" />
+          {value ? value : "Filter by category"}
+        </div>
+        <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-lg border bg-popover shadow-lg overflow-hidden">
+          {/* All option */}
+          <button
+            className={cn(
+              "w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-accent",
+              !value && "font-semibold text-foreground bg-accent/50"
+            )}
+            onClick={() => { onChange(undefined); setOpen(false); }}
+          >
+            <span className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+            All Categories
+          </button>
+          <div className="h-px bg-border mx-2" />
+
+          {/* All preset + note categories */}
+          <div className="max-h-48 overflow-y-auto">
+            {allOptions.map((cat) => (
+              <button
+                key={cat}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-accent",
+                  value === cat && "font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/5"
+                )}
+                onClick={() => { onChange(cat); setOpen(false); }}
+              >
+                <span className={cn(
+                  "w-2 h-2 rounded-full",
+                  value === cat ? "bg-blue-500" : "bg-muted-foreground/30"
+                )} />
+                {cat}
+                {value === cat && <Check className="w-3 h-3 ml-auto text-blue-500" />}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom category */}
+          <div className="h-px bg-border mx-2" />
+          {showCustomInput ? (
+            <div className="p-2 flex gap-1.5">
+              <input
+                autoFocus
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && customInput.trim()) {
+                    onChange(customInput.trim());
+                    setOpen(false);
+                    setShowCustomInput(false);
+                    setCustomInput("");
+                  }
+                  if (e.key === "Escape") setShowCustomInput(false);
+                }}
+                placeholder="Type category & press Enter"
+                className="flex-1 text-xs px-2 py-1.5 rounded border bg-background outline-none focus:ring-1 focus:ring-blue-500/50"
+              />
+              <button
+                onClick={() => {
+                  if (customInput.trim()) {
+                    onChange(customInput.trim());
+                    setOpen(false);
+                    setShowCustomInput(false);
+                    setCustomInput("");
+                  }
+                }}
+                className="px-2 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600"
+              >
+                Add
+              </button>
+            </div>
+          ) : (
+            <button
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground text-left hover:bg-accent transition-colors"
+              onClick={() => setShowCustomInput(true)}
+            >
+              <Plus className="w-3 h-3" /> Custom category…
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ─────────────────────────────────────────────────────────────── */
 /* RESIZE HANDLE                                                    */
@@ -482,7 +617,14 @@ export function NotesPage() {
               className="w-full h-9 text-xs mb-2"
             />
 
-            {/* Tag Pills */}
+            {/* Category Filter Dropdown */}
+            <CategoryFilterDropdown
+              value={selectedCategory}
+              onChange={setSelectedCategory}
+              allCategories={allCategories}
+            />
+
+            {/* Tag Pills - always blue */}
             {allTags.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {allTags.slice(0, 12).map((tag) => (
@@ -492,8 +634,8 @@ export function NotesPage() {
                     className={cn(
                       "px-2 py-0.5 rounded-full text-[10px] font-medium border transition-all",
                       selectedTag === tag
-                        ? "bg-emerald-500 text-white border-emerald-500"
-                        : getTagColor(tag)
+                        ? "bg-blue-500 text-white border-blue-500"
+                        : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/20"
                     )}
                   >
                     {tag}
