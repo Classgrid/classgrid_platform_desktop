@@ -1,8 +1,8 @@
 import React from 'react';
 import { useUploadStore } from '../stores/useUploadStore';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/marketing_ui/button';
+import { Progress } from '@/components/marketing_ui/progress';
+import { ScrollArea } from '@/components/marketing_ui/scroll-area';
 import { X, ChevronDown, ChevronUp, File, AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
