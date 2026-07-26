@@ -8,6 +8,8 @@ import {
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 
+import { motion } from "framer-motion";
+
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { Badge } from "@/components/marketing_ui/badge";
@@ -480,6 +482,11 @@ export function StorageFilesPage() {
 
   // Auto-scroll to the rightmost edge whenever a folder or file is opened
   React.useEffect(() => {
+    // Request browser notification permission for background uploads
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
     if (viewMode === 'columns' && scrollContainerRef.current) {
       setTimeout(() => {
         if (scrollContainerRef.current) {
@@ -721,6 +728,21 @@ export function StorageFilesPage() {
           toast.warning(`Uploaded ${successCount} file(s), but ${errorCount} failed.`);
         } else if (errorCount > 0) {
           toast.error(`Failed to upload ${errorCount} file(s).`);
+        }
+
+        // Send browser push notification if supported and granted
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('Classgrid Storage Upload', {
+              body: successCount > 0 && errorCount === 0 
+                ? `Successfully uploaded ${successCount} files.` 
+                : (successCount > 0 ? `Uploaded ${successCount} files, ${errorCount} failed.` : `Failed to upload ${errorCount} files.`),
+              icon: '/favicon.ico'
+            });
+          } catch (e) {
+            // Some browsers require service workers for notifications, fallback gracefully
+            console.error("Failed to send push notification", e);
+          }
         }
 
         // Clear the upload toast after 3 seconds
@@ -1510,7 +1532,11 @@ export function StorageFilesPage() {
 
       {/* Floating Upload Progress Toast */}
       {uploadingFiles.length > 0 && (
-        <div className="absolute top-4 right-4 z-50 w-[380px] bg-card border border-border shadow-xl rounded-md overflow-hidden animate-in fade-in slide-in-from-top-4">
+        <motion.div 
+          drag
+          dragMomentum={false}
+          className="absolute top-4 right-4 z-50 w-[380px] bg-card border border-border shadow-xl rounded-md overflow-hidden cursor-grab active:cursor-grabbing"
+        >
           <div className="p-4 flex items-center justify-between border-b border-border/50">
             <div className="flex items-center gap-3 text-sm font-medium">
               <Spinner className="text-muted-foreground" />
@@ -1529,10 +1555,10 @@ export function StorageFilesPage() {
           </div>
           
           <div className="p-3 bg-muted/20 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Please do not close the browser</span>
+            <span className="text-xs text-muted-foreground">You can drag this around and work in background</span>
             <Button variant="outline" size="sm" className="h-7 text-xs bg-background">Cancel</Button>
           </div>
-        </div>
+        </motion.div>
       )}
 
     </div>
