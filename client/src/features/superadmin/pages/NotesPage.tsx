@@ -3,13 +3,14 @@ import {
   Search, Plus, FileText, Star, Folder, Tag as TagIcon, X,
   ChevronDown, Lock, Globe, Users, Pencil, Check, Hash,
   StickyNote, BookOpen, Code2, Server, Database, Cpu, Cloud,
-  ShieldCheck, Layers, FlaskConical, BrainCircuit, Zap, Loader2
+  ShieldCheck, Layers, FlaskConical, BrainCircuit, Zap
 } from "lucide-react";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { Input } from "@/components/marketing_ui/input";
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
 import { ScrollArea } from "@/components/marketing_ui/scroll-area";
+import { Spinner } from "@/components/marketing_ui/spinner";
 import { cn } from "@/lib/utils";
 import {
   useNotes,
@@ -634,7 +635,7 @@ export function NotesPage() {
                 >
                   {createNote.isPending || updateNote.isPending ? (
                     <>
-                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <Spinner className="w-3 h-3 text-white" />
                       Saving…
                     </>
                   ) : (
