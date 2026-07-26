@@ -38,7 +38,10 @@ export const getNotes = async (req, res) => {
 
         // Text search
         if (search) {
-            query.$text = { $search: search };
+            query.$or = [
+                { title: { $regex: search, $options: "i" } },
+                { tags: { $regex: search, $options: "i" } }
+            ];
         }
 
         const notes = await Note.find(query)
