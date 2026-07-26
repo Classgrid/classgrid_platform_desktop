@@ -82,7 +82,8 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, role, user }: DashboardLayoutProps) {
   const location = useLocation();
-  const isFullBleed = location.pathname.includes("/chat") || location.pathname.includes("/website") || location.pathname.includes("/storage/files") || location.pathname.includes("/storage/notes");
+  const isFullBleed = location.pathname.includes("/chat") || location.pathname.includes("/website") || location.pathname.includes("/storage/files");
+  const isNoPadding = location.pathname.includes("/storage/notes");
   const { items, showBreadcrumbs } = useBreadcrumbStore();
   const dashboardRole = normalizeDashboardRole(role, location.pathname);
   const { data: currentUser } = useCurrentUser();
@@ -95,7 +96,7 @@ export function DashboardLayout({ children, role, user }: DashboardLayoutProps) 
         {/* Make the inset background match the sidebar so it's a seamless black canvas */}
         <SidebarInset className="bg-background m-0 p-0 flex flex-col h-screen overflow-hidden">
           {/* This is the actual flush right pane */}
-          <div className={`flex-1 min-h-0 flex flex-col overflow-hidden relative ${isFullBleed ? 'bg-background border-l border-border' : 'bg-card border-l border-border'}`}>
+          <div className={`flex-1 min-h-0 flex flex-col overflow-hidden relative ${(isFullBleed || isNoPadding) ? 'bg-background border-l border-border' : 'bg-card border-l border-border'}`}>
             {!isFullBleed && showBreadcrumbs && (
               <header className="flex h-14 shrink-0 items-center justify-center border-b border-border/50 px-4 bg-background/80 backdrop-blur-md sticky top-0 z-50 relative">
                 <div className="absolute left-4 flex items-center gap-2">
@@ -109,17 +110,17 @@ export function DashboardLayout({ children, role, user }: DashboardLayoutProps) 
                         <React.Fragment key={index}>
                           <BreadcrumbItem>
                             {item.onClick ? (
-                              <BreadcrumbLink asChild>
-                                <div role="button" tabIndex={0} onClick={item.onClick} className="hover:text-foreground cursor-pointer bg-transparent border-none p-0 inline-flex">
-                                  {item.label}
-                                </div>
-                              </BreadcrumbLink>
+                               <BreadcrumbLink asChild>
+                                 <div role="button" tabIndex={0} onClick={item.onClick} className="hover:text-foreground cursor-pointer bg-transparent border-none p-0 inline-flex">
+                                   {item.label}
+                                 </div>
+                               </BreadcrumbLink>
                             ) : item.href ? (
-                              <BreadcrumbLink asChild>
-                                <Link to={item.href}>{item.label}</Link>
-                              </BreadcrumbLink>
+                               <BreadcrumbLink asChild>
+                                 <Link to={item.href}>{item.label}</Link>
+                               </BreadcrumbLink>
                             ) : (
-                              <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                               <BreadcrumbPage>{item.label}</BreadcrumbPage>
                             )}
                           </BreadcrumbItem>
                           {index < items.length - 1 && <BreadcrumbSeparator />}
@@ -134,7 +135,7 @@ export function DashboardLayout({ children, role, user }: DashboardLayoutProps) 
                 </Breadcrumb>
               </header>
             )}
-            <main className={`flex-1 min-h-0 overflow-x-hidden bg-background ${isFullBleed ? 'overflow-y-hidden p-0 m-0 border-none flex flex-col' : 'overflow-y-auto p-4 lg:p-6'}`}>
+            <main className={`flex-1 min-h-0 overflow-x-hidden bg-background ${isFullBleed ? 'overflow-y-hidden p-0 m-0 border-none flex flex-col' : isNoPadding ? 'p-0 m-0 border-none flex flex-col' : 'overflow-y-auto p-4 lg:p-6'}`}>
 
               {children}
             </main>
