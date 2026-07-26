@@ -255,7 +255,6 @@ export function AppRouter() {
           <Route path="files" element={<StorageFilesPage />} />
           <Route path="analytics" element={<StorageAnalyticsPage />} />
           <Route path="s3" element={<StorageS3ConfigPage />} />
-          <Route path="notes" element={<NotesPage />} />
         </Route>
 
         {/* NEW ORG ADMIN SHELL */}
