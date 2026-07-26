@@ -356,8 +356,16 @@ router.post("/invite-staff", isAuthenticated, requireRole("org_admin"), async (r
         newUser.activationTokenExpiry = activationExpiry;
         await newUser.save();
 
-        const org = await Organization.findById(orgId).select('name').lean();
-        const frontendUrl = process.env.FRONTEND_URL?.trim() || 'https://classgrid.in';
+        const org = await Organization.findById(orgId).select('name subdomain custom_domain').lean();
+        
+        // Use the origin of the current request as the frontend URL (e.g. https://ganesha.classgrid.in)
+        // Fallback to custom domain, then subdomain.classgrid.in, then environment variable
+        const frontendUrl = req.get('origin') 
+            || (org?.custom_domain ? `https://${org.custom_domain}` : null)
+            || (org?.subdomain ? `https://${org.subdomain}.classgrid.in` : null)
+            || process.env.FRONTEND_URL?.trim() 
+            || 'https://app.classgrid.in';
+
         const activationLink = `${frontendUrl}/activate?token=${activationToken}`;
 
         try {
