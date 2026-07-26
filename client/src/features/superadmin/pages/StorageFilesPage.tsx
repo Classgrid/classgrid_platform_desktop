@@ -171,6 +171,7 @@ const FilePreviewPane = ({ activeFile, onClose, onDelete, onRename, onFullScreen
 
 const StorageColumn = ({
   prefix,
+  search,
   isLastColumn,
   selectedChildKey,
   selectedKeys,
@@ -191,7 +192,7 @@ const StorageColumn = ({
   handleRenameFile,
   isRenamingPending,
 }: any) => {
-  const { data, isLoading } = useStorageObjects(prefix);
+  const { data, isLoading } = useStorageObjects(prefix, search);
   
   const items = [
     ...(data?.folders || []).map((folder: any) => ({
@@ -1173,6 +1174,7 @@ export function StorageFilesPage() {
                 <StorageColumn
                   key={prefix}
                   prefix={prefix}
+                  search={i === openFolders.length - 1 ? debouncedSearch : ""}
                   isLastColumn={i === openFolders.length - 1}
                   selectedChildKey={openFolders[i + 1]}
                   selectedKeys={selectedKeys}
@@ -1216,7 +1218,7 @@ export function StorageFilesPage() {
               </div>
             </>
           ) : (
-            <div className="flex-1 w-full overflow-hidden flex flex-col p-4 bg-card">
+            <div className="flex-1 w-full flex flex-col p-4 bg-card">
               <DataTable
                 columns={[
                   {
