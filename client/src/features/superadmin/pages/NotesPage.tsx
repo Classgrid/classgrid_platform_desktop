@@ -376,7 +376,7 @@ export function NotesPage() {
   const allCategories = Array.from(new Set(notes.map((n) => n.category).filter(Boolean)));
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-background cursor-pointer [&_*]:cursor-pointer">
+    <div className="flex h-full w-full overflow-hidden bg-background border border-border rounded-lg cursor-pointer [&_*]:cursor-pointer">
 
       {/* ══════════ LEFT: Sidebar + List ══════════ */}
       <div
@@ -552,7 +552,7 @@ export function NotesPage() {
       <div 
         style={{ flex: 1, minWidth: 0 }} 
         className={cn(
-          "flex flex-col h-full overflow-hidden bg-card",
+          "flex flex-col h-full overflow-hidden bg-card border-l border-border",
           (!activeNote && !isEditing) ? "hidden md:flex" : "flex w-full md:w-auto"
         )}
       >
