@@ -746,6 +746,7 @@ export function NotesPage() {
                 );
               }
             }}
+            onTogglePin={() => togglePin.mutate(activeNote._id)}
           />
         )}
       </div>
