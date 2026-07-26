@@ -480,7 +480,7 @@ export function NotesPage() {
           <div className="border-t border-border/40 mx-4 my-1" />
 
           {/* Notes List */}
-          <ScrollArea className="flex-1 px-2 py-2">
+          <div className="flex-1 px-2 py-2 overflow-y-auto">
             {isLoading ? (
               <div className="flex flex-col gap-2 px-2 py-4">
                 {[1, 2, 3].map((i) => (
@@ -518,7 +518,7 @@ export function NotesPage() {
                 ))}
               </div>
             )}
-          </ScrollArea>
+          </div>
         </div>
       </div>
 
