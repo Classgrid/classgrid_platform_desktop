@@ -67,7 +67,7 @@ const uploadRateLimiter = rateLimit({
         );
         return res.status(429).json(buildStorageErrorResponse(
             req,
-            "Upload rate limit exceeded. Maximum 30 uploads per minute.",
+            `Upload rate limit exceeded. Maximum ${STORAGE_UPLOAD_RATE_LIMIT_PER_MINUTE} uploads per minute.`,
         ));
     },
 });

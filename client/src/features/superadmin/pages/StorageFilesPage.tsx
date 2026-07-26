@@ -617,7 +617,7 @@ export function StorageFilesPage() {
         let successCount = 0;
         let errorCount = 0;
         
-        const MAX_CONCURRENT_UPLOADS = 4;
+        const MAX_CONCURRENT_UPLOADS = 2;
         let currentIndex = 0;
 
         const processUpload = async (upload: typeof newUploads[0]) => {
@@ -682,6 +682,8 @@ export function StorageFilesPage() {
           while (currentIndex < newUploads.length) {
             const upload = newUploads[currentIndex++];
             await processUpload(upload);
+            // Add a small delay between uploads to prevent overwhelming the reverse proxy/firewall
+            await new Promise(resolve => setTimeout(resolve, 150));
           }
         });
 
