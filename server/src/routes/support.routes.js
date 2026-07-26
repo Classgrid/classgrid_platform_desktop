@@ -60,9 +60,6 @@ async function enforceStrictSession(req, res, next) {
     // 2. If they are NOT logged in, but the email belongs to a registered user,
     // we force them to log in to access existing tickets (prevents magic link sharing for registered users).
     // We only enforce this for READ and UPDATE endpoints, not for creating new tickets.
-    if (email && !req.loggedInUserEmail && req.method !== "POST" && req.path === "/public/tickets") {
-        // Wait, req.path is relative to the router. It would be "/" or "/:id" 
-    }
     if (email && !req.loggedInUserEmail && req.method !== "OPTIONS") {
         // Only block view/reply/rate/reopen for registered users. Creating tickets is allowed.
         const isCreating = req.method === "POST" && (req.path === "/public/tickets" || req.path === "/public/tickets/");

@@ -236,7 +236,7 @@ export async function notifyTicketCreatorOfAdminReply({ ticket, replyMessage, ad
     if (!to) return { queued: false, reason: "missing_submitter_email" };
 
     const siteUrl = getMarketingSiteUrl();
-    const conversationUrl = `${siteUrl}/support/requests/${ticket._id}?email=${encodeURIComponent(to)}`;
+    const conversationUrl = `${siteUrl}/support/requests/${ticket._id}`;
     const subject = `New reply: ${ticket.subject || "Support ticket"} | Classgrid`;
 
     const job = await enqueueEmail({
@@ -423,7 +423,7 @@ export async function notifyUserOfTicketCreation({ ticket }) {
     if (!to) return { queued: false, reason: "missing_submitter_email" };
 
     const siteUrl = getMarketingSiteUrl();
-    const trackingUrl = `${siteUrl}/support/requests/${ticket._id}?email=${encodeURIComponent(to)}`;
+    const trackingUrl = `${siteUrl}/support/requests/${ticket._id}`;
     const subject = `Ticket received: ${ticket.subject || "Support ticket"} | Classgrid`;
 
     const job = await enqueueEmail({
@@ -781,7 +781,7 @@ export async function notifyUserOfTalkRequestCreation({ ticket }) {
     if (!to) return { queued: false, reason: "missing_submitter_email" };
 
     const siteUrl = getMarketingSiteUrl();
-    const trackingUrl = `${siteUrl}/support/requests/${ticket._id}?email=${encodeURIComponent(to)}`;
+    const trackingUrl = `${siteUrl}/support/requests/${ticket._id}`;
     const subject = `Classgrid Talk request received: ${ticket.subject || "Classgrid Talk Request"} | Classgrid`;
 
     const job = await enqueueEmail({
@@ -802,7 +802,7 @@ export async function notifyTalkCreatorOfAdminReply({ ticket, replyMessage, admi
     if (!to) return { queued: false, reason: "missing_submitter_email" };
 
     const siteUrl = getMarketingSiteUrl();
-    const conversationUrl = `${siteUrl}/support/requests/${ticket._id}?email=${encodeURIComponent(to)}`;
+    const conversationUrl = `${siteUrl}/support/requests/${ticket._id}`;
     const ticketIdShort = String(ticket._id).slice(0, 8);
     const subject = `New Message from Your Classgrid Talk Specialist – Request #CG-TALK-${ticketIdShort}`;
 
