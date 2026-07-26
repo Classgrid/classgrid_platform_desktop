@@ -1072,7 +1072,7 @@ export function StorageFilesPage() {
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
-      <div className="flex flex-col flex-1 w-full border-t border-border overflow-hidden bg-card">
+      <div className="flex flex-col flex-1 min-h-0 w-full border-t border-border overflow-hidden bg-card">
         <div className="flex items-center justify-between p-3 border-b border-border bg-muted/20">
           
           <div className="flex items-center flex-1 mr-4 overflow-hidden">
@@ -1159,7 +1159,7 @@ export function StorageFilesPage() {
 
         <div 
           ref={scrollContainerRef}
-          className={`flex flex-1 overflow-x-auto bg-background relative custom-scrollbar pb-2 ${
+          className={`flex flex-1 min-h-0 overflow-x-auto bg-background relative custom-scrollbar pb-2 ${
             viewMode === 'columns' ? 'overflow-y-hidden cursor-grab active:cursor-grabbing' : 'overflow-y-auto'
           }`}
           onMouseDown={viewMode === 'columns' ? handleMouseDown : undefined}
@@ -1218,7 +1218,7 @@ export function StorageFilesPage() {
               </div>
             </>
           ) : (
-            <div className="flex-1 w-full flex flex-col p-4 bg-card overflow-y-auto">
+            <div className="flex-1 min-h-0 w-full flex flex-col p-4 bg-card overflow-y-auto custom-scrollbar">
               <DataTable
                 columns={[
                   {
