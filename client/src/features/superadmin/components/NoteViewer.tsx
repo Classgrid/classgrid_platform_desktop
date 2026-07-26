@@ -55,12 +55,6 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
           
           {/* Header Actions */}
           <div className="flex flex-wrap justify-end gap-3 mb-6 pt-2">
-            {headings.length > 0 && (
-              <Button variant="outline" size="sm" onClick={() => setShowTOC(!showTOC)} className={showTOC ? "bg-accent" : ""}>
-                <List className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Contents</span>
-              </Button>
-            )}
             <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)} className={showHistory ? "bg-accent" : ""}>
               <History className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">History</span>
@@ -183,35 +177,6 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
                 ))}
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Table of Contents Sidebar (Overlay) */}
-      {showTOC && headings.length > 0 && (
-        <div className="absolute top-0 right-0 w-80 max-w-[calc(100vw-2rem)] border-l bg-card flex flex-col h-full z-50 shadow-2xl animate-in slide-in-from-right-8 duration-200">
-          <div className="p-4 border-b flex items-center justify-between bg-muted/30">
-            <h3 className="font-medium flex items-center gap-2 text-foreground">
-              <List className="w-4 h-4 text-muted-foreground" /> Table of Contents
-            </h3>
-            <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-background" onClick={() => setShowTOC(false)}>
-              <span className="text-lg">&times;</span>
-            </Button>
-          </div>
-          <div className="flex-1 min-h-0 overflow-y-auto p-5">
-            <div className="flex flex-col gap-2.5 border-l-2 border-border/50">
-              {headings.map((h, i) => (
-                <a 
-                  key={i} 
-                  href={`#${h.text.toLowerCase().replace(/[^\w]+/g, '-')}`}
-                  onClick={() => setShowTOC(false)}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors truncate block"
-                  style={{ paddingLeft: `${(h.level - 1) * 0.75 + 0.5}rem` }}
-                >
-                  {h.text}
-                </a>
-              ))}
-            </div>
           </div>
         </div>
       )}
