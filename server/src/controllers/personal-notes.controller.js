@@ -38,8 +38,9 @@ export const getNotes = async (req, res) => {
 
         // Text search
         if (search) {
+            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             query.$or = [
-                { title: { $regex: search, $options: "i" } }
+                { title: { $regex: `^${escapedSearch}`, $options: "i" } }
             ];
         }
 
