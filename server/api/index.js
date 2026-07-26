@@ -147,7 +147,7 @@ app.use(
         "https://classgrid.in",
         "http://127.0.0.1:3000",
         "https://www.classgrid.in",
-        "https://classgrid.in",
+        "https://superadmin.classgrid.in",
         "https://classgridplatform.vercel.app",
         "https://nikhil.quantumchem.site"
       ];

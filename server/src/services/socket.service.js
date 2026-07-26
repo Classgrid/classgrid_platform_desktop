@@ -39,14 +39,10 @@ export const initSocket = (server) => {
         pingInterval: 25000,   // Heartbeat every 25 seconds to keep connection alive
         cors: {
             origin: (origin, callback) => {
-                // Allow all *.classgrid.in subdomains + custom org domains
-                if (!origin || origin.endsWith('.classgrid.in') || origin === 'https://classgrid.in' || origin === process.env.CLIENT_URL) {
-                    callback(null, true);
-                } else {
-                    callback(null, true); // Allow all for now — orgs can have custom domains too
-                }
+                callback(null, true); // Allow all domains including subdomains and custom domains
             },
-            methods: ["GET", "POST"]
+            methods: ["GET", "POST"],
+            credentials: true
         }
     });
 
