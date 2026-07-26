@@ -834,7 +834,8 @@ export function StorageFilesPage() {
             ...activeFile,
             key: newKey,
             name: finalName,
-            lastModified: nowIso
+            lastModified: nowIso,
+            cdnUrl: generateNewCdnUrl(activeFile.cdnUrl, newKey)
           });
         }
 
