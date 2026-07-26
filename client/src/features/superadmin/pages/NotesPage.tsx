@@ -111,7 +111,7 @@ export function NotesPage() {
     <ResizablePanelGroup direction="horizontal" className="h-full w-full overflow-hidden bg-background">
       
       {/* ── LEFT COLUMN: Calendar & Filters ── */}
-      <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-muted/20 flex flex-col h-full overflow-y-auto">
+      <ResizablePanel defaultSize={25} minSize={20} maxSize={35} className="bg-muted/20 flex flex-col h-full overflow-y-auto min-w-[280px]">
         <div className="p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold tracking-tight">Filters</h2>
@@ -177,7 +177,7 @@ export function NotesPage() {
       <ResizableHandle withHandle />
 
       {/* ── CENTER COLUMN: Notes List ── */}
-      <ResizablePanel defaultSize={25} minSize={20} maxSize={40} className="bg-background flex flex-col h-full">
+      <ResizablePanel defaultSize={30} minSize={25} maxSize={45} className="bg-background flex flex-col h-full min-w-[320px]">
         <div className="p-3 border-b border-border flex items-center justify-between bg-muted/10 sticky top-0 z-10">
           <div className="flex flex-col">
             <span className="font-semibold">{notes.length} Notes</span>
