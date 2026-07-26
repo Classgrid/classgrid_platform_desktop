@@ -23,7 +23,7 @@ const decodeHtmlEntities = (text: string | undefined) => {
     .replace(/&#39;/g, "'");
 };
 
-export default function NotesPage() {
+export function NotesPage() {
   const { data: notes = [], isLoading } = useNotes();
   const createNote = useCreateNote();
   const updateNote = useUpdateNote();
