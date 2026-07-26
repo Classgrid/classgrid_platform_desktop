@@ -1,4 +1,4 @@
-﻿import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Check, Eye, EyeOff, XCircle, AlertCircle } from "lucide-react";
 
@@ -224,6 +224,14 @@ export function ResetPasswordPage() {
           >
             Password Set
           </p>
+
+          <Link
+            to={window.location.pathname.includes("activate") ? "/onboard" : "/login"}
+            className="mt-8 flex items-center justify-center h-12 w-full rounded-xl font-bold bg-emerald-500 text-white shadow-[0_0_24px_rgba(16,185,129,0.28)] hover:bg-emerald-400 transition-colors"
+            style={{ animation: "fadeIn 0.4s ease 0.7s both" }}
+          >
+            {window.location.pathname.includes("activate") ? "Complete Profile Setup" : "Back to Login"}
+          </Link>
         </div>
 
         <style>{`

@@ -119,84 +119,75 @@ export function NotesPage() {
   };
 
   return (
-    <ResizablePanelGroup 
-      direction="horizontal" 
-      autoSaveId="notes-layout-v3"
-      className="h-full w-full overflow-hidden bg-background"
-    >
+    <div className="flex h-full w-full overflow-hidden bg-background">
       
       {/* ── LEFT COLUMN: Calendar & Filters ── */}
-      <ResizablePanel defaultSize={25} minSize={20} maxSize={35} className="bg-muted/20 min-w-[280px]">
-        <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden w-full">
-          <div className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold tracking-tight">Filters</h2>
-              {(selectedDate || selectedTag || searchQuery) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-xs text-muted-foreground"
-                  onClick={() => {
-                    setSelectedDate(undefined);
-                    setSelectedTag(undefined);
-                    setSearchQuery("");
-                  }}
-                >
-                  Clear all
-                </Button>
-              )}
-            </div>
-            
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search notes..."
-                className="pl-9 bg-background"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            <div className="bg-background rounded-xl overflow-hidden flex flex-col justify-center">
-              <NikhilTimeCalendar
-                value={selectedDate}
-                onChange={setSelectedDate}
-                placeholder="Select date & time"
-                popDirection="right"
-                className="w-full bg-accent/30 border-border shadow-sm hover:bg-accent/50"
-              />
-            </div>
-
-            {allTags.length > 0 && (
-              <div className="space-y-2 pt-2">
-                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Tag className="w-3.5 h-3.5" />
-                  Tags
-                </h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {allTags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant={selectedTag === tag ? "default" : "secondary"}
-                      className="cursor-pointer hover:bg-primary/80 transition-colors"
-                      onClick={() => setSelectedTag(selectedTag === tag ? undefined : tag)}
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+      <div className="w-[280px] shrink-0 flex flex-col h-full bg-muted/20 border-r border-border overflow-y-auto">
+        <div className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-tight">Filters</h2>
+            {(selectedDate || selectedTag || searchQuery) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs text-muted-foreground"
+                onClick={() => {
+                  setSelectedDate(undefined);
+                  setSelectedTag(undefined);
+                  setSearchQuery("");
+                }}
+              >
+                Clear all
+              </Button>
             )}
           </div>
-        </div>
-      </ResizablePanel>
+          
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search notes..."
+              className="pl-9 bg-background"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
-      <ResizableHandle withHandle />
+          <div className="bg-background rounded-xl overflow-hidden flex flex-col justify-center">
+            <NikhilTimeCalendar
+              value={selectedDate}
+              onChange={setSelectedDate}
+              placeholder="Select date & time"
+              popDirection="right"
+              className="w-full bg-accent/30 border-border shadow-sm hover:bg-accent/50"
+            />
+          </div>
+
+          {allTags.length > 0 && (
+            <div className="space-y-2 pt-2">
+              <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Tag className="w-3.5 h-3.5" />
+                Tags
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
+                {allTags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant={selectedTag === tag ? "default" : "secondary"}
+                    className="cursor-pointer hover:bg-primary/80 transition-colors"
+                    onClick={() => setSelectedTag(selectedTag === tag ? undefined : tag)}
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* ── CENTER COLUMN: Notes List ── */}
-      <ResizablePanel defaultSize={30} minSize={25} maxSize={45} className="bg-background min-w-[320px]">
-        <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden w-full">
-          <div className="p-3 border-b border-border flex items-center justify-between bg-muted/10 sticky top-0 z-10 shrink-0">
+      <div className="w-[320px] shrink-0 flex flex-col h-full bg-background border-r border-border">
+        <div className="p-3 border-b border-border flex items-center justify-between bg-muted/10 sticky top-0 z-10 shrink-0">
           <div className="flex flex-col">
             <span className="font-semibold">{notes.length} Notes</span>
             <span className="text-xs text-muted-foreground">
@@ -264,18 +255,15 @@ export function NotesPage() {
             ))
           )}
         </div>
-        </div>
-      </ResizablePanel>
-
-      <ResizableHandle withHandle />
+      </div>
 
       {/* ── RIGHT COLUMN: Note Editor/Viewer ── */}
-      <ResizablePanel defaultSize={45} minSize={30} className="bg-card flex flex-col h-full overflow-hidden min-w-[400px]">
+      <div className="flex-1 min-w-0 flex flex-col h-full bg-card overflow-hidden">
         {!activeNote && !isEditing ? (
           <div className="flex-1 flex flex-col items-center justify-center opacity-40 select-none">
             <FileText className="w-16 h-16 mb-4 text-muted-foreground" />
             <h2 className="text-xl font-semibold">No Note Selected</h2>
-            <p className="text-sm text-muted-foreground max-w-sm text-center mt-2">
+            <p className="text-sm mt-2 max-w-xs text-center">
               Select a note from the list on the left to view or edit its contents, or create a new note.
             </p>
           </div>

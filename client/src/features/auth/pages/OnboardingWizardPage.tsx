@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
+import { resetPasswordWithToken } from "../api";
 import {
   CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, Mail, Smartphone, Key, User,
   Upload, School, GraduationCap, Building2, Briefcase, PlaySquare, Eye, EyeOff, Moon, Sun, ChevronDown
@@ -20,9 +22,12 @@ import { cn } from "@/lib/utils";
 
 export function OnboardingWizardPage() {
   const { theme, setTheme } = useTheme();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token") || "";
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Central form state: sectionKey -> { fieldKey: value }
   const [formData, setFormData] = useState<Record<string, Record<string, any>>>({});
@@ -141,14 +146,32 @@ export function OnboardingWizardPage() {
   const totalSteps = steps.length;
   const currentStepData = steps[currentStep];
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (currentStep === 0) {
+      if (!password || !isStrongPassword || !isPasswordMatch) {
+        alert("Please enter a valid, matching, strong password to continue.");
+        return;
+      }
+    }
+
     if (currentStep < totalSteps - 1) {
       setCurrentStep(prev => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       console.log("FINAL SUBMITTED PROFILE DATA:", formData);
-      setIsCompleted(true);
-      setShowConfetti(true);
+      setIsSubmitting(true);
+      try {
+        if (token && password) {
+          await resetPasswordWithToken({ token, password });
+        }
+        setIsCompleted(true);
+        setShowConfetti(true);
+      } catch (err) {
+        console.error(err);
+        alert("Failed to save password or complete setup. Your link may have expired.");
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -629,11 +652,12 @@ export function OnboardingWizardPage() {
 
               <Button
                 size="sm"
-                onClick={handleNext}
+                onClick={() => void handleNext()}
+                disabled={isSubmitting}
                 className="h-10 px-6 text-sm font-semibold rounded-lg shadow-md shadow-primary/30"
               >
-                {currentStep === totalSteps - 1 ? "Submit Profile" : "Save & Continue"}
-                {currentStep !== totalSteps - 1 && <ChevronRight className="ml-1 size-4" />}
+                {isSubmitting ? "Submitting..." : (currentStep === totalSteps - 1 ? "Submit Profile" : "Save & Continue")}
+                {currentStep !== totalSteps - 1 && !isSubmitting && <ChevronRight className="ml-1 size-4" />}
               </Button>
             </div>
           </div>

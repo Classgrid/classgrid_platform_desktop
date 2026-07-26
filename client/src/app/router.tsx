@@ -192,7 +192,7 @@ export function AppRouter() {
       <Route path="/privacy-policy" element={<GenericPage title="Privacy Policy" />} />
       {/* TODO: Build ForgotPasswordPage */}
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/activate" element={<ResetPasswordPage />} />
+      <Route path="/activate" element={<OnboardingWizardPage />} />
       <Route path="/demo/globe" element={<GlobeDemoPage />} />
 
       {/* ── CANDIDATE PORTAL ROUTES ── */}
