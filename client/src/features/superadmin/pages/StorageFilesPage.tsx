@@ -1093,7 +1093,7 @@ export function StorageFilesPage() {
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
-      <div className="flex flex-col flex-1 min-h-0 w-full border-t border-border overflow-hidden bg-card">
+      <div className="flex flex-col flex-1 min-h-0 w-full border-t border-border bg-card">
         <div className="flex items-center justify-between p-3 border-b border-border bg-muted/20">
           
           <div className="flex items-center flex-1 mr-4 overflow-hidden">
