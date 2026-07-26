@@ -1,24 +1,182 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Search, Plus, FileText, Star, Folder, Tag as TagIcon, X } from "lucide-react";
+import {
+  Search, Plus, FileText, Star, Folder, Tag as TagIcon, X,
+  ChevronDown, Lock, Globe, Users, Pencil, Check, Hash,
+  StickyNote, BookOpen, Code2, Server, Database, Cpu, Cloud,
+  ShieldCheck, Layers, FlaskConical, BrainCircuit, Zap
+} from "lucide-react";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { Input } from "@/components/marketing_ui/input";
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
 import { ScrollArea } from "@/components/marketing_ui/scroll-area";
-import { 
-  useNotes, 
-  useNoteStats, 
-  useCreateNote, 
-  useUpdateNote, 
-  useDeleteNote, 
+import { cn } from "@/lib/utils";
+import {
+  useNotes,
+  useNoteStats,
+  useCreateNote,
+  useUpdateNote,
 } from "../queries/useNotes";
 import { Note } from "../services/notesApi";
 import { toast } from "sonner";
 import { NoteCard } from "../components/NoteCard";
 import { NoteViewer } from "../components/NoteViewer";
 import { PremiumNoteEditor } from "../components/PremiumNoteEditor";
+import { getTagColor } from "../utils/noteColors";
 
-/* ── Custom Resize Handle ── */
+/* ─────────────────────────────────────────────────────────────── */
+/* ICON PICKER                                                      */
+/* ─────────────────────────────────────────────────────────────── */
+const ICON_OPTIONS = [
+  "📄","📝","📋","📌","⭐","🔥","💡","🔑","🔒","🌐",
+  "☁️","🗄️","🧪","🐞","🚀","⚙️","🏗️","🔗","💻","🎯",
+  "📊","📈","🧠","🛡️","🏠","🌍","🔔","📦","🗂️","✅",
+];
+
+function IconPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 h-10 px-3 rounded-lg border border-input bg-background hover:bg-muted/60 transition-colors w-full group"
+      >
+        <span className="text-xl leading-none">{value}</span>
+        <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground ml-auto transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 top-full mt-1.5 left-0 bg-popover border rounded-xl shadow-xl p-2 grid grid-cols-8 gap-0.5 w-56">
+          {ICON_OPTIONS.map((icon) => (
+            <button
+              key={icon}
+              type="button"
+              onClick={() => { onChange(icon); setOpen(false); }}
+              className={cn(
+                "w-7 h-7 flex items-center justify-center rounded-md text-base hover:bg-muted transition-colors",
+                value === icon && "bg-emerald-500/20 ring-1 ring-emerald-500/50"
+              )}
+            >
+              {icon}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* CUSTOM DROPDOWN SELECT                                           */
+/* ─────────────────────────────────────────────────────────────── */
+type SelectOption = { value: string; label: string; icon?: React.ReactNode; desc?: string };
+
+function PremiumSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: SelectOption[];
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.value === value);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2.5 h-10 px-3 rounded-lg border border-input bg-background hover:bg-muted/60 transition-colors w-full text-sm"
+      >
+        {selected?.icon && <span className="text-muted-foreground">{selected.icon}</span>}
+        <span className="flex-1 text-left truncate">{selected?.label || placeholder}</span>
+        <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform shrink-0", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 top-full mt-1.5 left-0 right-0 bg-popover border rounded-xl shadow-xl overflow-hidden min-w-[160px]">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              className={cn(
+                "flex items-center gap-3 w-full px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors text-left",
+                value === opt.value && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              )}
+            >
+              {opt.icon && <span className="shrink-0">{opt.icon}</span>}
+              <div className="flex flex-col">
+                <span className="font-medium">{opt.label}</span>
+                {opt.desc && <span className="text-xs text-muted-foreground">{opt.desc}</span>}
+              </div>
+              {value === opt.value && <Check className="w-3.5 h-3.5 ml-auto text-emerald-500" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const VISIBILITY_OPTIONS: SelectOption[] = [
+  { value: "Private", label: "Private", icon: <Lock className="w-4 h-4" />, desc: "Only you" },
+  { value: "Public", label: "Public", icon: <Globe className="w-4 h-4" />, desc: "Anyone can see" },
+  { value: "Shared", label: "Shared", icon: <Users className="w-4 h-4" />, desc: "Team members" },
+];
+
+const STATUS_OPTIONS: SelectOption[] = [
+  { value: "Published", label: "Published", desc: "Active note" },
+  { value: "Draft", label: "Draft", desc: "Work in progress" },
+  { value: "Archived", label: "Archived", desc: "No longer active" },
+  { value: "Deprecated", label: "Deprecated", desc: "Outdated" },
+];
+
+const CATEGORY_PRESETS: SelectOption[] = [
+  { value: "General", label: "General" },
+  { value: "Backend", label: "Backend" },
+  { value: "Frontend", label: "Frontend" },
+  { value: "Infrastructure", label: "Infrastructure" },
+  { value: "Database", label: "Database" },
+  { value: "Security", label: "Security" },
+  { value: "DevOps", label: "DevOps" },
+  { value: "Research", label: "Research" },
+  { value: "Ideas", label: "Ideas" },
+];
+
+/* ─────────────────────────────────────────────────────────────── */
+/* RESIZE HANDLE                                                    */
+/* ─────────────────────────────────────────────────────────────── */
 function ResizeHandle({ onDrag }: { onDrag: (delta: number) => void }) {
   const onMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -42,14 +200,17 @@ function ResizeHandle({ onDrag }: { onDrag: (delta: number) => void }) {
   return (
     <div
       onMouseDown={onMouseDown}
-      className="w-[6px] shrink-0 cursor-col-resize flex items-center justify-center bg-border/50 hover:bg-emerald-500/30 active:bg-emerald-500/50 transition-colors group z-10"
+      className="w-[5px] shrink-0 cursor-col-resize flex items-center justify-center hover:bg-emerald-500/20 active:bg-emerald-500/40 transition-colors group z-10"
       style={{ touchAction: "none" }}
     >
-      <div className="w-[4px] h-8 rounded-full bg-border group-hover:bg-emerald-500/60 transition-colors" />
+      <div className="w-[3px] h-10 rounded-full bg-border/60 group-hover:bg-emerald-500/50 transition-all duration-150" />
     </div>
   );
 }
 
+/* ─────────────────────────────────────────────────────────────── */
+/* NOTES PAGE                                                       */
+/* ─────────────────────────────────────────────────────────────── */
 export function NotesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -65,12 +226,11 @@ export function NotesPage() {
     visibility: filterMode === "Private" || filterMode === "Public" ? filterMode : undefined,
   });
   const { data: stats } = useNoteStats();
-  
+
   const createNote = useCreateNote();
   const updateNote = useUpdateNote();
 
   const [activeNote, setActiveNote] = useState<Note | null>(null);
-
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -78,36 +238,34 @@ export function NotesPage() {
   const [editCategory, setEditCategory] = useState("General");
   const [editIcon, setEditIcon] = useState("📄");
   const [editVisibility, setEditVisibility] = useState("Private");
+  const [editStatus, setEditStatus] = useState("Published");
   const [newTagInput, setNewTagInput] = useState("");
+  const [categoryInput, setCategoryInput] = useState("");
+  const [showCategoryPresets, setShowCategoryPresets] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Left column width
   const [leftWidth, setLeftWidth] = useState(400);
   const leftBase = useRef(400);
 
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl/Cmd + N -> New Note
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") {
         e.preventDefault();
         handleCreateNew();
       }
-      // Ctrl/Cmd + F -> Search
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
-      // Ctrl/Cmd + S -> Save (if editing)
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
         if (isEditing) handleSave();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isEditing, editTitle, editContent, editTags, editCategory, editIcon, editVisibility]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isEditing, editTitle, editContent, editTags, editCategory, editIcon, editVisibility, editStatus]);
 
   useEffect(() => {
     if (activeNote && !notes.find((n) => n._id === activeNote._id)) {
@@ -123,8 +281,10 @@ export function NotesPage() {
     setEditContent("");
     setEditTags([]);
     setEditCategory("General");
+    setCategoryInput("General");
     setEditIcon("📄");
     setEditVisibility("Private");
+    setEditStatus("Published");
   };
 
   const handleSave = async () => {
@@ -132,7 +292,7 @@ export function NotesPage() {
       toast.error("Title cannot be empty");
       return;
     }
-    const content = editContent || " "; // backend requires content
+    const content = editContent || " ";
     const payload = {
       title: editTitle,
       content,
@@ -140,6 +300,7 @@ export function NotesPage() {
       category: editCategory,
       icon: editIcon,
       visibility: editVisibility,
+      status: editStatus,
     };
 
     if (activeNote) {
@@ -181,7 +342,7 @@ export function NotesPage() {
   };
 
   const handleLeftDrag = useCallback((delta: number) => {
-    const newW = Math.max(300, Math.min(600, leftBase.current + delta));
+    const newW = Math.max(280, Math.min(600, leftBase.current + delta));
     setLeftWidth(newW);
   }, []);
 
@@ -189,119 +350,172 @@ export function NotesPage() {
     leftBase.current = leftWidth;
   }, [leftWidth]);
 
-  // Derived filtered notes
-  const displayedNotes = filterMode === "Pinned" ? notes.filter(n => n.isPinned) : notes;
-
+  const displayedNotes = filterMode === "Pinned" ? notes.filter((n) => n.isPinned) : notes;
   const allTags = Array.from(new Set(notes.flatMap((n) => n.tags)));
   const allCategories = Array.from(new Set(notes.map((n) => n.category).filter(Boolean)));
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-background">
 
-      {/* ══════════ LEFT COLUMN: Sidebar + List ══════════ */}
+      {/* ══════════ LEFT: Sidebar + List ══════════ */}
       <div
-        style={{ width: leftWidth, minWidth: 300, maxWidth: 600, flexShrink: 0 }}
-        className="flex h-full border-r bg-muted/10 overflow-hidden"
+        style={{ width: leftWidth, minWidth: 280, maxWidth: 600, flexShrink: 0 }}
+        className="flex h-full border-r overflow-hidden"
       >
-        {/* Sidebar Nav (Favorites, Categories) */}
-        <div className="w-14 sm:w-48 shrink-0 border-r bg-muted/20 flex flex-col items-center sm:items-stretch py-4">
-          <div className="px-2 sm:px-4 pb-4 border-b">
-            <Button size="sm" className="w-full justify-center sm:justify-start gap-2" onClick={handleCreateNew}>
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">New Note</span>
-            </Button>
-          </div>
-          
-          <ScrollArea className="flex-1 w-full pt-4">
-            <div className="px-2 sm:px-3 space-y-6">
-              {/* Quick Filters */}
-              <div className="space-y-1">
-                <Button variant={filterMode === "All" ? "secondary" : "ghost"} size="sm" className="w-full justify-center sm:justify-start gap-2 h-8" onClick={() => setFilterMode("All")}>
-                  <FileText className="w-4 h-4 text-muted-foreground" />
-                  <span className="hidden sm:inline">All Notes</span>
-                </Button>
-                <Button variant={filterMode === "Pinned" ? "secondary" : "ghost"} size="sm" className="w-full justify-center sm:justify-start gap-2 h-8" onClick={() => setFilterMode("Pinned")}>
-                  <Star className="w-4 h-4 text-amber-500" />
-                  <span className="hidden sm:inline">Favorites</span>
-                </Button>
-              </div>
 
-              {/* Categories */}
-              {allCategories.length > 0 && (
-                <div className="space-y-1">
-                  <h4 className="hidden sm:block text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2 mb-2">Categories</h4>
-                  {allCategories.map(cat => (
-                    <Button key={cat} variant={selectedCategory === cat ? "secondary" : "ghost"} size="sm" className="w-full justify-center sm:justify-start gap-2 h-8" onClick={() => setSelectedCategory(selectedCategory === cat ? undefined : cat)}>
-                      <Folder className="w-4 h-4 text-muted-foreground" />
-                      <span className="hidden sm:inline truncate">{cat}</span>
-                    </Button>
-                  ))}
-                </div>
+        {/* Narrow Icon Sidebar */}
+        <div className="w-12 shrink-0 border-r bg-muted/30 flex flex-col items-center py-3 gap-1">
+          {/* New Note */}
+          <button
+            onClick={handleCreateNew}
+            title="New Note (Ctrl+N)"
+            className="w-8 h-8 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center transition-colors shadow-sm shadow-emerald-500/20 mb-2"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+
+          <div className="w-6 border-t border-border/50 mb-2" />
+
+          <button
+            onClick={() => setFilterMode("All")}
+            title="All Notes"
+            className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+              filterMode === "All" ? "bg-emerald-500/15 text-emerald-500" : "hover:bg-muted text-muted-foreground"
+            )}
+          >
+            <FileText className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => setFilterMode("Pinned")}
+            title="Favorites"
+            className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+              filterMode === "Pinned" ? "bg-amber-500/15 text-amber-500" : "hover:bg-muted text-muted-foreground"
+            )}
+          >
+            <Star className="w-4 h-4" />
+          </button>
+
+          {allCategories.slice(0, 6).map((cat, i) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(selectedCategory === cat ? undefined : cat)}
+              title={cat}
+              className={cn(
+                "w-8 h-8 rounded-lg flex items-center justify-center transition-colors text-xs font-bold",
+                selectedCategory === cat ? "bg-blue-500/15 text-blue-500" : "hover:bg-muted text-muted-foreground"
               )}
-            </div>
-          </ScrollArea>
+            >
+              <Folder className="w-3.5 h-3.5" />
+            </button>
+          ))}
         </div>
 
-        {/* Notes List Column */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-          {/* Header Stats */}
-          <div className="px-4 py-3 border-b bg-card flex items-center justify-between">
-            <h2 className="text-sm font-semibold">My Notes</h2>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span title="Total Notes">📄 {stats?.total || 0}</span>
-              <span title="Pinned">⭐ {stats?.pinned || 0}</span>
-            </div>
-          </div>
+        {/* Main List Panel */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-muted/5">
 
-          {/* Search & Date Filter */}
-          <div className="p-3 border-b space-y-2 bg-card">
-            <div className="relative">
+          {/* Panel Header */}
+          <div className="px-4 pt-4 pb-2 shrink-0">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="text-sm font-semibold">My Notes</h2>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {stats?.total || 0} total · {stats?.pinned || 0} pinned · {stats?.private || 0} private
+                </p>
+              </div>
+            </div>
+
+            {/* Search */}
+            <div className="relative mb-2">
               <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
+              <input
                 ref={searchInputRef}
-                placeholder="Search (Ctrl+F)"
-                className="pl-8 h-8 text-xs bg-muted/50"
+                placeholder="Search notes…"
+                className="w-full h-9 pl-8 pr-3 rounded-lg bg-background border border-input text-sm outline-none focus:ring-1 focus:ring-emerald-500/50 transition-shadow placeholder:text-muted-foreground/60"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </div>
-            <div className="flex gap-2">
-              <NikhilTimeCalendar
-                value={selectedDate}
-                onChange={setSelectedDate}
-                placeholder="Date filter"
-                popDirection="right"
-                className="flex-1 h-8 text-xs bg-muted/50 border-none"
-              />
-            </div>
-            {/* Tags Filter */}
-            <div className="flex flex-wrap gap-1 mt-2">
-              {allTags.slice(0, 10).map((tag) => (
-                <Badge
-                  key={tag}
-                  variant={selectedTag === tag ? "default" : "secondary"}
-                  className="cursor-pointer text-[9px] px-1.5 py-0 hover:bg-emerald-500 hover:text-white transition-colors"
-                  onClick={() => setSelectedTag(selectedTag === tag ? undefined : tag)}
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
                 >
-                  {tag}
-                </Badge>
-              ))}
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
+
+            {/* Date Filter */}
+            <NikhilTimeCalendar
+              value={selectedDate}
+              onChange={setSelectedDate}
+              placeholder="Filter by date"
+              popDirection="right"
+              className="w-full h-9 text-xs mb-2"
+            />
+
+            {/* Tag Pills */}
+            {allTags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {allTags.slice(0, 12).map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(selectedTag === tag ? undefined : tag)}
+                    className={cn(
+                      "px-2 py-0.5 rounded-full text-[10px] font-medium border transition-all",
+                      selectedTag === tag
+                        ? "bg-emerald-500 text-white border-emerald-500"
+                        : getTagColor(tag)
+                    )}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Clear filters */}
+            {(selectedDate || selectedTag || searchQuery || selectedCategory) && (
+              <button
+                onClick={() => { setSelectedDate(undefined); setSelectedTag(undefined); setSearchQuery(""); setSelectedCategory(undefined); }}
+                className="text-[10px] text-muted-foreground hover:text-foreground mt-1.5 flex items-center gap-1 transition-colors"
+              >
+                <X className="w-2.5 h-2.5" /> Clear filters
+              </button>
+            )}
           </div>
 
-          {/* List */}
-          <ScrollArea className="flex-1 bg-muted/10 p-2">
+          {/* Divider */}
+          <div className="border-t border-border/40 mx-4 my-1" />
+
+          {/* Notes List */}
+          <ScrollArea className="flex-1 px-2 py-2">
             {isLoading ? (
-              <div className="p-8 text-center text-xs text-muted-foreground">Loading...</div>
+              <div className="flex flex-col gap-2 px-2 py-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="rounded-xl bg-muted/40 h-24 animate-pulse" />
+                ))}
+              </div>
             ) : displayedNotes.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-12 text-center opacity-60">
-                <FileText className="w-10 h-10 mb-3 text-muted-foreground" />
-                <h3 className="text-sm font-medium">No notes found</h3>
-                <p className="text-xs mt-1 max-w-[200px]">Create your first note to get started.</p>
-                <Button size="sm" variant="outline" className="mt-4 text-xs h-7" onClick={handleCreateNew}>New Note</Button>
+              <div className="flex flex-col items-center justify-center py-16 text-center opacity-60 px-4">
+                <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                  <StickyNote className="w-7 h-7 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium">No notes found</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-[180px]">
+                  {searchQuery ? "Try a different search term" : "Create your first note to get started"}
+                </p>
+                <button
+                  onClick={handleCreateNew}
+                  className="mt-4 px-3 py-1.5 rounded-lg border text-xs font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> New Note
+                </button>
               </div>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5">
                 {displayedNotes.map((note) => (
                   <NoteCard
                     key={note._id}
@@ -319,105 +533,173 @@ export function NotesPage() {
         </div>
       </div>
 
+      {/* Resize Handle */}
       <ResizeHandle onDrag={handleLeftDrag} />
 
-      {/* ══════════ RIGHT COLUMN: Viewer / Editor ══════════ */}
-      <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }} className="flex flex-col h-full bg-card">
-        {!activeNote && !isEditing ? (
-          <div className="flex-1 flex flex-col items-center justify-center opacity-40 select-none bg-accent/20">
-            <FileText className="w-16 h-16 mb-4 text-muted-foreground" />
-            <h2 className="text-2xl font-bold">Premium Notes</h2>
-            <p className="text-sm mt-2 text-center max-w-sm">
-              Press <kbd className="px-1.5 py-0.5 border rounded bg-background text-xs mx-1 font-mono">Ctrl</kbd> + <kbd className="px-1.5 py-0.5 border rounded bg-background text-xs mx-1 font-mono">N</kbd> to create a new note.
-            </p>
+      {/* ══════════ RIGHT: Viewer / Editor ══════════ */}
+      <div style={{ flex: 1, minWidth: 0 }} className="flex flex-col h-full overflow-hidden bg-card">
+
+        {/* ── Empty State ── */}
+        {!activeNote && !isEditing && (
+          <div className="flex-1 flex flex-col items-center justify-center select-none">
+            <div className="flex flex-col items-center gap-4 opacity-30">
+              <div className="w-20 h-20 rounded-3xl bg-muted flex items-center justify-center">
+                <BookOpen className="w-10 h-10 text-muted-foreground" />
+              </div>
+              <div className="text-center">
+                <h2 className="text-xl font-semibold">Premium Notes</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Select a note or press{" "}
+                  <kbd className="px-1.5 py-0.5 border rounded bg-background text-xs font-mono mx-0.5">Ctrl</kbd>+
+                  <kbd className="px-1.5 py-0.5 border rounded bg-background text-xs font-mono mx-0.5">N</kbd>
+                </p>
+              </div>
+            </div>
           </div>
-        ) : isEditing ? (
-          <div className="flex-1 flex flex-col h-full overflow-hidden p-6 lg:px-12 max-w-5xl mx-auto w-full">
-            <div className="flex items-center justify-between mb-8 pb-4 border-b">
-              <h2 className="text-lg font-semibold">{activeNote ? "Edit Note" : "Create New Note"}</h2>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" onClick={() => {
-                  setIsEditing(false);
-                  if (!activeNote) setActiveNote(null);
-                }}>
+        )}
+
+        {/* ── EDITOR ── */}
+        {isEditing && (
+          <div className="flex flex-col h-full min-h-0">
+
+            {/* Editor Top Bar — fixed, never scrolls */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-b bg-background/95 backdrop-blur shrink-0 gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="text-xl shrink-0">{editIcon}</span>
+                <div className="min-w-0">
+                  <h2 className="text-xs font-semibold leading-tight truncate">
+                    {activeNote ? "Editing" : "New Note"}
+                  </h2>
+                  <p className="text-[10px] text-muted-foreground truncate max-w-[160px]">{editTitle || "Untitled"}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => { setIsEditing(false); if (!activeNote) setActiveNote(null); }}
+                  className="px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
                   Cancel
-                </Button>
-                <Button onClick={handleSave} disabled={createNote.isPending || updateNote.isPending || !editTitle.trim()}>
-                  {createNote.isPending || updateNote.isPending ? "Saving..." : "Save (Ctrl+S)"}
-                </Button>
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={createNote.isPending || updateNote.isPending || !editTitle.trim()}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 text-white transition-colors flex items-center gap-1.5"
+                >
+                  {createNote.isPending || updateNote.isPending ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3 h-3" />
+                      Save
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 
-            <ScrollArea className="flex-1 pb-12">
-              <div className="space-y-6">
-                {/* Meta Inputs */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="col-span-2">
-                    <label className="text-xs font-semibold uppercase text-muted-foreground mb-1.5 block">Title</label>
-                    <Input placeholder="Note Title" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="font-medium" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold uppercase text-muted-foreground mb-1.5 block">Category</label>
-                    <Input placeholder="e.g. Backend" value={editCategory} onChange={e => setEditCategory(e.target.value)} />
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="w-16">
-                      <label className="text-xs font-semibold uppercase text-muted-foreground mb-1.5 block">Icon</label>
-                      <Input value={editIcon} onChange={e => setEditIcon(e.target.value)} className="text-center text-lg px-0" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-semibold uppercase text-muted-foreground mb-1.5 block">Visibility</label>
-                      <select 
-                        value={editVisibility} 
-                        onChange={e => setEditVisibility(e.target.value)}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        <option value="Private">🔒 Private</option>
-                        <option value="Public">🌍 Public</option>
-                        <option value="Shared">👥 Shared</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
+            {/* Scrollable body — this is the key: flex-1 + min-h-0 + overflow-y-auto */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
 
-                {/* Tags */}
-                <div>
-                  <label className="text-xs font-semibold uppercase text-muted-foreground mb-1.5 block">Tags</label>
-                  <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md min-h-10 bg-background">
-                    {editTags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="gap-1 bg-muted">
-                        {tag}
-                        <button onClick={() => removeTag(tag)} className="hover:bg-muted-foreground/20 rounded-full p-0.5">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                    <div className="relative flex-1 min-w-[120px]">
-                      <TagIcon className="absolute left-2 top-1.5 h-3.5 w-3.5 text-muted-foreground" />
-                      <input
-                        placeholder="Add tag and press Enter"
-                        value={newTagInput}
-                        onChange={(e) => setNewTagInput(e.target.value)}
-                        onKeyDown={handleAddTag}
-                        className="w-full pl-7 h-7 text-sm outline-none bg-transparent"
-                      />
-                    </div>
+                {/* ── Icon + Title row ── */}
+                <div className="flex items-center gap-3">
+                  <div className="shrink-0">
+                    <IconPicker value={editIcon} onChange={setEditIcon} />
                   </div>
-                </div>
-
-                {/* Markdown Editor */}
-                <div className="h-[500px]">
-                  <PremiumNoteEditor
-                    content={editContent}
-                    onChange={setEditContent}
+                  <input
+                    autoFocus
+                    placeholder="Note title…"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="flex-1 text-2xl font-bold bg-transparent outline-none placeholder:text-muted-foreground/30 text-foreground leading-snug min-w-0"
                   />
                 </div>
+
+                {/* ── Meta Properties — flex-wrap so they stack on narrow widths ── */}
+                <div className="flex flex-wrap gap-3">
+                  <div className="space-y-1.5 min-w-[140px] flex-1">
+                    <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                      <Folder className="w-3 h-3" /> Category
+                    </label>
+                    <PremiumSelect
+                      value={editCategory}
+                      onChange={setEditCategory}
+                      options={CATEGORY_PRESETS}
+                      placeholder="Category"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 min-w-[140px] flex-1">
+                    <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> Visibility
+                    </label>
+                    <PremiumSelect
+                      value={editVisibility}
+                      onChange={setEditVisibility}
+                      options={VISIBILITY_OPTIONS}
+                      placeholder="Visibility"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 min-w-[140px] flex-1">
+                    <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                      <Zap className="w-3 h-3" /> Status
+                    </label>
+                    <PremiumSelect
+                      value={editStatus}
+                      onChange={setEditStatus}
+                      options={STATUS_OPTIONS}
+                      placeholder="Status"
+                    />
+                  </div>
+                </div>
+
+                {/* ── Tags ── */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                    <Hash className="w-3 h-3" /> Tags
+                  </label>
+                  <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 border border-input rounded-lg bg-background min-h-10 focus-within:ring-1 focus-within:ring-emerald-500/40 transition-shadow">
+                    {editTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border", getTagColor(tag))}
+                      >
+                        {tag}
+                        <button type="button" onClick={() => removeTag(tag)} className="hover:opacity-70 transition-opacity">
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </span>
+                    ))}
+                    <input
+                      placeholder={editTags.length === 0 ? "Add tags and press Enter…" : "Add more…"}
+                      value={newTagInput}
+                      onChange={(e) => setNewTagInput(e.target.value)}
+                      onKeyDown={handleAddTag}
+                      className="flex-1 min-w-[120px] text-sm outline-none bg-transparent placeholder:text-muted-foreground/40"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-border/40" />
+
+                {/* ── Markdown Editor ── */}
+                <PremiumNoteEditor content={editContent} onChange={setEditContent} />
+
+                {/* bottom breathing room */}
+                <div className="h-16" />
               </div>
-            </ScrollArea>
+            </div>
           </div>
-        ) : (
-          <NoteViewer 
-            note={activeNote} 
+        )}
+
+        {/* ── VIEWER ── */}
+        {!isEditing && activeNote && (
+          <NoteViewer
+            note={activeNote}
             onEdit={() => {
               setEditTitle(activeNote.title);
               setEditContent(activeNote.content || "");
@@ -425,24 +707,28 @@ export function NotesPage() {
               setEditCategory(activeNote.category || "General");
               setEditIcon(activeNote.icon || "📄");
               setEditVisibility(activeNote.visibility || "Private");
+              setEditStatus(activeNote.status || "Published");
               setIsEditing(true);
-            }} 
+            }}
             onRestoreVersion={(v) => {
               if (confirm("Restore this version? This will overwrite the current note content.")) {
-                updateNote.mutate({
-                  id: activeNote._id,
-                  title: v.title,
-                  content: v.content,
-                  tags: v.tags,
-                  category: v.category,
-                  icon: v.icon,
-                  visibility: v.visibility,
-                }, {
-                  onSuccess: (updated) => {
-                    toast.success("Version restored successfully");
-                    setActiveNote(updated);
+                updateNote.mutate(
+                  {
+                    id: activeNote._id,
+                    title: v.title,
+                    content: v.content,
+                    tags: v.tags,
+                    category: v.category,
+                    icon: v.icon,
+                    visibility: v.visibility,
+                  },
+                  {
+                    onSuccess: (updated) => {
+                      toast.success("Version restored successfully");
+                      setActiveNote(updated);
+                    },
                   }
-                });
+                );
               }
             }}
           />
