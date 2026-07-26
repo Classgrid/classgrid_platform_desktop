@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { format } from "date-fns";
-import { Search, Plus, Pin, Trash2, Edit3, X, Tag, FileText, Calendar as CalendarIcon, GripVertical } from "lucide-react";
+import {
+  Search, Plus, Pin, Trash2, Edit3, X, Tag, FileText,
+  Calendar as CalendarIcon,
+} from "lucide-react";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { Input } from "@/components/marketing_ui/input";
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
-import RichReplyEditor, { RichReplyEditorRef } from "@/app/support/components/RichReplyEditor";
 import { useNotes, useCreateNote, useUpdateNote, useDeleteNote, useTogglePin } from "../queries/useNotes";
 import { Note } from "../services/notesApi";
 import { cn } from "@/lib/utils";
@@ -24,24 +26,17 @@ const decodeHtmlEntities = (text: string | undefined) => {
 
 /* ── Custom Resize Handle ── */
 function ResizeHandle({ onDrag }: { onDrag: (delta: number) => void }) {
-  const handleRef = useRef<HTMLDivElement>(null);
-
   const onMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
       const startX = e.clientX;
-
-      const onMouseMove = (ev: MouseEvent) => {
-        onDrag(ev.clientX - startX);
-      };
-
+      const onMouseMove = (ev: MouseEvent) => onDrag(ev.clientX - startX);
       const onMouseUp = () => {
         document.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mouseup", onMouseUp);
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
       };
-
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
       document.addEventListener("mousemove", onMouseMove);
@@ -52,9 +47,8 @@ function ResizeHandle({ onDrag }: { onDrag: (delta: number) => void }) {
 
   return (
     <div
-      ref={handleRef}
       onMouseDown={onMouseDown}
-      className="w-[6px] shrink-0 cursor-col-resize flex items-center justify-center bg-border/50 hover:bg-primary/30 active:bg-primary/50 transition-colors group relative"
+      className="w-[6px] shrink-0 cursor-col-resize flex items-center justify-center bg-border/50 hover:bg-primary/30 active:bg-primary/50 transition-colors group"
       style={{ touchAction: "none" }}
     >
       <div className="w-[4px] h-8 rounded-full bg-border group-hover:bg-primary/60 transition-colors" />
@@ -77,16 +71,14 @@ export function NotesPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editTags, setEditTags] = useState<string[]>([]);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [newTagInput, setNewTagInput] = useState("");
-  const editorRef = useRef<RichReplyEditorRef>(null);
 
-  // Column widths (px)
-  const [leftWidth, setLeftWidth] = useState(280);
-  const [centerWidth, setCenterWidth] = useState(320);
-  const leftBase = useRef(280);
-  const centerBase = useRef(320);
+  // Left column width
+  const [leftWidth, setLeftWidth] = useState(360);
+  const leftBase = useRef(360);
 
-  const allTags = Array.from(new Set(notes.flatMap((note) => note.tags)));
+  const allTags = Array.from(new Set(notes.flatMap((n) => n.tags)));
 
   useEffect(() => {
     if (activeNote && !notes.find((n) => n._id === activeNote._id)) {
@@ -100,25 +92,21 @@ export function NotesPage() {
     setIsEditing(true);
     setEditTitle("");
     setEditTags([]);
-    if (editorRef.current) {
-      editorRef.current.clearContent();
-    }
   };
 
   const handleSave = async () => {
     if (!editTitle.trim()) return;
-    const content = editorRef.current?.getContent() || "";
-    const textContent = editorRef.current?.getTextContent() || "";
-
+    const html = contentRef.current?.innerHTML || "";
+    const text = contentRef.current?.textContent || "";
     if (activeNote) {
       updateNote.mutate({
         id: activeNote._id,
-        updates: { title: editTitle, content, textContent, tags: editTags },
+        updates: { title: editTitle, content: html, textContent: text, tags: editTags },
       });
       setIsEditing(false);
     } else {
       createNote.mutate(
-        { title: editTitle, content, textContent, tags: editTags },
+        { title: editTitle, content: html, textContent: text, tags: editTags },
         {
           onSuccess: (newNote) => {
             setActiveNote(newNote);
@@ -147,62 +135,50 @@ export function NotesPage() {
   };
 
   const removeTag = (tagToRemove: string) => {
-    setEditTags(editTags.filter((tag) => tag !== tagToRemove));
+    setEditTags(editTags.filter((t) => t !== tagToRemove));
   };
 
-  // Drag handlers for the two resize handles
   const handleLeftDrag = useCallback((delta: number) => {
-    const newW = Math.max(220, Math.min(450, leftBase.current + delta));
+    const newW = Math.max(300, Math.min(550, leftBase.current + delta));
     setLeftWidth(newW);
   }, []);
 
-  const handleLeftDragEnd = useCallback(() => {
-    leftBase.current = leftWidth;
-  }, [leftWidth]);
-
-  const handleCenterDrag = useCallback((delta: number) => {
-    const newW = Math.max(260, Math.min(500, centerBase.current + delta));
-    setCenterWidth(newW);
-  }, []);
-
-  const handleCenterDragEnd = useCallback(() => {
-    centerBase.current = centerWidth;
-  }, [centerWidth]);
-
-  // Sync bases on mouseup via effect
   useEffect(() => {
     leftBase.current = leftWidth;
   }, [leftWidth]);
-
-  useEffect(() => {
-    centerBase.current = centerWidth;
-  }, [centerWidth]);
 
   return (
     <div style={{ display: "flex", height: "100%", width: "100%", overflow: "hidden" }}>
 
-      {/* ── LEFT: Filters ── */}
+      {/* ══════════ LEFT COLUMN: Filters + Notes List ══════════ */}
       <div
-        style={{ width: leftWidth, minWidth: 220, maxWidth: 450, flexShrink: 0 }}
-        className="flex flex-col h-full bg-muted/20 overflow-y-auto overflow-x-hidden"
+        style={{ width: leftWidth, minWidth: 300, maxWidth: 550, flexShrink: 0 }}
+        className="flex flex-col h-full bg-muted/20 overflow-hidden"
       >
-        <div className="p-4 space-y-4">
+        {/* Search + Filters */}
+        <div className="p-4 space-y-3 border-b border-border shrink-0">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight">Filters</h2>
-            {(selectedDate || selectedTag || searchQuery) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs text-muted-foreground"
-                onClick={() => {
-                  setSelectedDate(undefined);
-                  setSelectedTag(undefined);
-                  setSearchQuery("");
-                }}
-              >
-                Clear all
+            <h2 className="text-lg font-semibold tracking-tight">Notes</h2>
+            <div className="flex items-center gap-2">
+              {(selectedDate || selectedTag || searchQuery) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-muted-foreground"
+                  onClick={() => {
+                    setSelectedDate(undefined);
+                    setSelectedTag(undefined);
+                    setSearchQuery("");
+                  }}
+                >
+                  Clear
+                </Button>
+              )}
+              <Button size="sm" className="gap-1.5" onClick={handleCreateNew}>
+                <Plus className="w-4 h-4" />
+                New Note
               </Button>
-            )}
+            </div>
           </div>
 
           <div className="relative">
@@ -215,60 +191,33 @@ export function NotesPage() {
             />
           </div>
 
-          <div className="bg-background rounded-xl overflow-hidden">
+          <div className="flex items-center gap-2">
             <NikhilTimeCalendar
               value={selectedDate}
               onChange={setSelectedDate}
-              placeholder="Select date & time"
+              placeholder="Filter by date"
               popDirection="right"
-              className="w-full bg-accent/30 border-border shadow-sm hover:bg-accent/50"
+              className="flex-1 bg-accent/30 border-border shadow-sm hover:bg-accent/50"
             />
           </div>
 
           {allTags.length > 0 && (
-            <div className="space-y-2 pt-2">
-              <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Tag className="w-3.5 h-3.5" />
-                Tags
-              </h3>
-              <div className="flex flex-wrap gap-1.5">
-                {allTags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant={selectedTag === tag ? "default" : "secondary"}
-                    className="cursor-pointer hover:bg-primary/80 transition-colors"
-                    onClick={() => setSelectedTag(selectedTag === tag ? undefined : tag)}
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-1.5">
+              {allTags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant={selectedTag === tag ? "default" : "secondary"}
+                  className="cursor-pointer hover:bg-primary/80 transition-colors text-[10px]"
+                  onClick={() => setSelectedTag(selectedTag === tag ? undefined : tag)}
+                >
+                  {tag}
+                </Badge>
+              ))}
             </div>
           )}
         </div>
-      </div>
 
-      {/* ── Handle 1 ── */}
-      <ResizeHandle onDrag={handleLeftDrag} />
-
-      {/* ── CENTER: Notes List ── */}
-      <div
-        style={{ width: centerWidth, minWidth: 260, maxWidth: 500, flexShrink: 0 }}
-        className="flex flex-col h-full bg-background overflow-x-hidden"
-      >
-        <div className="p-3 border-b border-border flex items-center justify-between bg-muted/10 shrink-0">
-          <div className="flex flex-col">
-            <span className="font-semibold">{notes.length} Notes</span>
-            <span className="text-xs text-muted-foreground">
-              {selectedDate ? format(selectedDate, "MMM d, yyyy") : "All time"}
-            </span>
-          </div>
-          <Button size="sm" className="gap-1.5" onClick={handleCreateNew}>
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">New Note</span>
-          </Button>
-        </div>
-
+        {/* Notes List */}
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {isLoading ? (
             <div className="p-4 text-center text-muted-foreground text-sm">Loading notes...</div>
@@ -287,31 +236,27 @@ export function NotesPage() {
                   setActiveNote(note);
                   setIsEditing(false);
                   setEditTitle(note.title);
+                  setEditContent(note.textContent || note.content || "");
                   setEditTags(note.tags);
                 }}
                 className={cn(
-                  "p-3 rounded-xl border cursor-pointer transition-all hover:shadow-sm group relative",
+                  "p-3 rounded-xl border cursor-pointer transition-all hover:shadow-sm",
                   activeNote?._id === note._id
                     ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-500/50 ring-1 ring-emerald-500/20"
                     : "bg-card border-border hover:border-emerald-500/30"
                 )}
               >
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <h4 className="font-medium text-sm line-clamp-1 flex-1 pr-6">{note.title}</h4>
-                  {note.isPinned && (
-                    <Pin className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
-                  )}
+                  <h4 className="font-medium text-sm line-clamp-1 flex-1">{note.title}</h4>
+                  {note.isPinned && <Pin className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />}
                 </div>
                 <p className="text-xs text-muted-foreground line-clamp-2 mb-2 leading-relaxed">
-                  {decodeHtmlEntities(note.textContent) || "No text content"}
+                  {decodeHtmlEntities(note.textContent) || "No content"}
                 </p>
-                <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50">
+                <div className="flex items-center justify-between pt-2 border-t border-border/50">
                   <div className="flex flex-wrap gap-1">
                     {note.tags.slice(0, 3).map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-muted text-muted-foreground"
-                      >
+                      <span key={tag} className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-muted text-muted-foreground">
                         {tag}
                       </span>
                     ))}
@@ -331,37 +276,31 @@ export function NotesPage() {
         </div>
       </div>
 
-      {/* ── Handle 2 ── */}
-      <ResizeHandle onDrag={handleCenterDrag} />
+      {/* ── Resize Handle ── */}
+      <ResizeHandle onDrag={handleLeftDrag} />
 
-      {/* ── RIGHT: Editor ── */}
+      {/* ══════════ RIGHT COLUMN: Note Viewer / Editor ══════════ */}
       <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }} className="flex flex-col h-full bg-card">
         {!activeNote && !isEditing ? (
           <div className="flex-1 flex flex-col items-center justify-center opacity-40 select-none">
             <FileText className="w-16 h-16 mb-4 text-muted-foreground" />
             <h2 className="text-xl font-semibold">No Note Selected</h2>
             <p className="text-sm mt-2 max-w-xs text-center">
-              Select a note from the list on the left to view or edit its contents, or create a new
-              note.
+              Select a note from the list or create a new one.
             </p>
           </div>
         ) : (
           <div className="flex-1 flex flex-col h-full overflow-hidden">
             {/* Header */}
             <div className="p-4 border-b border-border bg-background shrink-0">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium px-2 py-1 bg-muted rounded-md text-muted-foreground">
-                    {isEditing && !activeNote
-                      ? "New Note"
-                      : isEditing
-                        ? "Editing Note"
-                        : "Viewing Note"}
+                    {isEditing && !activeNote ? "New Note" : isEditing ? "Editing" : "Viewing"}
                   </span>
                   {activeNote && (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <CalendarIcon className="w-3.5 h-3.5" />
-                      Last edited{" "}
                       {format(new Date(activeNote.updatedAt), "MMM d, yyyy 'at' h:mm a")}
                     </span>
                   )}
@@ -373,11 +312,7 @@ export function NotesPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => togglePin.mutate(activeNote._id)}
-                        className={
-                          activeNote.isPinned
-                            ? "text-amber-500 hover:text-amber-600 bg-amber-50 dark:bg-amber-500/10"
-                            : "text-muted-foreground"
-                        }
+                        className={activeNote.isPinned ? "text-amber-500 bg-amber-50 dark:bg-amber-500/10" : "text-muted-foreground"}
                       >
                         <Pin className="w-4 h-4 mr-1.5" />
                         {activeNote.isPinned ? "Unpin" : "Pin"}
@@ -388,6 +323,7 @@ export function NotesPage() {
                         onClick={() => {
                           setIsEditing(true);
                           setEditTitle(activeNote.title);
+                          setEditContent(activeNote.textContent || activeNote.content || "");
                           setEditTags(activeNote.tags);
                         }}
                       >
@@ -420,77 +356,71 @@ export function NotesPage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Input
-                  placeholder="Note Title"
-                  value={isEditing ? editTitle : activeNote?.title}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  readOnly={!isEditing}
-                  className={cn(
-                    "text-xl font-semibold h-12 px-3 focus-visible:ring-emerald-500",
-                    !isEditing && "border-transparent bg-transparent px-0"
-                  )}
-                />
+              {/* Title */}
+              <Input
+                placeholder="Note title..."
+                value={isEditing ? editTitle : activeNote?.title}
+                onChange={(e) => setEditTitle(e.target.value)}
+                readOnly={!isEditing}
+                className={cn(
+                  "text-xl font-semibold h-12 px-3 focus-visible:ring-emerald-500",
+                  !isEditing && "border-transparent bg-transparent px-0"
+                )}
+              />
 
-                {isEditing ? (
-                  <div className="flex flex-col gap-2">
-                    <div className="flex flex-wrap gap-1.5">
-                      {editTags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="gap-1">
-                          {tag}
-                          <button
-                            onClick={() => removeTag(tag)}
-                            className="hover:bg-muted-foreground/20 rounded-full p-0.5"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="relative max-w-sm">
-                      <Tag className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                      <Input
-                        placeholder="Add tags (press Enter)"
-                        value={newTagInput}
-                        onChange={(e) => setNewTagInput(e.target.value)}
-                        onKeyDown={handleAddTag}
-                        className="h-8 pl-8 text-xs bg-muted/50"
-                      />
-                    </div>
-                  </div>
-                ) : activeNote?.tags.length ? (
+              {/* Tags */}
+              {isEditing ? (
+                <div className="mt-3 flex flex-col gap-2">
                   <div className="flex flex-wrap gap-1.5">
-                    {activeNote.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary">
+                    {editTags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="gap-1">
                         {tag}
+                        <button onClick={() => removeTag(tag)} className="hover:bg-muted-foreground/20 rounded-full p-0.5">
+                          <X className="w-3 h-3" />
+                        </button>
                       </Badge>
                     ))}
                   </div>
-                ) : null}
-              </div>
+                  <div className="relative max-w-sm">
+                    <Tag className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="Add tags (press Enter)"
+                      value={newTagInput}
+                      onChange={(e) => setNewTagInput(e.target.value)}
+                      onKeyDown={handleAddTag}
+                      className="h-8 pl-8 text-xs bg-muted/50"
+                    />
+                  </div>
+                </div>
+              ) : activeNote?.tags.length ? (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {activeNote.tags.map((tag) => (
+                    <Badge key={tag} variant="secondary">{tag}</Badge>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-hidden relative">
-              <div className={cn("absolute inset-0", !isEditing && "pointer-events-none")}>
-                <RichReplyEditor
-                  ref={editorRef}
-                  initialContent={activeNote?.content}
-                  placeholder="Write your note here..."
-                  onChange={() => {}}
-                />
-              </div>
-              {!isEditing && activeNote?.content && (
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto">
+              {isEditing ? (
                 <div
-                  className="absolute inset-0 overflow-y-auto p-4 prose prose-sm dark:prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(activeNote.content),
-                  }}
+                  ref={contentRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  data-placeholder="Write your note here..."
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activeNote?.content || "") }}
+                  className="w-full h-full p-4 bg-transparent text-sm leading-relaxed outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/50 empty:before:pointer-events-none prose prose-sm dark:prose-invert max-w-none"
+                />
+              ) : (
+                <div
+                  className="p-4 text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activeNote?.content || "") }}
                 />
               )}
             </div>
 
-            {/* Footer */}
+            {/* Save Footer */}
             {isEditing && (
               <div className="p-4 border-t border-border bg-background flex justify-end gap-3 shrink-0">
                 <Button
@@ -504,9 +434,7 @@ export function NotesPage() {
                 </Button>
                 <Button
                   onClick={handleSave}
-                  disabled={
-                    createNote.isPending || updateNote.isPending || !editTitle.trim()
-                  }
+                  disabled={createNote.isPending || updateNote.isPending || !editTitle.trim()}
                   className="gap-2"
                 >
                   {createNote.isPending || updateNote.isPending ? "Saving..." : "Save Note"}
