@@ -234,7 +234,7 @@ const StorageColumn = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-0.5">
+      <div className="flex-1 overflow-y-auto p-2 space-y-0.5 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-muted/20 [&::-webkit-scrollbar-thumb]:bg-emerald-500/80 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-emerald-400 [scrollbar-width:thin] [scrollbar-color:#10b981_rgba(0,0,0,0.1)]">
         {creatingFolderIn === prefix && (
           <div className="flex items-center gap-3 p-2 px-3 border-b border-border bg-primary/5">
             <div className="shrink-0 w-4 h-4" />
@@ -1244,7 +1244,7 @@ export function StorageFilesPage() {
               </div>
             </>
           ) : (
-            <div className="w-full h-full min-h-0 overflow-y-auto p-4 pb-24 bg-card custom-scrollbar">
+            <div className="w-full h-full min-h-0 overflow-y-auto p-4 pb-24 bg-card [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-muted/30 [&::-webkit-scrollbar-thumb]:bg-emerald-500 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-emerald-400 [scrollbar-width:thin] [scrollbar-color:#10b981_rgba(0,0,0,0.15)]">
               <DataTable
                 columns={[
                   {
