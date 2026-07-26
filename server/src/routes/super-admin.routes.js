@@ -821,7 +821,7 @@ router.post("/team/invite", async (req, res) => {
             organization_id: null,
         });
 
-        const { sendEmail } = await import("../services/brevo.service.js");
+        const { sendEmail } = await import("../services/aws-ses.service.js");
         
         const loginUrl = "https://superadmin.classgrid.in/superadmin/login";
         const classgridEmail = email.toLowerCase().trim();
@@ -1337,7 +1337,7 @@ router.post("/users/:id/reset-password", async (req, res) => {
     try {
         const User = (await import("../models/User.js")).default;
         const crypto = (await import("crypto")).default;
-        const { sendEmail } = await import("../services/brevo.service.js");
+        const { sendEmail } = await import("../services/aws-ses.service.js");
 
         const user = await User.findById(req.params.id).select("name email").lean();
         if (!user) return res.status(404).json({ success: false, message: "User not found" });

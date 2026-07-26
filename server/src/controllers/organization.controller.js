@@ -4,7 +4,7 @@ import Organization from "../models/Organization.js";
 import Classroom from "../models/Classroom.js";
 import ClassroomMembership from "../models/ClassroomMembership.js";
 import { studentNotesClient } from "../config/supabaseClient.js";
-import { sendEmail } from "../services/brevo.service.js";
+import { sendEmail } from "../services/aws-ses.service.js";
 import connectDB from "../../config/db.js";
 import OrganizationAnnouncement from "../models/OrganizationAnnouncement.js";
 import { logAdminAction } from "../services/auditLog.service.js";

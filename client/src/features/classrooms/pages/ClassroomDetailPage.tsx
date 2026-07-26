@@ -6,36 +6,110 @@ import { StreamTab } from '../components/StreamTab';
 import { MaterialsTab } from '../components/MaterialsTab';
 import { StudentsTab } from '../components/StudentsTab';
 import { ClassroomSettingsTab } from '../components/ClassroomSettingsTab';
+import { ClassroomAITab } from '../components/ClassroomAITab';
+import { ClassroomChatTab } from '../components/ClassroomChatTab';
+import { QuizzesTab } from '../components/QuizzesTab';
 import { useClassroomDetail } from '../queries/useClassroomDetail';
+import { useCurrentUser } from '@/features/auth/queries/useCurrentUser';
 import { Spinner } from "@/components/marketing_ui/spinner";
+import { Button } from '@/components/marketing_ui/button';
+import { AlertCircle, Lock, ShieldAlert, ArrowLeft, Archive } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ClassroomDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('stream');
 
-  const { data: classroom, isLoading } = useClassroomDetail(id);
+  const { data: classroom, isLoading, isError, error, refetch } = useClassroomDetail(id);
 
-  // TODO: Get actual user role from context/auth state
-  const userRole: 'faculty' | 'student' = 'faculty';
+  const { data: currentUser } = useCurrentUser();
+  const navigate = useNavigate();
+  
+  // Use current user's role from auth state
+  const userRole: 'faculty' | 'student' = currentUser?.role === 'faculty' ? 'faculty' : 'student';
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Spinner className="h-8 w-8 text-primary" />
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Placeholder Header Skeleton */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="h-32 bg-gray-200 animate-pulse w-full"></div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-end -mt-10">
+            <div className="flex items-center gap-4">
+              <div className="h-20 w-20 rounded-xl bg-white p-1">
+                <div className="h-full w-full bg-gray-200 animate-pulse rounded-lg"></div>
+              </div>
+              <div className="space-y-2 mt-10">
+                <div className="h-6 w-48 bg-gray-200 animate-pulse rounded"></div>
+                <div className="h-4 w-32 bg-gray-200 animate-pulse rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (!classroom) {
+  if (isError) {
+    const err = error as any;
+    const status = err?.response?.status;
+    const isAccessDenied = status === 403;
+    const isNotFound = status === 404;
+
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">Classroom not found.</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+          <div className="h-16 w-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            {isAccessDenied ? (
+              <Lock className="h-8 w-8 text-red-500" />
+            ) : isNotFound ? (
+              <ShieldAlert className="h-8 w-8 text-red-500" />
+            ) : (
+              <AlertCircle className="h-8 w-8 text-red-500" />
+            )}
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {isAccessDenied ? "Access Denied" : isNotFound ? "Classroom Not Found" : "Connection Error"}
+          </h2>
+          <p className="text-gray-500 mb-8">
+            {isAccessDenied 
+              ? "You don't have permission to view this classroom. You may need to join it first or wait for your request to be approved." 
+              : isNotFound 
+                ? "The classroom you are looking for does not exist or has been deleted."
+                : "We encountered an error while loading the classroom. Please check your connection and try again."}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button variant="outline" onClick={() => navigate(-1)} className="w-full sm:w-auto">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
+            </Button>
+            {!isAccessDenied && !isNotFound && (
+              <Button onClick={() => refetch()} className="w-full sm:w-auto">
+                Try Again
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
+
+  if (!classroom) return null;
+
+  const isArchived = classroom.status === "archived";
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {isArchived && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-center">
+          <div className="flex items-center justify-center gap-2 text-amber-800">
+            <Archive className="h-5 w-5" />
+            <p className="font-medium text-sm">
+              This classroom is archived. It is in read-only mode and no new activity can be added.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 1. Header (Banner, Title, Action Buttons) */}
       <ClassroomHeader 
         classroom={classroom} 
@@ -59,8 +133,18 @@ const ClassroomDetailPage = () => {
           />
         ) : activeTab === 'materials' ? (
           <MaterialsTab classroomId={id} userRole={userRole} />
+        ) : activeTab === 'quizzes' ? (
+          <QuizzesTab classroomId={id} userRole={userRole} />
         ) : activeTab === 'students' ? (
           <StudentsTab classroomId={id} userRole={userRole} />
+        ) : activeTab === 'chat' ? (
+          <ClassroomChatTab classroomId={id} userRole={userRole} />
+        ) : activeTab === 'ai' ? (
+          <ClassroomAITab
+            classroomId={id || ''}
+            classroomName={classroom.name || ''}
+            classroomSubject={classroom.subject || ''}
+          />
         ) : activeTab === 'settings' ? (
           <ClassroomSettingsTab classroomId={id} userRole={userRole} />
         ) : (

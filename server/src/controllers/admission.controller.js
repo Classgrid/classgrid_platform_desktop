@@ -2,7 +2,7 @@ import AdmissionConfig from "../models/AdmissionConfig.js";
 import AdmissionApplication from "../models/AdmissionApplication.js";
 import CETAllotment from "../models/CETAllotment.js";
 import AdmissionOTP from "../models/AdmissionOTP.js";
-import { sendEmail } from "../services/brevo.service.js";
+import { sendEmail } from "../services/aws-ses.service.js";
 import { 
     getAdmissionFeeReceiptHtml, 
     getAdmissionFeeReceiptPlainText 
@@ -411,7 +411,7 @@ export const sendEmailOTP = async (req, res) => {
             purpose: "email_validation"
         });
 
-        const { sendEmail } = await import("../services/brevo.service.js");
+        const { sendEmail } = await import("../services/aws-ses.service.js");
         await sendEmail({
             to: email,
             subject: "Verify Your Classgrid Login Email",

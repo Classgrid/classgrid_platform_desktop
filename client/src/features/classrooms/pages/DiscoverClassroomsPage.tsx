@@ -5,35 +5,37 @@ import { Button } from '@/components/marketing_ui/button';
 import { Spinner } from '@/components/marketing_ui/spinner';
 import { toast } from 'sonner';
 
-const MOCK_CLASSROOMS = [
-  { id: '1', name: 'Advanced Mathematics', subject: 'Mathematics', teacher: 'Dr. Alan Turing' },
-  { id: '2', name: 'Computer Science 101', subject: 'Computer Science', teacher: 'Grace Hopper' },
-  { id: '3', name: 'Physics for Engineers', subject: 'Physics', teacher: 'Albert Einstein' },
-  { id: '4', name: 'Introduction to Philosophy', subject: 'Philosophy', teacher: 'Socrates' },
-  { id: '5', name: 'Web Development Bootcamp', subject: 'Computer Science', teacher: 'Tim Berners-Lee' },
-];
+import { useDiscoverClassrooms } from '../queries/useDiscoverClassrooms';
+import { useJoinClassroom } from '../queries/useJoinClassroom';
+import { ClassroomCard, ClassroomCardSkeleton } from '../components/ClassroomCard';
 
 export function DiscoverClassroomsPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set());
+  const { data: discoverData, isLoading } = useDiscoverClassrooms({ search: searchQuery });
+  const classrooms = discoverData?.data || [];
+  
+  const joinClassroom = useJoinClassroom();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const filteredClassrooms = MOCK_CLASSROOMS.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.teacher.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleRequestJoin = (id: string) => {
+  const handleRequestJoin = (id: string, isCodeRequired: boolean = false) => {
+    if (isCodeRequired) {
+      toast.info("This classroom requires a code to join. Please ask the teacher.");
+      return;
+    }
     setRequestedIds(prev => new Set(prev).add(id));
-    toast.success("Join request sent to the teacher!");
+    joinClassroom.mutate({ classroomId: id }, {
+      onSuccess: () => {
+        toast.success("Join request sent successfully!");
+      },
+      onError: (err: any) => {
+        setRequestedIds(prev => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        toast.error(err.response?.data?.message || "Failed to send request");
+      }
+    });
   };
 
   const gradients = [
@@ -72,48 +74,32 @@ export function DiscoverClassroomsPage() {
 
       {/* Content */}
       {isLoading ? (
-        <div className="flex h-64 flex-col items-center justify-center gap-4">
-          <Spinner className="h-8 w-8 text-indigo-600" />
-          <p className="text-gray-500 font-medium">Discovering classrooms...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <ClassroomCardSkeleton key={i} />
+          ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredClassrooms.map((classroom, index) => {
-            const gradient = gradients[index % gradients.length];
-            const isRequested = requestedIds.has(classroom.id);
+          {classrooms.map((classroom) => {
+            const isRequested = requestedIds.has(classroom._id) || classroom.membershipStatus === 'pending';
+            const isMember = classroom.membershipStatus === 'approved';
+
+            if (isMember) return null;
 
             return (
-              <div 
-                key={classroom.id}
-                className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col"
-              >
-                <div className={`h-24 w-full bg-gradient-to-r ${gradient}`} />
-                <div className="p-5 flex-1 flex flex-col">
-                  <h3 className="font-bold text-lg text-gray-900 line-clamp-1 mb-1">{classroom.name}</h3>
-                  <p className="text-sm text-gray-500 mb-4">{classroom.subject}</p>
-                  
-                  <div className="flex items-center gap-2 mb-6">
-                    <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-600 border border-gray-200 shrink-0">
-                      {classroom.teacher.charAt(0)}
-                    </div>
-                    <span className="text-sm font-medium text-gray-700 truncate">{classroom.teacher}</span>
-                  </div>
-
-                  <div className="mt-auto">
-                    <Button 
-                      className={`w-full font-medium ${isRequested ? 'bg-gray-100 text-gray-500 cursor-not-allowed hover:bg-gray-100' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-                      onClick={() => !isRequested && handleRequestJoin(classroom.id)}
-                      disabled={isRequested}
-                    >
-                      {isRequested ? 'Requested' : 'Request to Join'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              <ClassroomCard 
+                key={classroom._id}
+                classroom={classroom as any}
+                isTeacher={false}
+                actionType={isRequested ? 'requested' : 'join'}
+                onActionClick={() => !isRequested && handleRequestJoin(classroom._id, false)}
+                isLoadingAction={joinClassroom.isPending}
+              />
             );
           })}
           
-          {filteredClassrooms.length === 0 && (
+          {classrooms.length === 0 && (
             <div className="col-span-full py-20 text-center text-gray-500 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50">
               <Users size={48} className="mx-auto mb-4 text-gray-400" />
               <h3 className="text-lg font-bold text-gray-900 mb-1">No classrooms found</h3>

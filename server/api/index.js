@@ -95,7 +95,7 @@ import systemRoutes from "../src/routes/system.routes.js";
 import dropdownRoutes from "../src/routes/dropdown.routes.js";
 import { publicTenantRouter, orgWebsiteRouter, superAdminWebsiteRouter } from "../src/routes/org-website.routes.js";
 import extractSubdomain, { resolveTenant, getPublicTenantInfo } from "../src/middleware/subdomain-router.middleware.js";
-import { sendEmail } from "../src/services/brevo.service.js";
+import { sendEmail } from "../src/services/aws-ses.service.js";
 import { metricsMiddleware, startMetricsFlush } from "../src/middleware/metrics.middleware.js";
 import { enforceFeatureFlags, platformAccessGate } from "../src/middleware/feature-flag.middleware.js";
 

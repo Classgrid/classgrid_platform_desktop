@@ -1,0 +1,119 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { useHierarchyTree } from '../queries/useHierarchyTree';
+import { useTerminology } from '../hooks/useTerminology';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/marketing_ui/select';
+import { Spinner } from '@/components/marketing_ui/spinner';
+import type { HierarchyNode } from '../types/classroom.types';
+
+interface HierarchySelectorProps {
+  onDivisionSelect: (divisionId: string | null) => void;
+  className?: string;
+}
+
+export const HierarchySelector: React.FC<HierarchySelectorProps> = ({ onDivisionSelect, className = '' }) => {
+  const { data: treeData, isLoading: isTreeLoading } = useHierarchyTree();
+  const { data: termData, isLoading: isTermLoading } = useTerminology();
+
+  const [selections, setSelections] = useState<Record<number, string>>({});
+
+  const hierarchyLabels = termData?.terminology?.hierarchy || [];
+  const tree = treeData?.tree || [];
+
+  // Reset downstream selections when an upstream selection changes
+  const handleSelect = (levelIndex: number, nodeId: string) => {
+    setSelections(prev => {
+      const next = { ...prev, [levelIndex]: nodeId };
+      // Clear all selections deeper than levelIndex
+      Object.keys(next).forEach(key => {
+        if (Number(key) > levelIndex) {
+          delete next[Number(key)];
+        }
+      });
+      return next;
+    });
+  };
+
+  // Build the list of available options for each level based on current selections
+  const levels = useMemo(() => {
+    const result: { label: string; options: HierarchyNode[]; selectedValue: string | undefined }[] = [];
+    
+    let currentNodes = tree;
+    for (let i = 0; i < hierarchyLabels.length; i++) {
+      const selectedNodeId = selections[i];
+      const selectedNode = currentNodes.find(n => n._id === selectedNodeId);
+      
+      result.push({
+        label: hierarchyLabels[i],
+        options: currentNodes,
+        selectedValue: selectedNodeId
+      });
+
+      if (selectedNode && selectedNode.children && selectedNode.children.length > 0) {
+        currentNodes = selectedNode.children;
+      } else {
+        // If no node selected, or selected node has no children, stop showing further dropdowns
+        break;
+      }
+    }
+    return result;
+  }, [tree, hierarchyLabels, selections]);
+
+  // When the deepest selection changes, call onDivisionSelect
+  useEffect(() => {
+    if (levels.length > 0) {
+      let isLeaf = false;
+      let leafId = null;
+
+      let current = tree;
+      for (let i = 0; i <= Object.keys(selections).length; i++) {
+        const selId = selections[i];
+        if (!selId) break;
+        const node = current.find(n => n._id === selId);
+        if (node) {
+          if (!node.children || node.children.length === 0) {
+            isLeaf = true;
+            leafId = node._id;
+            break;
+          } else {
+            current = node.children;
+          }
+        }
+      }
+
+      onDivisionSelect(isLeaf ? leafId : null);
+    }
+  }, [selections, levels, tree, hierarchyLabels, onDivisionSelect]);
+
+  if (isTreeLoading || isTermLoading) {
+    return <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner className="w-4 h-4" /> Loading hierarchy...</div>;
+  }
+
+  if (tree.length === 0) {
+    return <div className="text-sm text-muted-foreground italic">No hierarchy structure available.</div>;
+  }
+
+  return (
+    <div className={`space-y-4 ${className}`}>
+      {levels.map((level, index) => (
+        <div key={index} className="space-y-1.5">
+          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">{level.label}</label>
+          <Select 
+            value={level.selectedValue || ""} 
+            onValueChange={(val) => handleSelect(index, val)}
+          >
+            <SelectTrigger className="w-full bg-white border-gray-200">
+              <SelectValue placeholder={`Select ${level.label}`} />
+            </SelectTrigger>
+            <SelectContent>
+              <div className="max-h-[220px] overflow-y-auto pr-1">
+                {level.options.map(opt => (
+                  <SelectItem key={opt._id} value={opt._id}>{opt.name}</SelectItem>
+                ))}
+              </div>
+            </SelectContent>
+          </Select>
+        </div>
+      ))}
+    </div>
+  );
+};

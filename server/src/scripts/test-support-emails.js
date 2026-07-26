@@ -4,7 +4,7 @@ import path from "path";
 dotenv.config({ path: "C:/Users/nikhi/OneDrive/Documents/Classgrid_platfrom/classgrid_platform/server/.env" });
 dotenv.config({ path: "c:/classgrid_marketting/Classgrid_marketting/.env.local", override: true });
 import mongoose from "mongoose";
-import { notifyUserOfTicketCreation, notifyTicketCreatorOfAdminReply, notifyUserOfTalkRequestCreation, notifyTalkCreatorOfAdminReply } from "../services/support-ticket-email.service.js";
+import { notifyUserOfTicketCreation, notifyTicketCreatorOfAdminReply, notifyUserOfTalkRequestCreation, notifyTalkCreatorOfAdminReply } from "../services/support-ticket-aws-ses.service.js";
 import { processEmailQueue } from "../services/email-queue.service.js";
 
 async function run() {

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Settings, Save, AlertTriangle, Trash2 } from 'lucide-react';
 import { useClassroomDetail } from '../queries/useClassroomDetail';
 import { ClassroomCoverUpload } from './ClassroomCoverUpload';
+import { classroomApi } from '../services/classroomApi';
 import { Button } from '@/components/marketing_ui/button';
 import { Input } from '@/components/marketing_ui/input';
 import { Textarea } from '@/components/marketing_ui/textarea';
@@ -41,28 +42,31 @@ export const ClassroomSettingsTab: React.FC<ClassroomSettingsTabProps> = ({ clas
 
   const updateMutation = useMutation({
     mutationFn: async (updatedData: any) => {
-      // Mock API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      console.log('Updating classroom settings:', updatedData);
-      return { success: true };
+      if (!classroomId) throw new Error('ClassroomId missing');
+      return await classroomApi.updateClassroom(classroomId, updatedData);
     },
     onSuccess: () => {
       toast.success('Settings updated successfully!');
-      // queryClient.invalidateQueries({ queryKey: ['classrooms', classroomId] }); // would do this in real app
+      queryClient.invalidateQueries({ queryKey: ['classrooms', classroomId] });
+      queryClient.invalidateQueries({ queryKey: ['classrooms'] }); // Refresh lists
     },
-    onError: () => {
-      toast.error('Failed to update settings');
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to update settings');
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return { success: true };
+      if (!classroomId) throw new Error('ClassroomId missing');
+      return await classroomApi.deleteClassroom(classroomId);
     },
     onSuccess: () => {
-      toast.success('Classroom deleted successfully');
-      navigate('/classrooms');
+      toast.success('Classroom deleted successfully!');
+      queryClient.invalidateQueries({ queryKey: ['classrooms'] });
+      navigate('/app/classrooms');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to delete classroom');
     }
   });
 

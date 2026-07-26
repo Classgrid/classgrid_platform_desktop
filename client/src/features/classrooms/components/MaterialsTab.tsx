@@ -55,6 +55,7 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ classroomId, userRol
               key={material.id || material._id}
               material={material}
               userRole={userRole}
+              classroomId={classroomId}
             />
           ))}
         </div>

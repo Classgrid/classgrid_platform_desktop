@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, BookOpen, Users, Settings } from 'lucide-react';
+import { MessageSquare, BookOpen, Users, Settings, Bot, HelpCircle } from 'lucide-react';
 
 interface ClassroomTabsProps {
   activeTab: string;
@@ -15,7 +15,10 @@ export const ClassroomTabs: React.FC<ClassroomTabsProps> = ({
   const tabs = [
     { id: 'stream', name: 'Stream', icon: MessageSquare },
     { id: 'materials', name: 'Materials', icon: BookOpen },
+    { id: 'quizzes', name: 'Quizzes', icon: HelpCircle },
     { id: 'students', name: 'Students', icon: Users },
+    { id: 'chat', name: 'Chat', icon: MessageSquare },
+    { id: 'ai', name: 'AI Assistant', icon: Bot },
   ];
 
   if (userRole === 'faculty') {
@@ -25,7 +28,7 @@ export const ClassroomTabs: React.FC<ClassroomTabsProps> = ({
   return (
     <div className="w-full bg-white border-b border-gray-200 sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+        <nav className="-mb-px flex space-x-6 sm:space-x-8 overflow-x-auto overflow-y-hidden whitespace-nowrap scrollbar-hide pb-px" aria-label="Tabs">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (

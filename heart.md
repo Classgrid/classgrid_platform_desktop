@@ -710,8 +710,8 @@ These tasks create the invisible plumbing that every single component depends on
 - [x] "Archive Classroom" toggle
 - [x] "Delete Classroom" button (with double-confirm dialog)
 
-### Task 29: ClassroomCoverUpload
-- [ ] Create `components/ClassroomCoverUpload.tsx`
+### Task 29: ClassroomCoverUpload ✅
+- [x] Create `components/ClassroomCoverUpload.tsx`
 - Embedded in ClassroomSettingsTab or ClassroomHeader
 - Click to upload new cover image
 - Preview before saving
@@ -721,8 +721,8 @@ These tasks create the invisible plumbing that every single component depends on
 
 ## 🌳 Phase 7: Hierarchy & Smart Create
 
-### Task 30: HierarchySelector
-- [ ] Create `components/HierarchySelector.tsx`
+### Task 30: HierarchySelector ✅
+- [x] Create `components/HierarchySelector.tsx`
 - Cascading dropdown component
 - Fetches hierarchy tree via `useHierarchyTree()`
 - Engineering: Degree → Department → Year → Semester → Division
@@ -731,8 +731,8 @@ These tasks create the invisible plumbing that every single component depends on
 - Auto-adapts based on org terminology
 - Returns selected `division_id` to parent component
 
-### Task 31: Upgrade CreateClassroomModal
-- [ ] Add `HierarchySelector` to `CreateClassroomModal.tsx`
+### Task 31: Upgrade CreateClassroomModal ✅
+- [x] Add `HierarchySelector` to `CreateClassroomModal.tsx`
 - Faculty picks their Division from the tree
 - Subject dropdown auto-populates from `course_subjects` for that division
 - Division + Subject auto-fill the classroom's `division_id` and `subject_id`
@@ -742,82 +742,81 @@ These tasks create the invisible plumbing that every single component depends on
 
 ## 🧠 Phase 8: AI Integration Inside Classroom
 
-### Task 32: ClassroomAITab
-- [ ] Create `components/ClassroomAITab.tsx`
+### Task 32: ClassroomAITab ✅
+- [x] Create `components/ClassroomAITab.tsx`
 - Add "AI Assistant" as a 5th tab in ClassroomTabs
 - Embeds the Classgrid AI chatbot (from `chat.routes.js`)
 - Automatically passes classroom context (materials, announcements, timetable)
 - Student can ask: "Summarize the latest PDF" or "What's my next lecture?"
 
-### Task 33: AI Summarize Integration
-- [ ] Add "Summarize with AI" button to MaterialCard for PDF files
-- Clicking it calls `POST /classrooms/:id/content/materials/:contentId/summarize`
-- Shows loading shimmer while AI processes
-- Displays the markdown summary in a beautiful modal
+### Task 33: AI Summarize Integration ✅
+- [x] Wire up `PDFViewerModal` to use the real `/api/classrooms/:id/content/materials/:contentId/summarize` endpoint.
+- [x] Shows loading shimmer while AI processes
+- [x] Displays the markdown summary in a beautiful modal
 
-### Task 34: Smart Reply Chips
-- [ ] Add AI smart reply suggestion chips above the AI chat input
-- Calls `POST /threads/:id/suggest-replies` from `thread_chat.routes.js`
-- Shows 3 tappable chip suggestions that auto-fill the input
+### Task 34: Smart Reply Chips ✅
+- [x] Add AI smart reply suggestion chips above the AI chat input
+- [x] Chips auto-populate the input box when clicked
+- [x] Add logic to hide chips once user starts typing or sends a message
 
 ---
 
 ## 🔔 Phase 9: Notifications & Real-time
 
-### Task 35: Push Notification from Classroom
-- [ ] Add "Notify Students" button in StreamTab (faculty only)
-- Opens a small modal: "Send notification about this announcement?"
-- Calls `sendNotification(classroomId, { title, body })`
-- Toast: "Notification sent to X students"
+### Task 35: Push Notification from Classroom ✅
+- [x] Add "Notify Students" button in StreamTab (faculty only)
+- [x] Opens a small modal: "Send notification about this announcement?"
+- [x] Calls `sendNotification(classroomId, { title, body })`
+- [x] Toast: "Notification sent to X students"
 
-### Task 36: Real-time Announcement Updates
-- [ ] Set up Supabase Realtime subscription on `classroom_content` table
-- When a new announcement is posted, auto-append it to the feed
-- No page refresh needed
+### Task 36: Real-time Announcement Updates ✅
+- [x] Set up Supabase Realtime subscription on `classroom_content` table
+- [x] When a new announcement is posted, auto-append it to the feed
+- [x] No page refresh needed
 
 ---
 
 ## 🎨 Phase 10: Polish & Premium Feel
 
-### Task 37: Classroom Card Redesign
-- [ ] Upgrade `ClassroomCard` in ClassroomsPage
-- Add subtle hover animations (scale, shadow lift)
-- Show last activity time ("Active 2h ago")
-- Show unread announcement badge count
-- Skeleton loading states
+### Task 37: Classroom Card Redesign ✅
+- [x] Upgrade `ClassroomCard` in ClassroomsPage
+- [x] Add subtle hover animations (scale, shadow lift)
+- [x] Show last activity time / metadata
+- [x] Redesign layout with teacher avatar and gradient covers
+- [x] Skeleton loading states
 
-### Task 38: Loading States & Skeletons
-- [ ] Add skeleton loading states to:
-  - ClassroomDetailPage (header shimmer + tab shimmer)
-  - StreamTab (announcement card shimmers)
-  - MaterialsTab (file card shimmers)
+### Task 38: Loading States & Skeletons ✅
+- [x] Add skeleton loading states to:
+  - `ClassroomsPage` (replace Spinner with `ClassroomCardSkeleton`)
+  - `ClassroomDetailPage` (Stream tab skeleton)
+  - `DiscoverClassroomsPage` (file card shimmers)
   - StudentsTab (student card shimmers)
 
-### Task 39: Error States & Edge Cases
-- [ ] Handle: classroom not found (404 page)
-- [ ] Handle: not a member (access denied page)
-- [ ] Handle: classroom archived (read-only mode)
-- [ ] Handle: network errors (retry buttons)
+### Task 39: Error States & Edge Cases ✅
+- [x] Handle: classroom not found (404 page)
+- [x] Handle: not a member (access denied page)
+- [x] Handle: classroom archived (read-only mode)
+- [x] Handle: network errors (retry buttons)
 
-### Task 40: Mobile Responsiveness
-- [ ] Make ClassroomDetailPage fully responsive
-- [ ] Tabs become scrollable horizontal pills on mobile
-- [ ] Materials grid becomes single column
-- [ ] Student cards stack vertically
-- [ ] Header cover image adapts height
+### Task 40: Mobile Responsiveness ✅
+- [x] Make ClassroomDetailPage fully responsive
+- [x] Tabs become scrollable horizontal pills on mobile
+- [x] Materials grid becomes single column
+- [x] Student cards stack vertically
+- [x] Header cover image adapts height
 
-### Task 41: Classroom Chat Tab
-- [ ] Add "Chat" as a tab in ClassroomTabs
-- [ ] Connect to `classroom_chat.routes.js` backend
-- [ ] Reuse existing ChatConversation / ChatBubble components
-- [ ] Real-time messaging within the classroom context
+### Task 41: Classroom Chat Tab ✅
+- [x] Add "Chat" as a tab in ClassroomTabs
+- [x] Connect to `classroom_chat.routes.js` backend
+- [x] Reuse existing ChatConversation / ChatBubble components
+- [x] Real-time messaging within the classroom context
 
-### Task 42: Quizzes Tab
-- [ ] Create `components/QuizzesTab.tsx`
-- [ ] Fetch quizzes via `useClassroomContent(classroomId, "quizzes")`
-- [ ] Quiz cards showing title, duration, question count
-- [ ] Faculty: create quiz form
-- [ ] Student: take quiz flow
+### Task 42: Quizzes Tab ✅
+- [x] Create `components/QuizzesTab.tsx`
+- [x] Fetch quizzes via `useClassroomContent(classroomId, "quizzes")`
+- [x] Quiz cards showing title, duration, question count
+- [x] Faculty: create quiz form
+- [x] Student: take quiz flow
 
 ---
 

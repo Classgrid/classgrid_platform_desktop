@@ -15,7 +15,7 @@ import Classroom from "../models/Classroom.js";
 import User from "../models/User.js";
 import AdminAuditLog from "../models/AdminAuditLog.js";
 import { getChatSb } from "../config/supabaseClient.js";
-import { sendAttendanceStartedEmails, sendAbsenceNotificationEmails } from "../services/notification-email.service.js";
+import { sendAttendanceStartedEmails, sendAbsenceNotificationEmails } from "../services/notification-aws-ses.service.js";
 import { checkRadius, isValidCoords } from "../services/gps.service.js";
 import { isHoliday } from "../utils/holidayUtils.js";
 import connectDB from "../../config/db.js";

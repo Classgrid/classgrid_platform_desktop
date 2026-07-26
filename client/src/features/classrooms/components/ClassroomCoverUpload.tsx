@@ -22,14 +22,8 @@ export const ClassroomCoverUpload: React.FC<ClassroomCoverUploadProps> = ({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('coverImage', file);
-      // Fallback if the API method doesn't exist, to prevent breaking:
-      if (typeof (classroomApi as any).uploadCoverImage === 'function') {
-        return (classroomApi as any).uploadCoverImage(classroomId, formData);
-      }
       
-      // Mock delay if method not implemented
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      return { success: true };
+      return await classroomApi.uploadCover(classroomId, formData);
     },
     onSuccess: () => {
       toast.success('Cover image updated successfully!');

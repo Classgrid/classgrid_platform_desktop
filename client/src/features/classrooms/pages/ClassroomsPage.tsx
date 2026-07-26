@@ -7,6 +7,7 @@ import { useMyClassrooms, MyClassroomRecord } from "../queries/useMyClassrooms";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 import { CreateClassroomModal } from "../components/CreateClassroomModal";
 import { JoinClassroomModal } from "../components/JoinClassroomModal";
+import { ClassroomCard, ClassroomCardSkeleton } from "../components/ClassroomCard";
 
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
@@ -32,13 +33,16 @@ export function ClassroomsPage() {
     );
   }, [classrooms, search]);
 
-  const isTeacher = user?.role === "teacher" || user?.role === "faculty";
+  const isTeacher = user?.role === "teacher" || user?.role === "faculty" || user?.role === "org_admin" || user?.role === "super_admin";
 
   if (isLoading) {
     return (
-      <div className="flex h-[60vh] flex-col items-center justify-center gap-4">
-        <Spinner className="h-8 w-8  text-primary" />
-        <p className="text-muted-foreground">Loading your classrooms...</p>
+      <div className="max-w-7xl mx-auto pb-12 mt-8">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <ClassroomCardSkeleton key={i} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -112,7 +116,11 @@ export function ClassroomsPage() {
               to={`/classroom/${classroom._id}`} 
               className="block h-full outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
             >
-              <ClassroomCard classroom={classroom} isTeacher={isTeacher} />
+              <ClassroomCard 
+                classroom={classroom as any} 
+                isTeacher={isTeacher} 
+                actionType="enter" 
+              />
             </Link>
           ))}
         </div>
@@ -131,79 +139,3 @@ export function ClassroomsPage() {
   );
 }
 
-function ClassroomCard({ classroom, isTeacher }: { classroom: MyClassroomRecord; isTeacher: boolean }) {
-  const gradients = [
-    "from-blue-500 to-indigo-600",
-    "from-emerald-500 to-teal-600",
-    "from-orange-500 to-red-600",
-    "from-purple-500 to-pink-600",
-    "from-cyan-500 to-blue-600",
-  ];
-  const gradient = gradients[classroom.name.length % gradients.length];
-
-  return (
-    <div className="group relative flex flex-col h-full overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md hover:border-primary/30 cursor-pointer">
-      <div className={`h-24 w-full bg-gradient-to-r ${gradient} relative`}>
-        {classroom.coverImage && (
-          <img 
-            src={classroom.coverImage} 
-            alt="Cover" 
-            className="absolute inset-0 h-full w-full object-cover mix-blend-overlay opacity-60" 
-          />
-        )}
-        <div className="absolute inset-0 bg-black/10"></div>
-      </div>
-
-      <div className="flex flex-1 flex-col p-5">
-        <div className="mb-1 flex items-start justify-between gap-2">
-          <h3 className="font-bold text-lg text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-            {classroom.name}
-          </h3>
-          {!isTeacher && classroom.membershipStatus === "pending" && (
-            <span className="flex shrink-0 items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warning">
-              <Clock size={10} /> Pending
-            </span>
-          )}
-        </div>
-        
-        <p className="text-sm text-muted-foreground line-clamp-1 mb-4">
-          {classroom.subject || "General Subject"}
-        </p>
-
-        <div className="mt-auto pt-4 flex items-center justify-between border-t border-border">
-          {isTeacher ? (
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1.5" title="Enrolled Students">
-                <Users size={14} />
-                {classroom.memberCount || 0}
-              </span>
-              {classroom.pendingRequests ? (
-                <span className="flex items-center gap-1.5 text-warning font-medium" title="Pending Requests">
-                  <Clock size={14} />
-                  {classroom.pendingRequests}
-                </span>
-              ) : null}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              {classroom.teacher?.profilePicture ? (
-                <img 
-                  src={classroom.teacher.profilePicture} 
-                  alt={classroom.teacher.name} 
-                  className="h-6 w-6 rounded-full object-cover border border-border"
-                />
-              ) : (
-                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                  {classroom.teacher?.name.charAt(0)}
-                </div>
-              )}
-              <span className="text-xs font-medium text-foreground truncate max-w-[120px]">
-                {classroom.teacher?.name || "Unknown Teacher"}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}

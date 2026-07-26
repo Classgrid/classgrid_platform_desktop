@@ -4,13 +4,17 @@ import { FileText, File, MoreHorizontal, Download, Sparkles } from 'lucide-react
 import { toast } from 'sonner';
 import { ClassroomContent } from '../types/classroom.types';
 import { PDFViewerModal } from './PDFViewerModal';
+import { classroomApi } from '../services/classroomApi';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface MaterialCardProps {
   material: ClassroomContent;
   userRole: 'faculty' | 'student';
+  classroomId?: string;
 }
 
-export const MaterialCard: React.FC<MaterialCardProps> = ({ material, userRole }) => {
+export const MaterialCard: React.FC<MaterialCardProps> = ({ material, userRole, classroomId }) => {
+  const queryClient = useQueryClient();
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
   const isPdf = material.file_url?.toLowerCase().endsWith('.pdf');
   
@@ -18,10 +22,21 @@ export const MaterialCard: React.FC<MaterialCardProps> = ({ material, userRole }
     ? formatDistanceToNow(new Date(material.created_at), { addSuffix: true })
     : 'Unknown date';
 
-  const handleDelete = () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!classroomId || !material._id) {
+      toast.error('Missing required info for deletion');
+      return;
+    }
     if (window.confirm('Are you sure you want to delete this material?')) {
-      console.log('Delete clicked for', material.id);
-      toast.success('Material deletion mocked successfully');
+      try {
+        await classroomApi.deleteContent(classroomId, 'material', material._id);
+        toast.success('Material deleted successfully');
+        queryClient.invalidateQueries({ queryKey: ['classrooms', classroomId, 'content', 'material'] });
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to delete material');
+      }
     }
   };
 
@@ -105,6 +120,7 @@ export const MaterialCard: React.FC<MaterialCardProps> = ({ material, userRole }
           isOpen={isPdfViewerOpen} 
           onClose={() => setIsPdfViewerOpen(false)} 
           material={material} 
+          classroomId={classroomId}
         />
       )}
     </div>

@@ -15,7 +15,7 @@ import {
     sendJoinRequestEmail,
     sendJoinApprovedEmail,
     sendBulkJoinApprovedEmails,
-} from "../services/notification-email.service.js";
+} from "../services/notification-aws-ses.service.js";
 
 import pdfParse from "pdf-parse";
 import { Groq } from "groq-sdk";
@@ -260,6 +260,17 @@ router.get("/", isAuthenticated, requireOrganization, attachInstitutionProfile()
             }));
 
             return res.json({ classrooms: enriched });
+        }
+
+        if (req.user.role === "org_admin") {
+            const classrooms = await Classroom.find({
+                organization_id: req.user.organization_id
+            })
+                .populate("teacher", "name email profilePicture qualification department bio")
+                .sort({ createdAt: -1 })
+                .lean();
+            
+            return res.json({ classrooms });
         }
 
         // Students: show approved + pending classrooms

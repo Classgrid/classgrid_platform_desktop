@@ -2,22 +2,35 @@ import React from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import { ClassroomMember } from '../types/classroom.types';
+import { classroomApi } from '../services/classroomApi';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface StudentCardProps {
   member: ClassroomMember;
   userRole: 'faculty' | 'student';
+  classroomId?: string;
 }
 
-export const StudentCard: React.FC<StudentCardProps> = ({ member, userRole }) => {
+export const StudentCard: React.FC<StudentCardProps> = ({ member, userRole, classroomId }) => {
+  const queryClient = useQueryClient();
   const getInitials = (name?: string) => {
     if (!name) return 'U';
     return name.substring(0, 2).toUpperCase();
   };
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
+    if (!classroomId) {
+      toast.error('Classroom ID missing');
+      return;
+    }
     if (window.confirm(`Are you sure you want to remove ${member.student.name} from the classroom?`)) {
-      toast.success(`Student removed (mocked for Task 23)`);
-      console.log('Remove student:', member.student._id);
+      try {
+        await classroomApi.removeMember(classroomId, member.student._id);
+        toast.success(`Student removed successfully`);
+        queryClient.invalidateQueries({ queryKey: ['classrooms', classroomId, 'members'] });
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to remove student');
+      }
     }
   };
 

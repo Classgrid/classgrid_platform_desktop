@@ -1,4 +1,4 @@
-﻿import OrgSubscription from "../models/OrgSubscription.js";
+import OrgSubscription from "../models/OrgSubscription.js";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import { enqueueEmail } from "./email-queue.service.js";

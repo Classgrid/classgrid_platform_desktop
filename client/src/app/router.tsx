@@ -271,6 +271,7 @@ export function AppRouter() {
           <Route path="/org/admin/usage" element={<UsagePage />} />
           <Route path="/org/admin/billing" element={<OrgAdminBillingPage />} />
           <Route path="/org/admin/members" element={<MembersPage />} />
+          <Route path="/org/classrooms" element={<ClassroomsPage />} />
           <Route path="/org/admin/*" element={<ComingSoonPage />} />
           <Route path="/org/*" element={<ComingSoonPage />} />
           

@@ -5,7 +5,7 @@ import { getStudentDashboardData } from '../controllers/student-dashboard.contro
 import { getChatSb } from '../config/supabaseClient.js';
 import User from '../models/User.js';
 import DeviceVerification from '../models/DeviceVerification.js';
-import { sendEmail } from '../services/brevo.service.js';
+import { sendEmail } from '../services/aws-ses.service.js';
 
 const router = express.Router();
 

@@ -99,6 +99,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ classroomId, userRole 
                   key={member._id} 
                   member={member} 
                   userRole={userRole} 
+                  classroomId={classroomId}
                 />
               ))}
             </div>

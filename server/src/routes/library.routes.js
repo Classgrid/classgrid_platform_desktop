@@ -5,7 +5,7 @@ import { getChatSb } from '../config/supabaseClient.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import mongoose from 'mongoose';
-import { sendEmail } from '../services/brevo.service.js';
+import { sendEmail } from '../services/aws-ses.service.js';
 
 const router = express.Router();
 

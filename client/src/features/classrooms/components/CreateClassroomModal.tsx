@@ -1,14 +1,25 @@
-import React, { useState } from "react";
-import { X, Book, Users } from "lucide-react";
+import React, { useState, useCallback, useEffect } from "react";
+import { X, Book, Users, TreePine } from "lucide-react";
 import { useCreateClassroom } from "../queries/useCreateClassroom";
+import { useTerminology } from "../hooks/useTerminology";
+import { HierarchySelector } from "./HierarchySelector";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { Spinner } from "@/components/marketing_ui/spinner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
+import { apiClient } from "@/lib/apiClient";
 
 type CreateClassroomModalProps = {
   isOpen: boolean;
   onClose: () => void;
 };
+
+interface CourseSubject {
+  id: string;
+  subject_name: string;
+  subject_code?: string;
+  semester?: number;
+}
 
 export function CreateClassroomModal({ isOpen, onClose }: CreateClassroomModalProps) {
   const [name, setName] = useState("");
@@ -17,7 +28,88 @@ export function CreateClassroomModal({ isOpen, onClose }: CreateClassroomModalPr
   const [maxStudents, setMaxStudents] = useState("200");
   const [allowRequests, setAllowRequests] = useState(true);
 
+  // Hierarchy-driven fields
+  const [divisionId, setDivisionId] = useState<string | null>(null);
+  const [subjectId, setSubjectId] = useState<string | null>(null);
+  const [availableSubjects, setAvailableSubjects] = useState<CourseSubject[]>([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+
   const { mutate: createClassroom, isPending } = useCreateClassroom();
+  const { data: termData } = useTerminology();
+  const subjectLabel = termData?.terminology?.subject || "Subject";
+
+  // Fetch subjects when division is selected
+  useEffect(() => {
+    if (!divisionId) {
+      setAvailableSubjects([]);
+      setSubjectId(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingSubjects(true);
+
+    // Fetch courses for this org, then get subjects from the first course
+    // The course.routes.js GET / returns all courses for the org
+    apiClient.get<{ courses: Array<{ id: string; subject_count: number }> }>("/api/courses")
+      .then(async (res) => {
+        if (cancelled) return;
+        const courses = res.data.courses || [];
+        if (courses.length === 0) {
+          setAvailableSubjects([]);
+          setIsLoadingSubjects(false);
+          return;
+        }
+
+        // Fetch subjects from all courses and flatten
+        const allSubjects: CourseSubject[] = [];
+        for (const course of courses) {
+          try {
+            const detail = await apiClient.get<{ subjects: CourseSubject[] }>(`/api/courses/${course.id}`);
+            if (!cancelled && detail.data.subjects) {
+              allSubjects.push(...detail.data.subjects);
+            }
+          } catch {
+            // Skip courses that fail
+          }
+        }
+
+        if (!cancelled) {
+          // Deduplicate by subject name
+          const seen = new Set<string>();
+          const unique = allSubjects.filter(s => {
+            const key = s.subject_name.toLowerCase();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          setAvailableSubjects(unique);
+          setIsLoadingSubjects(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAvailableSubjects([]);
+          setIsLoadingSubjects(false);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [divisionId]);
+
+  const handleDivisionSelect = useCallback((id: string | null) => {
+    setDivisionId(id);
+    setSubjectId(null);
+    setSubject("");
+  }, []);
+
+  const handleSubjectSelect = (subId: string) => {
+    setSubjectId(subId);
+    const found = availableSubjects.find(s => s.id === subId);
+    if (found) {
+      setSubject(found.subject_name);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -28,29 +120,38 @@ export function CreateClassroomModal({ isOpen, onClose }: CreateClassroomModalPr
         name,
         subject,
         description,
+        division_id: divisionId || undefined,
+        subject_id: subjectId || undefined,
         settings: {
           maxStudents: parseInt(maxStudents) || 200,
-          allowJoinRequests: allowRequests } },
+          allowJoinRequests: allowRequests,
+        },
+      },
       {
         onSuccess: () => {
           onClose();
-          // Reset form
           setName("");
           setSubject("");
           setDescription("");
-        } }
+          setDivisionId(null);
+          setSubjectId(null);
+          setAvailableSubjects([]);
+        },
+      }
     );
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-foreground">Create Classroom</h2>
             <p className="text-sm text-muted-foreground mt-1">Set up a new digital learning space.</p>
           </div>
           <Button
+            type="button"
+            variant="ghost"
             onClick={onClose}
             className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
@@ -58,7 +159,52 @@ export function CreateClassroomModal({ isOpen, onClose }: CreateClassroomModalPr
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* ── Hierarchy Selector (Smart Picker) ── */}
+          <div className="space-y-2 p-4 rounded-lg border border-border bg-muted/30">
+            <div className="flex items-center gap-2 mb-3">
+              <TreePine size={16} className="text-primary" />
+              <span className="text-sm font-semibold text-foreground">Select Your {termData?.terminology?.division || "Division"}</span>
+              <span className="text-xs text-muted-foreground">(Optional)</span>
+            </div>
+            <HierarchySelector onDivisionSelect={handleDivisionSelect} />
+          </div>
+
+          {/* ── Subject Picker (from course_subjects if hierarchy selected, else manual) ── */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">{subjectLabel} *</label>
+            {divisionId && availableSubjects.length > 0 ? (
+              <Select value={subjectId || ""} onValueChange={handleSubjectSelect}>
+                <SelectTrigger className="w-full bg-background border-border">
+                  <SelectValue placeholder={`Pick a ${subjectLabel}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="max-h-[220px] overflow-y-auto pr-1">
+                    {availableSubjects.map(s => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.subject_name}{s.subject_code ? ` (${s.subject_code})` : ""}
+                      </SelectItem>
+                    ))}
+                  </div>
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="relative">
+                <Book className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                <Input
+                  type="text"
+                  required
+                  placeholder={isLoadingSubjects ? "Loading subjects..." : `e.g. Data Structures`}
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  disabled={isLoadingSubjects}
+                  className="w-full rounded-md border border-border bg-background pl-10 pr-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* ── Classroom Name ── */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Classroom Name *</label>
             <Input
@@ -71,21 +217,7 @@ export function CreateClassroomModal({ isOpen, onClose }: CreateClassroomModalPr
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Subject *</label>
-            <div className="relative">
-              <Book className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <Input
-                type="text"
-                required
-                placeholder="e.g. Computer Science"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="w-full rounded-md border border-border bg-background pl-10 pr-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-          </div>
-
+          {/* ── Description ── */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Description (Optional)</label>
             <textarea
@@ -96,6 +228,7 @@ export function CreateClassroomModal({ isOpen, onClose }: CreateClassroomModalPr
             />
           </div>
 
+          {/* ── Settings Row ── */}
           <div className="grid grid-cols-2 gap-4 pt-2">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Max Students</label>
@@ -125,9 +258,11 @@ export function CreateClassroomModal({ isOpen, onClose }: CreateClassroomModalPr
             </div>
           </div>
 
+          {/* ── Actions ── */}
           <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-border">
             <Button
               type="button"
+              variant="ghost"
               onClick={onClose}
               className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
             >
@@ -136,7 +271,7 @@ export function CreateClassroomModal({ isOpen, onClose }: CreateClassroomModalPr
             <Button type="submit" disabled={isPending || !name || !subject}>
               {isPending ? (
                 <>
-                  <Spinner className="mr-2 h-4 w-4 " /> Creating...
+                  <Spinner className="mr-2 h-4 w-4" /> Creating...
                 </>
               ) : (
                 "Create Classroom"

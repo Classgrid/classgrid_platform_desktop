@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import { notifyTicketCreatorOfAdminReply } from "./src/services/support-ticket-email.service.js";
+import { notifyTicketCreatorOfAdminReply } from "./src/services/support-ticket-brevo.service.js";
 
 dotenv.config();
 

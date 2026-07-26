@@ -8,7 +8,7 @@ import DemoRequest from "../models/DemoRequest.js";
 import mongoose from "mongoose";
 import { approveLeadAndProvision as approveLeadAndProvisionService } from "../services/lead-conversion.service.js";
 import { trackOnboardingEvent } from "../services/onboarding-event.service.js";
-import { sendDemoMeetingScheduledNotification } from "../services/notification-email.service.js";
+import { sendDemoMeetingScheduledNotification } from "../services/notification-aws-ses.service.js";
 import { getAppRolesForTarget, normalizeScheduledTarget } from "../utils/notification-targeting.js";
 
 const sb = getChatSb();

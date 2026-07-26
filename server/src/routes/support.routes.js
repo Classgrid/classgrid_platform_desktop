@@ -5,7 +5,7 @@ import SupportTicket from "../models/SupportTicket.js";
 import User from "../models/User.js";
 import { multipleUploads } from "../middleware/upload.middleware.js";
 import storageService from "../services/storage.service.js";
-import { notifyTicketCreatorOfAdminReply, notifyUserOfTicketCreation, notifyUserOfTalkRequestCreation, notifyTalkCreatorOfAdminReply } from "../services/support-ticket-email.service.js";
+import { notifyTicketCreatorOfAdminReply, notifyUserOfTicketCreation, notifyUserOfTalkRequestCreation, notifyTalkCreatorOfAdminReply } from "../services/support-ticket-aws-ses.service.js";
 import { dispatchNotification, bulkDispatchNotification } from "../services/notification.service.js";
 
 

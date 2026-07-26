@@ -165,6 +165,12 @@ export const classroomApi = {
     return data;
   },
 
+  // POST /api/classrooms/:id/notify — Send notification to all students
+  sendNotification: async (classroomId: string, payload: { title: string; message: string; type?: string; link?: string }) => {
+    const { data } = await apiClient.post(`/api/classrooms/${classroomId}/notify`, payload);
+    return data;
+  },
+
   // PUT /api/classrooms/:id/content/materials/:contentId/replace — Replace a PDF file
   replaceMaterial: async (classroomId: string, contentId: string, formData: FormData) => {
     const { data } = await apiClient.put(

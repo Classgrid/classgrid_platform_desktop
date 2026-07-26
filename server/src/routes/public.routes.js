@@ -5,7 +5,7 @@ import OrgWebsiteContent from "../models/OrgWebsiteContent.js";
 import {
   sendDemoLeadNotification,
   sendDemoMeetingScheduledNotification,
-} from "../services/notification-email.service.js";
+} from "../services/notification-aws-ses.service.js";
 import { trackOnboardingEvent } from "../services/onboarding-event.service.js";
 import { sendPushToRole } from "../services/push.service.js";
 

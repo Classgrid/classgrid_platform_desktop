@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { Bell, Loader2, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { ClassroomContent } from '../types/classroom.types';
+import { classroomApi } from '../services/classroomApi';
+import { Button } from '@/components/marketing_ui/button';
 
 interface AnnouncementCardProps {
   announcement: ClassroomContent;
@@ -8,9 +12,13 @@ interface AnnouncementCardProps {
     name: string;
     profilePicture?: string;
   };
+  userRole?: 'faculty' | 'student';
+  classroomId?: string;
 }
 
-export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({ announcement, teacher }) => {
+export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({ announcement, teacher, userRole, classroomId }) => {
+  const [isNotifying, setIsNotifying] = useState(false);
+  const [hasNotified, setHasNotified] = useState(false);
   const getInitials = (name?: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -20,8 +28,28 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({ announcement
     ? formatDistanceToNow(new Date(announcement.created_at), { addSuffix: true })
     : 'Just now';
 
+  const handleNotify = async () => {
+    if (!classroomId) return;
+    if (window.confirm("Send notification about this announcement to all students?")) {
+      setIsNotifying(true);
+      try {
+        await classroomApi.sendNotification(classroomId, {
+          title: "New Announcement",
+          message: announcement.title || "Check the stream for a new announcement.",
+          type: "announcement"
+        });
+        toast.success("Notification sent to students");
+        setHasNotified(true);
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || "Failed to send notification");
+      } finally {
+        setIsNotifying(false);
+      }
+    }
+  };
+
   return (
-    <div className="bg-white border border-gray-200 border-l-4 border-l-indigo-500 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 text-left">
+    <div className="bg-white border border-gray-200 border-l-4 border-l-indigo-500 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 text-left relative group">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         {teacher?.profilePicture ? (
@@ -49,6 +77,28 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({ announcement
         <div className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed">
           {announcement.message || announcement.description || ''}
         </div>
+        
+        {/* Faculty Controls */}
+        {userRole === 'faculty' && classroomId && (
+          <div className="mt-4 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNotify}
+              disabled={isNotifying || hasNotified}
+              className="text-xs h-8 px-3 flex items-center gap-1.5"
+            >
+              {isNotifying ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : hasNotified ? (
+                <CheckCircle2 size={14} className="text-green-500" />
+              ) : (
+                <Bell size={14} className="text-gray-500" />
+              )}
+              {isNotifying ? 'Sending...' : hasNotified ? 'Notified' : 'Notify Students'}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

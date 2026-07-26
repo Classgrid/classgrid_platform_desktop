@@ -1,4 +1,4 @@
-import { sendEmail } from "../brevo.service.js";
+import { sendEmail } from "../aws-ses.service.js";
 
 /**
  * admission-notification.service.js — Unified Admission Notification Dispatcher
