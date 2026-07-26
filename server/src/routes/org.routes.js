@@ -13,8 +13,61 @@ import { getOrgDashboardMetrics } from '../controllers/org-dashboard.controller.
 import { getMyOrganizationConfig, getOrganizationUsageSummary, getOrganizationBilling } from "../controllers/org-configuration.controller.js";
 import { getOrgAdminBillingDashboard, createSaasInvoiceOrder, verifySaasInvoicePayment } from '../controllers/admin-analytics.controller.js';
 import redis from '../config/redis.js';
-import { getDeptAdminInviteEmailHtml } from '../services/email-templates.service.js';
+import { getDeptAdminInviteEmailHtml, getErpRoleInvitationHtml, getErpRoleRequestAdminHtml, getErpRoleApprovedHtml, getErpRoleInstantlyGrantedHtml, getErpRoleRejectedHtml } from '../services/email-templates.service.js';
 import { sendEmail } from '../services/brevo.service.js';
+import crypto from 'crypto';
+
+const ERP_ROLE_LABELS = {
+    admission_head: "Admissions Department Head",
+    fee_manager: "Fees & Accounts Manager",
+    exam_controller: "Examination Controller",
+    library_manager: "Library Manager",
+    hod: "Head of Department (HOD)",
+    tpo_officer: "Training & Placement Officer",
+    transport_manager: "Transport Manager",
+    coordinator: "Academic Coordinator",
+    counselor: "Student Counselor",
+    faculty: "Faculty Member",
+    teacher: "Faculty Member",
+    principal: "Principal",
+    vice_principal: "Vice Principal",
+    admission_verifier: "Admissions Verifier",
+    admission_counselor: "Admissions Counselor",
+    admission_clerk: "Admissions Clerk",
+};
+
+const ERP_DASHBOARD_PATHS = {
+    org_admin: "/org/admin/dashboard",
+    library_manager: "/dept/library/dashboard",
+    hod: "/org/admin/dashboard",
+    principal: "/org/admin/dashboard",
+    vice_principal: "/org/admin/dashboard",
+    exam_controller: "/dept/exams/dashboard",
+    fee_manager: "/dept/fees/dashboard",
+    admission_head: "/dept/admissions/dashboard",
+    admission_verifier: "/dept/admissions/dashboard",
+    admission_counselor: "/dept/admissions/dashboard",
+    admission_clerk: "/dept/admissions/dashboard",
+    tpo_officer: "/org/admin/dashboard",
+    transport_manager: "/dept/transport/dashboard",
+    counselor: "/org/admin/dashboard",
+    coordinator: "/org/admin/dashboard",
+    faculty: "/work",
+    teacher: "/work",
+    student: "/student/work",
+};
+
+function getOrgFrontendUrl(req, org) {
+    return req.get('origin')
+        || (org?.custom_domain ? `https://${org.custom_domain}` : null)
+        || (org?.subdomain ? `https://${org.subdomain}.classgrid.in` : null)
+        || process.env.FRONTEND_URL?.trim()
+        || 'https://app.classgrid.in';
+}
+
+function formatExpiry(ms) {
+    return new Date(Date.now() + ms).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Kolkata' });
+}
 
 import {
     getAdmissionTrack,
@@ -349,11 +402,12 @@ router.post("/invite-staff", isAuthenticated, requireRole("org_admin"), async (r
             metadata: { role: newUser.role, email: newUser.email },
         });
 
-        // Generate 24-hour activation token and send invitation email
+        // Generate 7-hour single-use activation token
         const activationToken = crypto.randomBytes(32).toString('hex');
-        const activationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        const activationExpiry = new Date(Date.now() + 7 * 60 * 60 * 1000); // 7 hours — single-use
         newUser.activationToken = activationToken;
         newUser.activationTokenExpiry = activationExpiry;
+        newUser.activationUsedAt = null; // Ensure single-use tracking is clear
         await newUser.save();
 
         const org = await Organization.findById(orgId).select('name subdomain custom_domain').lean();
@@ -368,16 +422,18 @@ router.post("/invite-staff", isAuthenticated, requireRole("org_admin"), async (r
 
         const activationLink = `${frontendUrl}/activate?token=${activationToken}`;
 
+        // Email 1: Role Invitation (getErpRoleInvitationHtml)
         try {
+            const roleLabel = ERP_ROLE_LABELS[newUser.role] || newUser.role;
             await sendEmail({
                 to: newUser.email,
-                subject: `You've been invited to join ${org?.name || 'your organization'} on Classgrid`,
-                html: getDeptAdminInviteEmailHtml(
+                subject: `You've been assigned ${roleLabel} at ${org?.name || 'your organization'}`,
+                html: getErpRoleInvitationHtml(
                     newUser.name,
+                    roleLabel,
                     org?.name || 'Your Organization',
-                    newUser.role,
-                    req.user.name || 'Admin',
-                    activationLink
+                    activationLink,
+                    formatExpiry(24 * 60 * 60 * 1000)
                 ),
             });
         } catch (emailErr) {
@@ -433,9 +489,28 @@ router.post("/request-role", isAuthenticated, async (req, res) => {
                     targetUser.additional_roles.push(role);
                     await targetUser.save();
                 }
+
+                // Email 4: Instantly Granted (getErpRoleInstantlyGrantedHtml)
+                try {
+                    const roleLabel = ERP_ROLE_LABELS[role] || role;
+                    const frontendUrl = getOrgFrontendUrl(req, org);
+                    const dashboardPath = ERP_DASHBOARD_PATHS[role] || '/work';
+                    await sendEmail({
+                        to: targetUser.email,
+                        subject: `Security Notice: ${roleLabel} privileges granted at ${org.name}`,
+                        html: getErpRoleInstantlyGrantedHtml(
+                            targetUser.name,
+                            roleLabel,
+                            org.name,
+                            req.user.name || 'Organization Admin',
+                            new Date().toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Kolkata' }),
+                            `${frontendUrl}${dashboardPath}`
+                        ),
+                    });
+                } catch (emailErr) {
+                    console.warn('[Request Role] Instant grant email failed:', emailErr.message);
+                }
             } else {
-                // Shell account creation logic could go here if needed, 
-                // but for now we just fail if user doesn't exist
                 return res.status(404).json({ error: "User with this email not found. They must sign up first." });
             }
             
@@ -445,6 +520,18 @@ router.post("/request-role", isAuthenticated, async (req, res) => {
         // 4. Normal User Request (Self-serve)
         let targetUser = await User.findOne({ email: req.user.email });
         if (!targetUser) return res.status(404).json({ error: "User not found." });
+
+        // Block if user already holds this role
+        const alreadyHasRole = targetUser.role === role || (targetUser.additional_roles || []).includes(role);
+        if (alreadyHasRole) {
+            return res.status(400).json({ error: "You already have this role." });
+        }
+
+        // Self-serve users must belong to the same org (or have no org yet)
+        if (targetUser.organization_id && targetUser.organization_id.toString() !== org._id.toString()) {
+            return res.status(403).json({ error: "This Tenant ID does not match your organization." });
+        }
+
 
         const existingReq = await RoleRequest.findOne({ 
             user_id: targetUser._id, 
@@ -462,12 +549,34 @@ router.post("/request-role", isAuthenticated, async (req, res) => {
             organization_id: org._id,
             email: targetUser.email,
             role,
+            tenant_join_code: tenant_join_code, // Audit trail
             status: "pending"
         });
         
-        // TODO: Send Email to Admin (Optional)
+        // Email 2: Notify Org Admin about the pending request (getErpRoleRequestAdminHtml)
+        try {
+            const orgAdmin = await User.findOne({ organization_id: org._id, role: 'org_admin' }).select('name email').lean();
+            if (orgAdmin) {
+                const roleLabel = ERP_ROLE_LABELS[role] || role;
+                const frontendUrl = getOrgFrontendUrl(req, org);
+                await sendEmail({
+                    to: orgAdmin.email,
+                    subject: `Access Request: ${targetUser.name} wants ${roleLabel} at ${org.name}`,
+                    html: getErpRoleRequestAdminHtml(
+                        orgAdmin.name,
+                        targetUser.name,
+                        targetUser.email,
+                        roleLabel,
+                        org.name,
+                        new Date().toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Kolkata' }),
+                        `${frontendUrl}/org/admin/dashboard`
+                    ),
+                });
+            }
+        } catch (emailErr) {
+            console.warn('[Request Role] Admin notification email failed:', emailErr.message);
+        }
 
-        
         res.status(200).json({ message: "Role request sent to Org Admin." });
     } catch (err) {
         console.error("[Request Role Error]:", err.message);
@@ -501,8 +610,28 @@ router.post("/accept-role-request/:requestId", isAuthenticated, requireRole("org
         request.processed_by = req.user._id;
         await request.save();
 
-        // TODO: Send Approval Email to targetUser
-        
+        // Email 3: Role Approved — link to the short welcome page (getErpRoleApprovedHtml)
+        try {
+            const org = await Organization.findById(req.user.organization_id).select('name subdomain custom_domain').lean();
+            const roleLabel = ERP_ROLE_LABELS[request.role] || request.role;
+            const frontendUrl = getOrgFrontendUrl(req, org);
+            // Send to /welcome-new-role?role=... so user sees the short welcome screen first
+            const welcomeLink = `${frontendUrl}/welcome-new-role?role=${encodeURIComponent(request.role)}`;
+            await sendEmail({
+                to: targetUser.email,
+                subject: `Access Approved: You are now ${roleLabel} at ${org?.name || 'your organization'}`,
+                html: getErpRoleApprovedHtml(
+                    targetUser.name,
+                    roleLabel,
+                    org?.name || 'Your Organization',
+                    welcomeLink
+                ),
+            });
+        } catch (emailErr) {
+            console.warn('[Accept Role] Approval email failed:', emailErr.message);
+        }
+
+
         res.json({ message: "Role request approved." });
     } catch (err) {
         console.error("[Accept Role Error]:", err.message);
@@ -517,14 +646,39 @@ router.post("/accept-role-request/:requestId", isAuthenticated, requireRole("org
 router.post("/reject-role-request/:requestId", isAuthenticated, requireRole("org_admin"), async (req, res) => {
     try {
         const { requestId } = req.params;
+        const { reason } = req.body; // Optional: admin can provide a reason
+
         const request = await RoleRequest.findOne({ _id: requestId, organization_id: req.user.organization_id });
-        
         if (!request) return res.status(404).json({ error: "Request not found." });
         if (request.status !== "pending") return res.status(400).json({ error: "Request is already processed." });
 
         request.status = "rejected";
         request.processed_by = req.user._id;
+        request.rejection_reason = reason || null;
         await request.save();
+
+        // Email: Notify requester their request was declined (getErpRoleRejectedHtml)
+        try {
+            const targetUser = await User.findById(request.user_id).select('name email').lean();
+            if (targetUser) {
+                const org = await Organization.findById(req.user.organization_id).select('name subdomain custom_domain').lean();
+                const roleLabel = ERP_ROLE_LABELS[request.role] || request.role;
+                const frontendUrl = getOrgFrontendUrl(req, org);
+                await sendEmail({
+                    to: targetUser.email,
+                    subject: `Access Request Declined: ${roleLabel} at ${org?.name || 'your organization'}`,
+                    html: getErpRoleRejectedHtml(
+                        targetUser.name,
+                        roleLabel,
+                        org?.name || 'Your Organization',
+                        reason || null,
+                        `${frontendUrl}/contact` // Contact link — user can reach admin
+                    ),
+                });
+            }
+        } catch (emailErr) {
+            console.warn('[Reject Role] Decline email failed:', emailErr.message);
+        }
 
         res.json({ message: "Role request rejected." });
     } catch (err) {
@@ -647,25 +801,27 @@ router.post("/members/:userId/resend", isAuthenticated, requireRole("org_admin")
         const user = await User.findOne({ _id: req.params.userId, organization_id: orgId, mustResetPassword: true });
         if (!user) return res.status(404).json({ message: 'Pending member not found.' });
 
-        // Regenerate activation token
+        // Regenerate 7-hour single-use activation token
         const activationToken = crypto.randomBytes(32).toString('hex');
         user.activationToken = activationToken;
-        user.activationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        user.activationTokenExpiry = new Date(Date.now() + 7 * 60 * 60 * 1000); // 7 hours
+        user.activationUsedAt = null; // Reset single-use tracker
         await user.save();
 
-        const org = await Organization.findById(orgId).select('name').lean();
-        const frontendUrl = process.env.FRONTEND_URL?.trim() || 'https://classgrid.in';
+        const org = await Organization.findById(orgId).select('name subdomain custom_domain').lean();
+        const frontendUrl = getOrgFrontendUrl(req, org);
         const activationLink = `${frontendUrl}/activate?token=${activationToken}`;
+        const roleLabel = ERP_ROLE_LABELS[user.role] || user.role;
 
         await sendEmail({
             to: user.email,
-            subject: `Reminder: You've been invited to join ${org?.name || 'your organization'} on Classgrid`,
-            html: getDeptAdminInviteEmailHtml(
+            subject: `Reminder: You've been assigned ${roleLabel} at ${org?.name || 'your organization'}`,
+            html: getErpRoleInvitationHtml(
                 user.name,
+                roleLabel,
                 org?.name || 'Your Organization',
-                user.role,
-                req.user.name || 'Admin',
-                activationLink
+                activationLink,
+                formatExpiry(24 * 60 * 60 * 1000)
             ),
         });
 
@@ -1243,8 +1399,30 @@ router.post("/change-role", isAuthenticated, requireRole("org_admin"), async (re
 
         if (!user) return res.status(404).json({ message: "User not found in your organization." });
 
+        // Email: Notify user about role change (getErpRoleInstantlyGrantedHtml)
+        try {
+            const org = await Organization.findById(orgId).select('name subdomain custom_domain').lean();
+            const roleLabel = ERP_ROLE_LABELS[newRole] || newRole;
+            const frontendUrl = getOrgFrontendUrl(req, org);
+            const dashboardPath = ERP_DASHBOARD_PATHS[newRole] || '/work';
+            await sendEmail({
+                to: user.email,
+                subject: `Security Notice: Your role has been updated to ${roleLabel} at ${org?.name || 'your organization'}`,
+                html: getErpRoleInstantlyGrantedHtml(
+                    user.name,
+                    roleLabel,
+                    org?.name || 'Your Organization',
+                    req.user.name || 'Organization Admin',
+                    new Date().toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Kolkata' }),
+                    `${frontendUrl}${dashboardPath}`
+                ),
+            });
+        } catch (emailErr) {
+            console.warn('[Change Role] Email notification failed:', emailErr.message);
+        }
+
         logAdminAction(req, "change_role", "user", userId, user.name, { newRole });
-        res.json({ message: `${user.name} is now a ${newRole}.`, user });
+        res.json({ message: `${user.name} is now a ${ERP_ROLE_LABELS[newRole] || newRole}.`, user });
     } catch (err) {
         console.error("[Change Role] Error:", err.message);
         res.status(500).json({ message: "Server error" });
@@ -1308,18 +1486,32 @@ router.post("/resend-invite", isAuthenticated, requireRole("org_admin"), async (
         if (!orgId) return res.status(400).json({ message: "No organization bound." });
 
         const { userId } = req.body;
-        const user = await User.findOne({ _id: userId, organization_id: orgId, role: "faculty" });
-        if (!user) return res.status(404).json({ message: "Faculty not found in your organization." });
+        const user = await User.findOne({ _id: userId, organization_id: orgId });
+        if (!user) return res.status(404).json({ message: "Member not found in your organization." });
 
-        // Import brevo service dynamically for sending invitation email
-        try {
-            const { sendFacultyInviteEmail } = await import("../services/brevo.service.js");
-            const org = await Organization.findById(orgId).select("name").lean();
-            await sendFacultyInviteEmail(user.email, user.name, org?.name || "Your Organization", req.user.name);
-        } catch (emailErr) {
-            console.warn("[Resend Invite] Email service error:", emailErr.message);
-            return res.status(500).json({ message: "Failed to send invitation email. Please try again." });
-        }
+        // Regenerate 7-hour single-use activation token
+        const activationToken = crypto.randomBytes(32).toString('hex');
+        user.activationToken = activationToken;
+        user.activationTokenExpiry = new Date(Date.now() + 7 * 60 * 60 * 1000); // 7 hours
+        user.activationUsedAt = null; // Reset single-use tracker
+        await user.save();
+
+        const org = await Organization.findById(orgId).select('name subdomain custom_domain').lean();
+        const frontendUrl = getOrgFrontendUrl(req, org);
+        const activationLink = `${frontendUrl}/activate?token=${activationToken}`;
+        const roleLabel = ERP_ROLE_LABELS[user.role] || user.role;
+
+        await sendEmail({
+            to: user.email,
+            subject: `Reminder: You've been assigned ${roleLabel} at ${org?.name || 'your organization'}`,
+            html: getErpRoleInvitationHtml(
+                user.name,
+                roleLabel,
+                org?.name || 'Your Organization',
+                activationLink,
+                formatExpiry(24 * 60 * 60 * 1000)
+            ),
+        });
 
         logAdminAction(req, "resend_invite", "user", userId, user.name, {});
         res.json({ message: `Invitation resent to ${user.email}.` });

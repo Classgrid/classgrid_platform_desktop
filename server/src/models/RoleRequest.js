@@ -30,6 +30,14 @@ const roleRequestSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+    rejection_reason: {
+      type: String,
+      default: null,
+    },
+    tenant_join_code: {
+      type: String,
+      default: null, // The code used when requesting, for audit trail
+    },
   },
   {
     timestamps: true,

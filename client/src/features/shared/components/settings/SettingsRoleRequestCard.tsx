@@ -1,42 +1,47 @@
 import React, { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ShieldCheck, Send } from "lucide-react";
+import { ShieldCheck, Send, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { useOrgRoles } from "@/features/org-admin/queries/useOrgAdminMembers";
-import { useUserProfile } from "@/features/shared/queries/useUserProfile";
+import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 import { apiClient as api } from "@/lib/apiClient";
+import { filterAvailableRoles } from "@/lib/dashboardRoleMap";
 
 export function SettingsRoleRequestCard() {
   const qc = useQueryClient();
-  const { data: profile } = useUserProfile();
+  const { data: currentUser } = useCurrentUser();
   const { data: rolesData, isLoading: loadingRoles } = useOrgRoles();
-  
+
   const [tenantCode, setTenantCode] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const roles = rolesData?.roles || [];
-  const isAdmin = profile?.role === "org_admin";
-  const userEmail = profile?.email || "";
+  // All roles from backend
+  const allRoles: Array<{ value: string; label: string }> = rolesData?.roles ?? [];
+
+  // Filter out roles the user already holds
+  const mainRole = currentUser?.role ?? "";
+  const additionalRoles: string[] = currentUser?.additional_roles ?? [];
+  const availableRoles = filterAvailableRoles(allRoles, mainRole, additionalRoles);
+
+  const isAdmin = mainRole === "org_admin";
+  const userEmail = currentUser?.email ?? "";
+
+  // Roles already held — show as chips so user knows what they have
+  const heldRoles = [mainRole, ...additionalRoles].filter(Boolean);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!tenantCode.trim()) {
-      toast.error("Please enter the Tenant Join Code");
+      toast.error("Please enter the Tenant ID");
       return;
     }
-    
     if (!selectedRole) {
       toast.error("Please select a role to request");
-      return;
-    }
-
-    if (!email.trim() || !email.includes("@")) {
-      toast.error("Please enter a valid email address");
       return;
     }
 
@@ -45,23 +50,22 @@ export function SettingsRoleRequestCard() {
       const res = await api.post("/org/request-role", {
         email: userEmail,
         tenant_join_code: tenantCode.trim(),
-        role: selectedRole
+        role: selectedRole,
       });
-      
-      // If the user is an org_admin, the backend instantly assigns the role.
+
       if (res.data?.instant_approval) {
-        toast.success(`Role added successfully!`);
-        qc.invalidateQueries({ queryKey: ["currentUser"] });
-        qc.invalidateQueries({ queryKey: ["userProfile"] });
+        toast.success("Role added successfully!");
+        qc.invalidateQueries({ queryKey: ["current-user"] });
+        qc.invalidateQueries({ queryKey: ["orgAdmin", "roles"] });
       } else {
-        // Normal user -> Request goes to pending
         toast.success("Role request sent to your Org Admin for approval.");
       }
-      
+
       setTenantCode("");
       setSelectedRole("");
     } catch (err: any) {
-      toast.error(err.response?.data?.error || "Failed to process role request.");
+      const msg = err.response?.data?.error || err.response?.data?.message || "Failed to process role request.";
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -75,15 +79,33 @@ export function SettingsRoleRequestCard() {
           {isAdmin ? "Add a Role" : "Request a Role"}
         </h3>
         <p className="text-sm text-muted-foreground">
-          {isAdmin 
-            ? "Enter an email and your organization's Tenant ID to add a role."
-            : "Need access to a specific dashboard? Enter your email and organization's Tenant ID to request a role."}
+          {isAdmin
+            ? "Enter your organization's Tenant ID to add an additional role to your account."
+            : "Need access to a specific dashboard? Enter your organization's Tenant ID and select a role to request."}
         </p>
       </div>
 
+      {/* Current roles */}
+      {heldRoles.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Your current roles</p>
+          <div className="flex flex-wrap gap-2">
+            {heldRoles.map((r) => (
+              <span
+                key={r}
+                className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/20 rounded-full px-3 py-1 font-medium"
+              >
+                <CheckCircle2 className="h-3 w-3" />
+                {r.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Email Address */}
+          {/* Email — read only */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Email Address</label>
             <Input
@@ -95,7 +117,7 @@ export function SettingsRoleRequestCard() {
             />
           </div>
 
-          {/* Tenant Join Code */}
+          {/* Tenant ID */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Tenant ID</label>
             <Input
@@ -109,25 +131,35 @@ export function SettingsRoleRequestCard() {
             <p className="text-xs text-muted-foreground">Required for security verification.</p>
           </div>
 
-          {/* Role Selection */}
+          {/* Role — only shows roles user doesn't already have */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Role</label>
-            <ResponsiveSelect
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              disabled={loadingRoles}
-              required
-            >
-              <option value="">Select a role...</option>
-              {roles.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </ResponsiveSelect>
+            <label className="text-sm font-medium text-foreground">Role to Request</label>
+            {availableRoles.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic py-2">You already hold all available roles.</p>
+            ) : (
+              <ResponsiveSelect
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                disabled={loadingRoles}
+                required
+              >
+                <option value="">Select a role...</option>
+                {availableRoles.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </ResponsiveSelect>
+            )}
           </div>
         </div>
 
         <div className="flex justify-end pt-2">
-          <Button type="submit" disabled={isSubmitting} className="gap-2">
+          <Button
+            type="submit"
+            disabled={isSubmitting || availableRoles.length === 0}
+            className="gap-2"
+          >
             {isSubmitting ? (
               <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
             ) : (

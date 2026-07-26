@@ -116,12 +116,16 @@ const getFrontendDashboardTarget = (user) => {
     return DASHBOARD_TARGETS[user.role] || "/classroom";
 };
 
+const ACTIVATION_TOKEN_TTL_MS = 7 * 60 * 60 * 1000; // 7 hours
+const ACTIVATION_RATE_LIMIT_MAX = 5;               // max 5 attempts
+const ACTIVATION_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // per 15 minutes
+
 const generateActivationCredentials = () => {
     const rawToken = crypto.randomBytes(32).toString("hex");
     const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
     const activationCode = String(Math.floor(100000 + Math.random() * 900000));
     const activationCodeHash = crypto.createHash("sha256").update(activationCode).digest("hex");
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS);
 
     return {
         rawToken,
@@ -132,12 +136,13 @@ const generateActivationCredentials = () => {
     };
 };
 
-const findPendingOrgAdminByActivation = async ({ token, email, activationCode }) => {
+const findPendingUserByActivation = async ({ token, email, activationCode }) => {
     if (token) {
         const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
         return User.findOne({
             activationToken: hashedToken,
-            activationTokenExpires: { $gt: new Date() }
+            activationTokenExpires: { $gt: new Date() },
+            activationUsedAt: null, // Single-use: reject if already consumed
         }).select("+password");
     }
 
@@ -146,12 +151,16 @@ const findPendingOrgAdminByActivation = async ({ token, email, activationCode })
         return User.findOne({
             email: String(email).toLowerCase().trim(),
             activationCodeHash,
-            activationCodeExpires: { $gt: new Date() }
+            activationCodeExpires: { $gt: new Date() },
+            activationUsedAt: null, // Single-use: reject if already consumed
         }).select("+password");
     }
 
     return null;
 };
+
+// Also keep the old name as alias for backward compat
+const findPendingOrgAdminByActivation = findPendingUserByActivation;
 
 // 🔒 In-memory rate limiter for "no account" emails (max 1 per 15 min per email)
 const noAccountEmailCooldown = new Map();
@@ -492,14 +501,31 @@ export const validateActivationToken = async (req, res) => {
             return res.status(400).json({ message: "Provide either a token or email + activationCode." });
         }
 
-        const user = await findPendingOrgAdminByActivation({ token, email, activationCode });
+        // Find user by token first (before rate-limit check, since we need the user object)
+        const user = await findPendingUserByActivation({ token, email, activationCode });
 
         if (!user) {
+            // Check if token was already used (single-use violation)
+            if (token) {
+                const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+                const usedUser = await User.findOne({ activationToken: hashedToken }).select("activationUsedAt activationTokenExpires");
+                if (usedUser?.activationUsedAt) {
+                    return res.status(410).json({ message: "This activation link has already been used. Please sign in instead." });
+                }
+                if (usedUser && usedUser.activationTokenExpires && usedUser.activationTokenExpires < new Date()) {
+                    return res.status(410).json({ message: "This activation link has expired. Please contact your admin to resend the invitation." });
+                }
+            }
             return res.status(400).json({ message: "This activation credential is invalid or has expired." });
         }
 
-        if (user.role !== "org_admin") {
-            return res.status(403).json({ message: "This activation link is not valid for your account type." });
+        // 🔒 Rate limit: max 5 validation attempts per 15 min window
+        const now = Date.now();
+        if (user.activationAttemptsExpiresAt && user.activationAttemptsExpiresAt > now) {
+            if ((user.activationAttempts || 0) >= ACTIVATION_RATE_LIMIT_MAX) {
+                const minutesLeft = Math.ceil((user.activationAttemptsExpiresAt - now) / 60000);
+                return res.status(429).json({ message: `Too many activation attempts. Please try again in ${minutesLeft} minute(s).` });
+            }
         }
 
         if (!user.mustResetPassword) {
@@ -523,25 +549,50 @@ export const activateAdmin = async (req, res) => {
         if ((!token && !(email && activationCode)) || !password) {
             return res.status(400).json({ message: "Provide password plus either token or email + activationCode." });
         }
-        if (password.length < 8) {
-            return res.status(400).json({ message: "Password must be at least 8 characters." });
+
+        const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+        if (!strongPassword.test(password)) {
+            return res.status(400).json({ message: "Password must be at least 8 characters and include uppercase, lowercase, number, and special character." });
         }
 
-        const user = await findPendingOrgAdminByActivation({ token, email, activationCode });
+        // --- 1. Lookup user by token ---
+        const user = await findPendingUserByActivation({ token, email, activationCode });
 
         if (!user) {
+            // Detect specific failure reason for better UX
+            if (token) {
+                const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+                const staleUser = await User.findOne({ activationToken: hashedToken }).select("activationUsedAt activationTokenExpires activationAttempts activationAttemptsExpiresAt");
+                if (staleUser?.activationUsedAt) {
+                    return res.status(410).json({ message: "This activation link has already been used. Your account is active — please sign in." });
+                }
+                if (staleUser && staleUser.activationTokenExpires < new Date()) {
+                    return res.status(410).json({ message: "This activation link has expired (links are valid for 7 hours). Please ask your admin to resend the invitation." });
+                }
+            }
             return res.status(400).json({ message: "This activation credential is invalid or has expired. Please request a new one." });
         }
 
-        if (user.role !== "org_admin") {
-            return res.status(403).json({ message: "This activation link is not valid for your account type." });
+        // --- 2. Rate Limit: max 5 attempts per 15-minute window ---
+        const now = Date.now();
+        if (user.activationAttemptsExpiresAt && user.activationAttemptsExpiresAt > now) {
+            if ((user.activationAttempts || 0) >= ACTIVATION_RATE_LIMIT_MAX) {
+                const minutesLeft = Math.ceil((user.activationAttemptsExpiresAt - now) / 60000);
+                return res.status(429).json({ message: `Too many activation attempts. Please wait ${minutesLeft} minute(s) before trying again.` });
+            }
+            user.activationAttempts = (user.activationAttempts || 0) + 1;
+        } else {
+            // Start fresh 15-min window
+            user.activationAttempts = 1;
+            user.activationAttemptsExpiresAt = new Date(now + ACTIVATION_RATE_LIMIT_WINDOW_MS);
         }
 
+        // --- 3. Already activated? ---
         if (!user.mustResetPassword) {
             return res.status(400).json({ message: "This account has already been activated. Please sign in." });
         }
 
-        // Set password, mark activated, clear token (single-use)
+        // --- 4. Set password, mark single-use consumed, clear token ---
         user.password = await bcrypt.hash(password, 10);
         user.mustResetPassword = false;
         user.isEmailVerified = true;
@@ -549,6 +600,9 @@ export const activateAdmin = async (req, res) => {
         user.activationTokenExpires = null;
         user.activationCodeHash = null;
         user.activationCodeExpires = null;
+        user.activationUsedAt = new Date(); // 🔒 Single-use: prevent re-use
+        user.activationAttempts = 0;        // Reset rate limit on success
+        user.activationAttemptsExpiresAt = null;
         if (!user.linkedProviders) user.linkedProviders = [];
         if (!user.linkedProviders.includes("manual")) user.linkedProviders.push("manual");
         user.authProvider = "manual";
@@ -567,24 +621,23 @@ export const activateAdmin = async (req, res) => {
                 userId: user._id,
                 eventType: "org_admin_activated",
                 stage: "activated",
-                actorRole: "org_admin",
+                actorRole: user.role,
                 metadata: { mode: token ? "link" : "code" },
             });
         }
 
-        // Send activated confirmation email
-        const { getOrgAdminActivatedHtml, getOrgAdminActivatedPlainText } = await import("../services/email-templates.service.js");
-        const frontendUrl = getFrontendUrl();
-        const org = user.organization_id
-            ? await Organization.findById(user.organization_id).select("name").lean()
-            : null;
-        const orgNameFormatted = org?.name
-            ? encodeURIComponent(org.name.replace(/\s+/g, "-").toLowerCase())
-            : "dashboard";
-        const dashboardLink = `${frontendUrl}/org/${orgNameFormatted}/admin`;
-        const adminLoginLink = `${frontendUrl}/admin/login`;
-
+        // --- 5. Send confirmation email ---
         try {
+            const { getOrgAdminActivatedHtml, getOrgAdminActivatedPlainText } = await import("../services/email-templates.service.js");
+            const frontendUrl = getFrontendUrl();
+            const org = user.organization_id
+                ? await Organization.findById(user.organization_id).select("name").lean()
+                : null;
+            const orgNameFormatted = org?.name
+                ? encodeURIComponent(org.name.replace(/\s+/g, "-").toLowerCase())
+                : "dashboard";
+            const dashboardLink = `${frontendUrl}/org/${orgNameFormatted}/admin`;
+            const adminLoginLink = `${frontendUrl}/admin/login`;
             await sendEmail({
                 to: user.email,
                 subject: "Your Classgrid Admin Account is Active",
@@ -595,13 +648,17 @@ export const activateAdmin = async (req, res) => {
             console.error("Activation email send error (non-critical):", emailErr.message);
         }
 
-        // Auto login — generate JWT exactly like normal login does
+        // --- 6. Auto login ---
         const jwtToken = generateToken(user, req);
         setTokenCookie(res, jwtToken, req);
+
+        // --- 7. Determine redirect based on role ---
+        const dashboardTarget = getFrontendDashboardTarget(user);
 
         res.status(200).json({
             message: "Account activated successfully",
             token: jwtToken,
+            redirectTo: dashboardTarget,
             user: {
                 id: user._id,
                 name: user.name,
@@ -610,7 +667,6 @@ export const activateAdmin = async (req, res) => {
                 profilePicture: user.profilePicture || "",
                 photoURL: user.profilePicture || "",
                 organization_id: user.organization_id || null,
-                organization: org ? { name: org.name } : null,
                 authProvider: "manual",
             }
         });

@@ -278,11 +278,14 @@ const userSchema = new mongoose.Schema(
     resetPasswordToken: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },
 
-    // Org Admin Activation Token (secure single-use, expires 24h)
+    // Org Admin Activation Token (secure single-use, expires 7h)
     activationToken: { type: String, default: null },
     activationTokenExpires: { type: Date, default: null },
     activationCodeHash: { type: String, default: null },
     activationCodeExpires: { type: Date, default: null },
+    activationUsedAt: { type: Date, default: null }, // Single-use: set when token is consumed
+    activationAttempts: { type: Number, default: 0 }, // Rate limiting: failed activation attempts
+    activationAttemptsExpiresAt: { type: Date, default: null }, // Rate limit window expiry
 
     // Force password reset on next login (set for admin-created faculty accounts)
     mustResetPassword: {

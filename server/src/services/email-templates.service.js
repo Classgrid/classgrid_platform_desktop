@@ -2581,3 +2581,15 @@ export const getErpRoleInstantlyGrantedHtml = (recipientName, roleTitle, orgName
   return baseTemplate({ content, title: "Administrative Privileges Updated" });
 };
 
+// ------------- ERP: ROLE REQUEST DECLINED (sent to requester when admin rejects) -------------
+export const getErpRoleRejectedHtml = (recipientName, roleTitle, orgName, rejectionReason, contactLink) => {
+  const content = `<h2>Access Request Not Approved</h2>
+  <p>Dear ${recipientName},</p>
+  <p>Your request for <strong>${roleTitle}</strong> access at <strong>${orgName}</strong> has been reviewed and was <strong>not approved</strong> at this time.</p>
+  ${rejectionReason ? `<div class="box" style="border-left: 3px solid #dc2626;"><p style="margin-bottom: 8px; font-weight: 600; color: #111111;">Reason from Administrator</p><p style="margin-bottom: 0;">${rejectionReason}</p></div>` : ''}
+  <p>If you believe this decision was made in error, or if you have questions, please contact your Organization Administrator directly.</p>
+  ${contactLink ? `<a href="${contactLink}" class="btn">Contact Administrator</a>` : ''}
+  <p>You can continue using Classgrid with your current role and access level.</p>
+  <p>If you did not submit this request, please contact support immediately.</p>`;
+  return baseTemplate({ content, title: "Access Request Not Approved" });
+};

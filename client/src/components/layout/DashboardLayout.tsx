@@ -1,15 +1,17 @@
-import React from "react";
-import { useLocation } from "react-router-dom";
+import React, { useState, useRef, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/marketing_ui/sidebar";
 import { TooltipProvider } from "@/components/marketing_ui/tooltip";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink } from "@/components/marketing_ui/breadcrumb";
 import { Separator } from "@/components/marketing_ui/separator";
 import { Link } from "react-router-dom";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
+import { ChevronDown, LayoutDashboard } from "lucide-react";
 
 import { AppSidebar } from "./AppSidebar";
 import { resolveDashboardPageTitle } from "@/config/sidebar";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
+import { getAccessibleDashboards } from "@/lib/dashboardRoleMap";
 
 import type { DashboardRole } from "@/layouts/types";
 
@@ -80,6 +82,58 @@ interface DashboardLayoutProps {
   };
 }
 
+// Dashboard Switcher — shows in header when user has access to multiple dashboards
+function DashboardSwitcher({ mainRole, additionalRoles }: { mainRole: string; additionalRoles: string[] }) {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const dashboards = getAccessibleDashboards(mainRole, additionalRoles);
+
+  // Only render if user has 2+ distinct dashboards
+  if (dashboards.length < 2) return null;
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 text-sm font-medium text-foreground bg-muted hover:bg-muted/80 border border-border rounded-lg px-3 py-1.5 transition-colors"
+      >
+        <LayoutDashboard className="h-3.5 w-3.5 text-primary" />
+        Switch Dashboard
+        <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[220px] bg-popover border border-border rounded-xl shadow-lg overflow-hidden">
+          {dashboards.map((dash) => (
+            <button
+              key={dash.key}
+              onClick={() => {
+                navigate(dash.path);
+                setOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-muted transition-colors"
+            >
+              <span className="text-base">{dash.icon}</span>
+              <span className="font-medium text-foreground">{dash.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DashboardLayout({ children, role, user }: DashboardLayoutProps) {
   const location = useLocation();
   const isFullBleed = location.pathname.includes("/chat") || location.pathname.includes("/website") || location.pathname.includes("/storage/files");
@@ -89,54 +143,58 @@ export function DashboardLayout({ children, role, user }: DashboardLayoutProps) 
   const { data: currentUser } = useCurrentUser();
   const sidebarUser = user ?? currentUser ?? undefined;
 
+  const mainRole: string = currentUser?.role ?? "";
+  const additionalRoles: string[] = currentUser?.additional_roles ?? [];
+
   return (
     <TooltipProvider>
       <SidebarProvider>
         <AppSidebar role={dashboardRole} user={sidebarUser} />
-        {/* Make the inset background match the sidebar so it's a seamless black canvas */}
         <SidebarInset className="bg-background m-0 p-0 flex flex-col h-screen overflow-hidden">
-          {/* This is the actual flush right pane */}
-          <div className={`flex-1 min-h-0 flex flex-col overflow-hidden relative ${(isFullBleed || isNoPadding) ? 'bg-background border-l border-border' : 'bg-card border-l border-border'}`}>
+          <div className={`flex-1 min-h-0 flex flex-col overflow-hidden relative ${(isFullBleed || isNoPadding) ? "bg-background border-l border-border" : "bg-card border-l border-border"}`}>
             {!isFullBleed && showBreadcrumbs && (
-              <header className="flex h-14 shrink-0 items-center justify-center border-b border-border/50 px-4 bg-background/80 backdrop-blur-md sticky top-0 z-50 relative">
-                <div className="absolute left-4 flex items-center gap-2">
+              <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/50 px-4 bg-background/80 backdrop-blur-md sticky top-0 z-50">
+                {/* Left: trigger + breadcrumb */}
+                <div className="flex items-center gap-2 min-w-0">
                   <SidebarTrigger />
                   <Separator orientation="vertical" className="h-4" />
+                  <Breadcrumb>
+                    <BreadcrumbList>
+                      {items.length > 0 ? (
+                        items.map((item, index) => (
+                          <React.Fragment key={index}>
+                            <BreadcrumbItem>
+                              {item.onClick ? (
+                                <BreadcrumbLink asChild>
+                                  <div role="button" tabIndex={0} onClick={item.onClick} className="hover:text-foreground cursor-pointer bg-transparent border-none p-0 inline-flex">
+                                    {item.label}
+                                  </div>
+                                </BreadcrumbLink>
+                              ) : item.href ? (
+                                <BreadcrumbLink asChild>
+                                  <Link to={item.href}>{item.label}</Link>
+                                </BreadcrumbLink>
+                              ) : (
+                                <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                              )}
+                            </BreadcrumbItem>
+                            {index < items.length - 1 && <BreadcrumbSeparator />}
+                          </React.Fragment>
+                        ))
+                      ) : (
+                        <BreadcrumbItem>
+                          <BreadcrumbPage>{resolveDashboardPageTitle(location.pathname)}</BreadcrumbPage>
+                        </BreadcrumbItem>
+                      )}
+                    </BreadcrumbList>
+                  </Breadcrumb>
                 </div>
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    {items.length > 0 ? (
-                      items.map((item, index) => (
-                        <React.Fragment key={index}>
-                          <BreadcrumbItem>
-                            {item.onClick ? (
-                               <BreadcrumbLink asChild>
-                                 <div role="button" tabIndex={0} onClick={item.onClick} className="hover:text-foreground cursor-pointer bg-transparent border-none p-0 inline-flex">
-                                   {item.label}
-                                 </div>
-                               </BreadcrumbLink>
-                            ) : item.href ? (
-                               <BreadcrumbLink asChild>
-                                 <Link to={item.href}>{item.label}</Link>
-                               </BreadcrumbLink>
-                            ) : (
-                               <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                            )}
-                          </BreadcrumbItem>
-                          {index < items.length - 1 && <BreadcrumbSeparator />}
-                        </React.Fragment>
-                      ))
-                    ) : (
-                      <BreadcrumbItem>
-                        <BreadcrumbPage>{resolveDashboardPageTitle(location.pathname)}</BreadcrumbPage>
-                      </BreadcrumbItem>
-                    )}
-                  </BreadcrumbList>
-                </Breadcrumb>
+
+                {/* Right: Dashboard Switcher — only if user has multiple dashboards */}
+                <DashboardSwitcher mainRole={mainRole} additionalRoles={additionalRoles} />
               </header>
             )}
-            <main className={`flex-1 min-h-0 overflow-x-hidden bg-background ${isFullBleed ? 'overflow-y-hidden p-0 m-0 border-none flex flex-col' : isNoPadding ? 'p-0 m-0 border-none flex flex-col' : 'overflow-y-auto p-4 lg:p-6'}`}>
-
+            <main className={`flex-1 min-h-0 overflow-x-hidden bg-background ${isFullBleed ? "overflow-y-hidden p-0 m-0 border-none flex flex-col" : isNoPadding ? "p-0 m-0 border-none flex flex-col" : "overflow-y-auto p-4 lg:p-6"}`}>
               {children}
             </main>
           </div>

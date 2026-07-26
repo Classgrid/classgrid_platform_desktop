@@ -75,6 +75,7 @@ import { DiscoverClassroomsPage } from "@/features/classrooms/pages/DiscoverClas
 import { WebsiteCMSPage } from "@/features/website_cms/pages/WebsiteCMSPage";
 import { JoinRequestPage } from "@/features/chat/pages/JoinRequestPage";
 import { OnboardingWizardPage } from "@/features/auth/pages/OnboardingWizardPage";
+import NewRoleWelcomePage from "@/features/auth/pages/NewRoleWelcomePage";
 
 import { StudentHomePage } from "@/features/student/pages/StudentHomePage";
 import { StudentWorkPage } from "@/features/student/pages/StudentWorkPage";
@@ -193,6 +194,7 @@ export function AppRouter() {
       {/* TODO: Build ForgotPasswordPage */}
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/activate" element={<ResetPasswordPage />} />
+      <Route path="/welcome-new-role" element={<NewRoleWelcomePage />} />
       <Route path="/demo/globe" element={<GlobeDemoPage />} />
 
       {/* ── CANDIDATE PORTAL ROUTES ── */}
