@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Clock, User, Globe, Lock, Users, Calendar, Tags, History, Edit3, CheckCircle2 } from "lucide-react";
+import { Clock, User, Globe, Lock, Users, Calendar, Tags, History, Edit3, CheckCircle2, List } from "lucide-react";
 import { Note } from "../services/notesApi";
 import { cn } from "@/lib/utils";
 import { getTagColor } from "../utils/noteColors";
@@ -18,6 +18,7 @@ interface NoteViewerProps {
 
 export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) {
   const [showHistory, setShowHistory] = useState(false);
+  const [showTOC, setShowTOC] = useState(false);
   const { data: versions = [], isLoading: loadingVersions } = useNoteVersions(showHistory ? note._id : undefined);
 
   const VisibilityIcon = note.visibility === "Public" ? Globe : note.visibility === "Shared" ? Users : Lock;
@@ -47,11 +48,19 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
     })
     .filter(Boolean) as { level: number; text: string }[];
 
+  return (
+    <div className="flex w-full h-full overflow-hidden">
       <div className="flex-1 min-w-0 h-full overflow-y-auto bg-background relative">
         <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12 relative">
           
           {/* Header Actions */}
           <div className="flex flex-wrap justify-end gap-3 mb-6 pt-2">
+            {headings.length > 0 && (
+              <Button variant="outline" size="sm" onClick={() => setShowTOC(!showTOC)} className={showTOC ? "bg-accent" : ""}>
+                <List className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Contents</span>
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)} className={showHistory ? "bg-accent" : ""}>
               <History className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">History</span>
@@ -65,7 +74,7 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
           {/* Title Area - 100% width */}
           <div className="flex items-center gap-4 min-w-0 mb-8 w-full">
             <span className="text-4xl sm:text-5xl shrink-0">{note.icon || "📄"}</span>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground min-w-0 w-full" style={{ wordBreak: 'keep-all' }}>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground break-words min-w-0 w-full">
               {note.title}
             </h1>
           </div>
@@ -174,6 +183,35 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Table of Contents Sidebar (Overlay) */}
+      {showTOC && headings.length > 0 && (
+        <div className="absolute top-0 right-0 w-80 max-w-[calc(100vw-2rem)] border-l bg-card flex flex-col h-full z-50 shadow-2xl animate-in slide-in-from-right-8 duration-200">
+          <div className="p-4 border-b flex items-center justify-between bg-muted/30">
+            <h3 className="font-medium flex items-center gap-2 text-foreground">
+              <List className="w-4 h-4 text-muted-foreground" /> Table of Contents
+            </h3>
+            <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-background" onClick={() => setShowTOC(false)}>
+              <span className="text-lg">&times;</span>
+            </Button>
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto p-5">
+            <div className="flex flex-col gap-2.5 border-l-2 border-border/50">
+              {headings.map((h, i) => (
+                <a 
+                  key={i} 
+                  href={`#${h.text.toLowerCase().replace(/[^\w]+/g, '-')}`}
+                  onClick={() => setShowTOC(false)}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors truncate block"
+                  style={{ paddingLeft: `${(h.level - 1) * 0.75 + 0.5}rem` }}
+                >
+                  {h.text}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       )}

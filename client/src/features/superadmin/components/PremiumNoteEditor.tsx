@@ -86,7 +86,6 @@ export function PremiumNoteEditor({ content, onChange, placeholder = "Start writ
         <div className="w-px h-4 bg-border mx-1" />
         <div className="flex items-center gap-0.5 ml-2">
           <ToolbarButton icon={Link2} title="Link" onClick={() => insertMarkdown("[", "](url)")} />
-          <ToolbarButton icon={ImageIcon} title="Image" onClick={() => insertMarkdown("![alt text](", ")")} />
         </div>
       </div>
 

@@ -657,29 +657,6 @@ export function NotesPage() {
                     />
                   </div>
 
-                  <div className="space-y-1.5 min-w-[140px] flex-1">
-                    <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Visibility
-                    </label>
-                    <PremiumSelect
-                      value={editVisibility}
-                      onChange={setEditVisibility}
-                      options={VISIBILITY_OPTIONS}
-                      placeholder="Visibility"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5 min-w-[140px] flex-1">
-                    <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                      <Zap className="w-3 h-3" /> Status
-                    </label>
-                    <PremiumSelect
-                      value={editStatus}
-                      onChange={setEditStatus}
-                      options={STATUS_OPTIONS}
-                      placeholder="Status"
-                    />
-                  </div>
                 </div>
 
                 {/* ── Tags ── */}
