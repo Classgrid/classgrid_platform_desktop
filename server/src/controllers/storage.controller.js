@@ -677,37 +677,15 @@ export async function uploadFile(req, res) {
             throw new StorageRequestError(400, "No file was provided.");
         }
 
-        if (req.file.size > MAX_STORAGE_UPLOAD_SIZE_BYTES) {
-            throw new StorageRequestError(413, "File size exceeds the 2 GB limit.");
-        }
-
-        const prefix = normalizePrefix(req.query.prefix);
-        const fileName = normalizeUploadFileName(req.file.originalname);
-        const contentType = req.file.mimetype || "application/octet-stream";
-        key = `${prefix}${fileName}`;
-
-        if (req.file.size > MULTIPART_THRESHOLD_BYTES) {
-            await multipartUpload({
-                key,
-                filePath: req.file.path,
-                contentType,
-            });
-        } else {
-            await s3Client.send(new PutObjectCommand({
-                Bucket: BUCKET_NAME,
-                Key: key,
-                Body: fs.createReadStream(req.file.path),
-                ContentType: contentType,
-                ContentLength: req.file.size,
-                Metadata: {
-                    "created-at": new Date().toISOString()
-                }
-            }));
-        }
+        // With multer-s3, the file is already uploaded to S3 by the middleware.
+        // The final S3 key is available in req.file.key.
+        key = req.file.key;
+        const contentType = req.file.mimetype || req.file.contentType || "application/octet-stream";
 
         invalidateStorageAnalyticsCache();
         auditStorageAction(req, "upload", key);
         emitStorageUpdated("upload");
+        
         return sendSuccess(res, "File uploaded successfully.", {
             key,
             cdnUrl: buildCdnUrl(key),
@@ -716,17 +694,6 @@ export async function uploadFile(req, res) {
         });
     } catch (error) {
         return handleControllerError(req, res, "upload", error, key ? [key] : []);
-    } finally {
-        // Clean up the temporary file from the disk to prevent disk space exhaustion
-        if (req.file && req.file.path) {
-            try {
-                if (fs.existsSync(req.file.path)) {
-                    fs.unlinkSync(req.file.path);
-                }
-            } catch (err) {
-                console.error(`[Storage] Failed to delete temp file ${req.file.path}:`, err);
-            }
-        }
     }
 }
 

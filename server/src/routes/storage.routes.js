@@ -1,7 +1,8 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
 import multer from "multer";
-import os from "os";
+import multerS3 from "multer-s3";
+import { s3Client, BUCKET_NAME } from "../config/s3Client.js";
 import { isAuthenticated } from "../middleware/auth.middleware.js";
 import {
     MAX_STORAGE_UPLOAD_SIZE_BYTES,
@@ -49,7 +50,19 @@ function storageUserKey(req) {
 }
 
 const storageUpload = multer({
-    storage: multer.diskStorage({ dest: os.tmpdir() }),
+    storage: multerS3({
+        s3: s3Client,
+        bucket: BUCKET_NAME,
+        key: function (req, file, cb) {
+            const prefix = req.query.prefix || "";
+            // Keep spaces, allow the frontend sanitation to pass through, but handle any necessary prepending
+            cb(null, `${prefix}${file.originalname}`);
+        },
+        metadata: function (req, file, cb) {
+            cb(null, { "created-at": new Date().toISOString() });
+        },
+        contentType: multerS3.AUTO_CONTENT_TYPE,
+    }),
     limits: {
         fileSize: MAX_STORAGE_UPLOAD_SIZE_BYTES,
     },
