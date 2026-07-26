@@ -143,27 +143,6 @@ export function NoteViewer({ note, onEdit, onRestoreVersion }: NoteViewerProps) 
                 )}
               </div>
             </div>
-
-            {/* Table of Contents */}
-            {headings.length > 0 && (
-              <div className="hidden xl:block w-64 shrink-0">
-                <div className="sticky top-8 max-h-[calc(100vh-120px)] overflow-y-auto">
-                  <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Contents</h4>
-                  <div className="flex flex-col gap-2.5 border-l-2 border-border/50">
-                    {headings.map((h, i) => (
-                      <a 
-                        key={i} 
-                        href={`#${h.text.toLowerCase().replace(/[^\w]+/g, '-')}`}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors truncate block"
-                        style={{ paddingLeft: `${(h.level - 1) * 0.75 + 0.5}rem` }}
-                      >
-                        {h.text}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
