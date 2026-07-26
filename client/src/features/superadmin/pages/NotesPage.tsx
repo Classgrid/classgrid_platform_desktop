@@ -183,25 +183,27 @@ function PremiumSelect({
         </div>
       </SelectTrigger>
       <SelectContent>
-        {displayOptions.map((opt) => (
-          <SelectItem key={opt.value} value={opt.value} className="py-2.5 px-3">
-            <div className="flex items-center gap-3">
-              {opt.icon && <span className="shrink-0">{opt.icon}</span>}
-              <div className="flex flex-col">
-                <span className="font-medium text-sm leading-none">{opt.label}</span>
-                {opt.desc && <span className="text-xs text-muted-foreground mt-0.5">{opt.desc}</span>}
+        <div className="max-h-[220px] overflow-y-auto pr-1">
+          {displayOptions.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value} className="py-2.5 px-3">
+              <div className="flex items-center gap-3">
+                {opt.icon && <span className="shrink-0">{opt.icon}</span>}
+                <div className="flex flex-col">
+                  <span className="font-medium text-sm leading-none">{opt.label}</span>
+                  {opt.desc && <span className="text-xs text-muted-foreground mt-0.5">{opt.desc}</span>}
+                </div>
               </div>
-            </div>
-          </SelectItem>
-        ))}
-        {allowCustom && (
-          <SelectItem value="__custom__" className="py-2.5 px-3 text-emerald-600 dark:text-emerald-400 font-medium border-t rounded-none mt-1">
-            <div className="flex items-center gap-2">
-              <Plus className="w-3.5 h-3.5" />
-              <span>Custom category...</span>
-            </div>
-          </SelectItem>
-        )}
+            </SelectItem>
+          ))}
+          {allowCustom && (
+            <SelectItem value="__custom__" className="py-2.5 px-3 text-emerald-600 dark:text-emerald-400 font-medium border-t rounded-none mt-1">
+              <div className="flex items-center gap-2">
+                <Plus className="w-3.5 h-3.5" />
+                <span>Custom category...</span>
+              </div>
+            </SelectItem>
+          )}
+        </div>
       </SelectContent>
     </Select>
   );
@@ -274,15 +276,17 @@ function CategoryFilterDropdown({
         </SelectTrigger>
         
         <SelectContent>
-          <SelectItem value="all" className="font-semibold px-3 py-2 text-xs">
-            All Categories
-          </SelectItem>
-          <div className="h-px bg-border mx-2 my-1" />
-          {allOptions.map((cat) => (
-            <SelectItem key={cat} value={cat} className="px-3 py-2 text-xs">
-              {cat}
+          <div className="max-h-[220px] overflow-y-auto pr-1">
+            <SelectItem value="all" className="font-semibold px-3 py-2 text-xs">
+              All Categories
             </SelectItem>
-          ))}
+            <div className="h-px bg-border mx-2 my-1" />
+            {allOptions.map((cat) => (
+              <SelectItem key={cat} value={cat} className="px-3 py-2 text-xs">
+                {cat}
+              </SelectItem>
+            ))}
+          </div>
         </SelectContent>
       </Select>
     </div>
@@ -501,6 +505,13 @@ export function NotesPage() {
   const displayedNotes = filterMode === "Pinned" ? notes.filter((n) => n.isPinned) : notes;
   const allTags = Array.from(new Set(notes.flatMap((n) => n.tags)));
   const allCategories = Array.from(new Set(notes.map((n) => n.category).filter(Boolean)));
+  
+  const editorCategoryOptions = [
+    ...CATEGORY_PRESETS,
+    ...allCategories
+      .filter((c) => !CATEGORY_PRESETS.find((p) => p.value === c))
+      .map((c) => ({ value: c, label: c }))
+  ];
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-background border border-border rounded-lg cursor-pointer [&_*]:cursor-pointer">
@@ -793,7 +804,7 @@ export function NotesPage() {
                     <PremiumSelect
                       value={editCategory}
                       onChange={setEditCategory}
-                      options={CATEGORY_PRESETS}
+                      options={editorCategoryOptions}
                       placeholder="Select Category"
                       allowCustom={true}
                     />
