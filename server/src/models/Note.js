@@ -25,6 +25,25 @@ const noteSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true
+    },
+    category: {
+        type: String,
+        default: "General",
+        trim: true
+    },
+    icon: {
+        type: String,
+        default: "📄"
+    },
+    status: {
+        type: String,
+        enum: ["Draft", "Published", "Archived", "Deprecated"],
+        default: "Published"
+    },
+    visibility: {
+        type: String,
+        enum: ["Private", "Public", "Shared"],
+        default: "Private"
     }
 }, { timestamps: true });
 

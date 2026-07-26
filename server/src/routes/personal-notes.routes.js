@@ -5,7 +5,9 @@ import {
     createNote,
     updateNote,
     deleteNote,
-    togglePin
+    togglePin,
+    getNoteVersions,
+    getNoteStats
 } from "../controllers/personal-notes.controller.js";
 
 const router = express.Router();
@@ -24,6 +26,8 @@ function isSuperAdmin(req, res, next) {
 router.use(isAuthenticated, isSuperAdmin);
 
 router.get("/", getNotes);
+router.get("/stats", getNoteStats);
+router.get("/:id/versions", getNoteVersions);
 router.post("/", createNote);
 router.put("/:id", updateNote);
 router.delete("/:id", deleteNote);

@@ -8,6 +8,21 @@ export const useNotes = (params?: GetNotesParams) => {
   });
 };
 
+export const useNoteStats = () => {
+  return useQuery({
+    queryKey: ["superadmin-notes-stats"],
+    queryFn: () => notesApi.getStats(),
+  });
+};
+
+export const useNoteVersions = (noteId: string | undefined) => {
+  return useQuery({
+    queryKey: ["superadmin-notes-versions", noteId],
+    queryFn: () => notesApi.getVersions(noteId!),
+    enabled: !!noteId,
+  });
+};
+
 export const useCreateNote = () => {
   const queryClient = useQueryClient();
   

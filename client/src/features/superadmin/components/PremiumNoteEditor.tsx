@@ -1,0 +1,112 @@
+import React, { useRef, useEffect } from "react";
+import { Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, CheckSquare, Code, Image as ImageIcon, Link2, Quote, Table } from "lucide-react";
+import { Button } from "@/components/marketing_ui/button";
+
+interface PremiumNoteEditorProps {
+  content: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
+
+export function PremiumNoteEditor({ content, onChange, placeholder = "Start writing your note in Markdown..." }: PremiumNoteEditorProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.max(400, textareaRef.current.scrollHeight)}px`;
+    }
+  }, [content]);
+
+  const insertMarkdown = (prefix: string, suffix: string = "") => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selected = text.substring(start, end);
+
+    const before = text.substring(0, start);
+    const after = text.substring(end, text.length);
+
+    // If it's a block level prefix (like ## or - ), ensure it starts on a new line
+    let finalPrefix = prefix;
+    if (["#", "-", "1.", ">", "- [ ]"].some(p => prefix.trim().startsWith(p))) {
+      if (before.length > 0 && !before.endsWith('\n')) {
+        finalPrefix = '\n' + prefix;
+      }
+    }
+
+    const newText = before + finalPrefix + (selected || (suffix ? "" : "text")) + suffix + after;
+    onChange(newText);
+
+    // Restore focus and selection
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(
+        start + finalPrefix.length,
+        start + finalPrefix.length + (selected.length || (suffix ? 0 : 4))
+      );
+    }, 0);
+  };
+
+  const ToolbarButton = ({ icon: Icon, onClick, title }: { icon: any, onClick: () => void, title: string }) => (
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-muted" 
+      onClick={onClick}
+      title={title}
+    >
+      <Icon className="w-4 h-4" />
+    </Button>
+  );
+
+  return (
+    <div className="flex flex-col w-full h-full border rounded-xl overflow-hidden bg-card focus-within:ring-1 focus-within:ring-emerald-500/50 transition-shadow">
+      
+      {/* Markdown Toolbar */}
+      <div className="flex flex-wrap items-center gap-1 p-1.5 border-b bg-muted/30">
+        <div className="flex items-center gap-0.5 mr-2">
+          <ToolbarButton icon={Bold} title="Bold" onClick={() => insertMarkdown("**", "**")} />
+          <ToolbarButton icon={Italic} title="Italic" onClick={() => insertMarkdown("_", "_")} />
+        </div>
+        <div className="w-px h-4 bg-border mx-1" />
+        <div className="flex items-center gap-0.5 mx-2">
+          <ToolbarButton icon={Heading1} title="Heading 1" onClick={() => insertMarkdown("# ", "")} />
+          <ToolbarButton icon={Heading2} title="Heading 2" onClick={() => insertMarkdown("## ", "")} />
+          <ToolbarButton icon={Heading3} title="Heading 3" onClick={() => insertMarkdown("### ", "")} />
+        </div>
+        <div className="w-px h-4 bg-border mx-1" />
+        <div className="flex items-center gap-0.5 mx-2">
+          <ToolbarButton icon={List} title="Bullet List" onClick={() => insertMarkdown("- ", "")} />
+          <ToolbarButton icon={ListOrdered} title="Numbered List" onClick={() => insertMarkdown("1. ", "")} />
+          <ToolbarButton icon={CheckSquare} title="Checklist" onClick={() => insertMarkdown("- [ ] ", "")} />
+        </div>
+        <div className="w-px h-4 bg-border mx-1" />
+        <div className="flex items-center gap-0.5 mx-2">
+          <ToolbarButton icon={Quote} title="Quote" onClick={() => insertMarkdown("> ", "")} />
+          <ToolbarButton icon={Code} title="Code Block" onClick={() => insertMarkdown("```\n", "\n```")} />
+          <ToolbarButton icon={Table} title="Table" onClick={() => insertMarkdown("\n| Header 1 | Header 2 |\n| -------- | -------- |\n| Cell 1   | Cell 2   |\n", "")} />
+        </div>
+        <div className="w-px h-4 bg-border mx-1" />
+        <div className="flex items-center gap-0.5 ml-2">
+          <ToolbarButton icon={Link2} title="Link" onClick={() => insertMarkdown("[", "](url)")} />
+          <ToolbarButton icon={ImageIcon} title="Image" onClick={() => insertMarkdown("![alt text](", ")")} />
+        </div>
+      </div>
+
+      {/* Editor Area */}
+      <textarea
+        ref={textareaRef}
+        value={content}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full flex-1 p-6 bg-transparent resize-none outline-none font-mono text-sm leading-relaxed text-foreground/90 placeholder:text-muted-foreground/50"
+        spellCheck={false}
+      />
+    </div>
+  );
+}

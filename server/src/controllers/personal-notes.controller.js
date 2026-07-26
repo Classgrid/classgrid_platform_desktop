@@ -1,4 +1,5 @@
 import Note from "../models/Note.js";
+import NoteVersion from "../models/NoteVersion.js";
 
 // Utility for formatting error responses
 function buildErrorResponse(req, message) {
@@ -13,7 +14,7 @@ function buildErrorResponse(req, message) {
 
 export const getNotes = async (req, res) => {
     try {
-        const { date, tag, search } = req.query;
+        const { date, tag, search, category, visibility, status } = req.query;
         let query = { createdBy: req.user._id };
 
         // Filter by specific date
@@ -30,10 +31,10 @@ export const getNotes = async (req, res) => {
             };
         }
 
-        // Filter by tag
-        if (tag) {
-            query.tags = tag;
-        }
+        if (tag) query.tags = tag;
+        if (category) query.category = category;
+        if (visibility) query.visibility = visibility;
+        if (status) query.status = status;
 
         // Text search
         if (search) {
@@ -56,7 +57,7 @@ export const getNotes = async (req, res) => {
 
 export const createNote = async (req, res) => {
     try {
-        const { title, content, tags, isPinned } = req.body;
+        const { title, content, tags, isPinned, category, icon, status, visibility } = req.body;
 
         if (!title || !content) {
             return res.status(400).json(buildErrorResponse(req, "Title and content are required."));
@@ -71,6 +72,10 @@ export const createNote = async (req, res) => {
             textContent,
             tags: Array.isArray(tags) ? tags : [],
             isPinned: !!isPinned,
+            category: category || "General",
+            icon: icon || "📄",
+            status: status || "Published",
+            visibility: visibility || "Private",
             createdBy: req.user._id
         });
 
@@ -87,7 +92,7 @@ export const createNote = async (req, res) => {
 export const updateNote = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, content, tags, isPinned } = req.body;
+        const { title, content, tags, isPinned, category, icon, status, visibility } = req.body;
 
         const updateData = {};
         if (title !== undefined) updateData.title = title;
@@ -97,16 +102,35 @@ export const updateNote = async (req, res) => {
         }
         if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
         if (isPinned !== undefined) updateData.isPinned = !!isPinned;
+        if (category !== undefined) updateData.category = category;
+        if (icon !== undefined) updateData.icon = icon;
+        if (status !== undefined) updateData.status = status;
+        if (visibility !== undefined) updateData.visibility = visibility;
+
+        const originalNote = await Note.findOne({ _id: id, createdBy: req.user._id });
+        if (!originalNote) {
+            return res.status(404).json(buildErrorResponse(req, "Note not found."));
+        }
+
+        // Save version before updating
+        await NoteVersion.create({
+            noteId: originalNote._id,
+            title: originalNote.title,
+            content: originalNote.content,
+            textContent: originalNote.textContent,
+            tags: originalNote.tags,
+            category: originalNote.category,
+            icon: originalNote.icon,
+            status: originalNote.status,
+            visibility: originalNote.visibility,
+            updatedBy: req.user._id
+        });
 
         const updatedNote = await Note.findOneAndUpdate(
             { _id: id, createdBy: req.user._id },
             { $set: updateData },
             { new: true, runValidators: true }
         );
-
-        if (!updatedNote) {
-            return res.status(404).json(buildErrorResponse(req, "Note not found."));
-        }
 
         res.json({
             success: true,
@@ -160,5 +184,53 @@ export const togglePin = async (req, res) => {
     } catch (error) {
         console.error("Error toggling pin status:", error);
         res.status(500).json(buildErrorResponse(req, "Failed to toggle pin status."));
+    }
+};
+
+export const getNoteVersions = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Make sure user owns the note
+        const note = await Note.findOne({ _id: id, createdBy: req.user._id });
+        if (!note) {
+            return res.status(404).json(buildErrorResponse(req, "Note not found."));
+        }
+
+        const versions = await NoteVersion.find({ noteId: id, updatedBy: req.user._id })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        res.json({
+            success: true,
+            versions
+        });
+    } catch (error) {
+        console.error("Error fetching note versions:", error);
+        res.status(500).json(buildErrorResponse(req, "Failed to fetch note versions."));
+    }
+};
+
+export const getNoteStats = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const totalNotes = await Note.countDocuments({ createdBy: userId });
+        const pinnedNotes = await Note.countDocuments({ createdBy: userId, isPinned: true });
+        const privateNotes = await Note.countDocuments({ createdBy: userId, visibility: "Private" });
+        const publicNotes = await Note.countDocuments({ createdBy: userId, visibility: { $in: ["Public", "Shared"] } });
+
+        res.json({
+            success: true,
+            stats: {
+                total: totalNotes,
+                pinned: pinnedNotes,
+                private: privateNotes,
+                shared: publicNotes
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching note stats:", error);
+        res.status(500).json(buildErrorResponse(req, "Failed to fetch stats."));
     }
 };
