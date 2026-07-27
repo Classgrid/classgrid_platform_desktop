@@ -539,7 +539,7 @@ export function SupportTicketsPage() {
         </div>
 
         {/* ═══ VERCEL EXACT FILTER BAR (WIRED UP) ═══ */}
-        <div className="flex flex-nowrap items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide w-full max-w-full text-sm">
+        <div className="flex flex-wrap items-center gap-2 mb-4 w-full text-sm">
           
           {/* Search */}
           <div className="relative flex h-9 min-w-[160px] flex-1 items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm focus-within:ring-1 focus-within:ring-ring transition-colors">
@@ -585,7 +585,7 @@ export function SupportTicketsPage() {
           </ResponsiveSelect>
 
           {/* Date Range (Single Calendar) */}
-          <div className="w-[180px] shrink-0 [&>div>button]:flex [&>div>button]:h-9 [&>div>button]:w-full [&>div>button]:items-center [&>div>button]:rounded-md [&>div>button]:border [&>div>button]:border-border [&>div>button]:bg-transparent [&>div>button]:px-3 [&>div>button]:py-1 [&>div>button]:shadow-sm hover:[&>div>button]:bg-accent/50 [&>div>button]:transition-colors [&>div>button]:text-muted-foreground">
+          <div className="w-[200px] shrink-0 [&>div>button]:flex [&>div>button]:h-9 [&>div>button]:w-full [&>div>button]:items-center [&>div>button]:rounded-md [&>div>button]:border [&>div>button]:border-border [&>div>button]:bg-transparent [&>div>button]:px-3 [&>div>button]:py-1 [&>div>button]:shadow-sm hover:[&>div>button]:bg-accent/50 [&>div>button]:transition-colors [&>div>button]:text-muted-foreground [&>div>button]:overflow-hidden [&>div>button>span]:truncate">
             <NikhilTimeCalendar
               value={dateFrom}
               onChange={setDateFrom}
