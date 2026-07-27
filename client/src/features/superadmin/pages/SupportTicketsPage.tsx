@@ -587,7 +587,14 @@ export function SupportTicketsPage() {
               <option value="">Org Name: All</option>
               {orgEntries.map(([name, logo]) => (
                 <option key={name} value={name}>
-                  {name}
+                  <span className="flex items-center gap-2">
+                    {logo ? (
+                      <img src={logo} alt="" className="w-4 h-4 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <span className="w-4 h-4 rounded-full bg-muted shrink-0 flex items-center justify-center text-[9px] font-bold text-muted-foreground">{name.charAt(0)}</span>
+                    )}
+                    <span className="truncate">{name}</span>
+                  </span>
                 </option>
               ))}
             </ResponsiveSelect>
