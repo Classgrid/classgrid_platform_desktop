@@ -651,7 +651,6 @@ export function ClassgridTalkPage() {
             ))}
           </ResponsiveSelect>
         </div>
-        </div>
 
         {/* Ticket List */}
         <div className="mt-4">
