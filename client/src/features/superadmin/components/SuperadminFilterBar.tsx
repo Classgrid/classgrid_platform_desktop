@@ -38,7 +38,7 @@ export function SuperadminFilterBar({
 
       {/* Dynamic Filters (Dropdowns & Date Pickers) */}
       {children && (
-        <div className="flex flex-row flex-wrap xl:flex-nowrap gap-2 shrink-0">
+        <div className="flex flex-row flex-wrap xl:flex-nowrap gap-2 flex-1 min-w-0">
           {children}
         </div>
       )}
