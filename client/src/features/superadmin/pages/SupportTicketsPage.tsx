@@ -316,6 +316,7 @@ export function SupportTicketsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
   const [orgTypeFilter, setOrgTypeFilter] = useState("");
+  const [orgNameFilter, setOrgNameFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
@@ -358,6 +359,15 @@ export function SupportTicketsPage() {
     return Array.from(types).sort();
   }, [tickets]);
 
+  const orgNames = useMemo(() => {
+    const names = new Set<string>();
+    tickets.forEach((t) => {
+      const name = (t as any).organization_id?.name || (t as any).institution;
+      if (name) names.add(name);
+    });
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [tickets]);
+
   const roles = useMemo(() => {
     const rs = new Set<string>();
     tickets.forEach((t) => {
@@ -374,7 +384,14 @@ export function SupportTicketsPage() {
     if (orgTypeFilter) {
       result = result.filter((t) => {
         const type = (t as any).organization_id?.org_type;
-        return type === orgTypeFilter;
+        return type && type.toLowerCase() === orgTypeFilter.toLowerCase();
+      });
+    }
+
+    if (orgNameFilter) {
+      result = result.filter((t) => {
+        const name = (t as any).organization_id?.name || (t as any).institution;
+        return name === orgNameFilter;
       });
     }
     
@@ -390,20 +407,12 @@ export function SupportTicketsPage() {
         const req = getRequester(t);
         const name = req.name.toLowerCase();
         const email = req.email.toLowerCase();
-        const role = req.role.toLowerCase();
         const id = (t._id || "").toLowerCase();
-        const subject = (t.subject || "").toLowerCase();
-        const category = (t.category || "").toLowerCase();
-        const orgName = ((t as any).organization_id?.name || (t as any).institution || "").toLowerCase();
 
         return (
           id.includes(cleanQ) ||
           name.includes(q) ||
-          email.includes(q) ||
-          subject.includes(q) ||
-          role.includes(q) ||
-          category.includes(q) ||
-          orgName.includes(q)
+          email.includes(q)
         );
       });
     }
@@ -568,91 +577,103 @@ export function SupportTicketsPage() {
         </div>
 
         {/* ═══ VERCEL EXACT FILTER BAR (WIRED UP) ═══ */}
-        <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-6">
           
           {/* Search */}
-          <div className="relative flex h-9 w-[220px] items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent transition-all">
-            <Search size={14} className="text-muted-foreground mr-2 shrink-0" />
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
-              type="search"
-              name="support_ticket_search_no_autofill"
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck="false"
-              data-lpignore="true"
-              readOnly
-              onFocus={(e) => e.target.removeAttribute("readonly")}
-              placeholder="Search name, email, ticket ID..."
+              type="text"
+              placeholder="Search by name, email, or ticket ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onInput={(e) => setSearchQuery((e.target as HTMLInputElement).value)}
-              style={{ outline: "none", boxShadow: "none", border: "none" }}
-              className="flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 shadow-none text-foreground placeholder:text-muted-foreground min-w-0"
+              className="w-full h-9 pl-10 pr-10 rounded-md border border-border bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all shadow-sm"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="text-muted-foreground hover:text-foreground shrink-0 ml-1">
-                <X size={14} />
-              </button>
-            )}
-          </div>
-
-          {/* Org Type */}
-          <div className="w-[160px] shrink-0">
-            <ResponsiveSelect
-              className="flex h-9 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
-              value={orgTypeFilter}
-              onChange={(e) => setOrgTypeFilter(e.target.value)}
-            >
-              {ORG_TYPE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </ResponsiveSelect>
-          </div>
-
-          {/* Date Range (Single Calendar) */}
-          <div className="w-[200px] shrink-0 relative flex items-center [&>div]:w-full [&>div>button]:flex [&>div>button]:h-9 [&>div>button]:w-full [&>div>button]:items-center [&>div>button]:rounded-md [&>div>button]:border [&>div>button]:border-border [&>div>button]:bg-transparent [&>div>button]:px-3 [&>div>button]:py-1 [&>div>button]:shadow-sm hover:[&>div>button]:bg-accent/50 [&>div>button]:transition-colors [&>div>button]:text-muted-foreground [&>div>button]:overflow-hidden [&>div>button>span]:truncate">
-            <NikhilTimeCalendar
-              value={dateFrom}
-              onChange={setDateFrom}
-              placeholder="Select Date"
-              popDirection="down"
-              className="h-9 w-full pr-6"
-            />
-            {dateFrom && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDateFrom(undefined);
-                }}
-                className="absolute right-2 z-10 p-0.5 text-muted-foreground hover:text-foreground shrink-0 rounded-full hover:bg-accent"
-                title="Clear date"
+              <button 
+                onClick={() => setSearchQuery("")} 
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground shrink-0"
               >
                 <X size={14} />
               </button>
             )}
           </div>
 
-          {/* Status */}
-          <div className="w-[180px] shrink-0">
-            <ResponsiveSelect
-              className="flex h-9 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              {STATUS_OPTIONS.map((o) => (
-                <option
-                  key={o.value}
-                  value={o.value}
-                  data-color={o.value ? statusColor(o.value) : undefined}
+          <div className="flex flex-wrap items-center gap-2 md:ml-auto shrink-0 text-sm">
+            {/* Org Name */}
+            <div className="w-[160px]">
+              <ResponsiveSelect
+                className="flex h-9 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+                value={orgNameFilter}
+                onChange={(e) => setOrgNameFilter(e.target.value)}
+              >
+                <option value="">Org Name: All</option>
+                {orgNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </ResponsiveSelect>
+            </div>
+
+            {/* Org Type */}
+            <div className="w-[160px]">
+              <ResponsiveSelect
+                className="flex h-9 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+                value={orgTypeFilter}
+                onChange={(e) => setOrgTypeFilter(e.target.value)}
+              >
+                <option value="">Org Type: All</option>
+                {orgTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, " ")}
+                  </option>
+                ))}
+              </ResponsiveSelect>
+            </div>
+
+            {/* Date Range (Single Calendar) */}
+            <div className="w-[180px] relative flex items-center [&>div]:w-full [&>div>button]:flex [&>div>button]:h-9 [&>div>button]:w-full [&>div>button]:items-center [&>div>button]:rounded-md [&>div>button]:border [&>div>button]:border-border [&>div>button]:bg-transparent [&>div>button]:px-3 [&>div>button]:py-1 [&>div>button]:shadow-sm hover:[&>div>button]:bg-accent/50 [&>div>button]:transition-colors [&>div>button]:text-muted-foreground [&>div>button]:overflow-hidden [&>div>button>span]:truncate">
+              <NikhilTimeCalendar
+                value={dateFrom}
+                onChange={setDateFrom}
+                placeholder="Select Date"
+                popDirection="down"
+                className="h-9 w-full pr-6"
+              />
+              {dateFrom && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDateFrom(undefined);
+                  }}
+                  className="absolute right-2 z-10 p-0.5 text-muted-foreground hover:text-foreground shrink-0 rounded-full hover:bg-accent"
+                  title="Clear date"
                 >
-                  {o.label}
-                </option>
-              ))}
-            </ResponsiveSelect>
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Status */}
+            <div className="w-[160px]">
+              <ResponsiveSelect
+                className="flex h-9 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                {STATUS_OPTIONS.map((o) => (
+                  <option
+                    key={o.value}
+                    value={o.value}
+                    data-color={o.value ? statusColor(o.value) : undefined}
+                  >
+                    {o.label}
+                  </option>
+                ))}
+              </ResponsiveSelect>
+            </div>
           </div>
         </div>
 
