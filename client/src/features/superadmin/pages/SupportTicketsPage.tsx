@@ -381,18 +381,23 @@ export function SupportTicketsPage() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter((t) => {
-        const name = t.submittedBy?.name ?? t.submitterName ?? t.name ?? "";
-        const email = t.submittedBy?.email ?? t.submitterEmail ?? t.email ?? "";
-        const role = t.submittedBy?.role ?? "";
+        const req = getRequester(t);
+        const name = req.name.toLowerCase();
+        const email = req.email.toLowerCase();
+        const role = req.role.toLowerCase();
+        const id = (t._id || "").toLowerCase();
+        const subject = (t.subject || "").toLowerCase();
+        const category = (t.category || "").toLowerCase();
+        const orgName = ((t as any).organization_id?.name || (t as any).institution || "").toLowerCase();
+
         return (
-          t._id.toLowerCase().includes(q) ||
-          t.subject.toLowerCase().includes(q) ||
-          name.toLowerCase().includes(q) ||
-          email.toLowerCase().includes(q) ||
-          role.toLowerCase().includes(q) ||
-          ((t as any).organization_id?.name || "").toLowerCase().includes(q) ||
-          ((t as any).institution || "").toLowerCase().includes(q) ||
-          (t.category || "").toLowerCase().includes(q)
+          id.includes(q) ||
+          name.includes(q) ||
+          email.includes(q) ||
+          subject.includes(q) ||
+          role.includes(q) ||
+          category.includes(q) ||
+          orgName.includes(q)
         );
       });
     }
