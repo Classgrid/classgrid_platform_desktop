@@ -576,13 +576,14 @@ export function ClassgridTalkPage() {
         <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
           
           {/* Search */}
-          <div className="relative flex h-9 w-[220px] items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm focus-within:ring-1 focus-within:ring-ring transition-colors">
+          <div className="relative flex h-9 w-[220px] items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent transition-all">
             <Search size={14} className="text-muted-foreground mr-2 shrink-0" />
             <input
               type="text"
               placeholder="Search name, email, talk ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ outline: "none", boxShadow: "none", border: "none" }}
               className="flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 shadow-none text-foreground placeholder:text-muted-foreground min-w-0"
             />
             {searchQuery && (
