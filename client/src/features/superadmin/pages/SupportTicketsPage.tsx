@@ -176,6 +176,15 @@ function getInitials(name: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+function formatTicketDate(dateString: string | Date) {
+  const date = new Date(dateString);
+  const currentYear = new Date().getFullYear();
+  if (date.getFullYear() !== currentYear) {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 const avatarColors = [
   "bg-emerald-500",
   "bg-emerald-600",
@@ -730,16 +739,8 @@ export function SupportTicketsPage() {
                       </span>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[10px] text-muted-foreground">
-                          Created: {new Date(ticket.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          Created: {formatTicketDate(ticket.createdAt)}
                         </span>
-                        {ticket.updatedAt && new Date(ticket.updatedAt).getTime() !== new Date(ticket.createdAt).getTime() && (
-                          <>
-                            <span className="text-[10px] text-muted-foreground/50">•</span>
-                            <span className="text-[10px] text-muted-foreground">
-                              Updated: {new Date(ticket.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </span>
-                          </>
-                        )}
                         {unreadCount > 0 && (
                           <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full w-fit ml-1">
                             {unreadCount} new message{unreadCount > 1 ? "s" : ""}
