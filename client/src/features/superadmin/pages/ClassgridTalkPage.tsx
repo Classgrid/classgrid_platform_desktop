@@ -585,30 +585,6 @@ export function ClassgridTalkPage() {
             </ResponsiveSelect>
           </div>
 
-          {/* Priority */}
-          <div className="w-[140px] shrink-0">
-            <ResponsiveSelect
-              className="flex h-9 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-            >
-              <option value="">Priority: All</option>
-              {PRIORITY_OPTIONS.map((o) => {
-                let pColor;
-                if (o.value === "low") pColor = "bg-emerald-500";
-                else if (o.value === "medium") pColor = "bg-amber-500";
-                else if (o.value === "high") pColor = "bg-orange-500";
-                else if (o.value === "critical") pColor = "bg-red-600";
-                
-                return (
-                  <option key={o.value} value={o.value} data-color={pColor}>
-                    {o.label}
-                  </option>
-                );
-              })}
-            </ResponsiveSelect>
-          </div>
-
           {/* Date Range (Single Calendar) */}
           <div className="w-[180px] shrink-0 [&>div>button]:flex [&>div>button]:h-9 [&>div>button]:w-full [&>div>button]:items-center [&>div>button]:rounded-md [&>div>button]:border [&>div>button]:border-border [&>div>button]:bg-transparent [&>div>button]:px-3 [&>div>button]:py-1 [&>div>button]:shadow-sm hover:[&>div>button]:bg-accent/50 [&>div>button]:transition-colors [&>div>button]:text-muted-foreground [&>div>button]:overflow-hidden [&>div>button>span]:truncate">
             <NikhilTimeCalendar
