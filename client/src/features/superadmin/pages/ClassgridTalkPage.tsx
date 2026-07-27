@@ -1369,17 +1369,17 @@ export function ClassgridTalkPage() {
                         { id: selectedTicket._id, status: "closed" },
                         {
                           onSuccess: (res) => {
-                            toast.success("Enquiry closed");
+                            toast.success("Ticket closed");
                             if (res.ticket) setSelectedTicket(res.ticket);
                             refetch();
                           },
-                          onError: () => toast.error("Failed to close enquiry"),
+                          onError: () => toast.error("Failed to close ticket"),
                         }
                       );
                     }}
                   >
                     <Lock className="w-3.5 h-3.5" />
-                    {updateTicket.isPending ? "Closing..." : "Close Enquiry"}
+                    {updateTicket.isPending ? "Closing..." : "Close Ticket"}
                   </Button>
                 </div>
               )}
@@ -1508,16 +1508,16 @@ export function ClassgridTalkPage() {
       <DangerConfirmDialog
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
-        title="Delete Enquiry"
-        description={<>Permanently delete this enquiry for <strong>{selectedTicket?.userEmail || "Unknown"}</strong>.</>}
-        warningMessage="This action is irreversible. All details associated with this enquiry will be permanently lost."
+        title="Delete Ticket"
+        description={<>Permanently delete this ticket for <strong>{selectedTicket?.userEmail || "Unknown"}</strong>.</>}
+        warningMessage="This action is irreversible. All details associated with this ticket will be permanently lost."
         confirmationSteps={[
           {
             label: "To confirm, type",
             value: "delete",
           },
         ]}
-        actionLabel="Delete Enquiry"
+        actionLabel="Delete Ticket"
         cancelLabel="Cancel"
         isLoading={deleteTicketMutation.isPending}
         onConfirm={() => {
