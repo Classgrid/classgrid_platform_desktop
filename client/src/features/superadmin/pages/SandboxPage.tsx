@@ -4,8 +4,8 @@ import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calend
 import { Search, X } from "lucide-react";
 
 export function SandboxPage() {
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
   const [statusFilter, setStatusFilter] = useState("");
   const [orgTypeFilter, setOrgTypeFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -14,24 +14,35 @@ export function SandboxPage() {
     <div className="min-h-screen p-8 lg:p-12">
       <h1 className="text-3xl font-bold tracking-tight mb-8">Filter Bar Sandbox</h1>
 
-      {/* ═══ ONE LINE — tight like Vercel, scales to fit screen, no scrollbar ═══ */}
-      <div className="flex items-center gap-1.5 w-full max-w-full">
-        {/* Date Range — ONE button using NikhilTimeCalendar mode="range" */}
-        <div className="min-w-[180px] max-w-[220px] flex-1">
+      {/* ═══ TWO SEPARATE CALENDARS ═══ */}
+      <div className="flex flex-wrap items-center gap-1.5 w-full max-w-full">
+        {/* Date From */}
+        <div className="min-w-[140px] max-w-[180px] flex-1">
           <NikhilTimeCalendar
-            mode="range"
-            startValue={startDate}
-            endValue={endDate}
-            onRangeApply={(start, end) => { setStartDate(start); setEndDate(end); }}
-            placeholder="Select Date Range"
+            value={dateFrom}
+            onChange={setDateFrom}
+            placeholder="Start date"
             popDirection="down"
             className="h-8 text-xs w-full"
           />
         </div>
 
-        {(startDate || endDate) && (
+        <span className="text-muted-foreground text-xs">–</span>
+
+        {/* Date To */}
+        <div className="min-w-[140px] max-w-[180px] flex-1">
+          <NikhilTimeCalendar
+            value={dateTo}
+            onChange={setDateTo}
+            placeholder="End date"
+            popDirection="down"
+            className="h-8 text-xs w-full"
+          />
+        </div>
+
+        {(dateFrom || dateTo) && (
           <button
-            onClick={() => { setStartDate(undefined); setEndDate(undefined); }}
+            onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}
             className="p-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
             <X size={12} />
@@ -79,6 +90,15 @@ export function SandboxPage() {
           <option value="resolved">Resolved</option>
           <option value="closed">Closed</option>
         </ResponsiveSelect>
+      </div>
+
+      {/* Debug output */}
+      <div className="mt-6 p-4 bg-card border border-border rounded-lg text-sm text-muted-foreground space-y-1">
+        <p><strong>dateFrom:</strong> {dateFrom?.toLocaleString() || "—"}</p>
+        <p><strong>dateTo:</strong> {dateTo?.toLocaleString() || "—"}</p>
+        <p><strong>search:</strong> {searchQuery || "—"}</p>
+        <p><strong>orgType:</strong> {orgTypeFilter || "—"}</p>
+        <p><strong>status:</strong> {statusFilter || "—"}</p>
       </div>
     </div>
   );
