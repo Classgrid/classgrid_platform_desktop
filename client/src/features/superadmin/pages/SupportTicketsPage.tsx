@@ -581,6 +581,8 @@ export function SupportTicketsPage() {
               autoCapitalize="off"
               spellCheck="false"
               data-lpignore="true"
+              readOnly
+              onFocus={(e) => e.target.removeAttribute("readonly")}
               placeholder="Search name, email, ticket ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

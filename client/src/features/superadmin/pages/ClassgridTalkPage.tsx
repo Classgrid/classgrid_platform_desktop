@@ -586,6 +586,8 @@ export function ClassgridTalkPage() {
               autoCapitalize="off"
               spellCheck="false"
               data-lpignore="true"
+              readOnly
+              onFocus={(e) => e.target.removeAttribute("readonly")}
               placeholder="Search name, email, talk ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
