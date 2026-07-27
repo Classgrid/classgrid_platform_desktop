@@ -216,7 +216,7 @@ export function NikhilTimeCalendar({
             className
           )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+          <CalendarIcon className="mr-1.5 h-4 w-4 shrink-0" />
           <span className="truncate min-w-0">{displayString}</span>
         </Button>
       </PopoverTrigger>

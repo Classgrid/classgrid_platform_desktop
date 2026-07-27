@@ -642,15 +642,15 @@ export function SupportTicketsPage() {
               </ResponsiveSelect>
             </div>
 
-            {/* Date picker — hard clip at 160px */}
-            <div className="w-[160px] max-w-[160px] overflow-hidden relative">
+            {/* Date picker */}
+            <div className="w-[180px] max-w-[180px] overflow-hidden relative">
               <NikhilTimeCalendar
                 value={dateFrom}
                 onChange={setDateFrom}
                 placeholder="Select Date"
                 popDirection="down"
                 showTime={false}
-                className="h-9 w-full max-w-full"
+                className="h-9 w-full pr-7"
               />
               {dateFrom && (
                 <button
