@@ -360,7 +360,6 @@ export function SupportTicketsPage() {
   // New states for editing and confirmation
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
   const editEditorRef = useRef<RichReplyEditorRef>(null);
-  const [showReplyConfirm, setShowReplyConfirm] = useState(false);
   const [sendEmailWithReply, setSendEmailWithReply] = useState(true);
 
   const { data: currentUser } = useCurrentUser();
@@ -554,17 +553,6 @@ export function SupportTicketsPage() {
     }
   };
 
-  const promptSubmitReply = () => {
-    const currentHTML = replyEditorRef.current?.getHTML() || "";
-    const cleanText = currentHTML.replace(/<[^>]+>/g, "").trim();
-    const files = replyEditorRef.current?.getFiles() || [];
-
-    // Allow submission if there is text OR if there are files attached
-    if (!selectedTicket || (!cleanText && files.length === 0)) return;
-
-    setShowReplyConfirm(true);
-  };
-
   const submitReply = async () => {
     const currentHTML = replyEditorRef.current?.getHTML() || "";
     const cleanText = currentHTML.replace(/<[^>]+>/g, "").trim();
@@ -572,8 +560,6 @@ export function SupportTicketsPage() {
 
     // Allow submission if there is text OR if there are files attached
     if (!selectedTicket || (!cleanText && files.length === 0)) return;
-
-    setShowReplyConfirm(false);
 
     try {
       const result = await replyToTicket.mutateAsync({
@@ -1023,7 +1009,8 @@ export function SupportTicketsPage() {
                     <div className="mt-2">
                       <RichReplyEditor
                         ref={editEditorRef}
-                        initialValue={msg.body}
+                        initialHtml={msg.body}
+                        onChange={() => {}}
                         minHeight={150}
                         placeholder="Edit your reply..."
                         onSubmit={() => submitEditReply((msg as any)._id)}
@@ -1173,11 +1160,22 @@ export function SupportTicketsPage() {
                     <p className="text-xs text-muted-foreground">
                       Press Enter to send, Shift+Enter for new line.
                     </p>
-                    <Button
-                      variant="primary"
-                      onClick={promptSubmitReply}
-                      disabled={!replyBody.trim() || replyToTicket.isPending}
-                    >
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2" title="If checked, the user will receive an email about this reply.">
+                        <label htmlFor="send-email-toggle" className="text-xs font-semibold text-foreground cursor-pointer">
+                          Send Email
+                        </label>
+                        <Switch
+                          id="send-email-toggle"
+                          checked={sendEmailWithReply}
+                          onCheckedChange={setSendEmailWithReply}
+                        />
+                      </div>
+                      <Button
+                        variant="primary"
+                        onClick={submitReply}
+                        disabled={!replyBody.trim() || replyToTicket.isPending}
+                      >
                       {replyToTicket.isPending ? (
                         <>
                           <Spinner className="w-4 h-4 mr-2" />
@@ -1524,37 +1522,6 @@ export function SupportTicketsPage() {
         }}
         variant="danger"
       />
-
-      <AlertDialog open={showReplyConfirm} onOpenChange={setShowReplyConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Send Reply</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to send this reply? It will be visible to the user.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="my-4 flex items-center gap-3 bg-muted/50 p-4 rounded-lg border border-border">
-            <Switch
-              id="send-email"
-              checked={sendEmailWithReply}
-              onCheckedChange={setSendEmailWithReply}
-            />
-            <div className="flex flex-col gap-0.5">
-              <label htmlFor="send-email" className="text-sm font-semibold text-foreground cursor-pointer">
-                Send Email Notification
-              </label>
-              <span className="text-xs text-muted-foreground">
-                If checked, the user will receive an email about this reply.
-              </span>
-            </div>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={submitReply}>Send Reply</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
     </div>
   );
 }

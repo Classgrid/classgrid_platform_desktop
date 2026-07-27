@@ -1201,6 +1201,38 @@ router.patch("/admin/tickets/:id", isAuthenticated, requireRole("super_admin"), 
 });
 
 // ══════════════════════════════════════════════════════════════
+//  SUPER ADMIN: PATCH /api/support/admin/tickets/:id/reply/:replyId — Edit a reply
+// ══════════════════════════════════════════════════════════════
+router.patch("/admin/tickets/:id/reply/:replyId", isAuthenticated, requireRole("super_admin"), async (req, res) => {
+    try {
+        const { message } = req.body;
+        if (!message?.trim()) return res.status(400).json({ success: false, message: "Message is required" });
+
+        const ticket = await SupportTicket.findById(req.params.id);
+        if (!ticket) return res.status(404).json({ success: false, message: "Ticket not found" });
+
+        // Find the reply in `messages` array
+        const msg = ticket.messages.id(req.params.replyId);
+        if (!msg) return res.status(404).json({ success: false, message: "Reply not found" });
+
+        // Update the message body
+        msg.body = message.trim();
+        
+        await ticket.save();
+
+        const updated = await SupportTicket.findById(ticket._id)
+            .populate("submittedBy", "name email role")
+            .populate("assignedTo", "name email")
+            .lean();
+
+        res.json({ success: true, message: "Reply updated", ticket: serializeTicket(updated) });
+    } catch (err) {
+        console.error("[Support] Admin edit reply error:", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+// ══════════════════════════════════════════════════════════════
 //  SUPER ADMIN: POST /api/support/admin/tickets/:id/note — Internal note
 // ══════════════════════════════════════════════════════════════
 router.post("/admin/tickets/:id/note", isAuthenticated, requireRole("super_admin"), async (req, res) => {
