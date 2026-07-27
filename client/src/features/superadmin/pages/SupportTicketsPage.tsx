@@ -725,14 +725,27 @@ export function SupportTicketsPage() {
                   ),
                   subject: (
                     <div className="flex flex-col gap-1.5">
-                      <span className="text-sm text-foreground">
+                      <span className="text-sm text-foreground font-medium">
                         {ticket.subject}
                       </span>
-                      {unreadCount > 0 && (
-                        <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full w-fit">
-                          {unreadCount} new message{unreadCount > 1 ? "s" : ""}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] text-muted-foreground">
+                          Created: {new Date(ticket.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
-                      )}
+                        {ticket.updatedAt && new Date(ticket.updatedAt).getTime() !== new Date(ticket.createdAt).getTime() && (
+                          <>
+                            <span className="text-[10px] text-muted-foreground/50">•</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              Updated: {new Date(ticket.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                          </>
+                        )}
+                        {unreadCount > 0 && (
+                          <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full w-fit ml-1">
+                            {unreadCount} new message{unreadCount > 1 ? "s" : ""}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ),
                   status: (
