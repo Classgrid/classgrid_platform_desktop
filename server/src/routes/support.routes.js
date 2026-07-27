@@ -818,7 +818,8 @@ router.get("/tickets/:id", isAuthenticated, async (req, res) => {
 // ══════════════════════════════════════════════════════════════
 router.post("/tickets/:id/reply", isAuthenticated, multipleUploads("files", 5), async (req, res) => {
     try {
-        const { message, adminName } = req.body;
+        const { message, adminName, sendEmail = true } = req.body;
+        const shouldSendEmail = String(sendEmail) !== "false";
         if (!message?.trim()) return res.status(400).json({ success: false, message: "Message is required" });
 
         const ticket = await SupportTicket.findById(req.params.id);
@@ -965,7 +966,7 @@ router.post("/tickets/:id/reply", isAuthenticated, multipleUploads("files", 5), 
         await ticket.save();
 
         let emailNotification = { queued: false };
-        if (isSuperAdmin) {
+        if (isSuperAdmin && shouldSendEmail) {
             try {
                 const adminAvatar = req.user.profilePicture || req.user.profilePic || req.user.image || "";
                 const adminEmail = req.user.email?.trim() || "";
@@ -1338,6 +1339,55 @@ router.get("/public/tickets/:id/related", enforceStrictSession, async (req, res)
         res.json({ success: true, tickets: related });
     } catch (err) {
         console.error("[Support] Related tickets error:", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+// ══════════════════════════════════════════════════════════════
+//  PATCH /api/support/admin/tickets/:id/reply/:replyId — Edit a reply (admin only)
+// ══════════════════════════════════════════════════════════════
+router.patch("/admin/tickets/:id/reply/:replyId", isAuthenticated, requireRole("super_admin"), async (req, res) => {
+    try {
+        const { message } = req.body;
+        if (!message?.trim()) {
+            return res.status(400).json({ success: false, message: "Message is required" });
+        }
+
+        const ticket = await SupportTicket.findById(req.params.id);
+        if (!ticket) {
+            return res.status(404).json({ success: false, message: "Ticket not found" });
+        }
+
+        // Find the reply in replies array
+        const replyIndex = ticket.replies.findIndex(r => r._id.toString() === req.params.replyId);
+        // Find the corresponding message in messages array
+        const messageIndex = ticket.messages.findIndex(m => m._id.toString() === req.params.replyId);
+
+        if (replyIndex !== -1) {
+            ticket.replies[replyIndex].message = message.trim();
+        }
+        if (messageIndex !== -1) {
+            ticket.messages[messageIndex].body = message.trim();
+        }
+
+        if (replyIndex === -1 && messageIndex === -1) {
+            return res.status(404).json({ success: false, message: "Reply not found" });
+        }
+
+        // Add event
+        ticket.events.push({
+            type: 'adminEdit',
+            label: 'Admin edited a reply',
+            actorName: req.user.name || req.user.email,
+            actorRole: 'super_admin',
+            createdAt: new Date()
+        });
+
+        await ticket.save();
+
+        res.json({ success: true, message: "Reply updated successfully", ticket: serializeTicket(ticket.toObject()) });
+    } catch (err) {
+        console.error("[Support] Edit reply error:", err.message);
         res.status(500).json({ success: false, message: "Server error" });
     }
 });

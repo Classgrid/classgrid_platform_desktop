@@ -238,9 +238,10 @@ export const supportApi = {
       .patch<{ success: boolean; ticket: SupportTicket }>(`/api/support/admin/tickets/${id}`, payload)
       .then((r) => r.data),
 
-  replyToTicket: (id: string, message: string, files?: File[]) => {
+  replyToTicket: (id: string, message: string, files?: File[], sendEmail: boolean = true) => {
     const formData = new FormData();
     formData.append("message", message);
+    formData.append("sendEmail", String(sendEmail));
     if (files && files.length > 0) {
       files.forEach((file) => {
         formData.append("files", file);
@@ -254,6 +255,12 @@ export const supportApi = {
       })
       .then((r) => r.data);
   },
+
+  editTicketReply: (ticketId: string, replyId: string, message: string) =>
+    apiClient
+      .patch<{ success: boolean; ticket: SupportTicket }>(`/api/support/admin/tickets/${ticketId}/reply/${replyId}`, { message })
+      .then((r) => r.data),
+
 
   deleteTicket: (id: string) =>
     apiClient

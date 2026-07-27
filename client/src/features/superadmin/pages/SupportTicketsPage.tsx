@@ -20,11 +20,23 @@ import {
   Calendar,
   X,
   Lock,
+  Edit2,
 } from "lucide-react";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { StatCard } from "@/components/marketing_ui/StatCard";
 import { RecentActivityTable } from "@/components/marketing_ui/data-table";
 import { Button } from "@/components/marketing_ui/button";
+import { Switch } from "@/components/marketing_ui/switch";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/marketing_ui/alert-dialog";
 import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
 import { Spinner } from "@/components/marketing_ui/spinner";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/marketing_ui/tooltip";
@@ -43,6 +55,7 @@ import {
   useSupportTickets,
   useUpdateTicket,
   useDeleteTicket,
+  useEditTicketReply,
 } from "../queries/useSupportTickets";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 import type {
@@ -344,6 +357,12 @@ export function SupportTicketsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [assigningTicketId, setAssigningTicketId] = useState<string | null>(null);
 
+  // New states for editing and confirmation
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const editEditorRef = useRef<RichReplyEditorRef>(null);
+  const [showReplyConfirm, setShowReplyConfirm] = useState(false);
+  const [sendEmailWithReply, setSendEmailWithReply] = useState(true);
+
   const { data: currentUser } = useCurrentUser();
 
   const { data, isLoading, isError, refetch, isFetching } = useSupportTickets({
@@ -356,6 +375,7 @@ export function SupportTicketsPage() {
   const updateTicket = useUpdateTicket();
   const replyToTicket = useReplyToTicket();
   const deleteTicketMutation = useDeleteTicket();
+  const editTicketReply = useEditTicketReply();
 
   const tickets = data?.tickets ?? [];
   const apiStats = data?.stats;
@@ -534,6 +554,17 @@ export function SupportTicketsPage() {
     }
   };
 
+  const promptSubmitReply = () => {
+    const currentHTML = replyEditorRef.current?.getHTML() || "";
+    const cleanText = currentHTML.replace(/<[^>]+>/g, "").trim();
+    const files = replyEditorRef.current?.getFiles() || [];
+
+    // Allow submission if there is text OR if there are files attached
+    if (!selectedTicket || (!cleanText && files.length === 0)) return;
+
+    setShowReplyConfirm(true);
+  };
+
   const submitReply = async () => {
     const currentHTML = replyEditorRef.current?.getHTML() || "";
     const cleanText = currentHTML.replace(/<[^>]+>/g, "").trim();
@@ -542,11 +573,14 @@ export function SupportTicketsPage() {
     // Allow submission if there is text OR if there are files attached
     if (!selectedTicket || (!cleanText && files.length === 0)) return;
 
+    setShowReplyConfirm(false);
+
     try {
       const result = await replyToTicket.mutateAsync({
         id: selectedTicket._id,
         message: currentHTML,
         files: files.length > 0 ? files : undefined,
+        sendEmail: sendEmailWithReply,
       });
       setSelectedTicket(result.ticket);
       setReplyBody("");
@@ -558,6 +592,27 @@ export function SupportTicketsPage() {
       replySentTimerRef.current = setTimeout(() => setReplySent(false), 10000);
     } catch {
       toast.error("Failed to send reply");
+    }
+  };
+
+  const submitEditReply = async (replyId: string) => {
+    if (!selectedTicket || !editEditorRef.current) return;
+    const currentHTML = editEditorRef.current.getHTML() || "";
+    const cleanText = currentHTML.replace(/<[^>]+>/g, "").trim();
+    if (!cleanText) return;
+
+    try {
+      const result = await editTicketReply.mutateAsync({
+        ticketId: selectedTicket._id,
+        replyId,
+        message: currentHTML,
+      });
+      setSelectedTicket(result.ticket);
+      setEditingReplyId(null);
+      refetch();
+      toast.success("Reply updated successfully");
+    } catch {
+      toast.error("Failed to update reply");
     }
   };
 
@@ -923,22 +978,35 @@ export function SupportTicketsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="mb-3">
                     <div className="flex items-center flex-wrap gap-y-1 gap-x-3">
-                      <div className="flex items-center">
-                        <span className="font-bold text-sm text-foreground">
-                          {msg.author}
-                        </span>
-                        {(msg as any).authorRole === "super_admin" && (
-                          <span
-                            className="ml-1.5 inline-flex items-center"
-                            title="Verified Admin"
-                          >
-                            <BadgeCheck className="w-4 h-4 text-white fill-[#1DA1F2] dark:text-[#0f0f0f]" />
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center">
+                          <span className="font-bold text-sm text-foreground">
+                            {msg.author}
                           </span>
-                        )}
+                          {(msg as any).authorRole === "super_admin" && (
+                            <span
+                              className="ml-1.5 inline-flex items-center"
+                              title="Verified Admin"
+                            >
+                              <BadgeCheck className="w-4 h-4 text-white fill-[#1DA1F2] dark:text-[#0f0f0f]" />
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {fmtDateTime(msg.date)}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {fmtDateTime(msg.date)}
-                      </p>
+                      
+                      {msg.role === "admin" && msg.author === (currentUser?.name || currentUser?.email) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingReplyId((msg as any)._id)}
+                          className="h-6 px-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          <Edit2 className="w-3 h-3 mr-1" /> Edit
+                        </Button>
+                      )}
                     </div>
                     {(msg as any).orgName && (
                       <div className="mt-1.5">
@@ -951,17 +1019,46 @@ export function SupportTicketsPage() {
                       </div>
                     )}
                   </div>
-                  <div
-                    className="whitespace-pre-wrap break-words text-base text-foreground leading-relaxed [&>p]:mb-4 last:[&>p]:mb-0 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-4 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:mb-4 [&>li]:mb-1.5 [&>strong]:font-bold [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-bold [&>h2]:mb-3 [&>h3]:text-base [&>h3]:font-bold [&>h3]:mb-2 [&>blockquote]:border-l-4 [&>blockquote]:border-primary/50 [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:my-3 [&_a]:!text-blue-500 [&_a]:!no-underline hover:[&_a]:!text-blue-400 [&_u]:!decoration-emerald-500 [&_u]:underline-offset-4 [&_u]:decoration-2 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:border [&_img]:border-border [&_img]:my-4 [&_img]:max-h-[500px] [&_img]:object-contain overflow-hidden"
-                    dangerouslySetInnerHTML={{ __html: msg.body }}
-                    onClick={(e) => {
-                      const target = e.target as HTMLElement;
-                      if (target.tagName === "IMG") {
-                        const src = (target as HTMLImageElement).src;
-                        setPreviewFile({ name: "Image preview", src });
-                      }
-                    }}
-                  />
+                  {editingReplyId === (msg as any)._id ? (
+                    <div className="mt-2">
+                      <RichReplyEditor
+                        ref={editEditorRef}
+                        initialValue={msg.body}
+                        minHeight={150}
+                        placeholder="Edit your reply..."
+                        onSubmit={() => submitEditReply((msg as any)._id)}
+                      />
+                      <div className="flex items-center justify-end gap-2 mt-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingReplyId(null)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => submitEditReply((msg as any)._id)}
+                          disabled={editTicketReply.isPending}
+                        >
+                          {editTicketReply.isPending ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="whitespace-pre-wrap break-words text-base text-foreground leading-relaxed [&>p]:mb-4 last:[&>p]:mb-0 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-4 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:mb-4 [&>li]:mb-1.5 [&>strong]:font-bold [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-bold [&>h2]:mb-3 [&>h3]:text-base [&>h3]:font-bold [&>h3]:mb-2 [&>blockquote]:border-l-4 [&>blockquote]:border-primary/50 [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:my-3 [&_a]:!text-blue-500 [&_a]:!no-underline hover:[&_a]:!text-blue-400 [&_u]:!decoration-emerald-500 [&_u]:underline-offset-4 [&_u]:decoration-2 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:border [&_img]:border-border [&_img]:my-4 [&_img]:max-h-[500px] [&_img]:object-contain overflow-hidden"
+                      dangerouslySetInnerHTML={{ __html: msg.body }}
+                      onClick={(e) => {
+                        const target = e.target as HTMLElement;
+                        if (target.tagName === "IMG") {
+                          const src = (target as HTMLImageElement).src;
+                          setPreviewFile({ name: "Image preview", src });
+                        }
+                      }}
+                    />
+                  )}
 
                   {/* Message Attachments */}
                   {(msg as any).attachments &&
@@ -1078,7 +1175,7 @@ export function SupportTicketsPage() {
                     </p>
                     <Button
                       variant="primary"
-                      onClick={submitReply}
+                      onClick={promptSubmitReply}
                       disabled={!replyBody.trim() || replyToTicket.isPending}
                     >
                       {replyToTicket.isPending ? (
@@ -1427,6 +1524,36 @@ export function SupportTicketsPage() {
         }}
         variant="danger"
       />
+
+      <AlertDialog open={showReplyConfirm} onOpenChange={setShowReplyConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send Reply</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to send this reply? It will be visible to the user.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4 flex items-center gap-3 bg-muted/50 p-4 rounded-lg border border-border">
+            <Switch
+              id="send-email"
+              checked={sendEmailWithReply}
+              onCheckedChange={setSendEmailWithReply}
+            />
+            <div className="flex flex-col gap-0.5">
+              <label htmlFor="send-email" className="text-sm font-semibold text-foreground cursor-pointer">
+                Send Email Notification
+              </label>
+              <span className="text-xs text-muted-foreground">
+                If checked, the user will receive an email about this reply.
+              </span>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={submitReply}>Send Reply</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );

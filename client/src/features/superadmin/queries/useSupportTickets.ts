@@ -40,8 +40,17 @@ export function useUpdateTicket() {
 export function useReplyToTicket() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, message, files }: { id: string; message: string; files?: File[] }) =>
-      supportApi.replyToTicket(id, message, files),
+    mutationFn: ({ id, message, files, sendEmail }: { id: string; message: string; files?: File[]; sendEmail?: boolean }) =>
+      supportApi.replyToTicket(id, message, files, sendEmail),
+    onSuccess: () => qc.invalidateQueries({ queryKey: TICKETS_KEY }),
+  });
+}
+
+export function useEditTicketReply() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ticketId, replyId, message }: { ticketId: string; replyId: string; message: string }) =>
+      supportApi.editTicketReply(ticketId, replyId, message),
     onSuccess: () => qc.invalidateQueries({ queryKey: TICKETS_KEY }),
   });
 }
