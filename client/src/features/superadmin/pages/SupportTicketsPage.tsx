@@ -539,10 +539,10 @@ export function SupportTicketsPage() {
         </div>
 
         {/* ═══ VERCEL EXACT FILTER BAR (WIRED UP) ═══ */}
-        <div className="flex flex-wrap items-center gap-2 mb-4 w-full text-sm">
+        <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
           
           {/* Search */}
-          <div className="relative flex h-9 min-w-[160px] flex-1 items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm focus-within:ring-1 focus-within:ring-ring transition-colors">
+          <div className="relative flex h-9 w-[220px] items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm focus-within:ring-1 focus-within:ring-ring transition-colors">
             <Search size={14} className="text-muted-foreground mr-2 shrink-0" />
             <input
               type="text"
@@ -560,7 +560,7 @@ export function SupportTicketsPage() {
 
           {/* Org Name */}
           <ResponsiveSelect
-            className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+            className="flex h-9 w-[160px] items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
             value={orgNameFilter}
             onChange={(e) => setOrgNameFilter(e.target.value)}
           >
@@ -572,7 +572,7 @@ export function SupportTicketsPage() {
 
           {/* Priority */}
           <ResponsiveSelect
-            className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+            className="flex h-9 w-[140px] items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
           >
@@ -585,7 +585,7 @@ export function SupportTicketsPage() {
           </ResponsiveSelect>
 
           {/* Date Range (Single Calendar) */}
-          <div className="w-[200px] shrink-0 [&>div>button]:flex [&>div>button]:h-9 [&>div>button]:w-full [&>div>button]:items-center [&>div>button]:rounded-md [&>div>button]:border [&>div>button]:border-border [&>div>button]:bg-transparent [&>div>button]:px-3 [&>div>button]:py-1 [&>div>button]:shadow-sm hover:[&>div>button]:bg-accent/50 [&>div>button]:transition-colors [&>div>button]:text-muted-foreground [&>div>button]:overflow-hidden [&>div>button>span]:truncate">
+          <div className="w-[180px] shrink-0 [&>div>button]:flex [&>div>button]:h-9 [&>div>button]:w-full [&>div>button]:items-center [&>div>button]:rounded-md [&>div>button]:border [&>div>button]:border-border [&>div>button]:bg-transparent [&>div>button]:px-3 [&>div>button]:py-1 [&>div>button]:shadow-sm hover:[&>div>button]:bg-accent/50 [&>div>button]:transition-colors [&>div>button]:text-muted-foreground [&>div>button]:overflow-hidden [&>div>button>span]:truncate">
             <NikhilTimeCalendar
               value={dateFrom}
               onChange={setDateFrom}
@@ -597,7 +597,7 @@ export function SupportTicketsPage() {
 
           {/* Status */}
           <ResponsiveSelect
-            className="flex h-9 min-w-[160px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+            className="flex h-9 w-[180px] items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             renderCustomValue={() => (
