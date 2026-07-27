@@ -121,14 +121,18 @@ function getRequester(ticket: SupportTicket) {
       ticket.submittedBy?.name ??
       ticket.submitterName ??
       ticket.name ??
+      (ticket as any).createdBy?.name ??
+      (ticket as any).author ??
       "Unknown",
     email:
       ticket.submittedBy?.email ??
       ticket.submitterEmail ??
       ticket.email ??
+      (ticket as any).createdBy?.email ??
       "",
     role:
       ticket.submittedBy?.role ??
+      (ticket as any).createdBy?.role ??
       (ticket as any).requester?.role ??
       (ticket as any).submitterRole ??
       "",
@@ -379,7 +383,9 @@ export function SupportTicketsPage() {
     }
 
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+      const q = searchQuery.toLowerCase().trim();
+      const cleanQ = q.replace(/^#/, "");
+
       result = result.filter((t) => {
         const req = getRequester(t);
         const name = req.name.toLowerCase();
@@ -391,7 +397,7 @@ export function SupportTicketsPage() {
         const orgName = ((t as any).organization_id?.name || (t as any).institution || "").toLowerCase();
 
         return (
-          id.includes(q) ||
+          id.includes(cleanQ) ||
           name.includes(q) ||
           email.includes(q) ||
           subject.includes(q) ||
