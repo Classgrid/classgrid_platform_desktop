@@ -194,7 +194,7 @@ export function NikhilTimeCalendar({
   };
 
   const displayString = isValidDate(value)
-    ? `${format(value as Date, "MMM do, yyyy")} at ${format(value as Date, "hh:mm a")}`
+    ? format(value as Date, "MMM do, yyyy")
     : placeholder;
 
   return (

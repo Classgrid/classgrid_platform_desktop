@@ -632,23 +632,23 @@ export function SupportTicketsPage() {
               </ResponsiveSelect>
             </div>
 
-            {/* Date picker — fixed 160px, text truncated inside */}
-            <div className="w-[160px] relative [&>div]:w-full [&>div>button]:flex [&>div>button]:h-9 [&>div>button]:w-full [&>div>button]:items-center [&>div>button]:rounded-md [&>div>button]:border [&>div>button]:border-border [&>div>button]:bg-transparent [&>div>button]:px-3 [&>div>button]:py-1 [&>div>button]:shadow-sm [&>div>button]:overflow-hidden [&>div>button>span]:truncate [&>div>button]:text-sm [&>div>button]:text-muted-foreground">
+            {/* Date picker — hard clip at 160px */}
+            <div className="w-[160px] max-w-[160px] overflow-hidden relative">
               <NikhilTimeCalendar
                 value={dateFrom}
                 onChange={setDateFrom}
                 placeholder="Select Date"
                 popDirection="down"
-                className="h-9 w-full pr-6"
+                className="h-9 w-full max-w-full"
               />
               {dateFrom && (
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent bg-background"
                   title="Clear date"
                 >
-                  <X size={14} />
+                  <X size={12} />
                 </button>
               )}
             </div>
