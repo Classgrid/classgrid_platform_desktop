@@ -190,10 +190,10 @@ export function GlobalUsersPage() {
     <div className="flex flex-col w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 animate-in fade-in">
       
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-6">
         
         {/* Search */}
-        <div className="relative flex-1 min-w-[250px] max-w-full">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
@@ -212,7 +212,7 @@ export function GlobalUsersPage() {
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-2 shrink-0">
           {/* Org Type */}
           <div className="w-[150px]">
             <ResponsiveSelect
