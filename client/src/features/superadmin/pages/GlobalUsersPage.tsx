@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Users, Search } from "lucide-react";
+import { Users, Search, X } from "lucide-react";
 
 import { Card, CardContent } from "@/components/marketing_ui/card";
 import { DataTable } from "@/components/marketing_ui/data-table";
@@ -189,52 +189,85 @@ export function GlobalUsersPage() {
   return (
     <div className="flex flex-col w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 animate-in fade-in">
       
-      {/* Vercel-style Filter Bar (No background, no border, just sitting above the table) */}
-      <div className="flex items-center gap-3 mb-4 overflow-x-auto no-scrollbar whitespace-nowrap">
-          <div className="w-[200px] shrink-0">
-              <NikhilTimeCalendar 
-                  value={dateFilter} 
-                  onChange={setDateFilter} 
-                  placeholder="Select Date Range" 
-                  className="h-8 w-full bg-background" 
-              />
+      {/* Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
+        
+        {/* Search */}
+        <div className="relative w-full sm:max-w-xs shrink-0">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search by name or email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full h-9 pl-10 pr-10 rounded-md border border-border bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all shadow-sm"
+          />
+          {search && (
+            <button 
+              onClick={() => setSearch("")} 
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2 shrink-0">
+          {/* Org Type */}
+          <div className="w-[150px]">
+            <ResponsiveSelect
+              className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
+              value={orgTypeFilter}
+              onChange={(e) => setOrgTypeFilter(e.target.value)}
+            >
+              {ORG_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </ResponsiveSelect>
           </div>
-          <div className="relative w-[240px] shrink-0">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input 
-                  className="pl-8 h-8 w-full bg-background border-border text-sm shadow-sm" 
-                  placeholder="Search by name or email..." 
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-              />
+
+          {/* Role */}
+          <div className="w-[150px]">
+            <ResponsiveSelect
+              className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+            >
+              {ROLE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </ResponsiveSelect>
           </div>
-          <div className="w-[140px] shrink-0">
-              <ResponsiveSelect
-                  className="h-8 w-full rounded-md border border-border shadow-sm bg-background px-3 py-1 text-sm text-foreground focus-visible:outline-none"
-                  value={orgTypeFilter}
-                  onChange={(e) => setOrgTypeFilter(e.target.value)}
+
+          {/* Status */}
+          <div className="w-[150px]">
+            <ResponsiveSelect
+              className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </ResponsiveSelect>
+          </div>
+
+          {/* Date picker */}
+          <div className="w-[180px] max-w-[180px] overflow-hidden relative">
+            <NikhilTimeCalendar 
+              value={dateFilter} 
+              onChange={setDateFilter} 
+              placeholder="Select Date Range" 
+              popDirection="down"
+              showTime={false}
+              className="h-9 w-full pr-7" 
+            />
+            {dateFilter && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setDateFilter(undefined); }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent bg-background"
+                title="Clear date"
               >
-                  {ORG_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </ResponsiveSelect>
+                <X size={14} />
+              </button>
+            )}
           </div>
-          <div className="w-[140px] shrink-0">
-              <ResponsiveSelect
-                  className="h-8 w-full rounded-md border border-border shadow-sm bg-background px-3 py-1 text-sm text-foreground focus-visible:outline-none"
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-              >
-                  {ROLE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </ResponsiveSelect>
-          </div>
-          <div className="w-[140px] shrink-0">
-              <ResponsiveSelect
-                  className="h-8 w-full rounded-md border border-border shadow-sm bg-background px-3 py-1 text-sm text-foreground focus-visible:outline-none"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                  {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </ResponsiveSelect>
-          </div>
+        </div>
       </div>
 
       {/* Data Table (Vercel wraps the list in a subtle border) */}
