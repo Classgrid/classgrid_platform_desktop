@@ -250,12 +250,14 @@ const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "reopened", label: "Reopened" },
 ];
 
-const PRIORITY_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "", label: "Priority: All" },
-  { value: "critical", label: "Critical" },
-  { value: "high", label: "High" },
-  { value: "medium", label: "Medium" },
-  { value: "low", label: "Low" },
+const ORG_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "", label: "Org Type: All" },
+  { value: "school", label: "School" },
+  { value: "junior_college", label: "Junior College" },
+  { value: "engineering", label: "Engineering" },
+  { value: "coaching", label: "Coaching" },
+  { value: "diploma", label: "Diploma" },
+  { value: "other", label: "Other" },
 ];
 
 const STATUS_CHANGE_OPTIONS: TicketStatus[] = [
@@ -581,9 +583,10 @@ export function SupportTicketsPage() {
               value={orgTypeFilter}
               onChange={(e) => setOrgTypeFilter(e.target.value)}
             >
-              <option value="">Org Type: All</option>
-              {orgTypes.map((o) => (
-                <option key={o} value={o}>{o.replace(/_/g, " ")}</option>
+              {ORG_TYPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
               ))}
             </ResponsiveSelect>
           </div>
