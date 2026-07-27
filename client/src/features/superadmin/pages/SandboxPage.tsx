@@ -4,8 +4,8 @@ import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calend
 import { Search, X } from "lucide-react";
 
 export function SandboxPage() {
-  const [dateFrom, setDateFrom] = useState<Date | undefined>();
-  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
   const [statusFilter, setStatusFilter] = useState("");
   const [orgTypeFilter, setOrgTypeFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -13,63 +13,29 @@ export function SandboxPage() {
   return (
     <div className="min-h-screen p-8 lg:p-12">
       <h1 className="text-3xl font-bold tracking-tight mb-8">Filter Bar Sandbox</h1>
-      <p className="text-sm text-muted-foreground mb-6">All filters on ONE line — no wrapping</p>
 
-      {/* ═══ ALL ON ONE LINE — NO WRAP ═══ */}
-      <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-2">
-        {/* NikhilTimeCalendar — Start */}
-        <div className="w-[200px] shrink-0">
-          <NikhilTimeCalendar
-            value={dateFrom}
-            onChange={setDateFrom}
-            placeholder="Start date"
-            popDirection="down"
-            className="h-9 text-xs"
-          />
-        </div>
-
-        <span className="text-xs text-muted-foreground shrink-0">–</span>
-
-        {/* NikhilTimeCalendar — End */}
-        <div className="w-[200px] shrink-0">
-          <NikhilTimeCalendar
-            value={dateTo}
-            onChange={setDateTo}
-            placeholder="End date"
-            popDirection="down"
-            className="h-9 text-xs"
-          />
-        </div>
-
-        {(dateFrom || dateTo) && (
-          <button
-            onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}
-            className="p-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-          >
-            <X size={14} />
-          </button>
-        )}
-
+      {/* ═══ ONE LINE — tight like Vercel ═══ */}
+      <div className="flex flex-nowrap items-center gap-1.5">
         {/* Search */}
-        <div className="relative w-[220px] shrink-0">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative w-[180px] shrink-0">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Name, email, ID..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex h-9 w-full items-center rounded-md border border-input bg-transparent pl-9 pr-8 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring placeholder:text-muted-foreground"
+            className="flex h-8 w-full items-center rounded-md border border-input bg-transparent pl-8 pr-7 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring placeholder:text-muted-foreground"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-              <X size={14} />
+            <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <X size={12} />
             </button>
           )}
         </div>
 
         {/* Org Type */}
         <ResponsiveSelect
-          className="flex h-9 w-[140px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="flex h-8 w-[120px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-2.5 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           value={orgTypeFilter}
           onChange={(e) => setOrgTypeFilter(e.target.value)}
         >
@@ -79,9 +45,31 @@ export function SandboxPage() {
           <option value="coaching">Coaching</option>
         </ResponsiveSelect>
 
+        {/* Date Range — ONE button using NikhilTimeCalendar mode="range" */}
+        <div className="w-[200px] shrink-0">
+          <NikhilTimeCalendar
+            mode="range"
+            startValue={startDate}
+            endValue={endDate}
+            onRangeApply={(start, end) => { setStartDate(start); setEndDate(end); }}
+            placeholder="Select Date Range"
+            popDirection="down"
+            className="h-8 text-xs"
+          />
+        </div>
+
+        {(startDate || endDate) && (
+          <button
+            onClick={() => { setStartDate(undefined); setEndDate(undefined); }}
+            className="p-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          >
+            <X size={12} />
+          </button>
+        )}
+
         {/* Status */}
         <ResponsiveSelect
-          className="flex h-9 w-[140px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="flex h-8 w-[110px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-2.5 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
@@ -93,10 +81,10 @@ export function SandboxPage() {
         </ResponsiveSelect>
       </div>
 
-      {/* Show active filters */}
+      {/* Debug output */}
       <div className="mt-6 p-4 bg-card border border-border rounded-lg text-sm text-muted-foreground space-y-1">
-        <p><strong>dateFrom:</strong> {dateFrom?.toLocaleString() || "—"}</p>
-        <p><strong>dateTo:</strong> {dateTo?.toLocaleString() || "—"}</p>
+        <p><strong>startDate:</strong> {startDate?.toLocaleString() || "—"}</p>
+        <p><strong>endDate:</strong> {endDate?.toLocaleString() || "—"}</p>
         <p><strong>search:</strong> {searchQuery || "—"}</p>
         <p><strong>orgType:</strong> {orgTypeFilter || "—"}</p>
         <p><strong>status:</strong> {statusFilter || "—"}</p>
