@@ -124,7 +124,7 @@ ${text}
 // ─────────────────────────────────────────────
 // CREATE CLASSROOM (Teacher/Faculty only)
 // ─────────────────────────────────────────────
-router.post("/", isAuthenticated, requireRole("teacher", "faculty"), requireOrganization, attachInstitutionProfile(), validateClassroom, async (req, res) => {
+router.post("/", isAuthenticated, requireRole("teacher", "faculty", "org_admin", "super_admin"), requireOrganization, attachInstitutionProfile(), validateClassroom, async (req, res) => {
     try {
         await connectDB();
         const orgId = req.effectiveOrganizationId || req.user.organization_id;
@@ -1232,9 +1232,9 @@ router.get("/:id/meetings", isAuthenticated, requireClassroomMember, async (req,
     }
 });
 
-// GET MEMBERS (Owner only)
+// GET MEMBERS (Members can see roster)
 // ─────────────────────────────────────────────
-router.get("/:id/members", isAuthenticated, requireClassroomOwner, async (req, res) => {
+router.get("/:id/members", isAuthenticated, requireClassroomMember, async (req, res) => {
     try {
         const { data: supaMembers, error } = await getChatSb()
             .from('classroom_memberships')
