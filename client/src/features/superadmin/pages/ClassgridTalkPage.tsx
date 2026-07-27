@@ -308,7 +308,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 export function ClassgridTalkPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
-  const [orgNameFilter, setOrgNameFilter] = useState("");
+  const [orgTypeFilter, setOrgTypeFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
@@ -342,13 +342,13 @@ export function ClassgridTalkPage() {
   const tickets = data?.tickets ?? [];
   const apiStats = data?.stats;
 
-  const orgNames = useMemo(() => {
-    const names = new Set<string>();
+  const orgTypes = useMemo(() => {
+    const types = new Set<string>();
     tickets.forEach((t) => {
-      const name = (t as any).organization_id?.name || (t as any).institution;
-      if (name) names.add(name);
+      const type = (t as any).organization_id?.org_type;
+      if (type) types.add(type);
     });
-    return Array.from(names).sort();
+    return Array.from(types).sort();
   }, [tickets]);
 
   const roles = useMemo(() => {
@@ -364,10 +364,10 @@ export function ClassgridTalkPage() {
   const filteredTickets = useMemo(() => {
     let result = tickets;
 
-    if (orgNameFilter) {
+    if (orgTypeFilter) {
       result = result.filter((t) => {
-        const name = (t as any).organization_id?.name || (t as any).institution;
-        return name === orgNameFilter;
+        const type = (t as any).organization_id?.org_type;
+        return type === orgTypeFilter;
       });
     }
     
@@ -394,13 +394,27 @@ export function ClassgridTalkPage() {
       });
     }
     if (dateFrom) {
-      result = result.filter((t) => new Date(t.createdAt) >= dateFrom);
+      const startOfDay = new Date(dateFrom);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(dateFrom);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      result = result.filter((t) => {
+        const tDate = new Date(t.createdAt);
+        return tDate >= startOfDay && tDate <= endOfDay;
+      });
     }
-    if (dateTo) {
-      result = result.filter((t) => new Date(t.createdAt) <= dateTo);
+
+    if (priorityFilter) {
+      result = result.filter((t) => t.priority === priorityFilter);
     }
+    
+    if (statusFilter) {
+      result = result.filter((t) => t.status === statusFilter);
+    }
+
     return result;
-  }, [tickets, searchQuery, dateFrom, dateTo, orgNameFilter, roleFilter]);
+  }, [tickets, searchQuery, dateFrom, orgTypeFilter, roleFilter, priorityFilter, statusFilter]);
 
   const displayStats = useMemo(
     () => ({
@@ -557,31 +571,43 @@ export function ClassgridTalkPage() {
             )}
           </div>
 
-          {/* Org Name */}
-          <ResponsiveSelect
-            className="flex h-9 w-[160px] items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
-            value={orgNameFilter}
-            onChange={(e) => setOrgNameFilter(e.target.value)}
-          >
-            <option value="">Org: All</option>
-            {orgNames.map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </ResponsiveSelect>
+          {/* Org Type */}
+          <div className="w-[160px] shrink-0">
+            <ResponsiveSelect
+              className="flex h-9 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+              value={orgTypeFilter}
+              onChange={(e) => setOrgTypeFilter(e.target.value)}
+            >
+              <option value="">Org Type: All</option>
+              {orgTypes.map((o) => (
+                <option key={o} value={o}>{o.replace(/_/g, " ")}</option>
+              ))}
+            </ResponsiveSelect>
+          </div>
 
           {/* Priority */}
-          <ResponsiveSelect
-            className="flex h-9 w-[140px] items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
-          >
-            <option value="">Priority: All</option>
-            {PRIORITY_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </ResponsiveSelect>
+          <div className="w-[140px] shrink-0">
+            <ResponsiveSelect
+              className="flex h-9 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+            >
+              <option value="">Priority: All</option>
+              {PRIORITY_OPTIONS.map((o) => {
+                let pColor;
+                if (o.value === "low") pColor = "bg-emerald-500";
+                else if (o.value === "medium") pColor = "bg-amber-500";
+                else if (o.value === "high") pColor = "bg-orange-500";
+                else if (o.value === "critical") pColor = "bg-red-600";
+                
+                return (
+                  <option key={o.value} value={o.value} data-color={pColor}>
+                    {o.label}
+                  </option>
+                );
+              })}
+            </ResponsiveSelect>
+          </div>
 
           {/* Date Range (Single Calendar) */}
           <div className="w-[180px] shrink-0 [&>div>button]:flex [&>div>button]:h-9 [&>div>button]:w-full [&>div>button]:items-center [&>div>button]:rounded-md [&>div>button]:border [&>div>button]:border-border [&>div>button]:bg-transparent [&>div>button]:px-3 [&>div>button]:py-1 [&>div>button]:shadow-sm hover:[&>div>button]:bg-accent/50 [&>div>button]:transition-colors [&>div>button]:text-muted-foreground [&>div>button]:overflow-hidden [&>div>button>span]:truncate">
@@ -595,38 +621,24 @@ export function ClassgridTalkPage() {
           </div>
 
           {/* Status */}
-          <ResponsiveSelect
-            className="flex h-9 w-[180px] items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            renderCustomValue={() => (
-              <div className="flex items-center w-full">
-                <div className="flex -space-x-1.5 mr-2 shrink-0">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500 border border-background z-30" />
-                  <div className="w-3 h-3 rounded-full bg-red-500 border border-background z-20" />
-                  <div className="w-3 h-3 rounded-full bg-amber-500 border border-background z-10" />
-                  <div className="w-3 h-3 rounded-full bg-slate-200 border border-background z-0" />
-                </div>
-                <span className="text-foreground truncate flex-1 text-left">
-                  {statusFilter ? STATUS_OPTIONS.find(o => o.value === statusFilter)?.label : "Status"}
-                </span>
-                <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-foreground shrink-0">
-                  {displayStats.total}
-                </span>
-              </div>
-            )}
-          >
-            <option value="">Status: All</option>
-            {STATUS_OPTIONS.map((o) => (
-              <option
-                key={o.value}
-                value={o.value}
-                data-color={o.value ? statusColor(o.value) : undefined}
-              >
-                {o.label}
-              </option>
-            ))}
-          </ResponsiveSelect>
+          <div className="w-[180px] shrink-0">
+            <ResponsiveSelect
+              className="flex h-9 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">Status: All</option>
+              {STATUS_OPTIONS.map((o) => (
+                <option
+                  key={o.value}
+                  value={o.value}
+                  data-color={o.value ? statusColor(o.value) : undefined}
+                >
+                  {o.label}
+                </option>
+              ))}
+            </ResponsiveSelect>
+          </div>
 
         </div>
 
