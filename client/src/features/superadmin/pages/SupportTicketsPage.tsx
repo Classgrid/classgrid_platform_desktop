@@ -359,13 +359,14 @@ export function SupportTicketsPage() {
     return Array.from(types).sort();
   }, [tickets]);
 
-  const orgNames = useMemo(() => {
-    const names = new Set<string>();
+  const orgEntries = useMemo(() => {
+    const map = new Map<string, string>();
     tickets.forEach((t) => {
       const name = (t as any).organization_id?.name || (t as any).institution;
-      if (name) names.add(name);
+      const logo = (t as any).organization_id?.logo_url || "";
+      if (name && !map.has(name)) map.set(name, logo);
     });
-    return Array.from(names).sort((a, b) => a.localeCompare(b));
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [tickets]);
 
   const roles = useMemo(() => {
@@ -610,8 +611,17 @@ export function SupportTicketsPage() {
                 onChange={(e) => setOrgNameFilter(e.target.value)}
               >
                 <option value="">Org Name: All</option>
-                {orgNames.map((name) => (
-                  <option key={name} value={name}>{name}</option>
+                {orgEntries.map(([name, logo]) => (
+                  <option key={name} value={name}>
+                    <span className="flex items-center gap-2">
+                      {logo ? (
+                        <img src={logo} alt="" className="w-4 h-4 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <span className="w-4 h-4 rounded-full bg-muted shrink-0 flex items-center justify-center text-[9px] font-bold text-muted-foreground">{name.charAt(0)}</span>
+                      )}
+                      <span className="truncate">{name}</span>
+                    </span>
+                  </option>
                 ))}
               </ResponsiveSelect>
             </div>
