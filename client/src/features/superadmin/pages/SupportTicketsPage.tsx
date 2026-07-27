@@ -564,7 +564,7 @@ export function SupportTicketsPage() {
             <Search size={14} className="text-muted-foreground mr-2 shrink-0" />
             <input
               type="text"
-              placeholder="Search tickets..."
+              placeholder="Search name, email, ticket ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground min-w-0"
