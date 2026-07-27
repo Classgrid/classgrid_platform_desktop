@@ -1,104 +1,61 @@
-import React, { useState } from 'react';
-import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
-import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
-import { Search, X } from "lucide-react";
+import React from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+// If UI table isn't found, fallback to simple HTML table styled with Tailwind
+const dummyData = [
+  { id: "T-1001", name: "Rahul Sharma", email: "rahul@example.com", orgType: "College", status: "Open", date: "Jul 25, 2026" },
+  { id: "T-1002", name: "Priya Patel", email: "priya@example.com", orgType: "School", status: "Resolved", date: "Jul 24, 2026" },
+  { id: "T-1003", name: "Amit Kumar", email: "amit@example.com", orgType: "Coaching", status: "In Progress", date: "Jul 23, 2026" },
+  { id: "T-1004", name: "Neha Singh", email: "neha@example.com", orgType: "School", status: "Closed", date: "Jul 22, 2026" },
+  { id: "T-1005", name: "Vikram Reddy", email: "vikram@example.com", orgType: "College", status: "Open", date: "Jul 21, 2026" },
+];
 
 export function SandboxPage() {
-  const [dateFrom, setDateFrom] = useState<Date | undefined>();
-  const [dateTo, setDateTo] = useState<Date | undefined>();
-  const [statusFilter, setStatusFilter] = useState("");
-  const [orgTypeFilter, setOrgTypeFilter] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-
   return (
     <div className="min-h-screen p-8 lg:p-12">
-      <h1 className="text-3xl font-bold tracking-tight mb-8">Filter Bar Sandbox</h1>
-
-      {/* ═══ TWO SEPARATE CALENDARS ═══ */}
-      <div className="flex flex-wrap items-center gap-1.5 w-full max-w-full">
-        {/* Date From */}
-        <div className="min-w-[140px] max-w-[180px] flex-1">
-          <NikhilTimeCalendar
-            value={dateFrom}
-            onChange={setDateFrom}
-            placeholder="Start date"
-            popDirection="down"
-            className="h-8 text-xs w-full"
-          />
-        </div>
-
-        <span className="text-muted-foreground text-xs">–</span>
-
-        {/* Date To */}
-        <div className="min-w-[140px] max-w-[180px] flex-1">
-          <NikhilTimeCalendar
-            value={dateTo}
-            onChange={setDateTo}
-            placeholder="End date"
-            popDirection="down"
-            className="h-8 text-xs w-full"
-          />
-        </div>
-
-        {(dateFrom || dateTo) && (
-          <button
-            onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}
-            className="p-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-          >
-            <X size={12} />
-          </button>
-        )}
-
-        {/* Search */}
-        <div className="relative min-w-[150px] flex-[2]">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex h-8 w-full items-center rounded-md border border-input bg-transparent pl-8 pr-7 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring placeholder:text-muted-foreground"
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-              <X size={12} />
-            </button>
-          )}
-        </div>
-
-        {/* Org Type */}
-        <ResponsiveSelect
-          className="flex h-8 w-[110px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-2.5 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          value={orgTypeFilter}
-          onChange={(e) => setOrgTypeFilter(e.target.value)}
-        >
-          <option value="">Org Type: All</option>
-          <option value="college">College</option>
-          <option value="school">School</option>
-          <option value="coaching">Coaching</option>
-        </ResponsiveSelect>
-
-        {/* Status */}
-        <ResponsiveSelect
-          className="flex h-8 w-[100px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-2.5 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="">Status: All</option>
-          <option value="open">Open</option>
-          <option value="in_progress">In Progress</option>
-          <option value="resolved">Resolved</option>
-          <option value="closed">Closed</option>
-        </ResponsiveSelect>
-      </div>
-
-      {/* Debug output */}
-      <div className="mt-6 p-4 bg-card border border-border rounded-lg text-sm text-muted-foreground space-y-1">
-        <p><strong>dateFrom:</strong> {dateFrom?.toLocaleString() || "—"}</p>
-        <p><strong>dateTo:</strong> {dateTo?.toLocaleString() || "—"}</p>
-        <p><strong>search:</strong> {searchQuery || "—"}</p>
-        <p><strong>orgType:</strong> {orgTypeFilter || "—"}</p>
-        <p><strong>status:</strong> {statusFilter || "—"}</p>
+      <h1 className="text-3xl font-bold tracking-tight mb-8">Data Table Sandbox</h1>
+      
+      <div className="border border-border rounded-lg overflow-hidden bg-card">
+        <table className="w-full text-sm text-left">
+          <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
+            <tr>
+              <th className="px-6 py-4 font-medium">Ticket ID</th>
+              <th className="px-6 py-4 font-medium">Name</th>
+              <th className="px-6 py-4 font-medium">Email</th>
+              <th className="px-6 py-4 font-medium">Org Type</th>
+              <th className="px-6 py-4 font-medium">Status</th>
+              <th className="px-6 py-4 font-medium text-right">Date</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {dummyData.map((row) => (
+              <tr key={row.id} className="hover:bg-muted/30 transition-colors">
+                <td className="px-6 py-4 font-medium text-foreground">{row.id}</td>
+                <td className="px-6 py-4 text-foreground">{row.name}</td>
+                <td className="px-6 py-4 text-muted-foreground">{row.email}</td>
+                <td className="px-6 py-4 text-muted-foreground">{row.orgType}</td>
+                <td className="px-6 py-4">
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    row.status === 'Open' ? 'bg-blue-500/10 text-blue-500' :
+                    row.status === 'Resolved' ? 'bg-emerald-500/10 text-emerald-500' :
+                    row.status === 'In Progress' ? 'bg-amber-500/10 text-amber-500' :
+                    'bg-slate-500/10 text-slate-500'
+                  }`}>
+                    {row.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right text-muted-foreground">{row.date}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
