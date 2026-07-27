@@ -204,13 +204,13 @@ export function NikhilTimeCalendar({
           type="button"
           variant="outline"
           className={cn(
-            "w-full justify-start text-left font-normal border-border bg-background hover:bg-accent/50",
+            "w-full justify-start text-left font-normal border-border bg-background hover:bg-accent/50 overflow-hidden",
             !value && "text-muted-foreground",
             className
           )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {displayString}
+          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+          <span className="truncate min-w-0">{displayString}</span>
         </Button>
       </PopoverTrigger>
 

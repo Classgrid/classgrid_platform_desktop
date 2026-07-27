@@ -16,7 +16,12 @@ import {
   Copy,
   ArrowLeft,
   FileText,
+  Search,
+  Calendar,
+  X,
+  Lock,
 } from "lucide-react";
+import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { StatCard } from "@/components/marketing_ui/StatCard";
 import { RecentActivityTable } from "@/components/marketing_ui/data-table";
 import { Button } from "@/components/marketing_ui/button";
@@ -303,6 +308,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 export function ClassgridTalkPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
+  const [orgNameFilter, setOrgNameFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(
     null
   );
@@ -331,6 +341,66 @@ export function ClassgridTalkPage() {
 
   const tickets = data?.tickets ?? [];
   const apiStats = data?.stats;
+
+  const orgNames = useMemo(() => {
+    const names = new Set<string>();
+    tickets.forEach((t) => {
+      const name = (t as any).organization_id?.name || (t as any).institution;
+      if (name) names.add(name);
+    });
+    return Array.from(names).sort();
+  }, [tickets]);
+
+  const roles = useMemo(() => {
+    const rs = new Set<string>();
+    tickets.forEach((t) => {
+      const role = t.submittedBy?.role;
+      if (role) rs.add(role);
+    });
+    return Array.from(rs).sort();
+  }, [tickets]);
+
+  // Client-side search & date filtering
+  const filteredTickets = useMemo(() => {
+    let result = tickets;
+
+    if (orgNameFilter) {
+      result = result.filter((t) => {
+        const name = (t as any).organization_id?.name || (t as any).institution;
+        return name === orgNameFilter;
+      });
+    }
+    
+    if (roleFilter) {
+      result = result.filter((t) => t.submittedBy?.role === roleFilter);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((t) => {
+        const name = t.submittedBy?.name ?? t.submitterName ?? t.name ?? "";
+        const email = t.submittedBy?.email ?? t.submitterEmail ?? t.email ?? "";
+        const role = t.submittedBy?.role ?? "";
+        return (
+          t._id.toLowerCase().includes(q) ||
+          t.subject.toLowerCase().includes(q) ||
+          name.toLowerCase().includes(q) ||
+          email.toLowerCase().includes(q) ||
+          role.toLowerCase().includes(q) ||
+          ((t as any).organization_id?.name || "").toLowerCase().includes(q) ||
+          ((t as any).institution || "").toLowerCase().includes(q) ||
+          (t.category || "").toLowerCase().includes(q)
+        );
+      });
+    }
+    if (dateFrom) {
+      result = result.filter((t) => new Date(t.createdAt) >= dateFrom);
+    }
+    if (dateTo) {
+      result = result.filter((t) => new Date(t.createdAt) <= dateTo);
+    }
+    return result;
+  }, [tickets, searchQuery, dateFrom, dateTo, orgNameFilter, roleFilter]);
 
   const displayStats = useMemo(
     () => ({
@@ -467,11 +537,60 @@ export function ClassgridTalkPage() {
           />
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-2 mb-4">
-          <Filter size={14} className="text-muted-foreground shrink-0" />
+        {/* Filters — Single row like Vercel */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {/* Date Range Pickers */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="w-[200px] overflow-hidden [&_button]:truncate [&_button]:overflow-hidden">
+              <NikhilTimeCalendar
+                value={dateFrom}
+                onChange={setDateFrom}
+                placeholder="Start date"
+                popDirection="down"
+                className="h-9 text-xs"
+              />
+            </div>
+            <span className="text-xs text-muted-foreground shrink-0">–</span>
+            <div className="w-[200px] overflow-hidden [&_button]:truncate [&_button]:overflow-hidden">
+              <NikhilTimeCalendar
+                value={dateTo}
+                onChange={setDateTo}
+                placeholder="End date"
+                popDirection="down"
+                className="h-9 text-xs"
+              />
+            </div>
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}
+                className="p-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                title="Clear dates"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Search */}
+          <div className="relative flex-1 min-w-[180px] max-w-[280px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search by name, email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex h-9 w-full items-center rounded-md border border-input bg-transparent pl-9 pr-8 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring placeholder:text-muted-foreground"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Dropdowns */}
           <ResponsiveSelect
-            className="flex h-9 w-full sm:w-[180px] items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-9 w-[140px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -485,8 +604,9 @@ export function ClassgridTalkPage() {
               </option>
             ))}
           </ResponsiveSelect>
+
           <ResponsiveSelect
-            className="flex h-9 w-full sm:w-[180px] items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-9 w-[140px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
           >
@@ -508,6 +628,29 @@ export function ClassgridTalkPage() {
               );
             })}
           </ResponsiveSelect>
+
+          <ResponsiveSelect
+            className="flex h-9 w-[150px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            value={orgNameFilter}
+            onChange={(e) => setOrgNameFilter(e.target.value)}
+          >
+            <option value="">Org: All</option>
+            {orgNames.map((o) => (
+              <option key={o} value={o}>{o}</option>
+            ))}
+          </ResponsiveSelect>
+
+          <ResponsiveSelect
+            className="flex h-9 w-[130px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+          >
+            <option value="">Role: All</option>
+            {roles.map((r) => (
+              <option key={r} value={r}>{r.replace(/_/g, " ")}</option>
+            ))}
+          </ResponsiveSelect>
+        </div>
         </div>
 
         {/* Ticket List */}
@@ -522,7 +665,7 @@ export function ClassgridTalkPage() {
               isLoading={isLoading}
               skeletonLines={6}
               emptyMessage="No tickets found. Adjust your filters or check back later."
-              rows={tickets.map((ticket) => {
+              rows={filteredTickets.map((ticket) => {
                 const name =
                   ticket.submittedBy?.name ??
                   ticket.submitterName ??
@@ -1080,6 +1223,32 @@ export function ClassgridTalkPage() {
                 {selectedMessages.length} message
                 {selectedMessages.length !== 1 ? "s" : ""} in this thread
               </div>
+
+              {selectedTicket.status !== "closed" && (
+                <div className="pt-2">
+                  <Button
+                    variant="outline"
+                    className="w-full text-xs gap-1.5"
+                    disabled={updateTicket.isPending}
+                    onClick={() => {
+                      updateTicket.mutate(
+                        { id: selectedTicket._id, status: "closed" },
+                        {
+                          onSuccess: (res) => {
+                            toast.success("Ticket closed");
+                            if (res.ticket) setSelectedTicket(res.ticket);
+                            refetch();
+                          },
+                          onError: () => toast.error("Failed to close ticket"),
+                        }
+                      );
+                    }}
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    {updateTicket.isPending ? "Closing..." : "Close Ticket"}
+                  </Button>
+                </div>
+              )}
 
               <div className="pt-2">
                 <Button

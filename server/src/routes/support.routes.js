@@ -582,6 +582,50 @@ router.post("/public/tickets/:id/reply", enforceStrictSession, multipleUploads("
     }
 });
 
+// ──────────────────────────────────────────────────────────────
+//  POST /api/support/public/tickets/:id/close — Close ticket (email verified)
+// ──────────────────────────────────────────────────────────────
+router.post("/public/tickets/:id/close", enforceStrictSession, async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email?.trim()) {
+            return res.status(400).json({ success: false, message: "Email is required" });
+        }
+
+        const ticket = await SupportTicket.findById(req.params.id);
+        if (!ticket) {
+            return res.status(404).json({ success: false, message: "Ticket not found" });
+        }
+
+        if (ticket.status === "closed") {
+            return res.status(400).json({ success: false, message: "This ticket is already closed." });
+        }
+
+        // Verify ownership via email
+        if (ticket.submitterEmail?.toLowerCase() !== email.trim().toLowerCase()) {
+            return res.status(403).json({ success: false, message: "Email does not match ticket owner" });
+        }
+
+        ticket.status = "closed";
+        ticket.updatedAt = new Date();
+        
+        ticket.events.push({
+            type: 'statusChanged',
+            label: 'User closed ticket',
+            actorName: ticket.submitterName || 'User',
+            actorRole: 'user',
+            createdAt: new Date()
+        });
+
+        await ticket.save();
+
+        res.json({ success: true, message: "Ticket closed", ticket: serializeTicket(ticket.toObject()) });
+    } catch (err) {
+        console.error("[Support] Public close error:", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
 // ╔═══════════════════════════════════════════════════════════════╗
 // ║  AUTHENTICATED ENDPOINTS — Logged-in platform users          ║
 // ╚═══════════════════════════════════════════════════════════════╝
