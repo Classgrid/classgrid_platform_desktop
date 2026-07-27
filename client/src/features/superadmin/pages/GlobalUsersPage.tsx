@@ -187,7 +187,7 @@ export function GlobalUsersPage() {
   ], []);
 
   return (
-    <div className="flex flex-col w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 animate-in fade-in">
+    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 animate-in fade-in">
       
       {/* Filter Bar */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-6">
