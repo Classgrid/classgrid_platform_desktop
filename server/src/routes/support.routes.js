@@ -1068,7 +1068,7 @@ router.get("/admin/tickets", isAuthenticated, requireRole("super_admin"), async 
                 .skip(skip)
                 .limit(parseInt(limit))
                 .populate("submittedBy", "name email role")
-                .populate("organization_id", "name slug org_type")
+                .populate("organization_id", "name slug org_type logo_url")
                 .populate("assignedTo", "name email")
                 .lean(),
             SupportTicket.countDocuments(filter)

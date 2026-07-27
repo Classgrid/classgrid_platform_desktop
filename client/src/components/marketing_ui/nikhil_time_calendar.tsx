@@ -181,14 +181,7 @@ export function NikhilTimeCalendar({
   const handleApply = () => {
     const baseDate = internalDate || new Date();
     const finalDate = new Date(baseDate);
-    let h = parseInt(hour);
-    if (ampm === "PM" && h < 12) h += 12;
-    if (ampm === "AM" && h === 12) h = 0;
-
-    finalDate.setHours(h);
-    finalDate.setMinutes(parseInt(minute));
-    finalDate.setSeconds(0);
-    finalDate.setMilliseconds(0);
+    finalDate.setHours(0, 0, 0, 0); // Normalize to start of day
     onChange(finalDate);
     setIsOpen(false);
   };
@@ -276,48 +269,6 @@ export function NikhilTimeCalendar({
             />
           </div>
 
-          <div className="w-full h-px bg-border/50" />
-
-          {/* Time Picker Section */}
-          <div className="p-4 flex flex-col gap-3 bg-muted/20">
-            <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
-              <Clock size={16} />
-              <span>Select Time</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="flex-[2]">
-                <CustomSelect 
-                  value={hour} 
-                  onValueChange={setHour} 
-                  options={hourOptions}
-                  className="h-9 border-border bg-background font-medium"
-                  dropUp={true}
-                />
-              </div>
-              <span className="text-lg font-bold text-muted-foreground pb-1">:</span>
-              <div className="flex-[2]">
-                <CustomSelect 
-                  value={minute} 
-                  onValueChange={setMinute} 
-                  options={minuteOptions}
-                  className="h-9 border-border bg-background font-medium"
-                  dropUp={true}
-                />
-              </div>
-              <div className="w-2" />
-              <div className="flex-[2]">
-                <CustomSelect 
-                  value={ampm} 
-                  onValueChange={setAmpm} 
-                  options={ampmOptions}
-                  className="h-9 border-none bg-emerald-500/10 text-emerald-500 font-bold hover:bg-emerald-500/20"
-                  dropUp={true}
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Action Button */}
           <div className="p-3 bg-muted/20 border-t border-border rounded-b-xl">
             <Button
@@ -325,7 +276,7 @@ export function NikhilTimeCalendar({
               className="w-full bg-foreground text-background hover:bg-foreground/90 font-medium"
               onClick={handleApply}
             >
-              Apply Date &amp; Time
+              Apply Date
             </Button>
           </div>
         </div>

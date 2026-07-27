@@ -128,7 +128,7 @@ export function ResponsiveSelect({
         {open && (
           <div
             ref={dropdownRef}
-            className="absolute left-0 right-0 top-full z-[1050] mt-1 rounded-lg border border-border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 duration-100"
+            className="absolute left-0 top-full z-[1050] mt-1 min-w-full w-max max-w-[320px] rounded-lg border border-border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 duration-100"
           >
             {/* Search input */}
             {showSearch && (
@@ -173,9 +173,9 @@ export function ResponsiveSelect({
                     setOpen(false);
                   }}
                 >
-                  <div className="flex items-center gap-2 flex-1">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
                     {opt.color && <span className={`shrink-0 w-2 h-2 rounded-full ${opt.color}`} />}
-                    <span>{opt.label}</span>
+                    <span className="whitespace-nowrap truncate">{opt.label}</span>
                   </div>
                   {displayValue === opt.value && (
                     <CheckIcon className="ml-auto h-4 w-4 text-primary" />
