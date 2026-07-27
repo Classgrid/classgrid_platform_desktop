@@ -432,8 +432,24 @@ export function ClassgridTalkPage() {
       endOfDay.setHours(23, 59, 59, 999);
       
       result = result.filter((t) => {
-        const tDate = new Date(t.createdAt);
-        return tDate >= startOfDay && tDate <= endOfDay;
+        const cDate = new Date(t.createdAt);
+        const uDate = t.updatedAt ? new Date(t.updatedAt) : cDate;
+        
+        // Check if ticket was created or updated on this day
+        if ((cDate >= startOfDay && cDate <= endOfDay) || 
+            (uDate >= startOfDay && uDate <= endOfDay)) {
+          return true;
+        }
+
+        // Also check if any reply was made on this day
+        if (t.replies && Array.isArray(t.replies)) {
+          return t.replies.some((r: any) => {
+            const rDate = new Date(r.createdAt);
+            return rDate >= startOfDay && rDate <= endOfDay;
+          });
+        }
+        
+        return false;
       });
     }
 
