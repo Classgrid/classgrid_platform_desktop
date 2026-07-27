@@ -1068,7 +1068,7 @@ router.get("/admin/tickets", isAuthenticated, requireRole("super_admin"), async 
                 .skip(skip)
                 .limit(parseInt(limit))
                 .populate("submittedBy", "name email role")
-                .populate("organization_id", "name slug")
+                .populate("organization_id", "name slug org_type")
                 .populate("assignedTo", "name email")
                 .lean(),
             SupportTicket.countDocuments(filter)
@@ -1080,7 +1080,7 @@ router.get("/admin/tickets", isAuthenticated, requireRole("super_admin"), async 
                 const user = await User.findOne(
                     { email: ticket.submitterEmail.toLowerCase() },
                     "name email role organization_id"
-                ).populate("organization_id", "name").lean();
+                ).populate("organization_id", "name org_type").lean();
                 
                 if (user) {
                     ticket.submitterRole = user.role;
