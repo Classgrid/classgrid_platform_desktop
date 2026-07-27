@@ -196,7 +196,7 @@ export function GlobalUsersPage() {
         searchPlaceholder="Search by name or email..."
       >
         {/* Org Type */}
-          <div className="w-[150px]">
+          <div className="w-[140px]">
             <ResponsiveSelect
               className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
               value={orgTypeFilter}
@@ -207,7 +207,7 @@ export function GlobalUsersPage() {
           </div>
 
           {/* Role */}
-          <div className="w-[150px]">
+          <div className="w-[140px]">
             <ResponsiveSelect
               className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
               value={roleFilter}
@@ -218,7 +218,7 @@ export function GlobalUsersPage() {
           </div>
 
           {/* Status */}
-          <div className="w-[150px]">
+          <div className="w-[140px]">
             <ResponsiveSelect
               className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
               value={statusFilter}

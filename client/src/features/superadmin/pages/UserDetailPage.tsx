@@ -383,7 +383,6 @@ export function UserDetailPage() {
           </TableRow>
           <TableRow className="hover:bg-transparent bg-muted/30">
             <TableCell colSpan={4} className="text-center font-semibold py-4 text-foreground/80 text-[13px] tracking-wide">
-              ACADEMIC YEAR - {recordAcademicYear}<br />
               USER RECORD FOR ACADEMIC YEAR {recordAcademicYear}
             </TableCell>
           </TableRow>
