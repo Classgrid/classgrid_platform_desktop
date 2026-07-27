@@ -8,6 +8,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { Search, Calendar as CalendarIcon, ChevronDown, MoreHorizontal } from "lucide-react";
+
 // If UI table isn't found, fallback to simple HTML table styled with Tailwind
 const dummyData = [
   { id: "T-1001", name: "Rahul Sharma", email: "rahul@example.com", orgType: "College", status: "Open", date: "Jul 25, 2026" },
@@ -22,6 +24,62 @@ export function SandboxPage() {
     <div className="min-h-screen p-8 lg:p-12">
       <h1 className="text-3xl font-bold tracking-tight mb-8">Data Table Sandbox</h1>
       
+      {/* ═══ VERCEL EXACT DUMMY FILTER BAR ═══ */}
+      <div className="flex flex-nowrap items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide w-full max-w-full text-sm">
+        
+        {/* All Branches */}
+        <button className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors">
+          <div className="flex items-center text-muted-foreground">
+            <Search size={14} className="mr-2" />
+            <span className="truncate">All Branc...</span>
+          </div>
+          <ChevronDown size={14} className="text-muted-foreground ml-2 shrink-0" />
+        </button>
+
+        {/* All Authors */}
+        <button className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors">
+          <div className="flex items-center text-muted-foreground">
+            <Search size={14} className="mr-2" />
+            <span className="truncate">All Autho...</span>
+          </div>
+          <ChevronDown size={14} className="text-muted-foreground ml-2 shrink-0" />
+        </button>
+
+        {/* All Environments */}
+        <button className="flex h-9 min-w-[150px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-foreground">
+          <span className="truncate">All Environments</span>
+          <ChevronDown size={14} className="text-muted-foreground ml-2 shrink-0" />
+        </button>
+
+        {/* Select Date Range */}
+        <button className="flex h-9 min-w-[200px] flex-[2] items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-muted-foreground">
+          <CalendarIcon size={14} className="mr-2 shrink-0" />
+          <span className="truncate">Select Date Range</span>
+        </button>
+
+        {/* Status */}
+        <button className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors">
+          <div className="flex items-center">
+            {/* Colored dots */}
+            <div className="flex -space-x-1.5 mr-2">
+              <div className="w-3 h-3 rounded-full bg-emerald-500 border border-background z-30" />
+              <div className="w-3 h-3 rounded-full bg-red-500 border border-background z-20" />
+              <div className="w-3 h-3 rounded-full bg-amber-500 border border-background z-10" />
+              <div className="w-3 h-3 rounded-full bg-slate-200 border border-background z-0" />
+            </div>
+            <span className="text-foreground">Status</span>
+            <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-foreground">6/7</span>
+          </div>
+          <ChevronDown size={14} className="text-muted-foreground ml-2 shrink-0" />
+        </button>
+
+        {/* More Options */}
+        <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-transparent shadow-sm hover:bg-accent/50 transition-colors">
+          <MoreHorizontal size={14} className="text-foreground" />
+        </button>
+
+      </div>
+
       <div className="border border-border rounded-lg overflow-hidden bg-card">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
