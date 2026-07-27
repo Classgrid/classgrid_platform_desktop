@@ -663,7 +663,7 @@ export function SupportTicketsPage() {
           ) : (
             <RecentActivityTable
               columns={ticketCols}
-              isLoading={isLoading}
+              isLoading={isLoading || isFetching}
               skeletonLines={6}
               emptyMessage="No tickets found. Adjust your filters or check back later."
               rows={filteredTickets.map((ticket) => {
