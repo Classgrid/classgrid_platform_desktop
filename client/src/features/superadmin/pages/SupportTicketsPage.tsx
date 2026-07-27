@@ -643,13 +643,13 @@ export function SupportTicketsPage() {
                 placeholder="Select Date"
                 popDirection="down"
                 showTime={false}
-                className="h-9 w-full pr-7"
+                className="h-9 w-full pr-8"
               />
               {dateFrom && (
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent bg-background"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent bg-background"
                   title="Clear date"
                 >
                   <X size={14} />
