@@ -15,9 +15,9 @@ export function SuperadminFilterBar({
   children,
 }: SuperadminFilterBarProps) {
   return (
-    <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3 mb-6">
+    <div className="flex flex-row items-center gap-3 mb-6 w-full">
       {/* Search Input */}
-      <div className="relative w-full xl:w-[240px] shrink-0">
+      <div className="relative flex-1 min-w-[130px] max-w-[280px]">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
           type="text"
@@ -38,7 +38,7 @@ export function SuperadminFilterBar({
 
       {/* Dynamic Filters (Dropdowns & Date Pickers) */}
       {children && (
-        <div className="flex flex-row flex-wrap xl:flex-nowrap gap-2 flex-1 min-w-0">
+        <div className="flex flex-row items-center gap-2 flex-1 min-w-0 justify-end">
           {children}
         </div>
       )}
