@@ -538,63 +538,86 @@ export function SupportTicketsPage() {
           />
         </div>
 
-        {/* Filters — Single row like Vercel */}
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          {/* Date Range Pickers */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div className="w-[200px] overflow-hidden [&_button]:truncate [&_button]:overflow-hidden">
-              <NikhilTimeCalendar
-                value={dateFrom}
-                onChange={setDateFrom}
-                placeholder="Start date"
-                popDirection="down"
-                className="h-9 text-xs"
-              />
-            </div>
-            <span className="text-xs text-muted-foreground shrink-0">–</span>
-            <div className="w-[200px] overflow-hidden [&_button]:truncate [&_button]:overflow-hidden">
-              <NikhilTimeCalendar
-                value={dateTo}
-                onChange={setDateTo}
-                placeholder="End date"
-                popDirection="down"
-                className="h-9 text-xs"
-              />
-            </div>
-            {(dateFrom || dateTo) && (
-              <button
-                onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}
-                className="p-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                title="Clear dates"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-
+        {/* ═══ VERCEL EXACT FILTER BAR (WIRED UP) ═══ */}
+        <div className="flex flex-nowrap items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide w-full max-w-full text-sm">
+          
           {/* Search */}
-          <div className="relative flex-1 min-w-[180px] max-w-[280px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative flex h-9 min-w-[160px] flex-1 items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm focus-within:ring-1 focus-within:ring-ring transition-colors">
+            <Search size={14} className="text-muted-foreground mr-2 shrink-0" />
             <input
               type="text"
-              placeholder="Search by name, email..."
+              placeholder="Search tickets..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex h-9 w-full items-center rounded-md border border-input bg-transparent pl-9 pr-8 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring placeholder:text-muted-foreground"
+              className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground min-w-0"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={() => setSearchQuery("")} className="text-muted-foreground hover:text-foreground shrink-0 ml-1">
                 <X size={14} />
               </button>
             )}
           </div>
 
-          {/* Dropdowns */}
+          {/* Org Name */}
           <ResponsiveSelect
-            className="flex h-9 w-[140px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+            value={orgNameFilter}
+            onChange={(e) => setOrgNameFilter(e.target.value)}
+          >
+            <option value="">Org: All</option>
+            {orgNames.map((o) => (
+              <option key={o} value={o}>{o}</option>
+            ))}
+          </ResponsiveSelect>
+
+          {/* Priority */}
+          <ResponsiveSelect
+            className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+          >
+            <option value="">Priority: All</option>
+            {PRIORITY_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </ResponsiveSelect>
+
+          {/* Date Range (Single Calendar) */}
+          <div className="w-[180px] shrink-0 [&>div>button]:flex [&>div>button]:h-9 [&>div>button]:w-full [&>div>button]:items-center [&>div>button]:rounded-md [&>div>button]:border [&>div>button]:border-border [&>div>button]:bg-transparent [&>div>button]:px-3 [&>div>button]:py-1 [&>div>button]:shadow-sm hover:[&>div>button]:bg-accent/50 [&>div>button]:transition-colors [&>div>button]:text-muted-foreground">
+            <NikhilTimeCalendar
+              value={dateFrom}
+              onChange={setDateFrom}
+              placeholder="Select Date"
+              popDirection="down"
+              className="h-9 w-full"
+            />
+          </div>
+
+          {/* Status */}
+          <ResponsiveSelect
+            className="flex h-9 min-w-[160px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
+            renderCustomValue={() => (
+              <div className="flex items-center w-full">
+                <div className="flex -space-x-1.5 mr-2 shrink-0">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500 border border-background z-30" />
+                  <div className="w-3 h-3 rounded-full bg-red-500 border border-background z-20" />
+                  <div className="w-3 h-3 rounded-full bg-amber-500 border border-background z-10" />
+                  <div className="w-3 h-3 rounded-full bg-slate-200 border border-background z-0" />
+                </div>
+                <span className="text-foreground truncate flex-1 text-left">
+                  {statusFilter ? STATUS_OPTIONS.find(o => o.value === statusFilter)?.label : "Status"}
+                </span>
+                <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-foreground shrink-0">
+                  {displayStats.total}
+                </span>
+              </div>
+            )}
           >
+            <option value="">Status: All</option>
             {STATUS_OPTIONS.map((o) => (
               <option
                 key={o.value}
@@ -606,51 +629,7 @@ export function SupportTicketsPage() {
             ))}
           </ResponsiveSelect>
 
-          <ResponsiveSelect
-            className="flex h-9 w-[140px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
-          >
-            {PRIORITY_OPTIONS.map((o) => {
-              let pColor;
-              if (o.value === "low") pColor = "bg-emerald-500";
-              else if (o.value === "medium") pColor = "bg-amber-500";
-              else if (o.value === "high") pColor = "bg-red-500";
-              else if (o.value === "urgent") pColor = "bg-red-600";
 
-              return (
-                <option
-                  key={o.value}
-                  value={o.value}
-                  data-color={pColor}
-                >
-                  {o.label}
-                </option>
-              );
-            })}
-          </ResponsiveSelect>
-
-          <ResponsiveSelect
-            className="flex h-9 w-[150px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            value={orgNameFilter}
-            onChange={(e) => setOrgNameFilter(e.target.value)}
-          >
-            <option value="">Org: All</option>
-            {orgNames.map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </ResponsiveSelect>
-
-          <ResponsiveSelect
-            className="flex h-9 w-[130px] shrink-0 items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-          >
-            <option value="">Role: All</option>
-            {roles.map((r) => (
-              <option key={r} value={r}>{r.replace(/_/g, " ")}</option>
-            ))}
-          </ResponsiveSelect>
         </div>
 
         {/* Ticket List */}
