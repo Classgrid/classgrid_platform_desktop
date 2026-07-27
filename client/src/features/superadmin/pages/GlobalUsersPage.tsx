@@ -255,7 +255,7 @@ export function GlobalUsersPage() {
       <DataTable
         columns={columns}
         rows={filteredUsers}
-        isLoading={isLoading || isFetching}
+        isLoading={isLoading}
         emptyMessage={search ? "No users found matching your search." : "No users found."}
         onRowClick={(user) => navigate(`/superadmin/global-users/${user._id}`)}
         className="shadow-sm" // Keeps the default rounded-md border from DataTable

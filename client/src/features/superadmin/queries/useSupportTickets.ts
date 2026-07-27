@@ -18,7 +18,6 @@ export function useSupportTickets(params?: UseSupportTicketsProps) {
     queryKey: [...TICKETS_KEY, params],
     queryFn: () => supportApi.getAllTickets(params),
     staleTime: 30_000,
-    placeholderData: (prev) => prev,
   });
 }
 

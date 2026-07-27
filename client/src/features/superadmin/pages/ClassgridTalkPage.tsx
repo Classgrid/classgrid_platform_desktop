@@ -670,7 +670,7 @@ export function ClassgridTalkPage() {
           ) : (
             <RecentActivityTable
               columns={ticketCols}
-              isLoading={isLoading || isFetching}
+              isLoading={isLoading}
               skeletonLines={6}
               emptyMessage="No tickets found. Adjust your filters or check back later."
               rows={filteredTickets.map((ticket) => {
