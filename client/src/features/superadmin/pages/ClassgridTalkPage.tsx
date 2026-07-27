@@ -565,7 +565,7 @@ export function ClassgridTalkPage() {
         <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
           
           {/* Search */}
-          <div className="relative flex h-9 w-[220px] items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm focus-within:ring-1 focus-within:ring-ring transition-colors">
+          <div className="relative flex h-9 w-[220px] items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm transition-colors">
             <Search size={14} className="text-muted-foreground mr-2 shrink-0" />
             <input
               type="text"
