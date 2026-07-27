@@ -440,7 +440,7 @@ export function SupportTicketsPage() {
     }
 
     return result;
-  }, [tickets, searchQuery, dateFrom, orgTypeFilter, roleFilter, priorityFilter, statusFilter]);
+  }, [tickets, searchQuery, dateFrom, orgTypeFilter, orgNameFilter, roleFilter, priorityFilter, statusFilter]);
 
   const displayStats = useMemo(
     () => ({
