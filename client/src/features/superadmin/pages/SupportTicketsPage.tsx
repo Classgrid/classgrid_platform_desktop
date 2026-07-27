@@ -576,11 +576,11 @@ export function SupportTicketsPage() {
           />
         </div>
 
-        {/* ═══ VERCEL EXACT FILTER BAR (WIRED UP) ═══ */}
+        {/* ═══ FILTER BAR ═══ */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-6">
           
           {/* Search */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
@@ -592,34 +592,34 @@ export function SupportTicketsPage() {
             {searchQuery && (
               <button 
                 onClick={() => setSearchQuery("")} 
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground shrink-0"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X size={14} />
               </button>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 md:ml-auto shrink-0 text-sm">
+          {/* All dropdowns in a row that wraps */}
+          <div className="flex flex-wrap gap-2 shrink-0">
+
             {/* Org Name */}
-            <div className="w-[160px]">
+            <div className="w-[150px]">
               <ResponsiveSelect
-                className="flex h-9 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+                className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
                 value={orgNameFilter}
                 onChange={(e) => setOrgNameFilter(e.target.value)}
               >
                 <option value="">Org Name: All</option>
                 {orgNames.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
+                  <option key={name} value={name}>{name}</option>
                 ))}
               </ResponsiveSelect>
             </div>
 
             {/* Org Type */}
-            <div className="w-[160px]">
+            <div className="w-[150px]">
               <ResponsiveSelect
-                className="flex h-9 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+                className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
                 value={orgTypeFilter}
                 onChange={(e) => setOrgTypeFilter(e.target.value)}
               >
@@ -632,8 +632,8 @@ export function SupportTicketsPage() {
               </ResponsiveSelect>
             </div>
 
-            {/* Date Range (Single Calendar) */}
-            <div className="w-[180px] relative flex items-center [&>div]:w-full [&>div>button]:flex [&>div>button]:h-9 [&>div>button]:w-full [&>div>button]:items-center [&>div>button]:rounded-md [&>div>button]:border [&>div>button]:border-border [&>div>button]:bg-transparent [&>div>button]:px-3 [&>div>button]:py-1 [&>div>button]:shadow-sm hover:[&>div>button]:bg-accent/50 [&>div>button]:transition-colors [&>div>button]:text-muted-foreground [&>div>button]:overflow-hidden [&>div>button>span]:truncate">
+            {/* Date picker — fixed 160px, text truncated inside */}
+            <div className="w-[160px] relative [&>div]:w-full [&>div>button]:flex [&>div>button]:h-9 [&>div>button]:w-full [&>div>button]:items-center [&>div>button]:rounded-md [&>div>button]:border [&>div>button]:border-border [&>div>button]:bg-transparent [&>div>button]:px-3 [&>div>button]:py-1 [&>div>button]:shadow-sm [&>div>button]:overflow-hidden [&>div>button>span]:truncate [&>div>button]:text-sm [&>div>button]:text-muted-foreground">
               <NikhilTimeCalendar
                 value={dateFrom}
                 onChange={setDateFrom}
@@ -644,11 +644,8 @@ export function SupportTicketsPage() {
               {dateFrom && (
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDateFrom(undefined);
-                  }}
-                  className="absolute right-2 z-10 p-0.5 text-muted-foreground hover:text-foreground shrink-0 rounded-full hover:bg-accent"
+                  onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent"
                   title="Clear date"
                 >
                   <X size={14} />
@@ -657,18 +654,14 @@ export function SupportTicketsPage() {
             </div>
 
             {/* Status */}
-            <div className="w-[160px]">
+            <div className="w-[150px]">
               <ResponsiveSelect
-                className="flex h-9 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors focus-visible:outline-none"
+                className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
                 {STATUS_OPTIONS.map((o) => (
-                  <option
-                    key={o.value}
-                    value={o.value}
-                    data-color={o.value ? statusColor(o.value) : undefined}
-                  >
+                  <option key={o.value} value={o.value} data-color={o.value ? statusColor(o.value) : undefined}>
                     {o.label}
                   </option>
                 ))}
