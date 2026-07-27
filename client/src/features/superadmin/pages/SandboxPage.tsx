@@ -21,8 +21,8 @@ const dummyData = [
 
 export function SandboxPage() {
   return (
-    <div className="min-h-screen p-8 lg:p-12">
-      <h1 className="text-3xl font-bold tracking-tight mb-8">Data Table Sandbox</h1>
+    <div className="min-h-screen p-4 w-full">
+      <h1 className="text-2xl font-bold tracking-tight mb-4 px-2">Data Table Sandbox</h1>
       
       {/* ═══ VERCEL EXACT DUMMY FILTER BAR ═══ */}
       <div className="flex flex-nowrap items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide w-full max-w-full text-sm">
@@ -93,8 +93,9 @@ export function SandboxPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {dummyData.map((row) => (
-              <tr key={row.id} className="hover:bg-muted/30 transition-colors">
+            {/* Generate more rows to make the table big size */}
+            {[...dummyData, ...dummyData, ...dummyData].map((row, index) => (
+              <tr key={`${row.id}-${index}`} className="hover:bg-muted/30 transition-colors">
                 <td className="px-6 py-4 font-medium text-foreground">{row.id}</td>
                 <td className="px-6 py-4 text-foreground">{row.name}</td>
                 <td className="px-6 py-4 text-muted-foreground">{row.email}</td>
