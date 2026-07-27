@@ -646,7 +646,7 @@ export function SupportTicketsPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               {STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
+                <option key={o.value} value={o.value} data-color={o.value ? statusColor(o.value) : undefined}>
                   {o.label}
                 </option>
               ))}
