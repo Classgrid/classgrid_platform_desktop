@@ -21,11 +21,10 @@ const dummyData = [
 
 export function SandboxPage() {
   return (
-    <div className="min-h-screen p-4 w-full">
-      <h1 className="text-2xl font-bold tracking-tight mb-4 px-2">Data Table Sandbox</h1>
+    <div className="min-h-screen w-full">
       
       {/* ═══ VERCEL EXACT DUMMY FILTER BAR ═══ */}
-      <div className="flex flex-nowrap items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide w-full max-w-full text-sm">
+      <div className="flex flex-nowrap items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide w-full max-w-full text-sm px-6 pt-6">
         
         {/* All Branches */}
         <button className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors">
@@ -80,7 +79,7 @@ export function SandboxPage() {
 
       </div>
 
-      <div className="border border-border rounded-lg overflow-hidden bg-card">
+      <div className="overflow-hidden bg-card border-t border-border">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
             <tr>
