@@ -1262,17 +1262,17 @@ export function ClassgridTalkPage() {
                         { id: selectedTicket._id, status: "closed" },
                         {
                           onSuccess: (res) => {
-                            toast.success("Ticket closed");
+                            toast.success("Enquiry closed");
                             if (res.ticket) setSelectedTicket(res.ticket);
                             refetch();
                           },
-                          onError: () => toast.error("Failed to close ticket"),
+                          onError: () => toast.error("Failed to close enquiry"),
                         }
                       );
                     }}
                   >
                     <Lock className="w-3.5 h-3.5" />
-                    {updateTicket.isPending ? "Closing..." : "Close Ticket"}
+                    {updateTicket.isPending ? "Closing..." : "Close Enquiry"}
                   </Button>
                 </div>
               )}
