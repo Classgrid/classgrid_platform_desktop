@@ -653,6 +653,7 @@ export function ClassgridTalkPage() {
                 onChange={setDateFrom}
                 placeholder="Select Date"
                 popDirection="down"
+                showTime={false}
                 className="h-9 w-full pr-6"
               />
               {dateFrom && (

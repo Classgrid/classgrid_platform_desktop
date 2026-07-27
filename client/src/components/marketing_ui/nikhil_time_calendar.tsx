@@ -12,6 +12,7 @@ interface NikhilTimeCalendarProps {
   placeholder?: string;
   className?: string;
   popDirection?: "up" | "down" | "left" | "right";
+  showTime?: boolean;
 }
 
 // Completely custom Select component that perfectly matches the styling
@@ -112,6 +113,7 @@ export function NikhilTimeCalendar({
   placeholder = "Pick date & time",
   className,
   popDirection = "down",
+  showTime = true,
 }: NikhilTimeCalendarProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -181,13 +183,25 @@ export function NikhilTimeCalendar({
   const handleApply = () => {
     const baseDate = internalDate || new Date();
     const finalDate = new Date(baseDate);
-    finalDate.setHours(0, 0, 0, 0); // Normalize to start of day
+    if (showTime) {
+      let h = parseInt(hour);
+      if (ampm === "PM" && h < 12) h += 12;
+      if (ampm === "AM" && h === 12) h = 0;
+      finalDate.setHours(h);
+      finalDate.setMinutes(parseInt(minute));
+      finalDate.setSeconds(0);
+      finalDate.setMilliseconds(0);
+    } else {
+      finalDate.setHours(0, 0, 0, 0);
+    }
     onChange(finalDate);
     setIsOpen(false);
   };
 
   const displayString = isValidDate(value)
-    ? format(value as Date, "MMM do, yyyy")
+    ? showTime
+      ? `${format(value as Date, "MMM do, yyyy")} at ${format(value as Date, "hh:mm a")}`
+      : format(value as Date, "MMM do, yyyy")
     : placeholder;
 
   return (
@@ -269,6 +283,50 @@ export function NikhilTimeCalendar({
             />
           </div>
 
+          {/* Time Picker Section — only when showTime is true */}
+          {showTime && (
+            <>
+              <div className="w-full h-px bg-border/50" />
+              <div className="p-4 flex flex-col gap-3 bg-muted/20">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+                  <Clock size={16} />
+                  <span>Select Time</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-[2]">
+                    <CustomSelect 
+                      value={hour} 
+                      onValueChange={setHour} 
+                      options={hourOptions}
+                      className="h-9 border-border bg-background font-medium"
+                      dropUp={true}
+                    />
+                  </div>
+                  <span className="text-lg font-bold text-muted-foreground pb-1">:</span>
+                  <div className="flex-[2]">
+                    <CustomSelect 
+                      value={minute} 
+                      onValueChange={setMinute} 
+                      options={minuteOptions}
+                      className="h-9 border-border bg-background font-medium"
+                      dropUp={true}
+                    />
+                  </div>
+                  <div className="w-2" />
+                  <div className="flex-[2]">
+                    <CustomSelect 
+                      value={ampm} 
+                      onValueChange={setAmpm} 
+                      options={ampmOptions}
+                      className="h-9 border-none bg-emerald-500/10 text-emerald-500 font-bold hover:bg-emerald-500/20"
+                      dropUp={true}
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Action Button */}
           <div className="p-3 bg-muted/20 border-t border-border rounded-b-xl">
             <Button
@@ -276,7 +334,7 @@ export function NikhilTimeCalendar({
               className="w-full bg-foreground text-background hover:bg-foreground/90 font-medium"
               onClick={handleApply}
             >
-              Apply Date
+              {showTime ? "Apply Date & Time" : "Apply Date"}
             </Button>
           </div>
         </div>
