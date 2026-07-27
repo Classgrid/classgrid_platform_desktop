@@ -9,6 +9,7 @@ import { Badge } from "@/components/marketing_ui/badge";
 import { Input } from "@/components/marketing_ui/input";
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
+import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
 
 import { apiClient } from "@/lib/apiClient";
 import { getSocket } from "@/lib/socketClient";
@@ -188,32 +189,13 @@ export function GlobalUsersPage() {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 animate-in fade-in">
-      
       {/* Filter Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-6">
-        
-        {/* Search */}
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-9 pl-10 pr-10 rounded-md border border-border bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all shadow-sm"
-          />
-          {search && (
-            <button 
-              onClick={() => setSearch("")} 
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-2 shrink-0">
-          {/* Org Type */}
+      <SuperadminFilterBar
+        searchQuery={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by name or email..."
+      >
+        {/* Org Type */}
           <div className="w-[150px]">
             <ResponsiveSelect
               className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
@@ -267,8 +249,7 @@ export function GlobalUsersPage() {
               </button>
             )}
           </div>
-        </div>
-      </div>
+      </SuperadminFilterBar>
 
       {/* Data Table (Vercel wraps the list in a subtle border) */}
       <DataTable

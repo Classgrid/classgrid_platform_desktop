@@ -25,6 +25,7 @@ import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calend
 import { StatCard } from "@/components/marketing_ui/StatCard";
 import { RecentActivityTable } from "@/components/marketing_ui/data-table";
 import { Button } from "@/components/marketing_ui/button";
+import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
 import { Spinner } from "@/components/marketing_ui/spinner";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/marketing_ui/tooltip";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
@@ -571,108 +572,80 @@ export function SupportTicketsPage() {
         </div>
 
         {/* ═══ FILTER BAR ═══ */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-6">
-          
-          {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search by name, email, or ticket ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-10 pr-10 rounded-md border border-border bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all shadow-sm"
+        <SuperadminFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search by name, email, or ticket ID..."
+        >
+          {/* Org Name */}
+          <div className="w-[150px]">
+            <ResponsiveSelect
+              className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
+              value={orgNameFilter}
+              onChange={(e) => setOrgNameFilter(e.target.value)}
+            >
+              <option value="">Org Name: All</option>
+              {orgEntries.map(([name, logo]) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </ResponsiveSelect>
+          </div>
+
+          {/* Org Type */}
+          <div className="w-[150px]">
+            <ResponsiveSelect
+              className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
+              value={orgTypeFilter}
+              onChange={(e) => setOrgTypeFilter(e.target.value)}
+            >
+              <option value="">Org Type: All</option>
+              {orgTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, " ")}
+                </option>
+              ))}
+            </ResponsiveSelect>
+          </div>
+
+          {/* Date picker */}
+          <div className="w-[180px] max-w-[180px] overflow-hidden relative">
+            <NikhilTimeCalendar
+              value={dateFrom}
+              onChange={setDateFrom}
+              placeholder="Select Date"
+              popDirection="down"
+              showTime={false}
+              className="h-9 w-full pr-8"
             />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery("")} 
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            {dateFrom && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent bg-background"
+                title="Clear date"
               >
                 <X size={14} />
               </button>
             )}
           </div>
 
-          {/* All dropdowns in a row that wraps */}
-          <div className="flex flex-wrap gap-2 shrink-0">
-
-            {/* Org Name */}
-            <div className="w-[150px]">
-              <ResponsiveSelect
-                className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
-                value={orgNameFilter}
-                onChange={(e) => setOrgNameFilter(e.target.value)}
-              >
-                <option value="">Org Name: All</option>
-                {orgEntries.map(([name, logo]) => (
-                  <option key={name} value={name}>
-                    <span className="flex items-center gap-2">
-                      {logo ? (
-                        <img src={logo} alt="" className="w-4 h-4 rounded-full object-cover shrink-0" />
-                      ) : (
-                        <span className="w-4 h-4 rounded-full bg-muted shrink-0 flex items-center justify-center text-[9px] font-bold text-muted-foreground">{name.charAt(0)}</span>
-                      )}
-                      <span className="truncate">{name}</span>
-                    </span>
-                  </option>
-                ))}
-              </ResponsiveSelect>
-            </div>
-
-            {/* Org Type */}
-            <div className="w-[150px]">
-              <ResponsiveSelect
-                className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
-                value={orgTypeFilter}
-                onChange={(e) => setOrgTypeFilter(e.target.value)}
-              >
-                <option value="">Org Type: All</option>
-                {orgTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, " ")}
-                  </option>
-                ))}
-              </ResponsiveSelect>
-            </div>
-
-            {/* Date picker */}
-            <div className="w-[180px] max-w-[180px] overflow-hidden relative">
-              <NikhilTimeCalendar
-                value={dateFrom}
-                onChange={setDateFrom}
-                placeholder="Select Date"
-                popDirection="down"
-                showTime={false}
-                className="h-9 w-full pr-8"
-              />
-              {dateFrom && (
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent bg-background"
-                  title="Clear date"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-
-            {/* Status */}
-            <div className="w-[150px]">
-              <ResponsiveSelect
-                className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                {STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value} data-color={o.value ? statusColor(o.value) : undefined}>
-                    {o.label}
-                  </option>
-                ))}
-              </ResponsiveSelect>
-            </div>
+          {/* Status */}
+          <div className="w-[150px]">
+            <ResponsiveSelect
+              className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              {STATUS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </ResponsiveSelect>
           </div>
-        </div>
+        </SuperadminFilterBar>
 
         {/* Ticket List */}
         <div className="mt-4">
