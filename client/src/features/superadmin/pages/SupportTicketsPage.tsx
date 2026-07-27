@@ -1013,6 +1013,7 @@ export function SupportTicketsPage() {
                         onChange={() => {}}
                         minHeight={150}
                         placeholder="Edit your reply..."
+                        hideAttachments
                         onSubmit={() => submitEditReply((msg as any)._id)}
                       />
                       <div className="flex items-center justify-end gap-2 mt-2">
