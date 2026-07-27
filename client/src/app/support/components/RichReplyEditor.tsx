@@ -357,6 +357,19 @@ const RichReplyEditor = forwardRef<RichReplyEditorRef, RichReplyEditorProps>(
         const file = e.target.files?.[0];
         if (!file) return;
 
+        if (file.size > 5 * 1024 * 1024) {
+          alert("Image size exceeds the 5MB limit. Please upload a smaller image.");
+          e.target.value = "";
+          return;
+        }
+
+        const currentImages = editorRef.current?.querySelectorAll("img").length || 0;
+        if (currentImages >= 5) {
+          alert("You can only upload a maximum of 5 inline images.");
+          e.target.value = "";
+          return;
+        }
+
         setUploadingImage(true);
         setUploadProgress(10);
         const interval = setInterval(() => {
