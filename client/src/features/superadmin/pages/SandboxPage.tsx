@@ -13,12 +13,12 @@ export function SandboxPage() {
   return (
     <div className="min-h-screen p-8 lg:p-12">
       <h1 className="text-3xl font-bold tracking-tight mb-8">Filter Bar Sandbox</h1>
-      <p className="text-sm text-muted-foreground mb-6">All filters on ONE line — Org Type, Status, Search, Calendar</p>
+      <p className="text-sm text-muted-foreground mb-6">All filters on ONE line — no wrapping</p>
 
-      {/* ═══ ALL ON ONE LINE ═══ */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* ═══ ALL ON ONE LINE — NO WRAP ═══ */}
+      <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-2">
         {/* NikhilTimeCalendar — Start */}
-        <div className="w-[200px] shrink-0 overflow-hidden">
+        <div className="w-[200px] shrink-0">
           <NikhilTimeCalendar
             value={dateFrom}
             onChange={setDateFrom}
@@ -31,7 +31,7 @@ export function SandboxPage() {
         <span className="text-xs text-muted-foreground shrink-0">–</span>
 
         {/* NikhilTimeCalendar — End */}
-        <div className="w-[200px] shrink-0 overflow-hidden">
+        <div className="w-[200px] shrink-0">
           <NikhilTimeCalendar
             value={dateTo}
             onChange={setDateTo}
