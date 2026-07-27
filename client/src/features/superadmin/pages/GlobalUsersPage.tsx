@@ -196,7 +196,7 @@ export function GlobalUsersPage() {
         searchPlaceholder="Search by name or email..."
       >
         {/* Org Type */}
-          <div className="w-full min-w-[110px] max-w-[150px] flex-1">
+          <div className="w-[140px]">
             <ResponsiveSelect
               className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
               value={orgTypeFilter}
@@ -207,7 +207,7 @@ export function GlobalUsersPage() {
           </div>
 
           {/* Role */}
-          <div className="w-full min-w-[110px] max-w-[150px] flex-1">
+          <div className="w-[140px]">
             <ResponsiveSelect
               className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
               value={roleFilter}
@@ -218,7 +218,7 @@ export function GlobalUsersPage() {
           </div>
 
           {/* Status */}
-          <div className="w-full min-w-[110px] max-w-[150px] flex-1">
+          <div className="w-[140px]">
             <ResponsiveSelect
               className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
               value={statusFilter}
@@ -229,7 +229,7 @@ export function GlobalUsersPage() {
           </div>
 
           {/* Date picker */}
-          <div className="w-full min-w-[140px] max-w-[180px] flex-1 overflow-hidden relative">
+          <div className="w-[180px] max-w-[180px] overflow-hidden relative">
             <NikhilTimeCalendar 
               value={dateFilter} 
               onChange={setDateFilter} 

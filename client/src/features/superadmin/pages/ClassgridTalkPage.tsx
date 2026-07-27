@@ -584,7 +584,7 @@ export function ClassgridTalkPage() {
           searchPlaceholder="Search by name, email, or inquiry ID..."
         >
           {/* Org Name */}
-          <div className="w-full min-w-[110px] max-w-[150px] flex-1">
+          <div className="w-[150px]">
             <ResponsiveSelect
               className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
               value={orgNameFilter}
@@ -607,7 +607,7 @@ export function ClassgridTalkPage() {
           </div>
 
           {/* Org Type */}
-          <div className="w-full min-w-[110px] max-w-[150px] flex-1">
+          <div className="w-[150px]">
             <ResponsiveSelect
               className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
               value={orgTypeFilter}
@@ -623,7 +623,7 @@ export function ClassgridTalkPage() {
           </div>
 
           {/* Date picker */}
-          <div className="w-full min-w-[140px] max-w-[180px] flex-1 overflow-hidden relative">
+          <div className="w-[180px] max-w-[180px] overflow-hidden relative">
             <NikhilTimeCalendar
               value={dateFrom}
               onChange={setDateFrom}
@@ -645,7 +645,7 @@ export function ClassgridTalkPage() {
           </div>
 
           {/* Status */}
-          <div className="w-full min-w-[110px] max-w-[150px] flex-1">
+          <div className="w-[150px]">
             <ResponsiveSelect
               className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
               value={statusFilter}
