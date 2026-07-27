@@ -1005,7 +1005,7 @@ export function ClassgridTalkPage() {
                       <div className="mt-1.5">
                         <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-muted/60 border border-border text-xs font-medium text-muted-foreground">
                           {(msg as any).orgLogo && (
-                            <img src={(msg as any).orgLogo} alt="" className="w-4 h-4 rounded-sm object-contain" />
+                            <img src={(msg as any).orgLogo} alt="" className="w-4 h-4 rounded-none object-contain" />
                           )}
                           {(msg as any).orgName}
                         </span>
@@ -1379,7 +1379,7 @@ export function ClassgridTalkPage() {
                     }}
                   >
                     <Lock className="w-3.5 h-3.5" />
-                    {updateTicket.isPending ? "Closing..." : "Close Ticket"}
+                    {updateTicket.isPending && updateTicket.variables?.status === "closed" ? "Closing..." : "Close Ticket"}
                   </Button>
                 </div>
               )}
