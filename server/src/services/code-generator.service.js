@@ -1,21 +1,21 @@
 /**
  * Classgrid — Cryptographically Secure Code Generator
  *
- * Generates exactly 10-character uppercase alphanumeric codes.
+ * Generates exactly 12-character uppercase alphanumeric codes.
  * Uses crypto.randomBytes for true randomness (CSPRNG-backed).
  *
  * Charset: A-Z + 2-9 (confusing O/0/I/1 removed) = 32 characters
- * 10-char code = ~50-bit entropy — secure yet easy to type.
+ * 12-char code = ~60-bit entropy — secure yet easy to type.
  */
 
 import crypto from "crypto";
 
 const CHARSET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const CODE_LENGTH = 10;
+const CODE_LENGTH = 12;
 
 /**
- * Generate a single cryptographically random 10-char code.
- * @returns {string} e.g. "X7K9P2LQ8A"
+ * Generate a single cryptographically random 12-char code.
+ * @returns {string} e.g. "X7K9P2LQ8A4M"
  */
 export const generateSecureCode = () => {
     const bytes = crypto.randomBytes(CODE_LENGTH * 2);

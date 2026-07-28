@@ -194,20 +194,20 @@ export function OrgCodesCard() {
 
       {/* ── Access Codes ── */}
       <CopySnippetCard
-        title="Internal System ID"
-        description="Used internally as your unique organization identifier in the database. May be required for technical support."
+        title="Organization ID"
+        description="Use this ID to identify your organization when contacting support."
         value={codes.tenantId}
       />
 
       <CopySnippetCard
-        title="Tenant ID"
-        description="Share this secure 12-character code with your staff to allow them to request roles and onboard into this organization."
+        title="Staff Join Code"
+        description="Give this 12-character code to staff so they can request a role and join your organization."
         value={codes.organizationCode}
       />
 
       <CopySnippetCard
         title="Student Honor Code"
-        description="Share this secure 12-character code with your students to allow them to directly join this organization."
+        description="Give this 12-character code to students so they can join your organization."
         value={codes.honorCode}
       />
     </div>
