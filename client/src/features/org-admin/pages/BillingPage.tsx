@@ -80,20 +80,20 @@ export function BillingPage() {
   }));
 
   // Resource Usage Calculations
-  const storageLimit = subscription.limits?.storageGb || 100;
-  const storageUsed = currentMonthCharges.storageCharges?.count || 0;
+  const storageLimit = subscription?.limits?.storageGb || 100;
+  const storageUsed = currentMonthCharges?.storageCharges?.count || 0;
   const storagePercent = Math.min(100, Math.round((storageUsed / storageLimit) * 100));
 
-  const studentsLimit = subscription.limits?.maxStudents || 1000;
-  const studentsUsed = currentMonthCharges.studentCharges?.count || 0;
+  const studentsLimit = subscription?.limits?.maxStudents || 1000;
+  const studentsUsed = currentMonthCharges?.studentCharges?.count || 0;
   const studentsPercent = Math.min(100, Math.round((studentsUsed / studentsLimit) * 100));
 
-  const facultyLimit = subscription.limits?.maxFaculty || 100;
-  const facultyUsed = currentMonthCharges.facultyCharges?.count || 0;
+  const facultyLimit = subscription?.limits?.maxFaculty || 100;
+  const facultyUsed = currentMonthCharges?.facultyCharges?.count || 0;
   const facultyPercent = Math.min(100, Math.round((facultyUsed / facultyLimit) * 100));
 
-  const emailsUsed = currentMonthCharges.emailCharges?.count || 0;
-  const smsUsed = currentMonthCharges.smsCharges?.count || 0;
+  const emailsUsed = currentMonthCharges?.emailCharges?.count || 0;
+  const smsUsed = currentMonthCharges?.smsCharges?.count || 0;
 
   const valueFormatter = (number: number) => {
     return new Intl.NumberFormat('en-IN', {
