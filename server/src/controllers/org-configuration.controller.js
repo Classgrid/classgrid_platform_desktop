@@ -192,7 +192,7 @@ export const setupBillingMandate = async (req, res) => {
         const options = {
             amount: 100, // 1 INR in paise
             currency: "INR",
-            receipt: `mandate_setup_${orgId}_${Date.now()}`,
+            receipt: `mand_${orgId.toString().slice(-6)}_${Date.now()}`.slice(0, 40),
         };
         const order = await razorpay.orders.create(options);
         
@@ -203,7 +203,7 @@ export const setupBillingMandate = async (req, res) => {
             currency: "INR" 
         });
     } catch (error) {
-        console.error("[SetupMandate] Error:", error.message);
-        return res.status(500).json({ message: "Unable to initialize payment gateway." });
+        console.error("[SetupMandate] Error:", error);
+        return res.status(500).json({ message: error.error?.description || error.message || "Payment gateway configuration error." });
     }
 };
