@@ -107,6 +107,11 @@ const organizationSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        billing_settings: {
+            invoice_email: { type: String, trim: true, default: "" },
+            state: { type: String, trim: true, default: "Maharashtra" },
+            address: { type: String, trim: true, default: "" }
+        },
         logo_url: {
             type: String,
             default: "",

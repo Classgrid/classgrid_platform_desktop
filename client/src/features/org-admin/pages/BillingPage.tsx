@@ -49,9 +49,39 @@ export function BillingPage() {
   const [showComparison, setShowComparison] = useState(false);
   const [isAddingBilling, setIsAddingBilling] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
-  const [billingEmail, setBillingEmail] = useState("admin@classgrid.in");
+  
+  const [billingEmail, setBillingEmail] = useState("");
+  const [billingState, setBillingState] = useState("Maharashtra");
   const [billingAddress, setBillingAddress] = useState("");
-  const [country, setCountry] = useState("India (भारत)");
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  // Sync settings with backend data when loaded
+  import { useEffect } from "react";
+  useEffect(() => {
+    if (billingData?.billingSettings) {
+      setBillingEmail(billingData.billingSettings.invoice_email || "");
+      setBillingState(billingData.billingSettings.state || "Maharashtra");
+      setBillingAddress(billingData.billingSettings.address || "");
+    }
+  }, [billingData]);
+
+  const handleSaveSettings = async () => {
+    try {
+      setIsSavingSettings(true);
+      const res = await fetch("/api/org-admin/dashboard/billing/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
+        body: JSON.stringify({ invoice_email: billingEmail, state: billingState, address: billingAddress })
+      });
+      if (!res.ok) throw new Error("Failed to save settings");
+      toast.success("Billing settings saved successfully!");
+      queryClient.invalidateQueries({ queryKey: ["orgBilling"] });
+    } catch (err: any) {
+      toast.error(err.message || "Could not save settings");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
 
   const handlePayNow = async (invoiceId: string) => {
     try {
@@ -573,15 +603,21 @@ export function BillingPage() {
             
             <div className="mt-6 max-w-xl space-y-6">
               <div>
-                <Label className="text-gray-500 mb-2 block font-normal text-sm">Country</Label>
+                <Label className="text-gray-500 mb-2 block font-normal text-sm">State (India)</Label>
                 <select 
                   className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
+                  value={billingState}
+                  onChange={(e) => setBillingState(e.target.value)}
                 >
-                  <option value="India (भारत)">India (भारत)</option>
-                  <option value="United States">United States</option>
-                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Andhra Pradesh">Andhra Pradesh</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Gujarat">Gujarat</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                  <option value="Tamil Nadu">Tamil Nadu</option>
+                  <option value="Telangana">Telangana</option>
+                  <option value="Uttar Pradesh">Uttar Pradesh</option>
+                  <option value="West Bengal">West Bengal</option>
                 </select>
               </div>
               
@@ -614,8 +650,8 @@ export function BillingPage() {
             </div>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800/40 px-6 py-4 flex justify-end border-t border-gray-200 dark:border-gray-800">
-            <Button className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white rounded-md px-6">
-              Save
+            <Button onClick={handleSaveSettings} disabled={isSavingSettings} className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white rounded-md px-6">
+              {isSavingSettings ? "Saving..." : "Save"}
             </Button>
           </div>
         </Card>
@@ -720,18 +756,18 @@ export function BillingPage() {
             <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
               <CreditCard className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             </div>
-            <h3 className="text-lg font-medium text-center">Secure Payment with Razorpay</h3>
+            <h3 className="text-lg font-medium text-center">Secure Payment Verification</h3>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              You will be redirected to our payment partner, Razorpay, to securely authenticate and save your card for future recurring billing.
+              You will be redirected to our secure payment gateway to authenticate and save your card for future recurring billing.
             </p>
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
             <Button variant="outline" onClick={() => setIsAddingBilling(false)}>Cancel</Button>
             <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
-              toast.success("Redirecting to Razorpay for card authentication...");
+              toast.error("Card authentication gateway requires backend subscription API integration to proceed.");
               setTimeout(() => setIsAddingBilling(false), 1500);
             }}>
-              Proceed to Razorpay
+              Proceed to Gateway
             </Button>
           </div>
         </DialogContent>

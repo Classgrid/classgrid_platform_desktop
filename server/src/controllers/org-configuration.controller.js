@@ -148,14 +148,36 @@ export async function getOrganizationUsageSummary(req, res) {
 export async function getOrganizationBilling(req, res) {
     try {
         const orgId = req.user?.organization_id; if (!orgId) return res.status(400).json({ message: "No organization is associated with this account." });
-        const [subscription, users, usage, invoices, payments, feeSummary, feeTransactions] = await Promise.all([
-            OrgSubscription.findOne({ organization_id: orgId }).lean(), User.find({ organization_id: orgId, status: "active" }).select("role").lean(), meters(orgId, rangeFor()), SaasInvoice.find({ organizationId: orgId }).sort({ createdAt: -1 }).limit(24).lean(), PlatformTransaction.find({ organizationId: orgId }).sort({ createdAt: -1 }).limit(100).lean(), Invoice.aggregate([{ $match: { organization_id: orgId } }, { $group: { _id: null, totalInvoices: { $sum: 1 }, totalBilled: { $sum: "$total_amount" }, totalPaid: { $sum: "$amount_paid" }, outstanding: { $sum: "$remaining_amount" } } }]), FeeTransaction.countDocuments({ organizationId: orgId, status: "success" }),
+        const [subscription, users, usage, invoices, payments, feeSummary, feeTransactions, org] = await Promise.all([
+            OrgSubscription.findOne({ organization_id: orgId }).lean(), User.find({ organization_id: orgId, status: "active" }).select("role").lean(), meters(orgId, rangeFor()), SaasInvoice.find({ organizationId: orgId }).sort({ createdAt: -1 }).limit(24).lean(), PlatformTransaction.find({ organizationId: orgId }).sort({ createdAt: -1 }).limit(100).lean(), Invoice.aggregate([{ $match: { organization_id: orgId } }, { $group: { _id: null, totalInvoices: { $sum: 1 }, totalBilled: { $sum: "$total_amount" }, totalPaid: { $sum: "$amount_paid" }, outstanding: { $sum: "$remaining_amount" } } }]), FeeTransaction.countDocuments({ organizationId: orgId, status: "success" }), Organization.findOne({ _id: orgId }).select("billing_settings").lean()
         ]);
         const rates = subscription?.billing || {}; const charge = (count, rate) => ({ count, rate: asNumber(rate), total: Number((count * asNumber(rate)).toFixed(2)) });
         const platformFee = asNumber(rates.basePricePerMonth), studentCharges = charge(countUsers(users, ["student"]), rates.pricePerStudent), facultyCharges = charge(countUsers(users, ["teacher", "faculty"]), rates.pricePerFaculty), deptAdminCharges = charge(countUsers(users, DEPT_ADMIN_ROLES), rates.pricePerDeptAdmin), emailCharges = charge(usage.emailsThisMonth, rates.pricePerEmail);
         const smsCharges = charge(usage.smsThisMonth, rates.pricePerSms), storageCharges = charge(usage.storageUsedGb, rates.pricePerGB), aiUsageCharges = charge(usage.aiThisMonth, rates.pricePerAiToken), liveClassCharges = charge(usage.liveMinutes, rates.pricePerAgoraMinute);
         const subtotal = Number((platformFee + studentCharges.total + facultyCharges.total + deptAdminCharges.total + emailCharges.total + smsCharges.total + storageCharges.total + aiUsageCharges.total + liveClassCharges.total).toFixed(2)), gstPercent = 18, gstAmount = Number((subtotal * gstPercent / 100).toFixed(2)); const fees = feeSummary[0] || {};
         const monthlyHistory = invoices.map(inv => ({ month: `${inv.billingPeriod?.month || ''} ${inv.billingPeriod?.year || ''}`.trim(), totalAmount: asNumber(inv.totalAmountInr), status: inv.status })).reverse();
-        return res.json({ subscription: subscription && { plan: subscription.plan, status: subscription.status, isPaid: subscription.isPaid, expiresAt: subscription.expiresAt, features: subscription.features, billing: publicBillingRates(rates), limits: { maxStudents: subscription.metadata?.max_students ?? null, maxFaculty: subscription.metadata?.max_faculty ?? null, maxDeptAdmins: subscription.metadata?.max_dept_admins ?? null, storageGb: subscription.metadata?.storage_limit_gb ?? null } }, currentMonthCharges: { platformFee, studentCharges, facultyCharges, deptAdminCharges, emailCharges, smsCharges, storageCharges, aiUsageCharges, liveClassCharges, subtotal, gstPercent, gstAmount, total: Number((subtotal + gstAmount).toFixed(2)) }, invoices: invoices.map(publicInvoice), payments: payments.map(publicPayment), monthlyHistory, feeCollection: { totalInvoices: asNumber(fees.totalInvoices), totalBilled: asNumber(fees.totalBilled), totalPaid: asNumber(fees.totalPaid), outstanding: asNumber(fees.outstanding), transactions: feeTransactions } });
+        return res.json({ subscription: subscription && { plan: subscription.plan, status: subscription.status, isPaid: subscription.isPaid, expiresAt: subscription.expiresAt, features: subscription.features, billing: publicBillingRates(rates), limits: { maxStudents: subscription.metadata?.max_students ?? null, maxFaculty: subscription.metadata?.max_faculty ?? null, maxDeptAdmins: subscription.metadata?.max_dept_admins ?? null, storageGb: subscription.metadata?.storage_limit_gb ?? null } }, currentMonthCharges: { platformFee, studentCharges, facultyCharges, deptAdminCharges, emailCharges, smsCharges, storageCharges, aiUsageCharges, liveClassCharges, subtotal, gstPercent, gstAmount, total: Number((subtotal + gstAmount).toFixed(2)) }, invoices: invoices.map(publicInvoice), payments: payments.map(publicPayment), monthlyHistory, feeCollection: { totalInvoices: asNumber(fees.totalInvoices), totalBilled: asNumber(fees.totalBilled), totalPaid: asNumber(fees.totalPaid), outstanding: asNumber(fees.outstanding), transactions: feeTransactions }, billingSettings: org?.billing_settings || { invoice_email: "", state: "Maharashtra", address: "" } });
     } catch (error) { console.error("[OrgBilling] load failed:", error.message); return res.status(500).json({ message: "Unable to load organization billing." }); }
+}
+
+export const updateBillingSettings = async (req, res) => {
+    try {
+        const orgId = req.user?.organization_id;
+        if (!orgId) return res.status(400).json({ message: "No organization associated." });
+        
+        const { invoice_email, state, address } = req.body;
+        
+        const org = await Organization.findOneAndUpdate(
+            { _id: orgId },
+            { $set: { "billing_settings.invoice_email": invoice_email, "billing_settings.state": state, "billing_settings.address": address } },
+            { new: true, runValidators: true }
+        );
+        
+        if (!org) return res.status(404).json({ message: "Organization not found." });
+        
+        return res.json({ message: "Billing settings updated successfully", billingSettings: org.billing_settings });
+    } catch (error) {
+        console.error("[UpdateBillingSettings] Error:", error.message);
+        return res.status(500).json({ message: "Unable to update billing settings." });
+    }
 }
