@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { leadsApi } from "../../services/superAdminApi";
+import { leadsApi } from "../services/superAdminApi";
 import { toast } from "sonner";
 import { Building2, User, LayoutDashboard, ToggleRight, CheckCircle2 } from "lucide-react";
 
