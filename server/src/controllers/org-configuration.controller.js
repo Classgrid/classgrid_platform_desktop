@@ -3,7 +3,7 @@ import OrgSubscription from "../models/OrgSubscription.js";
 import User from "../models/User.js";
 import Classroom from "../models/Classroom.js";
 import EmailJob from "../models/EmailJob.js";
-import FirebaseSmsLog from "../models/FirebaseSmsLog.js";
+import SmsLog from "../models/SmsLog.js";
 import AiUsageLog from "../models/AiUsageLog.js";
 import GoLive from "../models/GoLive.js";
 import Meeting from "../models/Meeting.js";
@@ -115,8 +115,8 @@ async function meters(orgId, range) {
     const period = { $gte: range.start, $lt: range.end };
     const [emailsThisMonth, emailsTotal, smsMonth, smsTotal, aiMonth, classrooms, meetingMinutes, liveMinutes, storage] = await Promise.all([
         EmailJob.countDocuments({ organizationId: orgId, status: "sent", processedAt: period }), EmailJob.countDocuments({ organizationId: orgId, status: "sent" }),
-        FirebaseSmsLog.aggregate([{ $match: { organizationId: orgId, status: { $in: ["sent", "delivered"] }, sentAt: period } }, { $group: { _id: null, count: { $sum: "$segmentCount" } } }]),
-        FirebaseSmsLog.aggregate([{ $match: { organizationId: orgId, status: { $in: ["sent", "delivered"] } } }, { $group: { _id: null, count: { $sum: "$segmentCount" } } }]),
+        SmsLog.aggregate([{ $match: { organizationId: orgId, status: { $in: ["sent", "delivered"] }, sentAt: period } }, { $group: { _id: null, count: { $sum: "$segmentCount" } } }]),
+        SmsLog.aggregate([{ $match: { organizationId: orgId, status: { $in: ["sent", "delivered"] } } }, { $group: { _id: null, count: { $sum: "$segmentCount" } } }]),
         AiUsageLog.aggregate([{ $match: { organization_id: orgId, success: true, createdAt: period } }, { $group: { _id: null, count: { $sum: "$totalTokens" } } }]),
         Classroom.countDocuments({ organization_id: orgId }),
         Meeting.aggregate([{ $match: { organization_id: orgId, start_time: period } }, { $group: { _id: null, minutes: { $sum: "$duration" } } }]),
@@ -154,6 +154,7 @@ export async function getOrganizationBilling(req, res) {
         const platformFee = asNumber(rates.basePricePerMonth), studentCharges = charge(countUsers(users, ["student"]), rates.pricePerStudent), facultyCharges = charge(countUsers(users, ["teacher", "faculty"]), rates.pricePerFaculty), deptAdminCharges = charge(countUsers(users, DEPT_ADMIN_ROLES), rates.pricePerDeptAdmin), emailCharges = charge(usage.emailsThisMonth, rates.pricePerEmail);
         const smsCharges = charge(usage.smsThisMonth, rates.pricePerSms), storageCharges = charge(usage.storageUsedGb, rates.pricePerGB), aiUsageCharges = charge(usage.aiThisMonth, rates.pricePerAiToken), liveClassCharges = charge(usage.liveMinutes, rates.pricePerAgoraMinute);
         const subtotal = Number((platformFee + studentCharges.total + facultyCharges.total + deptAdminCharges.total + emailCharges.total + smsCharges.total + storageCharges.total + aiUsageCharges.total + liveClassCharges.total).toFixed(2)), gstPercent = 18, gstAmount = Number((subtotal * gstPercent / 100).toFixed(2)); const fees = feeSummary[0] || {};
-        return res.json({ subscription: subscription && { plan: subscription.plan, status: subscription.status, isPaid: subscription.isPaid, expiresAt: subscription.expiresAt, features: subscription.features, billing: publicBillingRates(rates), limits: { maxStudents: subscription.metadata?.max_students ?? null, maxFaculty: subscription.metadata?.max_faculty ?? null, maxDeptAdmins: subscription.metadata?.max_dept_admins ?? null, storageGb: subscription.metadata?.storage_limit_gb ?? null } }, currentMonthCharges: { platformFee, studentCharges, facultyCharges, deptAdminCharges, emailCharges, smsCharges, storageCharges, aiUsageCharges, liveClassCharges, subtotal, gstPercent, gstAmount, total: Number((subtotal + gstAmount).toFixed(2)) }, invoices: invoices.map(publicInvoice), payments: payments.map(publicPayment), feeCollection: { totalInvoices: asNumber(fees.totalInvoices), totalBilled: asNumber(fees.totalBilled), totalPaid: asNumber(fees.totalPaid), outstanding: asNumber(fees.outstanding), transactions: feeTransactions } });
+        const monthlyHistory = invoices.map(inv => ({ month: `${inv.billingPeriod?.month || ''} ${inv.billingPeriod?.year || ''}`.trim(), totalAmount: asNumber(inv.totalAmountInr), status: inv.status })).reverse();
+        return res.json({ subscription: subscription && { plan: subscription.plan, status: subscription.status, isPaid: subscription.isPaid, expiresAt: subscription.expiresAt, features: subscription.features, billing: publicBillingRates(rates), limits: { maxStudents: subscription.metadata?.max_students ?? null, maxFaculty: subscription.metadata?.max_faculty ?? null, maxDeptAdmins: subscription.metadata?.max_dept_admins ?? null, storageGb: subscription.metadata?.storage_limit_gb ?? null } }, currentMonthCharges: { platformFee, studentCharges, facultyCharges, deptAdminCharges, emailCharges, smsCharges, storageCharges, aiUsageCharges, liveClassCharges, subtotal, gstPercent, gstAmount, total: Number((subtotal + gstAmount).toFixed(2)) }, invoices: invoices.map(publicInvoice), payments: payments.map(publicPayment), monthlyHistory, feeCollection: { totalInvoices: asNumber(fees.totalInvoices), totalBilled: asNumber(fees.totalBilled), totalPaid: asNumber(fees.totalPaid), outstanding: asNumber(fees.outstanding), transactions: feeTransactions } });
     } catch (error) { console.error("[OrgBilling] load failed:", error.message); return res.status(500).json({ message: "Unable to load organization billing." }); }
 }

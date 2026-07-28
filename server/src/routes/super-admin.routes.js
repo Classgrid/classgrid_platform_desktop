@@ -688,6 +688,252 @@ router.get("/activity-logs", async (req, res) => {
 router.get("/leads", getDemoLeads);
 router.post("/leads", createDemoLead);
 router.post("/leads/:id/approve", approveLeadAndProvision);
+
+// -- 9A. STEP 1 — Save admin details
+router.patch("/leads/:id/admin-details", async (req, res) => {
+  try {
+    const DemoRequest = (await import("../models/DemoRequest.js")).default;
+    const { adminName, adminEmail, adminPhone, role, designation } = req.body;
+
+    if (!adminName || !adminEmail) {
+      return res.status(400).json({ success: false, message: "adminName and adminEmail are required" });
+    }
+
+    const lead = await DemoRequest.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          adminName: adminName.trim(),
+          adminEmail: adminEmail.toLowerCase().trim(),
+          adminPhone: adminPhone || "",
+          role: role || "",
+          designation: designation || "",
+        },
+      },
+      { new: true }
+    );
+
+    if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+    res.json({ success: true, lead });
+  } catch (err) {
+    console.error("[SuperAdmin] admin-details error:", err.message);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// -- 9B. STEP 2 — Save/update institution details
+router.patch("/leads/:id/institution-details", async (req, res) => {
+  try {
+    const DemoRequest = (await import("../models/DemoRequest.js")).default;
+    const {
+      institutionName, orgType, state, district, taluka, cityVillage, city,
+      website, studentCount, staffCount, campusCount, departmentCount,
+      currentSystem, currentErpName, requiredModules, integrationsNeeded,
+      historicalDataNeeded, targetGoLiveDate,
+    } = req.body;
+
+    const update = {};
+    if (institutionName) update.institutionName = institutionName.trim();
+    if (orgType) update.orgType = orgType;
+    if (state) update.state = state;
+    if (district !== undefined) update.district = district;
+    if (taluka !== undefined) update.taluka = taluka;
+    if (cityVillage !== undefined) update.cityVillage = cityVillage;
+    if (city !== undefined) update.city = city;
+    if (website !== undefined) update.website = website;
+    if (studentCount !== undefined) update.studentCount = studentCount;
+    if (staffCount !== undefined) update.staffCount = staffCount;
+    if (campusCount !== undefined) update.campusCount = campusCount;
+    if (departmentCount !== undefined) update.departmentCount = departmentCount;
+    if (currentSystem !== undefined) update.currentSystem = currentSystem;
+    if (currentErpName !== undefined) update.currentErpName = currentErpName;
+    if (requiredModules !== undefined) update.requiredModules = requiredModules;
+    if (integrationsNeeded !== undefined) update.integrationsNeeded = integrationsNeeded;
+    if (historicalDataNeeded !== undefined) update.historicalDataNeeded = historicalDataNeeded;
+    if (targetGoLiveDate !== undefined) update.targetGoLiveDate = targetGoLiveDate;
+
+    const lead = await DemoRequest.findByIdAndUpdate(
+      req.params.id,
+      { $set: update },
+      { new: true }
+    );
+
+    if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+    res.json({ success: true, lead });
+  } catch (err) {
+    console.error("[SuperAdmin] institution-details error:", err.message);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// -- 9C. STEP 3 — Allocate dashboards
+router.patch("/leads/:id/allocate-dashboards", async (req, res) => {
+  try {
+    const DemoRequest = (await import("../models/DemoRequest.js")).default;
+    const { allocatedDashboards } = req.body;
+
+    if (!Array.isArray(allocatedDashboards)) {
+      return res.status(400).json({ success: false, message: "allocatedDashboards must be an array" });
+    }
+
+    const validDashboards = [
+      "dashboard_admission", "dashboard_fees", "dashboard_exam",
+      "dashboard_library", "dashboard_attendance", "dashboard_hr",
+      "dashboard_hostel", "dashboard_student", "dashboard_faculty",
+      "dashboard_organization",
+    ];
+
+    const filtered = allocatedDashboards.filter(d => validDashboards.includes(d));
+
+    const lead = await DemoRequest.findByIdAndUpdate(
+      req.params.id,
+      { $set: { allocatedDashboards: filtered } },
+      { new: true }
+    );
+
+    if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+    res.json({ success: true, lead, allocatedCount: filtered.length });
+  } catch (err) {
+    console.error("[SuperAdmin] allocate-dashboards error:", err.message);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// -- 9D. STEP 4 — Allocate modules
+router.patch("/leads/:id/allocate-modules", async (req, res) => {
+  try {
+    const DemoRequest = (await import("../models/DemoRequest.js")).default;
+    const { allocatedModules } = req.body;
+
+    if (!allocatedModules || typeof allocatedModules !== "object") {
+      return res.status(400).json({ success: false, message: "allocatedModules must be an object" });
+    }
+
+    const validModuleKeys = [
+      "erp_core", "admission_module", "fee_module", "hr_module",
+      "canteen_module", "custom_domain_module", "ai_assistant",
+      "analytics_module", "website_module", "certificates_module",
+      "events_module", "feedback_module", "holiday_module",
+      "id_cards_module", "exam_proctoring", "naac_module", "marketplace_module",
+    ];
+
+    const sanitized = {};
+    for (const key of validModuleKeys) {
+      sanitized[key] = !!allocatedModules[key];
+    }
+    sanitized.erp_core = true;
+
+    const lead = await DemoRequest.findByIdAndUpdate(
+      req.params.id,
+      { $set: { allocatedModules: sanitized } },
+      { new: true }
+    );
+
+    if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+    res.json({ success: true, lead });
+  } catch (err) {
+    console.error("[SuperAdmin] allocate-modules error:", err.message);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// -- 9E. STEP 5 — Review summary
+router.get("/leads/:id/provision-summary", async (req, res) => {
+  try {
+    const DemoRequest = (await import("../models/DemoRequest.js")).default;
+    const lead = await DemoRequest.findById(req.params.id).lean();
+
+    if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+    const summary = {
+      admin: {
+        name: lead.adminName,
+        email: lead.adminEmail,
+        phone: lead.adminPhone,
+        role: lead.role,
+      },
+      institution: {
+        name: lead.institutionName,
+        type: lead.orgType,
+        location: [lead.cityVillage || lead.city, lead.district, lead.state].filter(Boolean).join(", "),
+        website: lead.website,
+        studentCount: lead.studentCount,
+        staffCount: lead.staffCount,
+        campusCount: lead.campusCount,
+        departmentCount: lead.departmentCount,
+        currentSystem: lead.currentSystem,
+        currentErpName: lead.currentErpName,
+      },
+      modules: lead.allocatedModules || {},
+      dashboards: lead.allocatedDashboards || [],
+      targetGoLiveDate: lead.targetGoLiveDate,
+      provisioningType: lead.provisioningType || "sandbox",
+      plan: "sandbox",
+      duration: "31 days",
+      readyToProvision: !!(lead.adminName && lead.adminEmail && lead.institutionName && lead.orgType),
+    };
+
+    res.json({ success: true, summary });
+  } catch (err) {
+    console.error("[SuperAdmin] provision-summary error:", err.message);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// -- 9F. STEP 6 — Create Sandbox
+router.post("/leads/:id/create-sandbox", async (req, res) => {
+  try {
+    const { approveLeadAndProvision } = await import("../services/lead-conversion.service.js");
+
+    const result = await approveLeadAndProvision(
+      req.params.id,
+      { plan: "sandbox", mode: "sandbox" },
+      req.user?._id || null
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: `Sandbox organization created successfully for 31 days`,
+      organization: {
+        _id: result.organization._id,
+        name: result.organization.name,
+        subdomain: result.organization.subdomain,
+        org_mode: "sandbox",
+        demoExpiresAt: result.organization.demoExpiresAt,
+      },
+      admin: {
+        _id: result.admin?._id,
+        name: result.admin?.name,
+        email: result.admin?.email,
+      },
+      activation: result.activation,
+      warnings: result.warnings || [],
+    });
+  } catch (err) {
+    console.error("[SuperAdmin] create-sandbox error:", err.message);
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || "Sandbox provisioning failed",
+    });
+  }
+});
+
+// -- 9G. Sandbox to Active Conversion
+router.post("/organizations/:id/convert-to-active", async (req, res) => {
+  try {
+    const { convertSandboxToActive } = await import("../services/lead-conversion.service.js");
+    const result = await convertSandboxToActive(req.params.id, req.body, req.user?._id || null);
+    res.json({ success: true, message: "Organization converted to active production mode", data: result });
+  } catch (err) {
+    console.error("[SuperAdmin] convert-to-active error:", err.message);
+    res.status(err.statusCode || 500).json({ success: false, message: err.message || "Server error" });
+  }
+});
+
 router.post("/leads/:id/schedule-meeting", scheduleLeadMeeting);
 router.patch("/leads/:id/assign", async (req, res, next) => {
     try {

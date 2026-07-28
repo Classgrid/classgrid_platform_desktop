@@ -15,11 +15,11 @@ import { formatDate } from "@/utils/dateUtils";
 import { formatOrgType } from "@/utils/orgHelpers";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { toast } from "sonner";
+import { SandboxProvisioningWizard } from "../components/SandboxProvisioningWizard";
 
 export function LeadDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading } = useLeads();
-  const approveMutation = useApproveLead();
   const scheduleMutation = useScheduleMeeting();
   const deleteMutation = useDeleteLead();
   const navigate = useNavigate();
@@ -29,6 +29,7 @@ export function LeadDetailsPage() {
   const [isEditingMeeting, setIsEditingMeeting] = useState(false);
   const [provisionedData, setProvisionedData] = useState<any>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showProvisioningWizard, setShowProvisioningWizard] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -107,24 +108,7 @@ export function LeadDetailsPage() {
     statusClasses = "bg-gray-100 text-gray-800 border-gray-200";
   }
 
-  const handleApprove = () => {
-    if (!id) return;
-    approveMutation.mutate(id, {
-      onSuccess: (result: any) => {
-        setProvisionedData({
-          activationLink: result?.activation?.activationLink ?? "",
-          activationCode: result?.activation?.activationCode ?? "",
-          orgName: result?.organization?.name ?? "",
-          adminEmail: result?.admin?.email ?? "",
-        });
-        setShowConfirmModal(false);
-      },
-      onError: (err: any) => {
-        alert(err?.message || "Provisioning failed.");
-        setShowConfirmModal(false);
-      }
-    });
-  };
+
 
   const handleSchedule = () => {
     if (!id) return;
@@ -510,7 +494,7 @@ export function LeadDetailsPage() {
                   </p>
                   
                   <button 
-                    onClick={() => setShowConfirmModal(true)}
+                    onClick={() => setShowProvisioningWizard(true)}
                     className="
                       min-h-14 w-full rounded-xl
                       bg-emerald-500 px-5
@@ -521,7 +505,7 @@ export function LeadDetailsPage() {
                       active:scale-[0.99]
                     "
                   >
-                    APPROVE & PROVISION ORGANIZATION
+                    PROVISION SANDBOX WIZARD
                   </button>
                 </div>
               )}
@@ -542,51 +526,21 @@ export function LeadDetailsPage() {
         </div>
       </div>
 
-      {/* ── CONFIRMATION MODAL ── */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-background border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6">
-              <h3 className="text-xl font-bold mb-2">Approve and provision {lead.institutionName}?</h3>
-              <p className="text-sm text-muted-foreground mb-5">This will:</p>
-              <div className="space-y-2.5 mb-8">
-                <div className="flex items-center gap-2.5 text-sm font-medium">
-                  <CheckCircle2 size={16} className="text-emerald-500" />
-                  Create the organization
-                </div>
-                <div className="flex items-center gap-2.5 text-sm font-medium">
-                  <CheckCircle2 size={16} className="text-emerald-500" />
-                  Create the initial administrator
-                </div>
-                <div className="flex items-center gap-2.5 text-sm font-medium">
-                  <CheckCircle2 size={16} className="text-emerald-500" />
-                  Send login and onboarding details
-                </div>
-                <div className="flex items-center gap-2.5 text-sm font-medium">
-                  <CheckCircle2 size={16} className="text-emerald-500" />
-                  Mark this lead as provisioned
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 w-full">
-                <Button 
-                  variant="outline" 
-                  className="flex-1 rounded-xl h-12 font-semibold"
-                  onClick={() => setShowConfirmModal(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  className="flex-1 rounded-xl h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
-                  onClick={handleApprove}
-                  disabled={approveMutation.isPending}
-                >
-                  {approveMutation.isPending ? "Provisioning..." : "Confirm Provisioning"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* ── PROVISIONING WIZARD ── */}
+      {showProvisioningWizard && (
+        <SandboxProvisioningWizard
+          lead={lead}
+          onClose={() => setShowProvisioningWizard(false)}
+          onSuccess={(result) => {
+            setShowProvisioningWizard(false);
+            setProvisionedData({
+              activationLink: result?.activation?.activationLink ?? "",
+              activationCode: result?.activation?.activationCode ?? "",
+              orgName: result?.organization?.name ?? "",
+              adminEmail: result?.admin?.email ?? "",
+            });
+          }}
+        />
       )}
 
       <DangerConfirmDialog

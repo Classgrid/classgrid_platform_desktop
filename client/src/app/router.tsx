@@ -38,8 +38,6 @@ import { BackupPage } from "@/features/superadmin/pages/BackupPage";
 import { CustomDomainsPage } from "@/features/superadmin/pages/CustomDomainsPage";
 import { AnalyticsPage } from "@/features/superadmin/pages/AnalyticsPage";
 import { AuditLogsPage } from "@/features/superadmin/pages/AuditLogsPage";
-import { OnboardPage } from "@/features/superadmin/pages/OnboardPage";
-import { DirectOnboardPage } from "@/features/superadmin/pages/DirectOnboardPage";
 import { ClassgridTalkPage } from "@/features/superadmin/pages/ClassgridTalkPage";
 import { TeamPage } from "@/features/superadmin/pages/TeamPage";
 import { BillingPage } from "@/features/superadmin/pages/BillingPage";
@@ -215,8 +213,6 @@ export function AppRouter() {
           <Route path="/superadmin/orgs/:id" element={<OrgDetailPage />} />
           <Route path="/superadmin/domains" element={<CustomDomainsPage />} />
           <Route path="/superadmin/domains/:orgId" element={<OrgDetailsPage />} />
-          <Route path="/superadmin/onboard" element={<OnboardPage />} />
-          <Route path="/superadmin/direct-onboard" element={<DirectOnboardPage />} />
           <Route path="/superadmin/leads" element={<LeadsPage />} />
           <Route path="/superadmin/leads/:id" element={<LeadDetailsPage />} />
           <Route path="/superadmin/billing" element={<BillingPage />} />

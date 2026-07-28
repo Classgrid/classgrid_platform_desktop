@@ -9,7 +9,7 @@ const orgSubscriptionSchema = new mongoose.Schema({
   },
   plan: {
     type: String,
-    enum: ['demo', 'active'], // 🛑 Strict Single-Plan Enterprise Model
+    enum: ['sandbox', 'demo', 'active'], // 🛑 Strict Single-Plan Enterprise Model
     default: 'demo'
   },
   status: {

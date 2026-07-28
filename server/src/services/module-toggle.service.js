@@ -16,6 +16,16 @@ const PLAN_FEATURES = {
         max_students: 50,
         max_faculty: 5
     },
+    sandbox: {
+        attendance: true,
+        examinations: true,
+        admissions: true,
+        canteen: true,
+        ai_viva: true,
+        naac_auditor: true,
+        max_students: 50,
+        max_faculty: 5
+    },
     active: {
         attendance: true,
         examinations: true,

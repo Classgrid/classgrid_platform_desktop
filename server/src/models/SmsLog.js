@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const firebaseSmsLogSchema = new mongoose.Schema(
+const smsLogSchema = new mongoose.Schema(
     {
         organizationId: {
             type: mongoose.Schema.Types.ObjectId,
@@ -26,8 +26,8 @@ const firebaseSmsLogSchema = new mongoose.Schema(
         },
         provider: {
             type: String,
-            enum: ["firebase_sms", "fast2sms", "other"],
-            default: "firebase_sms",
+            enum: ["aws_sns", "other"],
+            default: "aws_sns",
             index: true,
         },
         providerMessageId: {
@@ -73,7 +73,7 @@ const firebaseSmsLogSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-firebaseSmsLogSchema.index({ organizationId: 1, status: 1, sentAt: -1 });
-firebaseSmsLogSchema.index({ providerMessageId: 1 }, { sparse: true });
+smsLogSchema.index({ organizationId: 1, status: 1, sentAt: -1 });
+smsLogSchema.index({ providerMessageId: 1 }, { sparse: true });
 
-export default mongoose.models.FirebaseSmsLog || mongoose.model("FirebaseSmsLog", firebaseSmsLogSchema);
+export default mongoose.models.SmsLog || mongoose.model("SmsLog", smsLogSchema);

@@ -91,7 +91,10 @@ const generateUniqueLegacyPrivateCode = async () => {
  * Provisioner Service
  * Handles creation of new demo institutions with trial plan.
  */
-export const provisionDemoOrg = async (adminData, orgData) => {
+export const provisionDemoOrg = async (adminData, orgData, options = {}) => {
+    const plan = options.plan || "demo";
+    const mode = options.mode || (plan === "sandbox" ? "sandbox" : "production");
+
     const session = await Organization.startSession();
     session.startTransaction();
 
@@ -180,6 +183,9 @@ export const provisionDemoOrg = async (adminData, orgData) => {
                 last_synced_at: new Date(),
             },
             is_active: true,
+            status: "active",
+            org_mode: mode === "sandbox" ? "sandbox" : "production",
+            feature_flags: orgData.feature_flags || {},
             demoExpiresAt: new Date(Date.now() + 31 * 24 * 60 * 60 * 1000),
         });
 
@@ -187,11 +193,16 @@ export const provisionDemoOrg = async (adminData, orgData) => {
 
         const subscription = new OrgSubscription({
             organization_id: newOrg._id,
-            plan: "demo",
+            plan: plan,
             status: "active",
             isPaid: false,
             expiresAt: new Date(Date.now() + 31 * 24 * 60 * 60 * 1000),
         });
+        
+        if (options.features) {
+            subscription.features = { ...subscription.features, ...options.features };
+        }
+
         await subscription.save({ session });
 
         rootAdmin.organization_id = newOrg._id;

@@ -16,6 +16,67 @@ const demoRequestSchema = new mongoose.Schema(
     website: { type: String, default: "", trim: true },
     message: { type: String, default: "" },
     
+    // ── Discovery Fields (collected during meeting) ──────────────────
+    studentCount: { type: Number, default: null },
+    staffCount: { type: Number, default: null },
+    campusCount: { type: Number, default: 1 },
+    departmentCount: { type: Number, default: null },
+    currentSystem: {
+      type: String,
+      enum: ["excel", "manual_registers", "other_erp", "no_system", null],
+      default: null,
+    },
+    currentErpName: { type: String, default: "", trim: true },
+    requiredModules: [{ type: String }],
+    integrationsNeeded: [{ type: String }],
+    historicalDataNeeded: { type: Boolean, default: false },
+    targetGoLiveDate: { type: Date, default: null },
+    provisioningType: {
+      type: String,
+      enum: ["sandbox", "production", null],
+      default: null,
+    },
+
+    // ── Dashboard Allocation ─────────────────────────────────────────
+    allocatedDashboards: [{
+      type: String,
+      enum: [
+        "dashboard_admission",
+        "dashboard_fees",
+        "dashboard_exam",
+        "dashboard_library",
+        "dashboard_attendance",
+        "dashboard_hr",
+        "dashboard_hostel",
+        "dashboard_student",
+        "dashboard_faculty",
+        "dashboard_organization",
+      ],
+    }],
+
+    // ── Module Allocation ────────────────────────────────────────────
+    allocatedModules: {
+      // Core (always on)
+      erp_core: { type: Boolean, default: true },
+      // Toggleable modules
+      admission_module: { type: Boolean, default: false },
+      fee_module: { type: Boolean, default: false },
+      hr_module: { type: Boolean, default: false },
+      canteen_module: { type: Boolean, default: false },
+      custom_domain_module: { type: Boolean, default: false },
+      ai_assistant: { type: Boolean, default: false },
+      analytics_module: { type: Boolean, default: false },
+      website_module: { type: Boolean, default: false },
+      certificates_module: { type: Boolean, default: false },
+      events_module: { type: Boolean, default: false },
+      feedback_module: { type: Boolean, default: false },
+      holiday_module: { type: Boolean, default: false },
+      id_cards_module: { type: Boolean, default: false },
+      exam_proctoring: { type: Boolean, default: false },
+      naac_module: { type: Boolean, default: false },
+      marketplace_module: { type: Boolean, default: false },
+    },
+
     // Marketing Site Scheduled Info
     meetingUrl: { type: String, default: "", trim: true },
     provider: { type: String, default: "", trim: true },

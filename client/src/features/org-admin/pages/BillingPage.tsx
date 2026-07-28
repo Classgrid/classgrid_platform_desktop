@@ -1,4 +1,8 @@
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useOrgBilling } from "../queries/useOrgAdminBilling";
+import { usePayInvoice } from "../queries/usePayInvoice";
+import toast from "react-hot-toast";
 import {
   Card,
   Text,
@@ -15,12 +19,34 @@ import {
   TableCell,
   Button,
   Divider,
+  BarChart,
+  Switch,
+  ProgressCircle,
 } from "@tremor/react";
-import { CreditCard, Download, ExternalLink, IndianRupee, ShieldCheck } from "lucide-react";
+import { CreditCard, Download, IndianRupee, ShieldCheck, Plus, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 
 export function BillingPage() {
+  const queryClient = useQueryClient();
   const { data: billingData, isLoading, isError } = useOrgBilling();
+  const { mutateAsync: payInvoice } = usePayInvoice();
+  const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
+
+  const [showComparison, setShowComparison] = useState(false);
+  const [isAddingBilling, setIsAddingBilling] = useState(false);
+
+  const handlePayNow = async (invoiceId: string) => {
+    try {
+      setPayingInvoiceId(invoiceId);
+      await payInvoice(invoiceId);
+      toast.success("Payment successful!");
+      queryClient.invalidateQueries({ queryKey: ["orgBilling"] });
+    } catch (error: any) {
+      toast.error(error.message || "Payment failed or was cancelled.");
+    } finally {
+      setPayingInvoiceId(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -44,7 +70,40 @@ export function BillingPage() {
     );
   }
 
-  const { subscription, currentMonthCharges, invoices, payments, feeCollection } = billingData;
+  const { subscription, currentMonthCharges, invoices, payments, monthlyHistory, feeCollection } = billingData;
+
+  // Process data for the chart to support the "Show Comparison" toggle if needed
+  const chartData = (monthlyHistory || []).map(record => ({
+    month: record.month,
+    'This Month': record.totalAmount,
+    'Estimated with Tax': record.totalAmount * 1.18, // dynamic calculation for toggle
+  }));
+
+  // Resource Usage Calculations
+  const storageLimit = subscription.limits?.storageGb || 100;
+  const storageUsed = currentMonthCharges.storageCharges?.count || 0;
+  const storagePercent = Math.min(100, Math.round((storageUsed / storageLimit) * 100));
+
+  const studentsLimit = subscription.limits?.maxStudents || 1000;
+  const studentsUsed = currentMonthCharges.studentCharges?.count || 0;
+  const studentsPercent = Math.min(100, Math.round((studentsUsed / studentsLimit) * 100));
+
+  const facultyLimit = subscription.limits?.maxFaculty || 100;
+  const facultyUsed = currentMonthCharges.facultyCharges?.count || 0;
+  const facultyPercent = Math.min(100, Math.round((facultyUsed / facultyLimit) * 100));
+
+  const emailsUsed = currentMonthCharges.emailCharges?.count || 0;
+  const smsUsed = currentMonthCharges.smsCharges?.count || 0;
+
+  const valueFormatter = (number: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      maximumFractionDigits: 0,
+      notation: 'compact',
+      compactDisplay: 'short',
+      style: 'currency',
+      currency: 'INR',
+    }).format(number);
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-8">
@@ -52,6 +111,134 @@ export function BillingPage() {
         <Title className="text-2xl font-semibold text-gray-900 dark:text-gray-50">Billing & Subscription</Title>
         <Text>Manage your Classgrid subscription, view invoices, and track payments.</Text>
       </div>
+
+      {/* HISTORICAL USAGE CHART (TOP) - Matching User Snippet */}
+      <Card className="sm:mx-auto sm:max-w-4xl">
+        <h3 className="ml-1 mr-1 font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          Month-over-Month Billing History
+        </h3>
+        <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content mb-6">
+          Your total billed amount across all platform resources over the last 6 months.
+        </p>
+        
+        {chartData && chartData.length > 0 ? (
+          <>
+            <BarChart
+              data={chartData}
+              index="month"
+              categories={
+                showComparison ? ['This Month', 'Estimated with Tax'] : ['This Month']
+              }
+              colors={showComparison ? ['blue', 'cyan'] : ['blue']}
+              valueFormatter={valueFormatter}
+              yAxisWidth={65}
+              className="mt-6 hidden h-72 sm:block"
+            />
+            <BarChart
+              data={chartData}
+              index="month"
+              categories={
+                showComparison ? ['This Month', 'Estimated with Tax'] : ['This Month']
+              }
+              colors={showComparison ? ['blue', 'cyan'] : ['blue']}
+              valueFormatter={valueFormatter}
+              showYAxis={false}
+              className="mt-4 h-56 sm:hidden"
+            />
+          </>
+        ) : (
+          <div className="flex items-center justify-center h-72 text-gray-500">
+            No historical data available yet.
+          </div>
+        )}
+        
+        <Divider />
+        <div className="mb-2 flex items-center space-x-3">
+          <Switch
+            id="comparison"
+            checked={showComparison}
+            onChange={() => setShowComparison(!showComparison)}
+          />
+          <label
+            htmlFor="comparison"
+            className="text-tremor-default text-tremor-content dark:text-dark-tremor-content"
+          >
+            Show Estimated 18% GST Projection
+          </label>
+        </div>
+      </Card>
+
+      {/* RESOURCES USED - PROGRESS CIRCLES */}
+      <Card>
+        <Title>Resource Usage</Title>
+        <Text>Real-time limits and usage for your organization based on your current plan.</Text>
+        <Grid numItems={2} numItemsSm={3} numItemsLg={5} className="gap-6 mt-6">
+          <Flex flexDirection="col" className="text-center">
+            <ProgressCircle value={storagePercent} radius={35} strokeWidth={6} color={storagePercent > 80 ? "red" : "emerald"}>
+              <span className="text-sm font-medium">{storagePercent}%</span>
+            </ProgressCircle>
+            <Text className="mt-4 font-medium">Storage</Text>
+            <Text className="text-xs text-gray-500">{storageUsed.toFixed(2)} GB / {storageLimit} GB</Text>
+          </Flex>
+
+          <Flex flexDirection="col" className="text-center">
+            <ProgressCircle value={studentsPercent} radius={35} strokeWidth={6} color={studentsPercent > 80 ? "red" : "blue"}>
+              <span className="text-sm font-medium">{studentsPercent}%</span>
+            </ProgressCircle>
+            <Text className="mt-4 font-medium">Students</Text>
+            <Text className="text-xs text-gray-500">{studentsUsed} / {studentsLimit}</Text>
+          </Flex>
+
+          <Flex flexDirection="col" className="text-center">
+            <ProgressCircle value={facultyPercent} radius={35} strokeWidth={6} color={facultyPercent > 80 ? "red" : "amber"}>
+              <span className="text-sm font-medium">{facultyPercent}%</span>
+            </ProgressCircle>
+            <Text className="mt-4 font-medium">Faculty</Text>
+            <Text className="text-xs text-gray-500">{facultyUsed} / {facultyLimit}</Text>
+          </Flex>
+
+          <Flex flexDirection="col" className="text-center">
+            <ProgressCircle value={emailsUsed > 0 ? 100 : 0} radius={35} strokeWidth={6} color="purple">
+              <span className="text-sm font-medium text-purple-600">{emailsUsed}</span>
+            </ProgressCircle>
+            <Text className="mt-4 font-medium">Emails Sent</Text>
+            <Text className="text-xs text-gray-500">Pay-as-you-go</Text>
+          </Flex>
+
+          <Flex flexDirection="col" className="text-center">
+            <ProgressCircle value={smsUsed > 0 ? 100 : 0} radius={35} strokeWidth={6} color="indigo">
+              <span className="text-sm font-medium text-indigo-600">{smsUsed}</span>
+            </ProgressCircle>
+            <Text className="mt-4 font-medium">SMS Sent</Text>
+            <Text className="text-xs text-gray-500">Pay-as-you-go</Text>
+          </Flex>
+        </Grid>
+      </Card>
+
+      {/* SETUP BILLING ACCOUNT */}
+      <Card decoration="left" decorationColor="blue" className="bg-blue-50/50 dark:bg-blue-900/10">
+        <Flex alignItems="start" className="gap-4">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+            <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-300" />
+          </div>
+          <div className="flex-1">
+            <Title>Setup Billing Account</Title>
+            <Text className="mt-1">
+              Add a payment method to automatically pay your monthly SaaS invoices based on the resources used above. 
+              We dynamically calculate your usage so you only pay for what you actually use.
+            </Text>
+            <div className="mt-4">
+              <Button 
+                icon={Plus} 
+                onClick={() => setIsAddingBilling(true)}
+                loading={isAddingBilling}
+              >
+                Add Payment Method
+              </Button>
+            </div>
+          </div>
+        </Flex>
+      </Card>
 
       <Grid numItems={1} numItemsLg={3} className="gap-6">
         {/* PLAN CARD */}
@@ -224,7 +411,15 @@ export function BillingPage() {
                   <TableCell className="text-right space-x-2">
                     <Button size="xs" variant="secondary" icon={Download}>PDF</Button>
                     {inv.status !== "paid" && (
-                      <Button size="xs" color="emerald" icon={CreditCard}>Pay Now</Button>
+                      <Button 
+                        size="xs" 
+                        color="emerald" 
+                        icon={CreditCard}
+                        loading={payingInvoiceId === inv.id}
+                        onClick={() => handlePayNow(inv.id)}
+                      >
+                        Pay Now
+                      </Button>
                     )}
                   </TableCell>
                 </TableRow>

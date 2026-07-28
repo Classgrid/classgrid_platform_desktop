@@ -121,6 +121,18 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
       .toLowerCase()
       .replace(/\s+/g, "_") || "school";
 
+  const allocatedModules =
+    typeof lead.allocatedModules?.toObject === "function"
+      ? lead.allocatedModules.toObject()
+      : lead.allocatedModules || {};
+  const allocatedDashboards = Array.isArray(lead.allocatedDashboards)
+    ? lead.allocatedDashboards
+    : [];
+  const featureFlags = { ...allocatedModules };
+  for (const dashboard of allocatedDashboards) {
+    featureFlags[dashboard] = true;
+  }
+
   const adminPayload = {
     name: lead.adminName,
     email: lead.adminEmail,
@@ -134,12 +146,22 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
     subdomain: options?.subdomain,
     org_type: orgType,
     structure_type: structureType,
-    city: lead.city,
+    city: lead.cityVillage || lead.city,
     state: lead.state,
+    address: [lead.cityVillage || lead.city, lead.taluka, lead.district, lead.state]
+      .filter(Boolean)
+      .join(", "),
+    website: lead.website || "",
+    designation: lead.designation || "",
+    feature_flags: featureFlags,
   };
 
   try {
-    const provisioned = await provisionDemoOrg(adminPayload, organizationPayload);
+    const provisioned = await provisionDemoOrg(adminPayload, organizationPayload, {
+      plan: options?.plan || "demo",
+      mode: options?.mode || "demo",
+      features: allocatedModules,
+    });
 
     const organization = provisioned.organization;
     const admin = await User.findById(provisioned.admin._id);
@@ -258,3 +280,59 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
     throw error;
   }
 }
+
+export async function convertSandboxToActive(orgId, activePlanOptions = {}, actorUserId = null) {
+  const Organization = (await import("../models/Organization.js")).default;
+  const OrgSubscription = (await import("../models/OrgSubscription.js")).default;
+  
+  const org = await Organization.findById(orgId);
+  if (!org) {
+    const error = new Error("Organization not found.");
+    error.statusCode = 404;
+    throw error;
+  }
+  
+  if (org.org_mode === "production") {
+    const error = new Error("Organization is already in production mode.");
+    error.statusCode = 400;
+    throw error;
+  }
+  
+  const sub = await OrgSubscription.findOne({ organization_id: orgId });
+  if (!sub) {
+    const error = new Error("Subscription not found.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Update Org
+  org.org_mode = "production";
+  org.status = "active";
+  org.demoExpiresAt = null;
+  await org.save();
+
+  // Update Sub
+  sub.plan = "active";
+  sub.isPaid = true;
+  // Default to 1 year renewal if no expiry is provided
+  sub.expiresAt = activePlanOptions.expiresAt || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  
+  // If activePlanOptions includes new feature allocations, merge them
+  if (activePlanOptions.features) {
+      sub.features = { ...sub.features, ...activePlanOptions.features };
+  }
+  
+  await sub.save();
+
+  await trackOnboardingEvent({
+    organizationId: org._id,
+    userId: actorUserId || org.owner_id,
+    eventType: "sandbox_converted_to_active",
+    stage: "live",
+    actorRole: "super_admin",
+    metadata: { plan: "active", activePlanOptions }
+  });
+
+  return { organization: org, subscription: sub };
+}
+

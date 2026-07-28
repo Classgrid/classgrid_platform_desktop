@@ -42,9 +42,9 @@ const PROVIDER_CONFIG = [
         note: "Redis is env-backed. Per-organization memory and command counts need app-level tenant counters or provider telemetry.",
     },
     {
-        provider: "fast2sms",
-        label: "Fast2SMS",
-        requiredEnv: ["FAST2SMS_API_KEY"],
+        provider: "aws_sns",
+        label: "AWS SNS",
+        requiredEnv: ["AWS_SNS_REGION", "AWS_SNS_ACCESS_KEY_ID", "AWS_SNS_SECRET_ACCESS_KEY"],
         optionalEnv: ["SMS_BUDGET_LIMIT", "SMS_COST_PER_MSG"],
         meterStatus: "config_only",
         note: "SMS sending is env-backed. Per-organization SMS cost needs message logs tagged with organizationId.",

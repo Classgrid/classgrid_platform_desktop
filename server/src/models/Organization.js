@@ -218,8 +218,13 @@ const organizationSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ["active", "suspended", "blocked"],
+            enum: ["active", "suspended", "blocked", "sandbox", "setup_in_progress"],
             default: "active",
+        },
+        org_mode: {
+            type: String,
+            enum: ["sandbox", "production"],
+            default: "production",
         },
         // 🕒 Tracks the 31-day Full ERP Demo expiry
         demoExpiresAt: {
@@ -485,6 +490,7 @@ const organizationSchema = new mongoose.Schema(
          * Sales team enables these flags when the org subscribes to a premium tier.
          */
         feature_flags: {
+            erp_core: { type: Boolean, default: true },
             naac_module: { type: Boolean, default: false },        // NAAC/NBA Auditor tab
             hr_module: { type: Boolean, default: false },          // Enterprise HR + Biometric + Payroll
             marketplace_module: { type: Boolean, default: false }, // Notes Marketplace for students
@@ -508,6 +514,9 @@ const organizationSchema = new mongoose.Schema(
             dashboard_attendance: { type: Boolean, default: false },
             dashboard_hr: { type: Boolean, default: false },
             dashboard_hostel: { type: Boolean, default: false },
+            dashboard_student: { type: Boolean, default: false },
+            dashboard_faculty: { type: Boolean, default: false },
+            dashboard_organization: { type: Boolean, default: false },
         },
         // 🔄 Academic Promotion Lock — prevents concurrent promotions
         is_promoting: {

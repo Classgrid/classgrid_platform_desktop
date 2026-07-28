@@ -89,6 +89,7 @@ export interface OrgBillingResponse {
   currentMonthCharges: OrgBillingCurrentCharges;
   invoices: any[]; // We'll refine this later
   payments: any[];
+  monthlyHistory: { month: string; totalAmount: number; status: string }[];
   feeCollection: {
     totalInvoices: number;
     totalBilled: number;

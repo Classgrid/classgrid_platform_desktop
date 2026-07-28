@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import Organization from "../models/Organization.js";
 import Classroom from "../models/Classroom.js";
 import EmailJob from "../models/EmailJob.js";
-import FirebaseSmsLog from "../models/FirebaseSmsLog.js";
+import SmsLog from "../models/SmsLog.js";
 import OrgSubscription from "../models/OrgSubscription.js";
 import OrganizationUsageDaily from "../models/OrganizationUsageDaily.js";
 import GoLive from "../models/GoLive.js";
@@ -185,7 +185,7 @@ async function calculateEmailUsageByOrg(periodStart, periodEnd) {
 }
 
 async function calculateSmsUsageByOrg(periodStart, periodEnd) {
-    const rows = await FirebaseSmsLog.aggregate([
+    const rows = await SmsLog.aggregate([
         {
             $match: {
                 organizationId: { $ne: null },
@@ -365,16 +365,16 @@ function buildLineItems({ r2, emailCount, sms, apiRequests, aiTokens, agoraMinut
             sourceQuality: "actual",
         },
         {
-            provider: "firebase_sms",
+            provider: "aws_sns",
             resourceKey: "sms_segments_sent",
-            resourceLabel: "Firebase SMS segments sent",
+            resourceLabel: "AWS SNS segments sent",
             quantity: smsQuantity,
             unit: "sms",
             unitRateInr: rateSnapshot.pricePerSms,
             amountInr: money(smsQuantity * rateSnapshot.pricePerSms),
             rawQuantity: sms.messages || 0,
             rawUnit: "messages",
-            source: "firebase_sms_logs",
+            source: "aws_sns_logs",
             sourceQuality: "actual",
             metadata: {
                 messages: sms.messages || 0,
