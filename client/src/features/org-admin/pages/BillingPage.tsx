@@ -3,29 +3,40 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useOrgBilling } from "../queries/useOrgAdminBilling";
 import { usePayInvoice } from "../queries/usePayInvoice";
 import toast from "react-hot-toast";
-import {
-  Card,
-  Text,
-  Flex,
-  Grid,
-  Title,
-  Subtitle,
-  Badge,
-  Table,
-  TableHead,
-  TableRow,
-  TableHeaderCell,
-  TableBody,
-  TableCell,
-  Button,
-  Divider,
-  BarChart,
-  Switch,
-  ProgressCircle,
-  Metric,
-} from "@tremor/react";
+
+// Native UI Components (No Tremor)
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/marketing_ui/card";
+import { Badge } from "@/components/marketing_ui/badge";
+import { Button } from "@/components/marketing_ui/button";
+import { Switch } from "@/components/marketing_ui/switch";
+import { Label } from "@/components/marketing_ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/marketing_ui/table";
+
+// Charts
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+
+// Icons & Utils
 import { CreditCard, Download, IndianRupee, ShieldCheck, Plus, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
+
+// Custom SVG Progress Circle to replace Tremor's
+const ProgressCircle = ({ value, colorClass, children, size = 64, strokeWidth = 6 }: any) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (value / 100) * circumference;
+  
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg className="transform -rotate-90 w-full h-full">
+        <circle className="text-gray-100 dark:text-gray-800" strokeWidth={strokeWidth} stroke="currentColor" fill="transparent" r={radius} cx={size/2} cy={size/2} />
+        <circle className={`${colorClass} transition-all duration-1000 ease-in-out`} strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" stroke="currentColor" fill="transparent" r={radius} cx={size/2} cy={size/2} />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center text-sm font-medium">
+        {children}
+      </div>
+    </div>
+  );
+};
 
 export function BillingPage() {
   const queryClient = useQueryClient();
@@ -65,7 +76,9 @@ export function BillingPage() {
     return (
       <div className="p-6 sm:p-10 max-w-7xl mx-auto">
         <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
-          <Text className="text-red-800 dark:text-red-200">Failed to load billing data.</Text>
+          <CardContent className="pt-6 text-red-800 dark:text-red-200">
+            Failed to load billing data.
+          </CardContent>
         </Card>
       </div>
     );
@@ -77,7 +90,7 @@ export function BillingPage() {
   const chartData = (monthlyHistory || []).map(record => ({
     month: record.month,
     'This Month': record.totalAmount,
-    'Estimated with Tax': record.totalAmount * 1.18, // dynamic calculation for toggle
+    'Estimated with Tax': record.totalAmount * 1.18,
   }));
 
   // Resource Usage Calculations
@@ -106,332 +119,370 @@ export function BillingPage() {
     }).format(number);
   };
 
+  const getStatusColor = (status: string) => {
+    if (status === 'active' || status === 'paid') return 'bg-emerald-500 hover:bg-emerald-600 text-white border-transparent';
+    if (status === 'overdue') return 'bg-red-500 hover:bg-red-600 text-white border-transparent';
+    return 'bg-amber-500 hover:bg-amber-600 text-white border-transparent';
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-8">
       <div>
-        <Title className="text-2xl font-semibold text-gray-900 dark:text-gray-50">Billing & Subscription</Title>
-        <Text>Manage your Classgrid subscription, view invoices, and track payments.</Text>
+        <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Billing & Subscription</h2>
+        <p className="text-muted-foreground mt-1">Manage your Classgrid subscription, view invoices, and track payments.</p>
       </div>
 
-      {/* HISTORICAL USAGE CHART (TOP) - Matching User Snippet */}
-      <Card className="sm:mx-auto sm:max-w-4xl">
-        <h3 className="ml-1 mr-1 font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-          Month-over-Month Billing History
-        </h3>
-        <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content mb-6">
-          Your total billed amount across all platform resources over the last 6 months.
-        </p>
-        
-        {chartData && chartData.length > 0 ? (
-          <>
-            <BarChart
-              data={chartData}
-              index="month"
-              categories={
-                showComparison ? ['This Month', 'Estimated with Tax'] : ['This Month']
-              }
-              colors={showComparison ? ['blue', 'cyan'] : ['blue']}
-              valueFormatter={valueFormatter}
-              yAxisWidth={65}
-              className="mt-6 hidden h-72 sm:block"
-            />
-            <BarChart
-              data={chartData}
-              index="month"
-              categories={
-                showComparison ? ['This Month', 'Estimated with Tax'] : ['This Month']
-              }
-              colors={showComparison ? ['blue', 'cyan'] : ['blue']}
-              valueFormatter={valueFormatter}
-              showYAxis={false}
-              className="mt-4 h-56 sm:hidden"
-            />
-          </>
-        ) : (
-          <div className="flex items-center justify-center h-72 text-gray-500">
-            No historical data available yet.
+      {/* HISTORICAL USAGE CHART (TOP) - Matching User Snippet natively */}
+      <Card className="sm:mx-auto sm:max-w-4xl shadow-md border-gray-200/60 dark:border-gray-800">
+        <CardHeader>
+          <CardTitle className="text-lg">Month-over-Month Billing History</CardTitle>
+          <CardDescription>Your total billed amount across all platform resources over the last 6 months.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-72 w-full mt-4">
+            {chartData && chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" className="dark:stroke-gray-800" />
+                  <XAxis 
+                    dataKey="month" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#6b7280', fontSize: 12 }} 
+                    dy={10} 
+                  />
+                  <YAxis 
+                    hide 
+                    domain={[0, 'auto']} 
+                  />
+                  <Tooltip 
+                    cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                    formatter={(value: number) => [`₹${value.toLocaleString()}`, '']}
+                  />
+                  <Bar dataKey="This Month" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                  {showComparison && <Bar dataKey="Estimated with Tax" fill="#22d3ee" radius={[4, 4, 0, 0]} maxBarSize={60} />}
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                No historical data available yet.
+              </div>
+            )}
           </div>
-        )}
-        
-        <Divider />
-        <div className="mb-2 flex items-center space-x-3">
-          <Switch
-            id="comparison"
-            checked={showComparison}
-            onChange={() => setShowComparison(!showComparison)}
-          />
-          <label
-            htmlFor="comparison"
-            className="text-tremor-default text-tremor-content dark:text-dark-tremor-content"
-          >
-            Show Estimated 18% GST Projection
-          </label>
-        </div>
+          
+          <hr className="my-6 border-gray-200 dark:border-gray-800" />
+          
+          <div className="flex items-center space-x-3">
+            <Switch
+              id="comparison"
+              checked={showComparison}
+              onCheckedChange={setShowComparison}
+            />
+            <Label htmlFor="comparison" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Show Estimated 18% GST Projection
+            </Label>
+          </div>
+        </CardContent>
       </Card>
 
       {/* RESOURCES USED - PROGRESS CIRCLES */}
-      <Card>
-        <Title>Resource Usage</Title>
-        <Text>Real-time limits and usage for your organization based on your current plan.</Text>
-        <Grid numItems={2} numItemsSm={3} numItemsLg={5} className="gap-6 mt-6">
-          <Flex flexDirection="col" className="text-center">
-            <ProgressCircle value={storagePercent} radius={35} strokeWidth={6} color={storagePercent > 80 ? "red" : "emerald"}>
-              <span className="text-sm font-medium">{storagePercent}%</span>
-            </ProgressCircle>
-            <Text className="mt-4 font-medium">Storage</Text>
-            <Text className="text-xs text-gray-500">{storageUsed.toFixed(2)} GB / {storageLimit} GB</Text>
-          </Flex>
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">Resource Usage</CardTitle>
+          <CardDescription>Real-time limits and usage for your organization based on your current plan.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 mt-4">
+            
+            <div className="flex flex-col items-center text-center">
+              <ProgressCircle value={storagePercent} colorClass={storagePercent > 80 ? "text-red-500" : "text-emerald-500"}>
+                <span>{storagePercent}%</span>
+              </ProgressCircle>
+              <p className="mt-4 font-semibold text-gray-900 dark:text-white">Storage</p>
+              <p className="text-xs text-muted-foreground mt-1">{storageUsed.toFixed(2)} GB / {storageLimit} GB</p>
+            </div>
 
-          <Flex flexDirection="col" className="text-center">
-            <ProgressCircle value={studentsPercent} radius={35} strokeWidth={6} color={studentsPercent > 80 ? "red" : "blue"}>
-              <span className="text-sm font-medium">{studentsPercent}%</span>
-            </ProgressCircle>
-            <Text className="mt-4 font-medium">Students</Text>
-            <Text className="text-xs text-gray-500">{studentsUsed} / {studentsLimit}</Text>
-          </Flex>
+            <div className="flex flex-col items-center text-center">
+              <ProgressCircle value={studentsPercent} colorClass={studentsPercent > 80 ? "text-red-500" : "text-blue-500"}>
+                <span>{studentsPercent}%</span>
+              </ProgressCircle>
+              <p className="mt-4 font-semibold text-gray-900 dark:text-white">Students</p>
+              <p className="text-xs text-muted-foreground mt-1">{studentsUsed} / {studentsLimit}</p>
+            </div>
 
-          <Flex flexDirection="col" className="text-center">
-            <ProgressCircle value={facultyPercent} radius={35} strokeWidth={6} color={facultyPercent > 80 ? "red" : "amber"}>
-              <span className="text-sm font-medium">{facultyPercent}%</span>
-            </ProgressCircle>
-            <Text className="mt-4 font-medium">Faculty</Text>
-            <Text className="text-xs text-gray-500">{facultyUsed} / {facultyLimit}</Text>
-          </Flex>
+            <div className="flex flex-col items-center text-center">
+              <ProgressCircle value={facultyPercent} colorClass={facultyPercent > 80 ? "text-red-500" : "text-amber-500"}>
+                <span>{facultyPercent}%</span>
+              </ProgressCircle>
+              <p className="mt-4 font-semibold text-gray-900 dark:text-white">Faculty</p>
+              <p className="text-xs text-muted-foreground mt-1">{facultyUsed} / {facultyLimit}</p>
+            </div>
 
-          <Flex flexDirection="col" className="text-center">
-            <ProgressCircle value={emailsUsed > 0 ? 100 : 0} radius={35} strokeWidth={6} color="purple">
-              <span className="text-sm font-medium text-purple-600">{emailsUsed}</span>
-            </ProgressCircle>
-            <Text className="mt-4 font-medium">Emails Sent</Text>
-            <Text className="text-xs text-gray-500">Pay-as-you-go</Text>
-          </Flex>
+            <div className="flex flex-col items-center text-center">
+              <ProgressCircle value={emailsUsed > 0 ? 100 : 0} colorClass="text-purple-500">
+                <span className="text-purple-600 dark:text-purple-400">{emailsUsed}</span>
+              </ProgressCircle>
+              <p className="mt-4 font-semibold text-gray-900 dark:text-white">Emails Sent</p>
+              <p className="text-xs text-muted-foreground mt-1">Pay-as-you-go</p>
+            </div>
 
-          <Flex flexDirection="col" className="text-center">
-            <ProgressCircle value={smsUsed > 0 ? 100 : 0} radius={35} strokeWidth={6} color="indigo">
-              <span className="text-sm font-medium text-indigo-600">{smsUsed}</span>
-            </ProgressCircle>
-            <Text className="mt-4 font-medium">SMS Sent</Text>
-            <Text className="text-xs text-gray-500">Pay-as-you-go</Text>
-          </Flex>
-        </Grid>
+            <div className="flex flex-col items-center text-center">
+              <ProgressCircle value={smsUsed > 0 ? 100 : 0} colorClass="text-indigo-500">
+                <span className="text-indigo-600 dark:text-indigo-400">{smsUsed}</span>
+              </ProgressCircle>
+              <p className="mt-4 font-semibold text-gray-900 dark:text-white">SMS Sent</p>
+              <p className="text-xs text-muted-foreground mt-1">Pay-as-you-go</p>
+            </div>
+
+          </div>
+        </CardContent>
       </Card>
 
       {/* SETUP BILLING ACCOUNT */}
-      <Card decoration="left" decorationColor="blue" className="bg-blue-50/50 dark:bg-blue-900/10">
-        <Flex alignItems="start" className="gap-4">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-            <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-300" />
-          </div>
-          <div className="flex-1">
-            <Title>Setup Billing Account</Title>
-            <Text className="mt-1">
-              Add a payment method to automatically pay your monthly SaaS invoices based on the resources used above. 
-              We dynamically calculate your usage so you only pay for what you actually use.
-            </Text>
-            <div className="mt-4">
-              <Button 
-                icon={Plus} 
-                onClick={() => setIsAddingBilling(true)}
-                loading={isAddingBilling}
-              >
-                Add Payment Method
-              </Button>
+      <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900 shadow-sm relative overflow-hidden">
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl shadow-sm">
+              <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
-          </div>
-        </Flex>
-      </Card>
-
-      <Grid numItems={1} numItemsLg={3} className="gap-6">
-        {/* PLAN CARD */}
-        <Card className="lg:col-span-1 flex flex-col justify-between">
-          <div>
-            <Flex alignItems="center" className="mb-4">
-              <Title>Current Plan</Title>
-              <Badge color={subscription?.status === "active" ? "emerald" : "amber"} icon={ShieldCheck}>
-                {subscription?.plan?.toUpperCase() || "NONE"}
-              </Badge>
-            </Flex>
-            
-            <div className="space-y-4">
-              <Flex className="border-b border-gray-100 dark:border-gray-800 pb-2">
-                <Text>Status</Text>
-                <Text className="font-medium capitalize">{subscription?.status || "No active plan"}</Text>
-              </Flex>
-              <Flex className="border-b border-gray-100 dark:border-gray-800 pb-2">
-                <Text>Billing State</Text>
-                <Badge color={subscription?.isPaid ? "emerald" : "orange"}>
-                  {subscription?.isPaid ? "Paid" : "Unpaid"}
-                </Badge>
-              </Flex>
-              <Flex className="border-b border-gray-100 dark:border-gray-800 pb-2">
-                <Text>Next Renewal</Text>
-                <Text className="font-medium">
-                  {subscription?.expiresAt ? format(new Date(subscription.expiresAt), "dd MMM yyyy") : "N/A"}
-                </Text>
-              </Flex>
-            </div>
-            
-            <div className="mt-6">
-              <Subtitle className="mb-2 text-sm font-semibold">Seat Limits</Subtitle>
-              <div className="space-y-1 text-sm">
-                <Flex><Text>Students</Text><Text>{subscription?.limits?.maxStudents || "Unlimited"}</Text></Flex>
-                <Flex><Text>Faculty</Text><Text>{subscription?.limits?.maxFaculty || "Unlimited"}</Text></Flex>
-                <Flex><Text>Dept Admins</Text><Text>{subscription?.limits?.maxDeptAdmins || "Unlimited"}</Text></Flex>
-                <Flex><Text>Storage Limit</Text><Text>{subscription?.limits?.storageGb ? `${subscription.limits.storageGb} GB` : "Pay as you go"}</Text></Flex>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Setup Billing Account</h3>
+              <p className="mt-1 text-gray-600 dark:text-gray-300">
+                Add a payment method to automatically pay your monthly SaaS invoices based on the resources used above. 
+                We dynamically calculate your usage so you only pay for what you actually use.
+              </p>
+              <div className="mt-5">
+                <Button 
+                  onClick={() => setIsAddingBilling(true)}
+                  disabled={isAddingBilling}
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Payment Method
+                </Button>
               </div>
             </div>
           </div>
-          
-          <Button variant="secondary" className="w-full mt-6">Change Plan</Button>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* PLAN CARD */}
+        <Card className="lg:col-span-1 shadow-sm flex flex-col justify-between">
+          <CardContent className="pt-6 flex-1">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold">Current Plan</h3>
+              <Badge className={getStatusColor(subscription?.status || "")}>
+                <ShieldCheck className="w-3 h-3 mr-1" />
+                {subscription?.plan?.toUpperCase() || "NONE"}
+              </Badge>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
+                <span className="text-sm text-muted-foreground">Status</span>
+                <span className="font-medium capitalize text-sm">{subscription?.status || "No active plan"}</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
+                <span className="text-sm text-muted-foreground">Billing State</span>
+                <Badge variant={subscription?.isPaid ? "default" : "secondary"} className={subscription?.isPaid ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100" : "bg-orange-100 text-orange-800 hover:bg-orange-100"}>
+                  {subscription?.isPaid ? "Paid" : "Unpaid"}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
+                <span className="text-sm text-muted-foreground">Next Renewal</span>
+                <span className="font-medium text-sm">
+                  {subscription?.expiresAt ? format(new Date(subscription.expiresAt), "dd MMM yyyy") : "N/A"}
+                </span>
+              </div>
+            </div>
+            
+            <div className="mt-8">
+              <h4 className="text-sm font-semibold mb-3 uppercase tracking-wider text-muted-foreground">Seat Limits</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Students</span><span className="font-medium">{subscription?.limits?.maxStudents || "Unlimited"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Faculty</span><span className="font-medium">{subscription?.limits?.maxFaculty || "Unlimited"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Dept Admins</span><span className="font-medium">{subscription?.limits?.maxDeptAdmins || "Unlimited"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Storage Limit</span><span className="font-medium">{subscription?.limits?.storageGb ? `${subscription.limits.storageGb} GB` : "Pay as you go"}</span></div>
+              </div>
+            </div>
+          </CardContent>
+          <div className="p-6 pt-0 mt-auto">
+            <Button variant="outline" className="w-full shadow-sm">Change Plan</Button>
+          </div>
         </Card>
 
         {/* CURRENT MONTH ESTIMATE */}
-        <Card className="lg:col-span-2">
-          <Title>Current Month Accrued Charges</Title>
-          <Text className="mb-6">Estimated charges for the current billing cycle. Finalized at month end.</Text>
-          
-          <div className="space-y-3">
-            <Flex className="py-2 border-b border-gray-100 dark:border-gray-800">
-              <Text className="font-medium text-gray-900 dark:text-gray-100">Classgrid Platform Fee</Text>
-              <Text className="font-medium">₹{currentMonthCharges.platformFee.toLocaleString()}</Text>
-            </Flex>
-            
-            {currentMonthCharges.studentCharges.count > 0 && (
-              <Flex className="py-1">
-                <Text>Students ({currentMonthCharges.studentCharges.count} × ₹{currentMonthCharges.studentCharges.rate})</Text>
-                <Text>₹{currentMonthCharges.studentCharges.total.toLocaleString()}</Text>
-              </Flex>
-            )}
-            
-            {currentMonthCharges.facultyCharges.count > 0 && (
-              <Flex className="py-1">
-                <Text>Faculty ({currentMonthCharges.facultyCharges.count} × ₹{currentMonthCharges.facultyCharges.rate})</Text>
-                <Text>₹{currentMonthCharges.facultyCharges.total.toLocaleString()}</Text>
-              </Flex>
-            )}
+        <Card className="lg:col-span-2 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg">Current Month Accrued Charges</CardTitle>
+            <CardDescription>Estimated charges for the current billing cycle. Finalized at month end.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                <span className="font-medium text-gray-900 dark:text-gray-100">Classgrid Platform Fee</span>
+                <span className="font-semibold">₹{currentMonthCharges?.platformFee?.toLocaleString() || 0}</span>
+              </div>
+              
+              <div className="space-y-2 py-2">
+                {currentMonthCharges?.studentCharges?.count > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Students ({currentMonthCharges.studentCharges.count} × ₹{currentMonthCharges.studentCharges.rate})</span>
+                    <span>₹{currentMonthCharges.studentCharges.total.toLocaleString()}</span>
+                  </div>
+                )}
+                
+                {currentMonthCharges?.facultyCharges?.count > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Faculty ({currentMonthCharges.facultyCharges.count} × ₹{currentMonthCharges.facultyCharges.rate})</span>
+                    <span>₹{currentMonthCharges.facultyCharges.total.toLocaleString()}</span>
+                  </div>
+                )}
 
-            {currentMonthCharges.deptAdminCharges.count > 0 && (
-              <Flex className="py-1">
-                <Text>Dept Admins ({currentMonthCharges.deptAdminCharges.count} × ₹{currentMonthCharges.deptAdminCharges.rate})</Text>
-                <Text>₹{currentMonthCharges.deptAdminCharges.total.toLocaleString()}</Text>
-              </Flex>
-            )}
+                {currentMonthCharges?.deptAdminCharges?.count > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Dept Admins ({currentMonthCharges.deptAdminCharges.count} × ₹{currentMonthCharges.deptAdminCharges.rate})</span>
+                    <span>₹{currentMonthCharges.deptAdminCharges.total.toLocaleString()}</span>
+                  </div>
+                )}
 
-            {currentMonthCharges.emailCharges.count > 0 && (
-              <Flex className="py-1">
-                <Text>Emails ({currentMonthCharges.emailCharges.count} × ₹{currentMonthCharges.emailCharges.rate})</Text>
-                <Text>₹{currentMonthCharges.emailCharges.total.toLocaleString()}</Text>
-              </Flex>
-            )}
-            
-            {currentMonthCharges.smsCharges?.count ? (
-              <Flex className="py-1">
-                <Text>SMS ({currentMonthCharges.smsCharges.count} × ₹{currentMonthCharges.smsCharges.rate})</Text>
-                <Text>₹{currentMonthCharges.smsCharges.total.toLocaleString()}</Text>
-              </Flex>
-            ) : null}
+                {currentMonthCharges?.emailCharges?.count > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Emails ({currentMonthCharges.emailCharges.count} × ₹{currentMonthCharges.emailCharges.rate})</span>
+                    <span>₹{currentMonthCharges.emailCharges.total.toLocaleString()}</span>
+                  </div>
+                )}
+                
+                {currentMonthCharges?.smsCharges?.count > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">SMS ({currentMonthCharges.smsCharges.count} × ₹{currentMonthCharges.smsCharges.rate})</span>
+                    <span>₹{currentMonthCharges.smsCharges.total.toLocaleString()}</span>
+                  </div>
+                )}
 
-            {currentMonthCharges.storageCharges?.count ? (
-              <Flex className="py-1">
-                <Text>Storage ({currentMonthCharges.storageCharges.count} GB × ₹{currentMonthCharges.storageCharges.rate})</Text>
-                <Text>₹{currentMonthCharges.storageCharges.total.toLocaleString()}</Text>
-              </Flex>
-            ) : null}
-            
-            <Divider />
-            
-            <Flex className="py-1">
-              <Text>Subtotal</Text>
-              <Text>₹{currentMonthCharges.subtotal.toLocaleString()}</Text>
-            </Flex>
-            <Flex className="py-1">
-              <Text>GST ({currentMonthCharges.gstPercent}%)</Text>
-              <Text>₹{currentMonthCharges.gstAmount.toLocaleString()}</Text>
-            </Flex>
-            <Flex className="py-2 mt-2 bg-gray-50 dark:bg-gray-800/50 rounded px-3">
-              <Text className="font-semibold text-gray-900 dark:text-white">Estimated Total</Text>
-              <Text className="font-bold text-lg text-gray-900 dark:text-white">₹{currentMonthCharges.total.toLocaleString()}</Text>
-            </Flex>
-          </div>
+                {currentMonthCharges?.storageCharges?.count > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Storage ({currentMonthCharges.storageCharges.count} GB × ₹{currentMonthCharges.storageCharges.rate})</span>
+                    <span>₹{currentMonthCharges.storageCharges.total.toLocaleString()}</span>
+                  </div>
+                )}
+              </div>
+              
+              <hr className="border-gray-200 dark:border-gray-800" />
+              
+              <div className="flex justify-between py-1 text-sm">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="font-medium">₹{currentMonthCharges?.subtotal?.toLocaleString() || 0}</span>
+              </div>
+              <div className="flex justify-between py-1 text-sm">
+                <span className="text-muted-foreground">GST ({currentMonthCharges?.gstPercent || 18}%)</span>
+                <span className="font-medium">₹{currentMonthCharges?.gstAmount?.toLocaleString() || 0}</span>
+              </div>
+              <div className="flex justify-between items-center py-4 mt-2 bg-gray-50 dark:bg-gray-800/40 rounded-xl px-4 border border-gray-100 dark:border-gray-800">
+                <span className="font-semibold text-gray-900 dark:text-white">Estimated Total</span>
+                <span className="font-bold text-xl text-blue-600 dark:text-blue-400">₹{currentMonthCharges?.total?.toLocaleString() || 0}</span>
+              </div>
+            </div>
+          </CardContent>
         </Card>
-      </Grid>
+      </div>
 
       {/* FEE COLLECTION SUMMARY */}
-      <Card decoration="top" decorationColor="emerald">
-        <Title>Student Fee Collection</Title>
-        <Text>Overview of fees collected by your organization from students.</Text>
-        <Grid numItems={2} numItemsSm={4} className="gap-4 mt-6">
-          <div>
-            <Text>Total Billed</Text>
-            <Metric className="text-xl mt-1">₹{feeCollection.totalBilled.toLocaleString()}</Metric>
+      <Card className="border-t-4 border-t-emerald-500 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">Student Fee Collection</CardTitle>
+          <CardDescription>Overview of fees collected by your organization from students.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+            <div className="p-4 bg-gray-50 dark:bg-gray-800/40 rounded-xl">
+              <p className="text-sm text-muted-foreground font-medium">Total Billed</p>
+              <p className="text-2xl font-bold mt-2 text-gray-900 dark:text-white">₹{feeCollection?.totalBilled?.toLocaleString() || 0}</p>
+            </div>
+            <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-900">
+              <p className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">Total Collected</p>
+              <p className="text-2xl font-bold mt-2 text-emerald-600 dark:text-emerald-500">₹{feeCollection?.totalPaid?.toLocaleString() || 0}</p>
+            </div>
+            <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-xl border border-amber-100 dark:border-amber-900">
+              <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">Outstanding</p>
+              <p className="text-2xl font-bold mt-2 text-amber-600 dark:text-amber-500">₹{feeCollection?.outstanding?.toLocaleString() || 0}</p>
+            </div>
+            <div className="p-4 bg-gray-50 dark:bg-gray-800/40 rounded-xl">
+              <p className="text-sm text-muted-foreground font-medium">Total Invoices</p>
+              <p className="text-2xl font-bold mt-2 text-gray-900 dark:text-white">{feeCollection?.totalInvoices || 0}</p>
+            </div>
           </div>
-          <div>
-            <Text>Total Collected</Text>
-            <Metric className="text-xl mt-1 text-emerald-600">₹{feeCollection.totalPaid.toLocaleString()}</Metric>
-          </div>
-          <div>
-            <Text>Outstanding</Text>
-            <Metric className="text-xl mt-1 text-amber-600">₹{feeCollection.outstanding.toLocaleString()}</Metric>
-          </div>
-          <div>
-            <Text>Invoices</Text>
-            <Metric className="text-xl mt-1">{feeCollection.totalInvoices}</Metric>
-          </div>
-        </Grid>
+        </CardContent>
       </Card>
 
       {/* INVOICE HISTORY */}
-      <Card>
-        <Flex className="mb-4">
-          <Title>Invoice History</Title>
-        </Flex>
-        {invoices.length > 0 ? (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>Invoice #</TableHeaderCell>
-                <TableHeaderCell>Billing Period</TableHeaderCell>
-                <TableHeaderCell>Due Date</TableHeaderCell>
-                <TableHeaderCell>Amount</TableHeaderCell>
-                <TableHeaderCell>Status</TableHeaderCell>
-                <TableHeaderCell className="text-right">Action</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {invoices.map((inv, idx) => (
-                <TableRow key={idx}>
-                  <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
-                  <TableCell>{inv.billingPeriod?.month} {inv.billingPeriod?.year}</TableCell>
-                  <TableCell>{format(new Date(inv.dueDate), "dd MMM yyyy")}</TableCell>
-                  <TableCell>₹{inv.totalAmountInr?.toLocaleString()}</TableCell>
-                  <TableCell>
-                    <Badge color={inv.status === "paid" ? "emerald" : inv.status === "overdue" ? "red" : "orange"}>
-                      {inv.status?.toUpperCase() || "UNPAID"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button size="xs" variant="secondary" icon={Download}>PDF</Button>
-                    {inv.status !== "paid" && (
-                      <Button 
-                        size="xs" 
-                        color="emerald" 
-                        icon={CreditCard}
-                        loading={payingInvoiceId === inv.id}
-                        onClick={() => handlePayNow(inv.id)}
-                      >
-                        Pay Now
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <div className="text-center py-10 text-gray-500">
-            No invoices generated yet.
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">Invoice History</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 sm:p-6 sm:pt-0">
+          <div className="overflow-x-auto">
+            {invoices && invoices.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                    <TableHead className="font-semibold">Invoice #</TableHead>
+                    <TableHead className="font-semibold">Billing Period</TableHead>
+                    <TableHead className="font-semibold">Due Date</TableHead>
+                    <TableHead className="font-semibold">Amount</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="text-right font-semibold">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invoices.map((inv: any, idx: number) => (
+                    <TableRow key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
+                      <TableCell>{inv.billingPeriod?.month} {inv.billingPeriod?.year}</TableCell>
+                      <TableCell>{format(new Date(inv.dueDate), "dd MMM yyyy")}</TableCell>
+                      <TableCell className="font-medium">₹{inv.totalAmountInr?.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(inv.status)}>
+                          {inv.status?.toUpperCase() || "UNPAID"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" variant="outline" className="h-8">
+                            <Download className="w-3.5 h-3.5 mr-1" />
+                            PDF
+                          </Button>
+                          {inv.status !== "paid" && (
+                            <Button 
+                              size="sm" 
+                              className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white"
+                              disabled={payingInvoiceId === inv.id}
+                              onClick={() => handlePayNow(inv.id)}
+                            >
+                              <CreditCard className="w-3.5 h-3.5 mr-1" />
+                              {payingInvoiceId === inv.id ? "Processing..." : "Pay Now"}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-12">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+                  <CreditCard className="w-6 h-6 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">No invoices yet</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Invoices will appear here once they are generated.</p>
+              </div>
+            )}
           </div>
-        )}
+        </CardContent>
       </Card>
       
     </div>
