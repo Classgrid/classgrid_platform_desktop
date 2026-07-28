@@ -706,6 +706,36 @@ export function BillingPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* ADD PAYMENT METHOD MODAL */}
+      <Dialog open={isAddingBilling} onOpenChange={setIsAddingBilling}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add Payment Method</DialogTitle>
+            <DialogDescription>
+              Connect a debit or credit card to automatically pay your monthly SaaS invoices.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-6 flex flex-col items-center justify-center space-y-4">
+            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
+              <CreditCard className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h3 className="text-lg font-medium text-center">Secure Payment with Razorpay</h3>
+            <p className="text-sm text-muted-foreground text-center max-w-sm">
+              You will be redirected to our payment partner, Razorpay, to securely authenticate and save your card for future recurring billing.
+            </p>
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <Button variant="outline" onClick={() => setIsAddingBilling(false)}>Cancel</Button>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
+              toast.success("Redirecting to Razorpay for card authentication...");
+              setTimeout(() => setIsAddingBilling(false), 1500);
+            }}>
+              Proceed to Razorpay
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       
     </div>
   );
