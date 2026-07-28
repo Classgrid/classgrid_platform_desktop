@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useOrgBilling } from "../queries/useOrgAdminBilling";
 import { usePayInvoice } from "../queries/usePayInvoice";
+import { apiClient } from "@/lib/apiClient";
 import toast from "react-hot-toast";
 
 // Native UI Components (No Tremor)
@@ -92,6 +93,36 @@ export function BillingPage() {
       toast.error(error.message || "Payment failed or was cancelled.");
     } finally {
       setPayingInvoiceId(null);
+    }
+  };
+
+  const handleSetupMandate = async () => {
+    try {
+      setIsSavingSettings(true);
+      const res = await apiClient.post("/api/org/billing/setup-mandate");
+      const { key_id, order_id, amount, currency } = res.data;
+
+      const options = {
+        key: key_id,
+        amount,
+        currency,
+        order_id,
+        name: "Classgrid",
+        description: "Payment Verification",
+        handler: function(response: any) {
+          toast.success("Account connected and verified successfully!");
+          setIsAddingBilling(false);
+        },
+        prefill: { email: billingEmail || "admin@classgrid.in" },
+        theme: { color: "#2563eb" }
+      };
+      
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to initialize secure gateway");
+    } finally {
+      setIsSavingSettings(false);
     }
   };
 
@@ -761,12 +792,9 @@ export function BillingPage() {
             </p>
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-            <Button variant="outline" onClick={() => setIsAddingBilling(false)}>Cancel</Button>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
-              toast.error("Card authentication gateway requires backend subscription API integration to proceed.");
-              setTimeout(() => setIsAddingBilling(false), 1500);
-            }}>
-              Proceed to Gateway
+            <Button variant="outline" onClick={() => setIsAddingBilling(false)} disabled={isSavingSettings}>Cancel</Button>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={handleSetupMandate} disabled={isSavingSettings}>
+              {isSavingSettings ? "Connecting..." : "Proceed to Gateway"}
             </Button>
           </div>
         </DialogContent>
