@@ -239,7 +239,34 @@ export function BillingPage() {
         </CardContent>
       </Card>
 
-      {/* Setup Billing Account block removed to avoid confusion with non-implemented auto-debit backend */}
+      {/* SETUP BILLING ACCOUNT */}
+      <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900 shadow-sm relative overflow-hidden">
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl shadow-sm">
+              <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Setup Billing Account</h3>
+              <p className="mt-1 text-gray-600 dark:text-gray-300">
+                Add a payment method to automatically pay your monthly SaaS invoices based on the resources used above. 
+                We dynamically calculate your usage so you only pay for what you actually use.
+              </p>
+              <div className="mt-5">
+                <Button 
+                  onClick={() => setIsAddingBilling(true)}
+                  disabled={isAddingBilling}
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Payment Method
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* PLAN CARD */}
