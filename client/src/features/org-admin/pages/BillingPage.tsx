@@ -246,26 +246,26 @@ export function BillingPage() {
           <div>
             <Flex alignItems="center" className="mb-4">
               <Title>Current Plan</Title>
-              <Badge color={subscription.status === "active" ? "emerald" : "amber"} icon={ShieldCheck}>
-                {subscription.plan.toUpperCase()}
+              <Badge color={subscription?.status === "active" ? "emerald" : "amber"} icon={ShieldCheck}>
+                {subscription?.plan?.toUpperCase() || "NONE"}
               </Badge>
             </Flex>
             
             <div className="space-y-4">
               <Flex className="border-b border-gray-100 dark:border-gray-800 pb-2">
                 <Text>Status</Text>
-                <Text className="font-medium capitalize">{subscription.status}</Text>
+                <Text className="font-medium capitalize">{subscription?.status || "No active plan"}</Text>
               </Flex>
               <Flex className="border-b border-gray-100 dark:border-gray-800 pb-2">
                 <Text>Billing State</Text>
-                <Badge color={subscription.isPaid ? "emerald" : "orange"}>
-                  {subscription.isPaid ? "Paid" : "Unpaid"}
+                <Badge color={subscription?.isPaid ? "emerald" : "orange"}>
+                  {subscription?.isPaid ? "Paid" : "Unpaid"}
                 </Badge>
               </Flex>
               <Flex className="border-b border-gray-100 dark:border-gray-800 pb-2">
                 <Text>Next Renewal</Text>
                 <Text className="font-medium">
-                  {subscription.expiresAt ? format(new Date(subscription.expiresAt), "dd MMM yyyy") : "N/A"}
+                  {subscription?.expiresAt ? format(new Date(subscription.expiresAt), "dd MMM yyyy") : "N/A"}
                 </Text>
               </Flex>
             </div>
@@ -273,10 +273,10 @@ export function BillingPage() {
             <div className="mt-6">
               <Subtitle className="mb-2 text-sm font-semibold">Seat Limits</Subtitle>
               <div className="space-y-1 text-sm">
-                <Flex><Text>Students</Text><Text>{subscription.limits.maxStudents || "Unlimited"}</Text></Flex>
-                <Flex><Text>Faculty</Text><Text>{subscription.limits.maxFaculty || "Unlimited"}</Text></Flex>
-                <Flex><Text>Dept Admins</Text><Text>{subscription.limits.maxDeptAdmins || "Unlimited"}</Text></Flex>
-                <Flex><Text>Storage Limit</Text><Text>{subscription.limits.storageGb ? `${subscription.limits.storageGb} GB` : "Pay as you go"}</Text></Flex>
+                <Flex><Text>Students</Text><Text>{subscription?.limits?.maxStudents || "Unlimited"}</Text></Flex>
+                <Flex><Text>Faculty</Text><Text>{subscription?.limits?.maxFaculty || "Unlimited"}</Text></Flex>
+                <Flex><Text>Dept Admins</Text><Text>{subscription?.limits?.maxDeptAdmins || "Unlimited"}</Text></Flex>
+                <Flex><Text>Storage Limit</Text><Text>{subscription?.limits?.storageGb ? `${subscription.limits.storageGb} GB` : "Pay as you go"}</Text></Flex>
               </div>
             </div>
           </div>
