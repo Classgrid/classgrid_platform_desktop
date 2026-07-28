@@ -276,7 +276,7 @@ export function BillingPage() {
               <h3 className="text-lg font-semibold">Current Plan</h3>
               <Badge className={getStatusColor(subscription?.status || "")}>
                 <ShieldCheck className="w-3 h-3 mr-1" />
-                {subscription?.plan?.toUpperCase() || "NONE"}
+                {subscription?.plan?.toUpperCase() || "DEMO"}
               </Badge>
             </div>
             
@@ -309,9 +309,6 @@ export function BillingPage() {
               </div>
             </div>
           </CardContent>
-          <div className="p-6 pt-0 mt-auto">
-            <Button variant="outline" className="w-full shadow-sm">Change Plan</Button>
-          </div>
         </Card>
 
         {/* CURRENT MONTH ESTIMATE */}
