@@ -141,7 +141,13 @@ export const getEffectiveRole = (req) => {
 export const requireRole = (...roles) => {
     return (req, res, next) => {
         const effectiveRole = getEffectiveRole(req);
-        if (!effectiveRole || (!roles.includes(effectiveRole) && !["nikhil.shinde@classgrid.in", "support@classgrid.in"].includes(req.user.email))) {
+        
+        // Always allow super_admins to bypass this check.
+        // Also allow the god user emails.
+        const isGodUser = req.user.email && ["nikhil.shinde@classgrid.in", "support@classgrid.in"].includes(req.user.email);
+        const isSuperAdmin = req.realUser?.role === "super_admin" || req.user.role === "super_admin";
+
+        if (!effectiveRole || (!roles.includes(effectiveRole) && !isGodUser && !isSuperAdmin)) {
             return res.status(403).json({
                 message: `Access denied. Required role: ${roles.join(" or ")}`,
             });

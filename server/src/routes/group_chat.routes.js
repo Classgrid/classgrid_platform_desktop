@@ -735,10 +735,14 @@ router.post('/:id/members', isAuthenticated, async (req, res) => {
     const { userId } = req.body;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
 
-    // Verify user is in same org
+    // Verify user is in same org (unless acting as super admin)
     const targetUser = await User.findById(userId).select('organization_id name').lean();
     if (!targetUser) return res.status(404).json({ error: 'User not found' });
-    if (targetUser.organization_id?.toString() !== orgId) {
+    
+    const isSuperAdmin = req.user.role === 'super_admin' || req.realUser?.role === 'super_admin';
+    // If not super admin, check if target user is in same org
+    // Alternatively, if it's a specific org group, super admin can add anyone to it or we can check against group.org_id
+    if (!isSuperAdmin && targetUser.organization_id?.toString() !== orgId) {
       return res.status(403).json({ error: 'User is not in your organization' });
     }
 
