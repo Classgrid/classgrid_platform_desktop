@@ -22,6 +22,7 @@ import {
   BarChart,
   Switch,
   ProgressCircle,
+  Metric,
 } from "@tremor/react";
 import { CreditCard, Download, IndianRupee, ShieldCheck, Plus, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
