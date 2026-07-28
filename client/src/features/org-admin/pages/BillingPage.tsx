@@ -10,10 +10,12 @@ import { Badge } from "@/components/marketing_ui/badge";
 import { Button } from "@/components/marketing_ui/button";
 import { Switch } from "@/components/marketing_ui/switch";
 import { Label } from "@/components/marketing_ui/label";
+import { Input } from "@/components/marketing_ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/marketing_ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/marketing_ui/dialog";
 
 // Charts
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 
 // Icons & Utils
 import { CreditCard, Download, IndianRupee, ShieldCheck, Plus, CheckCircle2 } from "lucide-react";
@@ -46,6 +48,10 @@ export function BillingPage() {
 
   const [showComparison, setShowComparison] = useState(false);
   const [isAddingBilling, setIsAddingBilling] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [billingEmail, setBillingEmail] = useState("admin@classgrid.in");
+  const [billingAddress, setBillingAddress] = useState("");
+  const [country, setCountry] = useState("India (भारत)");
 
   const handlePayNow = async (invoiceId: string) => {
     try {
@@ -133,58 +139,109 @@ export function BillingPage() {
       </div>
 
       {/* HISTORICAL USAGE CHART (TOP) - Matching User Snippet natively */}
-      <Card className="sm:mx-auto sm:max-w-4xl shadow-md border-gray-200/60 dark:border-gray-800">
-        <CardHeader>
-          <CardTitle className="text-lg">Month-over-Month Billing History</CardTitle>
-          <CardDescription>Your total billed amount across all platform resources over the last 6 months.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-72 w-full mt-4">
-            {chartData && chartData.length > 0 ? (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 shadow-sm border-gray-200/60 dark:border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-lg">Daily Cost Trend</CardTitle>
+            <CardDescription>Your daily platform usage costs over the current billing cycle.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-72 w-full mt-4">
+              {billingData.dailySeries && billingData.dailySeries.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={billingData.dailySeries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" className="dark:stroke-gray-800" />
+                    <XAxis 
+                      dataKey="date" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: '#6b7280', fontSize: 12 }} 
+                      tickFormatter={(val) => {
+                        const d = new Date(val);
+                        return `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })}`;
+                      }}
+                      dy={10} 
+                    />
+                    <YAxis 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      tickFormatter={(val) => `₹${val}`}
+                    />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                      formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Amount']}
+                      labelFormatter={(label) => format(new Date(label), "dd MMM yyyy")}
+                    />
+                    <Area type="monotone" dataKey="amountInr" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorAmount)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground bg-gray-50 dark:bg-gray-800/20 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
+                  Daily usage data will appear here once active.
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-1 shadow-sm border-gray-200/60 dark:border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-lg">Resource Breakdown</CardTitle>
+            <CardDescription>Distribution of your costs this month.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 w-full mt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" className="dark:stroke-gray-800" />
-                  <XAxis 
-                    dataKey="month" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#6b7280', fontSize: 12 }} 
-                    dy={10} 
-                  />
-                  <YAxis 
-                    hide 
-                    domain={[0, 'auto']} 
-                  />
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Students', value: currentMonthCharges?.studentCharges?.total || 0, color: '#3b82f6' },
+                      { name: 'Faculty', value: currentMonthCharges?.facultyCharges?.total || 0, color: '#f59e0b' },
+                      { name: 'Storage', value: currentMonthCharges?.storageCharges?.total || 0, color: '#10b981' },
+                      { name: 'Emails', value: currentMonthCharges?.emailCharges?.total || 0, color: '#8b5cf6' },
+                      { name: 'Platform Fee', value: currentMonthCharges?.platformFee || 0, color: '#64748b' },
+                    ].filter(d => d.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {
+                      [
+                        { name: 'Students', value: currentMonthCharges?.studentCharges?.total || 0, color: '#3b82f6' },
+                        { name: 'Faculty', value: currentMonthCharges?.facultyCharges?.total || 0, color: '#f59e0b' },
+                        { name: 'Storage', value: currentMonthCharges?.storageCharges?.total || 0, color: '#10b981' },
+                        { name: 'Emails', value: currentMonthCharges?.emailCharges?.total || 0, color: '#8b5cf6' },
+                        { name: 'Platform Fee', value: currentMonthCharges?.platformFee || 0, color: '#64748b' },
+                      ].filter(d => d.value > 0).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))
+                    }
+                  </Pie>
                   <Tooltip 
-                    cursor={{ fill: 'rgba(0,0,0,0.04)' }}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                     formatter={(value: number) => [`₹${value.toLocaleString()}`, '']}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                   />
-                  <Bar dataKey="This Month" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60} />
-                  {showComparison && <Bar dataKey="Estimated with Tax" fill="#22d3ee" radius={[4, 4, 0, 0]} maxBarSize={60} />}
-                </BarChart>
+                </PieChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                No historical data available yet.
-              </div>
-            )}
-          </div>
-          
-          <hr className="my-6 border-gray-200 dark:border-gray-800" />
-          
-          <div className="flex items-center space-x-3">
-            <Switch
-              id="comparison"
-              checked={showComparison}
-              onCheckedChange={setShowComparison}
-            />
-            <Label htmlFor="comparison" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Show Estimated 18% GST Projection
-            </Label>
-          </div>
-        </CardContent>
-      </Card>
+              {currentMonthCharges?.total === 0 && (
+                 <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
+                   No charges yet
+                 </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* RESOURCES USED - PROGRESS CIRCLES */}
       <Card className="shadow-sm">
@@ -440,7 +497,7 @@ export function BillingPage() {
                       <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
                       <TableCell>{inv.billingPeriod?.month} {inv.billingPeriod?.year}</TableCell>
                       <TableCell>{format(new Date(inv.dueDate), "dd MMM yyyy")}</TableCell>
-                      <TableCell className="font-medium">₹{inv.totalAmountInr?.toLocaleString()}</TableCell>
+                      <TableCell className="font-medium">₹{inv.total?.toLocaleString()}</TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(inv.status)}>
                           {inv.status?.toUpperCase() || "UNPAID"}
@@ -448,9 +505,9 @@ export function BillingPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button size="sm" variant="outline" className="h-8">
+                          <Button size="sm" variant="outline" className="h-8" onClick={() => setSelectedInvoice(inv)}>
                             <Download className="w-3.5 h-3.5 mr-1" />
-                            PDF
+                            View
                           </Button>
                           {inv.status !== "paid" && (
                             <Button 
@@ -481,6 +538,174 @@ export function BillingPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* BILLING SETTINGS (VERCEL STYLE) */}
+      <div className="space-y-6 mt-12">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Settings</h3>
+        
+        <Card className="shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden rounded-xl">
+          <div className="p-6">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Invoice Email Recipient</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-3xl leading-relaxed">
+              By default, all your invoices will be sent to the email address of the creator of your team. 
+              If you want to use a custom email address specifically for receiving invoices, enter it here.
+            </p>
+            <div className="max-w-xl">
+              <Input 
+                value={billingEmail} 
+                onChange={(e) => setBillingEmail(e.target.value)} 
+                className="bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 h-10"
+                placeholder="e.g. accounts@university.edu"
+              />
+            </div>
+          </div>
+          <div className="bg-gray-50 dark:bg-gray-800/40 px-6 py-4 flex justify-between items-center border-t border-gray-200 dark:border-gray-800">
+            <p className="text-sm text-gray-500">Please use 254 characters at maximum.</p>
+            <Button className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white rounded-md px-6">
+              Save
+            </Button>
+          </div>
+        </Card>
+
+        <Card className="shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden rounded-xl">
+          <div className="p-6">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Billing Address</h4>
+            
+            <div className="mt-6 max-w-xl space-y-6">
+              <div>
+                <Label className="text-gray-500 mb-2 block font-normal text-sm">Country</Label>
+                <select 
+                  className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                >
+                  <option value="India (भारत)">India (भारत)</option>
+                  <option value="United States">United States</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                </select>
+              </div>
+              
+              <div>
+                <Label className="text-gray-500 mb-2 block font-normal text-sm">Billing Address</Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                    <svg className="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <Input 
+                    value={billingAddress} 
+                    onChange={(e) => setBillingAddress(e.target.value)} 
+                    className="bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 h-10 pl-10"
+                    placeholder="Search address..."
+                  />
+                  {billingAddress && (
+                    <button 
+                      onClick={() => setBillingAddress("")}
+                      className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-50 dark:bg-gray-800/40 px-6 py-4 flex justify-end border-t border-gray-200 dark:border-gray-800">
+            <Button className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white rounded-md px-6">
+              Save
+            </Button>
+          </div>
+        </Card>
+      </div>
+      
+      {/* INVOICE DETAILS MODAL */}
+      <Dialog open={!!selectedInvoice} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Invoice Details</DialogTitle>
+            <DialogDescription>
+              {selectedInvoice?.invoiceNumber}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedInvoice && (
+            <div className="space-y-6">
+              <div className="flex justify-between text-sm text-gray-500">
+                <div>
+                  <p>Billing Period:</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                    {selectedInvoice.billingPeriod?.month}/{selectedInvoice.billingPeriod?.year}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p>Due Date:</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                    {format(new Date(selectedInvoice.dueDate), "dd MMM yyyy")}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                      <th className="text-left py-2 font-medium">Resource</th>
+                      <th className="text-right py-2 font-medium">Usage</th>
+                      <th className="text-right py-2 font-medium">Rate</th>
+                      <th className="text-right py-2 font-medium">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedInvoice.lineItems?.map((item: any, i: number) => (
+                      <tr key={i} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+                        <td className="py-2">{item.resourceLabel || item.provider}</td>
+                        <td className="text-right py-2">{item.totalQuantity} {item.unit}</td>
+                        <td className="text-right py-2">₹{item.unitRateInr}</td>
+                        <td className="text-right py-2 font-medium">₹{item.amountInr?.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Subtotal</span>
+                  <span>₹{selectedInvoice.subtotal?.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">GST ({selectedInvoice.taxPercent}%)</span>
+                  <span>₹{selectedInvoice.taxAmount?.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <span>Total Amount</span>
+                  <span>₹{selectedInvoice.total?.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 gap-3">
+                <Button variant="outline" onClick={() => setSelectedInvoice(null)}>Close</Button>
+                {selectedInvoice.status !== "paid" && (
+                  <Button 
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    disabled={payingInvoiceId === selectedInvoice.id}
+                    onClick={() => {
+                      handlePayNow(selectedInvoice.id);
+                      setSelectedInvoice(null);
+                    }}
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Pay ₹{selectedInvoice.total?.toLocaleString()} Now
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       
     </div>
   );

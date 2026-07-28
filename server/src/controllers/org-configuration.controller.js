@@ -30,6 +30,7 @@ const publicInvoice = (invoice) => ({
     taxAmount: asNumber(invoice.taxAmountInr), total: asNumber(invoice.totalAmountInr),
     currency: invoice.currency, status: invoice.status, dueDate: invoice.dueDate,
     paidAt: invoice.razorpay?.paidAt || null, createdAt: invoice.createdAt,
+    lineItems: invoice.lineItems || [],
 });
 const publicPayment = (payment) => ({
     id: payment._id, amount: asNumber(payment.amount), currency: payment.currency,
