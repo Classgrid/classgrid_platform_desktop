@@ -756,9 +756,9 @@ export function BillingPage() {
             <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
               <CreditCard className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             </div>
-            <h3 className="text-lg font-medium text-center">Secure Payment Verification</h3>
+            <h3 className="text-lg font-medium text-center">Payment Verification</h3>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              You will be redirected to our secure payment gateway to authenticate and save your card for future recurring billing.
+              You will be redirected to our payment gateway to authenticate and save your card for future recurring billing.
             </p>
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
