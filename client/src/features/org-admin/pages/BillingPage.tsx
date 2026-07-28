@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useOrgBilling } from "../queries/useOrgAdminBilling";
 import { usePayInvoice } from "../queries/usePayInvoice";
@@ -56,7 +56,6 @@ export function BillingPage() {
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // Sync settings with backend data when loaded
-  import { useEffect } from "react";
   useEffect(() => {
     if (billingData?.billingSettings) {
       setBillingEmail(billingData.billingSettings.invoice_email || "");
