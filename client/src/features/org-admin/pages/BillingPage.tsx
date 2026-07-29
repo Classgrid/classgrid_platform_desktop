@@ -266,7 +266,7 @@ export function BillingPage() {
                 {emailVerified ? (
                   <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
                 ) : (
-                  <Button onClick={handleSendEmailVerification} disabled={isSendingEmailOtp || !billingEmail?.trim()} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6">
+                  <Button variant="outline" onClick={handleSendEmailVerification} disabled={isSendingEmailOtp || !billingEmail?.trim()}>
                     Verify
                   </Button>
                 )}
@@ -289,7 +289,7 @@ export function BillingPage() {
                 {phoneVerified ? (
                   <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
                 ) : (
-                  <Button onClick={handleSendPhoneOtp} disabled={isSendingPhoneOtp || !billingPhone?.trim() || !emailVerified} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6">
+                  <Button variant="outline" onClick={handleSendPhoneOtp} disabled={isSendingPhoneOtp || !billingPhone?.trim() || !emailVerified}>
                     Verify
                   </Button>
                 )}
