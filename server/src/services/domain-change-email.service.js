@@ -409,11 +409,14 @@ export async function notifyExternalDomainChange({
         }
     };
     
-    // Add specific statuses for verified action
+    // Add specific statuses based on action type
     if (action === 'verified') {
         data.details["Verification Status"] = "✅ Verified";
         data.details["SSL/TLS Status"] = "✅ Active";
         data.details["DNS Status"] = "Ownership & routing records validated";
+    } else if (action === 'registered' || action === 'changed') {
+        data.details["Verification Status"] = "⏳ Pending Verification (Action Required)";
+        data.details["SSL/TLS Status"] = "⏳ Pending DNS Validation";
     }
 
     if (!to) return { queued: false, reason: "missing_admin_email" };
