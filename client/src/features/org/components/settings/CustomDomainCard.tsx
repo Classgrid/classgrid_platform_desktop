@@ -405,8 +405,8 @@ function DomainConfigCard({
         });
     };
 
-    const handleChangeDomain = (event: React.FormEvent) => {
-        event.preventDefault();
+    const handleChangeDomain = (event?: React.FormEvent) => {
+        if (event) event.preventDefault();
         const nextDomain = editDomainInput.trim();
         if (!nextDomain) {
             toast.error("Enter the replacement hostname.");
@@ -569,17 +569,16 @@ function DomainConfigCard({
                                     </a>
                                 </span>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-2">
                                 <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label={`Edit ${title}`}
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => {
                                         setEditDomainInput(domainConfig.domain || "");
                                         setEditDomainOpen(true);
                                     }}
                                 >
-                                    <Pencil className="w-4 h-4" />
+                                    Edit Domain
                                 </Button>
                                 <Button
                                     variant="ghost"
@@ -871,44 +870,37 @@ function DomainConfigCard({
                 )}
             </div>
 
-            {/* Remove Domain Confirmation Dialog */}
-            <Dialog open={editDomainOpen} onOpenChange={setEditDomainOpen}>
-                <DialogContent>
-                    <form onSubmit={handleChangeDomain}>
-                        <DialogHeader>
-                            <DialogTitle>Edit {title}</DialogTitle>
-                            <DialogDescription>
-                                Changing the hostname preserves your branding, but resets DNS verification. The new hostname remains disabled until verification succeeds.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="py-5 space-y-2">
-                            <label htmlFor={`edit-${domainType}`} className="text-sm font-medium text-foreground">
-                                Replacement hostname
-                            </label>
-                            <Input
-                                id={`edit-${domainType}`}
-                                name="customDomain"
-                                autoComplete="url"
-                                value={editDomainInput}
-                                onChange={(event) => setEditDomainInput(event.target.value)}
-                                placeholder="portal.example.edu"
-                                disabled={changeMutation.isPending}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Enter a hostname only. Do not include a URL path, port, query, or fragment.
-                            </p>
-                        </div>
-                        <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setEditDomainOpen(false)} disabled={changeMutation.isPending}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={!editDomainInput.trim() || changeMutation.isPending} isLoading={changeMutation.isPending}>
-                                Save and reverify
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+            <DangerConfirmDialog
+                open={editDomainOpen}
+                onOpenChange={setEditDomainOpen}
+                title={`Edit ${title}`}
+                description={<>Changing the hostname preserves your branding, but <strong>resets DNS verification</strong>. The new hostname will remain disabled until verification succeeds.</>}
+                confirmationSteps={domainConfig?.domain ? [{ label: "To confirm, type the current domain", value: domainConfig.domain }] : []}
+                warningMessage="Your students and staff will temporarily lose access via the custom domain until the new DNS records are verified."
+                actionLabel="Save and reverify"
+                cancelLabel="Cancel"
+                isLoading={changeMutation.isPending}
+                onConfirm={() => handleChangeDomain()}
+                variant="warning"
+            >
+                <div className="py-2 space-y-2">
+                    <label htmlFor={`edit-${domainType}`} className="text-sm font-medium text-foreground">
+                        Replacement hostname:
+                    </label>
+                    <Input
+                        id={`edit-${domainType}`}
+                        name="customDomain"
+                        autoComplete="url"
+                        value={editDomainInput}
+                        onChange={(event) => setEditDomainInput(event.target.value)}
+                        placeholder="portal.example.edu"
+                        disabled={changeMutation.isPending}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        Enter a hostname only. Do not include a URL path, port, query, or fragment.
+                    </p>
+                </div>
+            </DangerConfirmDialog>
 
             <DangerConfirmDialog
                 open={removeConfirmOpen}
