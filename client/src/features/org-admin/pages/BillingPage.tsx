@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/marketing_ui/card";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Button } from "@/components/marketing_ui/button";
-import { VerifiedButton } from "@/components/marketing_ui/verified-button";
+import { VerifiedButton } from "@/components/marketing_ui/status-button";
 import { Switch } from "@/components/marketing_ui/switch";
 import { Label } from "@/components/marketing_ui/label";
 import { Input } from "@/components/marketing_ui/input";

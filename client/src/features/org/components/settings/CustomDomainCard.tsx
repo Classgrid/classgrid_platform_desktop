@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Globe, CheckCircle2, AlertCircle, AlertTriangle, Copy, Trash2, XCircle, ExternalLink, Monitor, LayoutDashboard, Pencil } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
-import { VerifiedButton } from "@/components/marketing_ui/verified-button";
+import { StatusButton, VerifiedButton } from "@/components/marketing_ui/status-button";
 import { Input } from "@/components/marketing_ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/marketing_ui/dialog";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
@@ -127,9 +127,7 @@ export function CustomDomainCard() {
                                 <span className="text-sm font-medium w-16 text-muted-foreground">{domainsData.erp_domain?.allow_classgrid_url !== false ? 'Enabled' : 'Disabled'}</span>
                             </div>
                         )}
-                        <div className="px-3 py-1.5 rounded-md text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                            Default
-                        </div>
+                        <StatusButton variant="info" size="sm" text="Default" showIcon={false} />
                     </div>
                 </div>
                 <div className="p-0">
@@ -514,15 +512,11 @@ function DomainConfigCard({
                 <div className="flex items-center gap-3">
                     {hasDomain && (
                         isVerified ? (
-                            <VerifiedButton className="h-8 px-4" />
+                            <VerifiedButton size="sm" />
+                        ) : hasConflicts ? (
+                            <StatusButton variant="warning" size="sm" text="DNS conflict" />
                         ) : (
-                            <div className="px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 shadow-sm bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                {hasConflicts ? (
-                                    <><AlertTriangle className="w-3.5 h-3.5" /> DNS conflict</>
-                                ) : (
-                                    <><AlertCircle className="w-3.5 h-3.5" /> Pending Verification</>
-                                )}
-                            </div>
+                            <StatusButton variant="default" size="sm" text="Pending Verification" />
                         )
                     )}
                 </div>
