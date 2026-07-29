@@ -756,70 +756,69 @@ export function BillingPage() {
         
         <Card className="shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden rounded-xl">
           <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Invoice Email</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    value={billingEmail} 
-                    onChange={(e) => {
-                      setBillingEmail(e.target.value);
-                      setEmailVerified(false);
-                    }} 
-                    placeholder="accounts@school.edu"
-                    className="flex-1"
-                  />
-                  {emailVerified ? (
-                    <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
-                  ) : (
-                    <Button variant="outline" onClick={handleSendEmailVerification} disabled={isSendingEmailOtp}>
-                      Verify
-                    </Button>
-                  )}
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Billing Phone Number</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    value={billingPhone} 
-                    onChange={(e) => {
-                      setBillingPhone(e.target.value);
-                      setPhoneVerified(false);
-                    }} 
-                    placeholder="9876543210"
-                    className="flex-1"
-                  />
-                  {phoneVerified ? (
-                    <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
-                  ) : (
-                    <Button variant="outline" onClick={handleSendPhoneOtp} disabled={isSendingPhoneOtp}>
-                      Verify
-                    </Button>
-                  )}
-                </div>
-              </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Billing Contact Name</Label>
+              <Input 
+                value={billingContactName} 
+                onChange={(e) => setBillingContactName(e.target.value)} 
+                placeholder="John Doe"
+              />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Billing Contact Name</Label>
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Invoice Email</Label>
+              <div className="flex gap-2">
                 <Input 
-                  value={billingContactName} 
-                  onChange={(e) => setBillingContactName(e.target.value)} 
-                  placeholder="John Doe"
+                  value={billingEmail} 
+                  onChange={(e) => {
+                    setBillingEmail(e.target.value);
+                    setEmailVerified(false);
+                  }} 
+                  placeholder="accounts@school.edu"
+                  className="flex-1"
+                  disabled={!billingContactName?.trim()}
                 />
+                {emailVerified ? (
+                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
+                ) : (
+                  <Button variant="outline" onClick={handleSendEmailVerification} disabled={isSendingEmailOtp || !billingEmail?.trim()}>
+                    Verify
+                  </Button>
+                )}
               </div>
-              
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">GSTIN (Optional)</Label>
+            </div>
+            
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Billing Phone Number</Label>
+              <div className="flex gap-2">
                 <Input 
-                  value={billingGstin} 
-                  onChange={(e) => setBillingGstin(e.target.value)} 
-                  placeholder="27AADCB2230M1Z2"
+                  value={billingPhone} 
+                  onChange={(e) => {
+                    setBillingPhone(e.target.value);
+                    setPhoneVerified(false);
+                  }} 
+                  placeholder="9876543210"
+                  className="flex-1"
+                  disabled={!emailVerified}
                 />
+                {phoneVerified ? (
+                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
+                ) : (
+                  <Button variant="outline" onClick={handleSendPhoneOtp} disabled={isSendingPhoneOtp || !billingPhone?.trim() || !emailVerified}>
+                    Verify
+                  </Button>
+                )}
               </div>
+            </div>
+            
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">GSTIN (Optional)</Label>
+              <Input 
+                value={billingGstin} 
+                onChange={(e) => setBillingGstin(e.target.value)} 
+                placeholder="27AADCB2230M1Z2"
+                disabled={!phoneVerified}
+              />
             </div>
           </div>
         </Card>
@@ -835,6 +834,7 @@ export function BillingPage() {
                   value={billingAddress1} 
                   onChange={(e) => setBillingAddress1(e.target.value)} 
                   placeholder="Street address, P.O. box, company name, c/o"
+                  disabled={!phoneVerified}
                 />
               </div>
 
@@ -844,6 +844,7 @@ export function BillingPage() {
                   value={billingAddress2} 
                   onChange={(e) => setBillingAddress2(e.target.value)} 
                   placeholder="Apartment, suite, unit, building, floor, etc."
+                  disabled={!phoneVerified}
                 />
               </div>
               
@@ -853,12 +854,13 @@ export function BillingPage() {
                   value={billingCity} 
                   onChange={(e) => setBillingCity(e.target.value)} 
                   placeholder="Mumbai"
+                  disabled={!phoneVerified}
                 />
               </div>
 
               <div className="space-y-3">
                 <Label className="text-sm font-medium">State / Province</Label>
-                <Select value={billingState} onValueChange={setBillingState}>
+                <Select value={billingState} onValueChange={setBillingState} disabled={!phoneVerified}>
                   <SelectTrigger className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <SelectValue placeholder="Select State / UT" />
                   </SelectTrigger>
@@ -878,6 +880,7 @@ export function BillingPage() {
                   value={billingPincode} 
                   onChange={(e) => setBillingPincode(e.target.value)} 
                   placeholder="400001"
+                  disabled={!phoneVerified}
                 />
               </div>
             </div>
