@@ -32,7 +32,7 @@ export const updateVideoProgress = async (req, res) => {
                 isCompleted: isCompleted, // Don't flip back to false if they re-watch
                 lastAccessed: new Date()
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         );
 
         // If completed, check if we need to trigger any classroom hooks (e.g., unlocking next chapter)

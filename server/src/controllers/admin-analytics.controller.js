@@ -849,7 +849,7 @@ export const verifySaasInvoicePayment = async (req, res) => {
                         'razorpay.paymentMethod': 'razorpay'
                     }
                 },
-                { new: true, runValidators: true }
+                { returnDocument: 'after', runValidators: true }
             );
             
             if (!updatedInvoice) {

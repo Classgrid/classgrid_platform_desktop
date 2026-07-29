@@ -699,7 +699,7 @@ router.put("/razorpay/config", isAuthenticated, attachOptionalInstitutionProfile
                 fees_razorpay_key_secret: fees_razorpay_key_secret || "",
                 fees_razorpay_webhook_secret: fees_razorpay_webhook_secret || ""
             },
-            { new: true }
+            { returnDocument: 'after' }
         ).select("fees_razorpay_key_id");
 
         if (!org) return res.status(404).json({ message: "Organization not found" });

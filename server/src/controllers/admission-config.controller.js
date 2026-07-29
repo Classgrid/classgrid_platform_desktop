@@ -65,7 +65,7 @@ export const updateAdmissionConfig = async (req, res) => {
         const org = await Organization.findByIdAndUpdate(
             req.user.organization_id,
             { $set: { admission_config } },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).select("admission_config");
 
         await markOnboardingStep(req.user.organization_id, "admission_form_configured", true);

@@ -39,7 +39,7 @@ export async function createFeeStructure(data, orgId) {
                 line_items: line_items || []
             },
             {
-                new: true,
+                returnDocument: 'after',
                 upsert: true,
                 setDefaultsOnInsert: true,
                 runValidators: true
@@ -97,7 +97,7 @@ export async function updateFeeStructure(structureId, data, orgId) {
         const updatedStructure = await FeeStructure.findOneAndUpdate(
             { _id: structureId, organization_id: orgId },
             { $set: data },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
 
         if (!updatedStructure) {

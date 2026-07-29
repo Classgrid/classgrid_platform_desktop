@@ -92,7 +92,7 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
         conversionAttemptCount: 1,
       },
     },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   if (!lead) {

@@ -415,7 +415,7 @@ router.patch("/admin/posts/:id", isAuthenticated, requireRole("super_admin"), as
         if (isLocked !== undefined) update.isLocked = isLocked;
         if (isDeleted !== undefined) update.isDeleted = isDeleted;
 
-        const post = await ForumPost.findByIdAndUpdate(req.params.id, update, { new: true })
+        const post = await ForumPost.findByIdAndUpdate(req.params.id, update, { returnDocument: 'after' })
             .populate("author", "name email role")
             .lean();
 

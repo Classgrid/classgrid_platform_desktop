@@ -173,7 +173,7 @@ export const updateSuperAdminSupportConversation = async (req, res) => {
     const conversation = await SupportConversation.findByIdAndUpdate(
       req.params.threadId,
       { $set: updates },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!conversation) return res.status(404).json({ message: "Conversation not found." });

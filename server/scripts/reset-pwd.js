@@ -21,7 +21,7 @@ async function resetPassword() {
     const user = await User.findOneAndUpdate(
       { email: email },
       { $set: { password: hashedPassword, mustResetPassword: false, verification_status: 'verified', status: 'active', isEmailVerified: true } },
-      { new: true }
+      { returnDocument: 'after' }
     );
     
     if (user) {
@@ -34,7 +34,7 @@ async function resetPassword() {
     const adminUser = await User.findOneAndUpdate(
       { email: 'eng_admin@classgrid.in' },
       { $set: { password: hashedPassword, mustResetPassword: false, verification_status: 'verified', status: 'active', isEmailVerified: true } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (adminUser) {

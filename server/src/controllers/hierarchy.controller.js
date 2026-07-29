@@ -252,7 +252,7 @@ export async function updateNode(req, res) {
                 ...(sort_order !== undefined && { sort_order }),
                 ...(is_active !== undefined && { is_active }),
             },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!node) {

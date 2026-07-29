@@ -80,7 +80,7 @@ export async function submitDailyAttendance(
                 stats: stats
             },
             {
-                new: true,
+                returnDocument: 'after',
                 upsert: true,
                 setDefaultsOnInsert: true,
                 runValidators: true

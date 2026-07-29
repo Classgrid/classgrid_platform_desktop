@@ -641,7 +641,7 @@ router.patch("/feedback/:id", async (req, res) => {
         const feedback = await Review.findByIdAndUpdate(
             req.params.id,
             { $set: { status } },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
 
         if (!feedback) {
@@ -709,7 +709,7 @@ router.patch("/leads/:id/admin-details", async (req, res) => {
           designation: designation || "",
         },
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
@@ -755,7 +755,7 @@ router.patch("/leads/:id/institution-details", async (req, res) => {
     const lead = await DemoRequest.findByIdAndUpdate(
       req.params.id,
       { $set: update },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
@@ -789,7 +789,7 @@ router.patch("/leads/:id/allocate-dashboards", async (req, res) => {
     const lead = await DemoRequest.findByIdAndUpdate(
       req.params.id,
       { $set: { allocatedDashboards: filtered } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
@@ -828,7 +828,7 @@ router.patch("/leads/:id/allocate-modules", async (req, res) => {
     const lead = await DemoRequest.findByIdAndUpdate(
       req.params.id,
       { $set: { allocatedModules: sanitized } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
@@ -1352,7 +1352,7 @@ router.patch("/organizations/:id/suspend", async (req, res) => {
         const org = await Organization.findByIdAndUpdate(
             req.params.id,
             { $set: { status: "suspended", suspendedReason: reason, suspendedAt: new Date(), suspendedBy: req.user._id } },
-            { new: true }
+            { returnDocument: 'after' }
         ).lean();
 
         // Audit log
@@ -1390,7 +1390,7 @@ router.patch("/organizations/:id/activate", async (req, res) => {
         const org = await Organization.findByIdAndUpdate(
             req.params.id,
             { $set: { status: "active" }, $unset: { suspendedReason: "", suspendedAt: "", suspendedBy: "" } },
-            { new: true }
+            { returnDocument: 'after' }
         ).lean();
 
         await AdminAuditLog.create({
@@ -1514,7 +1514,7 @@ router.patch("/users/:id/ban", async (req, res) => {
         const user = await User.findByIdAndUpdate(
             req.params.id,
             { $set: { status: "suspended", bannedReason: reason, bannedAt: new Date() } },
-            { new: true }
+            { returnDocument: 'after' }
         ).select("name email status").lean();
 
         await AdminAuditLog.create({
@@ -1543,7 +1543,7 @@ router.patch("/users/:id/unban", async (req, res) => {
         const user = await User.findByIdAndUpdate(
             req.params.id,
             { $set: { status: "active" }, $unset: { bannedReason: "", bannedAt: "" } },
-            { new: true }
+            { returnDocument: 'after' }
         ).select("name email status").lean();
 
         await AdminAuditLog.create({
@@ -1566,7 +1566,7 @@ router.post("/users/:id/force-logout", async (req, res) => {
         const user = await User.findByIdAndUpdate(
             req.params.id,
             { $set: { passwordChangedAt: new Date() } },
-            { new: true }
+            { returnDocument: 'after' }
         ).select("name email").lean();
         if (!user) return res.status(404).json({ success: false, message: "User not found" });
         res.json({ success: true, message: `User "${user.name}" force-logged-out.` });
@@ -1621,7 +1621,7 @@ router.patch("/users/:id/role", async (req, res) => {
         const user = await User.findByIdAndUpdate(
             req.params.id,
             { $set: { role } },
-            { new: true }
+            { returnDocument: 'after' }
         ).select("name email role").lean();
 
         await AdminAuditLog.create({
@@ -1871,7 +1871,7 @@ router.patch("/content-reports/:id/resolve", async (req, res) => {
                     "resolution.resolvedAt": new Date(),
                 },
             },
-            { new: true }
+            { returnDocument: 'after' }
         ).lean();
 
         if (!report) return res.status(404).json({ success: false, message: "Report not found" });
@@ -1889,7 +1889,7 @@ router.patch("/content-reports/:id/dismiss", async (req, res) => {
         const report = await ContentReport.findByIdAndUpdate(
             req.params.id,
             { $set: { status: "dismissed", "resolution.action": "no_action", "resolution.resolvedBy": req.user._id, "resolution.resolvedAt": new Date() } },
-            { new: true }
+            { returnDocument: 'after' }
         ).lean();
         if (!report) return res.status(404).json({ success: false, message: "Report not found" });
         res.json({ success: true, message: "Report dismissed.", data: report });

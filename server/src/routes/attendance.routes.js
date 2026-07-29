@@ -1405,7 +1405,7 @@ router.patch(
                         markedAt: new Date(),
                         meta: { source: "appeal", appealId: appeal._id },
                     },
-                    { upsert: true, new: true }
+                    { upsert: true, returnDocument: 'after' }
                 );
 
                 // Update session present count

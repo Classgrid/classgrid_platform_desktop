@@ -115,7 +115,7 @@ export async function updateOrganizationConfig(req, res) {
         if (Object.values(flags).some((value) => typeof value !== "boolean")) return res.status(400).json({ message: "Feature and dashboard values must be boolean." });
         if ([...Object.values(billing), ...Object.values(limits)].some((value) => !Number.isFinite(Number(value)) || Number(value) < 0)) return res.status(400).json({ message: "Billing rates and limits must be non-negative numbers." });
         const updates = Object.fromEntries(Object.entries(flags).map(([key, value]) => [`feature_flags.${key}`, value]));
-        const organization = await Organization.findByIdAndUpdate(req.params.orgId, Object.keys(updates).length ? { $set: updates } : {}, { new: true, runValidators: true }).select("name org_type status feature_flags onboarding_progress").lean();
+        const organization = await Organization.findByIdAndUpdate(req.params.orgId, Object.keys(updates).length ? { $set: updates } : {}, { returnDocument: 'after', runValidators: true }).select("name org_type status feature_flags onboarding_progress").lean();
         if (!organization) return res.status(404).json({ message: "Organization not found." });
         let subscription = await OrgSubscription.findOne({ organization_id: req.params.orgId });
         if (!subscription) subscription = new OrgSubscription({ organization_id: req.params.orgId });
@@ -217,7 +217,7 @@ export const updateBillingSettings = async (req, res) => {
                     "billing_settings.billing_contact_name": billing_contact_name,
                 } 
             },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
         
         if (!org) return res.status(404).json({ message: "Organization not found." });

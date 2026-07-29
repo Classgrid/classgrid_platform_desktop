@@ -117,7 +117,7 @@ export const generatePayrollForMonth = async (orgId, monthString) => {
                 deductions: 0,
                 net_salary: netSalary,
             },
-            { new: true, upsert: true }
+            { returnDocument: 'after', upsert: true }
         );
 
         payrollResults.push(payrollRecord);

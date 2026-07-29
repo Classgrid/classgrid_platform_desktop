@@ -163,7 +163,7 @@ export async function processDueScheduledNotifications({ now = new Date(), batch
         const schedule = await ScheduledNotification.findOneAndUpdate(
             { _id: item._id, status: "pending" },
             { $set: { status: "processing" } },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!schedule) {

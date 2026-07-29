@@ -48,7 +48,7 @@ export const updateOrganizationStatus = async (req, res) => {
             return res.status(400).json({ success: false, message: "Status is required" });
         }
 
-        const org = await OrganizationRequest.findByIdAndUpdate(id, { status }, { new: true });
+        const org = await OrganizationRequest.findByIdAndUpdate(id, { status }, { returnDocument: 'after' });
         
         if (!org) {
             return res.status(404).json({ success: false, message: "Organization not found" });

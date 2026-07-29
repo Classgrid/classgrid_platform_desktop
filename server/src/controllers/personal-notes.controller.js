@@ -130,7 +130,7 @@ export const updateNote = async (req, res) => {
         const updatedNote = await Note.findOneAndUpdate(
             { _id: id, createdBy: req.user._id },
             { $set: updateData },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
 
         res.json({

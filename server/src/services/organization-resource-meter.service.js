@@ -266,7 +266,7 @@ export async function recordInternalResourceSnapshot(orgId, snapshot) {
             periodStart: meter.periodStart,
         },
         { $set: meter },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     )));
 
     return getOrganizationResourceUsage(orgId);

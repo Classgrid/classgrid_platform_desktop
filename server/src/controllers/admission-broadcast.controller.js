@@ -43,7 +43,7 @@ export const callCandidate = async (req, res) => {
             { 
                 $set: { is_called: true, called_at: new Date() }
             },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!application) return res.status(404).json({ error: "Application not found" });

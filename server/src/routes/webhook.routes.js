@@ -256,7 +256,7 @@ router.post("/zoom", express.json(), async (req, res) => {
                                     deviceFingerprint: `zoom-auto|${tracker.totalMinutes.toFixed(1)}min|${timePercent.toFixed(0)}%`,
                                 }
                             },
-                            { upsert: true, new: true }
+                            { upsert: true, returnDocument: 'after' }
                         );
                         presentCount++;
                     } catch (recordErr) {

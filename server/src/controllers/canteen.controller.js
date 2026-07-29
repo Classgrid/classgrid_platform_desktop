@@ -51,7 +51,7 @@ export const toggleAvailability = async (req, res) => {
         const item = await CanteenItem.findOneAndUpdate(
             { _id: id, orgId },
             { isAvailable },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!item) return res.status(404).json({ error: "Item not found" });
@@ -103,7 +103,7 @@ export const updateItem = async (req, res) => {
         const item = await CanteenItem.findOneAndUpdate(
             { _id: id, orgId },
             { $set: updates },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
 
         if (!item) return res.status(404).json({ error: "Item not found" });
@@ -269,7 +269,7 @@ export const verifyPayment = async (req, res) => {
         const order = await CanteenOrder.findOneAndUpdate(
             { transactionId: razorpay_order_id, orgId },
             { status: "NEW", paymentStatus: "SUCCESS" },
-            { new: true }
+            { returnDocument: 'after' }
         ).populate("items.itemId", "name");
 
         if (!order) return res.status(404).json({ error: "Order not found" });
@@ -390,7 +390,7 @@ export const updateOrderStatus = async (req, res) => {
         const order = await CanteenOrder.findOneAndUpdate(
             { _id: id, orgId },
             { status },
-            { new: true }
+            { returnDocument: 'after' }
         ).populate("items.itemId", "name");
 
         if (!order) return res.status(404).json({ error: "Order not found" });

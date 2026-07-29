@@ -40,7 +40,7 @@ class SeatMatrixService {
                     return { success: false, error: `No vacant seats available for ${quotaName}` };
                 }
 
-                const updateOptions = { new: true };
+                const updateOptions = { returnDocument: 'after' };
                 if (session) {
                     updateOptions.session = session;
                 }
@@ -107,7 +107,7 @@ class SeatMatrixService {
         } = options;
 
         try {
-            const updateOptions = { new: true };
+            const updateOptions = { returnDocument: 'after' };
             if (session) {
                 updateOptions.session = session;
             }

@@ -101,7 +101,7 @@ router.put("/:id", isAuthenticated, requireRole("super_admin"), async (req, res)
         const entry = await Changelog.findByIdAndUpdate(
             req.params.id,
             { version, title, body, type, highlights, isPublished },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!entry) return res.status(404).json({ success: false, message: "Entry not found" });

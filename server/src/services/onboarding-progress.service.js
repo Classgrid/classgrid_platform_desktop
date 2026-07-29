@@ -194,7 +194,7 @@ export async function syncDerivedOnboardingProgress(orgId) {
         update["onboarding_progress.completed_at"] = current.completed_at || new Date();
     }
 
-    const updatedOrg = await Organization.findByIdAndUpdate(orgId, { $set: update }, { new: true })
+    const updatedOrg = await Organization.findByIdAndUpdate(orgId, { $set: update }, { returnDocument: 'after' })
         .select("name onboarding_progress demoExpiresAt status")
         .lean();
 

@@ -33,7 +33,7 @@ async function makeOrgActive() {
           "billing.pricePerSms": 2.5
         }
       },
-      { new: true, upsert: true }
+      { returnDocument: 'after', upsert: true }
     );
 
     console.log("✅ Successfully converted org from DEMO to ACTIVE Pay-As-You-Go!");

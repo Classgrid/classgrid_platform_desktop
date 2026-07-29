@@ -587,7 +587,7 @@ router.patch("/schedule/:scheduleId/activate", isAuthenticated, requireRole("fac
         const schedule = await VivaSchedule.findByIdAndUpdate(
             req.params.scheduleId,
             { status: 'active' },
-            { new: true }
+            { returnDocument: 'after' }
         );
         if (!schedule) return res.status(404).json({ error: "Schedule not found" });
         res.json({ message: "Viva is now active", schedule });
@@ -605,7 +605,7 @@ router.patch("/schedule/:scheduleId/complete", isAuthenticated, requireRole("fac
         const schedule = await VivaSchedule.findByIdAndUpdate(
             req.params.scheduleId,
             { status: 'completed' },
-            { new: true }
+            { returnDocument: 'after' }
         );
         if (!schedule) return res.status(404).json({ error: "Schedule not found" });
         res.json({ message: "Viva marked as completed", schedule });

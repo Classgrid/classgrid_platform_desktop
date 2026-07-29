@@ -69,7 +69,7 @@ export async function submitStudentGrade(examId, studentId, obtainedMarks, remar
             faculty_remarks: remarks?.trim() || "",
         },
         {
-            new: true,
+            returnDocument: 'after',
             upsert: true,
             setDefaultsOnInsert: true,
             runValidators: true,

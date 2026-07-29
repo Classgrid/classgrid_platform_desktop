@@ -153,7 +153,7 @@ export async function markSupportConversationRead({ conversationId, actorRole })
   const conversation = await SupportConversation.findByIdAndUpdate(
     conversationId,
     { $set: update },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   if (conversation) emitSupportUpdate(conversation, "support_thread_read");

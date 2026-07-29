@@ -240,7 +240,7 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     const order = await CanteenOrder.findOneAndUpdate(
                         { transactionId: orderId, orgId: organizationId },
                         { status: "NEW", paymentStatus: "SUCCESS" },
-                        { new: true }
+                        { returnDocument: 'after' }
                     );
 
                     if (order) {

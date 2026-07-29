@@ -344,7 +344,7 @@ router.patch("/domains", isAuthenticated, requireRole("org_admin"), async (req, 
         const updatedOrg = await Organization.findByIdAndUpdate(
             req.user.organization_id,
             { $set: { allowed_domains: cleanedDomains } },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).select("allowed_domains name");
 
         // Audit log: org admin changed domains
@@ -380,7 +380,7 @@ router.patch("/type", isAuthenticated, requireRole("org_admin"), async (req, res
         const updatedOrg = await Organization.findByIdAndUpdate(
             req.user.organization_id,
             { $set: { org_type } },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).select("org_type name");
 
         logAdminAction(req, "update_org_type", "organization", req.user.organization_id, updatedOrg.name, { org_type });
@@ -983,7 +983,7 @@ router.put("/academic-config", isAuthenticated, requireRole("org_admin"), async 
         const updatedOrg = await Organization.findByIdAndUpdate(
             orgId,
             { $set: update },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).select("academic_config rollNumberLabel");
 
         logAdminAction(req, "update_academic_config", "organization", orgId, "Academic config", update);
@@ -1434,7 +1434,7 @@ router.post("/change-role", isAuthenticated, requireRole("org_admin"), async (re
         const user = await User.findOneAndUpdate(
             { _id: userId, organization_id: orgId, role: { $ne: "org_admin" } },
             { $set: { role: newRole } },
-            { new: true }
+            { returnDocument: 'after' }
         ).select("name email role");
 
         if (!user) return res.status(404).json({ message: "User not found in your organization." });
@@ -1895,7 +1895,7 @@ router.post("/promote", isAuthenticated, requireRole("org_admin"), async (req, r
             ]
         }, {
             $set: { is_promoting: true, promotion_started_at: new Date() }
-        }, { new: true });
+        }, { returnDocument: 'after' });
 
         if (!lockAcquired) {
             return res.status(409).json({ message: "A promotion is already in progress. Please wait." });
@@ -2362,7 +2362,7 @@ router.patch("/subdomain", isAuthenticated, requireRole("org_admin"), async (req
         const updatedOrg = await Organization.findByIdAndUpdate(
             orgId,
             { $set: { subdomain: slug } },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).select("subdomain name");
 
         // Invalidate cache for both old and new slugs
@@ -2711,7 +2711,7 @@ router.patch("/custom-domain/settings", isAuthenticated, requireRole("org_admin"
         const org = await Organization.findByIdAndUpdate(
             orgId,
             { $set: updateFields },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).select("custom_domain erp_domain name ownerEmail");
 
         logAdminAction(req, "update_custom_domain_settings", "organization", orgId, org.name, {
@@ -2811,7 +2811,7 @@ router.post("/custom-domain", isAuthenticated, requireRole("org_admin"), async (
         const updatedOrg = await Organization.findByIdAndUpdate(
             orgId,
             { $set: updateObj },
-            { new: true }
+            { returnDocument: 'after' }
         ).select("custom_domain erp_domain name ownerEmail");
 
         logAdminAction(req, "register_custom_domain", "organization", orgId, updatedOrg.name, { domainType, domain: cleanDomain });
@@ -2907,7 +2907,7 @@ router.patch("/custom-domain", isAuthenticated, requireRole("org_admin"), async 
         const updatedOrg = await Organization.findByIdAndUpdate(
             orgId,
             { $set: { [domainType]: replacementConfig } },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).select("custom_domain erp_domain name ownerEmail");
 
         await detachCustomDomainFromHosting(oldDomain, domainType);
@@ -3036,7 +3036,7 @@ router.post("/custom-domain/verify", isAuthenticated, requireRole("org_admin"), 
         const updatedOrg = await Organization.findByIdAndUpdate(
             orgId,
             { $set: updateObj },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).select("custom_domain erp_domain name ownerEmail");
 
         if (isFullyVerified) {
@@ -3332,7 +3332,7 @@ router.patch("/branding", isAuthenticated, requireRole("org_admin"), async (req,
         const updatedOrg = await Organization.findByIdAndUpdate(
             orgId,
             { $set: updateData },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).select("logo_url sidebar_logo_url favicon_url campus_photo_url social_links site_title name sidebar_name subdomain brand_colors branding.theme_colors");
 
         if (!updatedOrg) return res.status(404).json({ message: "Organization not found." });

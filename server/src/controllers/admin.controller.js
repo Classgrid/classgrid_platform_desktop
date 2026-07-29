@@ -1203,7 +1203,7 @@ export const updateOrgDomains = async (req, res) => {
         const org = await Organization.findByIdAndUpdate(
             id,
             { $set: { allowed_domains: cleanedDomains } },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).select("name allowed_domains");
 
         if (!org) return res.status(404).json({ message: "Organization not found" });

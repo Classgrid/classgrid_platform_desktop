@@ -270,7 +270,7 @@ export const cancelScheduledNotification = async (req, res) => {
         const notification = await ScheduledNotification.findByIdAndUpdate(
             req.params.id,
             { status: "cancelled" },
-            { new: true }
+            { returnDocument: 'after' }
         );
         if (!notification) return res.status(404).json({ success: false, message: "Not found" });
 
@@ -316,7 +316,7 @@ export const upsertFeatureFlag = async (req, res) => {
                 isPremium: isPremium || false,
                 lastModifiedBy: req.user._id
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         );
 
         res.json({ success: true, message: `Feature flag "${key}" updated`, flag });
@@ -783,7 +783,7 @@ export const getOrganizationDetail = async (req, res) => {
                     lastUpdated: new Date()
                 }
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         );
 
         res.json({
@@ -857,7 +857,7 @@ export const updateOrgSubscription = async (req, res) => {
                 metadata: nextMetadata,
                 billing: nextBilling,
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         );
 
         res.json({
@@ -1050,7 +1050,7 @@ export const verifyPlatformRazorpayPayment = async (req, res) => {
                 expiresAt: newExpiry,
                 razorpay_subscription_id: razorpay_order_id, // we use order id here to track the last transaction
             },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         res.json({

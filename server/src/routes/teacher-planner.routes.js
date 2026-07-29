@@ -63,7 +63,7 @@ router.post('/plan', isAuthenticated, requireRole('faculty', 'org_admin'), async
                 homeworkAssigned: homeworkAssigned || false,
                 notes: notes || ''
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         );
 
         res.status(200).json({ message: "Plan saved successfully", plan });

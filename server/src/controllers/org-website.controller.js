@@ -211,7 +211,7 @@ export async function updateWebsiteContent(req, res) {
     const site = await OrgWebsiteContent.findOneAndUpdate(
       { organization_id: orgId },
       { $set: { ...updateData, lastEditedBy: req.user?._id } },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!site) {
@@ -275,7 +275,7 @@ export async function addNotice(req, res) {
     const site = await OrgWebsiteContent.findOneAndUpdate(
       { organization_id: orgId },
       { $push: { notices: { $each: [notice], $position: 0 } }, $set: { lastEditedBy: req.user?._id } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!site) return res.status(404).json({ success: false, message: "Website not found." });

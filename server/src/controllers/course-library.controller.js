@@ -95,7 +95,7 @@ export const updatePlaylist = async (req, res) => {
         const playlist = await CoursePlaylist.findOneAndUpdate(
             { _id: id, organization_id: orgId },
             { $set: { title, description, is_published, sort_order } },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
 
         if (!playlist) return res.status(404).json({ error: "Playlist not found" });
@@ -249,7 +249,7 @@ export const updateVideo = async (req, res) => {
         const video = await CourseVideo.findOneAndUpdate(
             { _id: id, organization_id: orgId },
             { $set: updates },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
 
         if (!video) return res.status(404).json({ error: "Video not found" });

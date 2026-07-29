@@ -123,7 +123,7 @@ export const endMeeting = async (req, res) => {
         const meeting = await GoLive.findOneAndUpdate(
             { _id: meetingId, host: userId },
             { status: "ended", endTime: new Date() },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!meeting) return res.status(403).json({ error: "Only the host can end the meeting" });
@@ -253,7 +253,7 @@ export const updateGoLiveDetails = async (req, res) => {
         const meeting = await GoLive.findOneAndUpdate(
             { _id: meetingId, host: userId },
             { $set: updates },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!meeting) return res.status(403).json({ error: "Only the host can edit the live session recording details" });
