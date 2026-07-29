@@ -52,6 +52,10 @@ import {
     getOrganizationBilling,
     updateBillingSettings,
     setupBillingMandate,
+    sendBillingEmailVerification,
+    verifyBillingEmail,
+    sendBillingPhoneOtp,
+    verifyBillingPhoneOtp,
 } from "../controllers/org-configuration.controller.js";
 
 const router = express.Router();
@@ -63,6 +67,10 @@ router.get("/usage", isAuthenticated, requireRole("org_admin"), getOrganizationU
 router.get("/billing", isAuthenticated, requireRole("org_admin"), getOrganizationBilling);
 router.put("/billing/settings", isAuthenticated, requireRole("org_admin"), updateBillingSettings);
 router.post("/billing/setup-mandate", isAuthenticated, requireRole("org_admin"), setupBillingMandate);
+router.post("/billing/verify-email/send", isAuthenticated, requireRole("org_admin"), sendBillingEmailVerification);
+router.get("/billing/verify-email", verifyBillingEmail);
+router.post("/billing/verify-phone/send", isAuthenticated, requireRole("org_admin"), sendBillingPhoneOtp);
+router.post("/billing/verify-phone/confirm", isAuthenticated, requireRole("org_admin"), verifyBillingPhoneOtp);
 
 // Rate limiter for code verification — 10 attempts per 15 minutes per IP
 const verifyCodeLimiter = rateLimit({

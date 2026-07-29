@@ -91,7 +91,7 @@ export function BillingPage() {
   const handleSaveSettings = async () => {
     try {
       setIsSavingSettings(true);
-      const res = await fetch("/api/org/dashboard/billing/settings", {
+      const res = await fetch("/api/org/billing/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
         body: JSON.stringify({ 
