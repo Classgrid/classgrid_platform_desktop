@@ -343,16 +343,18 @@ export async function notifyExternalDomainChange({
             };
     }
 
+    const cleanDefaultUrl = defaultUrl.replace(/^https?:\/\//, '');
+
     const settingsSummary = (settings) => {
         if (!settings) return undefined;
         if (settings.is_enabled) {
             if (settings.allow_classgrid_url) {
-                return `<code>${escapeHtml(activeDomain)}</code> AND Default Classgrid URL`;
+                return `<code>${escapeHtml(activeDomain)}</code> AND <code>${cleanDefaultUrl}</code>`;
             } else {
-                return `<code>${escapeHtml(activeDomain)}</code> ONLY (Default URL disabled)`;
+                return `<code>${escapeHtml(activeDomain)}</code> ONLY (<code>${cleanDefaultUrl}</code> disabled)`;
             }
         } else {
-            return `Default Classgrid URL ONLY (<code>${escapeHtml(activeDomain)}</code> disabled)`;
+            return `<code>${cleanDefaultUrl}</code> ONLY (<code>${escapeHtml(activeDomain)}</code> disabled)`;
         }
     };
 
@@ -368,7 +370,7 @@ export async function notifyExternalDomainChange({
     }
 
     if (action === "removed") {
-        details["Access Status"] = `Default Classgrid URL ONLY`;
+        details["Access Status"] = `<code>${cleanDefaultUrl}</code> ONLY`;
     } else if (newSettings) {
         details["Access Status"] = settingsSummary(newSettings);
     }
