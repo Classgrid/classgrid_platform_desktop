@@ -24,7 +24,9 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { CreditCard, Download, IndianRupee, ShieldCheck, Plus, CheckCircle2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
-
+// Data
+import indiaLocations from "@/data/india-locations.json";
+const statesList = Object.keys(indiaLocations.states).sort();
 
 // Custom SVG Progress Circle to replace Tremor's
 const ProgressCircle = ({ value, colorClass, children, size = 64, strokeWidth = 6 }: any) => {
@@ -51,14 +53,27 @@ export function BillingPage() {
   const { mutateAsync: payInvoice } = usePayInvoice();
   
   const [billingEmail, setBillingEmail] = useState("");
+  const [billingPhone, setBillingPhone] = useState("");
+  const [billingGstin, setBillingGstin] = useState("");
+  const [billingAddress1, setBillingAddress1] = useState("");
+  const [billingAddress2, setBillingAddress2] = useState("");
+  const [billingCity, setBillingCity] = useState("");
+  const [billingState, setBillingState] = useState("");
+  const [billingPincode, setBillingPincode] = useState("");
   const [billingContactName, setBillingContactName] = useState("");
   
   const [emailVerified, setEmailVerified] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  
   const [isEmailVerifyModalOpen, setIsEmailVerifyModalOpen] = useState(false);
+  const [isPhoneVerifyModalOpen, setIsPhoneVerifyModalOpen] = useState(false);
+  const [phoneOtp, setPhoneOtp] = useState("");
   const [emailOtp, setEmailOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
+  const [isSendingPhoneOtp, setIsSendingPhoneOtp] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
@@ -77,15 +92,29 @@ export function BillingPage() {
   useEffect(() => {
     if (billingData?.billingSettings) {
       setBillingEmail(billingData.billingSettings.invoice_email || "");
+      setBillingPhone(billingData.billingSettings.phone || "");
+      setBillingGstin(billingData.billingSettings.gstin || "");
+      setBillingAddress1(billingData.billingSettings.address_line1 || "");
+      setBillingAddress2(billingData.billingSettings.address_line2 || "");
+      setBillingCity(billingData.billingSettings.city || "");
+      setBillingState(billingData.billingSettings.state || "");
+      setBillingPincode(billingData.billingSettings.pincode || "");
       setBillingContactName(billingData.billingSettings.billing_contact_name || "");
       setEmailVerified(billingData.billingSettings.email_verified || false);
+      setPhoneVerified(billingData.billingSettings.phone_verified || false);
     }
   }, [billingData]);
 
   const handleSaveSettings = async () => {
-    if (!billingContactName?.trim()) return toast.error("Billing Name is required.");
-    if (!billingEmail?.trim()) return toast.error("Billing Email is required.");
-    if (!emailVerified) return toast.error("You must verify your Billing Email before saving.");
+    if (!billingContactName?.trim()) return toast.error("Billing Contact Name is required.");
+    if (!billingEmail?.trim()) return toast.error("Invoice Email is required.");
+    if (!emailVerified) return toast.error("You must verify your Invoice Email before saving.");
+    if (!billingPhone?.trim()) return toast.error("Billing Phone is required.");
+    if (!phoneVerified) return toast.error("You must verify your Billing Phone before saving.");
+    if (!billingAddress1?.trim()) return toast.error("Address Line 1 is required.");
+    if (!billingCity?.trim()) return toast.error("City is required.");
+    if (!billingState?.trim()) return toast.error("State / Province is required.");
+    if (!billingPincode?.trim()) return toast.error("ZIP / Postal Code is required.");
 
     try {
       setIsSavingSettings(true);
@@ -94,6 +123,13 @@ export function BillingPage() {
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
         body: JSON.stringify({ 
           invoice_email: billingEmail, 
+          phone: billingPhone,
+          gstin: billingGstin,
+          address_line1: billingAddress1,
+          address_line2: billingAddress2,
+          city: billingCity,
+          state: billingState,
+          pincode: billingPincode,
           billing_contact_name: billingContactName
         })
       });
@@ -142,12 +178,47 @@ export function BillingPage() {
     }
   };
 
+  const handleSendPhoneOtp = async () => {
+    setIsSendingPhoneOtp(true);
+    const promise = apiClient.post("/api/org/billing/verify-phone/send", { phone: billingPhone });
 
+    toast.promise(promise, {
+      loading: "Sending OTP to your phone...",
+      success: () => {
+        setResendCooldown(60);
+        setIsPhoneVerifyModalOpen(true);
+        setIsSendingPhoneOtp(false);
+        return "OTP sent to your phone number.";
+      },
+      error: (error: any) => {
+        setIsSendingPhoneOtp(false);
+        return error.response?.data?.message || "Failed to send OTP";
+      }
+    });
+  };
+
+  const handleVerifyPhoneOtp = async () => {
+    try {
+      setIsVerifying(true);
+      await apiClient.post("/api/org/billing/verify-phone/confirm", { otp: phoneOtp });
+      toast.success("Phone verified successfully!");
+      setPhoneVerified(true);
+      setIsPhoneVerifyModalOpen(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Invalid or expired OTP");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   if (isLoading) {
     return (
       <div className="p-6 sm:p-10 space-y-6 max-w-7xl mx-auto animate-pulse">
         <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded w-1/4"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1 h-64 bg-gray-200 dark:bg-gray-800 rounded-xl"></div>
+          <div className="lg:col-span-2 h-64 bg-gray-200 dark:bg-gray-800 rounded-xl"></div>
+        </div>
       </div>
     );
   }
@@ -166,13 +237,18 @@ export function BillingPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-8">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Billing & Subscription</h2>
+      </div>
+
       {/* BILLING SETTINGS */}
-      <div className="space-y-6">
+      <div className="space-y-6 mt-12">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Billing Profile & Verification</h3>
         
         <Card className="shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden rounded-xl">
           <div className="p-6 space-y-6">
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Billing Name</Label>
+              <Label className="text-sm font-medium">Billing Contact Name</Label>
               <Input 
                 value={billingContactName} 
                 onChange={(e) => setBillingContactName(e.target.value)} 
@@ -181,7 +257,7 @@ export function BillingPage() {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Billing Email</Label>
+              <Label className="text-sm font-medium">Invoice Email</Label>
               <div className="flex gap-2">
                 <Input 
                   value={billingEmail} 
@@ -200,6 +276,103 @@ export function BillingPage() {
                     Verify
                   </Button>
                 )}
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Billing Phone Number</Label>
+              <div className="flex gap-2">
+                <Input 
+                  value={billingPhone} 
+                  onChange={(e) => {
+                    setBillingPhone(e.target.value);
+                    setPhoneVerified(false);
+                  }} 
+                  placeholder="9876543210"
+                  className="flex-1"
+                  disabled={!emailVerified}
+                />
+                {phoneVerified ? (
+                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
+                ) : (
+                  <Button variant="outline" onClick={handleSendPhoneOtp} disabled={isSendingPhoneOtp || !billingPhone?.trim() || !emailVerified}>
+                    Verify
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">GSTIN (Optional)</Label>
+              <Input 
+                value={billingGstin} 
+                onChange={(e) => setBillingGstin(e.target.value)} 
+                placeholder="27AADCB2230M1Z2"
+                disabled={!phoneVerified}
+              />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden rounded-xl">
+          <div className="p-6">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Billing Address</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3 md:col-span-2">
+                <Label className="text-sm font-medium">Address Line 1</Label>
+                <Input 
+                  value={billingAddress1} 
+                  onChange={(e) => setBillingAddress1(e.target.value)} 
+                  placeholder="Street address, P.O. box, company name, c/o"
+                  disabled={!phoneVerified}
+                />
+              </div>
+
+              <div className="space-y-3 md:col-span-2">
+                <Label className="text-sm font-medium">Address Line 2 (Optional)</Label>
+                <Input 
+                  value={billingAddress2} 
+                  onChange={(e) => setBillingAddress2(e.target.value)} 
+                  placeholder="Apartment, suite, unit, building, floor, etc."
+                  disabled={!phoneVerified}
+                />
+              </div>
+              
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">City</Label>
+                <Input 
+                  value={billingCity} 
+                  onChange={(e) => setBillingCity(e.target.value)} 
+                  placeholder="Mumbai"
+                  disabled={!phoneVerified}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">State / Province</Label>
+                <Select value={billingState} onValueChange={setBillingState} disabled={!phoneVerified}>
+                  <SelectTrigger className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <SelectValue placeholder="Select State / UT" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statesList.map((state) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">ZIP / Postal Code</Label>
+                <Input 
+                  value={billingPincode} 
+                  onChange={(e) => setBillingPincode(e.target.value)} 
+                  placeholder="400001"
+                  disabled={!phoneVerified}
+                />
               </div>
             </div>
           </div>
@@ -256,7 +429,44 @@ export function BillingPage() {
         </DialogContent>
       </Dialog>
 
-
+      {/* VERIFY PHONE MODAL */}
+      <Dialog open={isPhoneVerifyModalOpen} onOpenChange={setIsPhoneVerifyModalOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Verify Phone Number</DialogTitle>
+            <DialogDescription>
+              Enter the 6-digit OTP sent to {billingPhone}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2 flex flex-col items-center">
+              <Label>Enter 6-digit Code</Label>
+              <InputOTP 
+                value={phoneOtp}
+                onChange={setPhoneOtp}
+                maxLength={6}
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+            <Button onClick={handleVerifyPhoneOtp} disabled={isVerifying || phoneOtp.length !== 6} className="w-full">
+              Verify OTP
+            </Button>
+            <div className="mt-4 text-center">
+              <Button variant="ghost" onClick={handleSendPhoneOtp} disabled={isSendingPhoneOtp || resendCooldown > 0} className="w-full">
+                {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
