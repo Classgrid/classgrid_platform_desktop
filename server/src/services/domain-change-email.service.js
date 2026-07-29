@@ -322,9 +322,9 @@ export async function notifyExternalDomainChange({
         case "removed":
             actionUrl = defaultUrl;
             copy = {
-                title: `Custom domain removed: ${activeDomain}`,
-                summary: `A custom domain has been removed from your organization.`,
-                extraSummary: `The removed domain will no longer provide access to your Classgrid organisation. Your organization will now use the default Classgrid URL for access.`,
+                title: `Domain removed: ${activeDomain}`,
+                summary: `The domain <strong>${activeDomain}</strong> has been removed from your organization.`,
+                extraSummary: `This domain will no longer provide access to your Classgrid organisation. Your organization will now use the default Classgrid URL for access.`,
                 actionBtn: `Open Default Portal`,
                 dateLabel: "Removed at",
                 checklist: [],
