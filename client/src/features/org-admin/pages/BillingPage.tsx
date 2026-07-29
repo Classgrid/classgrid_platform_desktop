@@ -107,7 +107,9 @@ export function BillingPage() {
   const handleSaveSettings = async () => {
     if (!billingContactName?.trim()) return toast.error("Billing Contact Name is required.");
     if (!billingEmail?.trim()) return toast.error("Invoice Email is required.");
+    if (!emailVerified) return toast.error("You must verify your Invoice Email before saving.");
     if (!billingPhone?.trim()) return toast.error("Billing Phone is required.");
+    if (!phoneVerified) return toast.error("You must verify your Billing Phone before saving.");
     if (!billingAddress1?.trim()) return toast.error("Address Line 1 is required.");
     if (!billingCity?.trim()) return toast.error("City is required.");
     if (!billingState?.trim()) return toast.error("State / Province is required.");
@@ -754,7 +756,10 @@ export function BillingPage() {
                 <div className="flex gap-2">
                   <Input 
                     value={billingEmail} 
-                    onChange={(e) => setBillingEmail(e.target.value)} 
+                    onChange={(e) => {
+                      setBillingEmail(e.target.value);
+                      setEmailVerified(false);
+                    }} 
                     placeholder="accounts@school.edu"
                     className="flex-1"
                   />
@@ -778,7 +783,10 @@ export function BillingPage() {
                 <div className="flex gap-2">
                   <Input 
                     value={billingPhone} 
-                    onChange={(e) => setBillingPhone(e.target.value)} 
+                    onChange={(e) => {
+                      setBillingPhone(e.target.value);
+                      setPhoneVerified(false);
+                    }} 
                     placeholder="9876543210"
                     className="flex-1"
                   />
