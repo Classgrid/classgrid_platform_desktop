@@ -225,14 +225,9 @@ export function BillingPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Billing & Subscription</h2>
-      </div>
-
       {/* BILLING SETTINGS */}
-      <div className="space-y-6 mt-12">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Billing Profile & Verification</h3>
+      <div className="space-y-6">
+        <div className="flex justify-end mb-4">
           <Button onClick={handleSaveSettings} disabled={isSavingSettings} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6 py-2 font-medium shadow-sm transition-all hover:shadow-md">
             {isSavingSettings ? (
               <>
