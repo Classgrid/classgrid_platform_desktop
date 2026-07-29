@@ -166,50 +166,7 @@ export async function notifyDomainChange({
 // CUSTOM DOMAIN CHANGES (erp.custom.com)
 // ============================================================================
 
-const CUSTOM_DOMAIN_COPY = {
-    registered: {
-        title: "Custom domain registered",
-        summary: "Your organization's <strong>custom domain</strong> has been registered and now requires DNS verification.",
-        actionBtn: "Review Custom Domain",
-        checklist: [],
-        showURL: false
-    },
-    changed: {
-        title: "Custom domain changed",
-        summary: "Your organization's <strong>custom domain</strong> was changed. The replacement domain must be verified before it becomes active.",
-        actionBtn: "Review Custom Domain",
-        checklist: [],
-        showURL: false
-    },
-    verified: {
-        title: "Custom domain verified",
-        summary: "Your organization's <strong>custom domain</strong> has been successfully verified and is now active.",
-        actionBtn: "Review Custom Domain",
-        checklist: [
-            "Domain ownership verified",
-            "DNS routing validated",
-            "HTTPS certificate issued",
-            "Secure login activated",
-            "Organization routing updated",
-            "Default login URL disabled"
-        ],
-        showURL: true
-    },
-    settings_updated: {
-        title: "Custom domain access changed",
-        summary: "Access settings for your organization's <strong>custom domain</strong> were updated.",
-        actionBtn: "Review Custom Domain",
-        checklist: [],
-        showURL: false
-    },
-    removed: {
-        title: "Custom domain removed",
-        summary: "A <strong>custom domain</strong> was removed from your Classgrid organization.",
-        actionBtn: "Open Classgrid",
-        checklist: [],
-        showURL: false
-    },
-};
+// The copy is now built dynamically inside notifyExternalDomainChange based on domainType
 
 function buildCustomDomainHtml(data) {
     const year = new Date().getFullYear();
@@ -302,7 +259,7 @@ ${data.copy.checklist.length > 0 ? `
 
 <h3>Need assistance?</h3>
 <p>Our support team is available to help with DNS configuration, SSL certificates, and custom domain setup.</p>
-<a href="mailto:support@classgrid.in" class="support-btn">Contact Support</a>
+<a href="${escapeHtml(process.env.SUPPORT_URL || 'https://classgrid.in/support')}" class="support-btn">Open Support Portal</a>
 
 <hr/>
 
@@ -333,7 +290,7 @@ function buildCustomDomainText(data) {
         data.copy.checklist.length > 0 ? "Verification completed:\n" + data.copy.checklist.map(item => `✓ ${item}`).join('\n') + "\n" : "",
         `Review Domain here: ${data.actionUrl}`,
         "",
-        "If you did not authorize this change, contact Classgrid Support immediately.",
+        `Need assistance? Open Support Portal: ${process.env.SUPPORT_URL || 'https://classgrid.in/support'}`,
         "",
         "Regards,",
         "The Classgrid Team",
@@ -355,17 +312,75 @@ export async function notifyExternalDomainChange({
     organizationId,
     userId,
 }) {
-    const copy = CUSTOM_DOMAIN_COPY[action] || {
-        title: "Custom domain updated",
-        summary: "A custom domain setting changed on your Classgrid organization.",
-        actionBtn: "Open Classgrid",
-        checklist: [],
-        showURL: false
-    };
-    
-    const typeLabel = domainType === "erp_domain" ? "ERP Login Domain" : "Public Website Domain";
+    const typeLabel = domainType === "erp_domain" ? "ERP login domain" : "Public website domain";
     const activeDomain = newDomain || oldDomain;
     const actionUrl = newDomain ? `https://${newDomain}${domainType === "erp_domain" ? "/org/login" : ""}` : "https://classgrid.in";
+    
+    let copy = {};
+    const domainText = `<strong>${escapeHtml(typeLabel)}</strong> (<code>${escapeHtml(activeDomain)}</code>)`;
+    
+    switch (action) {
+        case "registered":
+            copy = {
+                title: `${typeLabel} registered`,
+                summary: `Your organization's ${domainText} has been registered and now requires DNS verification.`,
+                actionBtn: `Review ${typeLabel}`,
+                checklist: [],
+                showURL: false
+            };
+            break;
+        case "changed":
+            copy = {
+                title: `${typeLabel} changed`,
+                summary: `Your organization's ${domainText} was changed. The replacement domain must be verified before it becomes active.`,
+                actionBtn: `Review ${typeLabel}`,
+                checklist: [],
+                showURL: false
+            };
+            break;
+        case "verified":
+            copy = {
+                title: `${typeLabel} verified`,
+                summary: `Your organization's ${domainText} has been successfully verified and is now active.`,
+                actionBtn: `Review ${typeLabel}`,
+                checklist: [
+                    "Domain ownership verified",
+                    "DNS routing validated",
+                    "HTTPS certificate issued",
+                    "Secure login activated",
+                    "Organization routing updated",
+                    "Default login URL disabled"
+                ],
+                showURL: true
+            };
+            break;
+        case "settings_updated":
+            copy = {
+                title: `${typeLabel} access changed`,
+                summary: `Access settings for your organization's ${domainText} were updated.`,
+                actionBtn: `Review ${typeLabel}`,
+                checklist: [],
+                showURL: false
+            };
+            break;
+        case "removed":
+            copy = {
+                title: `${typeLabel} removed`,
+                summary: `Your organization's ${domainText} was removed from Classgrid.`,
+                actionBtn: "Open Classgrid",
+                checklist: [],
+                showURL: false
+            };
+            break;
+        default:
+            copy = {
+                title: `${typeLabel} updated`,
+                summary: `Settings for your organization's ${domainText} were updated.`,
+                actionBtn: "Open Classgrid",
+                checklist: [],
+                showURL: false
+            };
+    }
     
     const settingsSummary = (settings) => settings
         ? `<code>${escapeHtml(activeDomain)}</code>: ${settings.is_enabled === false ? "Disabled" : "Enabled"} | Default URL: ${settings.allow_classgrid_url === false ? "Disabled" : "Enabled"}`
@@ -382,8 +397,8 @@ export async function notifyExternalDomainChange({
         changedAt: new Date(),
         details: {
             "Organization": orgName,
-            "Domain Type": typeLabel,
-            "Custom Domain": action === "changed" && oldDomain && oldDomain !== newDomain 
+            "Domain Type": domainType === "erp_domain" ? "ERP Login Domain" : "Public Website Domain",
+            "Domain": action === "changed" && oldDomain && oldDomain !== newDomain 
                 ? `<code>${escapeHtml(newDomain)}</code> (was <code>${escapeHtml(oldDomain)}</code>)` 
                 : `<code>${escapeHtml(activeDomain)}</code>`,
             "Previous Access": settingsSummary(oldSettings),
