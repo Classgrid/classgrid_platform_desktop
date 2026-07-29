@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useOrgBilling } from "../queries/useOrgAdminBilling";
 import { usePayInvoice } from "../queries/usePayInvoice";
 import { apiClient } from "@/lib/apiClient";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 // Native UI Components (No Tremor)
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/marketing_ui/card";
@@ -197,17 +197,22 @@ export function BillingPage() {
   };
 
   const handleSendEmailVerification = async () => {
-    try {
-      setIsSendingOtp(true);
-      await apiClient.post("/api/org/billing/verify-email/send", { email: billingEmail });
-      toast.success("OTP sent! Check your inbox.");
-      setResendCooldown(60);
-      setIsEmailVerifyModalOpen(true);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to send email");
-    } finally {
-      setIsSendingOtp(false);
-    }
+    setIsSendingOtp(true);
+    const promise = apiClient.post("/api/org/billing/verify-email/send", { email: billingEmail });
+
+    toast.promise(promise, {
+      loading: "Sending OTP to your email...",
+      success: () => {
+        setResendCooldown(60);
+        setIsEmailVerifyModalOpen(true);
+        setIsSendingOtp(false);
+        return "OTP sent! Check your inbox.";
+      },
+      error: (error: any) => {
+        setIsSendingOtp(false);
+        return error.response?.data?.message || "Failed to send email";
+      }
+    });
   };
 
   const handleVerifyEmailOtp = async () => {
@@ -225,17 +230,22 @@ export function BillingPage() {
   };
 
   const handleSendPhoneOtp = async () => {
-    try {
-      setIsSendingOtp(true);
-      await apiClient.post("/api/org/billing/verify-phone/send", { phone: billingPhone });
-      toast.success("OTP sent to your phone number.");
-      setResendCooldown(60);
-      setIsPhoneVerifyModalOpen(true);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to send OTP");
-    } finally {
-      setIsSendingOtp(false);
-    }
+    setIsSendingOtp(true);
+    const promise = apiClient.post("/api/org/billing/verify-phone/send", { phone: billingPhone });
+
+    toast.promise(promise, {
+      loading: "Sending OTP to your phone...",
+      success: () => {
+        setResendCooldown(60);
+        setIsPhoneVerifyModalOpen(true);
+        setIsSendingOtp(false);
+        return "OTP sent to your phone number.";
+      },
+      error: (error: any) => {
+        setIsSendingOtp(false);
+        return error.response?.data?.message || "Failed to send OTP";
+      }
+    });
   };
 
   const handleVerifyPhoneOtp = async () => {
