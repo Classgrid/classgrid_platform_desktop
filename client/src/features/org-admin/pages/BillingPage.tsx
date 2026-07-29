@@ -88,67 +88,46 @@ export function BillingPage() {
     };
   }, [resendCooldown]);
 
-  // Sync settings with backend data when loaded (REMOVED TO PREVENT PRE-FILL FOR DEMO)
+  // Sync settings with backend data when loaded
   useEffect(() => {
-    // Intentionally left blank to clear defaults
+    if (billingData?.billingSettings) {
+      setBillingEmail(billingData.billingSettings.invoice_email || "");
+      setBillingPhone(billingData.billingSettings.phone || "");
+      setBillingGstin(billingData.billingSettings.gstin || "");
+      setBillingAddress1(billingData.billingSettings.address_line1 || "");
+      setBillingAddress2(billingData.billingSettings.address_line2 || "");
+      setBillingCity(billingData.billingSettings.city || "");
+      setBillingState(billingData.billingSettings.state || "");
+      setBillingPincode(billingData.billingSettings.pincode || "");
+      setBillingContactName(billingData.billingSettings.billing_contact_name || "");
+      setEmailVerified(billingData.billingSettings.email_verified || false);
+      setPhoneVerified(billingData.billingSettings.phone_verified || false);
+    }
   }, [billingData]);
 
-  const handleSaveName = async () => {
-    if (!billingContactName?.trim()) return toast.error("Billing Name is required.");
-    try {
-      setIsSavingSettings(true);
-      const res = await fetch("/api/org/billing/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
-        body: JSON.stringify({ billing_contact_name: billingContactName })
-      });
-      if (!res.ok) throw new Error("Failed to save name");
-      toast.success("Name saved successfully!");
-      queryClient.invalidateQueries({ queryKey: ["orgBilling"] });
-    } catch (err: any) {
-      toast.error(err.message || "Could not save name");
-    } finally {
-      setIsSavingSettings(false);
-    }
-  };
-
-  const handleSaveGstin = async () => {
-    try {
-      setIsSavingSettings(true);
-      const res = await fetch("/api/org/billing/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
-        body: JSON.stringify({ gstin: billingGstin })
-      });
-      if (!res.ok) throw new Error("Failed to save GSTIN");
-      toast.success("GSTIN saved successfully!");
-      queryClient.invalidateQueries({ queryKey: ["orgBilling"] });
-    } catch (err: any) {
-      toast.error(err.message || "Could not save GSTIN");
-    } finally {
-      setIsSavingSettings(false);
-    }
-  };
-
-  const handleSaveAddress = async () => {
+  const handleSaveSettings = async () => {
     try {
       setIsSavingSettings(true);
       const res = await fetch("/api/org/billing/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
         body: JSON.stringify({ 
+          invoice_email: billingEmail,
+          phone: billingPhone,
+          gstin: billingGstin,
           address_line1: billingAddress1,
           address_line2: billingAddress2,
           city: billingCity,
           state: billingState,
-          pincode: billingPincode
+          pincode: billingPincode,
+          billing_contact_name: billingContactName 
         })
       });
-      if (!res.ok) throw new Error("Failed to save address");
-      toast.success("Address saved successfully!");
+      if (!res.ok) throw new Error("Failed to save profile");
+      toast.success("Saved successfully!");
       queryClient.invalidateQueries({ queryKey: ["orgBilling"] });
     } catch (err: any) {
-      toast.error(err.message || "Could not save address");
+      toast.error(err.message || "Could not save");
     } finally {
       setIsSavingSettings(false);
     }
@@ -265,7 +244,7 @@ export function BillingPage() {
                   placeholder="John Doe"
                   className="flex-1"
                 />
-                <Button variant="outline" onClick={handleSaveName} disabled={isSavingSettings || !billingContactName?.trim()}>
+                <Button onClick={handleSaveSettings} disabled={isSavingSettings || !billingContactName?.trim()} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6">
                   Save
                 </Button>
               </div>
@@ -287,7 +266,7 @@ export function BillingPage() {
                 {emailVerified ? (
                   <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
                 ) : (
-                  <Button variant="outline" onClick={handleSendEmailVerification} disabled={isSendingEmailOtp || !billingEmail?.trim()}>
+                  <Button onClick={handleSendEmailVerification} disabled={isSendingEmailOtp || !billingEmail?.trim()} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6">
                     Verify
                   </Button>
                 )}
@@ -310,7 +289,7 @@ export function BillingPage() {
                 {phoneVerified ? (
                   <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
                 ) : (
-                  <Button variant="outline" onClick={handleSendPhoneOtp} disabled={isSendingPhoneOtp || !billingPhone?.trim() || !emailVerified}>
+                  <Button onClick={handleSendPhoneOtp} disabled={isSendingPhoneOtp || !billingPhone?.trim() || !emailVerified} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6">
                     Verify
                   </Button>
                 )}
@@ -327,7 +306,7 @@ export function BillingPage() {
                   disabled={!phoneVerified}
                   className="flex-1"
                 />
-                <Button variant="outline" onClick={handleSaveGstin} disabled={isSavingSettings || !phoneVerified}>
+                <Button onClick={handleSaveSettings} disabled={isSavingSettings || !phoneVerified} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6">
                   Save
                 </Button>
               </div>
@@ -398,7 +377,7 @@ export function BillingPage() {
             </div>
             
             <div className="mt-6 flex justify-end">
-              <Button onClick={handleSaveAddress} disabled={isSavingSettings || !phoneVerified} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6">
+              <Button onClick={handleSaveSettings} disabled={isSavingSettings || !phoneVerified} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6">
                 Save Address
               </Button>
             </div>
