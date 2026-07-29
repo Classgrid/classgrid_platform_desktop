@@ -183,7 +183,7 @@ export function BillingPage() {
   const handleSendEmailVerification = async () => {
     try {
       setIsVerifying(true);
-      await apiClient.post("/api/org/billing/verify-email/send");
+      await apiClient.post("/api/org/billing/verify-email/send", { email: billingEmail });
       toast.success("Verification email sent! Check your inbox.");
       setIsEmailVerifyModalOpen(false);
     } catch (error: any) {
