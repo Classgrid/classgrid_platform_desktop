@@ -14,6 +14,7 @@ import { Label } from "@/components/marketing_ui/label";
 import { Input } from "@/components/marketing_ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/marketing_ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/marketing_ui/dialog";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/marketing_ui/input-otp";
 
 // Charts
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
@@ -71,6 +72,19 @@ export function BillingPage() {
   const [phoneOtp, setPhoneOtp] = useState("");
   const [emailOtp, setEmailOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    let interval: any = null;
+    if (resendCooldown > 0) {
+      interval = setInterval(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [resendCooldown]);
 
   // Sync settings with backend data when loaded
   useEffect(() => {
@@ -186,6 +200,7 @@ export function BillingPage() {
       setIsVerifying(true);
       await apiClient.post("/api/org/billing/verify-email/send", { email: billingEmail });
       toast.success("OTP sent! Check your inbox.");
+      setResendCooldown(60);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to send email");
     } finally {
@@ -212,6 +227,7 @@ export function BillingPage() {
       setIsVerifying(true);
       await apiClient.post("/api/org/billing/verify-phone/send", { phone: billingPhone });
       toast.success("OTP sent to your phone number.");
+      setResendCooldown(60);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to send OTP");
     } finally {
@@ -996,21 +1012,28 @@ export function BillingPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <Label>Enter OTP</Label>
-              <Input 
+            <div className="space-y-2 flex flex-col items-center">
+              <Label>Enter 6-digit Code</Label>
+              <InputOTP 
                 value={emailOtp}
-                onChange={(e) => setEmailOtp(e.target.value)}
-                placeholder="123456"
+                onChange={setEmailOtp}
                 maxLength={6}
-                className="text-center text-lg tracking-widest"
-              />
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
             </div>
             <Button onClick={handleVerifyEmailOtp} disabled={isVerifying || emailOtp.length !== 6} className="w-full">
               {isVerifying ? "Verifying..." : "Verify OTP"}
             </Button>
-            <Button variant="ghost" onClick={handleSendEmailVerification} disabled={isVerifying} className="w-full">
-              Resend OTP
+            <Button variant="ghost" onClick={handleSendEmailVerification} disabled={isVerifying || resendCooldown > 0} className="w-full">
+              {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
             </Button>
           </div>
         </DialogContent>
@@ -1029,21 +1052,28 @@ export function BillingPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <Label>Enter OTP</Label>
-              <Input 
+            <div className="space-y-2 flex flex-col items-center">
+              <Label>Enter 6-digit Code</Label>
+              <InputOTP 
                 value={phoneOtp}
-                onChange={(e) => setPhoneOtp(e.target.value)}
-                placeholder="123456"
+                onChange={setPhoneOtp}
                 maxLength={6}
-                className="text-center text-lg tracking-widest"
-              />
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
             </div>
             <Button onClick={handleVerifyPhoneOtp} disabled={isVerifying || phoneOtp.length !== 6} className="w-full">
               {isVerifying ? "Verifying..." : "Verify OTP"}
             </Button>
-            <Button variant="ghost" onClick={handleSendPhoneOtp} disabled={isVerifying} className="w-full">
-              Resend OTP
+            <Button variant="ghost" onClick={handleSendPhoneOtp} disabled={isVerifying || resendCooldown > 0} className="w-full">
+               {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
             </Button>
           </div>
         </DialogContent>
