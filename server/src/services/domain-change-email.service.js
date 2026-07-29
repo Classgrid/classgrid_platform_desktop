@@ -21,51 +21,68 @@ function formatDate(value) {
     return date.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 }
 
-function detailRowsHtml(details) {
-    return Object.entries(details)
-        .filter(([, value]) => value !== undefined && value !== null && value !== "")
-        .map(([label, value]) => `
-            <tr>
-                <td style="padding:12px 16px;border-bottom:1px solid #2a2a2a;color:#9ca3af;width:34%;">${escapeHtml(label)}</td>
-                <td style="padding:12px 16px;border-bottom:1px solid #2a2a2a;color:#ffffff;font-weight:600;word-break:break-word;">${escapeHtml(value)}</td>
-            </tr>`)
-        .join("");
-}
+// ============================================================================
+// STANDARD CLASSGRID DOMAIN CHANGES (org.classgrid.in)
+// ============================================================================
 
 function buildNotificationHtml({ title, orgName, adminName, summary, details, actionUrl, actionLabel, note, changedAt }) {
     const year = new Date().getFullYear();
-    return `<!doctype html>
+    const formattedDate = formatDate(changedAt);
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>${escapeHtml(title)}</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>\${escapeHtml(title)}</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 20px; line-height: 1.6; color: #333333; background-color: #ffffff; margin: 0; }
+  .email-container { max-width: 600px; margin: 0 auto; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px; }
+  .table-row td { padding: 12px; border-bottom: 1px solid #dddddd; }
+  .table-label { font-weight: bold; width: 35%; }
+  .action-btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px; margin-bottom: 10px; }
+  .footer-text { font-size: 12px; color: #777777; }
+  hr { border: 0; border-top: 1px solid #eeeeee; margin: 20px 0; }
+  .note-box { padding: 15px; background-color: #fff3cd; border: 1px solid #ffe69c; color: #664d03; border-radius: 6px; margin: 15px 0; font-size: 14px; }
+
+  @media (prefers-color-scheme: dark) {
+    body { background-color: #111111; color: #e5e5e5; }
+    .table-row td { border-bottom: 1px solid #333333; }
+    .footer-text { color: #999999; }
+    hr { border-top: 1px solid #333333; }
+    .note-box { background-color: #332701; border-color: #664d03; color: #ffda6a; }
+  }
+</style>
 </head>
-<body style="margin:0;padding:0;background:#0f0f0f;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:36px 12px;background:#0f0f0f;">
-    <tr><td align="center">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#161616;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;">
-        <tr><td style="padding:28px;border-bottom:1px solid #2a2a2a;text-align:center;">
-          <h1 style="margin:0;color:#ffffff;font-size:22px;">${escapeHtml(title)}</h1>
-          <p style="margin:8px 0 0;color:#9ca3af;font-size:13px;">${escapeHtml(orgName)}</p>
-        </td></tr>
-        <tr><td style="padding:28px;color:#d1d5db;font-size:14px;line-height:1.7;">
-          <p style="margin:0 0 14px;color:#f3f4f6;">Hello ${escapeHtml(adminName || "Admin")},</p>
-          <p style="margin:0 0 22px;">${escapeHtml(summary)}</p>
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:9px;overflow:hidden;">
-            ${detailRowsHtml({ ...details, "Changed at": formatDate(changedAt) })}
-          </table>
-          ${note ? `<div style="margin:0 0 22px;padding:15px;background:#1c1007;border:1px solid #78350f;border-radius:8px;color:#fde68a;">${escapeHtml(note)}</div>` : ""}
-          ${actionUrl ? `<div style="text-align:center;margin:0 0 24px;"><a href="${escapeHtml(actionUrl)}" style="display:inline-block;padding:12px 24px;background:#34d399;color:#07110d;text-decoration:none;border-radius:7px;font-weight:700;">${escapeHtml(actionLabel || "Open Classgrid")}</a></div>` : ""}
-          <p style="margin:0 0 16px;">If you did not authorize this change, contact Classgrid support immediately.</p>
-          <p style="margin:0;color:#f3f4f6;">Regards,<br><strong>The Classgrid Team</strong></p>
-        </td></tr>
-        <tr><td style="padding:18px;text-align:center;border-top:1px solid #2a2a2a;background:#111111;color:#737373;font-size:11px;">
-          &copy; ${year} Classgrid. This security notification was sent because a domain setting changed on your organization account.
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
+<body>
+<div class="email-container">
+<h2 style="margin-top:0;">Hello \${escapeHtml(adminName || "Admin")},</h2>
+<p>\${escapeHtml(summary)}</p>
+
+<table>
+  \${Object.entries(details)
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .map(([label, value]) => \`
+  <tr class="table-row">
+    <td class="table-label">\${escapeHtml(label)}</td>
+    <td>\${escapeHtml(value)}</td>
+  </tr>\`).join("")}
+  <tr class="table-row">
+    <td class="table-label">Changed at</td>
+    <td>\${escapeHtml(formattedDate)}</td>
+  </tr>
+</table>
+
+\${note ? \`<div class="note-box">\${escapeHtml(note)}</div>\` : ""}
+
+\${actionUrl ? \`<p><a href="\${escapeHtml(actionUrl)}" class="action-btn">\${escapeHtml(actionLabel || "Open Classgrid")}</a></p>\` : ""}
+
+<p>If you did not authorize this change, contact Classgrid support immediately.</p>
+<br/>
+<p>Regards,<br><strong>The Classgrid Team</strong></p>
+<hr/>
+<p class="footer-text">&copy; \${year} Classgrid. This security notification was sent because a domain setting changed on your organization account.</p>
+</div>
 </body>
 </html>`;
 }
@@ -73,19 +90,19 @@ function buildNotificationHtml({ title, orgName, adminName, summary, details, ac
 function buildNotificationText({ title, orgName, adminName, summary, details, actionUrl, note, changedAt }) {
     const rows = Object.entries({ ...details, "Changed at": formatDate(changedAt) })
         .filter(([, value]) => value !== undefined && value !== null && value !== "")
-        .map(([label, value]) => `${label}: ${value}`);
+        .map(([label, value]) => `\${label}: \${value}`);
 
     return [
         title,
         "",
-        `Hello ${adminName || "Admin"},`,
+        `Hello \${adminName || "Admin"},`,
         "",
         summary,
         "",
-        `Organization: ${orgName}`,
+        `Organization: \${orgName}`,
         ...rows,
-        note ? `\nImportant: ${note}` : "",
-        actionUrl ? `\nOpen Classgrid: ${actionUrl}` : "",
+        note ? `\nImportant: \${note}` : "",
+        actionUrl ? `\nOpen Classgrid: \${actionUrl}` : "",
         "",
         "If you did not authorize this change, contact Classgrid support immediately.",
         "",
@@ -122,9 +139,9 @@ export async function notifyDomainChange({
     organizationId,
     userId,
 }) {
-    const oldHost = oldDomain && oldDomain !== "none" ? `${oldDomain}.classgrid.in` : "Not previously assigned";
-    const newHost = `${newDomain}.classgrid.in`;
-    const actionUrl = `https://${newHost}/org/login`;
+    const oldHost = oldDomain && oldDomain !== "none" ? `\${oldDomain}.classgrid.in` : "Not previously assigned";
+    const newHost = `\${newDomain}.classgrid.in`;
+    const actionUrl = `https://\${newHost}/org/login`;
     const template = {
         title: "Classgrid organization URL changed",
         orgName,
@@ -145,40 +162,191 @@ export async function notifyDomainChange({
 
     return queueDomainEmail({
         to,
-        subject: `Classgrid organization URL changed to ${newHost}`,
+        subject: `Classgrid organization URL changed to \${newHost}`,
         template,
         organizationId,
         userId,
     });
 }
 
-const ACTION_COPY = {
+// ============================================================================
+// CUSTOM DOMAIN CHANGES (erp.custom.com)
+// ============================================================================
+
+const CUSTOM_DOMAIN_COPY = {
     registered: {
-        title: "External domain registered",
-        summary: "An external domain was added to your Classgrid organization and now requires DNS verification.",
+        title: "Custom domain registered",
+        summary: "Your organization's <strong>custom domain</strong> has been registered and now requires DNS verification.",
+        actionBtn: "Review Custom Domain",
+        checklist: [],
+        showURL: false
     },
     changed: {
-        title: "External domain changed",
-        summary: "Your external domain was changed. The replacement domain must be verified before it becomes active.",
+        title: "Custom domain changed",
+        summary: "Your organization's <strong>custom domain</strong> was changed. The replacement domain must be verified before it becomes active.",
+        actionBtn: "Review Custom Domain",
+        checklist: [],
+        showURL: false
     },
     verified: {
-        title: "External domain verified",
-        summary: "Classgrid verified the ownership and routing records for your external domain.",
+        title: "Custom domain verified",
+        summary: "Your organization's <strong>custom domain</strong> has been successfully verified and is now active.",
+        actionBtn: "Review Custom Domain",
+        checklist: [
+            "Domain ownership verified",
+            "DNS routing validated",
+            "HTTPS certificate issued",
+            "Secure login activated",
+            "Organization routing updated",
+            "Default login URL disabled"
+        ],
+        showURL: true
     },
     settings_updated: {
-        title: "External domain access changed",
-        summary: "Access settings for your external domain were changed.",
+        title: "Custom domain access changed",
+        summary: "Access settings for your organization's <strong>custom domain</strong> were updated.",
+        actionBtn: "Review Custom Domain",
+        checklist: [],
+        showURL: false
     },
     removed: {
-        title: "External domain removed",
-        summary: "An external domain was removed from your Classgrid organization.",
+        title: "Custom domain removed",
+        summary: "A <strong>custom domain</strong> was removed from your Classgrid organization.",
+        actionBtn: "Open Classgrid",
+        checklist: [],
+        showURL: false
     },
 };
 
-/**
- * Notify an administrator after an external website or ERP hostname changes.
- * Verification secrets are deliberately never accepted or included here.
- */
+function buildCustomDomainHtml(data) {
+    const year = new Date().getFullYear();
+    const formattedDate = formatDate(data.changedAt);
+    
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>\${escapeHtml(data.copy.title)}</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 20px; line-height: 1.6; color: #333333; background-color: #ffffff; margin: 0; }
+  .email-container { max-width: 600px; margin: 0 auto; }
+  h2 { margin-top: 0; font-size: 20px; }
+  h3 { font-size: 16px; margin-top: 25px; margin-bottom: 15px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #dddddd; }
+  .table-row td { padding: 12px; border-bottom: 1px solid #dddddd; }
+  .table-label { font-weight: bold; width: 35%; background-color: #f9f9f9; }
+  .action-btn { display: inline-block; padding: 10px 20px; background-color: #000000; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin-bottom: 20px; }
+  .support-btn { display: inline-block; padding: 10px 20px; border: 1px solid #dddddd; color: #333333 !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin-bottom: 20px; }
+  .footer-text { font-size: 12px; color: #777777; }
+  hr { border: 0; border-top: 1px solid #eeeeee; margin: 25px 0; }
+  ul.checklist { list-style: none; padding: 0; margin: 0 0 20px 0; }
+  ul.checklist li { margin-bottom: 8px; font-weight: 500; }
+  code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #d63384; }
+
+  @media (prefers-color-scheme: dark) {
+    body { background-color: #111111; color: #e5e5e5; }
+    table { border: 1px solid #333333; }
+    .table-row td { border-bottom: 1px solid #333333; }
+    .table-label { background-color: #1a1a1a; }
+    .action-btn { background-color: #ffffff; color: #000000 !important; }
+    .support-btn { border: 1px solid #444444; color: #eeeeee !important; }
+    .footer-text { color: #999999; }
+    hr { border-top: 1px solid #333333; }
+    code { background-color: #222222; color: #ff85c0; }
+  }
+</style>
+</head>
+<body>
+<div class="email-container">
+<h2>Hello <strong>\${escapeHtml(data.adminName)}</strong>,</h2>
+<p>\${data.copy.summary}</p>
+\${data.action === 'verified' ? '<p>Classgrid confirmed ownership of the domain, validated the required DNS records, provisioned a secure HTTPS certificate, and enabled the domain for your organization.</p>' : ''}
+
+<hr/>
+
+<h3>Custom Domain Details</h3>
+<table>
+  \${Object.entries(data.details).filter(([, val]) => val !== undefined && val !== null && val !== "").map(([label, val]) => \`
+  <tr class="table-row">
+    <td class="table-label">\${escapeHtml(label)}</td>
+    <td>\${val}</td>
+  </tr>\`).join('')}
+  <tr class="table-row">
+    <td class="table-label">Verified At</td>
+    <td>\${escapeHtml(formattedDate)}</td>
+  </tr>
+</table>
+
+<hr/>
+
+\${data.copy.showURL && data.newDomain ? \`
+<h3>What changed?</h3>
+<p>Your organization will now use the following URL to access Classgrid:</p>
+<p style="font-size: 16px; font-weight: bold;"><a href="https://\${escapeHtml(data.newDomain)}" style="color: #007bff; text-decoration: none;">https://\${escapeHtml(data.newDomain)}</a></p>
+<p>The default Classgrid login URL has been updated based on your domain settings.</p>
+<hr/>
+\` : ''}
+
+\${data.copy.checklist.length > 0 ? \`
+<h3>Verification completed</h3>
+<ul class="checklist">
+  \${data.copy.checklist.map(item => \`<li>&#10003; \${escapeHtml(item)}</li>\`).join('')}
+</ul>
+<hr/>
+\` : ''}
+
+<h3>Review Custom Domain</h3>
+<p>You can review your domain configuration at any time from the Organization Settings dashboard.</p>
+<a href="\${escapeHtml(data.actionUrl)}" class="action-btn">\${escapeHtml(data.copy.actionBtn)}</a>
+
+<hr/>
+
+<h3>Didn't make this change?</h3>
+<p>If you did not authorize this update, contact the Classgrid Support team immediately. We recommend reviewing your organization administrators and DNS configuration to secure your account.</p>
+
+<hr/>
+
+<h3>Need assistance?</h3>
+<p>Our support team is available to help with DNS configuration, SSL certificates, and custom domain setup.</p>
+<a href="mailto:support@classgrid.in" class="support-btn">Contact Support</a>
+
+<hr/>
+
+<p>Regards,<br><strong>The Classgrid Team</strong></p>
+<br/>
+<p class="footer-text">&copy; \${year} Classgrid. All rights reserved.</p>
+<p class="footer-text">This security notification was sent because the custom domain settings for your organization were updated. This email cannot be unsubscribed from because it contains important account and security information.</p>
+</div>
+</body>
+</html>`;
+}
+
+function buildCustomDomainText(data) {
+    return [
+        data.copy.title,
+        "",
+        `Hello \${data.adminName},`,
+        "",
+        data.copy.summary.replace(/<[^>]+>/g, ''), // strip basic html
+        "",
+        "Custom Domain Details:",
+        ...Object.entries(data.details)
+            .filter(([, val]) => val !== undefined && val !== null && val !== "")
+            .map(([label, val]) => `- \${label}: \${String(val).replace(/<[^>]+>/g, '')}`),
+        `- Verified At: \${formatDate(data.changedAt)}`,
+        "",
+        data.copy.showURL && data.newDomain ? `New URL: https://\${data.newDomain}\n` : "",
+        data.copy.checklist.length > 0 ? "Verification completed:\n" + data.copy.checklist.map(item => `✓ \${item}`).join('\n') + "\n" : "",
+        `Review Domain here: \${data.actionUrl}`,
+        "",
+        "If you did not authorize this change, contact Classgrid Support immediately.",
+        "",
+        "Regards,",
+        "The Classgrid Team",
+    ].filter(Boolean).join("\n");
+}
+
 export async function notifyExternalDomainChange({
     to,
     orgName,
@@ -194,48 +362,61 @@ export async function notifyExternalDomainChange({
     organizationId,
     userId,
 }) {
-    const copy = ACTION_COPY[action] || {
-        title: "External domain updated",
-        summary: "An external domain setting changed on your Classgrid organization.",
+    const copy = CUSTOM_DOMAIN_COPY[action] || {
+        title: "Custom domain updated",
+        summary: "A custom domain setting changed on your Classgrid organization.",
+        actionBtn: "Open Classgrid",
+        checklist: [],
+        showURL: false
     };
-    const typeLabel = domainType === "erp_domain" ? "ERP login domain" : "Public website domain";
+    
+    const typeLabel = domainType === "erp_domain" ? "ERP Login Domain" : "Public Website Domain";
     const activeDomain = newDomain || oldDomain;
-    const actionUrl = newDomain ? `https://${newDomain}${domainType === "erp_domain" ? "/org/login" : ""}` : "https://classgrid.in";
+    const actionUrl = newDomain ? `https://\${newDomain}\${domainType === "erp_domain" ? "/org/login" : ""}` : "https://classgrid.in";
+    
     const settingsSummary = (settings) => settings
-        ? `Custom domain ${settings.is_enabled === false ? "disabled" : "enabled"}${domainType === "erp_domain" ? `; default Classgrid URL ${settings.allow_classgrid_url === false ? "disabled" : "enabled"}` : ""}`
+        ? `Custom domain \${settings.is_enabled === false ? "disabled" : "enabled"}; default Classgrid URL \${settings.allow_classgrid_url === false ? "disabled" : "enabled"}`
         : undefined;
-    const note = action === "removed" && brandingReset
-        ? "Removing a custom domain also resets its associated custom branding by product design. You can add the domain and configure branding again later."
-        : action === "changed"
-            ? "Existing branding is preserved during an in-place hostname change. DNS ownership and routing must be verified again."
-            : action === "registered"
-                ? "Do not share the hostname as active until both DNS checks pass."
-                : undefined;
 
-    const template = {
-        title: copy.title,
+    const data = {
+        action,
+        copy,
         orgName,
         adminName,
-        summary: copy.summary,
-        details: {
-            "Domain type": typeLabel,
-            "Old domain": oldDomain,
-            "New domain": newDomain,
-            "Previous access": settingsSummary(oldSettings),
-            "New access": settingsSummary(newSettings),
-            "Administrator": adminEmail,
-        },
+        newDomain,
+        oldDomain,
         actionUrl,
-        actionLabel: activeDomain ? "Review domain" : "Open Classgrid",
-        note,
         changedAt: new Date(),
+        details: {
+            "Organization": orgName,
+            "Domain Type": typeLabel,
+            "Custom Domain": \`<code>\${escapeHtml(activeDomain)}</code>\`,
+            "Previous Access": settingsSummary(oldSettings),
+            "Current Access": settingsSummary(newSettings),
+            "Administrator": \`<a href="mailto:\${escapeHtml(adminEmail)}" style="color:#007bff;text-decoration:none;">\${escapeHtml(adminEmail)}</a>\`
+        }
     };
+    
+    // Add specific statuses for verified action
+    if (action === 'verified') {
+        data.details["Verification Status"] = "✅ Verified";
+        data.details["SSL/TLS Status"] = "✅ Active";
+        data.details["DNS Status"] = "Ownership & routing records validated";
+    }
 
-    return queueDomainEmail({
+    if (!to) return { queued: false, reason: "missing_admin_email" };
+
+    const subject = `\${copy.title}: \${activeDomain || typeLabel}`;
+    const job = await enqueueEmail({
         to,
-        subject: `${copy.title}: ${activeDomain || typeLabel}`,
-        template,
-        organizationId,
-        userId,
+        subject,
+        html: buildCustomDomainHtml(data),
+        text: buildCustomDomainText(data),
+        type: "domain_change",
+        channel: "notification",
+        userId: userId || null,
+        organizationId: organizationId || null,
     });
+
+    return { queued: Boolean(job), jobId: job?._id || null };
 }
