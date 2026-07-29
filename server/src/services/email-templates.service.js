@@ -24,7 +24,7 @@ const formatDate = (date) => {
   });
 };
 
-const baseTemplate = ({ content, title = "Notification", ignoreText = null }) => {
+export const baseTemplate = ({ content, title = "Notification", ignoreText = null }) => {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

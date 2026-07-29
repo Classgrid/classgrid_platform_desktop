@@ -1,4 +1,5 @@
 import { sendEmail } from "./aws-ses.service.js";
+import { baseTemplate } from "./email-templates.service.js";
 
 function escapeHtml(value = "") {
     return String(value)
@@ -20,66 +21,45 @@ function formatDate(value) {
 // ============================================================================
 
 function buildNotificationHtml({ title, orgName, adminName, summary, details, actionUrl, actionLabel, note, changedAt }) {
-    const year = new Date().getFullYear();
     const formattedDate = formatDate(changedAt);
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(title)}</title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 20px; line-height: 1.6; color: #333333; background-color: #ffffff; margin: 0; }
-  .email-container { max-width: 600px; margin: 0 auto; }
-  table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px; }
-  .table-row td { padding: 12px; border-bottom: 1px solid #dddddd; }
-  .table-label { font-weight: bold; width: 35%; }
-  .action-btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px; margin-bottom: 10px; }
-  .footer-text { font-size: 12px; color: #777777; }
-  hr { border: 0; border-top: 1px solid #eeeeee; margin: 20px 0; }
-  .note-box { padding: 15px; background-color: #fff3cd; border: 1px solid #ffe69c; color: #664d03; border-radius: 6px; margin: 15px 0; font-size: 14px; }
+    
+    // Build the details block
+    const detailsHtml = Object.entries(details)
+        .filter(([, value]) => value !== undefined && value !== null && value !== "")
+        .map(([label, value]) => `
+            <tr>
+                <td style="padding: 8px 0; font-weight: 600; color: #111111; width: 40%; vertical-align: top;">${escapeHtml(label)}</td>
+                <td style="padding: 8px 0; color: #374151; vertical-align: top;">${escapeHtml(value)}</td>
+            </tr>
+        `).join("");
 
-  @media (prefers-color-scheme: dark) {
-    body { background-color: #111111; color: #e5e5e5; }
-    .table-row td { border-bottom: 1px solid #333333; }
-    .footer-text { color: #999999; }
-    hr { border-top: 1px solid #333333; }
-    .note-box { background-color: #332701; border-color: #664d03; color: #ffda6a; }
-  }
-</style>
-</head>
-<body>
-<div class="email-container">
-<h2 style="margin-top:0;">Hello ${escapeHtml(adminName || "Admin")},</h2>
-<p>${escapeHtml(summary)}</p>
+    const content = `
+        <h2 style="color: #111111; margin-top: 0;">Hello ${escapeHtml(adminName || "Admin")},</h2>
+        <p style="font-size: 15px; color: #374151;">${escapeHtml(summary)}</p>
+        
+        <div class="box" style="margin: 24px 0; padding: 20px; background-color: #f9f9f9; border: 1px solid #eaeaea; border-radius: 8px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 14px;">
+                ${detailsHtml}
+                <tr>
+                    <td style="padding: 8px 0; font-weight: 600; color: #111111; width: 40%; vertical-align: top;">Changed at</td>
+                    <td style="padding: 8px 0; color: #374151; vertical-align: top;">${escapeHtml(formattedDate)}</td>
+                </tr>
+            </table>
+        </div>
 
-<table>
-  ${Object.entries(details)
-            .filter(([, value]) => value !== undefined && value !== null && value !== "")
-            .map(([label, value]) => `
-  <tr class="table-row">
-    <td class="table-label">${escapeHtml(label)}</td>
-    <td>${escapeHtml(value)}</td>
-  </tr>`).join("")}
-  <tr class="table-row">
-    <td class="table-label">Changed at</td>
-    <td>${escapeHtml(formattedDate)}</td>
-  </tr>
-</table>
+        ${note ? `<div class="box" style="margin: 24px 0; padding: 16px; background-color: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px;"><p style="margin: 0; color: #92400e; font-size: 14px;"><strong>Important:</strong> ${escapeHtml(note)}</p></div>` : ""}
 
-${note ? `<div class="note-box">${escapeHtml(note)}</div>` : ""}
+        ${actionUrl ? `<div style="margin: 32px 0;"><a href="${escapeHtml(actionUrl)}" class="btn" style="background-color: #111111; color: #ffffff !important; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">${escapeHtml(actionLabel || "Open Classgrid")}</a></div>` : ""}
 
-${actionUrl ? `<p><a href="${escapeHtml(actionUrl)}" class="action-btn">${escapeHtml(actionLabel || "Open Classgrid")}</a></p>` : ""}
+        <p style="font-size: 14px; color: #6b7280; margin-top: 32px;">If you did not authorize this change, contact Classgrid support immediately.</p>
+        <p style="font-size: 14px; color: #6b7280;"><a href="https://classgrid.in/support" style="color: #111111; text-decoration: underline;">Open Support Portal</a></p>
+    `;
 
-<p>If you did not authorize this change, contact Classgrid support immediately.</p>
-<a href="${escapeHtml(process.env.SUPPORT_URL || 'https://classgrid.in/support')}" class="action-btn" style="background-color: #333333; margin-top: 5px;">Open Support Portal</a>
-<br/>
-<p>Regards,<br><strong>The Classgrid Team</strong></p>
-<hr/>
-<p class="footer-text">&copy; ${year} Classgrid. This security notification was sent because a domain setting changed on your organization account.</p>
-</div>
-</body>
-</html>`;
+    return baseTemplate({
+        title: escapeHtml(title),
+        content,
+        ignoreText: "This security notification was sent because a domain setting changed on your organization account."
+    });
 }
 
 function buildNotificationText({ title, orgName, adminName, summary, details, actionUrl, note, changedAt }) {
@@ -171,107 +151,63 @@ export async function notifyDomainChange({
 // The copy is now built dynamically inside notifyExternalDomainChange based on domainType
 
 export function buildCustomDomainHtml(data) {
-    const year = new Date().getFullYear();
     const formattedDate = formatDate(data.changedAt);
 
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(data.copy.title)}</title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 20px; line-height: 1.6; color: #333333; background-color: #ffffff; margin: 0; }
-  .email-container { max-width: 600px; margin: 0 auto; }
-  h2 { margin-top: 0; font-size: 20px; }
-  h3 { font-size: 16px; margin-top: 25px; margin-bottom: 15px; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #dddddd; }
-  .table-row td { padding: 12px; border-bottom: 1px solid #dddddd; }
-  .table-label { font-weight: bold; width: 35%; background-color: #f9f9f9; }
-  .action-btn { display: inline-block; padding: 10px 20px; background-color: #000000; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin-bottom: 20px; }
-  .support-btn { display: inline-block; padding: 10px 20px; border: 1px solid #dddddd; color: #333333 !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin-bottom: 20px; }
-  .footer-text { font-size: 12px; color: #777777; }
-  hr { border: 0; border-top: 1px solid #eeeeee; margin: 25px 0; }
-  ul.checklist { list-style: none; padding: 0; margin: 0 0 20px 0; }
-  ul.checklist li { margin-bottom: 8px; font-weight: 500; }
-  code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #d63384; }
+    // Build the details block
+    const detailsHtml = Object.entries(data.details)
+        .filter(([, val]) => val !== undefined && val !== null && val !== "")
+        .map(([label, val]) => `
+            <tr>
+                <td style="padding: 8px 0; font-weight: 600; color: #111111; width: 40%; vertical-align: top;">${escapeHtml(label)}</td>
+                <td style="padding: 8px 0; color: #374151; vertical-align: top;">${escapeHtml(val)}</td>
+            </tr>
+        `).join("");
 
-  @media (prefers-color-scheme: dark) {
-    body { background-color: #111111; color: #e5e5e5; }
-    table { border: 1px solid #333333; }
-    .table-row td { border-bottom: 1px solid #333333; }
-    .table-label { background-color: #1a1a1a; }
-    .action-btn { background-color: #ffffff; color: #000000 !important; }
-    .support-btn { border: 1px solid #444444; color: #eeeeee !important; }
-    .footer-text { color: #999999; }
-    hr { border-top: 1px solid #333333; }
-    code { background-color: #222222; color: #ff85c0; }
-  }
-</style>
-</head>
-<body>
-<div class="email-container">
-<h2>Hello <strong>${escapeHtml(data.adminName)}</strong>,</h2>
-<p>${data.copy.summary}</p>
-${data.action === 'verified' ? '<p>Classgrid confirmed ownership of the domain, validated the required DNS records, provisioned a secure HTTPS certificate, and enabled the domain for your organization.</p>' : ''}
+    const content = `
+        <h2 style="color: #111111; margin-top: 0;">Hello ${escapeHtml(data.adminName || "Admin")},</h2>
+        <p style="font-size: 15px; color: #374151;">${escapeHtml(data.copy.summary)}</p>
+        
+        ${data.action === 'verified' ? '<p style="font-size: 15px; color: #374151;">Classgrid confirmed ownership of the domain, validated the required DNS records, provisioned a secure HTTPS certificate, and enabled the domain for your organization.</p>' : ''}
+        
+        <h3 style="color: #111111; margin-top: 32px; font-size: 16px;">Custom Domain Details</h3>
+        <div class="box" style="margin: 16px 0 24px; padding: 20px; background-color: #f9f9f9; border: 1px solid #eaeaea; border-radius: 8px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 14px;">
+                ${detailsHtml}
+                <tr>
+                    <td style="padding: 8px 0; font-weight: 600; color: #111111; width: 40%; vertical-align: top;">Verified At</td>
+                    <td style="padding: 8px 0; color: #374151; vertical-align: top;">${escapeHtml(formattedDate)}</td>
+                </tr>
+            </table>
+        </div>
 
-<hr/>
+        ${data.copy.showURL && data.newDomain ? `
+        <div class="box" style="margin: 24px 0; padding: 20px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;">
+            <p style="margin: 0 0 8px; font-weight: 600; color: #111111;">What changed?</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 14px;">Your organization will now use the following URL to access Classgrid:</p>
+            <p style="margin: 0; font-size: 16px; font-weight: bold;"><a href="https://${escapeHtml(data.newDomain)}" style="color: #16a34a; text-decoration: none;">https://${escapeHtml(data.newDomain)}</a></p>
+        </div>
+        ` : ''}
 
-<h3>Custom Domain Details</h3>
-<table>
-  ${Object.entries(data.details).filter(([, val]) => val !== undefined && val !== null && val !== "").map(([label, val]) => `
-  <tr class="table-row">
-    <td class="table-label">${escapeHtml(label)}</td>
-    <td>${val}</td>
-  </tr>`).join('')}
-  <tr class="table-row">
-    <td class="table-label">Verified At</td>
-    <td>${escapeHtml(formattedDate)}</td>
-  </tr>
-</table>
+        ${data.copy.checklist.length > 0 ? `
+        <h3 style="color: #111111; margin-top: 32px; font-size: 16px;">Verification completed</h3>
+        <ul style="margin: 16px 0 24px 20px; padding: 0; color: #374151; font-size: 14px;">
+          ${data.copy.checklist.map(item => `<li style="margin-bottom: 8px; font-weight: 500;">${escapeHtml(item)}</li>`).join('')}
+        </ul>
+        ` : ''}
 
-<hr/>
+        <div style="margin: 32px 0;">
+            <a href="${escapeHtml(data.actionUrl)}" class="btn" style="background-color: #111111; color: #ffffff !important; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">${escapeHtml(data.copy.actionBtn)}</a>
+        </div>
 
-${data.copy.showURL && data.newDomain ? `
-<h3>What changed?</h3>
-<p>Your organization will now use the following URL to access Classgrid:</p>
-<p style="font-size: 16px; font-weight: bold;"><a href="https://${escapeHtml(data.newDomain)}" style="color: #007bff; text-decoration: none;">https://${escapeHtml(data.newDomain)}</a></p>
-<p>The default Classgrid login URL has been updated based on your domain settings.</p>
-<hr/>
-` : ''}
+        <p style="font-size: 14px; color: #6b7280; margin-top: 32px;">If you did not authorize this change, contact Classgrid support immediately.</p>
+        <p style="font-size: 14px; color: #6b7280;"><a href="https://classgrid.in/support" style="color: #111111; text-decoration: underline;">Open Support Portal</a></p>
+    `;
 
-${data.copy.checklist.length > 0 ? `
-<h3>Verification completed</h3>
-<ul class="checklist">
-  ${data.copy.checklist.map(item => `<li>&#10003; ${escapeHtml(item)}</li>`).join('')}
-</ul>
-<hr/>
-` : ''}
-
-<h3>Review Custom Domain</h3>
-<p>You can review your domain configuration at any time from the Organization Settings dashboard.</p>
-<a href="${escapeHtml(data.actionUrl)}" class="action-btn">${escapeHtml(data.copy.actionBtn)}</a>
-
-<hr/>
-
-<h3>Didn't make this change?</h3>
-<p>If you did not authorize this update, contact the Classgrid Support team immediately. We recommend reviewing your organization administrators and DNS configuration to secure your account.</p>
-
-<hr/>
-
-<h3>Need assistance?</h3>
-<p>Our support team is available to help with DNS configuration, SSL certificates, and custom domain setup.</p>
-<a href="${escapeHtml(process.env.SUPPORT_URL || 'https://classgrid.in/support')}" class="support-btn">Open Support Portal</a>
-
-<hr/>
-
-<p>Regards,<br><strong>The Classgrid Team</strong></p>
-<br/>
-<p class="footer-text">&copy; ${year} Classgrid. All rights reserved.</p>
-<p class="footer-text">This security notification was sent because the custom domain settings for your organization were updated. This email cannot be unsubscribed from because it contains important account and security information.</p>
-</div>
-</body>
-</html>`;
+    return baseTemplate({
+        title: escapeHtml(data.copy.title),
+        content,
+        ignoreText: "This security notification was sent because a custom domain setting changed on your organization account."
+    });
 }
 
 export function buildCustomDomainText(data) {
