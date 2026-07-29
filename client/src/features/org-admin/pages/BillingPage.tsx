@@ -105,6 +105,14 @@ export function BillingPage() {
   }, [billingData]);
 
   const handleSaveSettings = async () => {
+    if (!billingContactName?.trim()) return toast.error("Billing Contact Name is required.");
+    if (!billingEmail?.trim()) return toast.error("Invoice Email is required.");
+    if (!billingPhone?.trim()) return toast.error("Billing Phone is required.");
+    if (!billingAddress1?.trim()) return toast.error("Address Line 1 is required.");
+    if (!billingCity?.trim()) return toast.error("City is required.");
+    if (!billingState?.trim()) return toast.error("State / Province is required.");
+    if (!billingPincode?.trim()) return toast.error("ZIP / Postal Code is required.");
+
     try {
       setIsSavingSettings(true);
       const res = await fetch("/api/org/billing/settings", {
