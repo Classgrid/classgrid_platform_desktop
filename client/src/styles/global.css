@@ -972,3 +972,18 @@
 .sidebar-scroll-hidden::-webkit-scrollbar {
   display: none;
 }
+
+/* ── Standard Button Utility Classes ── */
+@layer components {
+  .btn-save {
+    @apply bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all;
+  }
+  
+  .btn-edit {
+    @apply bg-secondary hover:bg-secondary/80 text-secondary-foreground shadow-sm transition-all;
+  }
+
+  .btn-verify {
+    @apply bg-transparent border border-border hover:bg-accent text-accent-foreground shadow-sm transition-all;
+  }
+}

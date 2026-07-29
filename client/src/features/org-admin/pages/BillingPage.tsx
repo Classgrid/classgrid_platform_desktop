@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 
 // Icons & Utils
-import { CreditCard, Download, IndianRupee, ShieldCheck, Plus, CheckCircle2, Loader2 } from "lucide-react";
+import { CreditCard, Download, IndianRupee, ShieldCheck, Plus, CheckCircle2, Loader2, MapPin } from "lucide-react";
 import { format } from "date-fns";
 
 // Data
@@ -229,27 +229,38 @@ export function BillingPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-8">
       {/* BILLING SETTINGS */}
       <div className="space-y-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Billing Profile & Verification</h3>
-        </div>
         
-        <Card className="shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden rounded-xl">
-          <div className="p-6 space-y-6">
+        {/* Billing Profile Card */}
+        <div className="bg-card border border-border rounded-xl p-6 flex flex-col gap-6 shadow-sm hover:shadow-md transition-all">
+          <div className="border-b border-border pb-4 flex flex-col gap-2">
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <CreditCard size={18} /> Billing Profile & Verification
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1 opacity-80">
+              Manage your billing contact details and verify your communication channels.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
             <div className="space-y-3">
               <Label className="text-sm font-medium">Billing Name</Label>
-              <div className="flex gap-2">
-                <Input 
-                  value={billingContactName} 
-                  onChange={(e) => setBillingContactName(e.target.value)} 
-                  placeholder="John Doe"
-                  className="flex-1"
-                />
-                <Button onClick={handleSaveSettings} disabled={isSavingSettings || !billingContactName?.trim()} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6">
-                  Save
-                </Button>
-              </div>
+              <Input 
+                value={billingContactName} 
+                onChange={(e) => setBillingContactName(e.target.value)} 
+                placeholder="John Doe"
+              />
             </div>
-
+            
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">GSTIN (Optional)</Label>
+              <Input 
+                value={billingGstin} 
+                onChange={(e) => setBillingGstin(e.target.value)} 
+                placeholder="27AADCB2230M1Z2"
+                disabled={!phoneVerified}
+              />
+            </div>
+            
             <div className="space-y-3">
               <Label className="text-sm font-medium">Billing Email</Label>
               <div className="flex gap-2">
@@ -266,7 +277,7 @@ export function BillingPage() {
                 {emailVerified ? (
                   <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
                 ) : (
-                  <Button variant="outline" onClick={handleSendEmailVerification} disabled={isSendingEmailOtp || !billingEmail?.trim()}>
+                  <Button className="btn-verify" onClick={handleSendEmailVerification} disabled={isSendingEmailOtp || !billingEmail?.trim()}>
                     Verify
                   </Button>
                 )}
@@ -289,101 +300,96 @@ export function BillingPage() {
                 {phoneVerified ? (
                   <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
                 ) : (
-                  <Button variant="outline" onClick={handleSendPhoneOtp} disabled={isSendingPhoneOtp || !billingPhone?.trim() || !emailVerified}>
+                  <Button className="btn-verify" onClick={handleSendPhoneOtp} disabled={isSendingPhoneOtp || !billingPhone?.trim() || !emailVerified}>
                     Verify
                   </Button>
                 )}
               </div>
             </div>
+          </div>
+          
+          <div className="flex justify-end pt-4 border-t border-border">
+            <Button onClick={handleSaveSettings} disabled={isSavingSettings || !phoneVerified} className="btn-save px-6">
+              Save Profile
+            </Button>
+          </div>
+        </div>
+
+        {/* Billing Address Card */}
+        <div className="bg-card border border-border rounded-xl p-6 flex flex-col gap-6 shadow-sm hover:shadow-md transition-all">
+          <div className="border-b border-border pb-4 flex flex-col gap-2">
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <MapPin size={18} /> Billing Address
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1 opacity-80">
+              Set your primary address for invoices and tax purposes.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
+            <div className="space-y-3 md:col-span-2">
+              <Label className="text-sm font-medium">Address Line 1</Label>
+              <Input 
+                value={billingAddress1} 
+                onChange={(e) => setBillingAddress1(e.target.value)} 
+                placeholder="Street address, P.O. box, company name, c/o"
+                disabled={!phoneVerified}
+              />
+            </div>
+
+            <div className="space-y-3 md:col-span-2">
+              <Label className="text-sm font-medium">Address Line 2 (Optional)</Label>
+              <Input 
+                value={billingAddress2} 
+                onChange={(e) => setBillingAddress2(e.target.value)} 
+                placeholder="Apartment, suite, unit, building, floor, etc."
+                disabled={!phoneVerified}
+              />
+            </div>
             
             <div className="space-y-3">
-              <Label className="text-sm font-medium">GSTIN (Optional)</Label>
-              <div className="flex gap-2">
-                <Input 
-                  value={billingGstin} 
-                  onChange={(e) => setBillingGstin(e.target.value)} 
-                  placeholder="27AADCB2230M1Z2"
-                  disabled={!phoneVerified}
-                  className="flex-1"
-                />
-                <Button onClick={handleSaveSettings} disabled={isSavingSettings || !phoneVerified} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6">
-                  Save
-                </Button>
-              </div>
+              <Label className="text-sm font-medium">City</Label>
+              <Input 
+                value={billingCity} 
+                onChange={(e) => setBillingCity(e.target.value)} 
+                placeholder="Mumbai"
+                disabled={!phoneVerified}
+              />
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">State / Province</Label>
+              <Select value={billingState} onValueChange={setBillingState} disabled={!phoneVerified}>
+                <SelectTrigger className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                  <SelectValue placeholder="Select State / UT" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statesList.map((state) => (
+                    <SelectItem key={state} value={state}>
+                      {state}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">ZIP / Postal Code</Label>
+              <Input 
+                value={billingPincode} 
+                onChange={(e) => setBillingPincode(e.target.value)} 
+                placeholder="400001"
+                disabled={!phoneVerified}
+              />
             </div>
           </div>
-        </Card>
-
-        <Card className="shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden rounded-xl">
-          <div className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Billing Address</h4>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3 md:col-span-2">
-                <Label className="text-sm font-medium">Address Line 1</Label>
-                <Input 
-                  value={billingAddress1} 
-                  onChange={(e) => setBillingAddress1(e.target.value)} 
-                  placeholder="Street address, P.O. box, company name, c/o"
-                  disabled={!phoneVerified}
-                />
-              </div>
-
-              <div className="space-y-3 md:col-span-2">
-                <Label className="text-sm font-medium">Address Line 2 (Optional)</Label>
-                <Input 
-                  value={billingAddress2} 
-                  onChange={(e) => setBillingAddress2(e.target.value)} 
-                  placeholder="Apartment, suite, unit, building, floor, etc."
-                  disabled={!phoneVerified}
-                />
-              </div>
-              
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">City</Label>
-                <Input 
-                  value={billingCity} 
-                  onChange={(e) => setBillingCity(e.target.value)} 
-                  placeholder="Mumbai"
-                  disabled={!phoneVerified}
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">State / Province</Label>
-                <Select value={billingState} onValueChange={setBillingState} disabled={!phoneVerified}>
-                  <SelectTrigger className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <SelectValue placeholder="Select State / UT" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statesList.map((state) => (
-                      <SelectItem key={state} value={state}>
-                        {state}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">ZIP / Postal Code</Label>
-                <Input 
-                  value={billingPincode} 
-                  onChange={(e) => setBillingPincode(e.target.value)} 
-                  placeholder="400001"
-                  disabled={!phoneVerified}
-                />
-              </div>
-            </div>
-            
-            <div className="mt-6 flex justify-end">
-              <Button onClick={handleSaveSettings} disabled={isSavingSettings || !phoneVerified} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6">
-                Save Address
-              </Button>
-            </div>
+          
+          <div className="flex justify-end pt-4 border-t border-border">
+            <Button onClick={handleSaveSettings} disabled={isSavingSettings || !phoneVerified} className="btn-save px-6">
+              Save Address
+            </Button>
           </div>
-        </Card>
-
+        </div>
 
       </div>
 
