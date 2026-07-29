@@ -1,4 +1,4 @@
-import { enqueueEmail } from "./email-queue.service.js";
+import { sendEmail } from "./aws-ses.service.js";
 
 function escapeHtml(value = "") {
     return String(value)
@@ -55,8 +55,8 @@ function buildNotificationHtml({ title, orgName, adminName, summary, details, ac
 
 <table>
   ${Object.entries(details)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
-    .map(([label, value]) => `
+            .filter(([, value]) => value !== undefined && value !== null && value !== "")
+            .map(([label, value]) => `
   <tr class="table-row">
     <td class="table-label">${escapeHtml(label)}</td>
     <td>${escapeHtml(value)}</td>
@@ -170,10 +170,10 @@ export async function notifyDomainChange({
 
 // The copy is now built dynamically inside notifyExternalDomainChange based on domainType
 
-function buildCustomDomainHtml(data) {
+export function buildCustomDomainHtml(data) {
     const year = new Date().getFullYear();
     const formattedDate = formatDate(data.changedAt);
-    
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -274,7 +274,7 @@ ${data.copy.checklist.length > 0 ? `
 </html>`;
 }
 
-function buildCustomDomainText(data) {
+export function buildCustomDomainText(data) {
     return [
         data.copy.title,
         "",
@@ -317,10 +317,10 @@ export async function notifyExternalDomainChange({
     const typeLabel = domainType === "erp_domain" ? "ERP login domain" : "Public website domain";
     const activeDomain = newDomain || oldDomain;
     const actionUrl = newDomain ? `https://${newDomain}${domainType === "erp_domain" ? "/org/login" : ""}` : "https://classgrid.in";
-    
+
     let copy = {};
     const domainText = `<strong>${escapeHtml(typeLabel)}</strong> (<code>${escapeHtml(activeDomain)}</code>)`;
-    
+
     switch (action) {
         case "registered":
             copy = {
@@ -383,7 +383,7 @@ export async function notifyExternalDomainChange({
                 showURL: false
             };
     }
-    
+
     const settingsSummary = (settings) => {
         if (!settings) return undefined;
         if (settings.is_enabled) {
@@ -409,14 +409,14 @@ export async function notifyExternalDomainChange({
         details: {
             "Organization": orgName,
             "Domain Type": domainType === "erp_domain" ? "ERP Login Domain" : "Public Website Domain",
-            "Domain": action === "changed" && oldDomain && oldDomain !== newDomain 
-                ? `<code>${escapeHtml(newDomain)}</code> (was <code>${escapeHtml(oldDomain)}</code>)` 
+            "Domain": action === "changed" && oldDomain && oldDomain !== newDomain
+                ? `<code>${escapeHtml(newDomain)}</code> (was <code>${escapeHtml(oldDomain)}</code>)`
                 : `<code>${escapeHtml(activeDomain)}</code>`,
             "Access Status": settingsSummary(newSettings),
             "Administrator": `<a href="mailto:${escapeHtml(adminEmail)}" style="color:#007bff;text-decoration:none;">${escapeHtml(adminEmail)}</a>`
         }
     };
-    
+
     // Add specific statuses based on action type
     if (action === 'verified') {
         data.details["Verification Status"] = "✅ Verified";
@@ -430,7 +430,7 @@ export async function notifyExternalDomainChange({
     if (!to) return { queued: false, reason: "missing_admin_email" };
 
     const subject = `${copy.title}: ${activeDomain || typeLabel}`;
-    const job = await enqueueEmail({
+    await sendEmail({
         to,
         subject,
         html: buildCustomDomainHtml(data),
@@ -441,5 +441,5 @@ export async function notifyExternalDomainChange({
         organizationId: organizationId || null,
     });
 
-    return { queued: Boolean(job), jobId: job?._id || null };
+    return { queued: true };
 }
