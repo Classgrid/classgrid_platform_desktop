@@ -108,22 +108,17 @@ export function BillingPage() {
   const handleSaveSettings = async () => {
     try {
       setIsSavingSettings(true);
-      const res = await fetch("/api/org/billing/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
-        body: JSON.stringify({ 
-          invoice_email: billingEmail,
-          phone: billingPhone,
-          gstin: billingGstin,
-          address_line1: billingAddress1,
-          address_line2: billingAddress2,
-          city: billingCity,
-          state: billingState,
-          pincode: billingPincode,
-          billing_contact_name: billingContactName 
-        })
+      const res = await apiClient.put("/api/org/billing/settings", {
+        invoice_email: billingEmail,
+        phone: billingPhone,
+        gstin: billingGstin,
+        address_line1: billingAddress1,
+        address_line2: billingAddress2,
+        city: billingCity,
+        state: billingState,
+        pincode: billingPincode,
+        billing_contact_name: billingContactName
       });
-      if (!res.ok) throw new Error("Failed to save profile");
       toast.success("Saved successfully!");
       queryClient.invalidateQueries({ queryKey: ["orgBilling"] });
     } catch (err: any) {
