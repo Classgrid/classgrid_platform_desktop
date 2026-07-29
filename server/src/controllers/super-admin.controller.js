@@ -814,9 +814,9 @@ export const updateOrgSubscription = async (req, res) => {
     try {
         const { orgId } = req.params;
         const {
-            plan, expiresAt, maxStudents, maxFaculty, features,
+            plan, expiresAt, features,
             // ── Billing rates (set by Super Admin per org) ──
-            basePricePerMonth, pricePerStudent, pricePerGB, pricePerEmail, pricePerSms
+            basePricePerMonth, pricePerGB, pricePerEmail, pricePerSms
         } = req.body;
 
         const OrgSubscription = (await import("../models/OrgSubscription.js")).default;
@@ -828,8 +828,6 @@ export const updateOrgSubscription = async (req, res) => {
             });
         }
         const existingSubscription = await OrgSubscription.findOne({ organization_id: orgId }).lean();
-        const parsedMaxStudents = maxStudents !== undefined ? Number(maxStudents) : undefined;
-        const parsedMaxFaculty = maxFaculty !== undefined ? Number(maxFaculty) : undefined;
 
         const nextFeatures =
             features && typeof features === "object" && !Array.isArray(features)
@@ -838,15 +836,12 @@ export const updateOrgSubscription = async (req, res) => {
 
         const nextMetadata = {
             ...(existingSubscription?.metadata || {}),
-            ...(Number.isFinite(parsedMaxStudents) ? { max_students: parsedMaxStudents } : {}),
-            ...(Number.isFinite(parsedMaxFaculty) ? { max_faculty: parsedMaxFaculty } : {}),
         };
 
         // Build billing rates update — only overwrite fields that were actually sent
         const existingBilling = existingSubscription?.billing || {};
         const nextBilling = {
             basePricePerMonth: basePricePerMonth !== undefined ? Number(basePricePerMonth) : (existingBilling.basePricePerMonth ?? 0),
-            pricePerStudent:   pricePerStudent   !== undefined ? Number(pricePerStudent)   : (existingBilling.pricePerStudent   ?? 0),
             pricePerGB:        pricePerGB        !== undefined ? Number(pricePerGB)        : (existingBilling.pricePerGB        ?? 0),
             pricePerEmail:     pricePerEmail     !== undefined ? Number(pricePerEmail)     : (existingBilling.pricePerEmail     ?? 0),
             pricePerSms:       pricePerSms       !== undefined ? Number(pricePerSms)       : (existingBilling.pricePerSms       ?? 0),

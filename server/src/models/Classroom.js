@@ -96,9 +96,6 @@ const classroomSchema = new mongoose.Schema(
                 type: Boolean,
                 default: true,
             },
-            maxStudents: {
-                type: Number,
-            },
             isArchived: {
                 type: Boolean,
                 default: false,

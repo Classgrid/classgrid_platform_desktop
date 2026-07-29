@@ -174,10 +174,8 @@ router.post("/", isAuthenticated, requireRole("teacher", "faculty", "org_admin",
         };
 
         // Settings
-        const requestedMax = settings?.maxStudents || 200; // Default max to 200 without plan limit
         classroomData.settings = {
             allowJoinRequests: settings?.allowJoinRequests !== undefined ? settings.allowJoinRequests : true,
-            maxStudents: requestedMax,
             isArchived: false,
         };
 
@@ -647,20 +645,7 @@ router.post("/join-by-code", isAuthenticated, joinClassroomLimiter, enforceClass
             });
         }
 
-        // Check per-classroom limit in Supabase
-        const { count: currentCount, error: countErr } = await getChatSb()
-            .from('classroom_memberships')
-            .select('*', { count: 'exact', head: true })
-            .eq('classroom_id', classroom._id.toString())
-            .eq('status', 'approved');
 
-        if (countErr) throw countErr;
-
-        if (currentCount >= classroom.settings.maxStudents) {
-            return res.status(400).json({ message: "Classroom is full" });
-        }
-
-        // ── Org-level student limit enforcement is removed ──
 
         // Create APPROVED membership in Supabase
         const { data: newMem, error: createErr } = await getChatSb()
@@ -909,24 +894,6 @@ router.put("/:id/requests/:requestId", isAuthenticated, requireClassroomOwner, a
             return res.status(400).json({ message: `Request is already ${membership.status}` });
         }
 
-        // ── PLAN LIMIT CHECK on approve ──
-        if (action === "approve") {
-            const classroom = await Classroom.findById(req.params.id).select('organization_id settings').lean();
-
-            // Per-classroom limit in Supabase
-            const { count: currentCount, error: countErr } = await sb
-                .from('classroom_memberships')
-                .select('*', { count: 'exact', head: true })
-                .eq('classroom_id', req.params.id)
-                .eq('status', 'approved');
-
-            if (countErr) throw countErr;
-
-            if (classroom && currentCount >= (classroom.settings?.maxStudents || 200)) {
-                return res.status(403).json({ message: "Classroom is full.", code: 'CLASSROOM_FULL' });
-            }
-
-        }
 
         const status = action === "approve" ? "approved" : "rejected";
         const { error: upErr } = await sb
@@ -987,29 +954,6 @@ router.put("/:id/requests-bulk", isAuthenticated, requireClassroomOwner, async (
 
         const sb = getChatSb();
 
-        // ── PLAN LIMIT CHECK on bulk approve ──
-        if (action === "approve") {
-            const classroom = await Classroom.findById(req.params.id).select('organization_id settings').lean();
-
-            // Per-classroom limit in Supabase
-            const { count: currentCount, error: countErr } = await sb
-                .from('classroom_memberships')
-                .select('*', { count: 'exact', head: true })
-                .eq('classroom_id', req.params.id)
-                .eq('status', 'approved');
-
-            if (countErr) throw countErr;
-
-            const maxStudents = classroom?.settings?.maxStudents || 200;
-            const remainingSlots = Math.max(0, maxStudents - currentCount);
-
-            if (requestIds.length > remainingSlots) {
-                return res.status(403).json({
-                    message: `Classroom can only accept ${remainingSlots} more students (limit: ${maxStudents}).`,
-                    code: 'CLASSROOM_FULL',
-                });
-            }
-        }
 
         const newStatus = action === "approve" ? "approved" : "rejected";
 

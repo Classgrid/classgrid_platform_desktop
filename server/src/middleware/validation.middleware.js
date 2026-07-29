@@ -58,7 +58,6 @@ export const validateClassroom = (req, res, next) => {
         subjectSlug: Joi.string().trim().max(100).optional().allow(""),
         settings: Joi.object({
             allowJoinRequests: Joi.boolean().optional(),
-            maxStudents: Joi.number().min(1).max(10000).optional(),
         }).optional(),
     });
 

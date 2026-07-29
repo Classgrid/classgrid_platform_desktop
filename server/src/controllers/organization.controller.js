@@ -164,14 +164,6 @@ export const addFaculty = async (req, res) => {
         });
 
         const effectivePlan = getEffectivePlan(organization.plan, organization.planExpiresAt);
-        const maxFaculty = getMaxFaculty(effectivePlan);
-
-        if (facultyCount >= maxFaculty) {
-            return res.status(403).json({
-                message: `Faculty limit reached (${maxFaculty} on ${effectivePlan} plan). Contact support.`,
-                code: 'PLAN_LIMIT_REACHED',
-            });
-        }
 
         const crypto = (await import("crypto")).default;
         const bcrypt = (await import("bcryptjs")).default;
@@ -546,12 +538,8 @@ export const getOrganizationDetails = async (req, res) => {
             organization,
             stats: {
                 facultyCount,
-                facultyLimit: getMaxFaculty(effectivePlan),
                 studentCount,
                 classroomCount,
-                maxClassroomsPerFaculty: getMaxClassroomsPerFaculty(effectivePlan),
-                maxStudentsPerClassroom: getMaxStudentsPerClassroom(effectivePlan),
-                orgStudentLimit: getStudentLimit(effectivePlan),
                 effectivePlan,
             }
         });
@@ -903,9 +891,6 @@ export const getOrganizationAnalytics = async (req, res) => {
         // ── 11. PLAN UTILIZATION ──
         const org = await Organization.findById(organization_id).lean();
         const effectivePlan = getEffectivePlan(org?.plan, org?.planExpiresAt);
-        const maxFacultyLimit = getMaxFaculty(effectivePlan);
-        const maxClassroomsLimit = getMaxClassroomsPerFaculty(effectivePlan) * maxFacultyLimit;
-        const maxStudentsLimit = getMaxStudentsPerClassroom(effectivePlan);
 
         // ── 12. SMART ALERTS ──
         const alerts = [];
@@ -930,9 +915,8 @@ export const getOrganizationAnalytics = async (req, res) => {
             insights: { mostActiveDay, mostActiveClassroom },
             planUtilization: {
                 plan: effectivePlan,
-                faculty: { used: facultyCount, limit: maxFacultyLimit },
-                classrooms: { used: classroomCount, limit: maxClassroomsLimit },
-                studentsPerClassroom: { limit: maxStudentsLimit },
+                faculty: { used: facultyCount },
+                classrooms: { used: classroomCount },
             },
             alerts,
         });

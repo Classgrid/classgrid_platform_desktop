@@ -32,16 +32,7 @@ const FLAG_FIELDS = [
     "dashboard_organization"
 ];
 
-const DEFAULT_MODULE_PRICES = {
-    naac_module: 4000, hr_module: 2500, marketplace_module: 1500, admission_module: 3000, canteen_module: 2000, 
-    exam_proctoring: 2500, custom_domain_module: 1500, fee_module: 3000, ai_assistant: 3500, analytics_module: 2500, 
-    website_module: 2000, certificates_module: 1200, events_module: 1000, feedback_module: 800, holiday_module: 500, 
-    id_cards_module: 1000, attendance_module: 1500, classroom_module: 1000, timetable_module: 1200, academic_planner_module: 1000, 
-    assignment_module: 800, teacher_planner_module: 800, exam_module: 2500, exam_management_module: 2000, quiz_module: 1200, 
-    grade_entry_module: 1000, internal_assessment_module: 1000, cet_exam_module: 3500, mock_tests_module: 1500, ai_viva_module: 3000, 
-    test_series_module: 2000, library_module: 1500, alumni_module: 1500, dashboard_admission: 800, dashboard_fees: 800, 
-    dashboard_exam: 800, dashboard_library: 500, dashboard_attendance: 500, dashboard_hr: 800, dashboard_hostel: 800, dashboard_canteen: 500
-};
+
 const BILLING_FIELDS = ["basePricePerMonth", "pricePerGB", "pricePerEmail", "pricePerSms", "pricePerApiRequest", "pricePerAiToken", "pricePerAgoraMinute"];
 const LIMIT_FIELDS = ["storage_limit_gb"];
 const DEPT_ADMIN_ROLES = ["hod", "exam_controller", "fee_manager", "admission_head", "admission_verifier", "admission_counselor", "admission_clerk", "library_manager", "tpo_officer", "transport_manager", "counselor", "coordinator", "principal", "vice_principal"];
@@ -183,7 +174,7 @@ export async function getOrganizationBilling(req, res) {
         Object.entries(activeFlags).forEach(([flagKey, isEnabled]) => {
             if (isEnabled && flagKey !== "erp_core" && !["dashboard_student", "dashboard_faculty", "dashboard_organization"].includes(flagKey)) {
                 const overridePrice = typeof customPrices.get === 'function' ? customPrices.get(flagKey) : customPrices[flagKey];
-                const price = asNumber(overridePrice !== undefined ? overridePrice : DEFAULT_MODULE_PRICES[flagKey] || 0);
+                const price = asNumber(overridePrice !== undefined ? overridePrice : 0);
                 if (price > 0) {
                     moduleChargesTotal += price;
                     moduleLineItems.push({

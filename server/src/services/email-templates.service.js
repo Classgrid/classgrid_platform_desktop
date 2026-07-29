@@ -379,7 +379,7 @@ export const getFacultyInviteEmailHtml = (facultyName, orgName, verifyLink, orgC
 };
 
 // ------------- ORG APPROVAL (New format requested by User) -------------
-export const getOrgApprovalEmailHtml = (orgName, ownerName, organizationCode, honorCode, facultyLimit, frontendUrl) => {
+export const getOrgApprovalEmailHtml = (orgName, ownerName, organizationCode, honorCode, frontendUrl) => {
   const content = `
     <h1>?? ${orgName} is now live on Classgrid</h1>
     
@@ -733,7 +733,7 @@ export const getOrgDeleteVerificationEmailHtml = (orgName, ownerName, verifyLink
 };
 
 // ------------- PLAN ACTIVATION -------------
-export const getPlanActivationHtml = (planName, activationDate, expiryDate, studentLimit, userName = 'User', planDuration = 31) => {
+export const getPlanActivationHtml = (planName, activationDate, expiryDate, userName = 'User', planDuration = 31) => {
   const dashboardUrl = `${getFrontendUrl()}/admin/login`;
   return `<!DOCTYPE html>
 <html>
@@ -804,10 +804,7 @@ style="background:#f9f9f9;border:1px solid #eaeaea;border-radius:10px;padding:20
 <td><strong style="color:#6b7280;">Plan Duration</strong></td>
 <td align="right">${planDuration} Days</td>
 </tr>
-<tr>
-<td><strong style="color:#6b7280;">Student Capacity</strong></td>
-<td align="right">Up to ${studentLimit} Students</td>
-</tr>
+
 </table>
 
 </td>
@@ -826,19 +823,10 @@ style="background:#f9f9f9;border:1px solid #eaeaea;border-radius:10px;padding:20
 
 <table width="100%" cellpadding="4" cellspacing="0" style="font-size:13px;color:#374151;">
 <tr>
-<td style="padding:4px 0;">? <strong style="color:#111111;">150 Student Capacity</strong> — Expanded from 60</td>
-</tr>
-<tr>
 <td style="padding:4px 0;">? <strong style="color:#111111;">Smart Attendance</strong> — Live sessions, daily/weekly/monthly reports</td>
 </tr>
 <tr>
 <td style="padding:4px 0;">? <strong style="color:#111111;">Advanced Analytics</strong> — Student performance, engagement trends</td>
-</tr>
-<tr>
-<td style="padding:4px 0;">? <strong style="color:#111111;">10 Faculty Members</strong> — Expanded from 5</td>
-</tr>
-<tr>
-<td style="padding:4px 0;">? <strong style="color:#111111;">5 Classrooms per Faculty</strong> — Expanded from 2</td>
 </tr>
 <tr>
 <td style="padding:4px 0;">? <strong style="color:#111111;">Priority Support</strong> — Faster response times</td>
@@ -937,7 +925,7 @@ support@classgrid.in
 </html>`;
 };
 
-export const getPlanActivationPlainText = (planName, activationDate, expiryDate, studentLimit, userName = 'User', planDuration = 31) => {
+export const getPlanActivationPlainText = (planName, activationDate, expiryDate, userName = 'User', planDuration = 31) => {
   return `?? Your Classgrid PRO Plan is Now Active
 
 Payment confirmed — premium features unlocked
@@ -951,14 +939,10 @@ Plan Name: ${planName}
 Activation Date: ${formatDate(activationDate)}
 Expiry Date: ${formatDate(expiryDate)}
 Plan Duration: ${planDuration} Days
-Student Capacity: Up to ${studentLimit} Students
 
 --- PRO FEATURES NOW UNLOCKED ---
-? 150 Student Capacity — Expanded from 60
 ? Smart Attendance — Live sessions, daily/weekly/monthly reports
 ? Advanced Analytics — Student performance, engagement trends
-? 10 Faculty Members — Expanded from 5
-? 5 Classrooms per Faculty — Expanded from 2
 ? Priority Support — Faster response times
 
 --- HOW TO GET STARTED ---
@@ -1739,7 +1723,6 @@ export const getConsolidatedApprovalEmailHtml = ({
   organizationCode,
   honorCode,
   plan = "FREE",
-  studentLimit,
   activationLink,
   activationDate,
   expiryDate,
@@ -1771,10 +1754,7 @@ export const getConsolidatedApprovalEmailHtml = ({
               <td><strong style="color:#6b7280;">Plan Duration</strong></td>
               <td align="right">${planDuration} Days</td>
             </tr>
-            <tr>
-              <td><strong style="color:#6b7280;">Student Capacity</strong></td>
-              <td align="right">Up to ${studentLimit} Students</td>
-            </tr>
+
           </table>
         </td>
       </tr>
@@ -1790,7 +1770,6 @@ export const getConsolidatedApprovalEmailHtml = ({
     <div class="box" style="margin-bottom:24px;">
       <p style="margin-bottom:8px; font-weight:600; color:#111111;">?? Plan</p>
       <p style="margin-bottom:4px;">Plan: <strong>FREE</strong></p>
-      <p style="margin-bottom:0;">Student Capacity: <strong>Up to ${studentLimit} Students</strong></p>
     </div>
   ` : '';
 
@@ -1913,7 +1892,6 @@ export const getConsolidatedApprovalEmailPlainText = ({
   organizationCode,
   honorCode,
   plan = "FREE",
-  studentLimit,
   activationLink,
   activationDate,
   expiryDate,
@@ -1927,13 +1905,11 @@ Plan Name: ${plan}
 Activation Date: ${formatDate(activationDate)}
 Expiry Date: ${formatDate(expiryDate)}
 Plan Duration: ${planDuration} Days
-Student Capacity: Up to ${studentLimit} Students
 
 Your PRO plan remains active for ${planDuration} days from the activation date. Please renew before expiry to maintain uninterrupted access.
 ` : `
 --- PLAN ---
 Plan: FREE
-Student Capacity: Up to ${studentLimit} Students
 `;
 
   return `${isPro ? "Activate Your Classgrid Admin Account – PRO Plan Active" : "Activate Your Classgrid Admin Account – FREE Plan"}

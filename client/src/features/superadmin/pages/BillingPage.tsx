@@ -279,15 +279,7 @@ export function BillingPage() {
                 />
               </div>
 
-              {/* Current quotas from subscription */}
-              <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-1">
-                <p className="font-medium">Current Quotas</p>
-                <div className="text-muted-foreground space-y-0.5">
-                  <div>Max Students: <strong>{subData?.subscription?.metadata?.max_students ?? "—"}</strong></div>
-                  <div>Max Faculty: <strong>{subData?.subscription?.metadata?.max_faculty ?? "—"}</strong></div>
-                  <div>Storage Limit: <strong>{subData?.subscription?.metadata?.storage_limit_gb ?? "—"} GB</strong></div>
-                </div>
-              </div>
+
 
               {/* Billing rates display */}
               {(subData?.subscription as any)?.billing && (
@@ -295,7 +287,6 @@ export function BillingPage() {
                   <p className="font-medium">Billing Rates (from Org Detail)</p>
                   <div className="text-muted-foreground space-y-0.5">
                     <div>Base: <strong>₹{(subData?.subscription as any).billing.basePricePerMonth ?? 0}/month</strong></div>
-                    <div>Per Student: <strong>₹{(subData?.subscription as any).billing.pricePerStudent ?? 0}</strong></div>
                     <div>Per GB: <strong>₹{(subData?.subscription as any).billing.pricePerGB ?? 0}</strong></div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">

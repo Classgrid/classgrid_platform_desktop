@@ -42,7 +42,6 @@ const orgSubscriptionSchema = new mongoose.Schema({
     naac_auditor: { type: Boolean, default: true } 
   },
   metadata: {
-    storage_limit_gb: { type: Number, default: 2 }, // S3/Document limit
     demo_review_reminder_sent_at: { type: Date, default: null },
     demo_ending_soon_sent_at: { type: Date, default: null },
     demo_final_reminder_sent_at: { type: Date, default: null },

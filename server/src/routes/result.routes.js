@@ -670,8 +670,6 @@ router.post('/schemes/:id/upload-marks', isAuthenticated, requireRole('org_admin
 // RESULT ENGINE - GENERATE (School + College, Phase 2)
 // ======================================================
 
-const MAX_STUDENTS_PER_SCHEME = process.env.MAX_STUDENTS_PER_SCHEME || 6000;
-
 router.post('/schemes/:id/generate', isAuthenticated, requireRole('org_admin'), async (req, res) => {
     const { sb, orgId } = getSb(req);
     const schemeId = req.params.id;
@@ -725,12 +723,7 @@ router.post('/schemes/:id/generate', isAuthenticated, requireRole('org_admin'), 
         if (marksErr) throw marksErr;
         if (!allMarks?.length) return res.status(400).json({ message: 'No marks uploaded' });
 
-        // Hard limit
-        const uniqueStudents = new Set(allMarks.map(m => m.student_id)).size;
-        if (uniqueStudents > MAX_STUDENTS_PER_SCHEME) {
-            await sb.from('result_schemes').update({ is_generating: false }).eq('id', schemeId);
-            return res.status(400).json({ message: `${uniqueStudents} students exceeds ${MAX_STUDENTS_PER_SCHEME} limit. Split by division.` });
-        }
+
 
         // Group by student
         const studentMarksMap = {};

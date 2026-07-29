@@ -648,7 +648,7 @@ router.post('/:id/generate-classrooms', isAuthenticated, requireRole('org_admin'
                 division: divName !== 'All' ? divName : null,
                 division_id: a.division_id || null,
                 subject_id: a.subject_id,
-                settings: { allowJoinRequests: true, maxStudents: 200 },
+                settings: { allowJoinRequests: true },
             });
 
             created++;
