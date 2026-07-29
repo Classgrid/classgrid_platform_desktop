@@ -260,7 +260,14 @@ export const sendBillingEmailVerification = async (req, res) => {
         if (!orgId) return res.status(400).json({ message: "No organization associated." });
         
         const org = await Organization.findById(orgId);
-        if (!org || !org.billing_settings?.invoice_email) return res.status(400).json({ message: "No invoice email configured." });
+        const emailToVerify = req.body.email || org.billing_settings?.invoice_email;
+        if (!emailToVerify) return res.status(400).json({ message: "No invoice email provided or configured." });
+        
+        if (!org.billing_settings) org.billing_settings = {};
+        if (req.body.email && org.billing_settings.invoice_email !== req.body.email) {
+            org.billing_settings.invoice_email = req.body.email;
+            org.billing_settings.email_verified = false;
+        }
         
         const token = crypto.randomBytes(32).toString("hex");
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
@@ -272,7 +279,7 @@ export const sendBillingEmailVerification = async (req, res) => {
         const verifyLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/org/admin/billing/verify-email?token=${token}`;
         
         await sendEmail({
-            to: org.billing_settings.invoice_email,
+            to: emailToVerify,
             subject: "Verify your Classgrid Billing Email",
             html: `<p>Hello,</p><p>Please verify your email address for Classgrid billing by clicking the link below:</p><p><a href="${verifyLink}">${verifyLink}</a></p><p>This link will expire in 24 hours.</p>`,
             fromName: "Classgrid Billing",
@@ -320,9 +327,16 @@ export const sendBillingPhoneOtp = async (req, res) => {
         if (!orgId) return res.status(400).json({ message: "No organization associated." });
         
         const org = await Organization.findById(orgId);
-        if (!org || !org.billing_settings?.phone) return res.status(400).json({ message: "No phone number configured." });
+        const phoneToVerify = req.body.phone || org.billing_settings?.phone;
+        if (!phoneToVerify) return res.status(400).json({ message: "No phone number provided or configured." });
         
-        const result = await sendOTP(org.billing_settings.phone);
+        if (!org.billing_settings) org.billing_settings = {};
+        if (req.body.phone && org.billing_settings.phone !== req.body.phone) {
+            org.billing_settings.phone = req.body.phone;
+            org.billing_settings.phone_verified = false;
+        }
+        
+        const result = await sendOTP(phoneToVerify);
         if (!result.success) return res.status(500).json({ message: "Failed to send OTP." });
         
         org.billing_settings.verification_otp = result.otp;

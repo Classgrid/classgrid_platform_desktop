@@ -119,7 +119,8 @@ export function apiRequestMeter(req, res, next) {
 
     // Extract organization_id from the authenticated user (set by auth middleware)
     const orgId =
-        req.user?.organization_id?.toString?.() ||
+        req.effectiveOrganizationId ||
+        (req.effectiveOrganizationId || req.user?.organization_id)?.toString() ||
         req.user?.organizationId?.toString?.() ||
         req.headers["x-org-id"];
 
