@@ -77,7 +77,8 @@ export function BillingPage() {
   const [phoneOtp, setPhoneOtp] = useState("");
   const [emailOtp, setEmailOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
+  const [isSendingPhoneOtp, setIsSendingPhoneOtp] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
@@ -212,7 +213,7 @@ export function BillingPage() {
   };
 
   const handleSendEmailVerification = async () => {
-    setIsSendingOtp(true);
+    setIsSendingEmailOtp(true);
     const promise = apiClient.post("/api/org/billing/verify-email/send", { email: billingEmail });
 
     toast.promise(promise, {
@@ -220,11 +221,11 @@ export function BillingPage() {
       success: () => {
         setResendCooldown(60);
         setIsEmailVerifyModalOpen(true);
-        setIsSendingOtp(false);
+        setIsSendingEmailOtp(false);
         return "OTP sent! Check your inbox.";
       },
       error: (error: any) => {
-        setIsSendingOtp(false);
+        setIsSendingEmailOtp(false);
         return error.response?.data?.message || "Failed to send email";
       }
     });
@@ -245,7 +246,7 @@ export function BillingPage() {
   };
 
   const handleSendPhoneOtp = async () => {
-    setIsSendingOtp(true);
+    setIsSendingPhoneOtp(true);
     const promise = apiClient.post("/api/org/billing/verify-phone/send", { phone: billingPhone });
 
     toast.promise(promise, {
@@ -253,11 +254,11 @@ export function BillingPage() {
       success: () => {
         setResendCooldown(60);
         setIsPhoneVerifyModalOpen(true);
-        setIsSendingOtp(false);
+        setIsSendingPhoneOtp(false);
         return "OTP sent to your phone number.";
       },
       error: (error: any) => {
-        setIsSendingOtp(false);
+        setIsSendingPhoneOtp(false);
         return error.response?.data?.message || "Failed to send OTP";
       }
     });
@@ -771,13 +772,8 @@ export function BillingPage() {
                   {emailVerified ? (
                     <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
                   ) : (
-                    <Button variant="outline" onClick={handleSendEmailVerification} disabled={isSendingOtp}>
-                      {isSendingOtp ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Verify
-                        </>
-                      ) : "Verify"}
+                    <Button variant="outline" onClick={handleSendEmailVerification} disabled={isSendingEmailOtp}>
+                      Verify
                     </Button>
                   )}
                 </div>
@@ -798,13 +794,8 @@ export function BillingPage() {
                   {phoneVerified ? (
                     <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
                   ) : (
-                    <Button variant="outline" onClick={handleSendPhoneOtp} disabled={isSendingOtp}>
-                      {isSendingOtp ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Verify
-                        </>
-                      ) : "Verify"}
+                    <Button variant="outline" onClick={handleSendPhoneOtp} disabled={isSendingPhoneOtp}>
+                      Verify
                     </Button>
                   )}
                 </div>
@@ -1050,21 +1041,13 @@ export function BillingPage() {
               </InputOTP>
             </div>
             <Button onClick={handleVerifyEmailOtp} disabled={isVerifying || emailOtp.length !== 6} className="w-full">
-              {isVerifying ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Verifying...
-                </>
-              ) : "Verify OTP"}
+              Verify OTP
             </Button>
-            <Button variant="ghost" onClick={handleSendEmailVerification} disabled={isSendingOtp || resendCooldown > 0} className="w-full">
-              {isSendingOtp ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Sending...
-                </>
-              ) : resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
-            </Button>
+            <div className="mt-4 text-center">
+              <Button variant="ghost" onClick={handleSendEmailVerification} disabled={isSendingEmailOtp || resendCooldown > 0} className="w-full">
+                {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -1097,21 +1080,13 @@ export function BillingPage() {
               </InputOTP>
             </div>
             <Button onClick={handleVerifyPhoneOtp} disabled={isVerifying || phoneOtp.length !== 6} className="w-full">
-              {isVerifying ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Verifying...
-                </>
-              ) : "Verify OTP"}
+              Verify OTP
             </Button>
-            <Button variant="ghost" onClick={handleSendPhoneOtp} disabled={isSendingOtp || resendCooldown > 0} className="w-full">
-              {isSendingOtp ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Sending...
-                </>
-              ) : resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
-            </Button>
+            <div className="mt-4 text-center">
+              <Button variant="ghost" onClick={handleSendPhoneOtp} disabled={isSendingPhoneOtp || resendCooldown > 0} className="w-full">
+                {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
