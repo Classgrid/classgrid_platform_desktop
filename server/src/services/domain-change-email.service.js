@@ -72,6 +72,7 @@ ${note ? `<div class="note-box">${escapeHtml(note)}</div>` : ""}
 ${actionUrl ? `<p><a href="${escapeHtml(actionUrl)}" class="action-btn">${escapeHtml(actionLabel || "Open Classgrid")}</a></p>` : ""}
 
 <p>If you did not authorize this change, contact Classgrid support immediately.</p>
+<a href="${escapeHtml(process.env.SUPPORT_URL || 'https://classgrid.in/support')}" class="action-btn" style="background-color: #333333; margin-top: 5px;">Open Support Portal</a>
 <br/>
 <p>Regards,<br><strong>The Classgrid Team</strong></p>
 <hr/>
@@ -99,6 +100,7 @@ function buildNotificationText({ title, orgName, adminName, summary, details, ac
         actionUrl ? `\nOpen Classgrid: ${actionUrl}` : "",
         "",
         "If you did not authorize this change, contact Classgrid support immediately.",
+        `Need assistance? Open Support Portal: ${process.env.SUPPORT_URL || 'https://classgrid.in/support'}`,
         "",
         "Regards,",
         "The Classgrid Team",
