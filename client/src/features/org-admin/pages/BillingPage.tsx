@@ -246,8 +246,13 @@ export function BillingPage() {
                   placeholder="John Doe"
                   className="flex-1"
                 />
-                <Button variant="primary" onClick={handleSaveSettings} disabled={isSavingSettings || !billingContactName?.trim()}>
-                  Save
+                <Button 
+                  variant="primary" 
+                  onClick={handleSaveSettings} 
+                  disabled={isSavingSettings || !billingContactName?.trim()}
+                  isLoading={isSavingSettings}
+                >
+                  {isSavingSettings ? "Saving..." : "Save"}
                 </Button>
               </div>
             </div>
@@ -278,8 +283,13 @@ export function BillingPage() {
                 {emailVerified ? (
                   <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
                 ) : (
-                  <Button variant="secondary" onClick={handleSendEmailVerification} disabled={isSendingEmailOtp || !billingEmail?.trim()}>
-                    Verify
+                  <Button 
+                    variant="secondary" 
+                    onClick={handleSendEmailVerification} 
+                    disabled={isSendingEmailOtp || !billingEmail?.trim()}
+                    isLoading={isSendingEmailOtp}
+                  >
+                    {isSendingEmailOtp ? "Verifying..." : "Verify"}
                   </Button>
                 )}
               </div>
@@ -301,8 +311,13 @@ export function BillingPage() {
                 {phoneVerified ? (
                   <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
                 ) : (
-                  <Button variant="secondary" onClick={handleSendPhoneOtp} disabled={isSendingPhoneOtp || !billingPhone?.trim() || !emailVerified}>
-                    Verify
+                  <Button 
+                    variant="secondary" 
+                    onClick={handleSendPhoneOtp} 
+                    disabled={isSendingPhoneOtp || !billingPhone?.trim() || !emailVerified}
+                    isLoading={isSendingPhoneOtp}
+                  >
+                    {isSendingPhoneOtp ? "Verifying..." : "Verify"}
                   </Button>
                 )}
               </div>
@@ -381,8 +396,14 @@ export function BillingPage() {
           </div>
           
           <div className="flex justify-end pt-4 border-t border-border">
-            <Button variant="primary" onClick={handleSaveSettings} disabled={isSavingSettings || !phoneVerified} className="px-6">
-              Save Address
+            <Button 
+              variant="primary" 
+              onClick={handleSaveSettings} 
+              disabled={isSavingSettings || !phoneVerified} 
+              className="px-6"
+              isLoading={isSavingSettings}
+            >
+              {isSavingSettings ? "Saving..." : "Save Address"}
             </Button>
           </div>
         </div>
