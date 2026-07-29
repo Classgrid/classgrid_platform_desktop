@@ -158,8 +158,8 @@ export function buildCustomDomainHtml(data) {
         .filter(([, val]) => val !== undefined && val !== null && val !== "")
         .map(([label, val]) => `
             <tr>
-                <td style="padding: 8px 0; font-weight: 600; color: #111111; width: 40%; vertical-align: top;">${escapeHtml(label)}</td>
-                <td style="padding: 8px 0; color: #374151; vertical-align: top;">${val}</td>
+                <td style="padding: 8px 0; font-weight: 600; color: #111111; width: 35%; vertical-align: top; word-break: break-word;">${escapeHtml(label)}</td>
+                <td style="padding: 8px 0; color: #374151; vertical-align: top; word-break: break-word;">${val}</td>
             </tr>
         `).join("");
 
@@ -324,7 +324,7 @@ export async function notifyExternalDomainChange({
             copy = {
                 title: `Domain removed: ${activeDomain}`,
                 summary: `The domain <strong>${activeDomain}</strong> has been removed from your organization.`,
-                extraSummary: `This domain will no longer provide access to your Classgrid organisation. Your organization will now use the default Classgrid URL for access.`,
+                extraSummary: `This domain will no longer provide access to your Classgrid organisation. Your organization will now use the URL ${defaultUrl} for access.`,
                 actionBtn: `Open Default Portal`,
                 dateLabel: "Removed at",
                 checklist: [],
