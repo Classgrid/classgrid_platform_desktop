@@ -20,7 +20,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/marketing_ui
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 
 // Icons & Utils
-import { CreditCard, Download, IndianRupee, ShieldCheck, Plus, CheckCircle2 } from "lucide-react";
+import { CreditCard, Download, IndianRupee, ShieldCheck, Plus, CheckCircle2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 // Custom SVG Progress Circle to replace Tremor's
@@ -746,7 +746,7 @@ export function BillingPage() {
                     <Button variant="outline" onClick={handleSendEmailVerification} disabled={isSendingOtp}>
                       {isSendingOtp ? (
                         <>
-                          <div className="w-4 h-4 mr-2 border-2 border-t-transparent border-gray-500 rounded-full animate-spin" />
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Sending...
                         </>
                       ) : "Verify"}
@@ -770,7 +770,7 @@ export function BillingPage() {
                     <Button variant="outline" onClick={handleSendPhoneOtp} disabled={isSendingOtp}>
                       {isSendingOtp ? (
                         <>
-                          <div className="w-4 h-4 mr-2 border-2 border-t-transparent border-gray-500 rounded-full animate-spin" />
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Sending...
                         </>
                       ) : "Verify"}
@@ -1044,10 +1044,20 @@ export function BillingPage() {
               </InputOTP>
             </div>
             <Button onClick={handleVerifyEmailOtp} disabled={isVerifying || emailOtp.length !== 6} className="w-full">
-              {isVerifying ? "Verifying..." : "Verify OTP"}
+              {isVerifying ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Verifying...
+                </>
+              ) : "Verify OTP"}
             </Button>
-            <Button variant="ghost" onClick={handleSendEmailVerification} disabled={isVerifying || resendCooldown > 0} className="w-full">
-              {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
+            <Button variant="ghost" onClick={handleSendEmailVerification} disabled={isSendingOtp || resendCooldown > 0} className="w-full">
+              {isSendingOtp ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
             </Button>
           </div>
         </DialogContent>
@@ -1081,10 +1091,20 @@ export function BillingPage() {
               </InputOTP>
             </div>
             <Button onClick={handleVerifyPhoneOtp} disabled={isVerifying || phoneOtp.length !== 6} className="w-full">
-              {isVerifying ? "Verifying..." : "Verify OTP"}
+              {isVerifying ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Verifying...
+                </>
+              ) : "Verify OTP"}
             </Button>
-            <Button variant="ghost" onClick={handleSendPhoneOtp} disabled={isVerifying || resendCooldown > 0} className="w-full">
-               {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
+            <Button variant="ghost" onClick={handleSendPhoneOtp} disabled={isSendingOtp || resendCooldown > 0} className="w-full">
+              {isSendingOtp ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
             </Button>
           </div>
         </DialogContent>
