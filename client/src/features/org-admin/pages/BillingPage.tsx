@@ -72,6 +72,7 @@ export function BillingPage() {
   const [phoneOtp, setPhoneOtp] = useState("");
   const [emailOtp, setEmailOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
@@ -197,14 +198,15 @@ export function BillingPage() {
 
   const handleSendEmailVerification = async () => {
     try {
-      setIsVerifying(true);
+      setIsSendingOtp(true);
       await apiClient.post("/api/org/billing/verify-email/send", { email: billingEmail });
       toast.success("OTP sent! Check your inbox.");
       setResendCooldown(60);
+      setIsEmailVerifyModalOpen(true);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to send email");
     } finally {
-      setIsVerifying(false);
+      setIsSendingOtp(false);
     }
   };
 
@@ -224,14 +226,15 @@ export function BillingPage() {
 
   const handleSendPhoneOtp = async () => {
     try {
-      setIsVerifying(true);
+      setIsSendingOtp(true);
       await apiClient.post("/api/org/billing/verify-phone/send", { phone: billingPhone });
       toast.success("OTP sent to your phone number.");
       setResendCooldown(60);
+      setIsPhoneVerifyModalOpen(true);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to send OTP");
     } finally {
-      setIsVerifying(false);
+      setIsSendingOtp(false);
     }
   };
 
@@ -740,7 +743,14 @@ export function BillingPage() {
                   {emailVerified ? (
                     <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
                   ) : (
-                    <Button variant="outline" onClick={() => setIsEmailVerifyModalOpen(true)}>Verify</Button>
+                    <Button variant="outline" onClick={handleSendEmailVerification} disabled={isSendingOtp}>
+                      {isSendingOtp ? (
+                        <>
+                          <div className="w-4 h-4 mr-2 border-2 border-t-transparent border-gray-500 rounded-full animate-spin" />
+                          Sending...
+                        </>
+                      ) : "Verify"}
+                    </Button>
                   )}
                 </div>
               </div>
@@ -757,7 +767,14 @@ export function BillingPage() {
                   {phoneVerified ? (
                     <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
                   ) : (
-                    <Button variant="outline" onClick={() => setIsPhoneVerifyModalOpen(true)}>Verify</Button>
+                    <Button variant="outline" onClick={handleSendPhoneOtp} disabled={isSendingOtp}>
+                      {isSendingOtp ? (
+                        <>
+                          <div className="w-4 h-4 mr-2 border-2 border-t-transparent border-gray-500 rounded-full animate-spin" />
+                          Sending...
+                        </>
+                      ) : "Verify"}
+                    </Button>
                   )}
                 </div>
               </div>
@@ -1000,10 +1017,7 @@ export function BillingPage() {
       </Dialog>
       
       {/* VERIFY EMAIL MODAL */}
-      <Dialog open={isEmailVerifyModalOpen} onOpenChange={(open) => {
-        setIsEmailVerifyModalOpen(open);
-        if (open) handleSendEmailVerification();
-      }}>
+      <Dialog open={isEmailVerifyModalOpen} onOpenChange={setIsEmailVerifyModalOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Verify Email Address</DialogTitle>
@@ -1040,10 +1054,7 @@ export function BillingPage() {
       </Dialog>
 
       {/* VERIFY PHONE MODAL */}
-      <Dialog open={isPhoneVerifyModalOpen} onOpenChange={(open) => {
-        setIsPhoneVerifyModalOpen(open);
-        if (open) handleSendPhoneOtp(); // Auto-send when opened
-      }}>
+      <Dialog open={isPhoneVerifyModalOpen} onOpenChange={setIsPhoneVerifyModalOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Verify Phone Number</DialogTitle>
