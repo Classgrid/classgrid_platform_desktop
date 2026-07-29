@@ -18,6 +18,7 @@ import {
     verifyBillingEmail,
     sendBillingPhoneOtp,
     verifyBillingPhoneOtp,
+    updateOrganizationBillingSettings,
     downloadInvoicePdf
 } from "../controllers/org-configuration.controller.js";
 import { getOrgAdminBillingDashboard, createSaasInvoiceOrder, verifySaasInvoicePayment } from '../controllers/admin-analytics.controller.js';
@@ -131,6 +132,7 @@ router.get("/clear-test", async (req, res) => {
 router.get("/my-config", isAuthenticated, requireRole("org_admin"), getMyOrganizationConfig);
 router.get("/usage", isAuthenticated, requireRole("org_admin"), getOrganizationUsageSummary);
 router.get("/billing", isAuthenticated, requireRole("org_admin"), getOrganizationBilling);
+router.put("/billing/settings", isAuthenticated, requireRole("org_admin"), updateOrganizationBillingSettings);
 router.post("/billing/verify-email/send", isAuthenticated, requireRole("org_admin"), sendBillingEmailVerification);
 router.post("/billing/verify-email/confirm", isAuthenticated, requireRole("org_admin"), verifyBillingEmail);
 router.post("/billing/verify-phone/send", isAuthenticated, requireRole("org_admin"), sendBillingPhoneOtp);
