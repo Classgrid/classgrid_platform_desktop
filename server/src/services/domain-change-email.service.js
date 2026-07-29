@@ -384,9 +384,18 @@ export async function notifyExternalDomainChange({
             };
     }
     
-    const settingsSummary = (settings) => settings
-        ? `<code>${escapeHtml(activeDomain)}</code>: ${settings.is_enabled === false ? "Disabled" : "Enabled"} | Default URL: ${settings.allow_classgrid_url === false ? "Disabled" : "Enabled"}`
-        : undefined;
+    const settingsSummary = (settings) => {
+        if (!settings) return undefined;
+        if (settings.is_enabled) {
+            if (settings.allow_classgrid_url) {
+                return `<code>${escapeHtml(activeDomain)}</code> AND Default Classgrid URL`;
+            } else {
+                return `<code>${escapeHtml(activeDomain)}</code> ONLY (Default URL disabled)`;
+            }
+        } else {
+            return `Default Classgrid URL ONLY (<code>${escapeHtml(activeDomain)}</code> disabled)`;
+        }
+    };
 
     const data = {
         action,
