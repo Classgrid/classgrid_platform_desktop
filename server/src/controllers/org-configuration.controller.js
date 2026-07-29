@@ -17,6 +17,7 @@ import FeeTransaction from "../models/FeeTransaction.js";
 import { getTerminology } from "../utils/terminology.js";
 import { sendEmail } from "../services/aws-ses.service.js";
 import { sendOTP } from "../services/sms.service.js";
+import { getNewDeviceOtpHtml, getNewDeviceOtpPlainText } from "../services/email-templates.service.js";
 import { generateInvoicePdfBuffer } from "../services/pdf-invoice.service.js";
 import crypto from "crypto";
 
@@ -269,24 +270,23 @@ export const sendBillingEmailVerification = async (req, res) => {
             org.billing_settings.email_verified = false;
         }
         
-        const token = crypto.randomBytes(32).toString("hex");
-        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
         
-        org.billing_settings.verification_token = token;
+        org.billing_settings.verification_token = otp;
         org.billing_settings.verification_expires_at = expiresAt;
         await org.save();
         
-        const verifyLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/org/admin/billing/verify-email?token=${token}`;
-        
         await sendEmail({
             to: emailToVerify,
-            subject: "Verify your Classgrid Billing Email",
-            html: `<p>Hello,</p><p>Please verify your email address for Classgrid billing by clicking the link below:</p><p><a href="${verifyLink}">${verifyLink}</a></p><p>This link will expire in 24 hours.</p>`,
+            subject: "Classgrid Billing - Email Verification Code",
+            html: getNewDeviceOtpHtml("Billing Admin", otp),
+            text: getNewDeviceOtpPlainText("Billing Admin", otp),
             fromName: "Classgrid Billing",
             fromEmail: "billing@classgrid.in"
         });
         
-        return res.json({ message: "Verification email sent successfully." });
+        return res.json({ message: "Verification OTP sent successfully." });
     } catch (error) {
         console.error("[SendEmailVerification] Error:", error);
         return res.status(500).json({ message: "Unable to send verification email." });
@@ -296,14 +296,14 @@ export const sendBillingEmailVerification = async (req, res) => {
 export const verifyBillingEmail = async (req, res) => {
     try {
         const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
-        const { token } = req.body;
-        if (!orgId || !token) return res.status(400).json({ message: "Invalid request." });
+        const { otp } = req.body;
+        if (!orgId || !otp) return res.status(400).json({ message: "Invalid request." });
         
         const org = await Organization.findById(orgId);
         if (!org) return res.status(404).json({ message: "Organization not found." });
         
-        if (org.billing_settings.verification_token !== token) {
-            return res.status(400).json({ message: "Invalid verification token." });
+        if (org.billing_settings.verification_token !== otp) {
+            return res.status(400).json({ message: "Invalid verification code." });
         }
         
         if (new Date() > new Date(org.billing_settings.verification_expires_at)) {

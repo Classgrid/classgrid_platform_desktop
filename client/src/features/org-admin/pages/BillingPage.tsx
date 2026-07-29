@@ -69,6 +69,7 @@ export function BillingPage() {
   const [isEmailVerifyModalOpen, setIsEmailVerifyModalOpen] = useState(false);
   const [isPhoneVerifyModalOpen, setIsPhoneVerifyModalOpen] = useState(false);
   const [phoneOtp, setPhoneOtp] = useState("");
+  const [emailOtp, setEmailOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
 
   // Sync settings with backend data when loaded
@@ -184,10 +185,23 @@ export function BillingPage() {
     try {
       setIsVerifying(true);
       await apiClient.post("/api/org/billing/verify-email/send", { email: billingEmail });
-      toast.success("Verification email sent! Check your inbox.");
-      setIsEmailVerifyModalOpen(false);
+      toast.success("OTP sent! Check your inbox.");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to send email");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    try {
+      setIsVerifying(true);
+      await apiClient.post("/api/org/billing/verify-email/confirm", { otp: emailOtp });
+      toast.success("Email verified successfully!");
+      setEmailVerified(true);
+      setIsEmailVerifyModalOpen(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Invalid or expired OTP");
     } finally {
       setIsVerifying(false);
     }
@@ -970,18 +984,33 @@ export function BillingPage() {
       </Dialog>
       
       {/* VERIFY EMAIL MODAL */}
-      <Dialog open={isEmailVerifyModalOpen} onOpenChange={setIsEmailVerifyModalOpen}>
+      <Dialog open={isEmailVerifyModalOpen} onOpenChange={(open) => {
+        setIsEmailVerifyModalOpen(open);
+        if (open) handleSendEmailVerification();
+      }}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Verify Email Address</DialogTitle>
             <DialogDescription>
-              We'll send a verification link to {billingEmail}.
+              Enter the 6-digit OTP sent to {billingEmail}.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
-            <p className="text-sm">Click the button below to receive an email with a secure verification link.</p>
-            <Button onClick={handleSendEmailVerification} disabled={isVerifying} className="w-full">
-              {isVerifying ? "Sending..." : "Send Verification Link"}
+            <div className="space-y-2">
+              <Label>Enter OTP</Label>
+              <Input 
+                value={emailOtp}
+                onChange={(e) => setEmailOtp(e.target.value)}
+                placeholder="123456"
+                maxLength={6}
+                className="text-center text-lg tracking-widest"
+              />
+            </div>
+            <Button onClick={handleVerifyEmailOtp} disabled={isVerifying || emailOtp.length !== 6} className="w-full">
+              {isVerifying ? "Verifying..." : "Verify OTP"}
+            </Button>
+            <Button variant="ghost" onClick={handleSendEmailVerification} disabled={isVerifying} className="w-full">
+              Resend OTP
             </Button>
           </div>
         </DialogContent>
