@@ -17,7 +17,7 @@ import FeeTransaction from "../models/FeeTransaction.js";
 import { getTerminology } from "../utils/terminology.js";
 import { sendEmail } from "../services/aws-ses.service.js";
 import { sendOTP } from "../services/sms.service.js";
-import { getNewDeviceOtpHtml, getNewDeviceOtpPlainText } from "../services/email-templates.service.js";
+import { getNewDeviceOtpHtml, getNewDeviceOtpPlainText, getBillingVerificationOtpHtml, getBillingVerificationOtpPlainText } from "../services/email-templates.service.js";
 import { generateInvoicePdfBuffer } from "../services/pdf-invoice.service.js";
 import crypto from "crypto";
 
@@ -279,8 +279,8 @@ export const sendBillingEmailVerification = async (req, res) => {
         await sendEmail({
             to: emailToVerify,
             subject: "Classgrid Billing - Email Verification Code",
-            html: getNewDeviceOtpHtml("Billing Admin", otp),
-            text: getNewDeviceOtpPlainText("Billing Admin", otp),
+            html: getBillingVerificationOtpHtml(org.name, org.billing_settings.billing_contact_name, otp),
+            text: getBillingVerificationOtpPlainText(org.name, org.billing_settings.billing_contact_name, otp),
             fromName: "Classgrid Billing",
             fromEmail: "billing@classgrid.in"
         });

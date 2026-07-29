@@ -2343,6 +2343,44 @@ If you did not attempt to log in, please reset your password immediately.
 © ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
+// ------------- BILLING EMAIL OTP -------------
+export const getBillingVerificationOtpHtml = (orgName, userName, otp) => {
+  const content = `
+    <h1>Verify Your Billing Email</h1>
+    <p>Hi <strong>${userName || orgName}</strong>,</p>
+    <p>You requested to verify the billing email for <strong>${orgName}</strong>. Please use the verification code below to complete this process.</p>
+
+    <div class="box" style="text-align:center; margin: 24px 0;">
+      <div class="meta">Your Verification Code</div>
+      <span class="code" style="font-size:32px; letter-spacing:8px; color:#111111;">${otp}</span>
+      <p style="margin-top:12px; font-size:13px; color:#6b7280;">This code expires in <strong style="color:#111111;">10 minutes</strong>.</p>
+    </div>
+
+    <p>Enter this code in your Billing Profile to verify this email address. If you did not make this request, please review your organization settings.</p>
+  `;
+  return baseTemplate({
+    content,
+    title: 'Verify Billing Email',
+    ignoreText: 'If you did not make this request, you can safely ignore this email.'
+  });
+};
+
+export const getBillingVerificationOtpPlainText = (orgName, userName, otp) => {
+  return `Verify Your Billing Email
+
+Hi ${userName || orgName},
+
+You requested to verify the billing email for ${orgName}.
+
+Your Verification Code: ${otp}
+
+This code expires in 10 minutes. Enter it in your Billing Profile to verify this email address.
+
+If you did not make this request, please review your organization settings.
+
+© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+};
+
 // ----------------------------------------------------------------------
 // Account Deleted Notification (Hierarchical)
 // ----------------------------------------------------------------------
