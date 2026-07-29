@@ -412,8 +412,7 @@ export async function notifyExternalDomainChange({
             "Domain": action === "changed" && oldDomain && oldDomain !== newDomain 
                 ? `<code>${escapeHtml(newDomain)}</code> (was <code>${escapeHtml(oldDomain)}</code>)` 
                 : `<code>${escapeHtml(activeDomain)}</code>`,
-            "Previous Access": settingsSummary(oldSettings),
-            "Current Access": settingsSummary(newSettings),
+            "Access Status": settingsSummary(newSettings),
             "Administrator": `<a href="mailto:${escapeHtml(adminEmail)}" style="color:#007bff;text-decoration:none;">${escapeHtml(adminEmail)}</a>`
         }
     };
