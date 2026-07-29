@@ -270,7 +270,7 @@ export const sendBillingEmailVerification = async (req, res) => {
         }
         
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 60 * 1000); // 60 seconds
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
         
         org.billing_settings.verification_token = otp;
         org.billing_settings.verification_expires_at = expiresAt;
@@ -342,7 +342,7 @@ export const sendBillingPhoneOtp = async (req, res) => {
         if (!result.success) return res.status(500).json({ message: "Failed to send OTP." });
         
         org.billing_settings.verification_otp = result.otp;
-        org.billing_settings.verification_expires_at = new Date(Date.now() + 60 * 1000); // 60 seconds
+        org.billing_settings.verification_expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
         await org.save();
         
         return res.json({ message: "OTP sent successfully." });
