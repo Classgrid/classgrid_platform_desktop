@@ -274,6 +274,7 @@ export const sendBillingEmailVerification = async (req, res) => {
         
         org.billing_settings.verification_token = otp;
         org.billing_settings.verification_expires_at = expiresAt;
+        org.markModified('billing_settings');
         await org.save();
         
         await sendEmail({
@@ -301,7 +302,8 @@ export const verifyBillingEmail = async (req, res) => {
         const org = await Organization.findById(orgId);
         if (!org) return res.status(404).json({ message: "Organization not found." });
         
-        if (org.billing_settings.verification_token !== otp) {
+        console.log("DB OTP:", org.billing_settings.verification_token, "Received:", otp);
+        if (String(org.billing_settings.verification_token).trim() !== String(otp).trim()) {
             return res.status(400).json({ message: "Invalid verification code." });
         }
         
@@ -315,6 +317,7 @@ export const verifyBillingEmail = async (req, res) => {
         }
         org.billing_settings.email_verified = true;
         org.billing_settings.verification_token = "";
+        org.markModified('billing_settings');
         await org.save();
         
         return res.json({ message: "Email verified successfully.", billingSettings: org.billing_settings });
@@ -343,6 +346,7 @@ export const sendBillingPhoneOtp = async (req, res) => {
         
         org.billing_settings.verification_otp = result.otp;
         org.billing_settings.verification_expires_at = new Date(Date.now() + 60 * 1000); // 60 seconds
+        org.markModified('billing_settings');
         await org.save();
         
         return res.json({ message: "OTP sent successfully." });
