@@ -95,6 +95,7 @@ router.post('/buy/:id', isAuthenticated, async (req, res) => {
             currency: "INR",
             receipt: `note_${note._id}_${Date.now()}`,
             notes: {
+                type: "marketplace_order",
                 noteId: note._id.toString(),
                 buyerId: req.user._id.toString()
             }

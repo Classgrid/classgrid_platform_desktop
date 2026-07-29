@@ -927,7 +927,13 @@ export const initiateFeePayment = async (req, res) => {
             organization_id,
             structure.totalAmount,
             "INR",
-            `ADM-${application_id}`
+            `ADM-${application_id}`,
+            "fees",
+            {
+                type: "admission_fee",
+                application_id: application_id.toString(),
+                organization_id: organization_id.toString()
+            }
         );
 
         // 4. Update Application with Order ID

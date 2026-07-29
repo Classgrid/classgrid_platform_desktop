@@ -104,7 +104,7 @@ export const winstonMiddleware = (req, res, next) => {
             status: res.statusCode,
             ip: req.ip,
             durationMs: duration,
-            orgId: req.organization ? req.organization._id : "none",
+            orgId: req.effectiveOrganizationId || (req.user ? req.user.organization_id : "none"),
             userId: req.user ? req.user.id : "unauthenticated",
             ...(safeBody && { body: safeBody })
         };

@@ -37,7 +37,7 @@ class RazorpayService {
     /**
      * Creates a Razorpay Order
      */
-    async createOrder(organizationId, amount, currency = "INR", receipt = "", moduleName = "fees") {
+    async createOrder(organizationId, amount, currency = "INR", receipt = "", moduleName = "fees", notes = {}) {
         try {
             const rzp = await this.getInstance(organizationId, moduleName);
             
@@ -45,6 +45,7 @@ class RazorpayService {
                 amount: Math.round(amount * 100), // convert to paise
                 currency,
                 receipt,
+                notes,
                 payment_capture: 1 // auto capture
             };
 

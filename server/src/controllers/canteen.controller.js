@@ -218,7 +218,17 @@ export const createRazorpayOrder = async (req, res) => {
         }
 
         // Generate Razorpay Order via specific Canteen tenant keys
-        const rzpOrder = await RazorpayService.createOrder(orgId, totalAmount, "INR", `Receipt_${Date.now()}`, "canteen");
+        const rzpOrder = await RazorpayService.createOrder(
+            orgId,
+            totalAmount,
+            "INR",
+            `Receipt_${Date.now()}`,
+            "canteen",
+            {
+                type: "canteen_order",
+                organization_id: orgId.toString()
+            }
+        );
 
         // Save order as pending payment
         const newOrder = await CanteenOrder.create({

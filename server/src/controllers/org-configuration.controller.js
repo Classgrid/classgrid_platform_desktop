@@ -123,7 +123,7 @@ export async function updateOrganizationConfig(req, res) {
     } catch (error) { console.error("[OrgConfig] update failed:", error.message); return res.status(500).json({ message: "Unable to update organization configuration." }); }
 }
 export async function getMyOrganizationConfig(req, res) {
-    if (!(req.effectiveOrganizationId || req.user?.organization_id)) return res.status(400).json({ message: "No organization is associated with this account." });
+    if (!(req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id'])) return res.status(400).json({ message: "No organization is associated with this account." });
     req.params.orgId = String(req.user.organization_id); return getOrganizationConfig(req, res);
 }
 async function meters(orgId, range) {
@@ -147,7 +147,7 @@ function breakdown(users, field) {
 }
 export async function getOrganizationUsageSummary(req, res) {
     try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id); if (!orgId) return res.status(400).json({ message: "No organization is associated with this account." });
+        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']); if (!orgId) return res.status(400).json({ message: "No organization is associated with this account." });
         const range = rangeFor(req.query.month, req.query.year);
         const [organization, subscription, users, summaryMeters, ledger] = await Promise.all([
             Organization.findById(orgId).select("org_type structure_type").lean(), OrgSubscription.findOne({ organization_id: orgId }).lean(), User.find({ organization_id: orgId, status: "active" }).select("role department batch").lean(), meters(orgId, range), OrganizationUsageDaily.find({ organizationId: orgId, day: { $gte: range.start, $lt: range.end } }).sort({ day: 1 }).lean(),
@@ -161,7 +161,7 @@ export async function getOrganizationUsageSummary(req, res) {
 }
 export async function getOrganizationBilling(req, res) {
     try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id); if (!orgId) return res.status(400).json({ message: "No organization is associated with this account." });
+        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']); if (!orgId) return res.status(400).json({ message: "No organization is associated with this account." });
         const [subscription, users, usage, invoices, payments, feeSummary, feeTransactions, org] = await Promise.all([
             OrgSubscription.findOne({ organization_id: orgId }).lean(), User.find({ organization_id: orgId, status: "active" }).select("role").lean(), meters(orgId, rangeFor()), SaasInvoice.find({ organizationId: orgId }).sort({ createdAt: -1 }).limit(24).lean(), PlatformTransaction.find({ organizationId: orgId }).sort({ createdAt: -1 }).limit(100).lean(), Invoice.aggregate([{ $match: { organization_id: orgId } }, { $group: { _id: null, totalInvoices: { $sum: 1 }, totalBilled: { $sum: "$total_amount" }, totalPaid: { $sum: "$amount_paid" }, outstanding: { $sum: "$remaining_amount" } } }]), FeeTransaction.countDocuments({ organizationId: orgId, status: "success" }), Organization.findOne({ _id: orgId }).select("billing_settings feature_flags").lean()
         ]);
@@ -196,7 +196,7 @@ export async function getOrganizationBilling(req, res) {
 
 export const updateBillingSettings = async (req, res) => {
     try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id);
+        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
         if (!orgId) return res.status(400).json({ message: "No organization associated." });
         
         const { invoice_email, phone, gstin, address_line1, address_line2, city, state, pincode, billing_contact_name } = req.body;
@@ -230,7 +230,7 @@ export const updateBillingSettings = async (req, res) => {
 
 export const setupBillingMandate = async (req, res) => {
     try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id);
+        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
         if (!orgId) return res.status(400).json({ message: "No organization associated." });
         
         // Create a ₹1 order for mandate setup verification
@@ -256,7 +256,7 @@ export const setupBillingMandate = async (req, res) => {
 
 export const sendBillingEmailVerification = async (req, res) => {
     try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id);
+        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
         if (!orgId) return res.status(400).json({ message: "No organization associated." });
         
         const org = await Organization.findById(orgId);
@@ -295,7 +295,7 @@ export const sendBillingEmailVerification = async (req, res) => {
 
 export const verifyBillingEmail = async (req, res) => {
     try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id);
+        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
         const { token } = req.body;
         if (!orgId || !token) return res.status(400).json({ message: "Invalid request." });
         
@@ -323,7 +323,7 @@ export const verifyBillingEmail = async (req, res) => {
 
 export const sendBillingPhoneOtp = async (req, res) => {
     try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id);
+        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
         if (!orgId) return res.status(400).json({ message: "No organization associated." });
         
         const org = await Organization.findById(orgId);
@@ -352,7 +352,7 @@ export const sendBillingPhoneOtp = async (req, res) => {
 
 export const verifyBillingPhoneOtp = async (req, res) => {
     try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id);
+        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
         const { otp } = req.body;
         if (!orgId || !otp) return res.status(400).json({ message: "Invalid request." });
         
@@ -380,7 +380,7 @@ export const verifyBillingPhoneOtp = async (req, res) => {
 
 export const downloadInvoicePdf = async (req, res) => {
     try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id);
+        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
         const invoiceId = req.params.invoiceId;
         
         if (!orgId || !invoiceId) return res.status(400).json({ message: "Invalid request." });

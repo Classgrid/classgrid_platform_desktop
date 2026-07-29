@@ -74,6 +74,7 @@ import { WebsiteCMSPage } from "@/features/website_cms/pages/WebsiteCMSPage";
 import { JoinRequestPage } from "@/features/chat/pages/JoinRequestPage";
 import { OnboardingWizardPage } from "@/features/auth/pages/OnboardingWizardPage";
 import NewRoleWelcomePage from "@/features/auth/pages/NewRoleWelcomePage";
+import { CheckoutPage } from "@/features/billing-portal/pages/CheckoutPage";
 
 import { StudentHomePage } from "@/features/student/pages/StudentHomePage";
 import { StudentWorkPage } from "@/features/student/pages/StudentWorkPage";
@@ -144,11 +145,21 @@ export function AppRouter() {
   const subdomain = hostname.split(".")[0];
   const isSuperAdmin = subdomain === "superadmin";
   const isOnboarding = subdomain === "onboard" || subdomain === "onboarding" || window.location.pathname.startsWith("/onboard");
+  const isBilling = subdomain === "billing" || window.location.pathname.startsWith("/checkout");
 
   if (isOnboarding) {
     return (
       <Routes>
         <Route path="/*" element={<OnboardingWizardPage />} />
+      </Routes>
+    );
+  }
+
+  if (isBilling) {
+    return (
+      <Routes>
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="*" element={<Navigate to="/checkout" replace />} />
       </Routes>
     );
   }

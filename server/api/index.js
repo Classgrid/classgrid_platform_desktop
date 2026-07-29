@@ -93,6 +93,8 @@ import publicRoutes from "../src/routes/public.routes.js";
 import uploadRoutes from "../src/routes/upload.routes.js";
 import systemRoutes from "../src/routes/system.routes.js";
 import dropdownRoutes from "../src/routes/dropdown.routes.js";
+import billingHandoffRoutes from "../src/routes/billing-handoff.routes.js";
+import billingCheckoutRoutes from "../src/routes/billing-checkout.routes.js";
 import { publicTenantRouter, orgWebsiteRouter, superAdminWebsiteRouter } from "../src/routes/org-website.routes.js";
 import extractSubdomain, { resolveTenant, getPublicTenantInfo } from "../src/middleware/subdomain-router.middleware.js";
 import { sendEmail } from "../src/services/aws-ses.service.js";
@@ -289,6 +291,8 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/timetable", timetableRoutes);
 app.use("/api/academic", academicRoutes);
 app.use("/api/webhooks", webhookRoutes);
+app.use("/api/billing/handoff", billingHandoffRoutes);
+app.use("/api/billing/checkout", billingCheckoutRoutes);
 
 // Razorpay centralized webhook (billing.classgrid.in)
 import razorpayWebhookRoutes from "../src/routes/razorpay-webhook.routes.js";

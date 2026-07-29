@@ -37,33 +37,63 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
     try {
         const rawBody = req.body; // Buffer because of express.raw()
         const signature = req.headers["x-razorpay-signature"];
-        const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
 
-        // ── 1. Verify Signature ──
-        if (!verifyRazorpaySignature(rawBody, signature, webhookSecret)) {
+        // ── 1. Parse body strictly to get routing info (we verify signature right after) ──
+        const body = JSON.parse(rawBody.toString("utf8"));
+        const event = body.event;
+        const payload = body.payload;
+        
+        const paymentEntity = payload?.payment?.entity;
+        const orderEntity = payload?.order?.entity;
+        const refundEntity = payload?.refund?.entity;
+        
+        const notes = paymentEntity?.notes || orderEntity?.notes || refundEntity?.notes || {};
+        const paymentType = notes?.type || "unknown";
+        const organizationId = notes?.organization_id || notes?.orgId || req.query.organizationId || null;
+
+        await connectDB();
+        
+        // ── 2. Determine which secret to use and Verify Signature ──
+        let isValid = false;
+        
+        // Try platform secret first
+        const platformSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
+        if (verifyRazorpaySignature(rawBody, signature, platformSecret)) {
+            isValid = true;
+        } 
+        // If not platform, try organization secrets
+        else if (organizationId) {
+            const Organization = (await import("../models/Organization.js")).default;
+            const org = await Organization.findById(organizationId).select("fees_razorpay_webhook_secret canteen_config").lean();
+            
+            if (org) {
+                // Try Fees Webhook Secret
+                if (org.fees_razorpay_webhook_secret && verifyRazorpaySignature(rawBody, signature, org.fees_razorpay_webhook_secret)) {
+                    isValid = true;
+                }
+                // Try Canteen Webhook Secret (needs decryption)
+                else if (org.canteen_config?.canteen_razorpay_webhook_secret) {
+                    const { decrypt } = await import("../utils/encryption.js");
+                    const canteenSecret = decrypt(org.canteen_config.canteen_razorpay_webhook_secret);
+                    if (canteenSecret && verifyRazorpaySignature(rawBody, signature, canteenSecret)) {
+                        isValid = true;
+                    }
+                }
+            }
+        }
+
+        if (!isValid) {
             console.error("[Razorpay Webhook] ❌ Invalid signature");
             return res.status(401).json({ error: "Invalid webhook signature" });
         }
 
-        // ── 2. Parse body ──
-        const body = JSON.parse(rawBody.toString("utf8"));
-        const event = body.event;
-        const payload = body.payload;
-
-        console.log(`[Razorpay Webhook] ✅ Event received: ${event}`);
-
-        await connectDB();
+        console.log(`[Razorpay Webhook] ✅ Event received: ${event} | Type: ${paymentType}`);
 
         // Lazy-load models to avoid circular dependencies
         const PlatformTransaction = (await import("../models/PlatformTransaction.js")).default;
         const SaasInvoice = (await import("../models/SaasInvoice.js")).default;
         const FeeTransaction = (await import("../models/FeeTransaction.js")).default;
         const OrgSubscription = (await import("../models/OrgSubscription.js")).default;
-
-        // Extract payment entity
-        const paymentEntity = payload?.payment?.entity;
-        const orderEntity = payload?.order?.entity;
-        const refundEntity = payload?.refund?.entity;
 
         switch (event) {
 
@@ -80,8 +110,6 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                 console.log(`[Razorpay Webhook] 💰 Payment ${event}: ₹${amountInr} | Order: ${orderId} | Payment: ${paymentId}`);
 
                 // Determine payment type from notes
-                const paymentType = notes?.type || "unknown";
-                const organizationId = notes?.organization_id || notes?.orgId || null;
                 const invoiceId = notes?.invoice_id || notes?.invoiceId || null;
                 const studentId = notes?.student_id || notes?.studentId || null;
                 const feeRecordId = notes?.fee_record_id || notes?.feeRecordId || null;
@@ -174,6 +202,71 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     }
 
                     console.log(`[Razorpay Webhook] ✅ Fee payment recorded: Student ${studentId}, Org ${organizationId}`);
+                }
+
+                // ── Admission Fee Payment ──
+                else if (paymentType === "admission_fee") {
+                    const applicationId = notes?.application_id;
+                    if (!applicationId) {
+                        console.error("[Razorpay Webhook] Admission fee missing application_id");
+                        break;
+                    }
+
+                    const AdmissionApplication = (await import("../models/AdmissionApplication.js")).default;
+                    const application = await AdmissionApplication.findById(applicationId);
+
+                    if (application && !application.fee_paid) {
+                        // Confirm payment and create ledger via Admission Controller helper
+                        try {
+                            const { handlePaymentWebhook } = await import("../controllers/admission.controller.js");
+                            // Re-route the payload to the admission controller's logic by mocking the req object
+                            req.body = rawBody; // admission controller expects raw body or parsed body depending on parser, it calls getWebhookRawBody
+                            req.query.organizationId = organizationId;
+                            // Since admission webhook directly handles it and sends a response, we just invoke it and ignore the res
+                            const mockRes = { json: () => {}, status: () => ({ send: () => {} }), send: () => {} };
+                            await handlePaymentWebhook(req, mockRes);
+                            console.log(`[Razorpay Webhook] ✅ Admission Fee handled via controller for ${applicationId}`);
+                        } catch (err) {
+                            console.error("[Razorpay Webhook] Admission fee handler failed:", err);
+                        }
+                    } else {
+                        console.log(`[Razorpay Webhook] Admission already paid or not found for ${applicationId}`);
+                    }
+                }
+
+                // ── Canteen Order Payment ──
+                else if (paymentType === "canteen_order") {
+                    const CanteenOrder = (await import("../models/CanteenOrder.js")).default;
+                    const order = await CanteenOrder.findOneAndUpdate(
+                        { transactionId: orderId, orgId: organizationId },
+                        { status: "NEW", paymentStatus: "SUCCESS" },
+                        { new: true }
+                    );
+
+                    if (order) {
+                        console.log(`[Razorpay Webhook] ✅ Canteen order ${order.tokenNumber} marked paid`);
+                        // Try to emit socket
+                        try {
+                            const { getIO } = await import("../services/socket.service.js");
+                            const io = getIO();
+                            io.to(`org_${organizationId}_canteen_kitchen`).emit("canteen_new_order", {
+                                orderId: order._id,
+                                tokenNumber: order.tokenNumber,
+                                items: order.items,
+                                totalAmount: order.totalAmount,
+                                createdAt: order.createdAt
+                            });
+                        } catch (err) {
+                            console.warn("[Razorpay Webhook] Canteen socket emit failed");
+                        }
+                    } else {
+                        console.log(`[Razorpay Webhook] Canteen order for razorpay_order_id ${orderId} not found`);
+                    }
+                }
+
+                // ── Marketplace Order Payment ──
+                else if (paymentType === "marketplace_order") {
+                    console.log(`[Razorpay Webhook] ✅ Marketplace order received (No-op as marketplace is direct file access)`);
                 }
 
                 // ── Generic/Unknown Payment ──

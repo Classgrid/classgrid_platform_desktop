@@ -196,7 +196,7 @@ export function BillingPage() {
   const handleSendPhoneOtp = async () => {
     try {
       setIsVerifying(true);
-      await apiClient.post("/api/org/billing/verify-phone/send");
+      await apiClient.post("/api/org/billing/verify-phone/send", { phone: billingPhone });
       toast.success("OTP sent to your phone number.");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to send OTP");
