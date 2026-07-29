@@ -56,6 +56,7 @@ import {
     verifyBillingEmail,
     sendBillingPhoneOtp,
     verifyBillingPhoneOtp,
+    updateOrganizationBillingSettings
 } from "../controllers/org-configuration.controller.js";
 
 const router = express.Router();
@@ -65,10 +66,11 @@ const router = express.Router();
 router.get("/my-config", isAuthenticated, requireRole("org_admin"), getMyOrganizationConfig);
 router.get("/usage", isAuthenticated, requireRole("org_admin"), getOrganizationUsageSummary);
 router.get("/billing", isAuthenticated, requireRole("org_admin"), getOrganizationBilling);
-router.put("/billing/settings", isAuthenticated, requireRole("org_admin"), updateBillingSettings);
+router.put("/billing/settings", isAuthenticated, requireRole("org_admin"), updateOrganizationBillingSettings);
 router.post("/billing/setup-mandate", isAuthenticated, requireRole("org_admin"), setupBillingMandate);
 router.post("/billing/verify-email/send", isAuthenticated, requireRole("org_admin"), sendBillingEmailVerification);
 router.get("/billing/verify-email", verifyBillingEmail);
+router.post("/billing/verify-email/confirm", isAuthenticated, requireRole("org_admin"), verifyBillingEmail);
 router.post("/billing/verify-phone/send", isAuthenticated, requireRole("org_admin"), sendBillingPhoneOtp);
 router.post("/billing/verify-phone/confirm", isAuthenticated, requireRole("org_admin"), verifyBillingPhoneOtp);
 
