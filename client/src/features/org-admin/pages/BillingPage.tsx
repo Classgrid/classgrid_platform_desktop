@@ -93,39 +93,62 @@ export function BillingPage() {
     // Intentionally left blank to clear defaults
   }, [billingData]);
 
-  const handleSaveSettings = async () => {
+  const handleSaveName = async () => {
     if (!billingContactName?.trim()) return toast.error("Billing Name is required.");
-    if (!billingEmail?.trim()) return toast.error("Billing Email is required.");
-    if (!emailVerified) return toast.error("You must verify your Billing Email before saving.");
-    if (!billingPhone?.trim()) return toast.error("Billing Phone is required.");
-    if (!phoneVerified) return toast.error("You must verify your Billing Phone before saving.");
-    if (!billingAddress1?.trim()) return toast.error("Address Line 1 is required.");
-    if (!billingCity?.trim()) return toast.error("City is required.");
-    if (!billingState?.trim()) return toast.error("State / Province is required.");
-    if (!billingPincode?.trim()) return toast.error("ZIP / Postal Code is required.");
+    try {
+      setIsSavingSettings(true);
+      const res = await fetch("/api/org/billing/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
+        body: JSON.stringify({ billing_contact_name: billingContactName })
+      });
+      if (!res.ok) throw new Error("Failed to save name");
+      toast.success("Name saved successfully!");
+      queryClient.invalidateQueries({ queryKey: ["orgBilling"] });
+    } catch (err: any) {
+      toast.error(err.message || "Could not save name");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
 
+  const handleSaveGstin = async () => {
+    try {
+      setIsSavingSettings(true);
+      const res = await fetch("/api/org/billing/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
+        body: JSON.stringify({ gstin: billingGstin })
+      });
+      if (!res.ok) throw new Error("Failed to save GSTIN");
+      toast.success("GSTIN saved successfully!");
+      queryClient.invalidateQueries({ queryKey: ["orgBilling"] });
+    } catch (err: any) {
+      toast.error(err.message || "Could not save GSTIN");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const handleSaveAddress = async () => {
     try {
       setIsSavingSettings(true);
       const res = await fetch("/api/org/billing/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
         body: JSON.stringify({ 
-          invoice_email: billingEmail, 
-          phone: billingPhone,
-          gstin: billingGstin,
           address_line1: billingAddress1,
           address_line2: billingAddress2,
           city: billingCity,
           state: billingState,
-          pincode: billingPincode,
-          billing_contact_name: billingContactName
+          pincode: billingPincode
         })
       });
-      if (!res.ok) throw new Error("Failed to save settings");
-      toast.success("Billing settings saved successfully!");
+      if (!res.ok) throw new Error("Failed to save address");
+      toast.success("Address saved successfully!");
       queryClient.invalidateQueries({ queryKey: ["orgBilling"] });
     } catch (err: any) {
-      toast.error(err.message || "Could not save settings");
+      toast.error(err.message || "Could not save address");
     } finally {
       setIsSavingSettings(false);
     }
@@ -227,26 +250,25 @@ export function BillingPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-8">
       {/* BILLING SETTINGS */}
       <div className="space-y-6">
-        <div className="flex justify-end mb-4">
-          <Button onClick={handleSaveSettings} disabled={isSavingSettings} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6 py-2 font-medium shadow-sm transition-all hover:shadow-md">
-            {isSavingSettings ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : "Save All Changes"}
-          </Button>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Billing Profile & Verification</h3>
         </div>
         
         <Card className="shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden rounded-xl">
           <div className="p-6 space-y-6">
             <div className="space-y-3">
               <Label className="text-sm font-medium">Billing Name</Label>
-              <Input 
-                value={billingContactName} 
-                onChange={(e) => setBillingContactName(e.target.value)} 
-                placeholder="John Doe"
-              />
+              <div className="flex gap-2">
+                <Input 
+                  value={billingContactName} 
+                  onChange={(e) => setBillingContactName(e.target.value)} 
+                  placeholder="John Doe"
+                  className="flex-1"
+                />
+                <Button variant="outline" onClick={handleSaveName} disabled={isSavingSettings || !billingContactName?.trim()}>
+                  Save
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -297,12 +319,18 @@ export function BillingPage() {
             
             <div className="space-y-3">
               <Label className="text-sm font-medium">GSTIN (Optional)</Label>
-              <Input 
-                value={billingGstin} 
-                onChange={(e) => setBillingGstin(e.target.value)} 
-                placeholder="27AADCB2230M1Z2"
-                disabled={!phoneVerified}
-              />
+              <div className="flex gap-2">
+                <Input 
+                  value={billingGstin} 
+                  onChange={(e) => setBillingGstin(e.target.value)} 
+                  placeholder="27AADCB2230M1Z2"
+                  disabled={!phoneVerified}
+                  className="flex-1"
+                />
+                <Button variant="outline" onClick={handleSaveGstin} disabled={isSavingSettings || !phoneVerified}>
+                  Save
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
@@ -367,6 +395,12 @@ export function BillingPage() {
                   disabled={!phoneVerified}
                 />
               </div>
+            </div>
+            
+            <div className="mt-6 flex justify-end">
+              <Button onClick={handleSaveAddress} disabled={isSavingSettings || !phoneVerified} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6">
+                Save Address
+              </Button>
             </div>
           </div>
         </Card>
