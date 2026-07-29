@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/marketing_ui/card";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Button } from "@/components/marketing_ui/button";
+import { VerifiedButton } from "@/components/marketing_ui/verified-button";
 import { Switch } from "@/components/marketing_ui/switch";
 import { Label } from "@/components/marketing_ui/label";
 import { Input } from "@/components/marketing_ui/input";
@@ -249,7 +250,7 @@ export function BillingPage() {
                   className="flex-1"
                   disabled={isNameSaved}
                 />
-                {!isNameSaved && (
+                {!isNameSaved ? (
                   <Button 
                     variant="primary" 
                     onClick={handleSaveSettings} 
@@ -258,6 +259,8 @@ export function BillingPage() {
                   >
                     {isSavingSettings ? "Saving..." : "Save"}
                   </Button>
+                ) : (
+                  <VerifiedButton text="Saved" />
                 )}
               </div>
             </div>
@@ -286,7 +289,7 @@ export function BillingPage() {
                   disabled={!billingContactName?.trim()}
                 />
                 {emailVerified ? (
-                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
+                  <VerifiedButton />
                 ) : (
                   <Button 
                     variant="secondary" 
@@ -314,7 +317,7 @@ export function BillingPage() {
                   disabled={!emailVerified}
                 />
                 {phoneVerified ? (
-                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
+                  <VerifiedButton />
                 ) : (
                   <Button 
                     variant="secondary" 
