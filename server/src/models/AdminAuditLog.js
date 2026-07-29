@@ -56,6 +56,7 @@ const adminAuditLogSchema = new mongoose.Schema(
                 "reactivate_user",
                 "change_password",
                 "login_as_demo",
+                "update_branding",
                 // ── Attendance security actions ─────────────────
                 "attendance_suspicious",
                 "attendance_manual_override",
