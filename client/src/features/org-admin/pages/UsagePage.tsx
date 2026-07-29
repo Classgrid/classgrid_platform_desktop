@@ -240,48 +240,7 @@ export function UsagePage() {
         </CardContent>
       </Card>
 
-      {/* Breakdown Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Student Breakdown by Department</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {studentBreakdown?.byDepartment?.map((dept, i) => (
-                <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{dept.name || "Unassigned"}</span>
-                  <span className="text-sm font-semibold">{dept.count.toLocaleString()}</span>
-                </div>
-              ))}
-              {(!studentBreakdown?.byDepartment || studentBreakdown.byDepartment.length === 0) && (
-                <p className="text-sm text-muted-foreground italic">No department data available</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Department Admin Roles</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {deptAdminBreakdown?.map((admin, i) => (
-                <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
-                  <span className="text-sm font-medium capitalize text-gray-900 dark:text-gray-100">
-                    {admin.role?.replace(/_/g, " ") || "Unknown"}
-                  </span>
-                  <span className="text-sm font-semibold">{admin.count.toLocaleString()}</span>
-                </div>
-              ))}
-              {(!deptAdminBreakdown || deptAdminBreakdown.length === 0) && (
-                <p className="text-sm text-muted-foreground italic">No department admins found</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

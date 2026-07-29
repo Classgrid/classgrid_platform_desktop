@@ -51,11 +51,6 @@ export function BillingPage() {
   const queryClient = useQueryClient();
   const { data: billingData, isLoading, isError } = useOrgBilling();
   const { mutateAsync: payInvoice } = usePayInvoice();
-  const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
-
-  const [showComparison, setShowComparison] = useState(false);
-  const [isAddingBilling, setIsAddingBilling] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   
   const [billingEmail, setBillingEmail] = useState("");
   const [billingPhone, setBillingPhone] = useState("");
@@ -148,69 +143,7 @@ export function BillingPage() {
     }
   };
 
-  const handlePayNow = async (invoiceId: string) => {
-    try {
-      setPayingInvoiceId(invoiceId);
-      await payInvoice(invoiceId);
-      toast.success("Payment successful!");
-      queryClient.invalidateQueries({ queryKey: ["orgBilling"] });
-    } catch (error: any) {
-      toast.error(error.message || "Payment failed or was cancelled.");
-    } finally {
-      setPayingInvoiceId(null);
-    }
-  };
 
-  const handleSetupMandate = async () => {
-    try {
-      setIsSavingSettings(true);
-      const res = await apiClient.post("/api/org/billing/setup-mandate");
-      const { key_id, order_id, amount, currency } = res.data;
-
-      const options = {
-        key: key_id,
-        amount,
-        currency,
-        order_id,
-        name: "Classgrid",
-        description: "Payment Verification",
-        handler: function(response: any) {
-          toast.success("Account connected and verified successfully!");
-          setIsAddingBilling(false);
-        },
-        prefill: { email: billingEmail || "admin@classgrid.in" },
-        theme: { color: "#2563eb" }
-      };
-      
-      const rzp = new (window as any).Razorpay(options);
-      rzp.open();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to initialize secure gateway");
-    } finally {
-      setIsSavingSettings(false);
-    }
-  };
-
-  const handleDownloadPdf = async (invoiceId: string) => {
-    try {
-      const response = await fetch(`/api/org/billing/invoice/${invoiceId}/pdf`, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-      });
-      if (!response.ok) throw new Error("Failed to download PDF");
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Invoice-${invoiceId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to download PDF");
-    }
-  };
 
   const handleSendEmailVerification = async () => {
     setIsSendingEmailOtp(true);
@@ -302,60 +235,10 @@ export function BillingPage() {
     );
   }
 
-  const { subscription, currentMonthCharges, invoices, payments, monthlyHistory, feeCollection } = billingData;
-
-  // Process data for the chart to support the "Show Comparison" toggle if needed
-  const chartData = (monthlyHistory || []).map(record => ({
-    month: record.month,
-    'This Month': record.totalAmount,
-    'Estimated with Tax': record.totalAmount * 1.18,
-  }));
-
-  // Resource Usage Calculations
-  const storageLimit = subscription?.limits?.storageGb || 100;
-  const storageUsed = currentMonthCharges?.storageCharges?.count || 0;
-  const storagePercent = Math.min(100, Math.round((storageUsed / storageLimit) * 100));
-
-  const emailsUsed = currentMonthCharges?.emailCharges?.count || 0;
-  const smsUsed = currentMonthCharges?.smsCharges?.count || 0;
-
-  const valueFormatter = (number: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      maximumFractionDigits: 0,
-      notation: 'compact',
-      compactDisplay: 'short',
-      style: 'currency',
-      currency: 'INR',
-    }).format(number);
-  };
-
-  const getStatusColor = (status: string) => {
-    if (status === 'active' || status === 'paid') return 'bg-emerald-500 hover:bg-emerald-600 text-white border-transparent';
-    if (status === 'overdue') return 'bg-red-500 hover:bg-red-600 text-white border-transparent';
-    return 'bg-amber-500 hover:bg-amber-600 text-white border-transparent';
-  };
-
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-8">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Billing & Subscription</h2>
-        <p className="text-muted-foreground mt-1">Manage your Classgrid subscription, view invoices, and track payments.</p>
-      </div>
-
-      {/* HISTORICAL USAGE CHART (TOP) - Matching User Snippet natively */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 shadow-sm border-gray-200/60 dark:border-gray-800">
-          <CardHeader>
-            <CardTitle className="text-lg">Daily Cost Trend</CardTitle>
-            <CardDescription>Your daily platform usage costs over the current billing cycle.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-72 w-full mt-4">
-              {billingData.dailySeries && billingData.dailySeries.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={billingData.dailySeries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
                         <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                       </linearGradient>
@@ -898,124 +781,7 @@ export function BillingPage() {
           </Button>
         </div>
       </div>
-      
-      {/* INVOICE DETAILS MODAL */}
-      <Dialog open={!!selectedInvoice} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Invoice Details</DialogTitle>
-            <DialogDescription>
-              {selectedInvoice?.invoiceNumber}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedInvoice && (
-            <div className="space-y-6">
-              <div className="flex justify-between text-sm text-gray-500">
-                <div>
-                  <p>Billing Period:</p>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">
-                    {selectedInvoice.billingPeriod?.month}/{selectedInvoice.billingPeriod?.year}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p>Due Date:</p>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">
-                    {format(new Date(selectedInvoice.dueDate), "dd MMM yyyy")}
-                  </p>
-                </div>
-              </div>
 
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200 dark:border-gray-700">
-                      <th className="text-left py-2 font-medium">Resource</th>
-                      <th className="text-right py-2 font-medium">Usage</th>
-                      <th className="text-right py-2 font-medium">Rate</th>
-                      <th className="text-right py-2 font-medium">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedInvoice.lineItems?.map((item: any, i: number) => (
-                      <tr key={i} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
-                        <td className="py-2">{item.resourceLabel || item.provider}</td>
-                        <td className="text-right py-2">{item.totalQuantity} {item.unit}</td>
-                        <td className="text-right py-2">₹{item.unitRateInr}</td>
-                        <td className="text-right py-2 font-medium">₹{item.amountInr?.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Subtotal</span>
-                  <span>₹{selectedInvoice.subtotal?.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">GST ({selectedInvoice.taxPercent}%)</span>
-                  <span>₹{selectedInvoice.taxAmount?.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-200 dark:border-gray-700">
-                  <span>Total Amount</span>
-                  <span>₹{selectedInvoice.total?.toLocaleString()}</span>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-4 gap-3">
-                <Button variant="outline" onClick={() => setSelectedInvoice(null)}>Close</Button>
-                <Button variant="outline" onClick={() => handleDownloadPdf(selectedInvoice.id)}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Download PDF
-                </Button>
-                {selectedInvoice.status !== "paid" && (
-                  <Button 
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                    disabled={payingInvoiceId === selectedInvoice.id}
-                    onClick={() => {
-                      handlePayNow(selectedInvoice.id);
-                      setSelectedInvoice(null);
-                    }}
-                  >
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Pay ₹{selectedInvoice.total?.toLocaleString()} Now
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* ADD PAYMENT METHOD MODAL */}
-      <Dialog open={isAddingBilling} onOpenChange={setIsAddingBilling}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Add Payment Method</DialogTitle>
-            <DialogDescription>
-              Connect a debit or credit card to automatically pay your monthly SaaS invoices.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-6 flex flex-col items-center justify-center space-y-4">
-            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
-              <CreditCard className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-            </div>
-            <h3 className="text-lg font-medium text-center">Payment Verification</h3>
-            <p className="text-sm text-muted-foreground text-center max-w-sm">
-              You will be redirected to our payment gateway to authenticate and save your card for future recurring billing.
-            </p>
-          </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-            <Button variant="outline" onClick={() => setIsAddingBilling(false)} disabled={isSavingSettings}>Cancel</Button>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={handleSetupMandate} disabled={isSavingSettings}>
-              {isSavingSettings ? "Connecting..." : "Proceed to Gateway"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-      
       {/* VERIFY EMAIL MODAL */}
       <Dialog open={isEmailVerifyModalOpen} onOpenChange={setIsEmailVerifyModalOpen}>
         <DialogContent className="sm:max-w-[400px]">
