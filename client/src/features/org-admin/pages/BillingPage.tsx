@@ -757,7 +757,7 @@ export function BillingPage() {
                       {isSendingOtp ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Sending...
+                          Verify
                         </>
                       ) : "Verify"}
                     </Button>
@@ -781,7 +781,7 @@ export function BillingPage() {
                       {isSendingOtp ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Sending...
+                          Verify
                         </>
                       ) : "Verify"}
                     </Button>
