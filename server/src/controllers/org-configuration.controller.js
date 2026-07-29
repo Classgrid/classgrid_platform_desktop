@@ -266,8 +266,7 @@ export const sendBillingEmailVerification = async (req, res) => {
         
         if (!org.billing_settings) org.billing_settings = {};
         if (req.body.email && org.billing_settings.invoice_email !== req.body.email) {
-            org.billing_settings.invoice_email = req.body.email;
-            org.billing_settings.email_verified = false;
+            org.billing_settings.pending_invoice_email = req.body.email;
         }
         
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -310,6 +309,10 @@ export const verifyBillingEmail = async (req, res) => {
             return res.status(400).json({ message: "Verification token expired." });
         }
         
+        if (org.billing_settings.pending_invoice_email) {
+            org.billing_settings.invoice_email = org.billing_settings.pending_invoice_email;
+            org.billing_settings.pending_invoice_email = undefined;
+        }
         org.billing_settings.email_verified = true;
         org.billing_settings.verification_token = "";
         await org.save();
@@ -332,8 +335,7 @@ export const sendBillingPhoneOtp = async (req, res) => {
         
         if (!org.billing_settings) org.billing_settings = {};
         if (req.body.phone && org.billing_settings.phone !== req.body.phone) {
-            org.billing_settings.phone = req.body.phone;
-            org.billing_settings.phone_verified = false;
+            org.billing_settings.pending_phone = req.body.phone;
         }
         
         const result = await sendOTP(phoneToVerify);
@@ -367,6 +369,10 @@ export const verifyBillingPhoneOtp = async (req, res) => {
             return res.status(400).json({ message: "OTP expired." });
         }
         
+        if (org.billing_settings.pending_phone) {
+            org.billing_settings.phone = org.billing_settings.pending_phone;
+            org.billing_settings.pending_phone = undefined;
+        }
         org.billing_settings.phone_verified = true;
         org.billing_settings.verification_otp = "";
         await org.save();

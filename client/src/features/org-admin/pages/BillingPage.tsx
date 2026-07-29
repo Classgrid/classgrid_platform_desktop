@@ -901,12 +901,20 @@ export function BillingPage() {
               </div>
             </div>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-800/40 px-6 py-4 flex justify-end border-t border-gray-200 dark:border-gray-800">
-            <Button onClick={handleSaveSettings} disabled={isSavingSettings} className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white rounded-md px-6">
-              {isSavingSettings ? "Saving..." : "Save Settings"}
-            </Button>
+            </div>
           </div>
         </Card>
+
+        <div className="flex justify-end mt-6">
+          <Button onClick={handleSaveSettings} disabled={isSavingSettings} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-8 py-2 font-medium shadow-sm transition-all hover:shadow-md">
+            {isSavingSettings ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving Profile...
+              </>
+            ) : "Save All Changes"}
+          </Button>
+        </div>
       </div>
       
       {/* INVOICE DETAILS MODAL */}
