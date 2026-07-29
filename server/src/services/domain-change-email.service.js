@@ -165,7 +165,7 @@ export function buildCustomDomainHtml(data) {
 
     const content = `
         <h2 style="color: #111111; margin-top: 0;">Hello ${escapeHtml(data.adminName || "Admin")},</h2>
-        <p style="font-size: 15px; color: #374151;">${escapeHtml(data.copy.summary)}</p>
+        <p style="font-size: 15px; color: #374151;">${data.copy.summary}</p>
         
         ${data.copy.extraSummary ? `<p style="font-size: 15px; color: #374151;">${escapeHtml(data.copy.extraSummary)}</p>` : ''}
         
@@ -191,7 +191,7 @@ export function buildCustomDomainHtml(data) {
         ${data.copy.checklist && data.copy.checklist.length > 0 ? `
         <h3 style="color: #111111; margin-top: 32px; font-size: 16px;">Verification completed</h3>
         <ul style="margin: 16px 0 24px 20px; padding: 0; color: #374151; font-size: 14px;">
-          ${data.copy.checklist.map(item => `<li style="margin-bottom: 8px; font-weight: 500;">${escapeHtml(item)}</li>`).join('')}
+          ${data.copy.checklist.map(item => `<li style="margin-bottom: 8px; font-weight: 500;">${item}</li>`).join('')}
         </ul>
         ` : ''}
 
@@ -222,7 +222,7 @@ export function buildCustomDomainText(data) {
         "",
         `Hello ${data.adminName || "Admin"},`,
         "",
-        data.copy.summary,
+        data.copy.summary.replace(/<[^>]+>/g, ''),
         data.copy.extraSummary || "",
         "",
         "Organization: " + data.orgName,
