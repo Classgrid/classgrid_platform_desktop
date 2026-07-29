@@ -1,9 +1,3 @@
-/**
- * Security notifications for Classgrid-managed and external domain changes.
- * Domain operations must not fail just because a notification cannot be queued;
- * callers log queue failures and continue with the already-authorized change.
- */
-
 import { enqueueEmail } from "./email-queue.service.js";
 
 function escapeHtml(value = "") {
@@ -128,7 +122,6 @@ async function queueDomainEmail({ to, subject, template, organizationId, userId 
     return { queued: Boolean(job), jobId: job?._id || null };
 }
 
-/** Notify an administrator after their orgname.classgrid.in slug changes. */
 export async function notifyDomainChange({
     to,
     orgName,
@@ -328,7 +321,7 @@ function buildCustomDomainText(data) {
         "",
         `Hello ${data.adminName},`,
         "",
-        data.copy.summary.replace(/<[^>]+>/g, ''), // strip basic html
+        data.copy.summary.replace(/<[^>]+>/g, ''),
         "",
         "Custom Domain Details:",
         ...Object.entries(data.details)
@@ -375,7 +368,7 @@ export async function notifyExternalDomainChange({
     const actionUrl = newDomain ? `https://${newDomain}${domainType === "erp_domain" ? "/org/login" : ""}` : "https://classgrid.in";
     
     const settingsSummary = (settings) => settings
-        ? `Custom domain ${settings.is_enabled === false ? "disabled" : "enabled"}; default Classgrid URL ${settings.allow_classgrid_url === false ? "disabled" : "enabled"}`
+        ? `<code>${escapeHtml(activeDomain)}</code>: ${settings.is_enabled === false ? "Disabled" : "Enabled"} | Default URL: ${settings.allow_classgrid_url === false ? "Disabled" : "Enabled"}`
         : undefined;
 
     const data = {
@@ -390,7 +383,9 @@ export async function notifyExternalDomainChange({
         details: {
             "Organization": orgName,
             "Domain Type": typeLabel,
-            "Custom Domain": `<code>${escapeHtml(activeDomain)}</code>`,
+            "Custom Domain": action === "changed" && oldDomain && oldDomain !== newDomain 
+                ? `<code>${escapeHtml(newDomain)}</code> (was <code>${escapeHtml(oldDomain)}</code>)` 
+                : `<code>${escapeHtml(activeDomain)}</code>`,
             "Previous Access": settingsSummary(oldSettings),
             "Current Access": settingsSummary(newSettings),
             "Administrator": `<a href="mailto:${escapeHtml(adminEmail)}" style="color:#007bff;text-decoration:none;">${escapeHtml(adminEmail)}</a>`
