@@ -15,7 +15,7 @@ export async function verifyRecaptchaToken({ token, expectedAction = "login", re
         return { success: true, skipped: "explicitly_disabled" };
     }
 
-    const secret = process.env.RECAPTCHA_SECRET_KEY || process.env.GOOGLE_RECAPTCHA_SECRET_KEY;
+    const secret = process.env.RECAPTCHA_SECRET_KEY || process.env.GOOGLE_RECAPTCHA_SECRET_KEY || process.env.RECAPTCHA_SECRET;
     if (!secret) {
         if (process.env.NODE_ENV === "production") {
             throw new RecaptchaVerificationError(
