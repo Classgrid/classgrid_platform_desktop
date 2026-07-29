@@ -2353,7 +2353,7 @@ export const getBillingVerificationOtpHtml = (orgName, userName, otp) => {
     <div class="box" style="text-align:center; margin: 24px 0;">
       <div class="meta">Your Verification Code</div>
       <span class="code" style="font-size:32px; letter-spacing:8px; color:#111111;">${otp}</span>
-      <p style="margin-top:12px; font-size:13px; color:#6b7280;">This code expires in <strong style="color:#111111;">10 minutes</strong>.</p>
+      <p style="margin-top:12px; font-size:13px; color:#6b7280;">This code expires in <strong style="color:#111111;">60 seconds</strong>.</p>
     </div>
 
     <p>Enter this code in your Billing Profile to verify this email address. If you did not make this request, please review your organization settings.</p>
@@ -2374,7 +2374,7 @@ You requested to verify the billing email for ${orgName}.
 
 Your Verification Code: ${otp}
 
-This code expires in 10 minutes. Enter it in your Billing Profile to verify this email address.
+This code expires in 60 seconds. Enter it in your Billing Profile to verify this email address.
 
 If you did not make this request, please review your organization settings.
 
