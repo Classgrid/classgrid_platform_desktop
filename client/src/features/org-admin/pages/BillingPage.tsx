@@ -15,6 +15,7 @@ import { Input } from "@/components/marketing_ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/marketing_ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/marketing_ui/dialog";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/marketing_ui/input-otp";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
 
 // Charts
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
@@ -866,16 +867,18 @@ export function BillingPage() {
 
               <div className="space-y-3">
                 <Label className="text-sm font-medium">State / Province</Label>
-                <select 
-                  className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={billingState}
-                  onChange={(e) => setBillingState(e.target.value)}
-                >
-                  <option value="">Select State / UT</option>
-                  {statesList.map((state) => (
-                    <option key={state} value={state}>{state}</option>
-                  ))}
-                </select>
+                <Select value={billingState} onValueChange={setBillingState}>
+                  <SelectTrigger className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <SelectValue placeholder="Select State / UT" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statesList.map((state) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-3">
