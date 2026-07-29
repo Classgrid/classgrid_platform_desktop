@@ -1,0 +1,287 @@
+import express from "express";
+import crypto from "crypto";
+import connectDB from "../../config/db.js";
+
+const router = express.Router();
+
+// ─────────────────────────────────────────────────────────────────
+// RAZORPAY UNIVERSAL WEBHOOK
+// POST /api/webhooks/razorpay
+//
+// This is the single centralized Razorpay webhook for billing.classgrid.in
+// It handles ALL payment events across the platform:
+//   1. Platform SaaS invoice payments (org → Classgrid)
+//   2. Student fee payments (student → org)
+//   3. Admission fee payments
+//   4. Canteen payments
+//   5. Marketplace purchases
+//
+// Razorpay sends: payment.authorized, payment.captured,
+//                 payment.failed, order.paid, refund.created
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * Verify Razorpay webhook signature using HMAC SHA256
+ */
+function verifyRazorpaySignature(rawBody, signature, secret) {
+    if (!signature || !secret) return false;
+    const expectedSignature = crypto
+        .createHmac("sha256", secret)
+        .update(rawBody)
+        .digest("hex");
+    return expectedSignature === signature;
+}
+
+// Use raw body for signature verification
+router.post("/razorpay", express.raw({ type: "application/json" }), async (req, res) => {
+    try {
+        const rawBody = req.body; // Buffer because of express.raw()
+        const signature = req.headers["x-razorpay-signature"];
+        const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
+
+        // ── 1. Verify Signature ──
+        if (!verifyRazorpaySignature(rawBody, signature, webhookSecret)) {
+            console.error("[Razorpay Webhook] ❌ Invalid signature");
+            return res.status(401).json({ error: "Invalid webhook signature" });
+        }
+
+        // ── 2. Parse body ──
+        const body = JSON.parse(rawBody.toString("utf8"));
+        const event = body.event;
+        const payload = body.payload;
+
+        console.log(`[Razorpay Webhook] ✅ Event received: ${event}`);
+
+        await connectDB();
+
+        // Lazy-load models to avoid circular dependencies
+        const PlatformTransaction = (await import("../models/PlatformTransaction.js")).default;
+        const SaasInvoice = (await import("../models/SaasInvoice.js")).default;
+        const FeeTransaction = (await import("../models/FeeTransaction.js")).default;
+        const OrgSubscription = (await import("../models/OrgSubscription.js")).default;
+
+        // Extract payment entity
+        const paymentEntity = payload?.payment?.entity;
+        const orderEntity = payload?.order?.entity;
+        const refundEntity = payload?.refund?.entity;
+
+        switch (event) {
+
+            // ═══════════════════════════════════════════
+            // PAYMENT CAPTURED — Money received successfully
+            // ═══════════════════════════════════════════
+            case "payment.captured":
+            case "payment.authorized": {
+                if (!paymentEntity) break;
+
+                const { id: paymentId, order_id: orderId, amount, currency, notes, method, email, contact } = paymentEntity;
+                const amountInr = amount / 100; // Razorpay sends in paise
+
+                console.log(`[Razorpay Webhook] 💰 Payment ${event}: ₹${amountInr} | Order: ${orderId} | Payment: ${paymentId}`);
+
+                // Determine payment type from notes
+                const paymentType = notes?.type || "unknown";
+                const organizationId = notes?.organization_id || notes?.orgId || null;
+                const invoiceId = notes?.invoice_id || notes?.invoiceId || null;
+                const studentId = notes?.student_id || notes?.studentId || null;
+                const feeRecordId = notes?.fee_record_id || notes?.feeRecordId || null;
+
+                // ── Platform SaaS Payment ──
+                if (paymentType === "saas_invoice" || paymentType === "platform" || invoiceId) {
+                    // Check for duplicate
+                    const existing = await PlatformTransaction.findOne({ razorpayPaymentId: paymentId });
+                    if (existing) {
+                        console.log(`[Razorpay Webhook] Duplicate payment ${paymentId}, skipping`);
+                        break;
+                    }
+
+                    // Log the transaction
+                    await PlatformTransaction.create({
+                        organizationId,
+                        type: "razorpay",
+                        amount: amountInr,
+                        currency,
+                        status: "success",
+                        razorpayOrderId: orderId,
+                        razorpayPaymentId: paymentId,
+                        planActivated: "active",
+                        note: `Razorpay webhook: ${event} | Method: ${method} | Email: ${email}`,
+                    });
+
+                    // Update SaaS Invoice status to paid
+                    if (invoiceId) {
+                        await SaasInvoice.findByIdAndUpdate(invoiceId, {
+                            status: "paid",
+                            paidAt: new Date(),
+                            razorpayPaymentId: paymentId,
+                            razorpayOrderId: orderId,
+                        });
+                    }
+
+                    // Extend subscription
+                    if (organizationId) {
+                        const sub = await OrgSubscription.findOne({ organization_id: organizationId });
+                        if (sub) {
+                            sub.plan = "active";
+                            sub.status = "active";
+                            sub.isPaid = true;
+                            // Extend by 31 days from now or from current expiry (whichever is later)
+                            const now = new Date();
+                            const currentExpiry = sub.expiresAt ? new Date(sub.expiresAt) : now;
+                            const baseDate = currentExpiry > now ? currentExpiry : now;
+                            sub.expiresAt = new Date(baseDate.getTime() + 31 * 24 * 60 * 60 * 1000);
+                            await sub.save();
+                        }
+                    }
+
+                    console.log(`[Razorpay Webhook] ✅ Platform payment recorded for org ${organizationId}`);
+                }
+
+                // ── Student Fee Payment ──
+                else if (paymentType === "fee_payment" || paymentType === "student_fee" || feeRecordId) {
+                    const existing = await FeeTransaction.findOne({ razorpay_payment_id: paymentId });
+                    if (existing) {
+                        console.log(`[Razorpay Webhook] Duplicate fee payment ${paymentId}, skipping`);
+                        break;
+                    }
+
+                    await FeeTransaction.create({
+                        organization_id: organizationId,
+                        student_id: studentId,
+                        fee_record_id: feeRecordId,
+                        amount: amountInr,
+                        currency,
+                        method: "razorpay",
+                        status: "success",
+                        razorpay_order_id: orderId,
+                        razorpay_payment_id: paymentId,
+                        notes: `Webhook: ${event} | ${email || ""} | ${contact || ""}`,
+                    });
+
+                    // Update FeeRecord paid amount
+                    if (feeRecordId) {
+                        const FeeRecord = (await import("../models/FeeRecord.js")).default;
+                        const record = await FeeRecord.findById(feeRecordId);
+                        if (record) {
+                            record.paid_amount = (record.paid_amount || 0) + amountInr;
+                            if (record.paid_amount >= record.total_amount) {
+                                record.status = "paid";
+                            } else {
+                                record.status = "partial";
+                            }
+                            await record.save();
+                        }
+                    }
+
+                    console.log(`[Razorpay Webhook] ✅ Fee payment recorded: Student ${studentId}, Org ${organizationId}`);
+                }
+
+                // ── Generic/Unknown Payment ──
+                else {
+                    // Log it anyway so nothing is lost
+                    const existing = await PlatformTransaction.findOne({ razorpayPaymentId: paymentId });
+                    if (!existing) {
+                        await PlatformTransaction.create({
+                            organizationId: organizationId || null,
+                            type: "razorpay",
+                            amount: amountInr,
+                            currency,
+                            status: "success",
+                            razorpayOrderId: orderId,
+                            razorpayPaymentId: paymentId,
+                            note: `Webhook: ${event} | Type: ${paymentType} | ${email || ""} | Notes: ${JSON.stringify(notes || {})}`,
+                        });
+                    }
+                    console.log(`[Razorpay Webhook] ✅ Generic payment logged: ₹${amountInr}`);
+                }
+
+                break;
+            }
+
+            // ═══════════════════════════════════════════
+            // PAYMENT FAILED
+            // ═══════════════════════════════════════════
+            case "payment.failed": {
+                if (!paymentEntity) break;
+
+                const { id: paymentId, order_id: orderId, amount, notes, error_description, error_code } = paymentEntity;
+                const amountInr = amount / 100;
+                const organizationId = notes?.organization_id || notes?.orgId || null;
+
+                console.error(`[Razorpay Webhook] ❌ Payment FAILED: ₹${amountInr} | Error: ${error_code} — ${error_description}`);
+
+                await PlatformTransaction.create({
+                    organizationId: organizationId || null,
+                    type: "razorpay",
+                    amount: amountInr,
+                    status: "failed",
+                    razorpayOrderId: orderId,
+                    razorpayPaymentId: paymentId,
+                    note: `FAILED: ${error_code} — ${error_description}`,
+                });
+
+                break;
+            }
+
+            // ═══════════════════════════════════════════
+            // ORDER PAID (all payments for order captured)
+            // ═══════════════════════════════════════════
+            case "order.paid": {
+                if (!orderEntity) break;
+                console.log(`[Razorpay Webhook] 📦 Order fully paid: ${orderEntity.id} | ₹${orderEntity.amount_paid / 100}`);
+                // Payment already handled in payment.captured — this is just a confirmation
+                break;
+            }
+
+            // ═══════════════════════════════════════════
+            // REFUND CREATED
+            // ═══════════════════════════════════════════
+            case "refund.created":
+            case "refund.processed": {
+                if (!refundEntity) break;
+
+                const { id: refundId, payment_id: paymentId, amount, notes } = refundEntity;
+                const amountInr = amount / 100;
+                const organizationId = notes?.organization_id || notes?.orgId || null;
+
+                console.log(`[Razorpay Webhook] 🔄 Refund: ₹${amountInr} for payment ${paymentId}`);
+
+                // Find original transaction
+                const originalTxn = await PlatformTransaction.findOne({ razorpayPaymentId: paymentId });
+
+                await PlatformTransaction.create({
+                    organizationId: organizationId || originalTxn?.organizationId || null,
+                    type: "refund",
+                    amount: amountInr,
+                    status: "refunded",
+                    razorpayPaymentId: refundId,
+                    razorpayOrderId: originalTxn?.razorpayOrderId || null,
+                    refundOf: originalTxn?._id || null,
+                    refundReason: notes?.reason || "Razorpay refund",
+                    refundedAt: new Date(),
+                    note: `Refund of ₹${amountInr} for payment ${paymentId}`,
+                });
+
+                // Update original transaction
+                if (originalTxn) {
+                    originalTxn.status = "refunded";
+                    await originalTxn.save();
+                }
+
+                break;
+            }
+
+            default:
+                console.log(`[Razorpay Webhook] Unhandled event: ${event}`);
+        }
+
+        // Always return 200 to Razorpay to prevent retries
+        res.status(200).json({ received: true, event });
+    } catch (err) {
+        console.error("[Razorpay Webhook] 🔥 Error:", err);
+        // Return 200 even on error to prevent infinite Razorpay retries
+        res.status(200).json({ received: true, error: "internal" });
+    }
+});
+
+export default router;

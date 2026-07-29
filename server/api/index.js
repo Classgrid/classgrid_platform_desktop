@@ -180,7 +180,8 @@ app.use("/api/admission/payments/webhook", express.raw({ type: "application/json
 app.use((req, res, next) => {
   if (
     req.originalUrl.startsWith('/api/admission/payments/webhook') ||
-    req.originalUrl.startsWith('/api/payments/webhook')
+    req.originalUrl.startsWith('/api/payments/webhook') ||
+    req.originalUrl.startsWith('/api/webhooks/razorpay')
   ) {
     return next();
   }
@@ -288,6 +289,10 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/timetable", timetableRoutes);
 app.use("/api/academic", academicRoutes);
 app.use("/api/webhooks", webhookRoutes);
+
+// Razorpay centralized webhook (billing.classgrid.in)
+import razorpayWebhookRoutes from "../src/routes/razorpay-webhook.routes.js";
+app.use("/api/webhooks", razorpayWebhookRoutes);
 app.use("/api/threads", threadChatRoutes);
 app.use("/api/group-chat", groupChatRoutes);
 app.use("/api/advanced-quiz", advancedQuizRoutes);

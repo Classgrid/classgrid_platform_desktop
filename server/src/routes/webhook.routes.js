@@ -303,3 +303,13 @@ router.post("/zoom", express.json(), async (req, res) => {
 });
 
 export default router;
+
+// ─────────────────────────────────────────────
+// RAZORPAY WEBHOOK HANDLER
+// Handles: payment.authorized, payment.captured,
+//          payment.failed, order.paid, refund.created
+// Endpoint: POST /api/webhooks/razorpay
+// ─────────────────────────────────────────────
+
+import razorpayWebhookRouter from "./razorpay-webhook.routes.js";
+export { razorpayWebhookRouter };
