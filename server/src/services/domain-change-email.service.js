@@ -110,7 +110,7 @@ function buildNotificationText({ title, orgName, adminName, summary, details, ac
 async function queueDomainEmail({ to, subject, template, organizationId, userId }) {
     if (!to) return { queued: false, reason: "missing_admin_email" };
 
-    const job = await enqueueEmail({
+    const job = await sendEmail({
         to,
         subject,
         html: buildNotificationHtml(template),
