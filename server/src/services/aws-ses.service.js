@@ -27,6 +27,9 @@ transporter.verify((err) => {
 export const sendEmail = async ({ to, subject, html, text, fromName, fromEmail, replyTo }) => {
   console.log(`[AWS SES] Sending to: ${to} | From: ${fromEmail}`);
 
+  // Note: AWS SES is verified for the entire classgrid.in domain.
+  // You can pass ANY address under @classgrid.in (e.g. billing@, admin@, etc.) in the 'fromEmail' parameter.
+  // This default is only used if no specific fromEmail is provided.
   const defaultFromName = process.env.AWS_SES_DEFAULT_FROM_NAME || "Classgrid Platform";
   const defaultFromEmail = process.env.AWS_SES_DEFAULT_FROM_EMAIL || "support@classgrid.in";
 
