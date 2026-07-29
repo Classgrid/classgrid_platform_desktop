@@ -24,8 +24,8 @@ transporter.verify((err) => {
 // ─────────────────────────────────────────────────
 // SEND VIA AWS SES
 // ─────────────────────────────────────────────────
-export const sendEmail = async ({ to, subject, html, text, fromName, fromEmail, replyTo }) => {
-  console.log(`[AWS SES] Sending to: ${to} | From: ${fromEmail}`);
+export const sendEmail = async ({ to, subject, html, text, fromName, fromEmail, replyTo, userId, organizationId }) => {
+  console.log(`[AWS SES] Sending to: ${to} | From: ${fromEmail || "default"}`);
 
   // Note: AWS SES is verified for the entire classgrid.in domain.
   // You can pass ANY address under @classgrid.in (e.g. billing@, admin@, etc.) in the 'fromEmail' parameter.
@@ -43,5 +43,7 @@ export const sendEmail = async ({ to, subject, html, text, fromName, fromEmail, 
   });
 
   console.log(`[AWS SES] ✅ Email sent to: ${to} | ID: ${info.messageId}`);
+  console.log(`          Org ID: ${organizationId || 'N/A'}`);
+  console.log(`          User ID: ${userId || 'N/A'}`);
   return { ...info, provider: "aws_ses" };
 };
