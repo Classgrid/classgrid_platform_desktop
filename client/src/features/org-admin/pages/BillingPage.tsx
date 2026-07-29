@@ -88,27 +88,15 @@ export function BillingPage() {
     };
   }, [resendCooldown]);
 
-  // Sync settings with backend data when loaded
+  // Sync settings with backend data when loaded (REMOVED TO PREVENT PRE-FILL FOR DEMO)
   useEffect(() => {
-    if (billingData?.billingSettings) {
-      setBillingEmail(billingData.billingSettings.invoice_email || "");
-      setBillingPhone(billingData.billingSettings.phone || "");
-      setBillingGstin(billingData.billingSettings.gstin || "");
-      setBillingAddress1(billingData.billingSettings.address_line1 || "");
-      setBillingAddress2(billingData.billingSettings.address_line2 || "");
-      setBillingCity(billingData.billingSettings.city || "");
-      setBillingState(billingData.billingSettings.state || "");
-      setBillingPincode(billingData.billingSettings.pincode || "");
-      setBillingContactName(billingData.billingSettings.billing_contact_name || "");
-      setEmailVerified(billingData.billingSettings.email_verified || false);
-      setPhoneVerified(billingData.billingSettings.phone_verified || false);
-    }
+    // Intentionally left blank to clear defaults
   }, [billingData]);
 
   const handleSaveSettings = async () => {
-    if (!billingContactName?.trim()) return toast.error("Billing Contact Name is required.");
-    if (!billingEmail?.trim()) return toast.error("Invoice Email is required.");
-    if (!emailVerified) return toast.error("You must verify your Invoice Email before saving.");
+    if (!billingContactName?.trim()) return toast.error("Billing Name is required.");
+    if (!billingEmail?.trim()) return toast.error("Billing Email is required.");
+    if (!emailVerified) return toast.error("You must verify your Billing Email before saving.");
     if (!billingPhone?.trim()) return toast.error("Billing Phone is required.");
     if (!phoneVerified) return toast.error("You must verify your Billing Phone before saving.");
     if (!billingAddress1?.trim()) return toast.error("Address Line 1 is required.");
@@ -243,12 +231,22 @@ export function BillingPage() {
 
       {/* BILLING SETTINGS */}
       <div className="space-y-6 mt-12">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Billing Profile & Verification</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Billing Profile & Verification</h3>
+          <Button onClick={handleSaveSettings} disabled={isSavingSettings} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-6 py-2 font-medium shadow-sm transition-all hover:shadow-md">
+            {isSavingSettings ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : "Save All Changes"}
+          </Button>
+        </div>
         
         <Card className="shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden rounded-xl">
           <div className="p-6 space-y-6">
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Billing Contact Name</Label>
+              <Label className="text-sm font-medium">Billing Name</Label>
               <Input 
                 value={billingContactName} 
                 onChange={(e) => setBillingContactName(e.target.value)} 
@@ -257,7 +255,7 @@ export function BillingPage() {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Invoice Email</Label>
+              <Label className="text-sm font-medium">Billing Email</Label>
               <div className="flex gap-2">
                 <Input 
                   value={billingEmail} 
@@ -378,16 +376,7 @@ export function BillingPage() {
           </div>
         </Card>
 
-        <div className="flex justify-end mt-6">
-          <Button onClick={handleSaveSettings} disabled={isSavingSettings} className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-8 py-2 font-medium shadow-sm transition-all hover:shadow-md">
-            {isSavingSettings ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving Profile...
-              </>
-            ) : "Save All Changes"}
-          </Button>
-        </div>
+
       </div>
 
       {/* VERIFY EMAIL MODAL */}
