@@ -58,7 +58,7 @@
       <storage>Supabase Storage (file uploads)</storage>
       <realtime>Supabase Realtime (chat, notifications)</realtime>
       <payments>Razorpay (fees collection)</payments>
-      <sms>Fast2SMS (Indian SMS gateway)</sms>
+      <sms>AWS SNS (SMS gateway)</sms>
       <email>Nodemailer + Gmail SMTP</email>
       <ai>Google Gemini API (AI quiz generation, summaries)</ai>
       <hosting>AWS EC2 (t3.medium, Mumbai region)</hosting>

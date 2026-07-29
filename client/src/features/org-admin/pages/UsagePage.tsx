@@ -1,20 +1,9 @@
 import { useState } from "react";
 import { useOrgUsage } from "../queries/useOrgAdminBilling";
-import {
-  Card,
-  Metric,
-  Text,
-  Flex,
-  Grid,
-  BarChart,
-  Select,
-  SelectItem,
-  Title,
-  Subtitle,
-  Divider,
-} from "@tremor/react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/marketing_ui/card";
 import { format, subMonths } from "date-fns";
-import { Mail, MessageSquare, Database, Server, Sparkles, Video, Users, User, Briefcase } from "lucide-react";
+import { Mail, MessageSquare, Database, Video, Users, Briefcase, Sparkles } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 export function UsagePage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -42,7 +31,9 @@ export function UsagePage() {
     return (
       <div className="p-6 sm:p-10 max-w-7xl mx-auto">
         <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
-          <Text className="text-red-800 dark:text-red-200">Failed to load usage data.</Text>
+          <CardContent className="pt-6 text-red-800 dark:text-red-200">
+            Failed to load usage data.
+          </CardContent>
         </Card>
       </div>
     );
@@ -51,10 +42,11 @@ export function UsagePage() {
   const { summary, dailySeries, studentBreakdown, facultyBreakdown, deptAdminBreakdown } = usageData;
 
   const metricOptions = [
-    { value: "emails", label: "Emails Sent", color: "blue" },
-    { value: "sms", label: "SMS Sent", color: "indigo" },
-    { value: "activeStudents", label: "Active Students", color: "emerald" },
-    { value: "liveMinutes", label: "Live Class Minutes", color: "violet" },
+    { value: "emails", label: "Emails Sent", color: "#3b82f6" },
+    { value: "sms", label: "SMS Sent", color: "#6366f1" },
+    { value: "activeStudents", label: "Active Students", color: "#10b981" },
+    { value: "liveMinutes", label: "Live Class Minutes", color: "#8b5cf6" },
+    { value: "aiUsage", label: "AI Tokens", color: "#ec4899" },
   ];
 
   const selectedMetricObj = metricOptions.find((m) => m.value === selectedMetric) || metricOptions[0];
@@ -70,175 +62,226 @@ export function UsagePage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-8">
+      {/* Header & Month Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <Title className="text-2xl font-semibold text-gray-900 dark:text-gray-50">Usage Analytics</Title>
-          <Text>Monitor your organization's resource consumption and active seats.</Text>
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Usage Analytics</h2>
+          <p className="text-muted-foreground mt-1">Monitor your organization's resource consumption and active seats.</p>
         </div>
-        
+
         <div className="w-full sm:w-64">
-          <Select
+          <select
+            className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={`${year}-${month}`}
-            onValueChange={(val) => {
-              const opt = monthOptions.find((o) => o.value === val);
+            onChange={(e) => {
+              const opt = monthOptions.find((o) => o.value === e.target.value);
               if (opt) setSelectedDate(opt.date);
             }}
           >
             {monthOptions.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
+              <option key={opt.value} value={opt.value}>
                 {opt.label}
-              </SelectItem>
+              </option>
             ))}
-          </Select>
+          </select>
         </div>
       </div>
 
-      <Grid numItems={1} numItemsSm={2} numItemsLg={3} className="gap-6">
-        <Card decoration="top" decorationColor="blue">
-          <Flex alignItems="start">
-            <div>
-              <Text>Emails Sent</Text>
-              <Metric>{summary.emailsSent.thisMonth.toLocaleString()}</Metric>
+      {/* Top Resource Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="shadow-sm border-t-4 border-t-blue-500">
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Emails Sent</p>
+                <h3 className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">
+                  {summary.emailsSent.thisMonth.toLocaleString()}
+                </h3>
+              </div>
+              <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400">
+                <Mail className="w-5 h-5" />
+              </div>
             </div>
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
-              <Mail className="w-5 h-5" />
-            </div>
-          </Flex>
-          <Text className="mt-4 text-xs text-gray-500">{summary.emailsSent.total.toLocaleString()} all-time</Text>
+            <p className="mt-4 text-xs text-muted-foreground">{summary.emailsSent.total.toLocaleString()} all-time</p>
+          </CardContent>
         </Card>
 
-        <Card decoration="top" decorationColor="indigo">
-          <Flex alignItems="start">
-            <div>
-              <Text>SMS Sent</Text>
-              <Metric>{summary.smsSent.thisMonth.toLocaleString()}</Metric>
+        <Card className="shadow-sm border-t-4 border-t-indigo-500">
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">SMS Sent</p>
+                <h3 className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">
+                  {summary.smsSent.thisMonth.toLocaleString()}
+                </h3>
+              </div>
+              <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
+                <MessageSquare className="w-5 h-5" />
+              </div>
             </div>
-            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
-              <MessageSquare className="w-5 h-5" />
-            </div>
-          </Flex>
-          <Text className="mt-4 text-xs text-gray-500">{summary.smsSent.total.toLocaleString()} all-time</Text>
+            <p className="mt-4 text-xs text-muted-foreground">{summary.smsSent.total.toLocaleString()} all-time</p>
+          </CardContent>
         </Card>
 
-        <Card decoration="top" decorationColor="amber">
-          <Flex alignItems="start">
-            <div>
-              <Text>Storage Used</Text>
-              <Metric>{(summary.storageUsedGb ?? 0).toFixed(2)} GB</Metric>
+        <Card className="shadow-sm border-t-4 border-t-amber-500">
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Storage Used</p>
+                <h3 className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">
+                  {(summary.storageUsedGb ?? 0).toFixed(2)} GB
+                </h3>
+              </div>
+              <div className="p-2.5 bg-amber-100 dark:bg-amber-900/30 rounded-xl text-amber-600 dark:text-amber-400">
+                <Database className="w-5 h-5" />
+              </div>
             </div>
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg text-amber-600 dark:text-amber-400">
-              <Database className="w-5 h-5" />
-            </div>
-          </Flex>
-          <Text className="mt-4 text-xs text-gray-500">
-            {summary.storageLimitGb ? `Limit: ${summary.storageLimitGb} GB` : "Pay-as-you-go"}
-          </Text>
+            <p className="mt-4 text-xs text-muted-foreground">
+              {summary.storageLimitGb ? `Limit: ${summary.storageLimitGb} GB` : "Pay-as-you-go"}
+            </p>
+          </CardContent>
         </Card>
 
-        <Card decoration="top" decorationColor="emerald">
-          <Flex alignItems="start">
-            <div>
-              <Text>Active Students</Text>
-              <Metric>{summary.students.active.toLocaleString()}</Metric>
+        <Card className="shadow-sm border-t-4 border-t-violet-500">
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Live Class Minutes</p>
+                <h3 className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">
+                  {summary.liveClassMinutes.thisMonth.toLocaleString()}
+                </h3>
+              </div>
+              <div className="p-2.5 bg-violet-100 dark:bg-violet-900/30 rounded-xl text-violet-600 dark:text-violet-400">
+                <Video className="w-5 h-5" />
+              </div>
             </div>
-            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
-              <Users className="w-5 h-5" />
-            </div>
-          </Flex>
-          <Text className="mt-4 text-xs text-gray-500">
-            {summary.students.limit ? `Limit: ${summary.students.limit}` : "Unlimited"}
-          </Text>
+            <p className="mt-4 text-xs text-muted-foreground">This month</p>
+          </CardContent>
         </Card>
 
-        <Card decoration="top" decorationColor="fuchsia">
-          <Flex alignItems="start">
-            <div>
-              <Text>Active Faculty</Text>
-              <Metric>{summary.faculty.active.toLocaleString()}</Metric>
+        <Card className="shadow-sm border-t-4 border-t-pink-500">
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">AI Tokens Used</p>
+                <h3 className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">
+                  {(summary.aiUsage?.thisMonth || 0).toLocaleString()}
+                </h3>
+              </div>
+              <div className="p-2.5 bg-pink-100 dark:bg-pink-900/30 rounded-xl text-pink-600 dark:text-pink-400">
+                <Sparkles className="w-5 h-5" />
+              </div>
             </div>
-            <div className="p-2 bg-fuchsia-100 dark:bg-fuchsia-900/30 rounded-lg text-fuchsia-600 dark:text-fuchsia-400">
-              <Briefcase className="w-5 h-5" />
-            </div>
-          </Flex>
-          <Text className="mt-4 text-xs text-gray-500">
-            {summary.faculty.limit ? `Limit: ${summary.faculty.limit}` : "Unlimited"}
-          </Text>
+            <p className="mt-4 text-xs text-muted-foreground">This month</p>
+          </CardContent>
         </Card>
+      </div>
 
-        <Card decoration="top" decorationColor="violet">
-          <Flex alignItems="start">
+      {/* Daily Usage Trends Chart */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <Text>Live Class Minutes</Text>
-              <Metric>{summary.liveClassMinutes.thisMonth.toLocaleString()}</Metric>
+              <CardTitle className="text-lg">Daily Usage Trends</CardTitle>
+              <CardDescription>Breakdown for {format(selectedDate, "MMMM yyyy")}</CardDescription>
             </div>
-            <div className="p-2 bg-violet-100 dark:bg-violet-900/30 rounded-lg text-violet-600 dark:text-violet-400">
-              <Video className="w-5 h-5" />
+            <div className="w-full sm:w-48">
+              <select
+                className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedMetric}
+                onChange={(e) => setSelectedMetric(e.target.value)}
+              >
+                {metricOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
-          </Flex>
-          <Text className="mt-4 text-xs text-gray-500">This month</Text>
-        </Card>
-      </Grid>
-
-      <Card>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-          <div>
-            <Title>Daily Usage Trends</Title>
-            <Subtitle>Breakdown for {format(selectedDate, "MMMM yyyy")}</Subtitle>
           </div>
-          <div className="w-full sm:w-48">
-            <Select value={selectedMetric} onValueChange={setSelectedMetric}>
-              {metricOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </Select>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 w-full mt-4">
+            {dailySeries && dailySeries.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dailySeries} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" className="dark:stroke-gray-800" />
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#6b7280", fontSize: 12 }}
+                    tickFormatter={(val) => {
+                      const d = new Date(val);
+                      return `${d.getDate()} ${d.toLocaleString("default", { month: "short" })}`;
+                    }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#6b7280", fontSize: 12 }}
+                    tickFormatter={(val) => val.toLocaleString()}
+                  />
+                  <Tooltip
+                    contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}
+                    formatter={(value: number) => [value.toLocaleString(), selectedMetricObj.label]}
+                    labelFormatter={(label) => format(new Date(label), "dd MMM yyyy")}
+                  />
+                  <Bar dataKey={selectedMetric} fill={selectedMetricObj.color} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground bg-gray-50 dark:bg-gray-800/20 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
+                No usage data available for this period.
+              </div>
+            )}
           </div>
-        </div>
-        
-        <BarChart
-          className="h-80 mt-4"
-          data={dailySeries}
-          index="date"
-          categories={[selectedMetric]}
-          colors={[selectedMetricObj.color as any]}
-          yAxisWidth={48}
-          showAnimation={true}
-          valueFormatter={(val) => val.toLocaleString()}
-        />
+        </CardContent>
       </Card>
-      
-      <Grid numItems={1} numItemsLg={2} className="gap-6">
-        <Card>
-          <Title>Student Breakdown by Department</Title>
-          <div className="mt-4 space-y-2">
-            {studentBreakdown.byDepartment.map((dept, i) => (
-              <Flex key={i} className="py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
-                <Text>{dept.name || "Unassigned"}</Text>
-                <Text className="font-medium">{dept.count.toLocaleString()}</Text>
-              </Flex>
-            ))}
-            {studentBreakdown.byDepartment.length === 0 && (
-              <Text className="text-gray-500 italic">No department data available</Text>
-            )}
-          </div>
+
+      {/* Breakdown Tables */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg">Student Breakdown by Department</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {studentBreakdown?.byDepartment?.map((dept, i) => (
+                <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{dept.name || "Unassigned"}</span>
+                  <span className="text-sm font-semibold">{dept.count.toLocaleString()}</span>
+                </div>
+              ))}
+              {(!studentBreakdown?.byDepartment || studentBreakdown.byDepartment.length === 0) && (
+                <p className="text-sm text-muted-foreground italic">No department data available</p>
+              )}
+            </div>
+          </CardContent>
         </Card>
-        
-        <Card>
-          <Title>Department Admin Roles</Title>
-          <div className="mt-4 space-y-2">
-            {deptAdminBreakdown.map((admin, i) => (
-              <Flex key={i} className="py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
-                <Text className="capitalize">{admin.role?.replace(/_/g, ' ') || "Unknown"}</Text>
-                <Text className="font-medium">{admin.count.toLocaleString()}</Text>
-              </Flex>
-            ))}
-            {deptAdminBreakdown.length === 0 && (
-              <Text className="text-gray-500 italic">No department admins found</Text>
-            )}
-          </div>
+
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg">Department Admin Roles</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {deptAdminBreakdown?.map((admin, i) => (
+                <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                  <span className="text-sm font-medium capitalize text-gray-900 dark:text-gray-100">
+                    {admin.role?.replace(/_/g, " ") || "Unknown"}
+                  </span>
+                  <span className="text-sm font-semibold">{admin.count.toLocaleString()}</span>
+                </div>
+              ))}
+              {(!deptAdminBreakdown || deptAdminBreakdown.length === 0) && (
+                <p className="text-sm text-muted-foreground italic">No department admins found</p>
+              )}
+            </div>
+          </CardContent>
         </Card>
-      </Grid>
+      </div>
     </div>
   );
 }

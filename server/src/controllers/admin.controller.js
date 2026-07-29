@@ -87,7 +87,6 @@ export const approveOrganization = async (req, res) => {
             studentLimit: studentLimit,
             planExpiresAt: planExpiresAt,
             planActivatedAt: planActivatedAt,
-            faculty_limit: planConfig.maxFaculty || 5,
         });
         const savedOrg = await newOrg.save();
 
@@ -309,25 +308,6 @@ export const deleteOrganization = async (req, res) => {
     }
 };
 
-// POST /api/admin/update-faculty-limit/:id
-export const updateFacultyLimit = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { limit } = req.body;
-
-        if (!limit || isNaN(limit)) {
-            return res.status(400).json({ message: "Valid limit is required" });
-        }
-
-        const org = await Organization.findByIdAndUpdate(id, { faculty_limit: limit }, { returnDocument: "after" });
-        if (!org) return res.status(404).json({ message: "Organization not found" });
-
-        res.json({ message: "Faculty limit updated", org });
-    } catch (err) {
-        res.status(500).json({ message: "Server error", error: err.message });
-    }
-};
-
 // POST /api/admin/update-plan/:id
 export const updatePlan = async (req, res) => {
     try {
@@ -350,7 +330,6 @@ export const updatePlan = async (req, res) => {
             {
                 plan: planUpper,
                 studentLimit: planConfig.studentLimit,
-                faculty_limit: planConfig.maxFaculty,
                 planExpiresAt: null,
                 planActivatedAt: now,
             },

@@ -26,13 +26,8 @@ async function makeOrgActive() {
           expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // 1 year from now
           razorpay_subscription_id: "sub_mock_" + Date.now(),
           razorpay_customer_id: "cust_mock_" + Date.now(),
-          "metadata.max_students": 5000,
-          "metadata.max_faculty": 200,
-          "metadata.max_dept_admins": 20,
           "metadata.storage_limit_gb": 500,
           "billing.basePricePerMonth": 2000,
-          "billing.pricePerStudent": 150,
-          "billing.pricePerFaculty": 500,
           "billing.pricePerGB": 20,
           "billing.pricePerEmail": 0.5,
           "billing.pricePerSms": 2.5

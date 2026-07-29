@@ -11,6 +11,7 @@ import {
 } from "./formatters";
 import { OrgDataRow } from "./OrgDataRow";
 import { OrgSectionCard } from "./OrgSectionCard";
+import { EditModulesModal } from "./EditModulesModal";
 
 interface OrgConfigurationTabProps {
   profile?: OrganizationFullProfile;
@@ -63,6 +64,7 @@ export function OrgConfigurationTab({ profile }: OrgConfigurationTabProps) {
         title="Feature flags"
         description="Every organization feature flag currently returned by the backend."
         icon={<SlidersHorizontal className="h-5 w-5" aria-hidden="true" />}
+        action={<EditModulesModal profile={profile} orgId={profile?._id as string} />}
       >
         {featureFlags.length > 0 ? (
           <div className="grid gap-2 sm:grid-cols-2">

@@ -402,7 +402,6 @@ router.get("/organizations", async (req, res) => {
                 orgType: o.org_type ?? o.structure_type ?? "organization",
                 ownerName: o.ownerName || owner?.name || "",
                 ownerEmail: o.ownerEmail || owner?.email || "",
-                maxStudents: o.studentLimit ?? null,
                 totalUsers: userCount,
                 userCount,
             };
@@ -1295,11 +1294,9 @@ router.get("/revenue", async (req, res) => {
             const org = orgMap[orgId];
             if (!org) continue;
 
-            const students = usage?.totalStudents || 0;
             const billing = sub.billing || {};
             const base = billing.basePricePerMonth || 0;
-            const perStudent = billing.pricePerStudent || 0;
-            const estimatedValue = base + (students * perStudent);
+            const estimatedValue = base;
 
             if (sub.plan === "active" && sub.status === "active") {
                 mrr += estimatedValue;

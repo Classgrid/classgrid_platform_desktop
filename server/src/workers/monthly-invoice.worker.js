@@ -17,7 +17,18 @@ import SaasInvoice from "../models/SaasInvoice.js";
 import Organization from "../models/Organization.js";
 import OrgSubscription from "../models/OrgSubscription.js";
 import User from "../models/User.js";
-import EmailJob from "../models/EmailJob.js";
+import EmailJob from "../models/EmailJob.js";`r`n`r`nconst DEPT_ADMIN_ROLES = [`r`n    "hod", "exam_controller", "fee_manager", "admission_head",`r`n    "admission_verifier", "admission_counselor", "admission_clerk",`r`n    "library_manager", "tpo_officer", "transport_manager", "counselor",`r`n    "coordinator", "principal", "vice_principal",`r`n];
+
+const DEFAULT_MODULE_PRICES = {
+    naac_module: 4000, hr_module: 2500, marketplace_module: 1500, admission_module: 3000, canteen_module: 2000, 
+    exam_proctoring: 2500, custom_domain_module: 1500, fee_module: 3000, ai_assistant: 3500, analytics_module: 2500, 
+    website_module: 2000, certificates_module: 1200, events_module: 1000, feedback_module: 800, holiday_module: 500, 
+    id_cards_module: 1000, attendance_module: 1500, classroom_module: 1000, timetable_module: 1200, academic_planner_module: 1000, 
+    assignment_module: 800, teacher_planner_module: 800, exam_module: 2500, exam_management_module: 2000, quiz_module: 1200, 
+    grade_entry_module: 1000, internal_assessment_module: 1000, cet_exam_module: 3500, mock_tests_module: 1500, ai_viva_module: 3000, 
+    test_series_module: 2000, library_module: 1500, alumni_module: 1500, dashboard_admission: 800, dashboard_fees: 800, 
+    dashboard_exam: 800, dashboard_library: 500, dashboard_attendance: 500, dashboard_hr: 800, dashboard_hostel: 800, dashboard_canteen: 500
+};
 
 function money(value) {
     return Math.round((Number(value) || 0) * 100) / 100;
@@ -64,7 +75,7 @@ async function generateMonthlyInvoices({ month, year } = {}) {
     // 3. Fetch org details
     const orgIds = [...usageByOrg.keys()].map((id) => new mongoose.Types.ObjectId(id));
     const [organizations, subscriptions] = await Promise.all([
-        Organization.find({ _id: { $in: orgIds } }).select("_id name sidebar_name").lean(),
+        Organization.find({ _id: { $in: orgIds } }).select("_id name sidebar_name feature_flags").lean(),
         OrgSubscription.find({ organization_id: { $in: orgIds } }).select("_id organization_id billing").lean(),
     ]);
 
@@ -134,6 +145,26 @@ async function generateMonthlyInvoices({ month, year } = {}) {
                     amountInr: baseFee,
                 });
             }
+
+            // Add enabled module fees
+            const customPrices = sub?.billing?.modulePrices || {};
+            const activeFlags = org?.feature_flags || {};
+            Object.entries(activeFlags).forEach(([flagKey, isEnabled]) => {
+                if (isEnabled && flagKey !== "erp_core" && !["dashboard_student", "dashboard_faculty", "dashboard_organization"].includes(flagKey)) {
+                    const overridePrice = typeof customPrices.get === 'function' ? customPrices.get(flagKey) : customPrices[flagKey];
+                    const price = Number(overridePrice !== undefined ? overridePrice : DEFAULT_MODULE_PRICES[flagKey] || 0);
+                    if (price > 0) {
+                        lineItems.push({
+                            provider: "classgrid",
+                            resourceLabel: `Module: ${flagKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
+                            totalQuantity: 1,
+                            unit: "month",
+                            unitRateInr: price,
+                            amountInr: price,
+                        });
+                    }
+                }
+            });
 
             const finalSubtotal = money(lineItems.reduce((sum, item) => sum + item.amountInr, 0));
             const taxPercent = 18; // GST

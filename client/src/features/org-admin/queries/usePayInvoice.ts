@@ -20,13 +20,18 @@ export function usePayInvoice() {
           handler: async (response: any) => {
             try {
               // Step 3: Verify payment
-              const verifyRes = await apiClient.post("/api/org-admin/dashboard/billing/razorpay-verify", {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                invoiceId,
-              });
-              resolve(verifyRes.data);
+              try {
+                const verifyRes = await apiClient.post("/api/org-admin/dashboard/billing/razorpay-verify", {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  invoiceId,
+                });
+                resolve(verifyRes.data);
+              } catch (verifyError: any) {
+                // Return the specific error message from the backend if it exists
+                reject(new Error(verifyError.response?.data?.message || "Payment verification failed"));
+              }
             } catch (error) {
               reject(error);
             }

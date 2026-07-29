@@ -13,8 +13,6 @@ const PLAN_FEATURES = {
         canteen: true,
         ai_viva: true,
         naac_auditor: true,
-        max_students: 50,
-        max_faculty: 5
     },
     sandbox: {
         attendance: true,
@@ -23,8 +21,6 @@ const PLAN_FEATURES = {
         canteen: true,
         ai_viva: true,
         naac_auditor: true,
-        max_students: 50,
-        max_faculty: 5
     },
     active: {
         attendance: true,
@@ -33,8 +29,6 @@ const PLAN_FEATURES = {
         canteen: true,
         ai_viva: true,
         naac_auditor: true,
-        max_students: 100000,
-        max_faculty: 5000
     }
 };
 

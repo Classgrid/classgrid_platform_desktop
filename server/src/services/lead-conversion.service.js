@@ -188,7 +188,6 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
     const activationDate = new Date();
     const expiryDate = provisioned?.subscription?.expiresAt || new Date(Date.now() + 31 * 24 * 60 * 60 * 1000);
     const plan = String(options?.plan || provisioned?.subscription?.plan || "demo").trim().toLowerCase();
-    const limits = getPlanLimits(plan);
     const warnings = [];
 
     const subject = "Activate Your Classgrid Admin Account";
@@ -213,7 +212,6 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
           organizationCode: organization.organizationCode,
           honorCode: organization.honorCode,
           plan,
-          studentLimit: limits.max_students,
           activationLink,
           activationCode: credentials.activationCode,
           activationDate,
@@ -226,7 +224,6 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
           organizationCode: organization.organizationCode,
           honorCode: organization.honorCode,
           plan,
-          studentLimit: limits.max_students,
           activationLink,
           activationCode: credentials.activationCode,
           activationDate,

@@ -554,7 +554,7 @@ The code you pulled from 21st.dev (`IntegrationHero`) is the exact answer to VME
 *   **The Data:** Swap the generic links in your `ICONS_ROW1` array with our exact tech partners to prove Classgrid's power:
     *   Zoom / Google Meet (Live Classes)
     *   AWS S3 (Document storage)
-    *   Brevo / Fast2SMS (Messaging)
+    *   Brevo / AWS SNS (Messaging)
     *   Razorpay (Fee Collection)
     *   Agora (WebRTC Live Streams)
     *   mongodb (Backend Infrastructure proof)

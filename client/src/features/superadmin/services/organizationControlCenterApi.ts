@@ -428,4 +428,9 @@ export const organizationControlCenterApi = {
     apiClient
       .post("/api/org-admin/dashboard/billing/razorpay-verify", payload)
       .then((response) => response.data),
+
+  updateOrganizationConfig: (orgId: string, data: { featureFlags?: Record<string, boolean>; billing?: any; limits?: any }) =>
+    apiClient
+      .put(`/api/super-admin/org/${orgId}/config`, data)
+      .then((response) => response.data),
 };

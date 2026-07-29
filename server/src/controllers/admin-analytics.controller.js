@@ -838,12 +838,24 @@ export const verifySaasInvoicePayment = async (req, res) => {
             .digest("hex");
 
         if (expectedSignature === razorpay_signature) {
-            await SaasInvoice.findByIdAndUpdate(invoiceId, {
-                status: 'paid',
-                paymentDate: new Date(),
-                razorpayOrderId: razorpay_order_id,
-                razorpayPaymentId: razorpay_payment_id
-            });
+            const updatedInvoice = await SaasInvoice.findByIdAndUpdate(
+                invoiceId, 
+                {
+                    $set: {
+                        status: 'paid',
+                        'razorpay.paidAt': new Date(),
+                        'razorpay.orderId': razorpay_order_id,
+                        'razorpay.paymentId': razorpay_payment_id,
+                        'razorpay.paymentMethod': 'razorpay'
+                    }
+                },
+                { new: true, runValidators: true }
+            );
+            
+            if (!updatedInvoice) {
+                return res.status(404).json({ success: false, message: "Invoice not found" });
+            }
+
             res.json({ success: true, message: "Payment verified successfully" });
         } else {
             res.status(400).json({ success: false, message: "Invalid signature" });

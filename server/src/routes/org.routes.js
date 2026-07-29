@@ -10,7 +10,16 @@ import { getChatSb } from "../config/supabaseClient.js";
 import { trackOnboardingEvent } from "../services/onboarding-event.service.js";
 import { buildInstitutionProfile as buildSharedInstitutionProfile } from "../services/institution-profile.service.js";
 import { getOrgDashboardMetrics } from '../controllers/org-dashboard.controller.js';
-import { getMyOrganizationConfig, getOrganizationUsageSummary, getOrganizationBilling } from "../controllers/org-configuration.controller.js";
+import { 
+    getMyOrganizationConfig, 
+    getOrganizationUsageSummary, 
+    getOrganizationBilling,
+    sendBillingEmailVerification,
+    verifyBillingEmail,
+    sendBillingPhoneOtp,
+    verifyBillingPhoneOtp,
+    downloadInvoicePdf
+} from "../controllers/org-configuration.controller.js";
 import { getOrgAdminBillingDashboard, createSaasInvoiceOrder, verifySaasInvoicePayment } from '../controllers/admin-analytics.controller.js';
 import redis from '../config/redis.js';
 import { getDeptAdminInviteEmailHtml, getErpRoleInvitationHtml, getErpRoleRequestAdminHtml, getErpRoleApprovedHtml, getErpRoleInstantlyGrantedHtml, getErpRoleRejectedHtml } from '../services/email-templates.service.js';
@@ -98,6 +107,11 @@ const router = express.Router();
 router.get("/my-config", isAuthenticated, requireRole("org_admin"), getMyOrganizationConfig);
 router.get("/usage", isAuthenticated, requireRole("org_admin"), getOrganizationUsageSummary);
 router.get("/billing", isAuthenticated, requireRole("org_admin"), getOrganizationBilling);
+router.post("/billing/verify-email/send", isAuthenticated, requireRole("org_admin"), sendBillingEmailVerification);
+router.post("/billing/verify-email/confirm", isAuthenticated, requireRole("org_admin"), verifyBillingEmail);
+router.post("/billing/verify-phone/send", isAuthenticated, requireRole("org_admin"), sendBillingPhoneOtp);
+router.post("/billing/verify-phone/confirm", isAuthenticated, requireRole("org_admin"), verifyBillingPhoneOtp);
+router.get("/billing/invoice/:invoiceId/pdf", isAuthenticated, requireRole("org_admin"), downloadInvoicePdf);
 
 const HEX_COLOR_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 

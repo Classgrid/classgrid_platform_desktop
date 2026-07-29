@@ -1,0 +1,110 @@
+import { useState } from "react";
+import { Button } from "@/components/marketing_ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/marketing_ui/dialog";
+import { Input } from "@/components/marketing_ui/input";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { organizationControlCenterApi } from "../../services/organizationControlCenterApi";
+import { toast } from "sonner";
+import { Pencil, CheckCircle2 } from "lucide-react";
+import { Switch } from "@/components/marketing_ui/switch";
+
+export function EditModulesModal({ profile, orgId }: { profile: any; orgId: string }) {
+  const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
+
+  const initialFlags = profile?.feature_flags || {};
+  const [flags, setFlags] = useState<Record<string, boolean>>(initialFlags);
+  
+  const initialLimits = profile?.subscription?.limits || {};
+  const [limits, setLimits] = useState<{
+    storage_limit_gb?: number;
+  }>({
+    storage_limit_gb: initialLimits.storage_limit_gb || 100,
+  });
+
+  // Sync state if profile changes when modal opens
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      setFlags(profile?.feature_flags || {});
+      const lim = profile?.subscription?.limits || {};
+      setLimits({
+        storage_limit_gb: lim.storage_limit_gb || 100,
+      });
+    }
+    setOpen(isOpen);
+  };
+
+  const toggleFlag = (key: string) => {
+    setFlags((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+  
+  const handleLimitChange = (key: string, value: string) => {
+    setLimits(prev => ({ ...prev, [key]: parseInt(value) || 0 }));
+  };
+
+  const mutation = useMutation({
+    mutationFn: () => organizationControlCenterApi.updateOrganizationConfig(orgId, { featureFlags: flags, limits }),
+    onSuccess: () => {
+      toast.success("Modules updated successfully");
+      qc.invalidateQueries({ queryKey: ["super-admin", "org-full-profile", orgId] });
+      setOpen(false);
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to update modules");
+    }
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Pencil className="h-4 w-4" />
+          Edit Modules
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Configure Modules & Toggles</DialogTitle>
+          <DialogDescription>
+            Enable or disable premium modules and dashboards for this organization. These changes take effect immediately.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+          {Object.entries(flags).map(([key, value]) => (
+            <div key={key} className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+              <div className="space-y-0.5">
+                <label className="text-sm font-medium leading-none capitalize">
+                  {key.replace(/_/g, " ")}
+                </label>
+              </div>
+              <Switch
+                checked={value}
+                onCheckedChange={() => toggleFlag(key)}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-2 border-t pt-4">
+          <h4 className="font-semibold mb-3">Resource Limits</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Storage Limit (GB)</label>
+              <Input type="number" value={limits.storage_limit_gb} onChange={(e) => handleLimitChange("storage_limit_gb", e.target.value)} />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4 mt-4 border-t">
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
+            Cancel
+          </Button>
+          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+            {mutation.isPending ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -52,26 +52,59 @@ export function BillingPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   
   const [billingEmail, setBillingEmail] = useState("");
-  const [billingState, setBillingState] = useState("Maharashtra");
-  const [billingAddress, setBillingAddress] = useState("");
+  const [billingPhone, setBillingPhone] = useState("");
+  const [billingGstin, setBillingGstin] = useState("");
+  const [billingAddress1, setBillingAddress1] = useState("");
+  const [billingAddress2, setBillingAddress2] = useState("");
+  const [billingCity, setBillingCity] = useState("");
+  const [billingState, setBillingState] = useState("");
+  const [billingPincode, setBillingPincode] = useState("");
+  const [billingContactName, setBillingContactName] = useState("");
+  
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  
+  const [isEmailVerifyModalOpen, setIsEmailVerifyModalOpen] = useState(false);
+  const [isPhoneVerifyModalOpen, setIsPhoneVerifyModalOpen] = useState(false);
+  const [phoneOtp, setPhoneOtp] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
 
   // Sync settings with backend data when loaded
   useEffect(() => {
     if (billingData?.billingSettings) {
       setBillingEmail(billingData.billingSettings.invoice_email || "");
-      setBillingState(billingData.billingSettings.state || "Maharashtra");
-      setBillingAddress(billingData.billingSettings.address || "");
+      setBillingPhone(billingData.billingSettings.phone || "");
+      setBillingGstin(billingData.billingSettings.gstin || "");
+      setBillingAddress1(billingData.billingSettings.address_line1 || "");
+      setBillingAddress2(billingData.billingSettings.address_line2 || "");
+      setBillingCity(billingData.billingSettings.city || "");
+      setBillingState(billingData.billingSettings.state || "");
+      setBillingPincode(billingData.billingSettings.pincode || "");
+      setBillingContactName(billingData.billingSettings.billing_contact_name || "");
+      setEmailVerified(billingData.billingSettings.email_verified || false);
+      setPhoneVerified(billingData.billingSettings.phone_verified || false);
     }
   }, [billingData]);
 
   const handleSaveSettings = async () => {
     try {
       setIsSavingSettings(true);
-      const res = await fetch("/api/org-admin/dashboard/billing/settings", {
+      const res = await fetch("/api/org/dashboard/billing/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
-        body: JSON.stringify({ invoice_email: billingEmail, state: billingState, address: billingAddress })
+        body: JSON.stringify({ 
+          invoice_email: billingEmail, 
+          phone: billingPhone,
+          gstin: billingGstin,
+          address_line1: billingAddress1,
+          address_line2: billingAddress2,
+          city: billingCity,
+          state: billingState,
+          pincode: billingPincode,
+          billing_contact_name: billingContactName
+        })
       });
       if (!res.ok) throw new Error("Failed to save settings");
       toast.success("Billing settings saved successfully!");
@@ -126,6 +159,66 @@ export function BillingPage() {
     }
   };
 
+  const handleDownloadPdf = async (invoiceId: string) => {
+    try {
+      const response = await fetch(`/api/org/billing/invoice/${invoiceId}/pdf`, {
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+      });
+      if (!response.ok) throw new Error("Failed to download PDF");
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Invoice-${invoiceId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to download PDF");
+    }
+  };
+
+  const handleSendEmailVerification = async () => {
+    try {
+      setIsVerifying(true);
+      await apiClient.post("/api/org/billing/verify-email/send");
+      toast.success("Verification email sent! Check your inbox.");
+      setIsEmailVerifyModalOpen(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to send email");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleSendPhoneOtp = async () => {
+    try {
+      setIsVerifying(true);
+      await apiClient.post("/api/org/billing/verify-phone/send");
+      toast.success("OTP sent to your phone number.");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleVerifyPhoneOtp = async () => {
+    try {
+      setIsVerifying(true);
+      await apiClient.post("/api/org/billing/verify-phone/confirm", { otp: phoneOtp });
+      toast.success("Phone verified successfully!");
+      setPhoneVerified(true);
+      setIsPhoneVerifyModalOpen(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Invalid or expired OTP");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-6 sm:p-10 space-y-6 max-w-7xl mx-auto animate-pulse">
@@ -163,14 +256,6 @@ export function BillingPage() {
   const storageLimit = subscription?.limits?.storageGb || 100;
   const storageUsed = currentMonthCharges?.storageCharges?.count || 0;
   const storagePercent = Math.min(100, Math.round((storageUsed / storageLimit) * 100));
-
-  const studentsLimit = subscription?.limits?.maxStudents || 1000;
-  const studentsUsed = currentMonthCharges?.studentCharges?.count || 0;
-  const studentsPercent = Math.min(100, Math.round((studentsUsed / studentsLimit) * 100));
-
-  const facultyLimit = subscription?.limits?.maxFaculty || 100;
-  const facultyUsed = currentMonthCharges?.facultyCharges?.count || 0;
-  const facultyPercent = Math.min(100, Math.round((facultyUsed / facultyLimit) * 100));
 
   const emailsUsed = currentMonthCharges?.emailCharges?.count || 0;
   const smsUsed = currentMonthCharges?.smsCharges?.count || 0;
@@ -262,10 +347,12 @@ export function BillingPage() {
                 <PieChart>
                   <Pie
                     data={[
-                      { name: 'Students', value: currentMonthCharges?.studentCharges?.total || 0, color: '#3b82f6' },
-                      { name: 'Faculty', value: currentMonthCharges?.facultyCharges?.total || 0, color: '#f59e0b' },
                       { name: 'Storage', value: currentMonthCharges?.storageCharges?.total || 0, color: '#10b981' },
                       { name: 'Emails', value: currentMonthCharges?.emailCharges?.total || 0, color: '#8b5cf6' },
+                      { name: 'SMS', value: currentMonthCharges?.smsCharges?.total || 0, color: '#6366f1' },
+                      { name: 'AI Tokens', value: currentMonthCharges?.aiUsageCharges?.total || 0, color: '#ec4899' },
+                      { name: 'Live Classes', value: currentMonthCharges?.liveClassCharges?.total || 0, color: '#d946ef' },
+                      { name: 'Modules', value: currentMonthCharges?.moduleChargesTotal || 0, color: '#f43f5e' },
                       { name: 'Platform Fee', value: currentMonthCharges?.platformFee || 0, color: '#64748b' },
                     ].filter(d => d.value > 0)}
                     cx="50%"
@@ -277,10 +364,12 @@ export function BillingPage() {
                   >
                     {
                       [
-                        { name: 'Students', value: currentMonthCharges?.studentCharges?.total || 0, color: '#3b82f6' },
-                        { name: 'Faculty', value: currentMonthCharges?.facultyCharges?.total || 0, color: '#f59e0b' },
                         { name: 'Storage', value: currentMonthCharges?.storageCharges?.total || 0, color: '#10b981' },
                         { name: 'Emails', value: currentMonthCharges?.emailCharges?.total || 0, color: '#8b5cf6' },
+                        { name: 'SMS', value: currentMonthCharges?.smsCharges?.total || 0, color: '#6366f1' },
+                        { name: 'AI Tokens', value: currentMonthCharges?.aiUsageCharges?.total || 0, color: '#ec4899' },
+                        { name: 'Live Classes', value: currentMonthCharges?.liveClassCharges?.total || 0, color: '#d946ef' },
+                        { name: 'Modules', value: currentMonthCharges?.moduleChargesTotal || 0, color: '#f43f5e' },
                         { name: 'Platform Fee', value: currentMonthCharges?.platformFee || 0, color: '#64748b' },
                       ].filter(d => d.value > 0).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -321,22 +410,6 @@ export function BillingPage() {
             </div>
 
             <div className="flex flex-col items-center text-center">
-              <ProgressCircle value={studentsPercent} colorClass={studentsPercent > 80 ? "text-red-500" : "text-blue-500"}>
-                <span>{studentsPercent}%</span>
-              </ProgressCircle>
-              <p className="mt-4 font-semibold text-gray-900 dark:text-white">Students</p>
-              <p className="text-xs text-muted-foreground mt-1">{studentsUsed} / {studentsLimit}</p>
-            </div>
-
-            <div className="flex flex-col items-center text-center">
-              <ProgressCircle value={facultyPercent} colorClass={facultyPercent > 80 ? "text-red-500" : "text-amber-500"}>
-                <span>{facultyPercent}%</span>
-              </ProgressCircle>
-              <p className="mt-4 font-semibold text-gray-900 dark:text-white">Faculty</p>
-              <p className="text-xs text-muted-foreground mt-1">{facultyUsed} / {facultyLimit}</p>
-            </div>
-
-            <div className="flex flex-col items-center text-center">
               <ProgressCircle value={emailsUsed > 0 ? 100 : 0} colorClass="text-purple-500">
                 <span className="text-purple-600 dark:text-purple-400">{emailsUsed}</span>
               </ProgressCircle>
@@ -349,6 +422,22 @@ export function BillingPage() {
                 <span className="text-indigo-600 dark:text-indigo-400">{smsUsed}</span>
               </ProgressCircle>
               <p className="mt-4 font-semibold text-gray-900 dark:text-white">SMS Sent</p>
+              <p className="text-xs text-muted-foreground mt-1">Pay-as-you-go</p>
+            </div>
+
+            <div className="flex flex-col items-center text-center">
+              <ProgressCircle value={100} colorClass="text-pink-500">
+                <span className="text-pink-600 dark:text-pink-400">{currentMonthCharges?.aiUsageCharges?.count?.toLocaleString() || 0}</span>
+              </ProgressCircle>
+              <p className="mt-4 font-semibold text-gray-900 dark:text-white">AI Tokens</p>
+              <p className="text-xs text-muted-foreground mt-1">Pay-as-you-go</p>
+            </div>
+
+            <div className="flex flex-col items-center text-center">
+              <ProgressCircle value={100} colorClass="text-violet-500">
+                <span className="text-violet-600 dark:text-violet-400">{currentMonthCharges?.liveClassCharges?.count?.toLocaleString() || 0}</span>
+              </ProgressCircle>
+              <p className="mt-4 font-semibold text-gray-900 dark:text-white">Live Minutes</p>
               <p className="text-xs text-muted-foreground mt-1">Pay-as-you-go</p>
             </div>
 
@@ -417,11 +506,8 @@ export function BillingPage() {
             </div>
             
             <div className="mt-8">
-              <h4 className="text-sm font-semibold mb-3 uppercase tracking-wider text-muted-foreground">Seat Limits</h4>
+              <h4 className="text-sm font-semibold mb-3 uppercase tracking-wider text-muted-foreground">Resource Limits</h4>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Students</span><span className="font-medium">{subscription?.limits?.maxStudents || "Unlimited"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Faculty</span><span className="font-medium">{subscription?.limits?.maxFaculty || "Unlimited"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Dept Admins</span><span className="font-medium">{subscription?.limits?.maxDeptAdmins || "Unlimited"}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Storage Limit</span><span className="font-medium">{subscription?.limits?.storageGb ? `${subscription.limits.storageGb} GB` : "Pay as you go"}</span></div>
               </div>
             </div>
@@ -442,26 +528,18 @@ export function BillingPage() {
               </div>
               
               <div className="space-y-2 py-2">
-                {currentMonthCharges?.studentCharges?.count > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Students ({currentMonthCharges.studentCharges.count} × ₹{currentMonthCharges.studentCharges.rate})</span>
-                    <span>₹{currentMonthCharges.studentCharges.total.toLocaleString()}</span>
-                  </div>
-                )}
-                
-                {currentMonthCharges?.facultyCharges?.count > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Faculty ({currentMonthCharges.facultyCharges.count} × ₹{currentMonthCharges.facultyCharges.rate})</span>
-                    <span>₹{currentMonthCharges.facultyCharges.total.toLocaleString()}</span>
+                {currentMonthCharges?.moduleLineItems && currentMonthCharges.moduleLineItems.length > 0 && (
+                  <div className="space-y-1 pb-2 border-b border-gray-100 dark:border-gray-800">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Subscribed Modules</p>
+                    {currentMonthCharges.moduleLineItems.map((mod: any, idx: number) => (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Module: {mod.label}</span>
+                        <span>₹{mod.price?.toLocaleString()}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
 
-                {currentMonthCharges?.deptAdminCharges?.count > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Dept Admins ({currentMonthCharges.deptAdminCharges.count} × ₹{currentMonthCharges.deptAdminCharges.rate})</span>
-                    <span>₹{currentMonthCharges.deptAdminCharges.total.toLocaleString()}</span>
-                  </div>
-                )}
 
                 {currentMonthCharges?.emailCharges?.count > 0 && (
                   <div className="flex justify-between text-sm">
@@ -481,6 +559,20 @@ export function BillingPage() {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Storage ({currentMonthCharges.storageCharges.count} GB × ₹{currentMonthCharges.storageCharges.rate})</span>
                     <span>₹{currentMonthCharges.storageCharges.total.toLocaleString()}</span>
+                  </div>
+                )}
+                
+                {currentMonthCharges?.aiUsageCharges && currentMonthCharges.aiUsageCharges.count > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">AI Tokens ({currentMonthCharges.aiUsageCharges.count.toLocaleString()} × ₹{currentMonthCharges.aiUsageCharges.rate})</span>
+                    <span>₹{currentMonthCharges.aiUsageCharges.total.toLocaleString()}</span>
+                  </div>
+                )}
+                
+                {currentMonthCharges?.liveClassCharges && currentMonthCharges.liveClassCharges.count > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Live Classes ({currentMonthCharges.liveClassCharges.count.toLocaleString()} mins × ₹{currentMonthCharges.liveClassCharges.rate})</span>
+                    <span>₹{currentMonthCharges.liveClassCharges.total.toLocaleString()}</span>
                   </div>
                 )}
               </div>
@@ -599,89 +691,162 @@ export function BillingPage() {
         </CardContent>
       </Card>
 
-      {/* BILLING SETTINGS (VERCEL STYLE) */}
+      {/* BILLING SETTINGS */}
       <div className="space-y-6 mt-12">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Settings</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Billing Profile & Verification</h3>
         
         <Card className="shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden rounded-xl">
-          <div className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Invoice Email Recipient</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-3xl leading-relaxed">
-              By default, all your invoices will be sent to the email address of the creator of your team. 
-              If you want to use a custom email address specifically for receiving invoices, enter it here.
-            </p>
-            <div className="max-w-xl">
-              <Input 
-                value={billingEmail} 
-                onChange={(e) => setBillingEmail(e.target.value)} 
-                className="bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 h-10"
-                placeholder="e.g. accounts@university.edu"
-              />
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Invoice Email</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    value={billingEmail} 
+                    onChange={(e) => setBillingEmail(e.target.value)} 
+                    placeholder="accounts@school.edu"
+                    className="flex-1"
+                  />
+                  {emailVerified ? (
+                    <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
+                  ) : (
+                    <Button variant="outline" onClick={() => setIsEmailVerifyModalOpen(true)}>Verify</Button>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Billing Phone Number</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    value={billingPhone} 
+                    onChange={(e) => setBillingPhone(e.target.value)} 
+                    placeholder="9876543210"
+                    className="flex-1"
+                  />
+                  {phoneVerified ? (
+                    <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400">Verified</Badge>
+                  ) : (
+                    <Button variant="outline" onClick={() => setIsPhoneVerifyModalOpen(true)}>Verify</Button>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800/40 px-6 py-4 flex justify-between items-center border-t border-gray-200 dark:border-gray-800">
-            <p className="text-sm text-gray-500">Please use 254 characters at maximum.</p>
-            <Button className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white rounded-md px-6">
-              Save
-            </Button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Billing Contact Name</Label>
+                <Input 
+                  value={billingContactName} 
+                  onChange={(e) => setBillingContactName(e.target.value)} 
+                  placeholder="John Doe"
+                />
+              </div>
+              
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">GSTIN (Optional)</Label>
+                <Input 
+                  value={billingGstin} 
+                  onChange={(e) => setBillingGstin(e.target.value)} 
+                  placeholder="27AADCB2230M1Z2"
+                />
+              </div>
+            </div>
           </div>
         </Card>
 
         <Card className="shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden rounded-xl">
           <div className="p-6">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Billing Address</h4>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Billing Address</h4>
             
-            <div className="mt-6 max-w-xl space-y-6">
-              <div>
-                <Label className="text-gray-500 mb-2 block font-normal text-sm">State (India)</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3 md:col-span-2">
+                <Label className="text-sm font-medium">Address Line 1</Label>
+                <Input 
+                  value={billingAddress1} 
+                  onChange={(e) => setBillingAddress1(e.target.value)} 
+                  placeholder="Street address, P.O. box, company name, c/o"
+                />
+              </div>
+
+              <div className="space-y-3 md:col-span-2">
+                <Label className="text-sm font-medium">Address Line 2 (Optional)</Label>
+                <Input 
+                  value={billingAddress2} 
+                  onChange={(e) => setBillingAddress2(e.target.value)} 
+                  placeholder="Apartment, suite, unit, building, floor, etc."
+                />
+              </div>
+              
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">City</Label>
+                <Input 
+                  value={billingCity} 
+                  onChange={(e) => setBillingCity(e.target.value)} 
+                  placeholder="Mumbai"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">State / Province</Label>
                 <select 
                   className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={billingState}
                   onChange={(e) => setBillingState(e.target.value)}
                 >
+                  <option value="">Select State / UT</option>
+                  <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
                   <option value="Andhra Pradesh">Andhra Pradesh</option>
+                  <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                  <option value="Assam">Assam</option>
+                  <option value="Bihar">Bihar</option>
+                  <option value="Chandigarh">Chandigarh</option>
+                  <option value="Chhattisgarh">Chhattisgarh</option>
+                  <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
                   <option value="Delhi">Delhi</option>
+                  <option value="Goa">Goa</option>
                   <option value="Gujarat">Gujarat</option>
+                  <option value="Haryana">Haryana</option>
+                  <option value="Himachal Pradesh">Himachal Pradesh</option>
+                  <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                  <option value="Jharkhand">Jharkhand</option>
                   <option value="Karnataka">Karnataka</option>
+                  <option value="Kerala">Kerala</option>
+                  <option value="Ladakh">Ladakh</option>
+                  <option value="Lakshadweep">Lakshadweep</option>
+                  <option value="Madhya Pradesh">Madhya Pradesh</option>
                   <option value="Maharashtra">Maharashtra</option>
+                  <option value="Manipur">Manipur</option>
+                  <option value="Meghalaya">Meghalaya</option>
+                  <option value="Mizoram">Mizoram</option>
+                  <option value="Nagaland">Nagaland</option>
+                  <option value="Odisha">Odisha</option>
+                  <option value="Puducherry">Puducherry</option>
+                  <option value="Punjab">Punjab</option>
+                  <option value="Rajasthan">Rajasthan</option>
+                  <option value="Sikkim">Sikkim</option>
                   <option value="Tamil Nadu">Tamil Nadu</option>
                   <option value="Telangana">Telangana</option>
+                  <option value="Tripura">Tripura</option>
                   <option value="Uttar Pradesh">Uttar Pradesh</option>
+                  <option value="Uttarakhand">Uttarakhand</option>
                   <option value="West Bengal">West Bengal</option>
                 </select>
               </div>
-              
-              <div>
-                <Label className="text-gray-500 mb-2 block font-normal text-sm">Billing Address</Label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                    <svg className="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <Input 
-                    value={billingAddress} 
-                    onChange={(e) => setBillingAddress(e.target.value)} 
-                    className="bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 h-10 pl-10"
-                    placeholder="Search address..."
-                  />
-                  {billingAddress && (
-                    <button 
-                      onClick={() => setBillingAddress("")}
-                      className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
-                    >
-                      <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">ZIP / Postal Code</Label>
+                <Input 
+                  value={billingPincode} 
+                  onChange={(e) => setBillingPincode(e.target.value)} 
+                  placeholder="400001"
+                />
               </div>
             </div>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800/40 px-6 py-4 flex justify-end border-t border-gray-200 dark:border-gray-800">
             <Button onClick={handleSaveSettings} disabled={isSavingSettings} className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white rounded-md px-6">
-              {isSavingSettings ? "Saving..." : "Save"}
+              {isSavingSettings ? "Saving..." : "Save Settings"}
             </Button>
           </div>
         </Card>
@@ -754,6 +919,10 @@ export function BillingPage() {
 
               <div className="flex justify-end pt-4 gap-3">
                 <Button variant="outline" onClick={() => setSelectedInvoice(null)}>Close</Button>
+                <Button variant="outline" onClick={() => handleDownloadPdf(selectedInvoice.id)}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download PDF
+                </Button>
                 {selectedInvoice.status !== "paid" && (
                   <Button 
                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -800,6 +969,57 @@ export function BillingPage() {
         </DialogContent>
       </Dialog>
       
+      {/* VERIFY EMAIL MODAL */}
+      <Dialog open={isEmailVerifyModalOpen} onOpenChange={setIsEmailVerifyModalOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Verify Email Address</DialogTitle>
+            <DialogDescription>
+              We'll send a verification link to {billingEmail}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm">Click the button below to receive an email with a secure verification link.</p>
+            <Button onClick={handleSendEmailVerification} disabled={isVerifying} className="w-full">
+              {isVerifying ? "Sending..." : "Send Verification Link"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* VERIFY PHONE MODAL */}
+      <Dialog open={isPhoneVerifyModalOpen} onOpenChange={(open) => {
+        setIsPhoneVerifyModalOpen(open);
+        if (open) handleSendPhoneOtp(); // Auto-send when opened
+      }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Verify Phone Number</DialogTitle>
+            <DialogDescription>
+              Enter the 6-digit OTP sent to {billingPhone}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label>Enter OTP</Label>
+              <Input 
+                value={phoneOtp}
+                onChange={(e) => setPhoneOtp(e.target.value)}
+                placeholder="123456"
+                maxLength={6}
+                className="text-center text-lg tracking-widest"
+              />
+            </div>
+            <Button onClick={handleVerifyPhoneOtp} disabled={isVerifying || phoneOtp.length !== 6} className="w-full">
+              {isVerifying ? "Verifying..." : "Verify OTP"}
+            </Button>
+            <Button variant="ghost" onClick={handleSendPhoneOtp} disabled={isVerifying} className="w-full">
+              Resend OTP
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

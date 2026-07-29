@@ -481,7 +481,7 @@ POST /api/admission/cet/validate-en
 
 POST /api/admission/cet/send-otp
   Body: { en_number: 'EN25234503', phone: '9876543210' }
-  Action: Generate 6-digit OTP → Store hashed → Send via Fast2SMS (Not Firebase for Cost Savings)
+  Action: Generate 6-digit OTP → Store hashed → Send via AWS SNS
   Rate Limit: 3 OTPs per EN per hour
   Response: { sent: true, message: 'OTP sent' }
 

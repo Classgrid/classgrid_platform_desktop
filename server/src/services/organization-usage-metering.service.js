@@ -313,7 +313,6 @@ function getRateSnapshot(subscription) {
         pricePerGB: Number(billing.pricePerGB || 0),
         pricePerEmail: Number(billing.pricePerEmail || 0),
         pricePerSms: Number(billing.pricePerSms || 0),
-        pricePerStudent: Number(billing.pricePerStudent || 0),
         pricePerApiRequest: Number(billing.pricePerApiRequest || 0),
         pricePerAiToken: Number(billing.pricePerAiToken || 0),
         pricePerAgoraMinute: Number(billing.pricePerAgoraMinute || 0),

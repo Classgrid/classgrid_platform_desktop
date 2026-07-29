@@ -78,7 +78,7 @@ admission_config: {
       phone: { type: Boolean, default: true }   // Must verify 1 personal phone
     },
 
-    require_phone_otp_verification: { type: Boolean, default: true }, // Fast2SMS
+    require_phone_otp_verification: { type: Boolean, default: true }, // AWS SNS
     allow_social_login: { type: Boolean, default: false }
   },
   
@@ -209,7 +209,7 @@ admission_config: {
   },
   
   // SMS Notification Budget Tracker (DeepSeek Gap #6 Fix & Engineering Gap 5: Cost Fix)
-  // WARNING: DO NOT use Firebase for bulk SMS. Use Fast2SMS (₹0.09) or MSG91.
+  // WARNING: Use AWS SNS for bulk and transactional SMS.
   sms_budget: {
     allocated: { type: Number, default: 5000 },
     used: { type: Number, default: 0 },
@@ -895,7 +895,7 @@ export async function notifyApplicant(application, event, data = {}) {
     const notifications = NOTIFICATION_MAP[event];
     
     if (notifications.sms) {
-        // Use Firebase or Fast2SMS for transactional SMS
+        // Use AWS SNS for transactional SMS
         await sendAdmissionSMS(application.phone, notifications.smsTemplate(data));
     }
     

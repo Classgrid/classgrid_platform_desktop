@@ -15,10 +15,35 @@ import PlatformTransaction from "../models/PlatformTransaction.js";
 import Invoice from "../models/Invoice.js";
 import FeeTransaction from "../models/FeeTransaction.js";
 import { getTerminology } from "../utils/terminology.js";
+import { sendEmail } from "../services/aws-ses.service.js";
+import { sendOTP } from "../services/sms.service.js";
+import { generateInvoicePdfBuffer } from "../services/pdf-invoice.service.js";
+import crypto from "crypto";
 
-const FLAG_FIELDS = ["naac_module", "hr_module", "marketplace_module", "admission_module", "canteen_module", "exam_proctoring", "custom_domain_module", "fee_module", "ai_assistant", "analytics_module", "website_module", "certificates_module", "events_module", "feedback_module", "holiday_module", "id_cards_module", "dashboard_admission", "dashboard_fees", "dashboard_exam", "dashboard_library", "dashboard_attendance", "dashboard_hr", "dashboard_hostel"];
-const BILLING_FIELDS = ["basePricePerMonth", "pricePerStudent", "pricePerFaculty", "pricePerDeptAdmin", "pricePerGB", "pricePerEmail", "pricePerSms", "pricePerApiRequest", "pricePerAiToken", "pricePerAgoraMinute"];
-const LIMIT_FIELDS = ["max_students", "max_faculty", "max_dept_admins", "storage_limit_gb"];
+const FLAG_FIELDS = [
+    "naac_module", "hr_module", "marketplace_module", "admission_module", "canteen_module", "exam_proctoring", 
+    "custom_domain_module", "fee_module", "ai_assistant", "analytics_module", "website_module", "certificates_module", 
+    "events_module", "feedback_module", "holiday_module", "id_cards_module", "attendance_module", "classroom_module", 
+    "timetable_module", "academic_planner_module", "assignment_module", "teacher_planner_module", "exam_module", 
+    "exam_management_module", "quiz_module", "grade_entry_module", "internal_assessment_module", "cet_exam_module", 
+    "mock_tests_module", "ai_viva_module", "test_series_module", "library_module", "alumni_module", "dashboard_admission", 
+    "dashboard_fees", "dashboard_exam", "dashboard_library", "dashboard_attendance", "dashboard_hr", "dashboard_hostel", 
+    "dashboard_canteen", "subject_management_module", "course_management_module", "dashboard_student", "dashboard_faculty", 
+    "dashboard_organization"
+];
+
+const DEFAULT_MODULE_PRICES = {
+    naac_module: 4000, hr_module: 2500, marketplace_module: 1500, admission_module: 3000, canteen_module: 2000, 
+    exam_proctoring: 2500, custom_domain_module: 1500, fee_module: 3000, ai_assistant: 3500, analytics_module: 2500, 
+    website_module: 2000, certificates_module: 1200, events_module: 1000, feedback_module: 800, holiday_module: 500, 
+    id_cards_module: 1000, attendance_module: 1500, classroom_module: 1000, timetable_module: 1200, academic_planner_module: 1000, 
+    assignment_module: 800, teacher_planner_module: 800, exam_module: 2500, exam_management_module: 2000, quiz_module: 1200, 
+    grade_entry_module: 1000, internal_assessment_module: 1000, cet_exam_module: 3500, mock_tests_module: 1500, ai_viva_module: 3000, 
+    test_series_module: 2000, library_module: 1500, alumni_module: 1500, dashboard_admission: 800, dashboard_fees: 800, 
+    dashboard_exam: 800, dashboard_library: 500, dashboard_attendance: 500, dashboard_hr: 800, dashboard_hostel: 800, dashboard_canteen: 500
+};
+const BILLING_FIELDS = ["basePricePerMonth", "pricePerGB", "pricePerEmail", "pricePerSms", "pricePerApiRequest", "pricePerAiToken", "pricePerAgoraMinute"];
+const LIMIT_FIELDS = ["storage_limit_gb"];
 const DEPT_ADMIN_ROLES = ["hod", "exam_controller", "fee_manager", "admission_head", "admission_verifier", "admission_counselor", "admission_clerk", "library_manager", "tpo_officer", "transport_manager", "counselor", "coordinator", "principal", "vice_principal"];
 
 const asNumber = (value) => Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : 0;
@@ -40,9 +65,6 @@ const publicPayment = (payment) => ({
 });
 const publicBillingRates = (rates = {}) => ({
     basePricePerMonth: asNumber(rates.basePricePerMonth),
-    pricePerStudent: asNumber(rates.pricePerStudent),
-    pricePerFaculty: asNumber(rates.pricePerFaculty),
-    pricePerDeptAdmin: asNumber(rates.pricePerDeptAdmin),
     pricePerStorageGb: asNumber(rates.pricePerGB),
     pricePerEmail: asNumber(rates.pricePerEmail),
     pricePerSms: asNumber(rates.pricePerSms),
@@ -142,22 +164,42 @@ export async function getOrganizationUsageSummary(req, res) {
         const terminology = getTerminology(organization?.structure_type || organization?.org_type);
         const students = users.filter((user) => user.role === "student"); const faculty = users.filter((user) => ["teacher", "faculty"].includes(user.role)); const deptAdmins = users.filter((user) => DEPT_ADMIN_ROLES.includes(user.role));
         return res.json({ period: { month: range.month, year: range.year }, summary: {
-            students: { active: students.length, limit: subscription?.metadata?.max_students ?? null }, faculty: { active: faculty.length, limit: subscription?.metadata?.max_faculty ?? null }, deptAdmins: { active: deptAdmins.length, limit: subscription?.metadata?.max_dept_admins ?? null }, orgAdmins: { active: countUsers(users, ["org_admin"]) }, classrooms: { active: summaryMeters.classrooms }, emailsSent: { thisMonth: summaryMeters.emailsThisMonth, total: summaryMeters.emailsTotal }, smsSent: { thisMonth: summaryMeters.smsThisMonth, total: summaryMeters.smsTotal }, storage: { usedGb: Number(summaryMeters.storageUsedGb.toFixed(4)), limitGb: subscription?.metadata?.storage_limit_gb ?? null }, liveClassMinutes: { thisMonth: summaryMeters.liveMinutes }, aiUsage: { thisMonth: summaryMeters.aiThisMonth },
-        }, terminology, dailySeries: ledger.map((record) => ({ date: record.day.toISOString().slice(0, 10), emails: asNumber(record.totals?.emails), sms: asNumber(record.totals?.sms), activeStudents: students.length, liveMinutes: lineItemQuantity(record, "agora_minutes") })), studentBreakdown: { departmentLabel: terminology.course, yearLabel: terminology.year, byDepartment: breakdown(students, "department"), byYear: breakdown(students, "batch") }, facultyBreakdown: { departmentLabel: terminology.course, byDepartment: breakdown(faculty, "department") }, deptAdminBreakdown: Object.entries(deptAdmins.reduce((result, user) => { result[user.role] = (result[user.role] || 0) + 1; return result; }, {})).map(([role, count]) => ({ role, count })) });
+            students: { active: students.length }, faculty: { active: faculty.length }, deptAdmins: { active: deptAdmins.length }, orgAdmins: { active: countUsers(users, ["org_admin"]) }, classrooms: { active: summaryMeters.classrooms }, emailsSent: { thisMonth: summaryMeters.emailsThisMonth, total: summaryMeters.emailsTotal }, smsSent: { thisMonth: summaryMeters.smsThisMonth, total: summaryMeters.smsTotal }, storage: { usedGb: Number(summaryMeters.storageUsedGb.toFixed(4)), limitGb: subscription?.metadata?.storage_limit_gb ?? null }, liveClassMinutes: { thisMonth: summaryMeters.liveMinutes }, aiUsage: { thisMonth: summaryMeters.aiThisMonth },
+        }, terminology, dailySeries: ledger.map((record) => ({ date: record.day.toISOString().slice(0, 10), emails: asNumber(record.totals?.emails), sms: asNumber(record.totals?.sms), activeStudents: students.length, liveMinutes: lineItemQuantity(record, "agora_minutes"), aiUsage: lineItemQuantity(record, "ai_tokens") })), studentBreakdown: { departmentLabel: terminology.course, yearLabel: terminology.year, byDepartment: breakdown(students, "department"), byYear: breakdown(students, "batch") }, facultyBreakdown: { departmentLabel: terminology.course, byDepartment: breakdown(faculty, "department") }, deptAdminBreakdown: Object.entries(deptAdmins.reduce((result, user) => { result[user.role] = (result[user.role] || 0) + 1; return result; }, {})).map(([role, count]) => ({ role, count })) });
     } catch (error) { console.error("[OrgUsage] load failed:", error.message); return res.status(500).json({ message: "Unable to load organization usage." }); }
 }
 export async function getOrganizationBilling(req, res) {
     try {
         const orgId = req.user?.organization_id; if (!orgId) return res.status(400).json({ message: "No organization is associated with this account." });
         const [subscription, users, usage, invoices, payments, feeSummary, feeTransactions, org] = await Promise.all([
-            OrgSubscription.findOne({ organization_id: orgId }).lean(), User.find({ organization_id: orgId, status: "active" }).select("role").lean(), meters(orgId, rangeFor()), SaasInvoice.find({ organizationId: orgId }).sort({ createdAt: -1 }).limit(24).lean(), PlatformTransaction.find({ organizationId: orgId }).sort({ createdAt: -1 }).limit(100).lean(), Invoice.aggregate([{ $match: { organization_id: orgId } }, { $group: { _id: null, totalInvoices: { $sum: 1 }, totalBilled: { $sum: "$total_amount" }, totalPaid: { $sum: "$amount_paid" }, outstanding: { $sum: "$remaining_amount" } } }]), FeeTransaction.countDocuments({ organizationId: orgId, status: "success" }), Organization.findOne({ _id: orgId }).select("billing_settings").lean()
+            OrgSubscription.findOne({ organization_id: orgId }).lean(), User.find({ organization_id: orgId, status: "active" }).select("role").lean(), meters(orgId, rangeFor()), SaasInvoice.find({ organizationId: orgId }).sort({ createdAt: -1 }).limit(24).lean(), PlatformTransaction.find({ organizationId: orgId }).sort({ createdAt: -1 }).limit(100).lean(), Invoice.aggregate([{ $match: { organization_id: orgId } }, { $group: { _id: null, totalInvoices: { $sum: 1 }, totalBilled: { $sum: "$total_amount" }, totalPaid: { $sum: "$amount_paid" }, outstanding: { $sum: "$remaining_amount" } } }]), FeeTransaction.countDocuments({ organizationId: orgId, status: "success" }), Organization.findOne({ _id: orgId }).select("billing_settings feature_flags").lean()
         ]);
         const rates = subscription?.billing || {}; const charge = (count, rate) => ({ count, rate: asNumber(rate), total: Number((count * asNumber(rate)).toFixed(2)) });
-        const platformFee = asNumber(rates.basePricePerMonth), studentCharges = charge(countUsers(users, ["student"]), rates.pricePerStudent), facultyCharges = charge(countUsers(users, ["teacher", "faculty"]), rates.pricePerFaculty), deptAdminCharges = charge(countUsers(users, DEPT_ADMIN_ROLES), rates.pricePerDeptAdmin), emailCharges = charge(usage.emailsThisMonth, rates.pricePerEmail);
+        const customPrices = subscription?.billing?.modulePrices || {};
+        const activeFlags = org?.feature_flags || {};
+        let moduleChargesTotal = 0;
+        const moduleLineItems = [];
+
+        Object.entries(activeFlags).forEach(([flagKey, isEnabled]) => {
+            if (isEnabled && flagKey !== "erp_core" && !["dashboard_student", "dashboard_faculty", "dashboard_organization"].includes(flagKey)) {
+                const overridePrice = typeof customPrices.get === 'function' ? customPrices.get(flagKey) : customPrices[flagKey];
+                const price = asNumber(overridePrice !== undefined ? overridePrice : DEFAULT_MODULE_PRICES[flagKey] || 0);
+                if (price > 0) {
+                    moduleChargesTotal += price;
+                    moduleLineItems.push({
+                        flagKey,
+                        label: flagKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                        price
+                    });
+                }
+            }
+        });
+
+        const platformFee = asNumber(rates.basePricePerMonth), emailCharges = charge(usage.emailsThisMonth, rates.pricePerEmail);
         const smsCharges = charge(usage.smsThisMonth, rates.pricePerSms), storageCharges = charge(usage.storageUsedGb, rates.pricePerGB), aiUsageCharges = charge(usage.aiThisMonth, rates.pricePerAiToken), liveClassCharges = charge(usage.liveMinutes, rates.pricePerAgoraMinute);
-        const subtotal = Number((platformFee + studentCharges.total + facultyCharges.total + deptAdminCharges.total + emailCharges.total + smsCharges.total + storageCharges.total + aiUsageCharges.total + liveClassCharges.total).toFixed(2)), gstPercent = 18, gstAmount = Number((subtotal * gstPercent / 100).toFixed(2)); const fees = feeSummary[0] || {};
+        const subtotal = Number((platformFee + moduleChargesTotal + emailCharges.total + smsCharges.total + storageCharges.total + aiUsageCharges.total + liveClassCharges.total).toFixed(2)), gstPercent = 18, gstAmount = Number((subtotal * gstPercent / 100).toFixed(2)); const fees = feeSummary[0] || {};
         const monthlyHistory = invoices.map(inv => ({ month: `${inv.billingPeriod?.month || ''} ${inv.billingPeriod?.year || ''}`.trim(), totalAmount: asNumber(inv.totalAmountInr), status: inv.status })).reverse();
-        return res.json({ subscription: subscription && { plan: subscription.plan, status: subscription.status, isPaid: subscription.isPaid, expiresAt: subscription.expiresAt, features: subscription.features, billing: publicBillingRates(rates), limits: { maxStudents: subscription.metadata?.max_students ?? null, maxFaculty: subscription.metadata?.max_faculty ?? null, maxDeptAdmins: subscription.metadata?.max_dept_admins ?? null, storageGb: subscription.metadata?.storage_limit_gb ?? null } }, currentMonthCharges: { platformFee, studentCharges, facultyCharges, deptAdminCharges, emailCharges, smsCharges, storageCharges, aiUsageCharges, liveClassCharges, subtotal, gstPercent, gstAmount, total: Number((subtotal + gstAmount).toFixed(2)) }, invoices: invoices.map(publicInvoice), payments: payments.map(publicPayment), monthlyHistory, feeCollection: { totalInvoices: asNumber(fees.totalInvoices), totalBilled: asNumber(fees.totalBilled), totalPaid: asNumber(fees.totalPaid), outstanding: asNumber(fees.outstanding), transactions: feeTransactions }, billingSettings: org?.billing_settings || { invoice_email: "", state: "Maharashtra", address: "" } });
+        return res.json({ subscription: subscription && { plan: subscription.plan, status: subscription.status, isPaid: subscription.isPaid, expiresAt: subscription.expiresAt, features: subscription.features, billing: publicBillingRates(rates), limits: { storageGb: subscription.metadata?.storage_limit_gb ?? null } }, currentMonthCharges: { platformFee, moduleChargesTotal, moduleLineItems, emailCharges, smsCharges, storageCharges, aiUsageCharges, liveClassCharges, subtotal, gstPercent, gstAmount, total: Number((subtotal + gstAmount).toFixed(2)) }, invoices: invoices.map(publicInvoice), payments: payments.map(publicPayment), monthlyHistory, feeCollection: { totalInvoices: asNumber(fees.totalInvoices), totalBilled: asNumber(fees.totalBilled), totalPaid: asNumber(fees.totalPaid), outstanding: asNumber(fees.outstanding), transactions: feeTransactions }, billingSettings: org?.billing_settings || { invoice_email: "", state: "Maharashtra", address: "" } });
     } catch (error) { console.error("[OrgBilling] load failed:", error.message); return res.status(500).json({ message: "Unable to load organization billing." }); }
 }
 
@@ -166,11 +208,23 @@ export const updateBillingSettings = async (req, res) => {
         const orgId = req.user?.organization_id;
         if (!orgId) return res.status(400).json({ message: "No organization associated." });
         
-        const { invoice_email, state, address } = req.body;
+        const { invoice_email, phone, gstin, address_line1, address_line2, city, state, pincode, billing_contact_name } = req.body;
         
         const org = await Organization.findOneAndUpdate(
             { _id: orgId },
-            { $set: { "billing_settings.invoice_email": invoice_email, "billing_settings.state": state, "billing_settings.address": address } },
+            { 
+                $set: { 
+                    "billing_settings.invoice_email": invoice_email,
+                    "billing_settings.phone": phone,
+                    "billing_settings.gstin": gstin,
+                    "billing_settings.address_line1": address_line1,
+                    "billing_settings.address_line2": address_line2,
+                    "billing_settings.city": city,
+                    "billing_settings.state": state,
+                    "billing_settings.pincode": pincode,
+                    "billing_settings.billing_contact_name": billing_contact_name,
+                } 
+            },
             { new: true, runValidators: true }
         );
         
@@ -194,6 +248,7 @@ export const setupBillingMandate = async (req, res) => {
             currency: "INR",
             receipt: `mand_${orgId.toString().slice(-6)}_${Date.now()}`.slice(0, 40),
         };
+
         const order = await razorpay.orders.create(options);
         
         return res.json({ 
@@ -205,5 +260,141 @@ export const setupBillingMandate = async (req, res) => {
     } catch (error) {
         console.error("[SetupMandate] Error:", error);
         return res.status(500).json({ message: error.error?.description || error.message || "Payment gateway configuration error." });
+    }
+};
+
+export const sendBillingEmailVerification = async (req, res) => {
+    try {
+        const orgId = req.user?.organization_id;
+        if (!orgId) return res.status(400).json({ message: "No organization associated." });
+        
+        const org = await Organization.findById(orgId);
+        if (!org || !org.billing_settings?.invoice_email) return res.status(400).json({ message: "No invoice email configured." });
+        
+        const token = crypto.randomBytes(32).toString("hex");
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        
+        org.billing_settings.verification_token = token;
+        org.billing_settings.verification_expires_at = expiresAt;
+        await org.save();
+        
+        const verifyLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/org/admin/billing/verify-email?token=${token}`;
+        
+        await sendEmail({
+            to: org.billing_settings.invoice_email,
+            subject: "Verify your Classgrid Billing Email",
+            html: `<p>Hello,</p><p>Please verify your email address for Classgrid billing by clicking the link below:</p><p><a href="${verifyLink}">${verifyLink}</a></p><p>This link will expire in 24 hours.</p>`,
+            fromName: "Classgrid Billing",
+            fromEmail: "billing@classgrid.in"
+        });
+        
+        return res.json({ message: "Verification email sent successfully." });
+    } catch (error) {
+        console.error("[SendEmailVerification] Error:", error);
+        return res.status(500).json({ message: "Unable to send verification email." });
+    }
+};
+
+export const verifyBillingEmail = async (req, res) => {
+    try {
+        const orgId = req.user?.organization_id;
+        const { token } = req.body;
+        if (!orgId || !token) return res.status(400).json({ message: "Invalid request." });
+        
+        const org = await Organization.findById(orgId);
+        if (!org) return res.status(404).json({ message: "Organization not found." });
+        
+        if (org.billing_settings.verification_token !== token) {
+            return res.status(400).json({ message: "Invalid verification token." });
+        }
+        
+        if (new Date() > new Date(org.billing_settings.verification_expires_at)) {
+            return res.status(400).json({ message: "Verification token expired." });
+        }
+        
+        org.billing_settings.email_verified = true;
+        org.billing_settings.verification_token = "";
+        await org.save();
+        
+        return res.json({ message: "Email verified successfully.", billingSettings: org.billing_settings });
+    } catch (error) {
+        console.error("[VerifyEmail] Error:", error);
+        return res.status(500).json({ message: "Unable to verify email." });
+    }
+};
+
+export const sendBillingPhoneOtp = async (req, res) => {
+    try {
+        const orgId = req.user?.organization_id;
+        if (!orgId) return res.status(400).json({ message: "No organization associated." });
+        
+        const org = await Organization.findById(orgId);
+        if (!org || !org.billing_settings?.phone) return res.status(400).json({ message: "No phone number configured." });
+        
+        const result = await sendOTP(org.billing_settings.phone);
+        if (!result.success) return res.status(500).json({ message: "Failed to send OTP." });
+        
+        org.billing_settings.verification_otp = result.otp;
+        org.billing_settings.verification_expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        await org.save();
+        
+        return res.json({ message: "OTP sent successfully." });
+    } catch (error) {
+        console.error("[SendPhoneOTP] Error:", error);
+        return res.status(500).json({ message: "Unable to send OTP." });
+    }
+};
+
+export const verifyBillingPhoneOtp = async (req, res) => {
+    try {
+        const orgId = req.user?.organization_id;
+        const { otp } = req.body;
+        if (!orgId || !otp) return res.status(400).json({ message: "Invalid request." });
+        
+        const org = await Organization.findById(orgId);
+        if (!org) return res.status(404).json({ message: "Organization not found." });
+        
+        if (org.billing_settings.verification_otp !== otp) {
+            return res.status(400).json({ message: "Invalid OTP." });
+        }
+        
+        if (new Date() > new Date(org.billing_settings.verification_expires_at)) {
+            return res.status(400).json({ message: "OTP expired." });
+        }
+        
+        org.billing_settings.phone_verified = true;
+        org.billing_settings.verification_otp = "";
+        await org.save();
+        
+        return res.json({ message: "Phone verified successfully.", billingSettings: org.billing_settings });
+    } catch (error) {
+        console.error("[VerifyPhoneOTP] Error:", error);
+        return res.status(500).json({ message: "Unable to verify OTP." });
+    }
+};
+
+export const downloadInvoicePdf = async (req, res) => {
+    try {
+        const orgId = req.user?.organization_id;
+        const invoiceId = req.params.invoiceId;
+        
+        if (!orgId || !invoiceId) return res.status(400).json({ message: "Invalid request." });
+        
+        // Import SaasInvoice dynamically to avoid circular dependencies if any
+        const { default: SaasInvoice } = await import("../models/Invoice.js");
+        const invoice = await SaasInvoice.findOne({ _id: invoiceId, organization_id: orgId });
+        
+        if (!invoice) return res.status(404).json({ message: "Invoice not found." });
+        
+        const org = await Organization.findById(orgId);
+        
+        const pdfBuffer = await generateInvoicePdfBuffer(invoice, org);
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="Classgrid-Invoice-${invoice.invoiceNumber}.pdf"`);
+        res.send(pdfBuffer);
+    } catch (error) {
+        console.error("[DownloadInvoicePDF] Error:", error);
+        return res.status(500).json({ message: "Unable to generate PDF invoice." });
     }
 };

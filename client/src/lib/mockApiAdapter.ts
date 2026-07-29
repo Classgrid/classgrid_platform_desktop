@@ -348,7 +348,7 @@ function getMockData(config: InternalAxiosRequestConfig): unknown {
         plan: "pro",
         expiresAt: "2026-12-31T00:00:00.000Z",
         features: { mockMode: true },
-        metadata: { max_students: 1000, max_faculty: 100 },
+        metadata: { storage_limit_gb: 100 },
       },
     };
   }

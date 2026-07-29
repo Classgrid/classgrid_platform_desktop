@@ -33,5 +33,5 @@ console.log("OPENAI_API_KEY:", process.env.OPENAI_API_KEY ? "SET" : "MISSING");
 console.log("GROQ_API_KEY:", process.env.GROQ_API_KEY ? "SET" : "MISSING");
 console.log("GEMINI_API_KEY:", process.env.GEMINI_API_KEY ? "SET" : "MISSING");
 console.log("HUGGINGFACE_API_KEY:", process.env.HUGGINGFACE_API_KEY ? "SET" : "MISSING");
-console.log("FAST2SMS_API_KEY:", process.env.FAST2SMS_API_KEY ? "SET" : "MISSING");
+console.log("AWS_SNS_ACCESS_KEY_ID:", process.env.AWS_SNS_ACCESS_KEY_ID ? "SET" : "MISSING");
 console.log("=================================");

@@ -1,9 +1,9 @@
 import { apiClient } from "@/lib/apiClient";
 
 export interface OrgUsageSummary {
-  students: { active: number; limit: number | null };
-  faculty: { active: number; limit: number | null };
-  deptAdmins: { active: number; limit: number | null };
+  students: { active: number };
+  faculty: { active: number };
+  deptAdmins: { active: number };
   orgAdmins: { active: number };
   classrooms: { active: number };
   emailsSent: { thisMonth: number; total: number };
@@ -11,7 +11,7 @@ export interface OrgUsageSummary {
   storageUsedGb: number;
   storageLimitGb: number | null;
   liveClassMinutes: { thisMonth: number };
-  aiTokensUsed: { thisMonth: number };
+  aiUsage: { thisMonth: number };
 }
 
 export interface OrgUsageDailySeries {
@@ -49,9 +49,6 @@ export interface OrgBillingSubscription {
   features: Record<string, boolean>;
   billing: {
     basePricePerMonth: number;
-    pricePerStudent: number;
-    pricePerFaculty: number;
-    pricePerDeptAdmin: number;
     pricePerGB: number;
     pricePerEmail: number;
     pricePerSms: number;
@@ -60,24 +57,23 @@ export interface OrgBillingSubscription {
     pricePerAgoraMinute: number;
   };
   limits: {
-    maxStudents: number | null;
-    maxFaculty: number | null;
-    maxDeptAdmins: number | null;
     storageGb: number | null;
   };
 }
 
 export interface OrgBillingCurrentCharges {
   platformFee: number;
-  studentCharges: { count: number; rate: number; total: number };
-  facultyCharges: { count: number; rate: number; total: number };
-  deptAdminCharges: { count: number; rate: number; total: number };
+  studentCharges?: { count: number; rate: number; total: number };
+  facultyCharges?: { count: number; rate: number; total: number };
+  deptAdminCharges?: { count: number; rate: number; total: number };
   emailCharges: { count: number; rate: number; total: number };
   smsCharges?: { count: number; rate: number; total: number };
   storageCharges?: { count: number; rate: number; total: number };
   apiCharges?: { count: number; rate: number; total: number };
-  aiCharges?: { count: number; rate: number; total: number };
+  aiUsageCharges?: { count: number; rate: number; total: number };
   liveClassCharges?: { count: number; rate: number; total: number };
+  moduleChargesTotal?: number;
+  moduleLineItems?: { flagKey: string; label: string; price: number }[];
   subtotal: number;
   gstPercent: number;
   gstAmount: number;
@@ -96,6 +92,17 @@ export interface OrgBillingResponse {
     totalPaid: number;
     outstanding: number;
     transactions: number;
+  };
+  billingSettings?: {
+    invoice_email: string;
+    phone?: string;
+    gstin?: string;
+    address_line1?: string;
+    address_line2?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+    billing_contact_name?: string;
   };
 }
 

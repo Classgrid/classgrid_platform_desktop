@@ -117,11 +117,11 @@
 ---
 
 ## 📅 DAY 19: Notification Dispatcher & Official Enrollment ✅
-**Goal:** Connect Fast2SMS + Brevo + FCM and create final User accounts.
+**Goal:** Connect AWS SNS + Brevo + FCM and create final User accounts.
 
 - [x] Build `admission-notification.service.js` — Unified dispatcher (Email + SMS + Push).
 - [x] Map all 10 triggers (Applied, Under Review, Verified, Rejected, Merit Published, Selected, Waitlisted, Fee Pending, Enrolled, Withdrawn).
-- [x] Integrate Fast2SMS API (₹0.09) with budget tracker alert (`GET /api/admission/sms-budget`).
+- [x] Integrate AWS SNS API with budget tracker alert (`GET /api/admission/sms-budget`).
 - [x] Build `POST /api/admission/enroll` — The Final Step.
   - Takes Application → Creates `User` account.
   - Sets PRN, Roll Number, connects to Organization.

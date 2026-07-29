@@ -5,43 +5,20 @@ import { sendEmail } from "../aws-ses.service.js";
  * 
  * Sends event-driven notifications across all channels:
  *   1. Email (Brevo SMTP)
- *   2. SMS (Fast2SMS — ₹0.09/msg)
- *   3. Push (Firebase FCM)
- * 
- * Trigger Types (10 lifecycle events):
- *   1. APPLICATION_RECEIVED
- *   2. APPLICATION_UNDER_REVIEW
- *   3. DOCUMENTS_VERIFIED
- *   4. DOCUMENTS_REJECTED
- *   5. MERIT_LIST_PUBLISHED
- *   6. SELECTED
- *   7. WAITLISTED
- *   8. FEE_PAYMENT_PENDING
- *   9. ENROLLED
- *  10. WITHDRAWN
- */
+import { sendSMS } from "../sms.service.js";
 
 // ─── SMS Budget Control ─── 
 let smsBudgetUsed = 0;
 const SMS_BUDGET_LIMIT = parseInt(process.env.SMS_BUDGET_LIMIT || "5000"); // ₹ limit
 const SMS_COST_PER_MSG = 0.09;
 
-// ─── Fast2SMS API ───
-const FAST2SMS_API_KEY = process.env.FAST2SMS_API_KEY || "";
-const FAST2SMS_ENABLED = !!FAST2SMS_API_KEY;
-
 /**
- * Send SMS via Fast2SMS DLT Route.
+ * Send SMS via AWS SNS.
  * @param {string} phone - 10-digit Indian mobile
  * @param {string} message - SMS body (max 160 chars for single part)
  * @returns {Promise<Object>}
  */
-async function sendSMS(phone, message) {
-    if (!FAST2SMS_ENABLED) {
-        console.log(`[SMS-Mock] To: ${phone} | ${message}`);
-        return { success: true, mock: true };
-    }
-
+async function sendNotificationSMS(phone, message) {
     // Budget guard
     const projectedCost = smsBudgetUsed + SMS_COST_PER_MSG;
     if (projectedCost > SMS_BUDGET_LIMIT) {
@@ -50,29 +27,14 @@ async function sendSMS(phone, message) {
     }
 
     try {
-        const response = await fetch("https://www.fast2sms.com/dev/bulkV2", {
-            method: "POST",
-            headers: {
-                "authorization": FAST2SMS_API_KEY,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                route: "q", // Quick transactional
-                message,
-                language: "english",
-                flash: 0,
-                numbers: phone.replace(/^\+91/, "").replace(/\D/g, "")
-            })
-        });
-
-        const data = await response.json();
-        if (data.return) {
+        const result = await sendSMS(phone, message);
+        if (result.success) {
             smsBudgetUsed += SMS_COST_PER_MSG;
             console.log(`[SMS] Sent to ${phone}. Budget: ₹${smsBudgetUsed.toFixed(2)}/${SMS_BUDGET_LIMIT}`);
         }
-        return { success: data.return, data };
+        return result;
     } catch (err) {
-        console.error("[SMS] Fast2SMS Error:", err.message);
+        console.error("[SMS] Error:", err.message);
         return { success: false, error: err.message };
     }
 }
@@ -330,7 +292,7 @@ export async function dispatchNotification(trigger, context) {
 
     // 2. SMS
     if (application.phone) {
-        results.sms = await sendSMS(application.phone, template.sms(name, orgName, extra));
+        results.sms = await sendNotificationSMS(application.phone, template.sms(name, orgName, extra));
     }
 
     // 3. Push

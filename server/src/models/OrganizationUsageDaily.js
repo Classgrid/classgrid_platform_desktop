@@ -125,7 +125,6 @@ const organizationUsageDailySchema = new mongoose.Schema(
             pricePerGB: { type: Number, default: 0, min: 0 },
             pricePerEmail: { type: Number, default: 0, min: 0 },
             pricePerSms: { type: Number, default: 0, min: 0 },
-            pricePerStudent: { type: Number, default: 0, min: 0 },
         },
         calculationStatus: {
             type: String,
