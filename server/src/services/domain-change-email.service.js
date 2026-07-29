@@ -263,11 +263,12 @@ export async function notifyExternalDomainChange({
     newSettings,
     organizationId,
     userId,
+    subdomain,
 }) {
+    const typeLabel = domainType === "erp_domain" ? "ERP login domain" : "Public website domain";
     const activeDomain = newDomain || oldDomain;
-    
-    // Permanent Classgrid organization URL for managing settings
-    const actionUrl = "https://classgrid.in/admin/settings/domain";
+    const defaultUrl = subdomain ? `https://${subdomain}.classgrid.in` : "https://classgrid.in";
+    let actionUrl = newDomain ? `https://${newDomain}${domainType === "erp_domain" ? "/org/login" : ""}` : defaultUrl;
     let copy = {};
 
     switch (action) {
@@ -319,15 +320,17 @@ export async function notifyExternalDomainChange({
             };
             break;
         case "removed":
+            actionUrl = defaultUrl;
             copy = {
                 title: `Custom domain removed: ${activeDomain}`,
                 summary: `A custom domain has been removed from your organization.`,
-                extraSummary: `The removed domain will no longer provide access to your Classgrid organisation.`,
-                actionBtn: `Manage Domain`,
+                extraSummary: `The removed domain will no longer provide access to your Classgrid organisation. Your organization will now use the default Classgrid URL for access.`,
+                actionBtn: `Open Default Portal`,
                 dateLabel: "Removed at",
                 checklist: [],
-                showURL: false
+                showURL: true
             };
+            newDomain = subdomain ? `${subdomain}.classgrid.in` : "classgrid.in"; // Trick the template into showing the new default URL
             break;
         default:
             copy = {
@@ -354,7 +357,7 @@ export async function notifyExternalDomainChange({
     };
 
     const details = {
-        "Domain Type": domainType === "erp_domain" ? "ERP Login Domain" : "Public Website Domain",
+        "Domain Type": typeLabel,
     };
 
     if (action === "changed" && oldDomain && oldDomain !== newDomain) {
@@ -364,7 +367,9 @@ export async function notifyExternalDomainChange({
         details["Domain"] = `<code>${escapeHtml(activeDomain)}</code>`;
     }
 
-    if (newSettings) {
+    if (action === "removed") {
+        details["Access Status"] = `Default Classgrid URL ONLY`;
+    } else if (newSettings) {
         details["Access Status"] = settingsSummary(newSettings);
     }
     
