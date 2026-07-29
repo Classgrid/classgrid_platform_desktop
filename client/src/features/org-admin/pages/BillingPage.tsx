@@ -105,6 +105,8 @@ export function BillingPage() {
     }
   }, [billingData]);
 
+  const isNameSaved = Boolean(billingData?.billingSettings?.billing_contact_name);
+
   const handleSaveSettings = async () => {
     try {
       setIsSavingSettings(true);
@@ -245,15 +247,18 @@ export function BillingPage() {
                   onChange={(e) => setBillingContactName(e.target.value)} 
                   placeholder="John Doe"
                   className="flex-1"
+                  disabled={isNameSaved}
                 />
-                <Button 
-                  variant="primary" 
-                  onClick={handleSaveSettings} 
-                  disabled={isSavingSettings || !billingContactName?.trim()}
-                  isLoading={isSavingSettings}
-                >
-                  {isSavingSettings ? "Saving..." : "Save"}
-                </Button>
+                {!isNameSaved && (
+                  <Button 
+                    variant="primary" 
+                    onClick={handleSaveSettings} 
+                    disabled={isSavingSettings || !billingContactName?.trim()}
+                    isLoading={isSavingSettings}
+                  >
+                    {isSavingSettings ? "Saving..." : "Save"}
+                  </Button>
+                )}
               </div>
             </div>
             
