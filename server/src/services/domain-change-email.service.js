@@ -159,7 +159,7 @@ export function buildCustomDomainHtml(data) {
         .map(([label, val]) => `
             <tr>
                 <td style="padding: 8px 0; font-weight: 600; color: #111111; width: 40%; vertical-align: top;">${escapeHtml(label)}</td>
-                <td style="padding: 8px 0; color: #374151; vertical-align: top;">${escapeHtml(val)}</td>
+                <td style="padding: 8px 0; color: #374151; vertical-align: top;">${val}</td>
             </tr>
         `).join("");
 
@@ -167,14 +167,14 @@ export function buildCustomDomainHtml(data) {
         <h2 style="color: #111111; margin-top: 0;">Hello ${escapeHtml(data.adminName || "Admin")},</h2>
         <p style="font-size: 15px; color: #374151;">${escapeHtml(data.copy.summary)}</p>
         
-        ${data.action === 'verified' ? '<p style="font-size: 15px; color: #374151;">Classgrid confirmed ownership of the domain, validated the required DNS records, provisioned a secure HTTPS certificate, and enabled the domain for your organization.</p>' : ''}
+        ${data.copy.extraSummary ? `<p style="font-size: 15px; color: #374151;">${escapeHtml(data.copy.extraSummary)}</p>` : ''}
         
         <h3 style="color: #111111; margin-top: 32px; font-size: 16px;">Custom Domain Details</h3>
         <div class="box" style="margin: 16px 0 24px; padding: 20px; background-color: #f9f9f9; border: 1px solid #eaeaea; border-radius: 8px;">
             <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 14px;">
                 ${detailsHtml}
                 <tr>
-                    <td style="padding: 8px 0; font-weight: 600; color: #111111; width: 40%; vertical-align: top;">Verified At</td>
+                    <td style="padding: 8px 0; font-weight: 600; color: #111111; width: 40%; vertical-align: top;">${escapeHtml(data.copy.dateLabel || 'Changed at')}</td>
                     <td style="padding: 8px 0; color: #374151; vertical-align: top;">${escapeHtml(formattedDate)}</td>
                 </tr>
             </table>
@@ -188,18 +188,23 @@ export function buildCustomDomainHtml(data) {
         </div>
         ` : ''}
 
-        ${data.copy.checklist.length > 0 ? `
+        ${data.copy.checklist && data.copy.checklist.length > 0 ? `
         <h3 style="color: #111111; margin-top: 32px; font-size: 16px;">Verification completed</h3>
         <ul style="margin: 16px 0 24px 20px; padding: 0; color: #374151; font-size: 14px;">
           ${data.copy.checklist.map(item => `<li style="margin-bottom: 8px; font-weight: 500;">${escapeHtml(item)}</li>`).join('')}
         </ul>
         ` : ''}
 
+        ${data.copy.note ? `<div class="box" style="margin: 24px 0; padding: 16px; background-color: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px;"><p style="margin: 0; color: #92400e; font-size: 14px;"><strong>Important:</strong> ${escapeHtml(data.copy.note)}</p></div>` : ""}
+
         <div style="margin: 32px 0;">
-            <a href="${escapeHtml(data.actionUrl)}" class="btn" style="background-color: #111111; color: #ffffff !important; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">${escapeHtml(data.copy.actionBtn)}</a>
+            ${data.copy.actionUrl2 ? `
+            <a href="${escapeHtml(data.copy.actionUrl2)}" class="btn" style="background-color: #111111; color: #ffffff !important; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-right: 12px;">${escapeHtml(data.copy.actionBtn2)}</a>
+            ` : ''}
+            <a href="${escapeHtml(data.actionUrl)}" class="btn" style="background-color: ${data.copy.actionUrl2 ? '#ffffff' : '#111111'}; color: ${data.copy.actionUrl2 ? '#111111' : '#ffffff'} !important; border: ${data.copy.actionUrl2 ? '1px solid #111111' : 'none'}; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">${escapeHtml(data.copy.actionBtn)}</a>
         </div>
 
-        <p style="font-size: 14px; color: #6b7280; margin-top: 32px;">If you did not authorize this change, contact Classgrid support immediately.</p>
+        <p style="font-size: 14px; color: #6b7280; margin-top: 32px;">If you did not authorize this action, contact Classgrid Support immediately.</p>
         <p style="font-size: 14px; color: #6b7280;"><a href="https://classgrid.in/support" style="color: #111111; text-decoration: underline;">Open Support Portal</a></p>
     `;
 
@@ -211,110 +216,125 @@ export function buildCustomDomainHtml(data) {
 }
 
 export function buildCustomDomainText(data) {
+    const formattedDate = formatDate(data.changedAt);
     return [
         data.copy.title,
         "",
-        `Hello ${data.adminName},`,
+        `Hello ${data.adminName || "Admin"},`,
         "",
-        data.copy.summary.replace(/<[^>]+>/g, ''),
+        data.copy.summary,
+        data.copy.extraSummary || "",
         "",
-        "Custom Domain Details:",
+        "Organization: " + data.orgName,
         ...Object.entries(data.details)
             .filter(([, val]) => val !== undefined && val !== null && val !== "")
-            .map(([label, val]) => `- ${label}: ${String(val).replace(/<[^>]+>/g, '')}`),
-        `- Verified At: ${formatDate(data.changedAt)}`,
+            .map(([label, val]) => `${label}: ${String(val).replace(/<[^>]*>?/gm, '')}`),
+        `${data.copy.dateLabel || 'Changed at'}: ${formattedDate}`,
         "",
-        data.copy.showURL && data.newDomain ? `New URL: https://${data.newDomain}\n` : "",
-        data.copy.checklist.length > 0 ? "Verification completed:\n" + data.copy.checklist.map(item => `✓ ${item}`).join('\n') + "\n" : "",
-        `Review Domain here: ${data.actionUrl}`,
+        data.copy.showURL && data.newDomain ? [
+            "What changed?",
+            "Your organization will now use the following URL to access Classgrid:",
+            `https://${data.newDomain}`,
+            ""
+        ].join("\n") : "",
+        data.copy.checklist && data.copy.checklist.length > 0 ? [
+            "Verification completed",
+            ...data.copy.checklist.map(item => `- ${item}`),
+            ""
+        ].join("\n") : "",
+        data.copy.note ? `Important: ${data.copy.note}\n` : "",
+        data.copy.actionUrl2 ? `${data.copy.actionBtn2}: ${data.copy.actionUrl2}` : "",
+        `${data.copy.actionBtn}: ${data.actionUrl}`,
         "",
-        `Need assistance? Open Support Portal: ${process.env.SUPPORT_URL || 'https://classgrid.in/support'}`,
-        "",
-        "Regards,",
-        "The Classgrid Team",
+        "If you did not authorize this action, contact Classgrid Support immediately.",
+        `Need assistance? Open Support Portal: https://classgrid.in/support`,
     ].filter(Boolean).join("\n");
 }
 
 export async function notifyExternalDomainChange({
+    action,
     to,
     orgName,
     adminName,
     adminEmail,
-    action,
     domainType,
     oldDomain,
     newDomain,
-    oldSettings,
     newSettings,
-    brandingReset = false,
     organizationId,
     userId,
 }) {
-    const typeLabel = domainType === "erp_domain" ? "ERP login domain" : "Public website domain";
     const activeDomain = newDomain || oldDomain;
-    const actionUrl = newDomain ? `https://${newDomain}${domainType === "erp_domain" ? "/org/login" : ""}` : "https://classgrid.in";
-
+    
+    // Permanent Classgrid organization URL for managing settings
+    const actionUrl = "https://classgrid.in/admin/settings/domain";
     let copy = {};
-    const domainText = `<strong>${escapeHtml(typeLabel)}</strong> (<code>${escapeHtml(activeDomain)}</code>)`;
 
     switch (action) {
         case "registered":
             copy = {
-                title: `${typeLabel} registered`,
-                summary: `Your organization's ${domainText} has been registered and now requires DNS verification.`,
-                actionBtn: `Review ${typeLabel}`,
+                title: "Action required: Configure DNS for " + activeDomain,
+                summary: `A new custom domain has been registered for your organization.`,
+                actionBtn: `Configure DNS Records`,
+                dateLabel: "Registered at",
+                note: "You must configure the required DNS records for the new domain before it can be activated.",
                 checklist: [],
                 showURL: false
             };
             break;
         case "changed":
             copy = {
-                title: `${typeLabel} changed`,
-                summary: `Your organization's ${domainText} was changed. The replacement domain must be verified before it becomes active.`,
-                actionBtn: `Review ${typeLabel}`,
+                title: `Custom domain changed to ${newDomain}`,
+                summary: `Your organization's custom domain has been changed.`,
+                actionBtn: `Configure DNS Records`,
+                dateLabel: "Changed at",
+                note: "You must configure the required DNS records for the new domain before it can be activated.",
                 checklist: [],
                 showURL: false
             };
             break;
         case "verified":
             copy = {
-                title: `${typeLabel} verified`,
-                summary: `Your organization's ${domainText} has been successfully verified and is now active.`,
-                actionBtn: `Review ${typeLabel}`,
-                checklist: [
-                    "Domain ownership verified",
-                    "DNS routing validated",
-                    "HTTPS certificate issued",
-                    "Secure login activated",
-                    "Organization routing updated",
-                    "Default login URL disabled"
-                ],
-                showURL: true
+                title: `Custom domain verified and active: ${newDomain}`,
+                summary: `Your custom domain has been successfully verified and is now active.`,
+                extraSummary: `Classgrid confirmed ownership of the domain, validated the required DNS records, provisioned a secure HTTPS certificate, and enabled the domain for your organization.`,
+                actionBtn: `Manage Domain`,
+                actionBtn2: `Open ERP Portal`,
+                actionUrl2: `https://${newDomain}`,
+                dateLabel: "Verified at",
+                checklist: [],
+                showURL: false // Replaced with actionUrl2 buttons for cleaner layout
             };
             break;
         case "settings_updated":
+            const isDisabled = newSettings && newSettings.is_enabled === false;
             copy = {
-                title: `${typeLabel} access changed`,
-                summary: `Access settings for your organization's ${domainText} were updated.`,
-                actionBtn: `Review ${typeLabel}`,
+                title: isDisabled ? `Custom domain disabled: ${activeDomain}` : `Custom domain access changed: ${activeDomain}`,
+                summary: `The access settings for your custom domain have been updated.`,
+                extraSummary: isDisabled ? `Users can no longer access Classgrid through this custom domain. Your default Classgrid organisation URL remains available.` : "",
+                actionBtn: `Manage Domain`,
+                dateLabel: "Updated at",
                 checklist: [],
                 showURL: false
             };
             break;
         case "removed":
             copy = {
-                title: `${typeLabel} removed`,
-                summary: `Your organization's ${domainText} was removed from Classgrid.`,
-                actionBtn: "Open Classgrid",
+                title: `Custom domain removed: ${activeDomain}`,
+                summary: `A custom domain has been removed from your organization.`,
+                extraSummary: `The removed domain will no longer provide access to your Classgrid organisation.`,
+                actionBtn: `Manage Domain`,
+                dateLabel: "Removed at",
                 checklist: [],
                 showURL: false
             };
             break;
         default:
             copy = {
-                title: `${typeLabel} updated`,
-                summary: `Settings for your organization's ${domainText} were updated.`,
-                actionBtn: "Open Classgrid",
+                title: `Custom domain updated: ${activeDomain}`,
+                summary: `Settings for your organization's custom domain were updated.`,
+                actionBtn: "Manage Domain",
+                dateLabel: "Updated at",
                 checklist: [],
                 showURL: false
             };
@@ -333,6 +353,23 @@ export async function notifyExternalDomainChange({
         }
     };
 
+    const details = {
+        "Domain Type": domainType === "erp_domain" ? "ERP Login Domain" : "Public Website Domain",
+    };
+
+    if (action === "changed" && oldDomain && oldDomain !== newDomain) {
+        details["Previous Domain"] = `<code>${escapeHtml(oldDomain)}</code>`;
+        details["New Domain"] = `<code>${escapeHtml(newDomain)}</code>`;
+    } else {
+        details["Domain"] = `<code>${escapeHtml(activeDomain)}</code>`;
+    }
+
+    if (newSettings) {
+        details["Access Status"] = settingsSummary(newSettings);
+    }
+    
+    details["Administrator"] = `<a href="mailto:${escapeHtml(adminEmail)}" style="color:#007bff;text-decoration:none;">${escapeHtml(adminEmail)}</a>`;
+
     const data = {
         action,
         copy,
@@ -342,15 +379,7 @@ export async function notifyExternalDomainChange({
         oldDomain,
         actionUrl,
         changedAt: new Date(),
-        details: {
-            "Organization": orgName,
-            "Domain Type": domainType === "erp_domain" ? "ERP Login Domain" : "Public Website Domain",
-            "Domain": action === "changed" && oldDomain && oldDomain !== newDomain
-                ? `<code>${escapeHtml(newDomain)}</code> (was <code>${escapeHtml(oldDomain)}</code>)`
-                : `<code>${escapeHtml(activeDomain)}</code>`,
-            "Access Status": settingsSummary(newSettings),
-            "Administrator": `<a href="mailto:${escapeHtml(adminEmail)}" style="color:#007bff;text-decoration:none;">${escapeHtml(adminEmail)}</a>`
-        }
+        details
     };
 
     // Add specific statuses based on action type
@@ -365,7 +394,7 @@ export async function notifyExternalDomainChange({
 
     if (!to) return { queued: false, reason: "missing_admin_email" };
 
-    const subject = `${copy.title}: ${activeDomain || typeLabel}`;
+    const subject = copy.title;
     await sendEmail({
         to,
         subject,
