@@ -146,8 +146,7 @@ export function AppRouter() {
   const subdomain = hostname.split(".")[0];
   const isSuperAdmin = subdomain === "superadmin";
   const isOnboarding = subdomain === "onboard" || subdomain === "onboarding" || window.location.pathname.startsWith("/onboard");
-  const isBilling = subdomain === "billing" || window.location.pathname.startsWith("/checkout");
-  const isStudentBilling = subdomain === "studentbilling";
+  const isBilling = subdomain === "billing" || subdomain === "studentbilling" || window.location.pathname.startsWith("/checkout");
 
   if (isOnboarding) {
     return (
@@ -162,14 +161,6 @@ export function AppRouter() {
       <Routes>
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="*" element={<Navigate to="/checkout" replace />} />
-      </Routes>
-    );
-  }
-
-  if (isStudentBilling) {
-    return (
-      <Routes>
-        <Route path="*" element={<StudentBillingPortalPage />} />
       </Routes>
     );
   }
