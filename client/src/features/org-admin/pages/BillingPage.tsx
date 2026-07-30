@@ -226,6 +226,73 @@ export function BillingPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-8">
+      {/* INVOICES SECTION */}
+      <div className="bg-card border border-border rounded-xl p-6 flex flex-col gap-6 shadow-sm hover:shadow-md transition-all">
+        <div className="border-b border-border pb-4 flex flex-col gap-2">
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <IndianRupee size={18} /> Invoices
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1 opacity-80">
+            View and pay your recent invoices.
+          </p>
+        </div>
+        
+        {billingData.invoices && billingData.invoices.length > 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Invoice No.</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {billingData.invoices.map((invoice: any) => (
+                  <TableRow key={invoice._id}>
+                    <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                    <TableCell>{format(new Date(invoice.createdAt || new Date()), 'dd MMM yyyy')}</TableCell>
+                    <TableCell>₹{invoice.totalAmountInr?.toLocaleString('en-IN')}</TableCell>
+                    <TableCell>
+                      <Badge variant={invoice.status === 'paid' ? 'success' : invoice.status === 'sent' ? 'warning' : 'default'}>
+                        {invoice.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {invoice.status !== 'paid' ? (
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onClick={async () => {
+                            try {
+                              await payInvoice(invoice._id);
+                            } catch (e: any) {
+                              toast.error(e.message || "Failed to process payment");
+                            }
+                          }}
+                        >
+                          Pay Now
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline" disabled>
+                          Paid
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            No invoices found.
+          </div>
+        )}
+      </div>
+
       {/* BILLING SETTINGS */}
       <div className="space-y-6">
 

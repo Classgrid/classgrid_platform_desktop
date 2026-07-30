@@ -39,9 +39,8 @@ export function CheckoutPage() {
     setSendingOtp(true);
     setError(null);
     try {
-      // In a real implementation, you might need a route to resend OTP based on the token
-      // await apiClient.post("/api/billing/handoff/resend-otp", { token });
-      toast.info("A new code would be sent here (Backend route needed for resend).");
+      await apiClient.post("/api/billing/handoff/resend-otp", { token });
+      toast.success("A new code has been sent to your email.");
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to resend code.");
     } finally {

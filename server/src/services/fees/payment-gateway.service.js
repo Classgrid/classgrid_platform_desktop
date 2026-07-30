@@ -2,6 +2,7 @@ import crypto from "crypto";
 import Transaction from "../../models/Transaction.js";
 import Invoice from "../../models/Invoice.js";
 import { updateInvoiceAfterPayment } from "./invoicing.service.js";
+import razorpayService from "../razorpay.service.js";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PAYMENT GATEWAY SERVICE — Handles real money processing via Razorpay.
@@ -43,20 +44,18 @@ export async function createPaymentOrder(invoiceId, orgId) {
             throw new Error("No remaining balance on this invoice.");
         }
 
-        // 2. Create a Razorpay Order (placeholder — swap with real Razorpay SDK in production)
-        // In production, this would be:
-        //   const razorpay = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: RAZORPAY_KEY_SECRET });
-        //   const order = await razorpay.orders.create({ amount: amountInPaise, currency: "INR", receipt: invoiceId });
-        const amountInPaise = Math.round(invoice.remaining_amount * 100);
-        const mockOrderId = `order_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
-
-        const orderPayload = {
-            id: mockOrderId,
-            amount: amountInPaise,
-            currency: "INR",
-            receipt: invoiceId.toString(),
-            status: "created"
-        };
+        // 2. Create a Razorpay Order
+        const orderPayload = await razorpayService.createOrder(
+            orgId.toString(),
+            invoice.remaining_amount,
+            "INR",
+            invoiceId.toString(),
+            "fees",
+            {
+                invoice_id: invoiceId.toString(),
+                student_id: invoice.student_id?.toString() || ""
+            }
+        );
 
         // 3. Save a pending Transaction to track this payment attempt
         const transaction = await Transaction.create({
@@ -65,7 +64,7 @@ export async function createPaymentOrder(invoiceId, orgId) {
             student_id: invoice.student_id,
             amount: invoice.remaining_amount,
             payment_method: "razorpay",
-            gateway_order_id: mockOrderId,
+            gateway_order_id: orderPayload.id,
             gateway_payment_id: null,
             status: "pending"
         });

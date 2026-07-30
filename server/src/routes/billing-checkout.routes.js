@@ -58,9 +58,22 @@ router.post("/confirm", async (req, res) => {
             return res.status(404).json({ error: "Invalid session" });
         }
 
-        // Ideally, we would verify the signature here, but Razorpay webhook will also verify it.
-        // The frontend payment is a dual-confirmation pattern.
-        // We will just mark the handoff as verified immediately so they can't reuse it.
+        const { default: razorpayService } = await import("../services/razorpay.service.js");
+        
+        let isSignatureValid = false;
+        if (handoff.payment_type === "fee_payment" || handoff.payment_type === "admission_fee") {
+             isSignatureValid = await razorpayService.verifySignature(handoff.organization_id, razorpay_order_id, razorpay_payment_id, razorpay_signature, "fees");
+        } else if (handoff.payment_type === "canteen_order") {
+             isSignatureValid = await razorpayService.verifySignature(handoff.organization_id, razorpay_order_id, razorpay_payment_id, razorpay_signature, "canteen");
+        } else {
+             isSignatureValid = razorpayService.verifyPlatformSignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+        }
+
+        if (!isSignatureValid) {
+             return res.status(400).json({ error: "Invalid payment signature" });
+        }
+
+        // Signature is valid, mark the handoff as verified so they can't reuse it.
         handoff.verified = true;
         await handoff.save();
 

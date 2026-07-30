@@ -130,4 +130,43 @@ router.post("/initiate", generalLimiter, async (req, res) => {
     }
 });
 
+
+/**
+ * POST /api/billing/handoff/resend-otp
+ * Resends the 6-digit OTP to the user's email.
+ */
+router.post("/resend-otp", generalLimiter, async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) return res.status(400).json({ error: "Token is required" });
+
+        const handoff = await BillingHandoff.findOne({ token });
+        if (!handoff) return res.status(404).json({ error: "Invalid or expired session" });
+        if (handoff.verified) return res.status(400).json({ error: "Payment already completed" });
+
+        const org = await Organization.findById(handoff.organization_id).select("name");
+        
+        // Generate new OTP
+        const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        handoff.otp = newOtp;
+        await handoff.save();
+
+        const emailHtml = `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2>Secure Payment Checkout - Resend Code</h2>
+                <p>You requested a new verification code for your payment of ₹${handoff.amount} to ${org?.name || 'the organization'}.</p>
+                <h1 style="background: #f4f4f4; padding: 15px; text-align: center; letter-spacing: 5px; font-size: 32px; color: #333; border-radius: 8px;">${newOtp}</h1>
+                <p style="color: #666; font-size: 14px;">This code will expire in 10 minutes. If you did not initiate this payment, you can safely ignore this email.</p>
+            </div>
+        `;
+
+        await sendEmail(handoff.email, "Your Secure Payment Checkout Code", emailHtml, handoff.organization_id);
+
+        res.json({ success: true, message: "OTP resent successfully" });
+    } catch (error) {
+        console.error("[Billing Handoff Error]:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 export default router;
