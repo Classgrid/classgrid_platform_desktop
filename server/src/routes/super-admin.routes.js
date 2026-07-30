@@ -90,9 +90,9 @@ router.get("/billing/organizations", async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 });
-router.use("/billing/catalog", billingCatalogRoutes);
-router.use("/billing/discounts", billingDiscountsTaxesRoutes);
-router.use("/billing/eligibility", billingEligibilityPricingRoutes);
+router.use("/billing", billingCatalogRoutes);
+router.use("/billing", billingDiscountsTaxesRoutes);
+router.use("/billing", billingEligibilityPricingRoutes);
 router.use("/billing/failed-payments", billingFailuresRoutes);
 router.use("/billing/invoices", billingInvoiceRoutes);
 router.use("/billing/revenue", billingRevenueRoutes);
@@ -101,11 +101,14 @@ router.use("/billing/transactions", billingTransactionsRoutes);
 router.use("/billing/export-jobs", billingExportsRoutes);
 
 // Backward-compatible aliases for older deployed clients.
+router.use("/billing/catalog", billingCatalogRoutes);
 router.use("/billing/discounts-taxes", billingDiscountsTaxesRoutes);
 router.use("/billing/eligibility-pricing", billingEligibilityPricingRoutes);
 router.use("/billing/failures", billingFailuresRoutes);
 router.use("/billing/invoice", billingInvoiceRoutes);
+router.use("/billing/revenue", billingRevenueRoutes);
 router.use("/billing/subscription", billingSubscriptionRoutes);
+router.use("/billing/transactions", billingTransactionsRoutes);
 
 function isPrimarySuperAdmin(user) {
     return (user?.email || "").trim().toLowerCase() === PRIMARY_SUPER_ADMIN_EMAIL;
