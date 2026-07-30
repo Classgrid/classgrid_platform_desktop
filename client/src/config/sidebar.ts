@@ -10,6 +10,13 @@
 // 🛑 AI AGENT INSTRUCTION: DO NOT EDIT OR REFACTOR THIS FILE.
 // The user explicitly requested that AI agents must NEVER modify the sidebar 
 // layout, section headers, icons, or visual logic without extreme explicit permission.
+//
+// PAST AI MISTAKES TO NEVER REPEAT:
+// - Disabled the Storage link: An agent accidentally ran a git checkout to a version of the sidebar from a month ago, completely breaking Storage.
+// - Added colorful icons: An agent wrongly added bright green active states (text-emerald-500) to icons. DO NOT add colors to icons.
+// - Added extra "Classgrid" text: An agent wrongly added the word "Classgrid" above the switcher causing an Icons is not defined crash.
+// - Enabled/Disabled section labels: An agent messed around with <SidebarGroupLabel> hiding and showing it. Leave the labels alone.
+//
 // 🛑 STOP AND ASK BEFORE MAKING ANY CHANGES HERE.
 
 import {

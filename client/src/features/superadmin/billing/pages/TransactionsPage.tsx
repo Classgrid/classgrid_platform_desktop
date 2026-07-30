@@ -1,3 +1,8 @@
+// 🛑 AI AGENT INSTRUCTION: DO NOT EDIT OR REFACTOR THIS FILE.
+// The user explicitly requested that AI agents must NEVER modify this file,
+// its layout, logic, or structure without extreme explicit permission.
+// 🛑 STOP AND ASK BEFORE MAKING ANY CHANGES HERE.
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/marketing_ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/marketing_ui/card';
