@@ -10,6 +10,8 @@
 
 import EmailJob from "../models/EmailJob.js";
 import { sendEmail } from "./aws-ses.service.js";
+import { asyncContext } from "../utils/async-context.js";
+import accessLogger from "../config/logger.js";
 
 const MAX_BATCH_SIZE = 10;
 const MAX_RUNTIME_MS = 8000; // 8 seconds — leave 2s buffer for Vercel's 10s limit
@@ -30,6 +32,10 @@ export async function enqueueEmail({
     organizationId = null,
 }) {
     try {
+        const context = asyncContext.getStore();
+        const effectiveUserId = userId || context?.userId || null;
+        const effectiveOrgId = organizationId || context?.orgId || null;
+
         const job = await EmailJob.create({
             to,
             subject,
@@ -37,9 +43,9 @@ export async function enqueueEmail({
             text,
             type,
             channel,
-            userId,
+            userId: effectiveUserId,
             classroomId,
-            organizationId,
+            organizationId: effectiveOrgId,
             status: "pending",
             attempts: 0,
             nextRetryAt: new Date(),
@@ -63,6 +69,8 @@ export async function enqueueBulkEmails(payloads) {
     if (!payloads || !payloads.length) return [];
 
     try {
+        const context = asyncContext.getStore();
+        
         const docs = payloads.map((p) => ({
             to: p.to,
             subject: p.subject,
@@ -70,9 +78,9 @@ export async function enqueueBulkEmails(payloads) {
             text: p.text || "",
             type: p.type || "other",
             channel: p.channel || null,
-            userId: p.userId || null,
+            userId: p.userId || context?.userId || null,
             classroomId: p.classroomId || null,
-            organizationId: p.organizationId || null,
+            organizationId: p.organizationId || context?.orgId || null,
             status: "pending",
             attempts: 0,
             nextRetryAt: new Date(),
@@ -102,7 +110,11 @@ export async function processEmailQueue(batchSize = MAX_BATCH_SIZE) {
     const stats = { fetched: 0, sent: 0, failed: 0, skipped: 0, durationMs: 0 };
 
     try {
-        console.log(`[EmailQueue] Processing started (batchSize=${effectiveBatch})`);
+        accessLogger.info(`[EmailQueue] Processing started (batchSize=${effectiveBatch})`, {
+            provider: 'email_queue',
+            event: 'processing_start',
+            batchSize: effectiveBatch
+        });
 
         for (let i = 0; i < effectiveBatch; i++) {
             // ── Time guard: stop if approaching Vercel limit ──
@@ -146,6 +158,8 @@ export async function processEmailQueue(batchSize = MAX_BATCH_SIZE) {
                     html: job.html,
                     text: job.text,
                     channel: job.channel || undefined,
+                    userId: job.userId || undefined,
+                    organizationId: job.organizationId || undefined,
                 });
 
                 // ── Mark as sent ─────────────────────────────
@@ -160,8 +174,17 @@ export async function processEmailQueue(batchSize = MAX_BATCH_SIZE) {
                     }
                 );
                 stats.sent++;
-                console.log(
-                    `[EmailQueue] ✅ Sent: ${job._id} → ${job.to} (attempt ${job.attempts})`
+                accessLogger.info(
+                    `[EmailQueue] ✅ Sent: ${job._id} → ${job.to} (attempt ${job.attempts})`,
+                    {
+                        provider: 'email_queue',
+                        event: 'sent',
+                        jobId: job._id?.toString(),
+                        to: job.to,
+                        attempt: job.attempts,
+                        userId: job.userId || undefined,
+                        orgId: job.organizationId || undefined
+                    }
                 );
             } catch (sendErr) {
                 // ── Handle send failure ───────────────────────
@@ -184,9 +207,20 @@ export async function processEmailQueue(batchSize = MAX_BATCH_SIZE) {
                 );
 
                 stats.failed++;
-                console.error(
+                accessLogger.error(
                     `[EmailQueue] ❌ Failed: ${job._id} → ${job.to} (attempt ${job.attempts}/${job.maxAttempts})`,
-                    { error: sendErr.message, nextStatus, nextRetry: nextRetry.toISOString() }
+                    {
+                        provider: 'email_queue',
+                        event: 'failed',
+                        jobId: job._id?.toString(),
+                        to: job.to,
+                        attempt: job.attempts,
+                        error: sendErr.message,
+                        nextStatus,
+                        nextRetry: nextRetry.toISOString(),
+                        userId: job.userId || undefined,
+                        orgId: job.organizationId || undefined
+                    }
                 );
             }
         }
@@ -195,8 +229,16 @@ export async function processEmailQueue(batchSize = MAX_BATCH_SIZE) {
     }
 
     stats.durationMs = Date.now() - startTime;
-    console.log(
-        `[EmailQueue] Processing complete: fetched=${stats.fetched} sent=${stats.sent} failed=${stats.failed} duration=${stats.durationMs}ms`
+    accessLogger.info(
+        `[EmailQueue] Processing complete: fetched=${stats.fetched} sent=${stats.sent} failed=${stats.failed} duration=${stats.durationMs}ms`,
+        {
+            provider: 'email_queue',
+            event: 'processing_complete',
+            durationMs: stats.durationMs,
+            fetched: stats.fetched,
+            sent: stats.sent,
+            failed: stats.failed
+        }
     );
     return stats;
 }

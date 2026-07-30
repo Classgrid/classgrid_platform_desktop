@@ -1,0 +1,118 @@
+import OrganizationSubscription from "../../models/OrganizationSubscription.js";
+import OrganizationSubscriptionItem from "../../models/OrganizationSubscriptionItem.js";
+import Invoice from "../../models/Invoice.js";
+import InvoiceLineItem from "../../models/InvoiceLineItem.js";
+import InvoiceSequence from "../../models/InvoiceSequence.js";
+
+import OrganizationBillingContextService from "./OrganizationBillingContextService.js";
+import PricingEngine from "./PricingEngine.js";
+import TaxEngine from "./TaxEngine.js";
+import DiscountEngine from "./DiscountEngine.js";
+import CreditApplicationService from "./CreditApplicationService.js";
+
+/**
+ * InvoiceGenerator
+ * High-level orchestration for generating an invoice.
+ */
+class InvoiceGenerator {
+    static async generateForSubscription(organizationId, subscriptionId, periodStart, periodEnd) {
+        // 1. Context
+        const context = await OrganizationBillingContextService.getContext(organizationId);
+
+        // 2. Load Subscription & Items
+        const subscription = await OrganizationSubscription.findById(subscriptionId).populate("billingPlanVersionId").lean();
+        const items = await OrganizationSubscriptionItem.find({ organizationSubscriptionId: subscriptionId }).populate("billingModuleVersionId").lean();
+
+        // 3. Draft Line Items (Base Plan + Modules)
+        let subtotalPaise = 0;
+        let taxTotalPaise = 0;
+        const lineItems = [];
+
+        // Base Plan
+        if (subscription.billingPlanVersionId) {
+            const planPrice = subscription.billingCycle === "ANNUAL" 
+                ? subscription.billingPlanVersionId.annualBasePricePaise 
+                : subscription.billingPlanVersionId.monthlyBasePricePaise;
+            
+            subtotalPaise += planPrice;
+            lineItems.push({
+                description: `Base Plan: ${subscription.billingPlanVersionId.name || 'Subscription'}`,
+                unitPricePaise: planPrice,
+                subtotalPaise: planPrice,
+                planVersionId: subscription.billingPlanVersionId._id,
+                quantity: 1
+            });
+        }
+
+        // Modules
+        for (const item of items) {
+            const price = await PricingEngine.resolveModulePrice(
+                organizationId, 
+                subscription.billingPlanVersionId._id, 
+                item.billingModuleVersionId._id, 
+                item.billingModuleVersionId.monthlyPricePaise, 
+                item.billingModuleVersionId.annualPricePaise, 
+                subscription.billingCycle
+            );
+
+            const itemSubtotal = price.amountPaise * item.quantity;
+            subtotalPaise += itemSubtotal;
+
+            lineItems.push({
+                description: `Module: ${item.billingModuleVersionId.name || 'Add-on'}`,
+                unitPricePaise: price.amountPaise,
+                subtotalPaise: itemSubtotal,
+                moduleVersionId: item.billingModuleVersionId._id,
+                quantity: item.quantity
+            });
+        }
+
+        // 4. Discounts
+        // (Simplified for this file: assuming no invoice-level discount here)
+        const discountTotalPaise = 0; 
+        
+        // 5. Credits
+        // We do this at issue time, not draft time usually, but skipping for draft generation
+        const creditAppliedPaise = 0;
+
+        const taxableAmountPaise = subtotalPaise - discountTotalPaise - creditAppliedPaise;
+
+        // 6. Taxes (Assuming a default rule for the example)
+        // const taxResult = await TaxEngine.calculateTax(defaultRule, taxableAmountPaise, false);
+        // taxTotalPaise = taxResult.taxTotalPaise;
+
+        const grandTotalPaise = taxableAmountPaise + taxTotalPaise;
+
+        // 7. Generate Number
+        const financialYear = "2026-2027";
+        const invoiceNumber = await InvoiceSequence.getNextNumber(financialYear);
+
+        // 8. Save Invoice
+        const invoice = await Invoice.create({
+            invoiceNumber,
+            organizationId,
+            organizationSubscriptionId: subscriptionId,
+            status: "DRAFT",
+            servicePeriodStart: periodStart,
+            servicePeriodEnd: periodEnd,
+            subtotalPaise,
+            discountAmountPaise: discountTotalPaise,
+            creditAmountAppliedPaise: creditAppliedPaise,
+            taxableAmountPaise,
+            taxAmountPaise: taxTotalPaise,
+            totalAmountPaise: grandTotalPaise,
+            amountDuePaise: grandTotalPaise
+        });
+
+        // 9. Save Lines
+        const lineItemDocs = lineItems.map(li => ({
+            ...li,
+            invoiceId: invoice._id
+        }));
+        await InvoiceLineItem.insertMany(lineItemDocs);
+
+        return invoice;
+    }
+}
+
+export default InvoiceGenerator;

@@ -1,0 +1,23 @@
+import OrganizationBillingUsageSnapshot from "../../models/OrganizationBillingUsageSnapshot.js";
+
+/**
+ * BillingUsageService
+ * Retrieves usage metrics for a given billing period to calculate usage-based billing.
+ */
+class BillingUsageService {
+    /**
+     * Gets the latest snapshot for a specific metric and period
+     */
+    static async getUsage(organizationId, metricCode, periodStart, periodEnd) {
+        const snapshot = await OrganizationBillingUsageSnapshot.findOne({
+            organizationId,
+            metricCode,
+            billingPeriodStart: { $gte: periodStart },
+            billingPeriodEnd: { $lte: periodEnd }
+        }).sort({ calculatedAt: -1 }).lean();
+
+        return snapshot ? snapshot.quantity : 0;
+    }
+}
+
+export default BillingUsageService;

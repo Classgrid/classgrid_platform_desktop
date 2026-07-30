@@ -33,8 +33,12 @@ import {
     deleteSuperAdminSupportConversation
 } from "../controllers/support-communication.controller.js";
 
+import notificationRoutes from "./super-admin/notification.routes.js";
+
 const router = express.Router();
 const PRIMARY_SUPER_ADMIN_EMAIL = (process.env.SUPER_ADMIN_EMAIL || "support@classgrid.in").trim().toLowerCase();
+
+router.use("/notifications-sys", notificationRoutes);
 
 // All routes require super_admin role
 router.use(isAuthenticated, requireRole("super_admin"));

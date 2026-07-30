@@ -1,5 +1,8 @@
 import nodemailer from "nodemailer";
 import accessLogger from "../config/logger.js";
+import NotificationTemplate from "../models/NotificationTemplate.js";
+import NotificationLog from "../models/NotificationLog.js";
+import Handlebars from "handlebars";
 
 // ─────────────────────────────────────────────────
 // AWS SES SMTP TRANSPORTER (STOCKHOLM REGION)
@@ -52,4 +55,52 @@ export const sendEmail = async ({ to, subject, html, text, fromName, fromEmail, 
       ...(userId && { userId: userId })
   });
   return { ...info, provider: "aws_ses" };
+};
+
+export const sendTemplateEmail = async ({ templateName, to, data, userId, organizationId, fromName, fromEmail, replyTo }) => {
+    try {
+        const template = await NotificationTemplate.findOne({ name: templateName, type: "EMAIL", isActive: true });
+        if (!template) throw new Error(`Email template not found or inactive: ${templateName}`);
+
+        const compiledSubject = Handlebars.compile(template.subject)(data || {});
+        const compiledHtml = Handlebars.compile(template.htmlBody)(data || {});
+        const compiledText = template.textBody ? Handlebars.compile(template.textBody)(data || {}) : undefined;
+
+        const info = await sendEmail({
+            to,
+            subject: compiledSubject,
+            html: compiledHtml,
+            text: compiledText,
+            fromName: fromName || template.fromName,
+            fromEmail: fromEmail || template.fromEmail,
+            replyTo,
+            userId,
+            organizationId
+        });
+
+        await NotificationLog.create({
+            organizationId,
+            userId,
+            templateId: template._id,
+            type: "EMAIL",
+            recipient: to,
+            status: "SENT",
+            providerMessageId: info.messageId,
+            metadata: data
+        });
+
+        return info;
+    } catch (error) {
+        console.error(`[AWS SES] Failed to send template email (${templateName}):`, error.message);
+        await NotificationLog.create({
+            organizationId,
+            userId,
+            type: "EMAIL",
+            recipient: to,
+            status: "FAILED",
+            failureReason: error.message,
+            metadata: { templateName, ...data }
+        });
+        throw error;
+    }
 };

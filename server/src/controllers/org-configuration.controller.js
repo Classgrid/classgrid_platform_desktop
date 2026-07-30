@@ -191,7 +191,7 @@ export async function getOrganizationBilling(req, res) {
         const smsCharges = charge(usage.smsThisMonth, rates.pricePerSms), storageCharges = charge(usage.storageUsedGb, rates.pricePerGB), aiUsageCharges = charge(usage.aiThisMonth, rates.pricePerAiToken), liveClassCharges = charge(usage.liveMinutes, rates.pricePerAgoraMinute);
         const subtotal = Number((platformFee + moduleChargesTotal + emailCharges.total + smsCharges.total + storageCharges.total + aiUsageCharges.total + liveClassCharges.total).toFixed(2)), gstPercent = 18, gstAmount = Number((subtotal * gstPercent / 100).toFixed(2)); const fees = feeSummary[0] || {};
         const monthlyHistory = invoices.map(inv => ({ month: `${inv.billingPeriod?.month || ''} ${inv.billingPeriod?.year || ''}`.trim(), totalAmount: asNumber(inv.totalAmountInr), status: inv.status })).reverse();
-        return res.json({ subscription: subscription && { plan: subscription.plan, status: subscription.status, isPaid: subscription.isPaid, expiresAt: subscription.expiresAt, features: subscription.features, billing: publicBillingRates(rates), limits: { storageGb: subscription.metadata?.storage_limit_gb ?? null } }, currentMonthCharges: { platformFee, moduleChargesTotal, moduleLineItems, emailCharges, smsCharges, storageCharges, aiUsageCharges, liveClassCharges, subtotal, gstPercent, gstAmount, total: Number((subtotal + gstAmount).toFixed(2)) }, invoices: invoices.map(publicInvoice), payments: payments.map(publicPayment), monthlyHistory, feeCollection: { totalInvoices: asNumber(fees.totalInvoices), totalBilled: asNumber(fees.totalBilled), totalPaid: asNumber(fees.totalPaid), outstanding: asNumber(fees.outstanding), transactions: feeTransactions }, billingSettings: org?.billing_settings || { invoice_email: "", state: "Maharashtra", address: "" } });
+        return res.json({ subscription: subscription && { plan: subscription.plan, status: subscription.status, isPaid: subscription.isPaid, expiresAt: subscription.expiresAt, features: subscription.features, billing: publicBillingRates(rates), limits: { storageGb: subscription.metadata?.storage_limit_gb ?? null } }, currentMonthCharges: { platformFee, moduleChargesTotal, moduleLineItems, emailCharges, smsCharges, storageCharges, aiUsageCharges, liveClassCharges, subtotal, gstPercent, gstAmount, total: Number((subtotal + gstAmount).toFixed(2)) }, invoices: invoices.map(publicInvoice), payments: payments.map(publicPayment), monthlyHistory, feeCollection: { totalInvoices: asNumber(fees.totalInvoices), totalBilled: asNumber(fees.totalBilled), totalPaid: asNumber(fees.totalPaid), outstanding: asNumber(fees.outstanding), transactions: feeTransactions }, billingSettings: org?.billing_settings || { invoice_email: "", state: "Maharashtra", address: "" }, paymentGateway: { fees_razorpay_key_id: org.fees_razorpay_key_id || "", has_fees_razorpay_key_secret: !!org.fees_razorpay_key_secret, has_fees_razorpay_webhook_secret: !!org.fees_razorpay_webhook_secret } });
     } catch (error) { console.error("[OrgBilling] load failed:", error.message); return res.status(500).json({ message: "Unable to load organization billing." }); }
 }
 
@@ -436,11 +436,15 @@ export const updateOrganizationBillingSettings = async (req, res) => {
                 org.billing_settings[field] = req.body[field];
             }
         }
+        
+        if (req.body.fees_razorpay_key_id !== undefined) org.fees_razorpay_key_id = req.body.fees_razorpay_key_id;
+        if (req.body.fees_razorpay_key_secret !== undefined) org.fees_razorpay_key_secret = req.body.fees_razorpay_key_secret;
+        if (req.body.fees_razorpay_webhook_secret !== undefined) org.fees_razorpay_webhook_secret = req.body.fees_razorpay_webhook_secret;
 
         org.markModified('billing_settings');
         await org.save();
 
-        return res.json({ message: "Billing settings updated successfully.", billingSettings: org.billing_settings });
+        return res.json({ message: "Billing settings updated successfully.", billingSettings: org.billing_settings, fees_razorpay_key_id: org.fees_razorpay_key_id, has_fees_razorpay_key_secret: !!org.fees_razorpay_key_secret, has_fees_razorpay_webhook_secret: !!org.fees_razorpay_webhook_secret });
     } catch (error) {
         console.error("[UpdateBillingSettings] Error:", error);
         return res.status(500).json({ message: "Unable to update billing settings." });

@@ -1,0 +1,506 @@
+import React from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/marketing_ui/tabs';
+import { PillTabs } from '@/components/marketing_ui/pill-tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/marketing_ui/table';
+import { Badge } from '@/components/marketing_ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/marketing_ui/dropdown-menu';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose } from '@/components/marketing_ui/sheet';
+import { Input } from '@/components/marketing_ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/marketing_ui/select';
+import { Button } from '@/components/marketing_ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/marketing_ui/dialog';
+import { Label } from '@/components/marketing_ui/label';
+import { Textarea } from '@/components/marketing_ui/textarea';
+import { MoreHorizontal, Plus, ArrowRight, Settings2, History, Lock, Calculator, FileText, AlertTriangle } from 'lucide-react';
+import { MoneyDisplay, BillingStatusBadge, AsyncBillingState } from '../shared/BillingStateComponents';
+import { useBillingPlans, usePlanVersions, usePlanVersionDetail, useCreatePlan, useModuleVersions } from '../../hooks/useBillingCatalog';
+import { useState } from 'react';
+
+// 1. PlansBillingTabs
+export const PlansBillingTabs: React.FC<{
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  children: React.ReactNode;
+}> = ({ activeTab, onTabChange, children }) => {
+  return (
+    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+      <div className="flex justify-between items-center mb-6">
+        <TabsList>
+          <TabsTrigger value="plans">Base Plans</TabsTrigger>
+          <TabsTrigger value="modules">Add-on Modules</TabsTrigger>
+          <TabsTrigger value="eligibility">Eligibility Rules</TabsTrigger>
+          <TabsTrigger value="taxes">Tax Rules</TabsTrigger>
+          <TabsTrigger value="discounts">Discounts</TabsTrigger>
+        </TabsList>
+      </div>
+      {children}
+    </Tabs>
+  );
+};
+
+// 2. PlanCatalogTable
+export const PlanCatalogTable: React.FC<{
+  onEdit: (id: string) => void;
+  onViewHistory: (id: string) => void;
+}> = ({ onEdit, onViewHistory }) => {
+  const { data: plans, isLoading, error } = useBillingPlans();
+
+  return (
+    <div className="rounded-md border bg-card">
+      <AsyncBillingState loading={isLoading} error={error} skeletonType="table">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Plan Name</TableHead>
+              <TableHead>System Code</TableHead>
+              <TableHead>Active Version</TableHead>
+              <TableHead>Base Monthly</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {plans?.map((plan: any) => (
+              <TableRow key={plan._id}>
+                <TableCell className="font-medium">{plan.name}</TableCell>
+                <TableCell className="font-mono text-xs text-muted-foreground">{plan.code}</TableCell>
+                <TableCell>v{plan.activeVersionId?.versionNumber || 1}</TableCell>
+                <TableCell><MoneyDisplay amountPaise={plan.activeVersionId?.monthlyBasePricePaise || 0} /></TableCell>
+                <TableCell><BillingStatusBadge status={plan.status} /></TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onEdit(plan._id)}>Edit Draft</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onViewHistory(plan._id)}>Version History</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+            {plans?.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  No plans found. Create one to get started.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </AsyncBillingState>
+    </div>
+  );
+};
+
+// 3. PlanEditorDrawer
+export const PlanEditorDrawer: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  mode: 'create' | 'edit';
+}> = ({ isOpen, onClose, mode }) => {
+  const { mutateAsync: createPlan, isPending } = useCreatePlan();
+  const [formData, setFormData] = useState({ name: '', code: '', monthlyPrice: '', annualPrice: '', taxCategory: '' });
+
+  const handleSave = async () => {
+    if (mode === 'create') {
+      await createPlan({
+        name: formData.name,
+        code: formData.code,
+        monthlyBasePricePaise: Number(formData.monthlyPrice),
+        annualBasePricePaise: Number(formData.annualPrice)
+      });
+      onClose();
+    }
+  };
+
+  return (
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent className="sm:max-w-xl">
+        <SheetHeader>
+          <SheetTitle>{mode === 'create' ? 'Create New Plan' : 'Edit Plan Draft'}</SheetTitle>
+        </SheetHeader>
+        <div className="grid gap-6 py-6">
+          <div className="grid gap-2">
+            <Label>Plan Name</Label>
+            <Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Enterprise School Suite" />
+          </div>
+          <div className="grid gap-2">
+            <Label>System Code</Label>
+            <Input value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="ENT_SCHOOL_BASE" className="font-mono" disabled={mode === 'edit'} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label>Monthly Price (Paise)</Label>
+              <Input type="number" value={formData.monthlyPrice} onChange={e => setFormData({ ...formData, monthlyPrice: e.target.value })} placeholder="2500000" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Annual Price (Paise)</Label>
+              <Input type="number" value={formData.annualPrice} onChange={e => setFormData({ ...formData, annualPrice: e.target.value })} placeholder="25000000" />
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label>Tax Category</Label>
+            <Select onValueChange={v => setFormData({ ...formData, taxCategory: v })}>
+              <SelectTrigger><SelectValue placeholder="Select tax rule" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SOFTWARE_SERVICES">Software Services (18%)</SelectItem>
+                <SelectItem value="EXEMPT">Exempt (0%)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <SheetFooter>
+          <SheetClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </SheetClose>
+          <Button onClick={handleSave} disabled={isPending}>{isPending ? 'Saving...' : 'Save Draft'}</Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
+// 4. PlanVersionHistory
+export const PlanVersionHistory: React.FC<{
+  planId: string;
+  onCompare: (v1: number, v2: number) => void;
+}> = ({ planId, onCompare }) => {
+  const { data: versions, isLoading, error } = usePlanVersions(planId);
+
+  return (
+    <div className="rounded-md border bg-card">
+      <AsyncBillingState loading={isLoading} error={error} skeletonType="table">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Version</TableHead>
+              <TableHead>Published Date</TableHead>
+              <TableHead>Base Price</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {versions?.map((v: any) => (
+              <TableRow key={v.versionNumber}>
+                <TableCell className="font-medium">v{v.versionNumber}</TableCell>
+                <TableCell>{new Date(v.createdAt).toLocaleDateString()}</TableCell>
+                <TableCell><MoneyDisplay amountPaise={v.monthlyBasePricePaise} /></TableCell>
+                <TableCell><BillingStatusBadge status={v.status || 'ACTIVE'} /></TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="sm" onClick={() => onCompare(v.versionNumber, versions[0].versionNumber)}>
+                    Compare to Active
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {versions?.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                  No versions history found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </AsyncBillingState>
+    </div>
+  );
+};
+
+// 5. PlanVersionComparison
+export const PlanVersionComparison: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  planId: string;
+  v1: number;
+  v2: number;
+}> = ({ isOpen, onClose, planId, v1, v2 }) => {
+  const { data: version1, isLoading: load1 } = usePlanVersionDetail(planId, v1);
+  const { data: version2, isLoading: load2 } = usePlanVersionDetail(planId, v2);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Version Comparison: v{v1} vs v{v2}</DialogTitle>
+        </DialogHeader>
+        <AsyncBillingState loading={load1 || load2} skeletonType="card">
+          <div className="grid grid-cols-2 gap-4 py-4">
+            <div className="border rounded-lg p-4 bg-muted/30">
+              <h4 className="font-semibold mb-4 text-muted-foreground flex items-center justify-between">
+                Version {v1} <Badge variant="secondary">ARCHIVED</Badge>
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Monthly:</span> <span><MoneyDisplay amountPaise={version1?.monthlyBasePricePaise || 0} /></span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Org Limit:</span> <span>{version1?.organizationLimit || 'Unlimited'}</span></div>
+              </div>
+            </div>
+            <div className="border rounded-lg p-4 border-primary/20 bg-primary/5">
+              <h4 className="font-semibold mb-4 text-primary flex items-center justify-between">
+                Version {v2} <Badge>ACTIVE</Badge>
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Monthly:</span> <span className="text-primary font-medium"><MoneyDisplay amountPaise={version2?.monthlyBasePricePaise || 0} /></span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Org Limit:</span> <span className="text-primary font-medium">{version2?.organizationLimit || 'Unlimited'}</span></div>
+              </div>
+            </div>
+          </div>
+        </AsyncBillingState>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// 85. PlanEligibilityEditor
+export const PlanEligibilityEditor: React.FC<{ planId: string }> = ({ planId }) => {
+  const { data: plan, isLoading } = usePlanEligibility(planId);
+  const { mutate: updateEligibility, isPending } = useUpdatePlanEligibility();
+  
+  if (isLoading) return <Skeleton className="h-40 w-full" />;
+
+  const handleToggleOrgType = (type: string) => {
+    if (!plan) return;
+    const current = plan.allowedOrgTypes || [];
+    const updated = current.includes(type) ? current.filter((t: string) => t !== type) : [...current, type];
+    updateEligibility({ planId, payload: { allowedOrgTypes: updated } });
+  };
+
+  return (
+    <div className="space-y-4 p-4 border rounded-lg bg-card mt-4">
+      <h3 className="font-semibold flex items-center gap-2"><Settings2 className="w-4 h-4" /> Eligibility Rules</h3>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Allowed Org Types (Click to toggle)</Label>
+          <div className="flex gap-2 flex-wrap">
+            {['K-12 School', 'University', 'Coaching', 'Corporate'].map(type => (
+              <Badge 
+                key={type} 
+                variant={plan?.allowedOrgTypes?.includes(type) ? 'default' : 'outline'}
+                className="cursor-pointer"
+                onClick={() => handleToggleOrgType(type)}
+              >
+                {type}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </div>
+      <Button size="sm" disabled={isPending}>{isPending ? 'Saving...' : 'Rules Auto-Save'}</Button>
+    </div>
+  );
+};
+
+// 86. ModuleVersionHistory
+export const ModuleVersionHistory: React.FC<{ moduleId: string }> = ({ moduleId }) => {
+  const { data: versions, isLoading, error } = useModuleVersions(moduleId);
+
+  return (
+    <div className="rounded-md border bg-card p-4 space-y-4">
+      <h3 className="font-semibold flex items-center gap-2"><History className="w-4 h-4" /> Version History</h3>
+      <AsyncBillingState loading={isLoading} error={error} skeletonType="table">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Version</TableHead>
+              <TableHead>Pricing Model</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Active From</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {versions?.map((v: any) => (
+              <TableRow key={v.versionNumber} className={v.status === 'ARCHIVED' ? 'opacity-50' : ''}>
+                <TableCell>v{v.versionNumber}</TableCell>
+                <TableCell>
+                  {v.pricingModel === 'FLAT_FEE' ? `Flat Fee (` : `Per User (`}
+                  <MoneyDisplay amountPaise={v.monthlyBasePricePaise} />)
+                </TableCell>
+                <TableCell><BillingStatusBadge status={v.status} /></TableCell>
+                <TableCell>{new Date(v.createdAt).toLocaleDateString()}</TableCell>
+              </TableRow>
+            ))}
+            {versions?.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                  No versions history found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </AsyncBillingState>
+    </div>
+  );
+};
+
+// 87. ModulePricingTypeSelector
+export const ModulePricingTypeSelector: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
+  <Select value={value} onValueChange={onChange}>
+    <SelectTrigger><SelectValue placeholder="Select Pricing Model" /></SelectTrigger>
+    <SelectContent>
+      <SelectItem value="FLAT_FEE">Flat Fee (Monthly)</SelectItem>
+      <SelectItem value="PER_USER">Per User</SelectItem>
+      <SelectItem value="USAGE_BASED">Usage Based (Tiered)</SelectItem>
+      <SelectItem value="PERCENTAGE">Percentage of Revenue</SelectItem>
+    </SelectContent>
+  </Select>
+);
+
+// 88. ModuleEligibilityEditor
+export const ModuleEligibilityEditor: React.FC<{ moduleId: string }> = ({ moduleId }) => (
+  <div className="space-y-4 p-4 border rounded-lg bg-card">
+    <h3 className="font-semibold flex items-center gap-2"><Lock className="w-4 h-4" /> Prerequisite Modules</h3>
+    <p className="text-sm text-muted-foreground">Select modules that must be active for an organization to purchase this module.</p>
+    <div className="flex flex-col gap-2">
+      <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="rounded" defaultChecked /> Core Platform (Required)</label>
+      <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="rounded" /> Advanced Analytics</label>
+    </div>
+  </div>
+);
+
+// 89. EffectiveDateSelector
+export const EffectiveDateSelector: React.FC<{ date: Date | null; onSelect: (d: Date | null) => void }> = ({ date, onSelect }) => (
+  <div className="space-y-2">
+    <Label>Effective Date</Label>
+    <Input type="date" value={date ? format(date, 'yyyy-MM-dd') : ''} onChange={e => onSelect(e.target.value ? new Date(e.target.value) : null)} />
+    <p className="text-xs text-muted-foreground">When will this pricing change take effect for existing subscriptions?</p>
+  </div>
+);
+
+// 90. SubscriptionChangeReasonDialog
+export const SubscriptionChangeReasonDialog: React.FC<{ isOpen: boolean; onConfirm: (reason: string) => void; onCancel: () => void }> = ({ isOpen, onConfirm, onCancel }) => {
+  const [reason, setReason] = useState('');
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Reason for Modification</DialogTitle></DialogHeader>
+        <div className="py-4 space-y-2">
+          <Label>Audit Log Reason</Label>
+          <Textarea placeholder="E.g., Client requested downgrade due to budget constraints." value={reason} onChange={e => setReason(e.target.value)} />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button onClick={() => onConfirm(reason)} disabled={!reason}>Confirm Change</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// 91. UsageMetricTable
+export const UsageMetricTable: React.FC<{ data: any[] }> = ({ data }) => (
+  <Table>
+    <TableHeader><TableRow><TableHead>Metric</TableHead><TableHead>Current Usage</TableHead><TableHead>Limit</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+    <TableBody>
+      {data?.map((item, idx) => (
+        <TableRow key={idx}>
+          <TableCell>{item.metricName}</TableCell>
+          <TableCell>{item.currentUsage}</TableCell>
+          <TableCell>{item.limit || 'Unlimited'}</TableCell>
+          <TableCell>
+            <Badge variant={item.isNearLimit ? 'warning' : 'success'}>
+              {item.isNearLimit ? 'Near Limit' : 'Normal'}
+            </Badge>
+          </TableCell>
+        </TableRow>
+      ))}
+      {(!data || data.length === 0) && (
+        <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No usage data found.</TableCell></TableRow>
+      )}
+    </TableBody>
+  </Table>
+);
+
+// 92. UsageCalculationPreview
+export const UsageCalculationPreview: React.FC<{ calculations: any[]; nextInvoiceProjection: number }> = ({ calculations, nextInvoiceProjection }) => (
+  <div className="p-4 border rounded-lg bg-card space-y-3">
+    <h4 className="font-medium text-sm flex items-center gap-2"><Calculator className="w-4 h-4" /> Live Overage Calculation</h4>
+    {calculations?.map((calc, idx) => (
+      <div key={idx} className="flex justify-between text-sm border-b pb-1">
+        <span className="text-muted-foreground">{calc.label}</span>
+        <span><MoneyDisplay amountPaise={calc.amountPaise} /></span>
+      </div>
+    ))}
+    {(!calculations || calculations.length === 0) && <p className="text-sm text-muted-foreground">No overages calculated.</p>}
+    <div className="flex justify-between text-sm font-semibold pt-2">
+      <span className="text-primary">Next Invoice Projection</span>
+      <span className="text-primary"><MoneyDisplay amountPaise={nextInvoiceProjection} /></span>
+    </div>
+  </div>
+);
+
+// 93. InvoiceRulesPanel
+export const InvoiceRulesPanel: React.FC<{ planId: string }> = ({ planId }) => {
+  const { data: plan } = usePlanEligibility(planId);
+  return (
+    <div className="p-4 border rounded-lg space-y-4">
+      <h3 className="font-semibold flex items-center gap-2"><FileText className="w-4 h-4" /> Invoicing Rules</h3>
+      <div className="flex items-center gap-4 text-sm">
+        <div className="flex-1 space-y-1"><Label>Billing Cycle</Label>
+          <Select value={plan?.invoiceRules?.cycle || "MONTHLY"}>
+            <SelectTrigger><SelectValue/></SelectTrigger>
+            <SelectContent><SelectItem value="MONTHLY">Monthly</SelectItem><SelectItem value="ANNUALLY">Annually</SelectItem></SelectContent>
+          </Select>
+        </div>
+        <div className="flex-1 space-y-1"><Label>Net Terms</Label>
+          <Select value={plan?.invoiceRules?.netTerms || "NET15"}>
+            <SelectTrigger><SelectValue/></SelectTrigger>
+            <SelectContent><SelectItem value="NET15">Net 15</SelectItem><SelectItem value="NET30">Net 30</SelectItem></SelectContent>
+          </Select>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 94. PriceChangeConfirmationDialog
+export const PriceChangeConfirmationDialog: React.FC<{ isOpen: boolean; onConfirm: () => void; onCancel: () => void; impactCount: number }> = ({ isOpen, onConfirm, onCancel, impactCount }) => (
+  <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+    <DialogContent>
+      <DialogHeader><DialogTitle className="text-destructive flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Confirm Price Change</DialogTitle></DialogHeader>
+      <p className="text-sm py-4">You are about to publish a new pricing version. This will affect <strong>{impactCount}</strong> organizations on their next billing cycle if you choose to enforce it globally. Are you absolutely sure?</p>
+      <DialogFooter>
+        <Button variant="outline" onClick={onCancel}>Cancel</Button>
+        <Button variant="destructive" onClick={onConfirm}>Yes, Publish Price</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);
+
+// 95. SubscriptionHistoryTimeline
+export const SubscriptionHistoryTimeline: React.FC<{ history: any[] }> = ({ history }) => (
+  <div className="space-y-4 pl-4 border-l-2 border-border ml-2">
+    {history?.map((event, idx) => (
+      <div key={idx} className="relative">
+        <div className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full ${idx === 0 ? 'bg-primary' : 'bg-muted-foreground'} ring-4 ring-background`}></div>
+        <p className="text-sm font-medium">{event.actionLabel}</p>
+        <p className="text-xs text-muted-foreground">{new Date(event.timestamp).toLocaleDateString()} by {event.actorEmail}</p>
+      </div>
+    ))}
+    {(!history || history.length === 0) && <p className="text-sm text-muted-foreground">No history available.</p>}
+  </div>
+);
+
+// 96. TerminologyPricingPreview
+export const TerminologyPricingPreview: React.FC<{ planName: string; features: string; pricePaise: number; interval: string }> = ({ planName, features, pricePaise, interval }) => (
+  <div className="p-4 border border-dashed rounded-lg bg-muted/10">
+    <h4 className="text-sm font-semibold mb-2">Checkout Preview</h4>
+    <p className="text-xs text-muted-foreground mb-4">How this plan appears to school administrators during checkout:</p>
+    <div className="bg-background p-4 rounded border shadow-sm flex justify-between items-center">
+      <div>
+        <p className="font-medium">{planName || 'Unnamed Plan'}</p>
+        <p className="text-xs text-muted-foreground">{features || 'Standard Features'}</p>
+      </div>
+      <div className="text-right">
+        <p className="font-bold text-lg"><MoneyDisplay amountPaise={pricePaise || 0} /><span className="text-xs text-muted-foreground font-normal">/{interval.toLowerCase()}</span></p>
+        <p className="text-xs text-success">Billed {interval}</p>
+      </div>
+    </div>
+  </div>
+);

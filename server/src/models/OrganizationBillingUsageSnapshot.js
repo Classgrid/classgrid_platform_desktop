@@ -1,0 +1,50 @@
+import mongoose from "mongoose";
+
+const organizationBillingUsageSnapshotSchema = new mongoose.Schema(
+    {
+        organizationId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Organization",
+            required: true,
+        },
+        billingPeriodStart: {
+            type: Date,
+            required: true,
+        },
+        billingPeriodEnd: {
+            type: Date,
+            required: true,
+        },
+        metricCode: {
+            type: String, // Matches BillingMetricDefinition.code
+            required: true,
+        },
+        quantity: {
+            type: Number,
+            required: true,
+        },
+        source: {
+            type: String, // e.g. "DAILY_AGGREGATION_CRON", "MANUAL_OVERRIDE"
+            required: true,
+        },
+        calculatedAt: {
+            type: Date,
+            default: Date.now,
+        },
+        calculationVersion: { // To track multiple recalculations in a month
+            type: Number,
+            default: 1,
+        },
+        metadata: {
+            type: mongoose.Schema.Types.Mixed, // e.g. data points used for the calculation
+            default: null,
+        }
+    },
+    {
+        timestamps: true,
+    }
+);
+
+organizationBillingUsageSnapshotSchema.index({ organizationId: 1, metricCode: 1, billingPeriodStart: 1 });
+
+export default mongoose.models.OrganizationBillingUsageSnapshot || mongoose.model("OrganizationBillingUsageSnapshot", organizationBillingUsageSnapshotSchema);

@@ -1,0 +1,55 @@
+import mongoose from "mongoose";
+import { CREDIT_LEDGER_TYPE } from "../utils/billing.utils.js";
+
+const organizationCreditEntrySchema = new mongoose.Schema(
+    {
+        organizationCreditAccountId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "OrganizationCreditAccount",
+            required: true,
+        },
+        entryType: {
+            type: String,
+            enum: Object.values(CREDIT_LEDGER_TYPE),
+            required: true,
+        },
+        amountPaise: { // Positive for additions, Negative for deductions
+            type: Number,
+            required: true,
+        },
+        balanceAfterPaise: { // The resulting balance after this transaction
+            type: Number,
+            required: true,
+        },
+        referenceType: { // e.g. "Invoice", "Manual Adjustment", "Refund"
+            type: String,
+            default: null,
+        },
+        referenceId: {
+            type: mongoose.Schema.Types.ObjectId,
+            default: null, // The related document (like the Invoice ID)
+        },
+        reason: {
+            type: String,
+            default: "",
+        },
+        createdBy: { // Can be null if system generated
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null,
+        },
+    },
+    {
+        timestamps: true,
+    }
+);
+
+// Immutable Ledger
+organizationCreditEntrySchema.pre("save", function (next) {
+    if (!this.isNew) {
+        return next(new Error("OrganizationCreditEntry is immutable and cannot be modified."));
+    }
+    next();
+});
+
+export default mongoose.models.OrganizationCreditEntry || mongoose.model("OrganizationCreditEntry", organizationCreditEntrySchema);

@@ -1,0 +1,39 @@
+import mongoose from "mongoose";
+
+const discountRedemptionSchema = new mongoose.Schema(
+    {
+        discountId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Discount",
+            required: true,
+        },
+        organizationId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Organization",
+            required: true,
+        },
+        invoiceId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Invoice", // Can be null if it's redeemed but invoice generation failed
+            default: null,
+        },
+        amountAppliedPaise: {
+            type: Number,
+            required: true,
+        },
+        status: {
+            type: String,
+            enum: ["PENDING", "REDEEMED", "REVERSED", "FAILED"],
+            default: "PENDING",
+        },
+        redeemedAt: {
+            type: Date,
+            default: null,
+        }
+    },
+    {
+        timestamps: true,
+    }
+);
+
+export default mongoose.models.DiscountRedemption || mongoose.model("DiscountRedemption", discountRedemptionSchema);

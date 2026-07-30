@@ -2,6 +2,18 @@ import mongoose from "mongoose";
 
 const systemLogSchema = new mongoose.Schema(
     {
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null,
+            index: true
+        },
+        organizationId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Organization",
+            default: null,
+            index: true
+        },
         level: {
             type: String,
             enum: ["info", "warn", "error"],

@@ -2,6 +2,8 @@
 import Groq from 'groq-sdk';
 import { GoogleGenAI } from '@google/genai';
 import accessLogger from '../config/logger.js';
+import { asyncContext } from '../utils/async-context.js';
+import AiUsageLog from '../models/AiUsageLog.js';
 
 // Initialize clients
 const groq = new Groq({
@@ -350,6 +352,26 @@ export async function getChatReply(message, modelArg = 'groq', mode = 'chat', cl
     }
 
     const responseTime = Date.now() - startTime;
+    
+    // Estimate tokens (approx 4 chars per token)
+    const inputTokens = Math.ceil(fullMessage.length / 4);
+    const outputTokens = Math.ceil(reply.length / 4);
+    
+    // Log AI Usage
+    const context = asyncContext.getStore();
+    if (context?.orgId && context?.userId) {
+        AiUsageLog.create({
+            organization_id: context.orgId,
+            userId: context.userId,
+            provider: modelArg === 'gemini' ? 'gemini' : 'groq',
+            model: modelArg === 'gemini' ? 'gemini-2.5-flash' : 'llama-3.3-70b-versatile',
+            inputTokens,
+            outputTokens,
+            totalTokens: inputTokens + outputTokens,
+            success: true
+        }).catch(err => console.error("AiUsageLog Error:", err));
+    }
+
     accessLogger.info(`[${mode}] Response from ${modelUsed} in ${responseTime}ms`, { provider: 'ai', model: modelUsed, mode, durationMs: responseTime });
     return reply;
 
@@ -449,6 +471,24 @@ export async function getVisionReply(message, base64Image, mimeType, modelArg = 
     });
 
     accessLogger.info("Vision response received", { provider: 'ai', model: 'gemini-vision' });
+    
+    // Log AI Usage
+    const context = asyncContext.getStore();
+    if (context?.orgId && context?.userId) {
+        const inputTokens = Math.ceil(prompt.length / 4) + 1000; // rough image cost
+        const outputTokens = Math.ceil(response.text.length / 4);
+        AiUsageLog.create({
+            organization_id: context.orgId,
+            userId: context.userId,
+            provider: 'gemini',
+            model: 'gemini-2.5-flash-vision',
+            inputTokens,
+            outputTokens,
+            totalTokens: inputTokens + outputTokens,
+            success: true
+        }).catch(err => console.error("AiUsageLog Error:", err));
+    }
+
     return response.text;
   } catch (error) {
     console.error("Vision API Error:", error);

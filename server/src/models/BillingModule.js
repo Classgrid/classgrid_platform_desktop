@@ -1,0 +1,66 @@
+import mongoose from "mongoose";
+
+const billingModuleSchema = new mongoose.Schema(
+    {
+        name: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        code: {
+            type: String,
+            required: true,
+            unique: true,
+            uppercase: true,
+            trim: true,
+        },
+        category: {
+            type: String, // e.g. 'Academic', 'Finance', 'HR', 'Communication'
+            required: true,
+        },
+        description: {
+            type: String,
+            default: "",
+        },
+        pricingType: {
+            type: String,
+            enum: ["FIXED", "PER_USER", "PER_STUDENT", "PER_CAMPUS", "PER_STORAGE_UNIT", "PER_USAGE", "CUSTOM_CONTRACT"],
+            required: true,
+        },
+        trialAllowed: {
+            type: Boolean,
+            default: false,
+        },
+        status: {
+            type: String,
+            enum: ["ACTIVE", "ARCHIVED"],
+            default: "ACTIVE",
+        },
+        allowedOrgTypes: {
+            type: [String],
+            default: [], // Empty means applies to all org_types
+        },
+        allowedStructureTypes: {
+            type: [String],
+            default: [], // Empty means applies to all structure_types
+        },
+        activeVersionId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "BillingModuleVersion",
+            default: null,
+        },
+        createdBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+        },
+        updatedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+        }
+    },
+    {
+        timestamps: true,
+    }
+);
+
+export default mongoose.models.BillingModule || mongoose.model("BillingModule", billingModuleSchema);

@@ -1,4 +1,7 @@
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
+import NotificationTemplate from "../models/NotificationTemplate.js";
+import NotificationLog from "../models/NotificationLog.js";
+import Handlebars from "handlebars";
 
 /**
  * Classgrid SMS Service
@@ -77,4 +80,43 @@ export const sendOTP = async (phoneNumber) => {
         return { success: true, otp, messageId: result.messageId };
     }
     return result;
+};
+
+export const sendTemplateSMS = async ({ templateName, phoneNumber, data, userId, organizationId }) => {
+    try {
+        const template = await NotificationTemplate.findOne({ name: templateName, type: "SMS", isActive: true });
+        if (!template) throw new Error(`SMS template not found or inactive: ${templateName}`);
+
+        const compiledText = Handlebars.compile(template.textBody)(data || {});
+
+        const result = await sendSMS(phoneNumber, compiledText);
+
+        await NotificationLog.create({
+            organizationId,
+            userId,
+            templateId: template._id,
+            type: "SMS",
+            recipient: phoneNumber,
+            status: result.success ? "SENT" : "FAILED",
+            providerMessageId: result.messageId,
+            failureReason: result.success ? undefined : result.error,
+            metadata: data
+        });
+
+        if (!result.success) throw new Error(result.error);
+
+        return result;
+    } catch (error) {
+        console.error(`[AWS SNS] Failed to send template SMS (${templateName}):`, error.message);
+        await NotificationLog.create({
+            organizationId,
+            userId,
+            type: "SMS",
+            recipient: phoneNumber,
+            status: "FAILED",
+            failureReason: error.message,
+            metadata: { templateName, ...data }
+        });
+        throw error;
+    }
 };

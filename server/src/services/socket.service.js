@@ -7,6 +7,7 @@ import Message from "../models/Message.js";
 import MeetingChat from "../models/MeetingChat.js";
 import GoLive from "../models/GoLive.js";
 import { dispatchNotification } from "./notification.service.js";
+import accessLogger from "../config/logger.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 const REDIS_URL = process.env.REDIS_URL; // No default localhost fallback to avoid forcing Redis
@@ -70,7 +71,13 @@ export const initSocket = (server) => {
         const orgId = socket.orgId;
         const orgStreamKey = `chat:stream:org_${orgId}`;
 
-        console.log(`🔌 Socket connected: ${socket.userId} (Org: ${orgId})`);
+        accessLogger.info(`🔌 Socket connected: ${socket.userId} (Org: ${orgId})`, {
+            provider: 'socket',
+            event: 'connect',
+            userId: socket.userId,
+            orgId: orgId,
+            ip: socket.handshake.address
+        });
 
         // Ensure consumer group exists (catch if it already exists)
         if (orgId && redisClient) {
@@ -313,7 +320,13 @@ export const initSocket = (server) => {
         });
 
         socket.on("disconnect", () => {
-             console.log(`🔌 Socket disconnected: ${socket.userId}`);
+            accessLogger.info(`🔌 Socket disconnected: ${socket.userId}`, {
+                provider: 'socket',
+                event: 'disconnect',
+                userId: socket.userId,
+                orgId: orgId,
+                ip: socket.handshake.address
+            });
         });
     });
 

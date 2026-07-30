@@ -1,0 +1,440 @@
+import React, { useState } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/marketing_ui/table';
+import { Badge } from '@/components/marketing_ui/badge';
+import { Button } from '@/components/marketing_ui/button';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose, DrawerFooter } from '@/components/marketing_ui/drawer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/marketing_ui/dialog';
+import { Input } from '@/components/marketing_ui/input';
+import { Label } from '@/components/marketing_ui/label';
+import { Textarea } from '@/components/marketing_ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/marketing_ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/marketing_ui/select';
+import { Building2, AlertTriangle, ArrowRightCircle, Terminal, Clock, StickyNote, Link as LinkIcon, UserPlus, CheckCircle, Download, MailWarning } from 'lucide-react';
+import { MoneyDisplay, AsyncBillingState } from '../shared/BillingStateComponents';
+import { 
+  useFailedPaymentsList, 
+  useFailedPaymentDetail, 
+  useGeneratePaymentLink, 
+  useAssignFailure, 
+  useAddFailureNote, 
+  useResolveFailure 
+} from '../../hooks/useBillingFailures';
+import { format } from 'date-fns';
+
+// 72. FailureStageBadge
+export const FailureStageBadge: React.FC<{ stage: string }> = ({ stage }) => {
+  const map: Record<string, 'destructive' | 'warning' | 'secondary'> = {
+    'AUTHENTICATION': 'warning',
+    'CAPTURE': 'destructive',
+    'VERIFICATION': 'destructive',
+    'WEBHOOK': 'secondary'
+  };
+  return <Badge variant={map[stage] || 'outline'}>{stage}</Badge>;
+};
+
+// 73. FailureResponsibilityBadge
+export const FailureResponsibilityBadge: React.FC<{ responsibility: string }> = ({ responsibility }) => {
+  const map: Record<string, string> = {
+    'CUSTOMER': 'bg-orange-100 text-orange-800 border-orange-200',
+    'SYSTEM': 'bg-red-100 text-red-800 border-red-200',
+    'PROVIDER': 'bg-yellow-100 text-yellow-800 border-yellow-200'
+  };
+  return <Badge variant="outline" className={`${map[responsibility] || 'bg-gray-100 text-gray-800'}`}>{responsibility}</Badge>;
+};
+
+// 74. FailureReasonFilter
+export const FailureReasonFilter: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
+  <Select value={value} onValueChange={onChange}>
+    <SelectTrigger className="w-[200px]">
+      <SelectValue placeholder="Filter by Reason" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="ALL">All Reasons</SelectItem>
+      <SelectItem value="INSUFFICIENT_FUNDS">Insufficient Funds</SelectItem>
+      <SelectItem value="AUTHENTICATION_FAILED">Auth Failed</SelectItem>
+      <SelectItem value="CARD_DECLINED">Card Declined</SelectItem>
+      <SelectItem value="TIMEOUT">Gateway Timeout</SelectItem>
+    </SelectContent>
+  </Select>
+);
+
+// 75. FailureStageFilter
+export const FailureStageFilter: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
+  <Select value={value} onValueChange={onChange}>
+    <SelectTrigger className="w-[180px]">
+      <SelectValue placeholder="Filter by Stage" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="ALL">All Stages</SelectItem>
+      <SelectItem value="AUTHENTICATION">Authentication</SelectItem>
+      <SelectItem value="CAPTURE">Capture</SelectItem>
+      <SelectItem value="VERIFICATION">Verification</SelectItem>
+      <SelectItem value="WEBHOOK">Webhook Sync</SelectItem>
+    </SelectContent>
+  </Select>
+);
+
+// 76. RelatedAttemptList
+export const RelatedAttemptList: React.FC<{ attempts: any[] }> = ({ attempts }) => (
+  <div className="space-y-2">
+    <h4 className="text-sm font-medium">Related Payment Attempts</h4>
+    {attempts?.length > 0 ? (
+      <div className="space-y-2">
+        {attempts.map((a, idx) => (
+          <div key={idx} className="flex justify-between items-center text-sm p-2 border rounded-md">
+            <span className="font-mono text-muted-foreground">{a.id}</span>
+            <Badge variant={a.status === 'SUCCESS' ? 'success' : 'destructive'}>{a.status}</Badge>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <p className="text-sm text-muted-foreground">No other attempts found.</p>
+    )}
+  </div>
+);
+
+// 77. ContactAdministratorDialog
+export const ContactAdministratorDialog: React.FC<{ organizationId: string }> = ({ organizationId }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <MailWarning className="w-4 h-4" /> Notify School Admin
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Send Alert to School Admin</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Message</Label>
+            <Textarea 
+              value={message} 
+              onChange={e => setMessage(e.target.value)} 
+              placeholder="Explain the payment failure and required action..." 
+              rows={4}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+          <Button disabled={!message} onClick={() => {
+            // In a real app this would call an API like notifyAdmin(orgId, message)
+            setIsOpen(false);
+          }}>
+            Send Notification
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// 27. FailedPaymentTable
+export const FailedPaymentTable: React.FC<{
+  onResolve: (failureId: string) => void;
+}> = ({ onResolve }) => {
+  const { data: failures, isLoading, error } = useFailedPaymentsList();
+
+  return (
+    <div className="rounded-md border bg-card">
+      <AsyncBillingState loading={isLoading} error={error} skeletonType="table">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date</TableHead>
+              <TableHead>Organization</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Error Stage</TableHead>
+              <TableHead className="text-right">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {failures?.map((fail: any) => (
+              <TableRow key={fail.id}>
+                <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                  {format(new Date(fail.createdAt), 'dd MMM yyyy, HH:mm')}
+                </TableCell>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    {fail.organization?.name || fail.orgId}
+                  </div>
+                </TableCell>
+                <TableCell className="font-medium text-destructive">
+                  <MoneyDisplay amountPaise={fail.amountPaise} />
+                </TableCell>
+                <TableCell>
+                  <FailureStageBadge stage={fail.stage || 'UNKNOWN'} />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="sm" onClick={() => onResolve(fail.id)} className="h-8 gap-1">
+                    Investigate <ArrowRightCircle className="w-3 h-3" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {failures?.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                  No active payment failures found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </AsyncBillingState>
+    </div>
+  );
+};
+
+// 66. ErrorPayloadPanel
+export const ErrorPayloadPanel: React.FC<{ payload: any }> = ({ payload }) => (
+  <Card>
+    <CardHeader className="py-3 px-4 border-b">
+      <CardTitle className="text-sm font-medium flex items-center gap-2">
+        <Terminal className="w-4 h-4 text-muted-foreground" />
+        Raw Error Payload
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="p-4 bg-muted/30">
+      <pre className="text-xs font-mono overflow-auto max-h-48 text-muted-foreground">
+        {JSON.stringify(payload, null, 2)}
+      </pre>
+    </CardContent>
+  </Card>
+);
+
+// 67. RecoveryTimeline
+export const RecoveryTimeline: React.FC<{ timeline: any[] }> = ({ timeline }) => (
+  <div className="space-y-4">
+    <h4 className="text-sm font-medium flex items-center gap-2">
+      <Clock className="w-4 h-4" /> Recovery Attempts
+    </h4>
+    <div className="space-y-3 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+      {timeline?.map((event: any, i) => (
+        <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full border border-background bg-card shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+            <div className={`w-2 h-2 rounded-full ${event.status === 'SUCCESS' ? 'bg-success' : 'bg-muted-foreground'}`} />
+          </div>
+          <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] border rounded-lg p-3 bg-card shadow-sm">
+            <div className="flex justify-between mb-1 text-sm font-medium">
+              <span>{event.action}</span>
+              <span className="text-muted-foreground text-xs">{format(new Date(event.timestamp), 'MMM dd, HH:mm')}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">{event.note}</p>
+          </div>
+        </div>
+      ))}
+      {!timeline?.length && <p className="text-sm text-muted-foreground ml-12 md:mx-auto text-center">No recovery actions recorded yet.</p>}
+    </div>
+  </div>
+);
+
+// 68. InternalNotePanel
+export const InternalNotePanel: React.FC<{ failureId: string; notes: any[] }> = ({ failureId, notes }) => {
+  const [note, setNote] = useState('');
+  const addMutation = useAddFailureNote(failureId);
+
+  return (
+    <Card>
+      <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <StickyNote className="w-4 h-4" /> Internal Notes
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 space-y-4">
+        <div className="max-h-40 overflow-y-auto space-y-3">
+          {notes?.map((n: any, i) => (
+            <div key={i} className="bg-muted/50 p-3 rounded-md text-sm">
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-medium text-xs">{n.authorId}</span>
+                <span className="text-xs text-muted-foreground">{format(new Date(n.timestamp), 'MMM dd, HH:mm')}</span>
+              </div>
+              <p className="text-muted-foreground">{n.text}</p>
+            </div>
+          ))}
+          {!notes?.length && <p className="text-xs text-muted-foreground">No internal notes.</p>}
+        </div>
+        <div className="flex gap-2">
+          <Input value={note} onChange={e => setNote(e.target.value)} placeholder="Add a note..." className="h-8 text-sm" />
+          <Button 
+            size="sm" 
+            className="h-8" 
+            disabled={!note || addMutation.isPending}
+            onClick={() => addMutation.mutate({ note: note }, { onSuccess: () => setNote('') })}
+          >
+            Add
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// 69. GeneratePaymentLinkDialog
+export const GeneratePaymentLinkDialog: React.FC<{ failureId: string }> = ({ failureId }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [amount, setAmount] = useState('');
+  const generateMutation = useGeneratePaymentLink(failureId);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <LinkIcon className="w-4 h-4" /> Generate Link
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Generate Custom Payment Link</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Link Amount (INR) (Leave blank to use original failure amount)</Label>
+            <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 5000" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+          <Button 
+            disabled={generateMutation.isPending}
+            onClick={() => generateMutation.mutate({ amountPaise: amount ? Number(amount) * 100 : undefined }, { onSuccess: () => setIsOpen(false) })}
+          >
+            {generateMutation.isPending ? 'Generating...' : 'Generate Link'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// 70. FailureAssignmentPanel
+export const FailureAssignmentPanel: React.FC<{ failureId: string; currentAssignee?: string }> = ({ failureId, currentAssignee }) => {
+  const assignMutation = useAssignFailure(failureId);
+
+  return (
+    <div className="flex items-center gap-3">
+      <UserPlus className="w-4 h-4 text-muted-foreground" />
+      <Select 
+        value={currentAssignee || 'unassigned'} 
+        onValueChange={(val) => assignMutation.mutate({ assigneeId: val === 'unassigned' ? '' : val })}
+      >
+        <SelectTrigger className="w-48 h-8 text-sm">
+          <SelectValue placeholder="Assign Investigator" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="unassigned">Unassigned</SelectItem>
+          <SelectItem value="admin_1">Admin 1</SelectItem>
+          <SelectItem value="finance_team">Finance Team</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};
+
+// 71. ResolutionStatusControl
+export const ResolutionStatusControl: React.FC<{ failureId: string; status: string }> = ({ failureId, status }) => {
+  const resolveMutation = useResolveFailure(failureId);
+
+  if (status === 'RESOLVED') {
+    return <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" /> Resolved</Badge>;
+  }
+
+  return (
+    <Button 
+      variant="default" 
+      size="sm" 
+      disabled={resolveMutation.isPending}
+      onClick={() => resolveMutation.mutate({ resolution: 'Manual override via Admin Panel' })}
+    >
+      Mark Resolved
+    </Button>
+  );
+};
+
+// 65. FailureDetailDrawer (Expanded)
+export const FailureDetailDrawer: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  failureId: string;
+}> = ({ isOpen, onClose, failureId }) => {
+  const { data: failure, isLoading, error } = useFailedPaymentDetail(failureId);
+
+  return (
+    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DrawerContent className="max-w-3xl ml-auto right-0 left-auto h-full rounded-l-xl rounded-r-none">
+        <DrawerHeader className="border-b pb-4 flex justify-between items-center">
+          <DrawerTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5" />
+            Investigate Payment Failure
+          </DrawerTitle>
+          <DrawerClose asChild>
+            <Button variant="ghost" size="sm">Close</Button>
+          </DrawerClose>
+        </DrawerHeader>
+        <div className="p-6 flex-1 overflow-y-auto space-y-6 bg-muted/5">
+          <AsyncBillingState loading={isLoading} error={error} skeletonType="card">
+            {failure && (
+              <>
+                <div className="flex justify-between items-start bg-card p-6 rounded-lg border shadow-sm">
+                  <div>
+                    <h3 className="text-3xl font-semibold mb-2 text-destructive">
+                      <MoneyDisplay amountPaise={failure.amountPaise} />
+                    </h3>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>{failure.organization?.name || failure.orgId}</span>
+                      <span>•</span>
+                      <span>{format(new Date(failure.createdAt), 'MMM dd, yyyy')}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-3">
+                    <ResolutionStatusControl failureId={failureId} status={failure.status} />
+                    <div className="flex gap-2">
+                      <GeneratePaymentLinkDialog failureId={failureId} />
+                      <ContactAdministratorDialog organizationId={failure.orgId} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-lg flex justify-between items-start">
+                  <div>
+                    <p className="text-sm font-medium text-destructive mb-1">
+                      Failure Reason (<FailureStageBadge stage={failure.stage} />)
+                    </p>
+                    <p className="text-sm text-foreground">
+                      {failure.reason || 'Unknown error occurred during payment processing.'}
+                    </p>
+                  </div>
+                  <FailureResponsibilityBadge responsibility={failure.responsibility || 'SYSTEM'} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FailureAssignmentPanel failureId={failureId} currentAssignee={failure.assigneeId} />
+                  <Button variant="outline" size="sm" className="w-fit ml-auto gap-2">
+                    <Download className="w-4 h-4" /> Export Diagnostic Logs
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    <ErrorPayloadPanel payload={failure.rawPayload} />
+                    <RelatedAttemptList attempts={failure.relatedAttempts} />
+                    <InternalNotePanel failureId={failureId} notes={failure.notes} />
+                  </div>
+                  <div>
+                    <RecoveryTimeline timeline={failure.recoveryAttempts} />
+                  </div>
+                </div>
+              </>
+            )}
+          </AsyncBillingState>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+};

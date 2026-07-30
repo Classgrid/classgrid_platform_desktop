@@ -14,15 +14,38 @@ import Organization from "../models/Organization.js";
  * @param {string|null} targetId   - ID of affected entity
  * @param {string} targetName  - Human-readable name of affected entity
  * @param {object} metadata    - Optional diff info { oldRole, newRole, etc. }
+ * @param {string|null} forceOrgId - Optional override for organization_id
+ * @param {string} status      - 'success' | 'failure' | 'pending'
+ * @param {number} durationMs  - Optional override for duration, otherwise auto-calc from req._startTime
  */
-export async function logAdminAction(req, action, targetType, targetId = null, targetName = "", metadata = {}) {
+export async function logAdminAction(req, action, targetType, targetId = null, targetName = "", metadata = {}, forceOrgId = null, status = "success", durationMs = null) {
     try {
         const actor = req.user;
         if (!actor) return; // should never happen, but be safe
 
+        let orgId = actor.organization_id || forceOrgId;
+
+        // Auto-resolve organization if missing (common for Super Admins)
+        if (!orgId && targetId) {
+            if (targetType === "organization") {
+                orgId = targetId;
+            } else if (targetType === "user" || targetType === "faculty" || targetType === "student") {
+                const User = (await import("../models/User.js")).default;
+                const targetUser = await User.findById(targetId).select("organization_id").lean();
+                if (targetUser) orgId = targetUser.organization_id;
+            } else if (targetType === "users") {
+                // For bulk user actions, targetId is usually the orgId
+                orgId = targetId;
+            } else if (targetType === "classroom") {
+                const Classroom = (await import("../models/Classroom.js")).default;
+                const targetClass = await Classroom.findById(targetId).select("organization_id").lean();
+                if (targetClass) orgId = targetClass.organization_id;
+            }
+        }
+
         let orgName = "";
-        if (actor.organization_id) {
-            const org = await Organization.findById(actor.organization_id).select("name").lean();
+        if (orgId) {
+            const org = await Organization.findById(orgId).select("name").lean();
             orgName = org?.name || "";
         }
 
@@ -33,11 +56,16 @@ export async function logAdminAction(req, action, targetType, targetId = null, t
 
         const userAgent = (req.headers["user-agent"] || "").substring(0, 300);
 
+        let finalDuration = durationMs;
+        if (finalDuration === null && req._startTime) {
+            finalDuration = Date.now() - new Date(req._startTime).getTime();
+        }
+
         await AdminAuditLog.create({
             actorId: actor._id,
             actorName: actor.name || actor.email || "Unknown",
             actorRole: actor.role,
-            organization_id: actor.organization_id || null,
+            organization_id: orgId || null,
             organizationName: orgName,
             action,
             targetId: targetId ? String(targetId) : null,
@@ -46,6 +74,8 @@ export async function logAdminAction(req, action, targetType, targetId = null, t
             metadata,
             ip,
             userAgent,
+            durationMs: finalDuration || 0,
+            status,
             timestamp: new Date(),
         });
     } catch (err) {

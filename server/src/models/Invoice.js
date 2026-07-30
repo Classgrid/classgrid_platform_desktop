@@ -1,55 +1,108 @@
 import mongoose from "mongoose";
+import { INVOICE_STATUS } from "../utils/billing.utils.js";
 
-// ══════════════════════════════════════════════════════════════════════════════
-// INVOICE SCHEMA (Phase 8: 4x2 DNA Architecture)
-// The financial obligation mapped directly to an individual student.
-// ══════════════════════════════════════════════════════════════════════════════
+const invoiceSchema = new mongoose.Schema(
+    {
+        invoiceNumber: {
+            type: String,
+            required: true,
+            unique: true,
+        },
+        organizationId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Organization",
+            required: true,
+        },
+        organizationSubscriptionId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "OrganizationSubscription",
+            required: true,
+        },
+        status: {
+            type: String,
+            enum: Object.values(INVOICE_STATUS),
+            default: INVOICE_STATUS.DRAFT,
+        },
+        issueDate: {
+            type: Date,
+            default: null,
+        },
+        dueDate: {
+            type: Date,
+            default: null,
+        },
+        servicePeriodStart: {
+            type: Date,
+            required: true,
+        },
+        servicePeriodEnd: {
+            type: Date,
+            required: true,
+        },
+        
+        // Snapshot Financial Totals
+        subtotalPaise: {
+            type: Number,
+            default: 0,
+        },
+        discountAmountPaise: {
+            type: Number,
+            default: 0,
+        },
+        creditAmountAppliedPaise: {
+            type: Number,
+            default: 0,
+        },
+        taxableAmountPaise: {
+            type: Number,
+            default: 0,
+        },
+        taxAmountPaise: {
+            type: Number,
+            default: 0,
+        },
+        totalAmountPaise: {
+            type: Number,
+            default: 0,
+        },
+        amountPaidPaise: {
+            type: Number,
+            default: 0,
+        },
+        amountDuePaise: {
+            type: Number,
+            default: 0,
+        },
+        
+        // Currency Snapshot
+        currency: {
+            type: String,
+            default: "INR",
+        },
 
-const invoiceSchema = new mongoose.Schema({
-    organization_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Organization",
-        required: true,
-        index: true
+        // Immutable lock (ensures we don't accidentally update issued invoices)
+        isLocked: {
+            type: Boolean,
+            default: false,
+        },
     },
-    student_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
-    },
-    fee_structure_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "FeeStructure",
-        required: true
-    },
-    total_amount: {
-        type: Number,
-        required: true,
-        min: 0
-    },
-    amount_paid: {
-        type: Number,
-        required: true,
-        default: 0,
-        min: 0
-    },
-    remaining_amount: {
-        type: Number,
-        required: true,
-        min: 0
-    },
-    status: {
-        type: String,
-        enum: ["pending", "partial", "paid", "overdue"],
-        default: "pending"
+    {
+        timestamps: true,
     }
-}, { timestamps: true });
+);
 
-// CRITICAL INDEXES: Highly optimized for the Admin Dashboard and Student Portals
-invoiceSchema.index({ organization_id: 1, status: 1 });
-invoiceSchema.index({ student_id: 1, status: 1 });
-// Prevent a student from being billed the exact same fee structure twice
-invoiceSchema.index({ student_id: 1, fee_structure_id: 1 }, { unique: true });
+invoiceSchema.index({ organizationId: 1, status: 1, dueDate: 1 });
 
-const Invoice = mongoose.models.Invoice || mongoose.model("Invoice", invoiceSchema);
-export default Invoice;
+invoiceSchema.pre("save", function (next) {
+    // If it's already locked and not a status/payment update, block it
+    if (!this.isNew && this.isLocked && this.isModified("subtotalPaise")) {
+        return next(new Error("Cannot modify financial values of a locked invoice. Use a Credit Note instead."));
+    }
+    // Lock it automatically if it's issued
+    if (this.status !== INVOICE_STATUS.DRAFT) {
+        this.isLocked = true;
+    }
+    next();
+});
+
+export default mongoose.models.Invoice || mongoose.model("Invoice", invoiceSchema);

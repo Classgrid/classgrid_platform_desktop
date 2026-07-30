@@ -104,6 +104,11 @@ export interface OrgBillingResponse {
     pincode?: string;
     billing_contact_name?: string;
   };
+  paymentGateway?: {
+    fees_razorpay_key_id: string;
+    has_fees_razorpay_key_secret: boolean;
+    has_fees_razorpay_webhook_secret: boolean;
+  };
 }
 
 export const orgAdminBillingApi = {

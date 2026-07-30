@@ -707,7 +707,10 @@ export const getErrorLogs = async (req, res) => {
             message: e.message || e.meta?.message || "",
             stack: e.meta?.stack || e.stack || "",
             context: e.meta?.context || e.context || "",
-            metadata: e.metadata?.metadata || e.meta?.metadata || e.metadata || e.meta || {}
+            metadata: {
+                ...(e.meta?.metadata || e.meta || {}),
+                ...(e.metadata?.metadata || (Object.keys(e.metadata || {}).length > 0 ? e.metadata : {}))
+            }
         }));
 
         res.json({

@@ -821,9 +821,12 @@ export type OrgUsage = {
 
 export type OrgBillingRates = {
   basePricePerMonth: number;
-  pricePerStudent: number;
   pricePerGB: number;
-  freeStorageGB: number;
+  pricePerEmail: number;
+  pricePerSms: number;
+  pricePerApiRequest: number;
+  pricePerAiToken: number;
+  pricePerAgoraMinute: number;
 };
 
 export type OrgDetailSubscription = {

@@ -111,6 +111,7 @@ export const winstonMiddleware = (req, res, next) => {
             redact(safeBody);
         }
 
+        const isCronOrWebhook = req.originalUrl.includes("/api/cron") || req.originalUrl.includes("/api/webhooks");
         const logData = {
             traceId: req.traceId,
             method: req.method,
@@ -118,8 +119,8 @@ export const winstonMiddleware = (req, res, next) => {
             status: res.statusCode,
             ip: req.ip,
             durationMs: duration,
-            orgId: req.effectiveOrganizationId || (req.user ? req.user.organization_id : "none"),
-            userId: req.user ? req.user.id : "unauthenticated",
+            orgId: isCronOrWebhook ? "system" : (req.effectiveOrganizationId || (req.user ? (req.user.organization_id || "none") : "none")),
+            userId: isCronOrWebhook ? "system_service" : (req.user ? (req.user.id || req.user._id || "unauthenticated") : "unauthenticated"),
             ...(safeBody && { body: safeBody })
         };
 
@@ -133,8 +134,14 @@ export const winstonMiddleware = (req, res, next) => {
     const runContext = {
         traceId: req.traceId,
         ip: req.ip,
-        orgId: req.effectiveOrganizationId || (req.user ? req.user.organization_id : "none"),
-        userId: req.user ? req.user.id : "unauthenticated"
+        get orgId() { 
+            if (req.originalUrl.includes("/api/cron") || req.originalUrl.includes("/api/webhooks")) return "system";
+            return req.effectiveOrganizationId || (req.user ? (req.user.organization_id || "none") : "none"); 
+        },
+        get userId() { 
+            if (req.originalUrl.includes("/api/cron") || req.originalUrl.includes("/api/webhooks")) return "system_service";
+            return req.user ? (req.user.id || req.user._id || "unauthenticated") : "unauthenticated"; 
+        }
     };
 
     // Run the rest of the request within this context

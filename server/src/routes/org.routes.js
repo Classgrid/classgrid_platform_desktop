@@ -105,29 +105,7 @@ import {
 
 const router = express.Router();
 
-// TEMP ENDPOINT TO CLEAR NEHA EMAIL
-router.get("/clear-test", async (req, res) => {
-    try {
-        const mongoose = (await import("mongoose")).default;
-        const Organization = mongoose.connection.collection("organizations");
-        const result = await Organization.updateMany(
-            { "billing_settings.invoice_email": "nehasharmaking25@gmail.com" },
-            { 
-                $unset: { 
-                    "billing_settings.invoice_email": "",
-                    "billing_settings.phone": "",
-                    "billing_settings.gstin": "",
-                    "billing_settings.billing_contact_name": "",
-                    "billing_settings.email_verified": "",
-                    "billing_settings.phone_verified": ""
-                } 
-            }
-        );
-        res.json({ message: "Cleared successfully!", count: result.modifiedCount });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+
 
 router.get("/my-config", isAuthenticated, requireRole("org_admin"), getMyOrganizationConfig);
 router.get("/usage", isAuthenticated, requireRole("org_admin"), getOrganizationUsageSummary);

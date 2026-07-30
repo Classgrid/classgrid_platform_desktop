@@ -137,9 +137,11 @@ const adminAuditLogSchema = new mongoose.Schema(
         },
         rolledBackAt: { type: Date, default: null },
 
-        // ── Request context (security) ──────────────────────────
+        // ── Request context (security & performance) ────────────
         ip: { type: String, default: "" },
         userAgent: { type: String, default: "" },
+        durationMs: { type: Number, default: 0 },
+        status: { type: String, enum: ["success", "failure", "pending"], default: "success" },
 
         // ── Timestamp (indexed for fast time-range queries) ────
         timestamp: {

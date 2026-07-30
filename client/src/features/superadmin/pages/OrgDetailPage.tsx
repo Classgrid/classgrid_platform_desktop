@@ -40,20 +40,32 @@ const planVariant = (p?: string) =>
 
 /** Compute monthly bill estimate from usage + billing rates */
 function calcMonthlyBill(
-  students: number,
-  storageGB: number,
+  usage: any,
   rates: OrgBillingRates
-): { base: number; students: number; storage: number; total: number } {
-  const base     = rates.basePricePerMonth;
-  const stuCost  = students * rates.pricePerStudent;
-  const freeGB   = rates.freeStorageGB ?? 0;
-  const billableGB = Math.max(0, storageGB - freeGB);
-  const storageCost = billableGB * rates.pricePerGB;
+): { base: number; storage: number; api: number; ai: number; video: number; total: number } {
+  const base = rates.basePricePerMonth || 0;
+  
+  // Storage
+  const storageGB = usage?.storageUsedGB ?? 0;
+  const storageCost = storageGB * (rates.pricePerGB || 0);
+
+  // APIs & Processing (Wait, API/AI/Video usage stats aren't exposed in standard usage payload yet, so default to 0 for estimate, or use them if they exist)
+  const apiRequests = usage?.totalApiRequests ?? 0;
+  const apiCost = apiRequests * (rates.pricePerApiRequest || 0);
+
+  const aiTokens = usage?.totalAiTokens ?? 0;
+  const aiCost = aiTokens * (rates.pricePerAiToken || 0);
+
+  const videoMins = usage?.totalVideoMinutes ?? 0;
+  const videoCost = videoMins * (rates.pricePerAgoraMinute || 0);
+
   return {
     base,
-    students: stuCost,
     storage: storageCost,
-    total: base + stuCost + storageCost,
+    api: apiCost,
+    ai: aiCost,
+    video: videoCost,
+    total: base + storageCost + apiCost + aiCost + videoCost,
   };
 }
 
@@ -158,26 +170,31 @@ export function OrgDetailPage() {
 
   const [rates, setRates] = useState<OrgBillingRates>({
     basePricePerMonth: 0,
-    pricePerStudent: 0,
     pricePerGB: 0,
-    freeStorageGB: 0,
+    pricePerEmail: 0,
+    pricePerSms: 0,
+    pricePerApiRequest: 0,
+    pricePerAiToken: 0,
+    pricePerAgoraMinute: 0,
   });
 
   // Sync rates from API when data arrives (only if not currently editing)
   const serverRates: OrgBillingRates = {
-    basePricePerMonth: sub?.billing?.basePricePerMonth ?? 0,
-    pricePerStudent:   sub?.billing?.pricePerStudent   ?? 0,
-    pricePerGB:        sub?.billing?.pricePerGB        ?? 0,
-    freeStorageGB:     sub?.billing?.freeStorageGB     ?? 0,
+    basePricePerMonth:   sub?.billing?.basePricePerMonth ?? 0,
+    pricePerGB:          sub?.billing?.pricePerGB ?? 0,
+    pricePerEmail:       sub?.billing?.pricePerEmail ?? 0,
+    pricePerSms:         sub?.billing?.pricePerSms ?? 0,
+    pricePerApiRequest:  sub?.billing?.pricePerApiRequest ?? 0,
+    pricePerAiToken:     sub?.billing?.pricePerAiToken ?? 0,
+    pricePerAgoraMinute: sub?.billing?.pricePerAgoraMinute ?? 0,
   };
   const displayRates = editingRates ? rates : serverRates;
 
   const bill = calcMonthlyBill(
-    usage?.totalStudents ?? 0,
-    usage?.storageUsedGB ?? 0,
+    usage,
     displayRates
   );
-  const hasRates = serverRates.basePricePerMonth > 0 || serverRates.pricePerStudent > 0 || serverRates.pricePerGB > 0;
+  const hasRates = serverRates.basePricePerMonth > 0 || serverRates.pricePerGB > 0 || serverRates.pricePerApiRequest > 0;
 
   const storageLimit = sub?.metadata?.storage_limit_gb ?? 10;
   const storageUsed  = usage?.storageUsedGB ?? 0;
@@ -450,9 +467,12 @@ export function OrgDetailPage() {
 
             <div className="flex flex-col">
               <RateRow label="Base Price / Month" field="basePricePerMonth" value={displayRates.basePricePerMonth} suffix="" editing={editingRates} onChange={onRateChange} />
-              <RateRow label="Price per Student / Month" field="pricePerStudent" value={displayRates.pricePerStudent} suffix="/ student" editing={editingRates} onChange={onRateChange} />
-              <RateRow label="Price per GB Storage / Month" field="pricePerGB" value={displayRates.pricePerGB} suffix="/ GB" editing={editingRates} onChange={onRateChange} />
-              <RateRow label="Free Storage Included" field="freeStorageGB" value={displayRates.freeStorageGB} suffix="GB free" editing={editingRates} onChange={onRateChange} />
+              <RateRow label="Storage Rate (per GB)" field="pricePerGB" value={displayRates.pricePerGB} suffix="/ GB" editing={editingRates} onChange={onRateChange} />
+              <RateRow label="Email Rate (per email)" field="pricePerEmail" value={displayRates.pricePerEmail} suffix="/ email" editing={editingRates} onChange={onRateChange} />
+              <RateRow label="SMS Rate (per sms)" field="pricePerSms" value={displayRates.pricePerSms} suffix="/ sms" editing={editingRates} onChange={onRateChange} />
+              <RateRow label="API Requests (per req)" field="pricePerApiRequest" value={displayRates.pricePerApiRequest} suffix="/ req" editing={editingRates} onChange={onRateChange} />
+              <RateRow label="AI Tokens (per token)" field="pricePerAiToken" value={displayRates.pricePerAiToken} suffix="/ token" editing={editingRates} onChange={onRateChange} />
+              <RateRow label="Live Video (per min)" field="pricePerAgoraMinute" value={displayRates.pricePerAgoraMinute} suffix="/ min" editing={editingRates} onChange={onRateChange} />
             </div>
 
             {!hasRates && !editingRates && (
@@ -480,12 +500,20 @@ export function OrgDetailPage() {
                   {[
                     { label: "Base subscription", value: bill.base },
                     {
-                      label: `Students (${usage?.totalStudents ?? 0} × ${INR(displayRates.pricePerStudent)})`,
-                      value: bill.students,
+                      label: `Storage (${storageUsed.toFixed(1)} GB billed)`,
+                      value: bill.storage,
                     },
                     {
-                      label: `Storage (${Math.max(0, storageUsed - displayRates.freeStorageGB).toFixed(1)} GB billed)`,
-                      value: bill.storage,
+                      label: `API Requests`,
+                      value: bill.api,
+                    },
+                    {
+                      label: `AI Processing`,
+                      value: bill.ai,
+                    },
+                    {
+                      label: `Live Video`,
+                      value: bill.video,
                     },
                   ].map(({ label, value }) => (
                     <div key={label} className="flex justify-between text-sm py-2 border-b border-dashed border-border last:border-0">
@@ -504,7 +532,7 @@ export function OrgDetailPage() {
                 </div>
 
                 <p className="mt-3 text-xs text-muted-foreground mb-4">
-                  Formula: Base + (Students × Rate) + (max(0, StorageGB − FreeGB) × GB Rate)
+                  Formula: Base + (Resource Usage × Resource Rate)
                 </p>
 
                 <Button 

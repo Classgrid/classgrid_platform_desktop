@@ -1,0 +1,24 @@
+import express from "express";
+import * as CatalogController from "../../controllers/super-admin/billing-catalog.controller.js";
+
+const router = express.Router();
+
+// ── Plans ──
+router.get("/plans", CatalogController.listPlans);
+router.post("/plans", CatalogController.createPlan);
+router.get("/plans/:planId", CatalogController.getPlan);
+router.put("/plans/:planId/eligibility", CatalogController.updatePlanEligibility);
+router.post("/plans/:planId/versions", CatalogController.createPlanVersion);
+router.get("/plans/:planId/versions", CatalogController.listPlanVersions);
+router.post("/plans/:planId/archive", CatalogController.archivePlan);
+
+// ── Modules ──
+router.get("/modules", CatalogController.listModules);
+router.post("/modules", CatalogController.createModule);
+router.get("/modules/:moduleId", CatalogController.getModule);
+router.put("/modules/:moduleId/eligibility", CatalogController.updateModuleEligibility);
+router.post("/modules/:moduleId/versions", CatalogController.createModuleVersion);
+router.get("/modules/:moduleId/versions", CatalogController.listModuleVersions);
+router.post("/modules/:moduleId/archive", CatalogController.archiveModule);
+
+export default router;

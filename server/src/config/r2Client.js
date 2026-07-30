@@ -2,6 +2,8 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
+import accessLogger from './logger.js';
+import { asyncContext } from '../utils/async-context.js';
 
 // Parse environment variables
 const accountId = process.env.R2_ACCOUNT_ID;
@@ -48,6 +50,21 @@ export async function uploadBufferToR2(buffer, originalName, mimeType, customPat
     });
 
     await r2Client.send(command);
+
+    // Track the upload audit log
+    const context = asyncContext.getStore();
+    const userId = context?.userId;
+    const orgId = context?.orgId;
+    
+    accessLogger.info("File uploaded to R2/S3 (Buffer)", {
+        action: "file_upload",
+        fileName: originalName,
+        mimeType,
+        sizeBytes: buffer ? buffer.length : 0,
+        s3Key: uniqueFilename,
+        userId: userId,
+        organizationId: orgId
+    });
 
     // Return the public URL for DB storage
     return `${R2_PUBLIC_URL}/${uniqueFilename}`;
@@ -96,6 +113,21 @@ export async function getPresignedUploadUrl(fileName, mimeType, expiresInSeconds
     });
 
     const url = await getSignedUrl(r2Client, command, { expiresIn: expiresInSeconds });
+    
+    // Track the presigned URL generation (implies upload)
+    const context = asyncContext.getStore();
+    const userId = context?.userId;
+    const orgId = context?.orgId;
+    
+    accessLogger.info("Presigned URL generated for R2/S3 Upload", {
+        action: "file_upload_presigned",
+        fileName: fileName,
+        mimeType,
+        s3Key: uniqueFilename,
+        userId: userId,
+        organizationId: orgId
+    });
+
     return {
         uploadUrl: url,
         publicUrl: `${R2_PUBLIC_URL}/${uniqueFilename}` // This is what the frontend will save after success

@@ -1,0 +1,38 @@
+import Invoice from "../../models/Invoice.js";
+import PaymentOrder from "../../models/PaymentOrder.js";
+import PaymentTransaction from "../../models/PaymentTransaction.js";
+
+/**
+ * PaymentAllocationService
+ * Maps a successful transaction to the respective invoice and updates balances.
+ */
+class PaymentAllocationService {
+    static async allocatePayment(transactionId) {
+        const transaction = await PaymentTransaction.findById(transactionId).populate("paymentOrderId").lean();
+        if (!transaction || transaction.status !== "CAPTURED") return;
+
+        const order = transaction.paymentOrderId;
+        if (!order || order.paymentFlow !== "CLASSGRID_SUBSCRIPTION" || !order.invoiceId) return;
+
+        const invoice = await Invoice.findById(order.invoiceId);
+        if (!invoice || invoice.amountDuePaise <= 0) return;
+
+        // Apply captured amount
+        const appliedAmount = Math.min(transaction.amountCapturedPaise, invoice.amountDuePaise);
+        
+        invoice.amountPaidPaise += appliedAmount;
+        invoice.amountDuePaise -= appliedAmount;
+
+        if (invoice.amountDuePaise === 0) {
+            invoice.status = "PAID";
+        } else {
+            invoice.status = "PARTIALLY_PAID";
+        }
+
+        await invoice.save();
+
+        return invoice;
+    }
+}
+
+export default PaymentAllocationService;
