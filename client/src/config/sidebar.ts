@@ -87,9 +87,9 @@ export const dashboardConfigs: DashboardConfig[] = [
       {
         label: "💰 FINANCE",
         items: [
-          { label: "Revenue", to: "/superadmin/revenue", icon: IndianRupee },
-          { label: "Transactions", to: "/superadmin/transactions", icon: CreditCard },
-          { label: "Failed Payments", to: "/superadmin/failed-payments", icon: AlertTriangle },
+          { label: "Revenue", to: "/super-admin/billing/revenue", icon: IndianRupee },
+          { label: "Transactions", to: "/super-admin/billing/transactions", icon: CreditCard },
+          { label: "Failed Payments", to: "/super-admin/billing/failed-payments", icon: AlertTriangle },
           { label: "Plans & Billing", to: "/super-admin/billing/plans", icon: CreditCard },
         ]
       },
@@ -688,7 +688,7 @@ export const defaultTitlesByRole: Record<DashboardRole, string> = {
 };
 
 export function resolveDashboardConfig(pathname: string): DashboardConfig {
-  if (pathname.startsWith("/superadmin")) {
+  if (pathname.startsWith("/superadmin") || pathname.startsWith("/super-admin")) {
     return dashboardConfigs[0]!;
   }
   if (pathname.startsWith("/org")) {
