@@ -114,6 +114,9 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                   {index > 0 && (
                     <div className="mx-4 my-2 h-px bg-border group-data-[collapsible=icon]:mx-2 group-data-[collapsible=icon]:my-1" />
                   )}
+                  {section.label && (
+                    <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
+                  )}
                   <SidebarGroupContent>
                     <SidebarMenu>
                       {section.items.map((item) => {
@@ -135,43 +138,48 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                                   setShowStorageMenu(true);
                                 }
                               }}
-                              asChild
-                            >
-                              {item.label === "Log out" ? (
-                                <div
-                                  role="button"
-                                  tabIndex={0}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    const loginPath = getLoginPathForPath(location.pathname);
-                                    navigate(`/logout?redirectTo=${encodeURIComponent(loginPath)}`);
-                                  }}
-                                  className="flex items-center gap-3 w-full justify-between cursor-pointer"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    {item.icon && <item.icon size={20} />}
-                                    <span className="truncate">{item.label}</span>
+                              render={
+                                item.label === "Log out" ? (
+                                  <div
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      const loginPath = getLoginPathForPath(location.pathname);
+                                      navigate(`/logout?redirectTo=${encodeURIComponent(loginPath)}`);
+                                    }}
+                                    className="flex items-center gap-3 w-full justify-between cursor-pointer"
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      {item.icon && <item.icon size={20} />}
+                                      <span className="truncate">{item.label}</span>
+                                    </div>
                                   </div>
-                                </div>
-                              ) : (
-                                <Link to={item.to || "#"} className="flex items-center gap-3 w-full justify-between">
-                                  <div className="flex items-center gap-3">
-                                    {item.icon && <item.icon size={20} />}
-                                    <span className="truncate">{item.label}</span>
-                                  </div>
-                                  <div className="flex items-center ml-auto gap-2">
-                                    {item.badge && (
-                                      <span className="bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-4 text-center">
-                                        {item.badge}
-                                      </span>
-                                    )}
-                                    {item.hasNestedNav && (
-                                      <ChevronRight size={16} className="text-muted-foreground" />
-                                    )}
-                                  </div>
-                                </Link>
-                              )}
-                            </SidebarMenuButton>
+                                ) : (
+                                  <Link to={item.to || "#"} className="flex items-center gap-3 w-full justify-between">
+                                    <div className="flex items-center gap-3">
+                                      {item.icon && <item.icon size={20} />}
+                                      <span className="truncate">{item.label}</span>
+                                    </div>
+                                    <div className="flex items-center ml-auto gap-2">
+                                      {item.isNew && (
+                                        <span className="bg-primary/20 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                          New
+                                        </span>
+                                      )}
+                                      {item.badge && (
+                                        <span className="bg-secondary text-secondary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                          {item.badge}
+                                        </span>
+                                      )}
+                                      {item.hasNestedNav && (
+                                        <ChevronRight className="w-4 h-4 ml-1 opacity-50" />
+                                      )}
+                                    </div>
+                                  </Link>
+                                )
+                              }
+                            />
                           </SidebarMenuItem>
                         );
                       })}
