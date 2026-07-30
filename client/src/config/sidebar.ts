@@ -63,21 +63,21 @@ export const dashboardConfigs: DashboardConfig[] = [
     mobileMode: "desktop-only",
     sections: [
       {
-        label: "🏠 OVERVIEW",
+        label: "OVERVIEW",
         items: [
           { label: "Overview", to: "/superadmin/dashboard", icon: LayoutDashboard },
           { label: "Analytics", to: "/superadmin/analytics", icon: FileBarChart }
         ]
       },
       {
-        label: "🏢 ORGANIZATIONS",
+        label: "ORGANIZATIONS",
         items: [
           { label: "All Organizations", to: "/superadmin/orgs", icon: Building2 },
           { label: "Demo Leads", to: "/superadmin/leads", icon: ClipboardList },
         ]
       },
       {
-        label: "👤 USERS",
+        label: "USERS",
         items: [
           { label: "Global Users", to: "/superadmin/global-users", icon: Users },
           { label: "Platform Team", to: "/superadmin/team", icon: User },
@@ -85,7 +85,7 @@ export const dashboardConfigs: DashboardConfig[] = [
         ]
       },
       {
-        label: "💰 FINANCE",
+        label: "FINANCE",
         items: [
           { label: "Revenue", to: "/super-admin/billing/revenue", icon: IndianRupee },
           { label: "Transactions", to: "/super-admin/billing/transactions", icon: CreditCard },
@@ -94,7 +94,7 @@ export const dashboardConfigs: DashboardConfig[] = [
         ]
       },
       {
-        label: "⚙️ SYSTEM",
+        label: "SYSTEM",
         items: [
           { label: "Feature Flags", to: "/superadmin/feature-flags", icon: Zap },
           { label: "Rollback Actions", to: "/superadmin/rollback", icon: RotateCcw },
@@ -104,13 +104,13 @@ export const dashboardConfigs: DashboardConfig[] = [
         ]
       },
       {
-        label: "🌐 PLATFORM DOMAINS",
+        label: "PLATFORM DOMAINS",
         items: [
           { label: "Custom Domains", to: "/superadmin/domains", icon: Globe }
         ]
       },
       {
-        label: "📢 PLATFORM",
+        label: "PLATFORM",
         items: [
           { label: "Subscribers", to: "/superadmin/subscribers", icon: Mail, restrictedToEmail: "support@classgrid.in" },
           { label: "Chat", to: "/superadmin/chat", icon: MessageSquare },
