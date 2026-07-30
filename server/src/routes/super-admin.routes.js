@@ -42,6 +42,8 @@ import billingInvoiceRoutes from "./super-admin/billing-invoice.routes.js";
 import billingRevenueRoutes from "./super-admin/billing-revenue.routes.js";
 import billingSubscriptionRoutes from "./super-admin/billing-subscription.routes.js";
 import billingTransactionsRoutes from "./super-admin/billing-transactions.routes.js";
+import { requireSuperAdminBillingAccess } from "../middlewares/billingPermissions.js";
+import { validateBillingRequest } from "../middlewares/billingValidation.js";
 
 const router = express.Router();
 const PRIMARY_SUPER_ADMIN_EMAIL = (process.env.SUPER_ADMIN_EMAIL || "support@classgrid.in").trim().toLowerCase();
@@ -50,6 +52,53 @@ const PRIMARY_SUPER_ADMIN_EMAIL = (process.env.SUPER_ADMIN_EMAIL || "support@cla
 router.use(isAuthenticated, requireRole("super_admin"));
 
 router.use("/notifications-sys", notificationRoutes);
+
+// Canonical contract. Authentication, billing permission, and validation apply
+// to both canonical routes and the temporary backward-compatible aliases.
+router.use("/billing", requireSuperAdminBillingAccess, validateBillingRequest);
+router.get("/billing/permissions", (req, res) => {
+    res.json({
+        success: true,
+        data: [
+            "SUPER_ADMIN",
+            "BILLING_READ",
+            "BILLING_WRITE",
+            "BILLING_EXPORT",
+            "BILLING_REFUND",
+            "BILLING_RECONCILE",
+        ],
+    });
+});
+router.get("/billing/organizations", async (req, res) => {
+    try {
+        const Organization = (await import("../models/Organization.js")).default;
+        const organizations = await Organization.find({
+            status: { $in: ["active", "suspended", "setup_in_progress"] },
+        })
+            .select("_id name sidebar_name status org_type org_mode")
+            .sort({ name: 1 })
+            .lean();
+        res.json({
+            success: true,
+            data: organizations.map((organization) => ({
+                ...organization,
+                displayName: organization.sidebar_name || organization.name,
+            })),
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+router.use("/billing", billingCatalogRoutes);
+router.use("/billing", billingDiscountsTaxesRoutes);
+router.use("/billing", billingEligibilityPricingRoutes);
+router.use("/billing/failed-payments", billingFailuresRoutes);
+router.use("/billing/invoices", billingInvoiceRoutes);
+router.use("/billing/revenue", billingRevenueRoutes);
+router.use("/billing/subscriptions", billingSubscriptionRoutes);
+router.use("/billing/transactions", billingTransactionsRoutes);
+
+// Backward-compatible aliases for older deployed clients.
 router.use("/billing/catalog", billingCatalogRoutes);
 router.use("/billing/discounts-taxes", billingDiscountsTaxesRoutes);
 router.use("/billing/eligibility-pricing", billingEligibilityPricingRoutes);

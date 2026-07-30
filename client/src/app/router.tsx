@@ -40,16 +40,18 @@ import { AnalyticsPage } from "@/features/superadmin/pages/AnalyticsPage";
 import { AuditLogsPage } from "@/features/superadmin/pages/AuditLogsPage";
 import { ClassgridTalkPage } from "@/features/superadmin/pages/ClassgridTalkPage";
 import { TeamPage } from "@/features/superadmin/pages/TeamPage";
-import { BillingPage } from "@/features/superadmin/pages/BillingPage";
-import { RevenuePage } from "@/features/superadmin/pages/RevenuePage";
+import { BillingPage } from "@/features/superadmin/pages/BillingPage"; // Original, may be repurposed
+import PlansAndBillingPage from "@/features/superadmin/billing/pages/PlansAndBillingPage";
+import RevenuePage from "@/features/superadmin/billing/pages/RevenuePage";
 import { FeedbackPage } from "@/features/superadmin/pages/FeedbackPage";
 import { SubscribersPage } from "@/features/superadmin/pages/SubscribersPage";
 import { ChatPage } from "@/features/chat/pages/ChatPage";
 import { LogoutPage } from "@/features/auth/pages/LogoutPage";
 import { SystemHealthPage } from "@/features/superadmin/pages/SystemHealthPage";
 import { FeatureFlagsPage } from "@/features/superadmin/pages/FeatureFlagsPage";
-import { TransactionsPage } from "@/features/superadmin/pages/TransactionsPage";
-import { FailedPaymentsPage } from "@/features/superadmin/pages/FailedPaymentsPage";
+import TransactionsPage from "@/features/superadmin/billing/pages/TransactionsPage";
+import FailedPaymentsPage from "@/features/superadmin/billing/pages/FailedPaymentsPage";
+import { BillingShell } from "@/features/superadmin/billing/components/shared/BillingShell";
 import { RollbackPage } from "@/features/superadmin/pages/RollbackPage";
 import { ContentModerationPage } from "@/features/superadmin/pages/ContentModerationPage";
 import { NotificationEnginePage } from "@/features/superadmin/pages/NotificationEnginePage";
@@ -227,10 +229,19 @@ export function AppRouter() {
           <Route path="/superadmin/domains/:orgId" element={<OrgDetailsPage />} />
           <Route path="/superadmin/leads" element={<LeadsPage />} />
           <Route path="/superadmin/leads/:id" element={<LeadDetailsPage />} />
-          <Route path="/superadmin/billing" element={<BillingPage />} />
-          <Route path="/superadmin/revenue" element={<RevenuePage />} />
-          <Route path="/superadmin/transactions" element={<TransactionsPage />} />
-          <Route path="/superadmin/failed-payments" element={<FailedPaymentsPage />} />
+          {/* NEW BILLING ROUTES */}
+          <Route path="/superadmin/billing" element={<BillingShell />}>
+            <Route index element={<Navigate to="/superadmin/billing/plans" replace />} />
+            <Route path="plans" element={<PlansAndBillingPage />} />
+            <Route path="revenue" element={<RevenuePage />} />
+            <Route path="transactions" element={<TransactionsPage />} />
+            <Route path="failed-payments" element={<FailedPaymentsPage />} />
+          </Route>
+          
+          {/* LEGACY REDIRECTS (if users visit the old URLs) */}
+          <Route path="/superadmin/revenue" element={<Navigate to="/superadmin/billing/revenue" replace />} />
+          <Route path="/superadmin/transactions" element={<Navigate to="/superadmin/billing/transactions" replace />} />
+          <Route path="/superadmin/failed-payments" element={<Navigate to="/superadmin/billing/failed-payments" replace />} />
           <Route path="/superadmin/users" element={<UsersPage />} />
           <Route path="/superadmin/global-users" element={<GlobalUsersPage />} />
           <Route path="/superadmin/global-users/:userId" element={<UserDetailPage />} />

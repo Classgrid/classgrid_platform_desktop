@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
-
+import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Button } from "@/components/marketing_ui/button";
 import { DataTable } from "@/components/marketing_ui/data-table";
@@ -171,16 +171,16 @@ export function SystemHealthPage() {
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
-        }
+        <StatCard title="Total Users" value={metricsLoading ? "—" : m?.users?.total ?? 0} icon={<Activity size={15} />}
           trend={{ value: m?.users?.new7d ?? 0, label: "new this week" }} />
-        }
+        <StatCard title="Active Orgs" value={metricsLoading ? "—" : m?.orgs?.active ?? 0} icon={<CheckCircle2 size={15} />}
           trend={{ value: m?.orgs?.new7d ?? 0, label: "new this week" }} />
-        } />
-        } />
-        } />
-        } />
-        } />
-        } />
+        <StatCard title="Suspended Orgs" value={metricsLoading ? "—" : m?.orgs?.suspended ?? 0} icon={<AlertTriangle size={15} />} />
+        <StatCard title="Email Queue" value={metricsLoading ? "—" : m?.emails?.pending ?? 0} icon={<Mail size={15} />} />
+        <StatCard title="Errors (24h)" value={metricsLoading ? "—" : m?.logs?.errors24h ?? 0} icon={<XCircle size={15} />} />
+        <StatCard title="Warnings (24h)" value={metricsLoading ? "—" : m?.logs?.warnings24h ?? 0} icon={<AlertCircle size={15} />} />
+        <StatCard title="Memory Usage" value={metricsLoading ? "—" : `${m?.memoryMB ?? 0} MB`} icon={<MemoryStick size={15} />} />
+        <StatCard title="Uptime" value={metricsLoading ? "—" : formatUptime(m?.uptime ?? 0)} icon={<Clock size={15} />} />
       </div>
 
       {/* Email Stats */}

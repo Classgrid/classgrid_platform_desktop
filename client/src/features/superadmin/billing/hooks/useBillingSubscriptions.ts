@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchSubscriptions, fetchSubscriptionDetail, fetchPricingOverrides, setPricingOverride, previewProration, fetchSubscriptionOverview } from '../../services/superAdminBillingApi';
+import { fetchSubscriptions, fetchSubscriptionDetail, fetchPricingOverrides, setPricingOverride, previewProration, fetchSubscriptionOverview, assignSubscriptionPlan, addSubscriptionModule } from '../../services/superAdminBillingApi';
 
 export const useSubscriptions = () => {
   return useQuery({
@@ -50,5 +50,28 @@ export const useSetPricingOverride = () => {
 export const usePreviewProration = () => {
   return useMutation({
     mutationFn: (data: { orgId: string; newPlanId: string }) => previewProration(data.orgId, data.newPlanId),
+  });
+};
+
+export const useAssignSubscriptionPlan = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orgId, billingPlanVersionId }: { orgId: string; billingPlanVersionId: string }) =>
+      assignSubscriptionPlan(orgId, { billingPlanVersionId }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['billing-subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['billing-subscription-detail', variables.orgId] });
+    },
+  });
+};
+
+export const useAddSubscriptionModule = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orgId, billingModuleVersionId }: { orgId: string; billingModuleVersionId: string }) =>
+      addSubscriptionModule(orgId, { billingModuleVersionId }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['billing-subscription-detail', variables.orgId] });
+    },
   });
 };

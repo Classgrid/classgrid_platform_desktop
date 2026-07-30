@@ -20,6 +20,8 @@ const paymentRefundSchema = new mongoose.Schema(
         amountPaise: {
             type: Number,
             required: true,
+            min: 1,
+            validate: { validator: Number.isSafeInteger, message: "{VALUE} is not an integer paise value" },
         },
         currency: {
             type: String,
@@ -29,6 +31,12 @@ const paymentRefundSchema = new mongoose.Schema(
             type: String,
             enum: ["PENDING", "PROCESSED", "FAILED"],
             default: "PENDING",
+        },
+        reason: {
+            type: String,
+            required: true,
+            trim: true,
+            maxlength: 500,
         },
         speedRequested: { // e.g. "optimum", "normal"
             type: String,

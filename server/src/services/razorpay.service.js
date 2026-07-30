@@ -4,6 +4,13 @@ import Organization from "../models/Organization.js";
 import { decrypt } from "../utils/encryption.js";
 
 class RazorpayService {
+    getPlatformInstance() {
+        const keyId = process.env.RAZORPAY_KEY_ID;
+        const keySecret = process.env.RAZORPAY_KEY_SECRET;
+        if (!keyId || !keySecret) throw new Error("Platform Razorpay keys not configured");
+        return new Razorpay({ key_id: keyId, key_secret: keySecret });
+    }
+
     /**
      * Initializes a Razorpay instance for a specific organization
      * @param {string} organizationId 
@@ -38,19 +45,30 @@ class RazorpayService {
      * Creates a Razorpay Order
      */
     async createOrder(organizationId, amount, currency = "INR", receipt = "", moduleName = "fees", notes = {}) {
+        return this.createOrderPaise(
+            organizationId,
+            Math.round(Number(amount) * 100),
+            currency,
+            receipt,
+            moduleName,
+            notes
+        );
+    }
+
+    async createOrderPaise(organizationId, amountPaise, currency = "INR", receipt = "", moduleName = "fees", notes = {}) {
         try {
+            if (!Number.isSafeInteger(amountPaise) || amountPaise < 1) {
+                throw new Error("Order amount must be a positive integer number of paise");
+            }
             const rzp = await this.getInstance(organizationId, moduleName);
-            
             const options = {
-                amount: Math.round(amount * 100), // convert to paise
+                amount: amountPaise,
                 currency,
                 receipt,
                 notes,
-                payment_capture: 1 // auto capture
+                payment_capture: 1
             };
-
-            const order = await rzp.orders.create(options);
-            return order;
+            return await rzp.orders.create(options);
         } catch (error) {
             console.error(`[Razorpay] Create Order Error for Org ${organizationId}:`, error);
             throw new Error(`Failed to create payment order: ${error.message}`);
@@ -63,6 +81,7 @@ class RazorpayService {
     async verifySignature(organizationId, orderId, paymentId, signature, moduleName = "fees") {
         try {
             const org = await Organization.findById(organizationId);
+            if (!org) return false;
             
             let secret;
             if (moduleName === "canteen") {
@@ -70,13 +89,16 @@ class RazorpayService {
             } else {
                 secret = org.fees_razorpay_key_secret;
             }
+            if (!secret) return false;
 
             const generatedSignature = crypto
                 .createHmac("sha256", secret)
                 .update(`${orderId}|${paymentId}`)
                 .digest("hex");
 
-            return generatedSignature === signature;
+            const expected = Buffer.from(generatedSignature, "hex");
+            const received = Buffer.from(String(signature), "hex");
+            return expected.length === received.length && crypto.timingSafeEqual(expected, received);
         } catch (error) {
             console.error(`[Razorpay] Signature Verification Error for Org ${organizationId}:`, error);
             return false;
@@ -126,21 +148,21 @@ class RazorpayService {
      * Creates a Platform Order (Platform Subscription Fee) using primary keys
      */
     async createPlatformOrder(amount, receipt = "") {
+        return this.createPlatformOrderPaise(Math.round(Number(amount) * 100), receipt);
+    }
+
+    async createPlatformOrderPaise(amountPaise, receipt = "", notes = {}) {
         try {
-            const keyId = process.env.RAZORPAY_KEY_ID;
-            const keySecret = process.env.RAZORPAY_KEY_SECRET;
-
-            if (!keyId || !keySecret) {
-                throw new Error("Platform Razorpay keys not configured in environment");
+            if (!Number.isSafeInteger(amountPaise) || amountPaise < 1) {
+                throw new Error("Order amount must be a positive integer number of paise");
             }
-
-            const rzp = new Razorpay({ key_id: keyId, key_secret: keySecret });
-            
+            const rzp = this.getPlatformInstance();
             const options = {
-                amount: Math.round(amount * 100), // convert to paise
+                amount: amountPaise,
                 currency: "INR",
                 receipt,
-                payment_capture: 1 // auto capture
+                notes,
+                payment_capture: 1
             };
 
             return await rzp.orders.create(options);
@@ -163,11 +185,22 @@ class RazorpayService {
                 .update(`${orderId}|${paymentId}`)
                 .digest("hex");
 
-            return generatedSignature === signature;
+            const expected = Buffer.from(generatedSignature, "hex");
+            const received = Buffer.from(String(signature), "hex");
+            return expected.length === received.length && crypto.timingSafeEqual(expected, received);
         } catch (error) {
             console.error(`[Razorpay] Platform Signature Verification Error:`, error);
             return false;
         }
+    }
+
+    async fetchPayment(organizationId, paymentId, moduleName = "fees") {
+        const instance = await this.getInstance(organizationId, moduleName);
+        return instance.payments.fetch(paymentId);
+    }
+
+    async fetchPlatformPayment(paymentId) {
+        return this.getPlatformInstance().payments.fetch(paymentId);
     }
 }
 

@@ -2,187 +2,251 @@ import express from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import BillingHandoff from "../models/BillingHandoff.js";
+import PaymentOrder from "../models/PaymentOrder.js";
+import PaymentAttempt from "../models/PaymentAttempt.js";
 import Organization from "../models/Organization.js";
-import { sendEmail } from "../services/aws-ses.service.js";
-import { razorpay } from "../config/razorpay.js";
-import { getTerminology } from "../utils/terminology.js";
+import { sendTemplateEmail } from "../services/aws-ses.service.js";
+import razorpayService from "../services/razorpay.service.js";
 import { generalLimiter } from "../middleware/rateLimiter.js";
+import { isAuthenticated } from "../middleware/auth.middleware.js";
+import {
+    HANDOFF_TTL_MS,
+    MAX_OTP_RESENDS,
+    OTP_RESEND_COOLDOWN_MS,
+    formatPaise,
+    handoffTokenCandidates,
+    hashHandoffToken,
+    resolvePayable,
+    validateReturnUrl,
+} from "../services/billing-handoff.service.js";
+import { PAYMENT_ATTEMPT_STAGE } from "../utils/billing.utils.js";
 
 const router = express.Router();
 
+function publicError(res, error) {
+    const status = Number(error?.statusCode) || 500;
+    if (status >= 500) console.error("[Billing Handoff]", error);
+    return res.status(status).json({
+        success: false,
+        code: error?.code || "BILLING_HANDOFF_FAILED",
+        error: status >= 500 ? "Unable to start secure checkout" : error.message,
+    });
+}
+
+function referenceFromBody(body) {
+    return body.reference_id
+        || body.referenceId
+        || body.context?.invoiceId
+        || body.context?.feeRecordId
+        || body.context?.orderId;
+}
+
+function checkoutUrl(rawToken) {
+    const base = process.env.BILLING_PORTAL_URL || "https://billing.classgrid.in";
+    const url = new URL("/checkout", base);
+    url.searchParams.set("token", rawToken);
+    return url.toString();
+}
+
+function frontendKeyId(organization, providerModule) {
+    if (providerModule === "platform") return process.env.RAZORPAY_KEY_ID;
+    if (providerModule === "canteen") return organization.canteen_config?.canteen_razorpay_key_id;
+    return organization.fees_razorpay_key_id;
+}
+
+async function sendOtp({ handoff, otp, organization, user, label, idempotencyKey }) {
+    return sendTemplateEmail({
+        templateName: "PAYMENT_OTP_SENT",
+        to: handoff.email,
+        userId: user?._id || null,
+        organizationId: organization._id,
+        idempotencyKey,
+        data: {
+            payer_name: user?.name || "Payer",
+            otp,
+            otp_expiry_minutes: 10,
+            organization_name: organization.name,
+            fee_name: label,
+            amount: formatPaise(handoff.amountPaise, handoff.currency),
+        },
+    });
+}
+
 /**
- * POST /api/billing/handoff/initiate
- * Called by subdomains (org admin, students, etc.) when they click "Pay".
- * Generates a handoff token, Razorpay order, and sends OTP.
+ * Creates a checkout only from a server-resolved payable. Client-provided
+ * amount, recipient email, merchant account, and arbitrary context are ignored.
  */
-router.post("/initiate", generalLimiter, async (req, res) => {
+router.post("/initiate", generalLimiter, isAuthenticated, async (req, res) => {
+    let paymentOrder;
+    let paymentAttempt;
+    let handoff;
     try {
-        const { 
-            amount, 
-            currency = "INR", 
-            email, 
-            organization_id, 
-            payment_type, 
-            return_url, 
-            context 
-        } = req.body;
+        const organizationId = req.body.organization_id || req.body.organizationId;
+        const paymentType = req.body.payment_type || req.body.paymentType;
+        const referenceId = referenceFromBody(req.body);
 
-        if (!amount || !email || !organization_id || !payment_type || !return_url) {
-            return res.status(400).json({ error: "Missing required fields for billing handoff" });
+        const organization = await Organization.findById(organizationId)
+            .select("name subdomain custom_domain erp_domain fees_razorpay_key_id canteen_config.canteen_razorpay_key_id")
+            .lean();
+        if (!organization) {
+            return res.status(404).json({ success: false, code: "ORGANIZATION_NOT_FOUND", error: "Organization not found" });
         }
 
-        const org = await Organization.findById(organization_id).select("name razorpay_key_id fees_razorpay_key_id canteen_config");
-        if (!org) {
-            return res.status(404).json({ error: "Organization not found" });
+        const payable = await resolvePayable({
+            organizationId,
+            paymentType,
+            referenceId,
+            user: req.user,
+        });
+        const safeReturnUrl = validateReturnUrl(req.body.return_url || req.body.returnUrl, organization);
+
+        const existingOrder = await PaymentOrder.findOne({
+            organizationId,
+            referenceId: payable.referenceId,
+            status: { $in: ["CREATED", "ATTEMPTED"] },
+        }).select("_id").lean();
+        if (existingOrder) {
+            return res.status(409).json({
+                success: false,
+                code: "PAYMENT_ALREADY_IN_PROGRESS",
+                error: "A payment session for this item is already active",
+            });
         }
 
-        // Determine which Razorpay account to use for order creation
-        let razorpayKeyId = process.env.RAZORPAY_KEY_ID;
-        let razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
-
-        if (payment_type === "fee_payment" || payment_type === "admission_fee") {
-            if (!org.fees_razorpay_key_id) return res.status(400).json({ error: "Organization has not setup fees payment gateway" });
-            razorpayKeyId = org.fees_razorpay_key_id;
-            razorpayKeySecret = org.fees_razorpay_key_secret; // Assuming it's populated or we need to fetch the secret
-        } else if (payment_type === "canteen_order") {
-            if (!org.canteen_config?.canteen_razorpay_key_id) return res.status(400).json({ error: "Organization has not setup canteen payment gateway" });
-            razorpayKeyId = org.canteen_config.canteen_razorpay_key_id;
-            
-            const { decrypt } = await import("../utils/encryption.js");
-            razorpayKeySecret = decrypt(org.canteen_config.canteen_razorpay_webhook_secret); // Wait, we need the key_secret, not webhook secret!
-            // Actually, for order creation, we need the secret.
-            // Let's use razorpayService.createOrder directly since it handles this logic!
-        }
-        
-        const { default: razorpayService } = await import("../services/razorpay.service.js");
-        
-        // Use razorpayService to generate the order, because it already knows how to route to the correct account!
-        const receiptId = `rcpt_${crypto.randomBytes(6).toString("hex")}`;
+        const receiptId = `cg_${crypto.randomBytes(12).toString("hex")}`;
         const notes = {
-            type: payment_type,
-            organization_id: organization_id,
-            ...context
+            payment_type: paymentType,
+            organization_id: String(organizationId),
+            reference_id: String(payable.referenceId),
         };
-
-        let razorpayOrder;
-        try {
-            razorpayOrder = await razorpayService.createOrder(
-                organization_id,
-                amount,
-                currency,
+        const providerOrder = payable.providerModule === "platform"
+            ? await razorpayService.createPlatformOrderPaise(payable.amountPaise, receiptId, notes)
+            : await razorpayService.createOrderPaise(
+                organizationId,
+                payable.amountPaise,
+                payable.currency,
                 receiptId,
-                payment_type, // Maps to moduleName in RazorpayService
+                payable.providerModule,
                 notes
             );
-        } catch (error) {
-            console.error("[Billing Handoff] Failed to create Razorpay Order:", error);
-            return res.status(500).json({ error: "Failed to initiate payment order" });
-        }
 
-        // Generate OTP and Handoff Token
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const token = crypto.randomBytes(32).toString("hex");
-
-        // We also need to get the correct razorpay_key_id for the frontend to use in checkout
-        let frontendKeyId = process.env.RAZORPAY_KEY_ID;
-        if ((payment_type === "fee_payment" || payment_type === "admission_fee") && org.fees_razorpay_key_id) {
-            frontendKeyId = org.fees_razorpay_key_id;
-        } else if (payment_type === "canteen_order" && org.canteen_config?.canteen_razorpay_key_id) {
-            frontendKeyId = org.canteen_config.canteen_razorpay_key_id;
-        }
-
-        // Hash OTP before storing
-        const hashedOtp = await bcrypt.hash(otp, 10);
-
-        const handoff = await BillingHandoff.create({
-            token,
-            email,
-            otp: hashedOtp,
-            organization_id,
-            razorpay_order_id: razorpayOrder.id,
-            amount,
-            currency,
-            razorpay_key_id: frontendKeyId,
-            payment_type,
-            return_url,
-            context
+        paymentOrder = await PaymentOrder.create({
+            organizationId,
+            invoiceId: payable.invoiceId,
+            referenceId: payable.referenceId,
+            paymentFlow: payable.paymentFlow,
+            merchantType: payable.merchantType,
+            merchantOrganizationId: payable.merchantOrganizationId,
+            amountPaise: payable.amountPaise,
+            currency: payable.currency,
+            providerOrderId: providerOrder.id,
+            receiptId,
+            status: "CREATED",
+            createdBy: req.user._id,
+        });
+        paymentAttempt = await PaymentAttempt.create({
+            paymentOrderId: paymentOrder._id,
+            organizationId,
+            stage: PAYMENT_ATTEMPT_STAGE.OTP_PENDING,
+            amountPaise: payable.amountPaise,
+            ipAddress: req.ip,
+            userAgent: String(req.headers["user-agent"] || "").slice(0, 300),
+            createdBy: req.user._id,
         });
 
-        // Send OTP via Email
-        const terminology = await getTerminology(organization_id);
-        const emailHtml = `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2>Secure Payment Checkout</h2>
-                <p>You have initiated a payment of ₹${amount} for ${org.name}.</p>
-                <p>To securely complete this checkout, please enter the following verification code:</p>
-                <h1 style="background: #f4f4f4; padding: 15px; text-align: center; letter-spacing: 5px; font-size: 32px; color: #333; border-radius: 8px;">${otp}</h1>
-                <p style="color: #666; font-size: 14px;">This code will expire in 10 minutes. If you did not initiate this payment, you can safely ignore this email.</p>
-            </div>
-        `;
-
-        await sendEmail({
-            to: email,
-            subject: "Your Secure Payment Checkout Code",
-            html: emailHtml,
-            organizationId: organization_id
+        const otp = crypto.randomInt(100000, 1000000).toString();
+        const rawToken = crypto.randomBytes(32).toString("base64url");
+        handoff = await BillingHandoff.create({
+            token: hashHandoffToken(rawToken),
+            email: req.user.email,
+            otp: await bcrypt.hash(otp, 12),
+            organization_id: organizationId,
+            paymentOrderId: paymentOrder._id,
+            paymentAttemptId: paymentAttempt._id,
+            referenceId: payable.referenceId,
+            referenceModel: payable.referenceModel,
+            razorpay_order_id: providerOrder.id,
+            amountPaise: payable.amountPaise,
+            currency: payable.currency,
+            razorpay_key_id: frontendKeyId(organization, payable.providerModule),
+            payment_type: paymentType,
+            return_url: safeReturnUrl,
+            context: { label: payable.label, payerName: req.user.name || "Payer" },
+            expiresAt: new Date(Date.now() + HANDOFF_TTL_MS),
         });
 
-        res.json({
+        await sendOtp({
+            handoff,
+            otp,
+            organization,
+            user: req.user,
+            label: payable.label,
+            idempotencyKey: `payment-otp:${handoff._id}:initial`,
+        });
+
+        return res.status(201).json({
             success: true,
-            checkout_url: `https://billing.classgrid.in/checkout?token=${token}`,
-            token: token
+            data: {
+                checkout_url: checkoutUrl(rawToken),
+                expiresAt: handoff.expiresAt,
+            },
         });
-
     } catch (error) {
-        console.error("[Billing Handoff Error]:", error);
-        res.status(500).json({ error: "Internal server error" });
+        if (handoff) {
+            await BillingHandoff.findByIdAndUpdate(handoff._id, { expiresAt: new Date(), consumedAt: new Date() }).catch(() => {});
+        }
+        if (paymentAttempt) {
+            await PaymentAttempt.findByIdAndUpdate(paymentAttempt._id, { stage: PAYMENT_ATTEMPT_STAGE.FAILED }).catch(() => {});
+        }
+        if (paymentOrder) {
+            await PaymentOrder.findByIdAndUpdate(paymentOrder._id, { status: "CANCELLED" }).catch(() => {});
+        }
+        return publicError(res, error);
     }
 });
 
-
-/**
- * POST /api/billing/handoff/resend-otp
- * Resends the 6-digit OTP to the user's email.
- */
 router.post("/resend-otp", generalLimiter, async (req, res) => {
     try {
-        const { token } = req.body;
-        if (!token) return res.status(400).json({ error: "Token is required" });
+        const rawToken = req.body.token;
+        if (!rawToken) return res.status(400).json({ success: false, error: "Token is required" });
 
-        const handoff = await BillingHandoff.findOne({ token });
-        if (!handoff) return res.status(404).json({ error: "Invalid or expired session" });
-        if (handoff.verified) return res.status(400).json({ error: "Payment already completed" });
+        const handoff = await BillingHandoff.findOne({
+            token: { $in: handoffTokenCandidates(rawToken) },
+            verified: false,
+            consumedAt: null,
+            expiresAt: { $gt: new Date() },
+        }).select("+token +otp");
+        if (!handoff) return res.status(404).json({ success: false, error: "Invalid or expired session" });
+        if (handoff.resendCount >= MAX_OTP_RESENDS) {
+            return res.status(429).json({ success: false, error: "OTP resend limit reached" });
+        }
+        if (handoff.lastOtpSentAt && Date.now() - handoff.lastOtpSentAt.getTime() < OTP_RESEND_COOLDOWN_MS) {
+            return res.status(429).json({ success: false, error: "Wait before requesting another code" });
+        }
 
-        const org = await Organization.findById(handoff.organization_id).select("name");
-        
-        // Generate new OTP
-        const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        const hashedOtp = await bcrypt.hash(newOtp, 10);
-        handoff.otp = hashedOtp;
-        handoff.attempts = 0; // Reset attempts on new OTP
+        const organization = await Organization.findById(handoff.organization_id).select("name").lean();
+        if (!organization) return res.status(404).json({ success: false, error: "Organization not found" });
+
+        const otp = crypto.randomInt(100000, 1000000).toString();
+        handoff.otp = await bcrypt.hash(otp, 12);
+        handoff.attempts = 0;
         handoff.lockoutUntil = null;
+        handoff.resendCount += 1;
+        handoff.lastOtpSentAt = new Date();
         await handoff.save();
 
-        const emailHtml = `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2>Secure Payment Checkout - Resend Code</h2>
-                <p>You requested a new verification code for your payment of ₹${handoff.amount} to ${org?.name || 'the organization'}.</p>
-                <h1 style="background: #f4f4f4; padding: 15px; text-align: center; letter-spacing: 5px; font-size: 32px; color: #333; border-radius: 8px;">${newOtp}</h1>
-                <p style="color: #666; font-size: 14px;">This code will expire in 10 minutes. If you did not initiate this payment, you can safely ignore this email.</p>
-            </div>
-        `;
-
-        await sendEmail({
-            to: handoff.email,
-            subject: "Your Secure Payment Checkout Code",
-            html: emailHtml,
-            organizationId: handoff.organization_id
+        await sendOtp({
+            handoff,
+            otp,
+            organization,
+            user: { _id: null, name: handoff.context?.payerName },
+            label: handoff.context?.label || "Payment",
+            idempotencyKey: `payment-otp:${handoff._id}:resend:${handoff.resendCount}`,
         });
 
-        res.json({ success: true, message: "OTP resent successfully" });
+        return res.json({ success: true, message: "OTP resent successfully" });
     } catch (error) {
-        console.error("[Billing Handoff Error]:", error);
-        res.status(500).json({ error: "Internal server error" });
+        return publicError(res, error);
     }
 });
 

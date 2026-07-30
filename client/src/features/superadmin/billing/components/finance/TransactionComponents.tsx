@@ -17,6 +17,7 @@ export const TransactionStatusBadge: React.FC<{ status: string }> = ({ status })
   switch (normalized) {
     case 'SUCCESS':
     case 'COMPLETED':
+    case 'CAPTURED':
       return <Badge className="bg-primary/10 text-primary border-primary/20">SUCCESS</Badge>;
     case 'FAILED':
     case 'DECLINED':
@@ -168,7 +169,7 @@ export const TransactionDetailDrawer: React.FC<{
                 </div>
 
                 <div className="mt-6">
-                  <TransactionTimeline events={tx.events} />
+                  <TransactionTimeline events={tx.events || []} />
                 </div>
 
                 {tx.allocations && tx.allocations.length > 0 && (

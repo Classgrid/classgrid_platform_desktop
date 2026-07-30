@@ -15,7 +15,7 @@ import CreditApplicationService from "./CreditApplicationService.js";
  * High-level orchestration for generating an invoice.
  */
 class InvoiceGenerator {
-    static async generateForSubscription(organizationId, subscriptionId, periodStart, periodEnd) {
+    static async generateForSubscription(organizationId, subscriptionId, periodStart, periodEnd, isPreview = false) {
         // 1. Context
         const context = await OrganizationBillingContextService.getContext(organizationId);
 
@@ -83,6 +83,26 @@ class InvoiceGenerator {
 
         const grandTotalPaise = taxableAmountPaise + taxTotalPaise;
 
+        if (isPreview) {
+            return {
+                invoiceNumber: "PREVIEW-AUTO",
+                organizationId,
+                organizationSubscriptionId: subscriptionId,
+                status: "DRAFT",
+                servicePeriodStart: periodStart,
+                servicePeriodEnd: periodEnd,
+                subtotalPaise,
+                discountAmountPaise: discountTotalPaise,
+                creditAmountAppliedPaise: creditAppliedPaise,
+                taxableAmountPaise,
+                taxAmountPaise: taxTotalPaise,
+                totalAmountPaise: grandTotalPaise,
+                amountDuePaise: grandTotalPaise,
+                lineItems,
+                estimatedDate: new Date()
+            };
+        }
+
         // 7. Generate Number
         const financialYear = "2026-2027";
         const invoiceNumber = await InvoiceSequence.getNextNumber(financialYear);
@@ -111,8 +131,10 @@ class InvoiceGenerator {
         }));
         await InvoiceLineItem.insertMany(lineItemDocs);
 
-        return invoice;
+        // Return combined object for easier use
+        return { ...invoice.toObject(), lineItems: lineItemDocs };
     }
+
 }
 
 export default InvoiceGenerator;

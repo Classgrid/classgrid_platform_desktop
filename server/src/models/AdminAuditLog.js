@@ -11,12 +11,12 @@ const adminAuditLogSchema = new mongoose.Schema(
         actorId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
-            required: true,
+            required: false, // system events might not have a user
         },
         actorName: { type: String, required: true },
         actorRole: {
             type: String,
-            enum: ["org_admin", "super_admin"],
+            enum: ["org_admin", "super_admin", "system"],
             required: true,
         },
 
@@ -27,6 +27,11 @@ const adminAuditLogSchema = new mongoose.Schema(
             default: null,
         },
         organizationName: { type: String, default: "" },
+        orgType: {
+            type: String,
+            enum: ["K12", "HIGHER_ED", "COACHING", "CORPORATE", "DEMO", "TRIAL"],
+            default: null,
+        },
 
         // ── Action ─────────────────────────────────────────────
         action: {
@@ -96,6 +101,9 @@ const adminAuditLogSchema = new mongoose.Schema(
                 "feature_flag.toggle",
                 "feature_flag.kill_all",
                 "platform.broadcast",
+                "UPDATE_BILLING",
+                "VIEW",
+                "WEBHOOK_EVENT"
             ],
         },
 
@@ -107,7 +115,7 @@ const adminAuditLogSchema = new mongoose.Schema(
             enum: [
                 "faculty", "student", "classroom", "note", "announcement",
                 "organization", "user", "users", "academic", "demo", "AttendanceSession",
-                "AttendanceRecord", "feature_flag", "subscription", "platform",
+                "AttendanceRecord", "feature_flag", "subscription", "platform", "billing"
             ],
             required: true,
         },

@@ -5,7 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
-
+import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
@@ -184,10 +184,10 @@ export function FeatureFlagsPage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        } />
-        }
+        <StatCard title="Total Flags" value={isLoading ? "—" : flags.length} icon={<Shield size={15} />} />
+        <StatCard title="Active Features" value={isLoading ? "—" : enabledCount} icon={<Power size={15} />}
           trend={{ value: enabledCount, label: `of ${flags.length} total` }} />
-        } />
+        <StatCard title="Disabled Features" value={isLoading ? "—" : flags.length - enabledCount} icon={<AlertTriangle size={15} />} />
       </div>
 
       <div >

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/marketing_ui/table';
-import { AsyncBillingState, BillingEmptyState } from './BillingStateComponents';
+import { AsyncBillingState } from './BillingStateComponents';
+import { BillingEmptyState } from './BillingLayoutComponents';
 import { BillingPagination } from './BillingFilterComponents';
 import { SearchX } from 'lucide-react';
 

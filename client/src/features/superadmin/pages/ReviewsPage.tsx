@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Star, MessageSquareQuote, RefreshCw, TrendingUp } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
-
+import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Button } from "@/components/marketing_ui/button";
 import { DataTable } from "@/components/marketing_ui/data-table";
@@ -155,13 +155,25 @@ export function ReviewsPage() {
 
       {/* Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        }
+        <StatCard
+          title="Total Reviews"
+          value={isLoading ? "—" : stats.total}
+          icon={<MessageSquareQuote size={16} />}
         />
-        }
+        <StatCard
+          title="Average Rating"
+          value={isLoading ? "—" : stats.avg}
+          icon={<Star size={16} />}
           trend={{ value: 4, label: "vs last month" }}
         />
-        
-        
+        <StatCard
+          title="Publicly Visible"
+          value={isLoading ? "—" : stats.publicCount}
+        />
+        <StatCard
+          title="With Suggestions"
+          value={isLoading ? "—" : stats.withSuggestions}
+        />
       </div>
 
       {/* Table */}

@@ -152,12 +152,7 @@ export function TransactionsPage() {
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        } />
-        } />
-        } />
-        } />
-      </div>
+
 
       <div >
         <SectionPanel title="Transaction History" description={`${filtered.length} records`} noPadding

@@ -5,64 +5,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter, SheetClose }
 import { Input } from '@/components/marketing_ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/marketing_ui/select';
 import { Button } from '@/components/marketing_ui/button';
-import { Combobox } from '@/components/marketing_ui/combobox';
-import { Chip } from '@/components/marketing_ui/chip';
-import { Checkbox } from '@/components/marketing_ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/marketing_ui/radio-group';
 import { Label } from '@/components/marketing_ui/label';
 import { BillingStatusBadge, MoneyDisplay, AsyncBillingState } from '../shared/BillingStateComponents';
-import { X, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { useBillingModules, useModuleVersions, useCreateModule } from '../../hooks/useBillingCatalog';
-import { useState } from 'react';
-
-// 6. PlanEligibilityEditor
-export const PlanEligibilityEditor: React.FC<{
-  allowedTypes: string[];
-  onAdd: (type: string) => void;
-  onRemove: (type: string) => void;
-  isRestricted: boolean;
-  onToggleRestricted: (restricted: boolean) => void;
-}> = ({ allowedTypes, onAdd, onRemove, isRestricted, onToggleRestricted }) => {
-  return (
-    <div className="space-y-4 border rounded-lg p-4 bg-muted/10">
-      <div className="flex items-center space-x-2">
-        <Checkbox 
-          id="restrict-eligibility" 
-          checked={isRestricted} 
-          onCheckedChange={(checked) => onToggleRestricted(!!checked)} 
-        />
-        <label htmlFor="restrict-eligibility" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-          Restrict plan to specific organization types
-        </label>
-      </div>
-
-      {isRestricted && (
-        <div className="pl-6 space-y-4 pt-2">
-          <div className="flex flex-wrap gap-2">
-            {allowedTypes.map(type => (
-              <Chip key={type} variant="secondary" className="flex items-center gap-1">
-                {type}
-                <button onClick={() => onRemove(type)} className="hover:bg-muted-foreground/20 rounded-full p-0.5">
-                  <X className="h-3 w-3" />
-                </button>
-              </Chip>
-            ))}
-          </div>
-          <Combobox
-            options={[
-              { label: 'School', value: 'school' },
-              { label: 'Engineering', value: 'engineering' },
-              { label: 'Coaching', value: 'coaching' },
-            ]}
-            value=""
-            onSelect={onAdd}
-            placeholder="Add allowed org type..."
-          />
-        </div>
-      )}
-    </div>
-  );
-};
 
 // 7. ModuleCatalogTable
 export const ModuleCatalogTable: React.FC<{

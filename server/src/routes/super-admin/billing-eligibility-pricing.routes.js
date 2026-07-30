@@ -17,5 +17,6 @@ router.post("/organizations/:organizationId/recalculate-usage", Controller.recal
 router.get("/organizations/:organizationId/price-overrides", Controller.listPriceOverrides);
 router.post("/organizations/:organizationId/price-overrides", Controller.createPriceOverride);
 router.patch("/price-overrides/:overrideId", Controller.updatePriceOverride);
+router.delete("/price-overrides/:overrideId", Controller.deletePriceOverride);
 
 export default router;

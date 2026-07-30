@@ -75,14 +75,25 @@ export const DiscountEditorDrawer: React.FC<{
   isOpen: boolean;
   onClose: () => void;
 }> = ({ isOpen, onClose }) => {
+  const [name, setName] = useState('');
   const [code, setCode] = useState('');
-  const [type, setType] = useState('PERCENTAGE');
+  const [type, setType] = useState<'PERCENTAGE' | 'FIXED_AMOUNT'>('PERCENTAGE');
   const [value, setValue] = useState('');
   const createMutation = useCreateDiscount();
 
   const handleSave = () => {
+    const numericValue = Number(value);
+    if (!name.trim() || !code.trim() || !Number.isFinite(numericValue) || numericValue <= 0) return;
     createMutation.mutate(
-      { code, type, value: Number(value) },
+      {
+        name: name.trim(),
+        code: code.trim(),
+        discountType: type,
+        ...(type === 'PERCENTAGE'
+          ? { percentage: numericValue }
+          : { amountPaise: numericValue }),
+        validFrom: new Date().toISOString(),
+      },
       { onSuccess: onClose }
     );
   };
@@ -99,12 +110,18 @@ export const DiscountEditorDrawer: React.FC<{
         <div className="p-6 flex-1 overflow-y-auto space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label>Discount name</Label>
+              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Annual subscription offer" />
+            </div>
+            <div className="space-y-2">
               <Label>Discount Code</Label>
               <Input value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="e.g. SUMMER2024" />
             </div>
             <div className="space-y-2">
               <Label>Discount Type</Label>
-              <Select value={type} onValueChange={setType}>
+              <Select value={type} onValueChange={(nextType) => {
+                if (nextType === 'PERCENTAGE' || nextType === 'FIXED_AMOUNT') setType(nextType);
+              }}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -124,7 +141,16 @@ export const DiscountEditorDrawer: React.FC<{
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>
           </DrawerClose>
-          <Button onClick={handleSave} disabled={createMutation.isPending || !code || !value}>
+          <Button
+            onClick={handleSave}
+            disabled={
+              createMutation.isPending ||
+              !name.trim() ||
+              !code.trim() ||
+              !Number.isFinite(Number(value)) ||
+              Number(value) <= 0
+            }
+          >
             <Save className="w-4 h-4 mr-2" /> 
             {createMutation.isPending ? 'Saving...' : 'Save Discount'}
           </Button>
@@ -239,13 +265,21 @@ export const TaxRuleEditorDrawer: React.FC<{
   onClose: () => void;
 }> = ({ isOpen, onClose }) => {
   const [name, setName] = useState('');
+  const [code, setCode] = useState('');
   const [rate, setRate] = useState('');
   const [region, setRegion] = useState('');
   const createMutation = useCreateTaxRule();
 
   const handleSave = () => {
+    const numericRate = Number(rate);
+    if (!name.trim() || !code.trim() || !region || !Number.isFinite(numericRate) || numericRate < 0) return;
     createMutation.mutate(
-      { name, rate: Number(rate), region },
+      {
+        name: name.trim(),
+        code: code.trim(),
+        taxPercentage: numericRate,
+        placeOfSupplyLogic: region as 'INTRA_STATE' | 'INTER_STATE' | 'INTERNATIONAL',
+      },
       { onSuccess: onClose }
     );
   };
@@ -266,19 +300,23 @@ export const TaxRuleEditorDrawer: React.FC<{
               <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. IGST 18%" />
             </div>
             <div className="space-y-2">
+              <Label>Tax code</Label>
+              <Input value={code} onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))} placeholder="SOFTWARE_SERVICES" />
+            </div>
+            <div className="space-y-2">
               <Label>Tax Rate (%)</Label>
               <Input type="number" value={rate} onChange={e => setRate(e.target.value)} placeholder="e.g. 18" />
             </div>
             <div className="space-y-2">
               <Label>Applicable Region</Label>
-              <Select value={region} onValueChange={setRegion}>
+              <Select value={region} onValueChange={(nextRegion) => nextRegion && setRegion(nextRegion)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select region" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All Regions (Default)</SelectItem>
                   <SelectItem value="INTER_STATE">Inter-State (IGST)</SelectItem>
                   <SelectItem value="INTRA_STATE">Intra-State (CGST+SGST)</SelectItem>
+                  <SelectItem value="INTERNATIONAL">International</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -288,7 +326,17 @@ export const TaxRuleEditorDrawer: React.FC<{
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>
           </DrawerClose>
-          <Button onClick={handleSave} disabled={createMutation.isPending || !name || !rate || !region}>
+          <Button
+            onClick={handleSave}
+            disabled={
+              createMutation.isPending ||
+              !name.trim() ||
+              !code.trim() ||
+              !region ||
+              !Number.isFinite(Number(rate)) ||
+              Number(rate) < 0
+            }
+          >
             <Save className="w-4 h-4 mr-2" /> 
             {createMutation.isPending ? 'Saving...' : 'Save Tax Rule'}
           </Button>

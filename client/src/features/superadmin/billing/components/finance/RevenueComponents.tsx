@@ -45,19 +45,19 @@ export const RevenueOrganizationTable: React.FC = () => {
           </TableHeader>
           <TableBody>
             {revenueData?.map((item: any) => (
-              <TableRow key={item.orgId}>
+              <TableRow key={item._id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
-                    {item.organization?.name || item.orgId}
+                    {item.organization?.sidebar_name || item.organization?.name || item._id}
                   </div>
                 </TableCell>
-                <TableCell>{item.plan?.name || 'Unknown'}</TableCell>
+                <TableCell>Classgrid subscription</TableCell>
                 <TableCell className="text-right font-medium text-primary">
-                  <MoneyDisplay amountPaise={item.mrrPaise} />
+                  <MoneyDisplay amountPaise={item.grossRevenuePaise} />
                 </TableCell>
                 <TableCell className="text-right">
-                  <MoneyDisplay amountPaise={item.ytdRevenuePaise} />
+                  <MoneyDisplay amountPaise={item.grossRevenuePaise} />
                 </TableCell>
               </TableRow>
             ))}

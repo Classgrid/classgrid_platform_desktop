@@ -150,7 +150,7 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     }
 
                     // Log the transaction
-                    await PlatformTransaction.create({
+                    const platformTxn = await PlatformTransaction.create({
                         organizationId,
                         type: "razorpay",
                         amount: amountInr,
@@ -161,6 +161,17 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                         planActivated: "active",
                         note: `Razorpay webhook: ${event} | Method: ${method} | Email: ${email}`,
                     });
+
+                    // RULE 6 ENFORCEMENT: Audit Log
+                    const { logAdminAction } = await import("../../services/auditLog.service.js");
+                    await logAdminAction(
+                        req, 
+                        "WEBHOOK_EVENT", 
+                        "organization", 
+                        organizationId, 
+                        "Processed platform SaaS payment webhook", 
+                        { paymentId, amountInr, orderId }
+                    );
 
                     // Update SaaS Invoice status to paid
                     if (invoiceId) {
@@ -228,6 +239,17 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                         notes: `Webhook: ${event} | ${email || ""} | ${contact || ""}`,
                     });
 
+                    // RULE 6 ENFORCEMENT: Audit Log
+                    const { logAdminAction } = await import("../../services/auditLog.service.js");
+                    await logAdminAction(
+                        req, 
+                        "WEBHOOK_EVENT", 
+                        "organization", 
+                        organizationId, 
+                        "Processed student fee payment webhook", 
+                        { paymentId, studentId, amountInr }
+                    );
+
                     // Update FeeRecord paid amount
                     if (feeRecordId) {
                         const FeeRecord = (await import("../models/FeeRecord.js")).default;
@@ -268,6 +290,17 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                             const mockRes = { json: () => {}, status: () => ({ send: () => {} }), send: () => {} };
                             await handlePaymentWebhook(req, mockRes);
                             console.log(`[Razorpay Webhook] ✅ Admission Fee handled via controller for ${applicationId}`);
+
+                            // RULE 6 ENFORCEMENT: Audit Log
+                            const { logAdminAction } = await import("../../services/auditLog.service.js");
+                            await logAdminAction(
+                                req, 
+                                "WEBHOOK_EVENT", 
+                                "organization", 
+                                organizationId, 
+                                "Processed admission fee payment webhook", 
+                                { paymentId, applicationId, amountInr }
+                            );
                         } catch (err) {
                             console.error("[Razorpay Webhook] Admission fee handler failed:", err);
                         }
@@ -298,6 +331,17 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                                 totalAmount: order.totalAmount,
                                 createdAt: order.createdAt
                             });
+
+                            // RULE 6 ENFORCEMENT: Audit Log
+                            const { logAdminAction } = await import("../../services/auditLog.service.js");
+                            await logAdminAction(
+                                req, 
+                                "WEBHOOK_EVENT", 
+                                "organization", 
+                                organizationId, 
+                                "Processed canteen order payment webhook", 
+                                { paymentId, orderId: order._id, amountInr }
+                            );
                         } catch (err) {
                             console.warn("[Razorpay Webhook] Canteen socket emit failed");
                         }
@@ -355,6 +399,17 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     note: `FAILED: ${error_code} — ${error_description}`,
                 });
 
+                // RULE 6 ENFORCEMENT: Audit Log
+                const { logAdminAction } = await import("../../services/auditLog.service.js");
+                await logAdminAction(
+                    req, 
+                    "WEBHOOK_EVENT", 
+                    "organization", 
+                    organizationId || null, 
+                    "Processed failed payment webhook", 
+                    { paymentId, amountInr, error_code }
+                );
+
                 break;
             }
 
@@ -403,11 +458,28 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     await originalTxn.save();
                 }
 
+                // RULE 6 ENFORCEMENT: Audit Log
+                const { logAdminAction } = await import("../../services/auditLog.service.js");
+                await logAdminAction(
+                    req, 
+                    "WEBHOOK_EVENT", 
+                    "organization", 
+                    organizationId || originalTxn?.organizationId || null, 
+                    "Processed refund webhook", 
+                    { refundId, paymentId, amountInr }
+                );
+
                 break;
             }
 
             default:
                 console.log(`[Razorpay Webhook] Unhandled event: ${event}`);
+        }
+
+        } catch (switchErr) {
+            console.error("[Razorpay Webhook] Error processing event:", switchErr);
+            processingStatus = "FAILED";
+            lastError = switchErr.message;
         }
 
         // Mark WebhookEvent as processed

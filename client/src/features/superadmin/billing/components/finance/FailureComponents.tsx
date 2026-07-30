@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Input } from '@/components/marketing_ui/input';
 import { Label } from '@/components/marketing_ui/label';
 import { Textarea } from '@/components/marketing_ui/textarea';
+import { Checkbox } from '@/components/marketing_ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/marketing_ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/marketing_ui/select';
 import { Building2, AlertTriangle, ArrowRightCircle, Terminal, Clock, StickyNote, Link as LinkIcon, UserPlus, CheckCircle, Download, MailWarning } from 'lucide-react';
@@ -17,7 +18,10 @@ import {
   useGeneratePaymentLink, 
   useAssignFailure, 
   useAddFailureNote, 
-  useResolveFailure 
+  useResolveFailure,
+  useFailureOverview,
+  useNotifyFailureOrganization,
+  useFailureDiagnosticExport
 } from '../../hooks/useBillingFailures';
 import { format } from 'date-fns';
 
@@ -44,7 +48,7 @@ export const FailureResponsibilityBadge: React.FC<{ responsibility: string }> = 
 
 // 74. FailureReasonFilter
 export const FailureReasonFilter: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
-  <Select value={value} onValueChange={onChange}>
+  <Select value={value} onValueChange={(nextValue) => nextValue && onChange(nextValue)}>
     <SelectTrigger className="w-[200px]">
       <SelectValue placeholder="Filter by Reason" />
     </SelectTrigger>
@@ -60,7 +64,7 @@ export const FailureReasonFilter: React.FC<{ value: string; onChange: (v: string
 
 // 75. FailureStageFilter
 export const FailureStageFilter: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
-  <Select value={value} onValueChange={onChange}>
+  <Select value={value} onValueChange={(nextValue) => nextValue && onChange(nextValue)}>
     <SelectTrigger className="w-[180px]">
       <SelectValue placeholder="Filter by Stage" />
     </SelectTrigger>
@@ -94,9 +98,10 @@ export const RelatedAttemptList: React.FC<{ attempts: any[] }> = ({ attempts }) 
 );
 
 // 77. ContactAdministratorDialog
-export const ContactAdministratorDialog: React.FC<{ organizationId: string }> = ({ organizationId }) => {
+export const ContactAdministratorDialog: React.FC<{ failureId: string }> = ({ failureId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const notify = useNotifyFailureOrganization(failureId);
   
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -122,11 +127,93 @@ export const ContactAdministratorDialog: React.FC<{ organizationId: string }> = 
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-          <Button disabled={!message} onClick={() => {
-            // In a real app this would call an API like notifyAdmin(orgId, message)
-            setIsOpen(false);
-          }}>
-            Send Notification
+          <Button
+            disabled={!message.trim() || notify.isPending}
+            onClick={() => notify.mutate(
+              { message: message.trim() },
+              {
+                onSuccess: () => {
+                  setMessage('');
+                  setIsOpen(false);
+                },
+              }
+            )}
+          >
+            {notify.isPending ? 'Sending...' : 'Send notification'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// 96. DiagnosticExportDialog
+export const DiagnosticExportDialog: React.FC<{ failureId: string }> = ({ failureId }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [includeRedactedPayload, setIncludeRedactedPayload] = useState(false);
+  const [queuedJobId, setQueuedJobId] = useState('');
+  const exportMutation = useFailureDiagnosticExport(failureId);
+
+  const queueExport = () => {
+    exportMutation.mutate(
+      { format: 'JSON', includeRedactedPayload },
+      {
+        onSuccess: (job) => {
+          setQueuedJobId(job?._id || job?.id || '');
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (!open) setQueuedJobId('');
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Download className="h-4 w-4" /> Export diagnostics
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Queue secure diagnostic export</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <p className="text-sm text-muted-foreground">
+            The export is generated as a short-lived JSON file. Payment credentials and direct identifiers are never included.
+          </p>
+          <div className="flex items-start gap-3 rounded-md border p-3">
+            <Checkbox
+              id={`include-redacted-payload-${failureId}`}
+              checked={includeRedactedPayload}
+              onCheckedChange={(checked) => setIncludeRedactedPayload(checked === true)}
+            />
+            <div>
+              <Label htmlFor={`include-redacted-payload-${failureId}`}>Include redacted provider payload</Label>
+              <p className="text-xs text-muted-foreground">
+                Only the server-approved, redacted payload is added.
+              </p>
+            </div>
+          </div>
+          {queuedJobId && (
+            <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+              Export queued. Job ID: <span className="font-mono">{queuedJobId}</span>
+            </div>
+          )}
+          {exportMutation.error && (
+            <p className="text-sm text-destructive">
+              {exportMutation.error instanceof Error ? exportMutation.error.message : 'Could not queue the export.'}
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
+          <Button disabled={exportMutation.isPending || !!queuedJobId} onClick={queueExport}>
+            {exportMutation.isPending ? 'Queuing...' : queuedJobId ? 'Queued' : 'Queue export'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -137,8 +224,11 @@ export const ContactAdministratorDialog: React.FC<{ organizationId: string }> = 
 // 27. FailedPaymentTable
 export const FailedPaymentTable: React.FC<{
   onResolve: (failureId: string) => void;
-}> = ({ onResolve }) => {
-  const { data: failures, isLoading, error } = useFailedPaymentsList();
+  filterType?: string;
+}> = ({ onResolve, filterType = 'ALL' }) => {
+  const { data: failures, isLoading, error } = useFailedPaymentsList({
+    status: filterType === 'ALL' ? undefined : filterType,
+  });
 
   return (
     <div className="rounded-md border bg-card">
@@ -316,23 +406,24 @@ export const GeneratePaymentLinkDialog: React.FC<{ failureId: string }> = ({ fai
 // 70. FailureAssignmentPanel
 export const FailureAssignmentPanel: React.FC<{ failureId: string; currentAssignee?: string }> = ({ failureId, currentAssignee }) => {
   const assignMutation = useAssignFailure(failureId);
+  const [assigneeId, setAssigneeId] = useState(currentAssignee || '');
 
   return (
     <div className="flex items-center gap-3">
       <UserPlus className="w-4 h-4 text-muted-foreground" />
-      <Select 
-        value={currentAssignee || 'unassigned'} 
-        onValueChange={(val) => assignMutation.mutate({ assigneeId: val === 'unassigned' ? '' : val })}
+      <Input
+        value={assigneeId}
+        onChange={(event) => setAssigneeId(event.target.value)}
+        placeholder="Investigator user ID"
+        className="h-8 w-56 text-sm"
+      />
+      <Button
+        size="sm"
+        disabled={!assigneeId.trim() || assignMutation.isPending}
+        onClick={() => assignMutation.mutate({ assigneeId: assigneeId.trim() })}
       >
-        <SelectTrigger className="w-48 h-8 text-sm">
-          <SelectValue placeholder="Assign Investigator" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="unassigned">Unassigned</SelectItem>
-          <SelectItem value="admin_1">Admin 1</SelectItem>
-          <SelectItem value="finance_team">Finance Team</SelectItem>
-        </SelectContent>
-      </Select>
+        Assign
+      </Button>
     </div>
   );
 };
@@ -396,7 +487,8 @@ export const FailureDetailDrawer: React.FC<{
                     <ResolutionStatusControl failureId={failureId} status={failure.status} />
                     <div className="flex gap-2">
                       <GeneratePaymentLinkDialog failureId={failureId} />
-                      <ContactAdministratorDialog organizationId={failure.orgId} />
+                      <ContactAdministratorDialog failureId={failureId} />
+                      <DiagnosticExportDialog failureId={failureId} />
                     </div>
                   </div>
                 </div>
@@ -413,12 +505,11 @@ export const FailureDetailDrawer: React.FC<{
                   <FailureResponsibilityBadge responsibility={failure.responsibility || 'SYSTEM'} />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FailureAssignmentPanel failureId={failureId} currentAssignee={failure.assigneeId} />
-                  <Button variant="outline" size="sm" className="w-fit ml-auto gap-2">
-                    <Download className="w-4 h-4" /> Export Diagnostic Logs
-                  </Button>
-                </div>
+                {failure.assigneeId && (
+                  <div className="text-sm text-muted-foreground">
+                    Assigned investigator: <span className="font-mono text-foreground">{failure.assigneeId}</span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-6">
@@ -436,5 +527,45 @@ export const FailureDetailDrawer: React.FC<{
         </div>
       </DrawerContent>
     </Drawer>
+  );
+};
+
+export const FailedPaymentsTable: React.FC<{
+  filterType?: string;
+  onViewDetail: (failureId: string) => void;
+}> = ({ filterType, onViewDetail }) => (
+  <FailedPaymentTable filterType={filterType} onResolve={onViewDetail} />
+);
+
+export const FailedPaymentDetailDrawer = FailureDetailDrawer;
+
+export const FailedPaymentsOverview: React.FC = () => {
+  const { data, isLoading, error } = useFailureOverview();
+
+  return (
+    <AsyncBillingState loading={isLoading} error={error} skeletonType="card">
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Open failures</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">{data?.failedPayments || 0}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Revenue at risk</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">
+            <MoneyDisplay amountPaise={data?.revenueAtRiskPaise || 0} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Affected organizations</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">{data?.affectedOrgs || 0}</CardContent>
+        </Card>
+      </div>
+    </AsyncBillingState>
   );
 };

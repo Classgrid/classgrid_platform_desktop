@@ -1,11 +1,82 @@
+import mongoose from "mongoose";
 import PaymentTransaction from "../../models/PaymentTransaction.js";
 import PaymentRefund from "../../models/PaymentRefund.js";
+import PaymentOrder from "../../models/PaymentOrder.js";
 import WebhookEvent from "../../models/WebhookEvent.js";
+import BillingAuditLog from "../../models/BillingAuditLog.js";
+import razorpayService from "../../services/razorpay.service.js";
+
+function auditContext(req) {
+    return {
+        actorId: req.user?._id || null,
+        ipAddress: req.ip || null,
+        requestId: req.id || req.headers["x-request-id"] || null,
+    };
+}
+
+async function recordAudit(req, transaction, action, oldState, newState, reason = null, session = null) {
+    const entry = {
+        ...auditContext(req),
+        organizationId: transaction.organizationId || null,
+        entityType: "PaymentTransaction",
+        entityId: transaction._id,
+        action,
+        reason,
+        oldState,
+        newState,
+    };
+    if (session) return BillingAuditLog.create([entry], { session });
+    return BillingAuditLog.create(entry);
+}
+
+async function providerFor(transaction) {
+    if (transaction.merchantType === "CLASSGRID") {
+        return razorpayService.getPlatformInstance();
+    }
+    const merchantOrganizationId = transaction.merchantOrganizationId || transaction.organizationId;
+    if (!merchantOrganizationId) throw new Error("Merchant organization is missing");
+    return razorpayService.getInstance(merchantOrganizationId, "fees");
+}
+
+async function fetchAndValidateProviderPayment(transaction) {
+    if (!transaction.providerPaymentId) throw new Error("Provider payment ID is missing");
+    const provider = await providerFor(transaction);
+    const payment = await provider.payments.fetch(transaction.providerPaymentId);
+    const order = await PaymentOrder.findById(transaction.paymentOrderId).lean();
+
+    if (!payment || payment.id !== transaction.providerPaymentId) {
+        throw new Error("Provider returned a different payment");
+    }
+    if (order?.providerOrderId && payment.order_id !== order.providerOrderId) {
+        throw new Error("Provider order does not match the stored order");
+    }
+    if (Number(payment.amount) !== transaction.amountCapturedPaise) {
+        throw new Error("Provider amount does not match the stored transaction");
+    }
+    if (String(payment.currency || "").toUpperCase() !== String(transaction.currency || "INR").toUpperCase()) {
+        throw new Error("Provider currency does not match the stored transaction");
+    }
+    return payment;
+}
 
 export const listTransactions = async (req, res) => {
     try {
-        const transactions = await PaymentTransaction.find().populate("organizationId paymentOrderId").sort({ createdAt: -1 });
-        res.json({ success: true, data: transactions });
+        const limit = Math.min(Number(req.query.limit) || 50, 200);
+        const page = Math.max(Number(req.query.page) || 1, 1);
+        const filter = {};
+        if (req.query.status) filter.status = req.query.status;
+        if (req.query.paymentFlow) filter.paymentFlow = req.query.paymentFlow;
+        if (req.query.organizationId) filter.organizationId = req.query.organizationId;
+
+        const [items, total] = await Promise.all([
+            PaymentTransaction.find(filter)
+                .populate("organizationId paymentOrderId")
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit),
+            PaymentTransaction.countDocuments(filter),
+        ]);
+        res.json({ success: true, data: items, pagination: { page, limit, total } });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -13,9 +84,9 @@ export const listTransactions = async (req, res) => {
 
 export const getTransaction = async (req, res) => {
     try {
-        const transaction = await PaymentTransaction.findById(req.params.transactionId).populate("organizationId paymentOrderId paymentAttemptId");
+        const transaction = await PaymentTransaction.findById(req.params.transactionId)
+            .populate("organizationId paymentOrderId paymentAttemptId");
         if (!transaction) return res.status(404).json({ success: false, message: "Transaction not found" });
-
         res.json({ success: true, data: transaction });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -24,10 +95,38 @@ export const getTransaction = async (req, res) => {
 
 export const recheckTransaction = async (req, res) => {
     try {
-        // Calls the Payment Provider API to fetch latest status
-        res.json({ success: true, message: "Recheck triggered" });
+        const transaction = await PaymentTransaction.findById(req.params.transactionId);
+        if (!transaction) return res.status(404).json({ success: false, message: "Transaction not found" });
+
+        const oldState = { status: transaction.status };
+        const payment = await fetchAndValidateProviderPayment(transaction);
+        const providerStatus = String(payment.status || "").toLowerCase();
+
+        if (providerStatus === "captured" && transaction.status === "FAILED") {
+            transaction.status = "CAPTURED";
+            transaction.capturedAt = payment.created_at
+                ? new Date(payment.created_at * 1000)
+                : transaction.capturedAt;
+            await transaction.save();
+        } else if (providerStatus === "failed" && transaction.status === "CAPTURED") {
+            return res.status(409).json({
+                success: false,
+                message: "Provider reports failed but the local transaction is captured; manual investigation is required",
+            });
+        }
+
+        await recordAudit(
+            req,
+            transaction,
+            "PROVIDER_RECHECKED",
+            oldState,
+            { status: transaction.status, providerStatus },
+            req.body.reason || null
+        );
+        res.json({ success: true, data: transaction, providerStatus });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        const status = /not configured|Provider|match|missing/i.test(error.message) ? 409 : 502;
+        res.status(status).json({ success: false, message: error.message });
     }
 };
 
@@ -35,37 +134,110 @@ export const createRefund = async (req, res) => {
     try {
         const transaction = await PaymentTransaction.findById(req.params.transactionId);
         if (!transaction) return res.status(404).json({ success: false, message: "Transaction not found" });
+        if (!transaction.providerPaymentId) {
+            return res.status(409).json({ success: false, message: "This transaction has no provider payment to refund" });
+        }
+        if (!["CAPTURED", "PARTIALLY_REFUNDED"].includes(transaction.status)) {
+            return res.status(409).json({ success: false, message: `Cannot refund a ${transaction.status} transaction` });
+        }
 
-        const refund = await PaymentRefund.create({
-            paymentTransactionId: transaction._id,
-            organizationId: transaction.organizationId,
-            providerRefundId: `rfnd_${Date.now()}`, // Mocking provider call
-            amountPaise: req.body.amountPaise,
-            reason: req.body.reason,
-            createdBy: req.user?._id
+        const amountPaise = Number(req.body.amountPaise);
+        if (!Number.isSafeInteger(amountPaise) || amountPaise < 1) {
+            return res.status(400).json({ success: false, message: "amountPaise must be a positive integer" });
+        }
+        if (!String(req.body.reason || "").trim()) {
+            return res.status(400).json({ success: false, message: "A refund reason is required" });
+        }
+
+        const totals = await PaymentRefund.aggregate([
+            {
+                $match: {
+                    paymentTransactionId: transaction._id,
+                    status: { $in: ["PENDING", "PROCESSED"] },
+                },
+            },
+            { $group: { _id: null, amountPaise: { $sum: "$amountPaise" } } },
+        ]);
+        const alreadyRefundedPaise = totals[0]?.amountPaise || 0;
+        const remainingPaise = transaction.amountCapturedPaise - alreadyRefundedPaise;
+        if (amountPaise > remainingPaise) {
+            return res.status(400).json({
+                success: false,
+                message: `Refund exceeds the remaining refundable amount of ${remainingPaise} paise`,
+            });
+        }
+
+        const provider = await providerFor(transaction);
+        const providerRefund = await provider.payments.refund(transaction.providerPaymentId, {
+            amount: amountPaise,
+            receipt: `refund_${transaction._id}_${Date.now()}`.slice(0, 40),
+            notes: {
+                reason: String(req.body.reason).trim().slice(0, 200),
+                transaction_id: transaction._id.toString(),
+            },
         });
+        if (!providerRefund?.id) throw new Error("Provider did not return a refund ID");
+
+        const refundStatus = providerRefund.status === "processed" ? "PROCESSED" : "PENDING";
+        const session = await mongoose.startSession();
+        let refund;
+        try {
+            await session.withTransaction(async () => {
+                [refund] = await PaymentRefund.create([{
+                    paymentTransactionId: transaction._id,
+                    organizationId: transaction.organizationId,
+                    providerRefundId: providerRefund.id,
+                    amountPaise,
+                    currency: transaction.currency,
+                    reason: String(req.body.reason).trim(),
+                    status: refundStatus,
+                    speedRequested: providerRefund.speed_requested || "normal",
+                    speedProcessed: providerRefund.speed_processed || "normal",
+                    receipt: providerRefund.receipt || null,
+                    processedAt: refundStatus === "PROCESSED" ? new Date() : null,
+                    createdBy: req.user._id,
+                }], { session });
+
+                if (refundStatus === "PROCESSED") {
+                    const processedTotal = alreadyRefundedPaise + amountPaise;
+                    transaction.status = processedTotal >= transaction.amountCapturedPaise
+                        ? "REFUNDED"
+                        : "PARTIALLY_REFUNDED";
+                    await transaction.save({ session });
+                }
+                await recordAudit(
+                    req,
+                    transaction,
+                    "REFUND_REQUESTED",
+                    { status: "CAPTURED", refundedPaise: alreadyRefundedPaise },
+                    { status: transaction.status, refundId: refund._id, amountPaise, providerStatus: providerRefund.status },
+                    String(req.body.reason).trim(),
+                    session
+                );
+            });
+        } finally {
+            await session.endSession();
+        }
 
         res.status(201).json({ success: true, data: refund });
     } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
+        const status = /not configured|Provider|Razorpay/i.test(error.message) ? 502 : 400;
+        res.status(status).json({ success: false, message: error.message });
     }
 };
 
-export const reconcileTransaction = async (req, res) => {
-    try {
-        res.json({ success: true, message: "Transaction manually reconciled" });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const reconcileTransaction = async (req, res) => recheckTransaction(req, res);
 
 export const getTransactionWebhooks = async (req, res) => {
     try {
         const transaction = await PaymentTransaction.findById(req.params.transactionId);
         if (!transaction) return res.status(404).json({ success: false, message: "Transaction not found" });
-
-        // Search Webhook events for the providerPaymentId inside the payload
-        const webhooks = await WebhookEvent.find({ "payload.payload.payment.entity.id": transaction.providerPaymentId }).sort({ receivedAt: -1 });
+        const webhooks = await WebhookEvent.find({
+            $or: [
+                { "payload.payload.payment.entity.id": transaction.providerPaymentId },
+                { "payload.payload.refund.entity.payment_id": transaction.providerPaymentId },
+            ],
+        }).sort({ receivedAt: -1 });
         res.json({ success: true, data: webhooks });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -74,8 +246,38 @@ export const getTransactionWebhooks = async (req, res) => {
 
 export const getTransactionTimeline = async (req, res) => {
     try {
-        // Collects attempts, transactions, refunds, settlements, and webhooks into a unified timeline
-        res.json({ success: true, data: [] });
+        const transaction = await PaymentTransaction.findById(req.params.transactionId);
+        if (!transaction) return res.status(404).json({ success: false, message: "Transaction not found" });
+        const [refunds, webhooks] = await Promise.all([
+            PaymentRefund.find({ paymentTransactionId: transaction._id }),
+            WebhookEvent.find({
+                $or: [
+                    { "payload.payload.payment.entity.id": transaction.providerPaymentId },
+                    { "payload.payload.refund.entity.payment_id": transaction.providerPaymentId },
+                ],
+            }),
+        ]);
+        const timeline = [
+            {
+                id: `tx_init_${transaction._id}`,
+                status: "CAPTURED",
+                timestamp: transaction.capturedAt || transaction.createdAt,
+                note: `Transaction captured for ${transaction.paymentFlow}`,
+            },
+            ...refunds.map((refund) => ({
+                id: refund._id.toString(),
+                status: `REFUND_${refund.status}`,
+                timestamp: refund.processedAt || refund.createdAt,
+                note: `Refund of ${refund.amountPaise} paise. Reason: ${refund.reason || "Not provided"}`,
+            })),
+            ...webhooks.map((webhook) => ({
+                id: webhook._id.toString(),
+                status: `WEBHOOK_${String(webhook.eventType || webhook.event || "UNKNOWN").toUpperCase().replace(/\./g, "_")}`,
+                timestamp: webhook.receivedAt || webhook.createdAt,
+                note: "Received Razorpay webhook",
+            })),
+        ].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        res.json({ success: true, data: timeline });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

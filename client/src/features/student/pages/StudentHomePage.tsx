@@ -2,7 +2,7 @@ import React from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/marketing_ui/card";
-
+import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Button } from "@/components/marketing_ui/button";
 import { Avatar, AvatarFallback } from "@/components/marketing_ui/avatar";
@@ -110,9 +110,21 @@ export function StudentHomePage() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        
-        
-        
+        <StatCard 
+          title={`Today's ${attendanceLabel}`} 
+          value={data?.metrics?.attendancePercentage !== undefined ? `${data?.metrics?.attendancePercentage}%` : "-"} 
+          icon={CalendarCheck} 
+        />
+        <StatCard 
+          title="Pending Assignments" 
+          value={data?.metrics?.pendingAssignments?.toString() || "0"} 
+          icon={FileText} 
+        />
+        <StatCard 
+          title={`Upcoming ${examLabel}`} 
+          value="0" 
+          icon={BookOpen} 
+        />
       </div>
 
       {/* Main Content Grid */}

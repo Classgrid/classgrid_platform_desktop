@@ -4,6 +4,7 @@ import CreditNote from "../../models/CreditNote.js";
 import InvoiceDelivery from "../../models/InvoiceDelivery.js";
 import InvoiceGenerator from "../../services/billing/InvoiceGenerator.js";
 import { INVOICE_STATUS } from "../../utils/billing.utils.js";
+import { logAdminAction } from "../../services/auditLog.service.js";
 
 export const listInvoices = async (req, res) => {
     try {
@@ -29,8 +30,9 @@ export const getInvoice = async (req, res) => {
 export const previewInvoice = async (req, res) => {
     try {
         const { organizationId, subscriptionId, periodStart, periodEnd } = req.body;
-        // Run generation without saving
-        res.json({ success: true, message: "Preview generated" });
+        // Run generation in preview mode without saving
+        const preview = await InvoiceGenerator.generateForSubscription(organizationId, subscriptionId, new Date(periodStart), new Date(periodEnd), true);
+        res.json({ success: true, data: preview });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -40,6 +42,17 @@ export const generateInvoice = async (req, res) => {
     try {
         const { organizationId, subscriptionId, periodStart, periodEnd } = req.body;
         const invoice = await InvoiceGenerator.generateForSubscription(organizationId, subscriptionId, new Date(periodStart), new Date(periodEnd));
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            organizationId, 
+            "Generated ad-hoc invoice", 
+            { invoiceId: invoice._id, subscriptionId }
+        );
+
         res.status(201).json({ success: true, data: invoice });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -58,6 +71,16 @@ export const issueInvoice = async (req, res) => {
         invoice.isLocked = true;
         await invoice.save();
 
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            invoice.organization_id || invoice.organizationId || null, 
+            "Issued draft invoice", 
+            { invoiceId: invoice._id }
+        );
+
         res.json({ success: true, data: invoice });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -73,6 +96,17 @@ export const sendInvoice = async (req, res) => {
             emailSentTo: req.body.email,
             actorId: req.user?._id
         });
+
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            req.body.organizationId || null, 
+            "Sent invoice manually via email", 
+            { invoiceId: req.params.invoiceId, email: req.body.email }
+        );
+
         res.json({ success: true, message: "Invoice sent" });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -82,6 +116,17 @@ export const sendInvoice = async (req, res) => {
 export const voidInvoice = async (req, res) => {
     try {
         const invoice = await Invoice.findByIdAndUpdate(req.params.invoiceId, { status: INVOICE_STATUS.VOID }, { new: true });
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            invoice?.organization_id || invoice?.organizationId || null, 
+            "Voided invoice", 
+            { invoiceId: invoice?._id }
+        );
+
         res.json({ success: true, data: invoice });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -91,6 +136,17 @@ export const voidInvoice = async (req, res) => {
 export const createCreditNote = async (req, res) => {
     try {
         const note = await CreditNote.create({ ...req.body, invoiceId: req.params.invoiceId, createdBy: req.user?._id });
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            req.body.organizationId || null, 
+            "Created credit note", 
+            { creditNoteId: note._id, invoiceId: req.params.invoiceId }
+        );
+
         res.status(201).json({ success: true, data: note });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -99,7 +155,24 @@ export const createCreditNote = async (req, res) => {
 
 export const downloadInvoicePdf = async (req, res) => {
     try {
-        res.json({ success: true, url: "https://r2.classgrid.in/invoices/demo.pdf" });
+        const invoice = await Invoice.findById(req.params.invoiceId).select('invoiceNumber organizationId');
+        if (!invoice) return res.status(404).json({ success: false, message: "Invoice not found" });
+
+        // In a real system, this would call AWS S3 / Cloudflare R2 getSignedUrl
+        // Dynamically generating the path based on the real DB entity
+        const url = `https://r2.classgrid.in/invoices/${invoice.invoiceNumber || req.params.invoiceId}.pdf`;
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "VIEW", 
+            "organization", 
+            invoice.organizationId || null, 
+            "Downloaded invoice PDF", 
+            { invoiceId: invoice._id }
+        );
+
+        res.json({ success: true, url });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

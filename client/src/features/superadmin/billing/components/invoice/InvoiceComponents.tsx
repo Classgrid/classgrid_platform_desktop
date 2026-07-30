@@ -31,7 +31,7 @@ export const InvoiceListTable: React.FC<{
 
   return (
     <BillingDataTable
-      data={data?.invoices}
+      data={data}
       isLoading={isLoading}
       error={error}
       keyExtractor={(row: any) => row.id || row._id}
@@ -44,12 +44,12 @@ export const InvoiceListTable: React.FC<{
         {
           id: 'organization',
           header: 'Organization',
-          cell: (row) => <span className="font-medium">{row.organization?.name || row.orgId}</span>,
+          cell: (row) => <span className="font-medium">{row.organizationId?.name || row.organizationId || 'Unavailable'}</span>,
         },
         {
           id: 'date',
           header: 'Issued Date',
-          cell: (row) => <span className="text-muted-foreground">{row.issuedAt ? format(new Date(row.issuedAt), 'MMM dd, yyyy') : '-'}</span>,
+          cell: (row) => <span className="text-muted-foreground">{row.issueDate ? format(new Date(row.issueDate), 'MMM dd, yyyy') : 'Not issued'}</span>,
         },
         {
           id: 'amount',

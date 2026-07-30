@@ -3,10 +3,12 @@ import * as Controller from "../../controllers/super-admin/billing-revenue.contr
 
 const router = express.Router();
 
-router.get("/revenue", Controller.getRevenueOverview);
-router.get("/revenue/by-organization", Controller.getRevenueByOrganization);
-router.get("/revenue/by-module", Controller.getRevenueByModule);
-router.get("/revenue/by-invoice", Controller.getRevenueByInvoice);
-router.get("/revenue/export", Controller.exportRevenue);
+router.get("", Controller.getRevenueOverview);
+router.get("/by-organization", Controller.getRevenueByOrganization);
+router.get("/by-module", Controller.getRevenueByModule);
+router.get("/by-invoice", Controller.getRevenueByInvoice);
+router.get("/export", Controller.exportRevenue);
+router.post("/export", Controller.exportRevenue);
+router.post("/reconcile", Controller.reconcileRevenue);
 
 export default router;

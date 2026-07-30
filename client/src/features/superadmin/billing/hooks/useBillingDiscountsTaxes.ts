@@ -1,19 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchDiscounts, createDiscount, fetchTaxRules, createTaxRule, grantCredits } from '../../services/superAdminBillingApi';
+import { fetchDiscounts, createDiscount, fetchTaxRules, createTaxRule, fetchTaxRuleVersions, createTaxRuleVersion, fetchCreditAccount, grantCredits } from '../../services/superAdminBillingApi';
 
 export interface TaxRulePayload {
     name: string;
-    ratePercent: number;
-    country: string;
-    state?: string;
-    isActive: boolean;
+    code: string;
+    taxPercentage: number;
+    placeOfSupplyLogic: 'INTRA_STATE' | 'INTER_STATE' | 'INTERNATIONAL';
 }
 
 export interface DiscountPayload {
+    name: string;
     code: string;
-    type: 'PERCENTAGE' | 'FIXED_AMOUNT';
-    value: number;
-    maxUses?: number;
+    discountType: 'PERCENTAGE' | 'FIXED_AMOUNT';
+    amountPaise?: number;
+    percentage?: number;
+    validFrom: string;
     validUntil?: string;
 }
 
@@ -48,7 +49,19 @@ export const useTaxRules = () => {
 export const useCreateTaxRule = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: TaxRulePayload) => createTaxRule(payload),
+    mutationFn: async (payload: TaxRulePayload) => {
+      const rule = await createTaxRule({ name: payload.name, code: payload.code });
+      const isInterState = payload.placeOfSupplyLogic === 'INTER_STATE';
+      const isIntraState = payload.placeOfSupplyLogic === 'INTRA_STATE';
+      return createTaxRuleVersion(rule._id, {
+        taxPercentage: payload.taxPercentage,
+        igstPercentage: isInterState ? payload.taxPercentage : 0,
+        cgstPercentage: isIntraState ? payload.taxPercentage / 2 : 0,
+        sgstPercentage: isIntraState ? payload.taxPercentage / 2 : 0,
+        placeOfSupplyLogic: payload.placeOfSupplyLogic,
+        effectiveFrom: new Date().toISOString(),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['billing-tax-rules'] });
     },
@@ -62,5 +75,21 @@ export const useGrantCredits = (orgId: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['billing-organization-credits', orgId] });
     },
+  });
+};
+
+export const useCreditAccount = (orgId: string) => {
+  return useQuery({
+    queryKey: ['billing-organization-credits', orgId],
+    queryFn: () => fetchCreditAccount(orgId),
+    enabled: !!orgId,
+  });
+};
+
+export const useTaxRuleVersions = (taxRuleId: string) => {
+  return useQuery({
+    queryKey: ['billing-tax-rule-versions', taxRuleId],
+    queryFn: () => fetchTaxRuleVersions(taxRuleId),
+    enabled: !!taxRuleId,
   });
 };

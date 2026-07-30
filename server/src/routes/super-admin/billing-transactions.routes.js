@@ -3,14 +3,15 @@ import * as Controller from "../../controllers/super-admin/billing-transactions.
 
 const router = express.Router();
 
-router.get("/transactions", Controller.listTransactions);
-router.get("/transactions/:transactionId", Controller.getTransaction);
+router.get("/", Controller.listTransactions);
+router.get("/:transactionId", Controller.getTransaction);
 
-router.post("/transactions/:transactionId/recheck", Controller.recheckTransaction);
-router.post("/transactions/:transactionId/refunds", Controller.createRefund);
-router.post("/transactions/:transactionId/reconcile", Controller.reconcileTransaction);
+router.post("/:transactionId/recheck", Controller.recheckTransaction);
+router.post("/:transactionId/refund", Controller.createRefund);
+router.post("/:transactionId/refunds", Controller.createRefund);
+router.post("/:transactionId/reconcile", Controller.reconcileTransaction);
 
-router.get("/transactions/:transactionId/webhooks", Controller.getTransactionWebhooks);
-router.get("/transactions/:transactionId/timeline", Controller.getTransactionTimeline);
+router.get("/:transactionId/webhooks", Controller.getTransactionWebhooks);
+router.get("/:transactionId/timeline", Controller.getTransactionTimeline);
 
 export default router;

@@ -17,6 +17,7 @@ router.post("/organizations/:organizationId/credits/reverse", Controller.reverse
 // ── Taxes ──
 router.get("/tax-rules", Controller.listTaxRules);
 router.post("/tax-rules", Controller.createTaxRule);
+router.get("/tax-rules/:taxRuleId/versions", Controller.listTaxRuleVersions);
 router.post("/tax-rules/:taxRuleId/versions", Controller.createTaxRuleVersion);
 
 export default router;

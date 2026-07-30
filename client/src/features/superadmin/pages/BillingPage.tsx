@@ -180,14 +180,10 @@ export function BillingPage() {
 
       {/* ── Summary cards ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        }
-        />
-        }
-        />
-        }
-        />
-        }
-        />
+        <StatCard title="Total Users" value={totalUsers} icon={Users} />
+        <StatCard title="Active Subs" value={activeCount} icon={CheckCircle} />
+        <StatCard title="Demo Orgs" value={demoCount} icon={Clock} />
+        <StatCard title="Platform Load" value="Normal" icon={ShieldCheck} />
       </div>
 
       {/* ── Org table ─────────────────────────────────────────────────────── */}

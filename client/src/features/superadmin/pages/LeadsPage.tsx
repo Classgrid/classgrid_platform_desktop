@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
-
+import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { DataTable } from "@/components/marketing_ui/data-table";
@@ -76,10 +76,10 @@ export function LeadsPage() {
 
       {/* Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        } />
-        } />
-        } />
-        } />
+        <StatCard title="Total Leads" value={isLoading ? "—" : stats.total} icon={<ClipboardList size={16} />} />
+        <StatCard title="Unassigned Leads" value={isLoading ? "—" : stats.unassigned} icon={<AlertTriangle size={16} />} />
+        <StatCard title="Demos Scheduled" value={isLoading ? "—" : stats.demoScheduled} icon={<CalendarClock size={16} />} />
+        <StatCard title="Converted" value={isLoading ? "—" : stats.converted} icon={<CheckCircle size={16} />} />
       </div>
 
       {/* Search Filter */}

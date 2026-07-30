@@ -9,7 +9,7 @@ export const requireSuperAdminBillingAccess = (req, res, next) => {
         return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    if (req.user.role !== "SUPER_ADMIN" && req.user.role !== "BILLING_ADMIN") {
+    if (!["super_admin", "billing_admin"].includes(req.user.role)) {
         return res.status(403).json({ success: false, message: "Forbidden: Requires Super Admin or Billing Admin role." });
     }
 
@@ -21,7 +21,7 @@ export const requireFinancialWriteAccess = (req, res, next) => {
         return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    if (req.user.role !== "SUPER_ADMIN") {
+    if (req.user.role !== "super_admin") {
         return res.status(403).json({ success: false, message: "Forbidden: Only Super Admins can issue refunds or edit ledger entries." });
     }
 

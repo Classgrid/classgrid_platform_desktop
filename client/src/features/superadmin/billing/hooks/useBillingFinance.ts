@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchRevenueOverview, fetchRevenueByOrg, fetchRevenueByModule, fetchRevenueByInvoice, exportRevenue, fetchTransactions, fetchTransactionDetail, fetchTransactionWebhooks, fetchTransactionTimeline, fetchFailedPayments, billingApi } from '../../services/superAdminBillingApi';
+import { fetchRevenueOverview, fetchRevenueByOrg, fetchRevenueByModule, fetchRevenueByInvoice, exportRevenue, reconcileRevenue, fetchTransactions, fetchTransactionDetail, fetchTransactionWebhooks, fetchTransactionTimeline, fetchFailedPayments, refundTransaction } from '../../services/superAdminBillingApi';
 
 export interface TransactionFilters {
   status?: string;
@@ -43,16 +43,17 @@ export const useRevenueByInvoice = () => {
 
 export const useExportRevenue = () => {
   return useMutation({
-    mutationFn: exportRevenue,
-    onSuccess: (blob) => {
-      // Create a temporary link to download the blob
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `revenue_export_${new Date().toISOString()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
+    mutationFn: () => exportRevenue(),
+  });
+};
+
+export const useReconcileRevenue = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { targetDate: string }) => reconcileRevenue(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billing-revenue-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['billing-transactions'] });
     },
   });
 };
@@ -97,8 +98,7 @@ export const useRefundTransaction = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ txId, amountPaise, reason }: { txId: string; amountPaise: number; reason: string }) => {
-      const res = await billingApi.post(`/finance/transactions/${txId}/refunds`, { amountPaise, reason });
-      return res.data;
+      return refundTransaction(txId, { amountPaise, reason });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['billing-transaction-detail', variables.txId] });

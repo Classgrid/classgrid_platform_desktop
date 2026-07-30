@@ -20,8 +20,15 @@ import Organization from "../models/Organization.js";
  */
 export async function logAdminAction(req, action, targetType, targetId = null, targetName = "", metadata = {}, forceOrgId = null, status = "success", durationMs = null) {
     try {
-        const actor = req.user;
-        if (!actor) return; // should never happen, but be safe
+        let actor = req.user;
+        if (!actor) {
+            // Handle system automated webhooks
+            actor = {
+                _id: null,
+                name: "SYSTEM (Webhook)",
+                role: "system"
+            };
+        }
 
         let orgId = actor.organization_id || forceOrgId;
 
@@ -44,9 +51,11 @@ export async function logAdminAction(req, action, targetType, targetId = null, t
         }
 
         let orgName = "";
+        let orgType = null;
         if (orgId) {
-            const org = await Organization.findById(orgId).select("name").lean();
+            const org = await Organization.findById(orgId).select("name org_type").lean();
             orgName = org?.name || "";
+            orgType = org?.org_type || null;
         }
 
         const ip =
@@ -67,6 +76,7 @@ export async function logAdminAction(req, action, targetType, targetId = null, t
             actorRole: actor.role,
             organization_id: orgId || null,
             organizationName: orgName,
+            orgType: orgType,
             action,
             targetId: targetId ? String(targetId) : null,
             targetName: String(targetName || ""),

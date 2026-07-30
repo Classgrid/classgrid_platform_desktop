@@ -1,6 +1,4 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/marketing_ui/card';
-import { Button } from '@/components/marketing_ui/button';
 import { Input } from '@/components/marketing_ui/input';
 import { Search, Lock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -13,16 +11,7 @@ export const useBillingPermissions = () => {
   });
 };
 
-// 29. BillingShell
-export const BillingShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return (
-    <div className="flex min-h-screen bg-background text-foreground flex-col w-full">
-      <main className="flex-1 overflow-auto bg-muted/20">
-        {children}
-      </main>
-    </div>
-  );
-};
+export { BillingShell } from './BillingShell';
 
 // 30. BillingPermissionGuard
 export const BillingPermissionGuard: React.FC<{
@@ -35,7 +24,6 @@ export const BillingPermissionGuard: React.FC<{
     return <div className="p-8 text-center animate-pulse text-muted-foreground">Checking permissions...</div>;
   }
 
-  // Assuming permissions array contains allowed actions
   const hasAccess = permissions?.includes('SUPER_ADMIN') || permissions?.includes(requiredAction);
 
   if (!hasAccess) {
@@ -53,22 +41,7 @@ export const BillingPermissionGuard: React.FC<{
   return <>{children}</>;
 };
 
-// 31. BillingPageHeader
-export const BillingPageHeader: React.FC<{
-  title: string;
-  description?: string;
-  action?: React.ReactNode;
-}> = ({ title, description, action }) => {
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
-        {description && <p className="text-muted-foreground mt-1">{description}</p>}
-      </div>
-      {action && <div className="flex items-center gap-2">{action}</div>}
-    </div>
-  );
-};
+export { BillingPageHeader } from './BillingPageHeader';
 
 // 32. BillingSearchInput
 export const BillingSearchInput: React.FC<{

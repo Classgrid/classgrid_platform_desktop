@@ -3,7 +3,7 @@ import { Shield, RefreshCw, User, Building2, Clock, Filter } from "lucide-react"
 import type { ColumnDef } from "@tanstack/react-table";
 import { useQuery } from "@tanstack/react-query";
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
-
+import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Badge } from "@/components/marketing_ui/badge";
 import { DataTable } from "@/components/marketing_ui/data-table";
 
@@ -236,10 +236,10 @@ export function ActivityLogPage() {
 
       {/* Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        } />
-        } />
-        } />
-        } />
+        <StatCard title="Total Events" value={isLoading ? "—" : stats.total} icon={<Shield size={16} />} />
+        <StatCard title="Super Admin Actions" value={isLoading ? "—" : stats.superAdminActions} icon={<User size={16} />} />
+        <StatCard title="High-Risk Events" value={isLoading ? "—" : stats.danger} icon={<Building2 size={16} />} />
+        <StatCard title="Warning Events" value={isLoading ? "—" : stats.warning} icon={<Clock size={16} />} />
       </div>
 
       {/* Filters */}

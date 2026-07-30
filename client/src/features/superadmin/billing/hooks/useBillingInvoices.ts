@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchInvoices, fetchInvoiceDetail, previewInvoice, fetchInvoiceDeliveryHistory, billingApi } from '../../services/superAdminBillingApi';
+import { fetchInvoices, fetchInvoiceDetail, previewInvoice, fetchInvoiceDeliveryHistory, generateInvoice, issueInvoice } from '../../services/superAdminBillingApi';
 
 export interface InvoiceFilters {
   status?: string;
@@ -51,8 +51,7 @@ export const useGenerateInvoice = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: any) => {
-      const res = await billingApi.post('/invoice/generate', payload);
-      return res.data;
+      return generateInvoice(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['billing-invoices'] });
@@ -64,8 +63,7 @@ export const useIssueInvoice = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (invoiceId: string) => {
-      const res = await billingApi.post(`/invoice/${invoiceId}/issue`);
-      return res.data;
+      return issueInvoice(invoiceId);
     },
     onSuccess: (_, invoiceId) => {
       queryClient.invalidateQueries({ queryKey: ['billing-invoice-detail', invoiceId] });

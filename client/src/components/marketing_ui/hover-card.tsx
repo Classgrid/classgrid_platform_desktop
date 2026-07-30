@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { PreviewCard as PreviewCardPrimitive } from "@base-ui/react/preview-card"
 
 import { cn } from "@/lib/utils"
@@ -8,9 +9,16 @@ function HoverCard({ ...props }: PreviewCardPrimitive.Root.Props) {
   return <PreviewCardPrimitive.Root data-slot="hover-card" {...props} />
 }
 
-function HoverCardTrigger({ ...props }: PreviewCardPrimitive.Trigger.Props) {
+function HoverCardTrigger({
+  asChild,
+  children,
+  ...props
+}: PreviewCardPrimitive.Trigger.Props & { asChild?: boolean }) {
+  const renderedChild = asChild && React.isValidElement(children) ? children : undefined
   return (
-    <PreviewCardPrimitive.Trigger data-slot="hover-card-trigger" {...props} />
+    <PreviewCardPrimitive.Trigger data-slot="hover-card-trigger" render={renderedChild} {...props}>
+      {renderedChild ? undefined : children}
+    </PreviewCardPrimitive.Trigger>
   )
 }
 

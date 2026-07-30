@@ -2,7 +2,7 @@ import React from "react";
 import { Users, FileText, CheckCircle, Clock } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
-
+import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/marketing_ui/card";
 import { DataTable } from "@/components/marketing_ui/data-table";
 
@@ -28,10 +28,10 @@ export function AdmissionsDashboardPage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        
-        
-        
-        
+        <StatCard title="Total Applications" value="1,245" icon={FileText} trend="15% this week" trendDirection="up" />
+        <StatCard title="Enrolled" value="840" icon={CheckCircle} trend="5% this week" trendDirection="up" />
+        <StatCard title="Pending Review" value="312" icon={Clock} trend="Action required" trendDirection="neutral" />
+        <StatCard title="Conversion Rate" value="67%" icon={Users} trend="2% from last month" trendDirection="up" />
       </div>
 
       <div className="grid grid-cols-1 gap-6">

@@ -12,6 +12,20 @@ import OrganizationUsageDaily from "../models/OrganizationUsageDaily.js";
 import OrganizationResourceUsage from "../models/OrganizationResourceUsage.js";
 import SaasInvoice from "../models/SaasInvoice.js";
 import PlatformTransaction from "../models/PlatformTransaction.js";
+import Organization from "../models/Organization.js";
+import { razorpay } from "../config/razorpay.js";
+import OrgSubscription from "../models/OrgSubscription.js";
+import User from "../models/User.js";
+import Classroom from "../models/Classroom.js";
+import EmailJob from "../models/EmailJob.js";
+import SmsLog from "../models/SmsLog.js";
+import AiUsageLog from "../models/AiUsageLog.js";
+import GoLive from "../models/GoLive.js";
+import Meeting from "../models/Meeting.js";
+import OrganizationUsageDaily from "../models/OrganizationUsageDaily.js";
+import OrganizationResourceUsage from "../models/OrganizationResourceUsage.js";
+import SaasInvoice from "../models/SaasInvoice.js";
+import PlatformTransaction from "../models/PlatformTransaction.js";
 import Invoice from "../models/Invoice.js";
 import FeeTransaction from "../models/FeeTransaction.js";
 import { getTerminology } from "../utils/terminology.js";
@@ -20,6 +34,7 @@ import { sendOTP } from "../services/sms.service.js";
 import { getNewDeviceOtpHtml, getNewDeviceOtpPlainText, getBillingVerificationOtpHtml, getBillingVerificationOtpPlainText } from "../services/email-templates.service.js";
 import { generateInvoicePdfBuffer } from "../services/pdf-invoice.service.js";
 import crypto from "crypto";
+import { logAdminAction } from "../services/auditLog.service.js";
 
 const FLAG_FIELDS = [
     "naac_module", "hr_module", "marketplace_module", "admission_module", "canteen_module", "exam_proctoring", 
@@ -191,202 +206,6 @@ export async function getOrganizationBilling(req, res) {
         const smsCharges = charge(usage.smsThisMonth, rates.pricePerSms), storageCharges = charge(usage.storageUsedGb, rates.pricePerGB), aiUsageCharges = charge(usage.aiThisMonth, rates.pricePerAiToken), liveClassCharges = charge(usage.liveMinutes, rates.pricePerAgoraMinute);
         const subtotal = Number((platformFee + moduleChargesTotal + emailCharges.total + smsCharges.total + storageCharges.total + aiUsageCharges.total + liveClassCharges.total).toFixed(2)), gstPercent = 18, gstAmount = Number((subtotal * gstPercent / 100).toFixed(2)); const fees = feeSummary[0] || {};
         const monthlyHistory = invoices.map(inv => ({ month: `${inv.billingPeriod?.month || ''} ${inv.billingPeriod?.year || ''}`.trim(), totalAmount: asNumber(inv.totalAmountInr), status: inv.status })).reverse();
-        return res.json({ subscription: subscription && { plan: subscription.plan, status: subscription.status, isPaid: subscription.isPaid, expiresAt: subscription.expiresAt, features: subscription.features, billing: publicBillingRates(rates), limits: { storageGb: subscription.metadata?.storage_limit_gb ?? null } }, currentMonthCharges: { platformFee, moduleChargesTotal, moduleLineItems, emailCharges, smsCharges, storageCharges, aiUsageCharges, liveClassCharges, subtotal, gstPercent, gstAmount, total: Number((subtotal + gstAmount).toFixed(2)) }, invoices: invoices.map(publicInvoice), payments: payments.map(publicPayment), monthlyHistory, feeCollection: { totalInvoices: asNumber(fees.totalInvoices), totalBilled: asNumber(fees.totalBilled), totalPaid: asNumber(fees.totalPaid), outstanding: asNumber(fees.outstanding), transactions: feeTransactions }, billingSettings: org?.billing_settings || { invoice_email: "", state: "Maharashtra", address: "" }, paymentGateway: { fees_razorpay_key_id: org.fees_razorpay_key_id || "", has_fees_razorpay_key_secret: !!org.fees_razorpay_key_secret, has_fees_razorpay_webhook_secret: !!org.fees_razorpay_webhook_secret } });
-    } catch (error) { console.error("[OrgBilling] load failed:", error.message); return res.status(500).json({ message: "Unable to load organization billing." }); }
-}
-
-export const updateBillingSettings = async (req, res) => {
-    try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
-        if (!orgId) return res.status(400).json({ message: "No organization associated." });
-        
-        const { invoice_email, phone, gstin, address_line1, address_line2, city, state, pincode, billing_contact_name } = req.body;
-        
-        const org = await Organization.findOneAndUpdate(
-            { _id: orgId },
-            { 
-                $set: { 
-                    "billing_settings.invoice_email": invoice_email,
-                    "billing_settings.phone": phone,
-                    "billing_settings.gstin": gstin,
-                    "billing_settings.address_line1": address_line1,
-                    "billing_settings.address_line2": address_line2,
-                    "billing_settings.city": city,
-                    "billing_settings.state": state,
-                    "billing_settings.pincode": pincode,
-                    "billing_settings.billing_contact_name": billing_contact_name,
-                } 
-            },
-            { returnDocument: 'after', runValidators: true }
-        );
-        
-        if (!org) return res.status(404).json({ message: "Organization not found." });
-        
-        return res.json({ message: "Billing settings updated successfully", billingSettings: org.billing_settings });
-    } catch (error) {
-        console.error("[UpdateBillingSettings] Error:", error.message);
-        return res.status(500).json({ message: "Unable to update billing settings." });
-    }
-}
-
-export const setupBillingMandate = async (req, res) => {
-    try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
-        if (!orgId) return res.status(400).json({ message: "No organization associated." });
-        
-        // Create a ₹1 order for mandate setup verification
-        const options = {
-            amount: 100, // 1 INR in paise
-            currency: "INR",
-            receipt: `mand_${orgId.toString().slice(-6)}_${Date.now()}`.slice(0, 40),
-        };
-
-        const order = await razorpay.orders.create(options);
-        
-        return res.json({ 
-            key_id: process.env.RAZORPAY_KEY_ID, 
-            order_id: order.id, 
-            amount: 100, 
-            currency: "INR" 
-        });
-    } catch (error) {
-        console.error("[SetupMandate] Error:", error);
-        return res.status(500).json({ message: error.error?.description || error.message || "Payment gateway configuration error." });
-    }
-};
-
-export const sendBillingEmailVerification = async (req, res) => {
-    try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
-        if (!orgId) return res.status(400).json({ message: "No organization associated." });
-        
-        const org = await Organization.findById(orgId);
-        const emailToVerify = req.body.email || org.billing_settings?.invoice_email;
-        if (!emailToVerify) return res.status(400).json({ message: "No invoice email provided or configured." });
-        
-        if (!org.billing_settings) org.billing_settings = {};
-        if (req.body.email && org.billing_settings.invoice_email !== req.body.email) {
-            org.billing_settings.pending_invoice_email = req.body.email;
-        }
-        
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 60 * 1000); // 60 seconds
-        
-        org.billing_settings.verification_token = otp;
-        org.billing_settings.verification_expires_at = expiresAt;
-        org.markModified('billing_settings');
-        await org.save();
-        
-        await sendEmail({
-            to: emailToVerify,
-            subject: "Classgrid Billing - Email Verification Code",
-            html: getBillingVerificationOtpHtml(org.name, org.billing_settings.billing_contact_name, otp),
-            text: getBillingVerificationOtpPlainText(org.name, org.billing_settings.billing_contact_name, otp),
-            fromName: "Classgrid Billing",
-            fromEmail: "billing@classgrid.in"
-        });
-        
-        return res.json({ message: "Verification OTP sent successfully." });
-    } catch (error) {
-        console.error("[SendEmailVerification] Error:", error);
-        return res.status(500).json({ message: "Unable to send verification email." });
-    }
-};
-
-export const verifyBillingEmail = async (req, res) => {
-    try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
-        const { otp } = req.body;
-        if (!orgId || !otp) return res.status(400).json({ message: "Invalid request." });
-        
-        const org = await Organization.findById(orgId);
-        if (!org) return res.status(404).json({ message: "Organization not found." });
-        
-        console.log("DB OTP:", org.billing_settings.verification_token, "Received:", otp);
-        if (String(org.billing_settings.verification_token).trim() !== String(otp).trim()) {
-            return res.status(400).json({ message: "Invalid verification code." });
-        }
-        
-        if (new Date() > new Date(org.billing_settings.verification_expires_at)) {
-            return res.status(400).json({ message: "Verification token expired." });
-        }
-        
-        if (org.billing_settings.pending_invoice_email) {
-            org.billing_settings.invoice_email = org.billing_settings.pending_invoice_email;
-            org.billing_settings.pending_invoice_email = undefined;
-        }
-        org.billing_settings.email_verified = true;
-        org.billing_settings.verification_token = "";
-        org.markModified('billing_settings');
-        await org.save();
-        
-        return res.json({ message: "Email verified successfully.", billingSettings: org.billing_settings });
-    } catch (error) {
-        console.error("[VerifyEmail] Error:", error);
-        return res.status(500).json({ message: "Unable to verify email." });
-    }
-};
-
-export const sendBillingPhoneOtp = async (req, res) => {
-    try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
-        if (!orgId) return res.status(400).json({ message: "No organization associated." });
-        
-        const org = await Organization.findById(orgId);
-        const phoneToVerify = req.body.phone || org.billing_settings?.phone;
-        if (!phoneToVerify) return res.status(400).json({ message: "No phone number provided or configured." });
-        
-        if (!org.billing_settings) org.billing_settings = {};
-        if (req.body.phone && org.billing_settings.phone !== req.body.phone) {
-            org.billing_settings.pending_phone = req.body.phone;
-        }
-        
-        const result = await sendOTP(phoneToVerify);
-        if (!result.success) return res.status(500).json({ message: "Failed to send OTP." });
-        
-        org.billing_settings.verification_otp = result.otp;
-        org.billing_settings.verification_expires_at = new Date(Date.now() + 60 * 1000); // 60 seconds
-        org.markModified('billing_settings');
-        await org.save();
-        
-        return res.json({ message: "OTP sent successfully." });
-    } catch (error) {
-        console.error("[SendPhoneOTP] Error:", error);
-        return res.status(500).json({ message: "Unable to send OTP." });
-    }
-};
-
-export const verifyBillingPhoneOtp = async (req, res) => {
-    try {
-        const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
-        const { otp } = req.body;
-        if (!orgId || !otp) return res.status(400).json({ message: "Invalid request." });
-        
-        const org = await Organization.findById(orgId);
-        if (!org) return res.status(404).json({ message: "Organization not found." });
-        
-        if (org.billing_settings.verification_otp !== otp) {
-            return res.status(400).json({ message: "Invalid OTP." });
-        }
-        
-        if (new Date() > new Date(org.billing_settings.verification_expires_at)) {
-            return res.status(400).json({ message: "OTP expired." });
-        }
-        
-        if (org.billing_settings.pending_phone) {
-            org.billing_settings.phone = org.billing_settings.pending_phone;
-            org.billing_settings.pending_phone = undefined;
-        }
-        org.billing_settings.phone_verified = true;
-        org.billing_settings.verification_otp = "";
-        await org.save();
-        
-        return res.json({ message: "Phone verified successfully.", billingSettings: org.billing_settings });
-    } catch (error) {
-        console.error("[VerifyPhoneOTP] Error:", error);
-        return res.status(500).json({ message: "Unable to verify OTP." });
-    }
-};
 
 export const downloadInvoicePdf = async (req, res) => {
     try {
@@ -443,6 +262,16 @@ export const updateOrganizationBillingSettings = async (req, res) => {
 
         org.markModified('billing_settings');
         await org.save();
+
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            orgId, 
+            "Updated full organization billing settings and/or gateway", 
+            req.body
+        );
 
         return res.json({ message: "Billing settings updated successfully.", billingSettings: org.billing_settings, fees_razorpay_key_id: org.fees_razorpay_key_id, has_fees_razorpay_key_secret: !!org.fees_razorpay_key_secret, has_fees_razorpay_webhook_secret: !!org.fees_razorpay_webhook_secret });
     } catch (error) {

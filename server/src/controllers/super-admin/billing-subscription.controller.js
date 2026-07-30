@@ -3,6 +3,7 @@ import OrganizationSubscriptionItem from "../../models/OrganizationSubscriptionI
 import SubscriptionChange from "../../models/SubscriptionChange.js";
 import InvoiceGenerator from "../../services/billing/InvoiceGenerator.js";
 import ProrationEngine from "../../services/billing/ProrationEngine.js";
+import { logAdminAction } from "../../services/auditLog.service.js";
 
 export const listSubscriptions = async (req, res) => {
     try {
@@ -69,21 +70,19 @@ export const getSubscription = async (req, res) => {
 export const previewSubscriptionChange = async (req, res) => {
     try {
         const { organizationId } = req.params;
-        // In a real scenario, this would call a sophisticated Preview Engine that runs InvoiceGenerator in a dry-run mode
-        // For now, we mock the response format requested by the user
-        res.json({
-            success: true,
-            data: {
-                currentPricePaise: 500000,
-                newPricePaise: 700000,
-                prorationPaise: 100000,
-                discountPaise: 0,
-                creditPaise: 0,
-                taxImpactPaise: 18000,
-                effectiveDate: new Date(),
-                upcomingInvoiceTotalPaise: 318000
-            }
-        });
+        const subscription = await OrganizationSubscription.findOne({ organizationId });
+        if (!subscription) return res.status(404).json({ success: false, message: "Subscription not found" });
+
+        // Use the real InvoiceGenerator engine in dry-run mode
+        const preview = await InvoiceGenerator.generateForSubscription(
+            organizationId, 
+            subscription._id, 
+            new Date(), 
+            subscription.currentPeriodEnd, 
+            true
+        );
+
+        res.json({ success: true, data: preview });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -111,6 +110,16 @@ export const assignPlan = async (req, res) => {
             createdBy: req.user?._id
         });
 
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            organizationId, 
+            "Assigned new billing plan", 
+            { planId: billingPlanId, cycle: billingCycle }
+        );
+
         res.status(201).json({ success: true, data: subscription });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -121,6 +130,17 @@ export const changePlan = async (req, res) => {
     try {
         const { organizationId } = req.params;
         const subscription = await OrganizationSubscription.findOneAndUpdate({ organizationId }, req.body, { new: true });
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            organizationId, 
+            "Changed subscription plan", 
+            req.body
+        );
+
         res.json({ success: true, data: subscription });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -148,6 +168,16 @@ export const addModule = async (req, res) => {
             createdBy: req.user?._id
         });
 
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            organizationId, 
+            "Added billing module", 
+            { moduleId: req.body.billingModuleId, quantity: req.body.quantity || 1 }
+        );
+
         res.status(201).json({ success: true, data: item });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -157,6 +187,17 @@ export const addModule = async (req, res) => {
 export const removeModule = async (req, res) => {
     try {
         const { organizationId } = req.params;
+
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            organizationId, 
+            "Removed billing module", 
+            {}
+        );
+
         res.json({ success: true, message: "Module removed" });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -165,6 +206,18 @@ export const removeModule = async (req, res) => {
 
 export const changeBillingCycle = async (req, res) => {
     try {
+        const { organizationId } = req.params;
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            organizationId || null, 
+            "Changed billing cycle", 
+            {}
+        );
+
         res.json({ success: true, message: "Cycle changed" });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -175,6 +228,17 @@ export const pauseSubscription = async (req, res) => {
     try {
         const { organizationId } = req.params;
         const subscription = await OrganizationSubscription.findOneAndUpdate({ organizationId }, { status: "PAUSED" }, { new: true });
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            organizationId, 
+            "Paused subscription", 
+            {}
+        );
+
         res.json({ success: true, data: subscription });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -185,6 +249,17 @@ export const resumeSubscription = async (req, res) => {
     try {
         const { organizationId } = req.params;
         const subscription = await OrganizationSubscription.findOneAndUpdate({ organizationId }, { status: "ACTIVE" }, { new: true });
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            organizationId, 
+            "Resumed subscription", 
+            {}
+        );
+
         res.json({ success: true, data: subscription });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -195,6 +270,17 @@ export const cancelSubscription = async (req, res) => {
     try {
         const { organizationId } = req.params;
         const subscription = await OrganizationSubscription.findOneAndUpdate({ organizationId }, { status: "CANCELLED", cancelledAt: new Date() }, { new: true });
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            organizationId, 
+            "Cancelled subscription", 
+            {}
+        );
+
         res.json({ success: true, data: subscription });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -221,7 +307,7 @@ export const getUpcomingInvoice = async (req, res) => {
         if (!subscription) return res.status(404).json({ success: false, message: "Subscription not found" });
 
         // Generate draft invoice dynamically without saving
-        const draft = await InvoiceGenerator.generateForSubscription(organizationId, subscription._id, subscription.currentPeriodStart, subscription.currentPeriodEnd);
+        const draft = await InvoiceGenerator.generateForSubscription(organizationId, subscription._id, subscription.currentPeriodStart, subscription.currentPeriodEnd, true);
         
         res.json({ success: true, data: draft });
     } catch (error) {

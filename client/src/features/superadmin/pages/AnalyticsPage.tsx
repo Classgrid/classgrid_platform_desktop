@@ -1,5 +1,5 @@
 import { BarChart3, TrendingUp, Users, RefreshCw } from "lucide-react";
-
+import { StatCard } from "@/components/marketing_ui/StatCard";
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
 import { useDashboardAnalytics } from "../queries/useAnalytics";
 import { RefreshButton } from "@/components/marketing_ui/refresh-button";
@@ -41,13 +41,25 @@ export function AnalyticsPage() {
         <>
           {/* Top Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            }
+            <StatCard
+              title="Active Usage Score"
+              value={isLoading ? "—" : activeUsage}
+              icon={<TrendingUp size={16} />}
               trend={{ value: 4.5, label: "from last week" }}
             />
-            }
+            <StatCard
+              title="New Users (Period)"
+              value={isLoading ? "—" : totalUsersGrown}
+              icon={<Users size={16} />}
             />
-            
-            }
+            <StatCard
+              title="New Organizations"
+              value={isLoading ? "—" : totalOrgsGrown}
+            />
+            <StatCard
+              title="Total Data Points"
+              value={isLoading ? "—" : Object.keys(analytics?.metrics || {}).length}
+              icon={<BarChart3 size={16} />}
             />
           </div>
 

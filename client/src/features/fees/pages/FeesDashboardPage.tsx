@@ -2,7 +2,7 @@ import React from "react";
 import { IndianRupee, AlertTriangle, TrendingUp, Receipt } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
-
+import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/marketing_ui/card";
 import { DataTable } from "@/components/marketing_ui/data-table";
 
@@ -28,10 +28,10 @@ export function FeesDashboardPage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        
-        
-        
-        
+        <StatCard title="Total Collected" value="₹12.5M" icon={IndianRupee} trend="15% from last month" trendDirection="up" />
+        <StatCard title="Pending Dues" value="₹2.1M" icon={AlertTriangle} trend="3% increase" trendDirection="down" />
+        <StatCard title="Defaulters" value="145" icon={Receipt} trend="Needs attention" trendDirection="neutral" />
+        <StatCard title="Growth" value="+8.4%" icon={TrendingUp} trend="Healthy" trendDirection="up" />
       </div>
 
       <div className="grid grid-cols-1 gap-6">

@@ -9,7 +9,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
-
+import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Button } from "@/components/marketing_ui/button";
 import { DataTable } from "@/components/marketing_ui/data-table";
@@ -184,10 +184,10 @@ export function BackupPage() {
 
       {/* Top Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        } />
-        } />
-        } />
-        } />
+        <StatCard title="Total Records" value={statsLoading ? "—" : formatCount(totalRecords)} icon={<Database size={15} />} />
+        <StatCard title="Collections" value={statsLoading ? "—" : collections.length} icon={<Shield size={15} />} />
+        <StatCard title="Memory" value={metricsLoading ? "—" : `${metrics?.memoryMB ?? 0} MB`} icon={<HardDrive size={15} />} />
+        <StatCard title="Uptime" value={metricsLoading ? "—" : formatUptime(metrics?.uptime ?? 0)} icon={<Clock size={15} />} />
       </div>
 
       {/* ── OVERVIEW TAB ─────────────────────────────────────────────────────── */}

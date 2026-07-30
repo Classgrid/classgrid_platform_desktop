@@ -4,7 +4,7 @@ import { Globe, ShieldAlert, CheckCircle, RefreshCw, Copy, Check, Info, Settings
 import { toast } from "sonner";
 
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
-
+import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Button } from "@/components/marketing_ui/button";
 import { DataTable } from "@/components/marketing_ui/data-table";
@@ -234,9 +234,9 @@ export function CustomDomainsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        } />
-        } />
-        } />
+        <StatCard title="Total Domain Requests" value={orgs.length} icon={<Globe size={15} />} />
+        <StatCard title="Verified & Active" value={totalVerified} icon={<CheckCircle size={15} />} />
+        <StatCard title="Pending DNS Setup" value={totalPending} icon={<ShieldAlert size={15} />} />
       </div>
 
       <div >

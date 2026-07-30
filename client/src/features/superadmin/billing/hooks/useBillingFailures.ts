@@ -6,19 +6,21 @@ import {
   assignFailure, 
   addFailureNote, 
   resolveFailure,
-  fetchFailureOverview
+  fetchFailureOverview,
+  notifyFailureOrganization,
+  exportFailureDiagnostic
 } from '../../services/superAdminBillingApi';
 
 export interface PaymentLinkPayload {
-  amountPaise: number;
+  amountPaise?: number;
   expiryHours?: number;
   sendEmail?: boolean;
 }
 
-export const useFailedPaymentsList = () => {
+export const useFailedPaymentsList = (filters: { status?: string } = {}) => {
   return useQuery({
-    queryKey: ['billing-failed-payments'],
-    queryFn: fetchFailedPayments,
+    queryKey: ['billing-failed-payments', filters],
+    queryFn: () => fetchFailedPayments(filters),
     staleTime: 60 * 1000,
     retry: 2,
   });
@@ -81,5 +83,22 @@ export const useResolveFailure = (failureId: string) => {
       queryClient.invalidateQueries({ queryKey: ['billing-failed-payment-detail', failureId] });
       queryClient.invalidateQueries({ queryKey: ['billing-failed-payments'] });
     },
+  });
+};
+
+export const useNotifyFailureOrganization = (failureId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { message: string }) => notifyFailureOrganization(failureId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billing-failed-payment-detail', failureId] });
+    },
+  });
+};
+
+export const useFailureDiagnosticExport = (failureId: string) => {
+  return useMutation({
+    mutationFn: (payload: { format: 'JSON'; includeRedactedPayload: boolean }) =>
+      exportFailureDiagnostic(failureId, payload),
   });
 };

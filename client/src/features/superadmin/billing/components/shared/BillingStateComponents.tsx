@@ -1,5 +1,5 @@
 import React from 'react';
-import { CmsErrorBoundary } from '@/components/marketing_ui/CmsErrorBoundary';
+import { ErrorBoundary } from 'react-error-boundary';
 import { Alert, AlertDescription, AlertTitle } from '@/components/marketing_ui/alert';
 import { Spinner } from '@/components/marketing_ui/spinner';
 import { Skeleton } from '@/components/marketing_ui/skeleton';
@@ -7,13 +7,13 @@ import { Badge } from '@/components/marketing_ui/badge';
 import { StatusButton } from '@/components/marketing_ui/status-button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/marketing_ui/hover-card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/marketing_ui/table';
-import { AlertCircle, Building2, GraduationCap, Clock, CheckCircle2, XCircle, Activity } from 'lucide-react';
+import { AlertCircle, Building2, GraduationCap, Clock, CheckCircle2, XCircle, Activity, Fingerprint, Terminal } from 'lucide-react';
 import { format } from 'date-fns';
 
 // 1. BillingErrorBoundary
 export const BillingErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <CmsErrorBoundary
+    <ErrorBoundary
       fallback={
         <Alert variant="destructive" className="my-4">
           <AlertCircle className="h-4 w-4" />
@@ -25,7 +25,7 @@ export const BillingErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ 
       }
     >
       {children}
-    </CmsErrorBoundary>
+    </ErrorBoundary>
   );
 };
 
@@ -34,7 +34,7 @@ export const AsyncBillingState: React.FC<{
   loading: boolean;
   error?: Error | null;
   skeletonType?: 'table' | 'card' | 'form';
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }> = ({ loading, error, skeletonType = 'table', children }) => {
   if (error) {
     return (
@@ -61,7 +61,7 @@ export const AsyncBillingState: React.FC<{
     }
     return (
       <div className="flex justify-center p-8">
-        <Spinner size="lg" />
+        <Spinner className="h-8 w-8" />
       </div>
     );
   }
@@ -109,12 +109,11 @@ export const BillingStatusBadge: React.FC<{
   if (asButton) {
     return (
       <StatusButton 
-        status={variant === 'success' ? 'success' : variant === 'destructive' ? 'error' : variant === 'warning' ? 'warning' : 'idle'}
+        variant={variant === 'success' ? 'success' : variant === 'destructive' ? 'error' : variant === 'warning' ? 'warning' : 'default'}
+        text={status.replace(/_/g, ' ')}
         onClick={onClick}
         size="sm"
-      >
-        {status.replace(/_/g, ' ')}
-      </StatusButton>
+      />
     );
   }
 

@@ -3,6 +3,7 @@ import OrganizationCreditAccount from "../../models/OrganizationCreditAccount.js
 import OrganizationCreditEntry from "../../models/OrganizationCreditEntry.js";
 import TaxRule from "../../models/TaxRule.js";
 import TaxRuleVersion from "../../models/TaxRuleVersion.js";
+import { logAdminAction } from "../../services/auditLog.service.js";
 
 // ── Discounts ──
 
@@ -18,6 +19,17 @@ export const listDiscounts = async (req, res) => {
 export const createDiscount = async (req, res) => {
     try {
         const discount = await Discount.create({ ...req.body, createdBy: req.user?._id });
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            null, 
+            "Created new discount code", 
+            { discountId: discount._id, code: discount.code }
+        );
+
         res.status(201).json({ success: true, data: discount });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -27,6 +39,17 @@ export const createDiscount = async (req, res) => {
 export const updateDiscount = async (req, res) => {
     try {
         const discount = await Discount.findByIdAndUpdate(req.params.discountId, req.body, { new: true });
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            null, 
+            "Updated discount code", 
+            { discountId: discount?._id }
+        );
+
         res.json({ success: true, data: discount });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -36,6 +59,17 @@ export const updateDiscount = async (req, res) => {
 export const archiveDiscount = async (req, res) => {
     try {
         const discount = await Discount.findByIdAndUpdate(req.params.discountId, { status: "ARCHIVED" }, { new: true });
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            null, 
+            "Archived discount code", 
+            { discountId: req.params.discountId }
+        );
+
         res.json({ success: true, data: discount });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -80,6 +114,16 @@ export const grantCredits = async (req, res) => {
         account.currentBalancePaise = balanceAfterPaise;
         await account.save();
 
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            organizationId, 
+            "Granted credits to organization", 
+            { amountPaise, reason }
+        );
+
         res.status(201).json({ success: true, data: account });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -110,6 +154,16 @@ export const reverseCredits = async (req, res) => {
         account.currentBalancePaise = balanceAfterPaise;
         await account.save();
 
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            organizationId, 
+            "Reversed credits from organization", 
+            { amountPaise, reason }
+        );
+
         res.status(201).json({ success: true, data: account });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -130,6 +184,17 @@ export const listTaxRules = async (req, res) => {
 export const createTaxRule = async (req, res) => {
     try {
         const rule = await TaxRule.create({ ...req.body, createdBy: req.user?._id });
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            null, 
+            "Created tax rule", 
+            { taxRuleId: rule._id }
+        );
+
         res.status(201).json({ success: true, data: rule });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -152,8 +217,31 @@ export const createTaxRuleVersion = async (req, res) => {
 
         await TaxRule.findByIdAndUpdate(taxRuleId, { activeVersionId: version._id });
 
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            null, 
+            "Created tax rule version", 
+            { taxRuleId, versionId: version._id }
+        );
+
         res.status(201).json({ success: true, data: version });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const listTaxRuleVersions = async (req, res) => {
+    try {
+        const rule = await TaxRule.findById(req.params.taxRuleId).select("_id").lean();
+        if (!rule) return res.status(404).json({ success: false, message: "Tax rule not found" });
+        const versions = await TaxRuleVersion.find({ taxRuleId: req.params.taxRuleId })
+            .sort({ versionNumber: -1 })
+            .lean();
+        return res.json({ success: true, data: versions });
+    } catch (error) {
+        return res.status(400).json({ success: false, message: error.message });
     }
 };

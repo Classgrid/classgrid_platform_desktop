@@ -3,6 +3,7 @@ import BillingPlanVersion from "../../models/BillingPlanVersion.js";
 import BillingModule from "../../models/BillingModule.js";
 import BillingModuleVersion from "../../models/BillingModuleVersion.js";
 import PlanModule from "../../models/PlanModule.js";
+import { logAdminAction } from "../../services/auditLog.service.js";
 
 // ── Plans ──
 
@@ -21,6 +22,17 @@ export const createPlan = async (req, res) => {
         const plan = await BillingPlan.create({
             name, code, description, currency, allowedOrgTypes, allowedStructureTypes, status: "DRAFT", createdBy: req.user?._id
         });
+
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            null, 
+            "Created new billing plan", 
+            { planId: plan._id, code }
+        );
+
         res.status(201).json({ success: true, data: plan });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -46,6 +58,17 @@ export const updatePlanEligibility = async (req, res) => {
             { new: true }
         );
         if (!plan) return res.status(404).json({ success: false, message: "Plan not found" });
+
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            null, 
+            "Updated billing plan eligibility", 
+            { planId: plan._id }
+        );
+
         res.json({ success: true, data: plan });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -84,6 +107,16 @@ export const createPlanVersion = async (req, res) => {
             await PlanModule.insertMany(planModules);
         }
 
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            null, 
+            "Created new billing plan version", 
+            { planId, versionId: version._id }
+        );
+
         res.status(201).json({ success: true, data: version });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -102,6 +135,17 @@ export const listPlanVersions = async (req, res) => {
 export const archivePlan = async (req, res) => {
     try {
         const plan = await BillingPlan.findByIdAndUpdate(req.params.planId, { status: "ARCHIVED" }, { new: true });
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            null, 
+            "Archived billing plan", 
+            { planId: req.params.planId }
+        );
+
         res.json({ success: true, data: plan });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -125,6 +169,17 @@ export const createModule = async (req, res) => {
         const module = await BillingModule.create({
             name, code, category, description, pricingType, trialAllowed, allowedOrgTypes, allowedStructureTypes, createdBy: req.user?._id
         });
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            null, 
+            "Created new billing module", 
+            { moduleId: module._id, code }
+        );
+
         res.status(201).json({ success: true, data: module });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -150,6 +205,17 @@ export const updateModuleEligibility = async (req, res) => {
             { new: true }
         );
         if (!module) return res.status(404).json({ success: false, message: "Module not found" });
+
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            null, 
+            "Updated billing module eligibility", 
+            { moduleId: module._id }
+        );
+
         res.json({ success: true, data: module });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -171,6 +237,16 @@ export const createModuleVersion = async (req, res) => {
             moduleId, versionNumber, monthlyPricePaise, annualPricePaise, taxCategory, unitType, effectiveFrom, createdBy: req.user?._id
         });
 
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            null, 
+            "Created new billing module version", 
+            { moduleId, versionId: version._id }
+        );
+
         res.status(201).json({ success: true, data: version });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -189,6 +265,17 @@ export const listModuleVersions = async (req, res) => {
 export const archiveModule = async (req, res) => {
     try {
         const module = await BillingModule.findByIdAndUpdate(req.params.moduleId, { status: "ARCHIVED" }, { new: true });
+        
+        // RULE 6 ENFORCEMENT: Audit Log
+        await logAdminAction(
+            req, 
+            "UPDATE_BILLING", 
+            "organization", 
+            null, 
+            "Archived billing module", 
+            { moduleId: req.params.moduleId }
+        );
+
         res.json({ success: true, data: module });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

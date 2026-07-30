@@ -3,9 +3,7 @@ import { Button } from '@/components/marketing_ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/marketing_ui/dropdown-menu';
 import { Card, CardContent } from '@/components/marketing_ui/card';
 import { ButtonGroup } from '@/components/marketing_ui/button-group';
-import { RadialOrbitalTimeline, TimelineItem } from '@/components/marketing_ui/radial-orbital-timeline';
 import { Badge } from '@/components/marketing_ui/badge';
-import { Empty } from '@/components/marketing_ui/empty';
 import { Columns, Download, Archive, Trash2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -100,40 +98,26 @@ export const BulkActionToolbar: React.FC<{
 export const BillingAuditTimeline: React.FC<{
   events: { id: string; timestamp: Date; user: string; action: string; details?: string; status: 'success' | 'warning' | 'error' }[];
 }> = ({ events }) => {
-  const timelineItems: TimelineItem[] = events.map(event => ({
-    id: event.id,
-    title: event.action,
-    description: event.details || `Performed by ${event.user}`,
-    date: event.timestamp,
-    icon: <Badge variant={event.status === 'error' ? 'destructive' : event.status === 'warning' ? 'secondary' : 'default'} className="w-2 h-2 rounded-full p-0" />
-  }));
-
   return (
     <div className="p-4">
       <h3 className="text-lg font-medium mb-4">Audit Trail</h3>
-      <RadialOrbitalTimeline items={timelineItems} />
+      <div className="space-y-4 border-l pl-4">
+        {events.map((event) => (
+          <div key={event.id} className="relative">
+            <span className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{event.action}</span>
+              <Badge variant={event.status === 'error' ? 'destructive' : event.status === 'warning' ? 'secondary' : 'default'}>
+                {event.status}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">{event.details || `Performed by ${event.user}`}</p>
+            <time className="text-xs text-muted-foreground">{event.timestamp.toLocaleString()}</time>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
 
-// 5. BillingEmptyState
-export const BillingEmptyState: React.FC<{
-  title: string;
-  description: string;
-  actionLabel?: string;
-  onAction?: () => void;
-}> = ({ title, description, actionLabel, onAction }) => {
-  return (
-    <div className="border border-dashed rounded-lg p-12">
-      <Empty
-        title={title}
-        description={description}
-        action={
-          actionLabel && onAction ? (
-            <Button onClick={onAction}>{actionLabel}</Button>
-          ) : undefined
-        }
-      />
-    </div>
-  );
-};
+export { BillingEmptyState } from './BillingLayoutComponents';

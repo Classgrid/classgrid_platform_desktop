@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/marketing_ui/dialog';
-import { Combobox } from '@/components/marketing_ui/combobox';
+import { SelectAdvanced } from '@/components/marketing_ui/select-advanced';
 import { Button } from '@/components/marketing_ui/button';
 import { Input } from '@/components/marketing_ui/input';
 import { Label } from '@/components/marketing_ui/label';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { AlertCircle, FileText } from 'lucide-react';
 import { MoneyDisplay, AsyncBillingState } from '../shared/BillingStateComponents';
 import { useBillingModules } from '../../hooks/useBillingCatalog';
-import { usePricingOverrides, useSetPricingOverride } from '../../hooks/useBillingSubscriptions';
+import { usePricingOverrides, useSetPricingOverride, useAddSubscriptionModule } from '../../hooks/useBillingSubscriptions';
 
 // 16. ModuleAssignmentDialog
 export const ModuleAssignmentDialog: React.FC<{
@@ -19,8 +19,12 @@ export const ModuleAssignmentDialog: React.FC<{
 }> = ({ isOpen, onClose, orgId }) => {
   const { data: modules, isLoading } = useBillingModules();
   const [selectedModule, setSelectedModule] = useState<string>('');
+  const addModule = useAddSubscriptionModule();
 
-  const moduleOptions = modules?.map((m: any) => ({ label: m.name, value: m._id })) || [];
+  const moduleOptions = modules?.map((module: any) => ({
+    label: module.name,
+    value: module.activeVersionId?._id || module.activeVersionId,
+  })).filter((option: any) => option.value) || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -32,10 +36,10 @@ export const ModuleAssignmentDialog: React.FC<{
           <div className="py-6 space-y-4">
             <div className="space-y-2">
               <Label>Select Module</Label>
-              <Combobox
+              <SelectAdvanced
                 options={moduleOptions}
                 value={selectedModule}
-                onSelect={setSelectedModule}
+                onChange={setSelectedModule}
                 placeholder="Search modules..."
               />
             </div>
@@ -48,7 +52,15 @@ export const ModuleAssignmentDialog: React.FC<{
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
-          <Button disabled={!selectedModule}>Assign Module</Button>
+          <Button
+            disabled={!selectedModule || addModule.isPending}
+            onClick={() => addModule.mutate(
+              { orgId, billingModuleVersionId: selectedModule },
+              { onSuccess: onClose }
+            )}
+          >
+            {addModule.isPending ? 'Assigning...' : 'Assign module'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

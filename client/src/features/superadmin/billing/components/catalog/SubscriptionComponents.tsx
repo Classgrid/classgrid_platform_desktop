@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Combobox } from '@/components/marketing_ui/combobox';
 import { Chip } from '@/components/marketing_ui/chip';
 import { SelectAdvanced } from '@/components/marketing_ui/select-advanced';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/marketing_ui/table';
@@ -12,7 +11,7 @@ import { Badge } from '@/components/marketing_ui/badge';
 import { Label } from '@/components/marketing_ui/label';
 import { X, Building2, Package, RefreshCw } from 'lucide-react';
 import { BillingStatusBadge, AsyncBillingState, MoneyDisplay } from '../shared/BillingStateComponents';
-import { useSubscriptions, useSubscriptionDetail } from '../../hooks/useBillingSubscriptions';
+import { useSubscriptions, useSubscriptionDetail, useAssignSubscriptionPlan } from '../../hooks/useBillingSubscriptions';
 import { useBillingPlans } from '../../hooks/useBillingCatalog';
 
 // 11. ModuleEligibilityEditor
@@ -26,7 +25,7 @@ export const ModuleEligibilityEditor: React.FC<{
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         {allowedTypes.map(type => (
-          <Chip key={type} variant="secondary" className="flex items-center gap-1">
+          <Chip key={type} variant="default" className="flex items-center gap-1">
             {type}
             <button onClick={() => onRemove(type)} className="hover:bg-muted-foreground/20 rounded-full p-0.5">
               <X className="h-3 w-3" />
@@ -35,10 +34,10 @@ export const ModuleEligibilityEditor: React.FC<{
         ))}
         {allowedTypes.length === 0 && <span className="text-sm text-muted-foreground">Available to all organization types.</span>}
       </div>
-      <Combobox
+      <SelectAdvanced
         options={orgTypeOptions}
         value=""
-        onSelect={onAdd}
+        onChange={onAdd}
         placeholder="Restrict to org type..."
       />
     </div>
@@ -141,7 +140,7 @@ export const OrganizationSubscriptionDrawer: React.FC<{
                   <BillingStatusBadge status={subDetail.status} asButton />
                 </div>
 
-                <Accordion type="single" collapsible className="w-full">
+        <Accordion className="w-full">
                   <AccordionItem value="modules">
                     <AccordionTrigger className="hover:no-underline">
                       <div className="flex items-center gap-2 font-medium">
@@ -191,9 +190,15 @@ export const OrganizationSubscriptionDrawer: React.FC<{
 export const PlanAssignmentDialog: React.FC<{
   isOpen: boolean;
   onClose: () => void;
-}> = ({ isOpen, onClose }) => {
+  orgId: string;
+}> = ({ isOpen, onClose, orgId }) => {
   const { data: plans, isLoading } = useBillingPlans();
-  const planOptions = plans?.map((p: any) => ({ label: p.name, value: p._id })) || [];
+  const [selectedPlanVersionId, setSelectedPlanVersionId] = useState('');
+  const assignment = useAssignSubscriptionPlan();
+  const planOptions = plans?.map((plan: any) => ({
+    label: plan.name,
+    value: plan.activeVersionId?._id || plan.activeVersionId,
+  })).filter((option: any) => option.value) || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -205,10 +210,10 @@ export const PlanAssignmentDialog: React.FC<{
           <div className="py-6 space-y-4">
             <div className="space-y-2">
               <Label>Select Plan</Label>
-              <Combobox
+              <SelectAdvanced
                 options={planOptions}
-                value=""
-                onSelect={() => {}}
+                value={selectedPlanVersionId}
+                onChange={setSelectedPlanVersionId}
                 placeholder="Search plans..."
               />
             </div>
@@ -221,7 +226,15 @@ export const PlanAssignmentDialog: React.FC<{
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
-          <Button disabled={isLoading}>Preview Proration & Assign</Button>
+          <Button
+            disabled={isLoading || !selectedPlanVersionId || assignment.isPending}
+            onClick={() => assignment.mutate(
+              { orgId, billingPlanVersionId: selectedPlanVersionId },
+              { onSuccess: onClose }
+            )}
+          >
+            {assignment.isPending ? 'Assigning...' : 'Assign plan'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

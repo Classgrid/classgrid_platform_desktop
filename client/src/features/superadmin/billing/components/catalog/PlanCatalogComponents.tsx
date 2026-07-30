@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { format } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/marketing_ui/tabs';
 import { PillTabs } from '@/components/marketing_ui/pill-tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/marketing_ui/table';
@@ -8,13 +9,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter
 import { Input } from '@/components/marketing_ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/marketing_ui/select';
 import { Button } from '@/components/marketing_ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/marketing_ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/marketing_ui/dialog';
+import { Skeleton } from '@/components/marketing_ui/skeleton';
 import { Label } from '@/components/marketing_ui/label';
 import { Textarea } from '@/components/marketing_ui/textarea';
 import { MoreHorizontal, Plus, ArrowRight, Settings2, History, Lock, Calculator, FileText, AlertTriangle } from 'lucide-react';
 import { MoneyDisplay, BillingStatusBadge, AsyncBillingState } from '../shared/BillingStateComponents';
-import { useBillingPlans, usePlanVersions, usePlanVersionDetail, useCreatePlan, useModuleVersions } from '../../hooks/useBillingCatalog';
-import { useState } from 'react';
+import { useBillingPlans, usePlanVersions, usePlanVersionDetail, useCreatePlan, useModuleVersions, usePlanEligibility, useUpdatePlanEligibility, useModuleEligibility, useUpdateModuleEligibility } from '../../hooks/useBillingCatalog';
 
 // 1. PlansBillingTabs
 export const PlansBillingTabs: React.FC<{
@@ -145,7 +146,7 @@ export const PlanEditorDrawer: React.FC<{
           </div>
           <div className="grid gap-2">
             <Label>Tax Category</Label>
-            <Select onValueChange={v => setFormData({ ...formData, taxCategory: v })}>
+            <Select onValueChange={v => v && setFormData({ ...formData, taxCategory: String(v) })}>
               <SelectTrigger><SelectValue placeholder="Select tax rule" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="SOFTWARE_SERVICES">Software Services (18%)</SelectItem>
@@ -341,7 +342,7 @@ export const ModuleVersionHistory: React.FC<{ moduleId: string }> = ({ moduleId 
 
 // 87. ModulePricingTypeSelector
 export const ModulePricingTypeSelector: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
-  <Select value={value} onValueChange={onChange}>
+  <Select value={value} onValueChange={(nextValue) => nextValue && onChange(nextValue)}>
     <SelectTrigger><SelectValue placeholder="Select Pricing Model" /></SelectTrigger>
     <SelectContent>
       <SelectItem value="FLAT_FEE">Flat Fee (Monthly)</SelectItem>
@@ -353,16 +354,45 @@ export const ModulePricingTypeSelector: React.FC<{ value: string; onChange: (v: 
 );
 
 // 88. ModuleEligibilityEditor
-export const ModuleEligibilityEditor: React.FC<{ moduleId: string }> = ({ moduleId }) => (
-  <div className="space-y-4 p-4 border rounded-lg bg-card">
-    <h3 className="font-semibold flex items-center gap-2"><Lock className="w-4 h-4" /> Prerequisite Modules</h3>
-    <p className="text-sm text-muted-foreground">Select modules that must be active for an organization to purchase this module.</p>
-    <div className="flex flex-col gap-2">
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="rounded" defaultChecked /> Core Platform (Required)</label>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="rounded" /> Advanced Analytics</label>
+export const ModuleEligibilityEditor: React.FC<{ moduleId: string }> = ({ moduleId }) => {
+  const { data: module, isLoading } = useModuleEligibility(moduleId);
+  const updateEligibility = useUpdateModuleEligibility();
+  const [orgType, setOrgType] = useState('');
+  const allowedOrgTypes: string[] = module?.allowedOrgTypes || [];
+
+  const save = (nextTypes: string[]) => {
+    updateEligibility.mutate({ moduleId, payload: { allowedOrgTypes: nextTypes } });
+  };
+
+  return (
+    <div className="space-y-4 rounded-lg border bg-card p-4">
+      <h3 className="flex items-center gap-2 font-semibold"><Lock className="h-4 w-4" /> Module eligibility</h3>
+      <AsyncBillingState loading={isLoading} skeletonType="form">
+        <div className="flex flex-wrap gap-2">
+          {allowedOrgTypes.map((type) => (
+            <Button key={type} variant="outline" size="sm" onClick={() => save(allowedOrgTypes.filter((item) => item !== type))}>
+              {type} ×
+            </Button>
+          ))}
+          {!allowedOrgTypes.length && <p className="text-sm text-muted-foreground">Available to every organization type.</p>}
+        </div>
+        <div className="flex gap-2">
+          <Input value={orgType} onChange={(event) => setOrgType(event.target.value)} placeholder="Organization type code" />
+          <Button
+            disabled={!orgType.trim() || updateEligibility.isPending}
+            onClick={() => {
+              const normalized = orgType.trim();
+              if (!allowedOrgTypes.includes(normalized)) save([...allowedOrgTypes, normalized]);
+              setOrgType('');
+            }}
+          >
+            Add
+          </Button>
+        </div>
+      </AsyncBillingState>
     </div>
-  </div>
-);
+  );
+};
 
 // 89. EffectiveDateSelector
 export const EffectiveDateSelector: React.FC<{ date: Date | null; onSelect: (d: Date | null) => void }> = ({ date, onSelect }) => (

@@ -3,17 +3,17 @@ import * as Controller from "../../controllers/super-admin/billing-invoice.contr
 
 const router = express.Router();
 
-router.get("/invoices", Controller.listInvoices);
-router.get("/invoices/:invoiceId", Controller.getInvoice);
+router.get("", Controller.listInvoices);
+router.get("/:invoiceId", Controller.getInvoice);
 
-router.post("/invoices/preview", Controller.previewInvoice);
-router.post("/invoices/generate", Controller.generateInvoice);
-router.post("/invoices/:invoiceId/issue", Controller.issueInvoice);
-router.post("/invoices/:invoiceId/send", Controller.sendInvoice);
-router.post("/invoices/:invoiceId/void", Controller.voidInvoice);
-router.post("/invoices/:invoiceId/credit-notes", Controller.createCreditNote);
+router.post("/preview", Controller.previewInvoice);
+router.post("/generate", Controller.generateInvoice);
+router.post("/:invoiceId/issue", Controller.issueInvoice);
+router.post("/:invoiceId/send", Controller.sendInvoice);
+router.post("/:invoiceId/void", Controller.voidInvoice);
+router.post("/:invoiceId/credit-notes", Controller.createCreditNote);
 
-router.get("/invoices/:invoiceId/pdf", Controller.downloadInvoicePdf);
-router.get("/invoices/:invoiceId/delivery-history", Controller.getDeliveryHistory);
+router.get("/:invoiceId/pdf", Controller.downloadInvoicePdf);
+router.get("/:invoiceId/delivery-history", Controller.getDeliveryHistory);
 
 export default router;
