@@ -10,6 +10,8 @@ router.get("/:failureId", Controller.getFailedPayment);
 router.post("/:failureId/generate-payment-link", Controller.generatePaymentLink);
 router.post("/:failureId/retry-webhook", Controller.retryWebhook);
 router.post("/:failureId/recheck-provider", Controller.recheckProvider);
+router.post("/:failureId/notify-organization", Controller.notifyOrganization);
+router.post("/:failureId/diagnostic-export", Controller.exportDiagnostic);
 router.post("/:failureId/assign", Controller.assignFailure);
 router.post("/:failureId/add-note", Controller.addFailureNote);
 router.post("/:failureId/resolve", Controller.resolveFailure);

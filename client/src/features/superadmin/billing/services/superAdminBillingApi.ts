@@ -188,6 +188,13 @@ export const exportRevenue = (filters?: any) =>
   });
 export const reconcileRevenue = (payload: any) =>
   request<any>({ method: "POST", url: `${BILLING_BASE}/revenue/reconcile`, data: payload });
+export const fetchBillingExportJob = (jobId: string) =>
+  request<any>({ method: "GET", url: `${BILLING_BASE}/export-jobs/${jobId}` });
+export const fetchBillingExportDownload = (jobId: string) =>
+  request<{ url: string; fileName: string; expiresInSeconds: number }>({
+    method: "GET",
+    url: `${BILLING_BASE}/export-jobs/${jobId}/download`,
+  });
 
 // Transactions
 export const fetchTransactions = async (filters: any = {}) => {

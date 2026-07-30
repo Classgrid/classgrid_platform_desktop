@@ -24,6 +24,7 @@ import {
   useFailureDiagnosticExport
 } from '../../hooks/useBillingFailures';
 import { format } from 'date-fns';
+import { useBillingExportDownload, useBillingExportJob } from '../../hooks/useBillingExports';
 
 // 72. FailureStageBadge
 export const FailureStageBadge: React.FC<{ stage: string }> = ({ stage }) => {
@@ -153,6 +154,8 @@ export const DiagnosticExportDialog: React.FC<{ failureId: string }> = ({ failur
   const [includeRedactedPayload, setIncludeRedactedPayload] = useState(false);
   const [queuedJobId, setQueuedJobId] = useState('');
   const exportMutation = useFailureDiagnosticExport(failureId);
+  const exportJob = useBillingExportJob(queuedJobId);
+  const downloadExport = useBillingExportDownload();
 
   const queueExport = () => {
     exportMutation.mutate(
@@ -200,8 +203,21 @@ export const DiagnosticExportDialog: React.FC<{ failureId: string }> = ({ failur
             </div>
           </div>
           {queuedJobId && (
-            <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-              Export queued. Job ID: <span className="font-mono">{queuedJobId}</span>
+            <div className="space-y-2 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+              <p>Export status: <span className="font-medium">{exportJob.data?.status || 'PENDING'}</span></p>
+              <p>Job ID: <span className="font-mono">{queuedJobId}</span></p>
+              {exportJob.data?.status === 'COMPLETED' && (
+                <Button
+                  size="sm"
+                  onClick={() => downloadExport.mutate(queuedJobId)}
+                  disabled={downloadExport.isPending}
+                >
+                  {downloadExport.isPending ? 'Opening...' : 'Download secure export'}
+                </Button>
+              )}
+              {exportJob.data?.status === 'FAILED' && (
+                <p className="text-destructive">{exportJob.data.errorDetails || 'Export generation failed.'}</p>
+              )}
             </div>
           )}
           {exportMutation.error && (
@@ -369,11 +385,17 @@ export const InternalNotePanel: React.FC<{ failureId: string; notes: any[] }> = 
 // 69. GeneratePaymentLinkDialog
 export const GeneratePaymentLinkDialog: React.FC<{ failureId: string }> = ({ failureId }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [amount, setAmount] = useState('');
+  const [generatedLink, setGeneratedLink] = useState('');
   const generateMutation = useGeneratePaymentLink(failureId);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (!open) setGeneratedLink('');
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <LinkIcon className="w-4 h-4" /> Generate Link
@@ -381,21 +403,34 @@ export const GeneratePaymentLinkDialog: React.FC<{ failureId: string }> = ({ fai
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Generate Custom Payment Link</DialogTitle>
+          <DialogTitle>Generate payment recovery link</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>Link Amount (INR) (Leave blank to use original failure amount)</Label>
-            <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 5000" />
-          </div>
+          <p className="text-sm text-muted-foreground">
+            The server will use the original verified order amount and create a new provider-hosted link that expires in 24 hours.
+          </p>
+          {generatedLink && (
+            <div className="space-y-2">
+              <Label htmlFor={`payment-link-${failureId}`}>Secure payment link</Label>
+              <div className="flex gap-2">
+                <Input id={`payment-link-${failureId}`} readOnly value={generatedLink} />
+                <Button type="button" variant="outline" onClick={() => navigator.clipboard.writeText(generatedLink)}>
+                  Copy
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button 
-            disabled={generateMutation.isPending}
-            onClick={() => generateMutation.mutate({ amountPaise: amount ? Number(amount) * 100 : undefined }, { onSuccess: () => setIsOpen(false) })}
+            disabled={generateMutation.isPending || !!generatedLink}
+            onClick={() => generateMutation.mutate(
+              { expiryHours: 24 },
+              { onSuccess: (result) => setGeneratedLink(result.link) },
+            )}
           >
-            {generateMutation.isPending ? 'Generating...' : 'Generate Link'}
+            {generateMutation.isPending ? 'Generating...' : generatedLink ? 'Generated' : 'Generate Link'}
           </Button>
         </DialogFooter>
       </DialogContent>

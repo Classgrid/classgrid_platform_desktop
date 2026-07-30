@@ -1,4 +1,5 @@
 import Notification from '../models/Notification.js';
+import User from '../models/User.js';
 import { sendPushToDevice, sendPushToMultiple } from './firebase.service.js';
 import { primarySupabaseClient as supabase } from '../config/supabaseClient.js';
 import { sendNotificationEmail } from './notification-email.service.js';
@@ -21,6 +22,11 @@ export async function dispatchNotification({
     isCall = false // --- Day 17: VoIP Ringing Support ---
 }) {
     try {
+        const effectiveOrgId = orgId || (await User.findById(recipientId).select("organization_id").lean())?.organization_id;
+        if (!effectiveOrgId) {
+            throw new Error("Notification recipient does not belong to an organization");
+        }
+
         // 1. Throttling Check (Persistent in MongoDB or Redis - using simple DB check for now)
         if (sendPush && type === 'chat') {
             const lastNotif = await Notification.findOne({
@@ -36,6 +42,7 @@ export async function dispatchNotification({
 
         // 2. Create Internal DB Notification (Mongoose)
         const notification = await Notification.create({
+            organization_id: effectiveOrgId,
             recipient: recipientId,
             type,
             title,

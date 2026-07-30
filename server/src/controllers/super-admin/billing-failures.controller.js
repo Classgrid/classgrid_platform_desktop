@@ -1,39 +1,132 @@
 import PaymentFailure from "../../models/PaymentFailure.js";
 import PaymentAttempt from "../../models/PaymentAttempt.js";
-import { logAdminAction } from "../../services/auditLog.service.js";
+import PaymentTransaction from "../../models/PaymentTransaction.js";
+import WebhookEvent from "../../models/WebhookEvent.js";
+import User from "../../models/User.js";
+import BillingExportJob from "../../models/BillingExportJob.js";
+import BillingAuditLog from "../../models/BillingAuditLog.js";
+import razorpayService from "../../services/razorpay.service.js";
+import { dispatchNotification } from "../../services/notification.service.js";
+
+const PLATFORM_ASSIGNEE_ROLES = ["super_admin", "co_super_admin"];
+const ORGANIZATION_ADMIN_ROLES = ["org_admin", "principal", "fee_manager"];
+
+function auditContext(req) {
+    return {
+        actorId: req.user?._id || null,
+        ipAddress: req.ip || null,
+        requestId: req.id || req.headers["x-request-id"] || null,
+    };
+}
+
+async function recordFailureAudit(req, failure, action, oldState, newState, reason = null) {
+    return BillingAuditLog.create({
+        ...auditContext(req),
+        organizationId: failure.organizationId?._id || failure.organizationId,
+        entityType: "PaymentFailure",
+        entityId: failure._id,
+        action,
+        reason,
+        oldState,
+        newState,
+    });
+}
+
+function serializeFailure(document) {
+    const failure = typeof document?.toObject === "function" ? document.toObject() : document;
+    if (!failure) return failure;
+    return {
+        ...failure,
+        notes: (failure.internalNotes || []).map((note) => ({
+            id: note._id,
+            authorId: note.authorId,
+            text: note.text,
+            timestamp: note.createdAt,
+        })),
+        recoveryAttempts: failure.recoveryAttempts || [],
+        rawPayload: {
+            errorCode: failure.errorCode || null,
+            errorDescription: failure.errorDescription || null,
+            errorSource: failure.errorSource || null,
+            errorStep: failure.errorStep || null,
+            errorReason: failure.errorReason || null,
+        },
+    };
+}
+
+async function providerForOrder(order) {
+    if (order.merchantType === "CLASSGRID") {
+        return razorpayService.getPlatformInstance();
+    }
+    const merchantOrganizationId = order.merchantOrganizationId || order.organizationId;
+    if (!merchantOrganizationId) throw new Error("Merchant organization is missing");
+    return razorpayService.getInstance(merchantOrganizationId, "fees");
+}
+
+async function loadFailure(failureId) {
+    return PaymentFailure.findById(failureId)
+        .populate("organizationId paymentOrderId paymentAttemptId assignedTo");
+}
 
 export const listFailedPayments = async (req, res) => {
     try {
-        const failures = await PaymentFailure.find().populate("organizationId paymentOrderId paymentAttemptId").sort({ createdAt: -1 });
-        res.json({ success: true, data: failures });
+        const limit = Math.min(Number(req.query.limit) || 50, 200);
+        const page = Math.max(Number(req.query.page) || 1, 1);
+        const filter = {};
+        if (req.query.status === "RESOLVED") filter.resolved = true;
+        if (req.query.status === "UNRESOLVED") filter.resolved = { $ne: true };
+        if (req.query.failureStage) filter.failureStage = req.query.failureStage;
+        if (req.query.responsibility) filter.responsibility = req.query.responsibility;
+        if (req.query.organizationId) filter.organizationId = req.query.organizationId;
+
+        const [failures, total] = await Promise.all([
+            PaymentFailure.find(filter)
+                .populate("organizationId paymentOrderId paymentAttemptId assignedTo")
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit),
+            PaymentFailure.countDocuments(filter),
+        ]);
+        res.json({
+            success: true,
+            data: failures.map(serializeFailure),
+            pagination: { page, limit, total },
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
-export const getFailureOverview = async (req, res) => {
+export const getFailureOverview = async (_req, res) => {
     try {
         const failures = await PaymentFailure.aggregate([
             { $match: { resolved: { $ne: true } } },
             {
+                $lookup: {
+                    from: "paymentorders",
+                    localField: "paymentOrderId",
+                    foreignField: "_id",
+                    as: "paymentOrder",
+                },
+            },
+            { $unwind: { path: "$paymentOrder", preserveNullAndEmptyArrays: true } },
+            {
                 $group: {
                     _id: null,
                     failedPaymentsCount: { $sum: 1 },
-                    revenueAtRiskPaise: { $sum: "$amountPaise" },
-                    uniqueOrgs: { $addToSet: "$organizationId" }
-                }
-            }
+                    revenueAtRiskPaise: { $sum: { $ifNull: ["$paymentOrder.amountPaise", 0] } },
+                    uniqueOrgs: { $addToSet: "$organizationId" },
+                },
+            },
         ]);
-
         const stats = failures[0] || { failedPaymentsCount: 0, revenueAtRiskPaise: 0, uniqueOrgs: [] };
-
         res.json({
             success: true,
             data: {
                 failedPayments: stats.failedPaymentsCount,
                 revenueAtRiskPaise: stats.revenueAtRiskPaise,
-                affectedOrgs: stats.uniqueOrgs.length
-            }
+                affectedOrgs: stats.uniqueOrgs.length,
+            },
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -42,96 +135,134 @@ export const getFailureOverview = async (req, res) => {
 
 export const getFailedPayment = async (req, res) => {
     try {
-        const failure = await PaymentFailure.findById(req.params.failureId).populate("organizationId paymentOrderId paymentAttemptId assignedTo");
+        const failure = await loadFailure(req.params.failureId);
         if (!failure) return res.status(404).json({ success: false, message: "Failure record not found" });
-        res.json({ success: true, data: failure });
+        res.json({ success: true, data: serializeFailure(failure) });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
-import Razorpay from "razorpay";
-
 export const generatePaymentLink = async (req, res) => {
     try {
-        const failure = await PaymentFailure.findById(req.params.failureId).populate("paymentOrderId organizationId");
+        const failure = await loadFailure(req.params.failureId);
         if (!failure) return res.status(404).json({ success: false, message: "Failure not found" });
-
-        if (!failure.retryEligibility) {
-            return res.status(400).json({ success: false, message: "This failure is not eligible for a retry link." });
+        if (!failure.retryEligibility || failure.resolved) {
+            return res.status(409).json({ success: false, message: "This failure is not eligible for a new payment link" });
         }
 
-        let paymentUrl = "";
-        try {
-            const razorpay = new Razorpay({
-                key_id: process.env.RAZORPAY_KEY_ID || 'dummy',
-                key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy'
+        const order = failure.paymentOrderId;
+        const amountPaise = Number(order?.amountPaise);
+        if (!Number.isSafeInteger(amountPaise) || amountPaise < 1) {
+            return res.status(409).json({ success: false, message: "The stored payment order has an invalid amount" });
+        }
+        if (req.body.amountPaise !== undefined && Number(req.body.amountPaise) !== amountPaise) {
+            return res.status(409).json({
+                success: false,
+                message: "A recovery link must use the original stored order amount",
             });
-            const amountInPaise = failure.paymentOrderId ? failure.paymentOrderId.amountPaise : 10000;
-            const plink = await razorpay.paymentLink.create({
-                amount: amountInPaise,
-                currency: "INR",
-                description: "Retry Payment for Failed Transaction",
-                customer: {
-                    name: failure.organizationId?.name || "Customer",
-                    email: failure.organizationId?.invoice_email || "customer@example.com"
-                },
-                notify: { sms: true, email: true },
-                reminder_enable: true,
-                notes: { failureId: failure._id.toString() }
-            });
-            paymentUrl = plink.short_url;
-        } catch (rzpErr) {
-            console.error("Razorpay link error:", rzpErr);
-            return res.status(400).json({ success: false, message: "Failed to generate payment link: " + rzpErr.message });
         }
 
-        // Generate new PaymentAttempt
-        const newAttempt = await PaymentAttempt.create({
-            paymentOrderId: failure.paymentOrderId?._id,
-            organizationId: failure.organizationId,
-            stage: "TOKEN_CREATED",
-            amountPaise: failure.paymentOrderId?.amountPaise || 10000,
-            createdBy: req.user?._id
+        const expiryHours = Number(req.body.expiryHours || 24);
+        if (!Number.isInteger(expiryHours) || expiryHours < 1 || expiryHours > 168) {
+            return res.status(400).json({ success: false, message: "expiryHours must be an integer between 1 and 168" });
+        }
+
+        const provider = await providerForOrder(order);
+        const organization = failure.organizationId;
+        const email = organization?.billing_settings?.invoice_email || organization?.email || "";
+        const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000);
+        const paymentLink = await provider.paymentLink.create({
+            amount: amountPaise,
+            currency: String(order.currency || "INR").toUpperCase(),
+            description: `Payment recovery for order ${order.receiptId}`,
+            customer: {
+                name: organization?.name || organization?.sidebar_name || "Organization billing contact",
+                ...(email ? { email } : {}),
+            },
+            notify: { sms: false, email: Boolean(email) },
+            reminder_enable: true,
+            expire_by: Math.floor(expiresAt.getTime() / 1000),
+            notes: {
+                failure_id: failure._id.toString(),
+                payment_order_id: order._id.toString(),
+            },
         });
-
-        // Fallback to internal checkout link if Razorpay link creation failed for some reason, though it shouldn't
-        if (!paymentUrl) {
-            paymentUrl = `https://billing.classgrid.in/checkout/${newAttempt._id}`;
+        if (!paymentLink?.short_url || !paymentLink?.id) {
+            throw new Error("Provider did not return a payment link");
         }
 
-        // RULE 6 ENFORCEMENT: Audit Log
-        await logAdminAction(
-            req, 
-            "UPDATE_BILLING", 
-            "organization", 
-            failure.organizationId?._id || failure.organizationId || null, 
-            "Generated secure Razorpay payment retry link", 
-            { failureId: failure._id, attemptId: newAttempt._id, link: paymentUrl }
+        const attempt = await PaymentAttempt.create({
+            paymentOrderId: order._id,
+            organizationId: organization._id,
+            stage: "TOKEN_CREATED",
+            amountPaise,
+            createdBy: req.user?._id,
+        });
+        failure.recoveryAttempts.push({
+            action: "PAYMENT_LINK_CREATED",
+            status: "SUCCESS",
+            note: `Secure provider link created; expires ${expiresAt.toISOString()}`,
+            actorId: req.user?._id,
+        });
+        await failure.save();
+        await recordFailureAudit(
+            req,
+            failure,
+            "PAYMENT_LINK_CREATED",
+            { retryEligibility: true },
+            { attemptId: attempt._id, providerPaymentLinkId: paymentLink.id, expiresAt },
+            String(req.body.reason || "Payment recovery requested").slice(0, 500),
         );
 
-        res.json({ success: true, data: { link: paymentUrl } });
+        res.status(201).json({
+            success: true,
+            data: { link: paymentLink.short_url, expiresAt, attemptId: attempt._id },
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        const status = /not configured|Razorpay|Provider/i.test(error.message) ? 503 : 400;
+        res.status(status).json({ success: false, message: error.message });
     }
 };
 
 export const retryWebhook = async (req, res) => {
     try {
-        const { failureId } = req.params;
-        const failure = await PaymentFailure.findById(failureId).select("organizationId").lean();
-        
-        // RULE 6 ENFORCEMENT: Audit Log
-        await logAdminAction(
-            req, 
-            "UPDATE_BILLING", 
-            "organization", 
-            failure?.organizationId || null, 
-            "Triggered manual webhook retry for payment failure", 
-            { failureId }
-        );
+        const failure = await loadFailure(req.params.failureId);
+        if (!failure) return res.status(404).json({ success: false, message: "Failure not found" });
+        const providerPaymentId = failure.paymentAttemptId?.providerPaymentId;
+        if (!providerPaymentId) {
+            return res.status(409).json({ success: false, message: "This failure has no provider payment ID" });
+        }
+        const webhook = await WebhookEvent.findOne({
+            processingStatus: "FAILED",
+            $or: [
+                { "payload.payload.payment.entity.id": providerPaymentId },
+                { "payload.payload.refund.entity.payment_id": providerPaymentId },
+            ],
+        }).sort({ receivedAt: -1 });
+        if (!webhook) {
+            return res.status(404).json({ success: false, message: "No failed webhook was found for this payment" });
+        }
 
-        res.json({ success: true, message: "Webhook retry queued" });
+        webhook.processingStatus = "PENDING";
+        webhook.retryCount += 1;
+        webhook.lastError = null;
+        await webhook.save();
+        failure.recoveryAttempts.push({
+            action: "WEBHOOK_RETRY_QUEUED",
+            status: "QUEUED",
+            note: `Webhook ${webhook.providerEventId} queued for retry`,
+            actorId: req.user?._id,
+        });
+        await failure.save();
+        await recordFailureAudit(
+            req,
+            failure,
+            "WEBHOOK_RETRY_QUEUED",
+            { webhookStatus: "FAILED" },
+            { webhookId: webhook._id, webhookStatus: "PENDING", retryCount: webhook.retryCount },
+        );
+        res.status(202).json({ success: true, data: { webhookId: webhook._id, status: webhook.processingStatus } });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -139,20 +270,141 @@ export const retryWebhook = async (req, res) => {
 
 export const recheckProvider = async (req, res) => {
     try {
-        const { failureId } = req.params;
-        const failure = await PaymentFailure.findById(failureId).select("organizationId").lean();
+        const failure = await loadFailure(req.params.failureId);
+        if (!failure) return res.status(404).json({ success: false, message: "Failure not found" });
+        const order = failure.paymentOrderId;
+        const provider = await providerForOrder(order);
+        let payment = null;
+        if (failure.paymentAttemptId?.providerPaymentId) {
+            payment = await provider.payments.fetch(failure.paymentAttemptId.providerPaymentId);
+        } else {
+            const response = await provider.orders.fetchPayments(order.providerOrderId);
+            payment = [...(response?.items || [])].sort((a, b) => Number(b.created_at) - Number(a.created_at))[0] || null;
+        }
+        if (!payment) {
+            return res.status(404).json({ success: false, message: "Provider has no payment attempt for this order" });
+        }
+        if (payment.order_id !== order.providerOrderId ||
+            Number(payment.amount) !== Number(order.amountPaise) ||
+            String(payment.currency || "").toUpperCase() !== String(order.currency || "INR").toUpperCase()) {
+            return res.status(409).json({ success: false, message: "Provider payment does not match the stored order" });
+        }
 
-        // RULE 6 ENFORCEMENT: Audit Log
-        await logAdminAction(
-            req, 
-            "UPDATE_BILLING", 
-            "organization", 
-            failure?.organizationId || null, 
-            "Rechecked provider status for payment failure", 
-            { failureId }
+        const localTransaction = await PaymentTransaction.findOne({ providerPaymentId: payment.id });
+        const providerStatus = String(payment.status || "").toUpperCase();
+        const reconciled = providerStatus === "CAPTURED" && localTransaction?.status === "CAPTURED";
+        if (reconciled) {
+            failure.resolved = true;
+            failure.resolvedAt = new Date();
+            failure.resolution = "Provider and local ledger both confirm the captured payment";
+        }
+        failure.recoveryAttempts.push({
+            action: "PROVIDER_RECHECKED",
+            status: reconciled ? "SUCCESS" : providerStatus === "CAPTURED" ? "REQUIRES_RECONCILIATION" : "SUCCESS",
+            note: `Provider status: ${providerStatus}; local ledger: ${localTransaction?.status || "MISSING"}`,
+            actorId: req.user?._id,
+        });
+        await failure.save();
+        await recordFailureAudit(
+            req,
+            failure,
+            "PROVIDER_RECHECKED",
+            null,
+            { providerStatus, localTransactionStatus: localTransaction?.status || null, reconciled },
         );
+        res.json({
+            success: true,
+            data: { providerStatus, localTransactionStatus: localTransaction?.status || null, reconciled },
+        });
+    } catch (error) {
+        const status = /not configured|Razorpay|Provider/i.test(error.message) ? 503 : 400;
+        res.status(status).json({ success: false, message: error.message });
+    }
+};
 
-        res.json({ success: true, message: "Provider status rechecked" });
+export const notifyOrganization = async (req, res) => {
+    try {
+        const message = String(req.body.message || "").trim();
+        if (message.length < 10 || message.length > 1000) {
+            return res.status(400).json({ success: false, message: "message must contain 10 to 1000 characters" });
+        }
+        const failure = await loadFailure(req.params.failureId);
+        if (!failure) return res.status(404).json({ success: false, message: "Failure not found" });
+        const organizationId = failure.organizationId?._id || failure.organizationId;
+        const recipients = await User.find({
+            organization_id: organizationId,
+            status: "active",
+            $or: [
+                { role: { $in: ORGANIZATION_ADMIN_ROLES } },
+                { additional_roles: { $in: ORGANIZATION_ADMIN_ROLES } },
+            ],
+        }).select("_id").lean();
+        if (!recipients.length) {
+            return res.status(409).json({ success: false, message: "No active organization administrator was found" });
+        }
+
+        const deliveries = await Promise.all(recipients.map((recipient) =>
+            dispatchNotification({
+                recipientId: recipient._id,
+                orgId: organizationId,
+                type: "fee_payment",
+                title: "Billing payment requires attention",
+                message,
+                link: "/admin/billing",
+                relatedId: failure._id.toString(),
+                sendPush: true,
+                sendEmail: true,
+            })
+        ));
+        const delivered = deliveries.filter(Boolean).length;
+        if (!delivered) {
+            return res.status(502).json({ success: false, message: "The notification service did not accept any delivery" });
+        }
+
+        failure.userNotified = true;
+        failure.organizationNotifiedAt = new Date();
+        failure.recoveryAttempts.push({
+            action: "ORGANIZATION_NOTIFIED",
+            status: "SUCCESS",
+            note: `Notification queued for ${delivered} organization administrator(s)`,
+            actorId: req.user?._id,
+        });
+        await failure.save();
+        await recordFailureAudit(
+            req,
+            failure,
+            "ORGANIZATION_NOTIFIED",
+            { userNotified: false },
+            { userNotified: true, recipientCount: delivered },
+        );
+        res.status(202).json({ success: true, data: { recipientCount: delivered } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const exportDiagnostic = async (req, res) => {
+    try {
+        const failure = await PaymentFailure.findById(req.params.failureId).select("_id organizationId");
+        if (!failure) return res.status(404).json({ success: false, message: "Failure not found" });
+        const job = await BillingExportJob.create({
+            exportType: "FAILED_PAYMENT_DIAGNOSTIC",
+            format: "JSON",
+            filters: {
+                failureId: failure._id.toString(),
+                includeRedactedPayload: req.body.includeRedactedPayload === true,
+            },
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            requestedBy: req.user._id,
+        });
+        await recordFailureAudit(
+            req,
+            failure,
+            "DIAGNOSTIC_EXPORT_QUEUED",
+            null,
+            { jobId: job._id, includeRedactedPayload: job.filters.includeRedactedPayload },
+        );
+        res.status(202).json({ success: true, data: job, message: "Diagnostic export queued" });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -160,19 +412,34 @@ export const recheckProvider = async (req, res) => {
 
 export const assignFailure = async (req, res) => {
     try {
-        const failure = await PaymentFailure.findByIdAndUpdate(req.params.failureId, { assignedTo: req.body.userId }, { new: true });
-        
-        // RULE 6 ENFORCEMENT: Audit Log
-        await logAdminAction(
-            req, 
-            "UPDATE_BILLING", 
-            "organization", 
-            failure?.organizationId || null, 
-            "Assigned payment failure to agent", 
-            { failureId: failure._id, assignedTo: req.body.userId }
+        const assigneeId = req.body.userId;
+        const assignee = await User.findOne({
+            _id: assigneeId,
+            status: "active",
+            role: { $in: PLATFORM_ASSIGNEE_ROLES },
+        }).select("_id");
+        if (!assignee) {
+            return res.status(400).json({ success: false, message: "Assignee must be an active platform administrator" });
+        }
+        const failure = await PaymentFailure.findById(req.params.failureId);
+        if (!failure) return res.status(404).json({ success: false, message: "Failure not found" });
+        const previousAssignee = failure.assignedTo;
+        failure.assignedTo = assignee._id;
+        failure.recoveryAttempts.push({
+            action: "FAILURE_ASSIGNED",
+            status: "SUCCESS",
+            note: `Assigned to platform administrator ${assignee._id}`,
+            actorId: req.user?._id,
+        });
+        await failure.save();
+        await recordFailureAudit(
+            req,
+            failure,
+            "ASSIGNED",
+            { assignedTo: previousAssignee },
+            { assignedTo: assignee._id },
         );
-
-        res.json({ success: true, data: failure });
+        res.json({ success: true, data: serializeFailure(failure) });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }
@@ -180,20 +447,22 @@ export const assignFailure = async (req, res) => {
 
 export const addFailureNote = async (req, res) => {
     try {
-        const { failureId } = req.params;
-        const failure = await PaymentFailure.findById(failureId).select("organizationId").lean();
-
-        // RULE 6 ENFORCEMENT: Audit Log
-        await logAdminAction(
-            req, 
-            "UPDATE_BILLING", 
-            "organization", 
-            failure?.organizationId || null, 
-            "Added internal note to payment failure", 
-            { failureId }
+        const note = String(req.body.note || "").trim();
+        if (!note || note.length > 2000) {
+            return res.status(400).json({ success: false, message: "note is required and must not exceed 2000 characters" });
+        }
+        const failure = await PaymentFailure.findById(req.params.failureId);
+        if (!failure) return res.status(404).json({ success: false, message: "Failure not found" });
+        failure.internalNotes.push({ authorId: req.user._id, text: note });
+        await failure.save();
+        await recordFailureAudit(
+            req,
+            failure,
+            "INTERNAL_NOTE_ADDED",
+            null,
+            { noteId: failure.internalNotes.at(-1)?._id },
         );
-
-        res.json({ success: true, message: "Note added" }); // In reality, we'd have a notes sub-schema or array
+        res.status(201).json({ success: true, data: serializeFailure(failure) });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }
@@ -201,19 +470,32 @@ export const addFailureNote = async (req, res) => {
 
 export const resolveFailure = async (req, res) => {
     try {
-        const failure = await PaymentFailure.findByIdAndUpdate(req.params.failureId, { resolved: true }, { new: true });
-        
-        // RULE 6 ENFORCEMENT: Audit Log
-        await logAdminAction(
-            req, 
-            "UPDATE_BILLING", 
-            "organization", 
-            failure?.organizationId || null, 
-            "Resolved payment failure ticket", 
-            { failureId: failure._id }
+        const resolution = String(req.body.resolution || "").trim();
+        if (resolution.length < 5 || resolution.length > 1000) {
+            return res.status(400).json({ success: false, message: "resolution must contain 5 to 1000 characters" });
+        }
+        const failure = await PaymentFailure.findById(req.params.failureId);
+        if (!failure) return res.status(404).json({ success: false, message: "Failure not found" });
+        const oldState = { resolved: failure.resolved, resolution: failure.resolution };
+        failure.resolved = true;
+        failure.resolvedAt = new Date();
+        failure.resolution = resolution;
+        failure.recoveryAttempts.push({
+            action: "FAILURE_RESOLVED",
+            status: "SUCCESS",
+            note: resolution,
+            actorId: req.user?._id,
+        });
+        await failure.save();
+        await recordFailureAudit(
+            req,
+            failure,
+            "RESOLVED",
+            oldState,
+            { resolved: true, resolution, resolvedAt: failure.resolvedAt },
+            resolution,
         );
-
-        res.json({ success: true, data: failure });
+        res.json({ success: true, data: serializeFailure(failure) });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }

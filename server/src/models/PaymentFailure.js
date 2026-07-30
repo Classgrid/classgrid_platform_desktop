@@ -65,6 +65,65 @@ const paymentFailureSchema = new mongoose.Schema(
             ref: "User", // Support or Engineering owner
             default: null,
         },
+        internalNotes: [{
+            authorId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User",
+                required: true,
+            },
+            text: {
+                type: String,
+                required: true,
+                trim: true,
+                maxlength: 2000,
+            },
+            createdAt: {
+                type: Date,
+                default: Date.now,
+            },
+        }],
+        recoveryAttempts: [{
+            action: {
+                type: String,
+                required: true,
+                trim: true,
+                maxlength: 100,
+            },
+            status: {
+                type: String,
+                enum: ["QUEUED", "SUCCESS", "FAILED", "REQUIRES_RECONCILIATION"],
+                required: true,
+            },
+            note: {
+                type: String,
+                trim: true,
+                maxlength: 1000,
+                default: "",
+            },
+            actorId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User",
+                default: null,
+            },
+            timestamp: {
+                type: Date,
+                default: Date.now,
+            },
+        }],
+        organizationNotifiedAt: {
+            type: Date,
+            default: null,
+        },
+        resolvedAt: {
+            type: Date,
+            default: null,
+        },
+        resolution: {
+            type: String,
+            trim: true,
+            maxlength: 1000,
+            default: null,
+        },
     },
     {
         timestamps: true,

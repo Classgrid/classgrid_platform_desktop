@@ -13,7 +13,7 @@ import { useBillingModules, useModuleVersions, useCreateModule } from '../../hoo
 
 // 7. ModuleCatalogTable
 export const ModuleCatalogTable: React.FC<{
-  onEdit: (id: string) => void;
+  onEdit?: (id: string) => void;
 }> = ({ onEdit }) => {
   const { data: modules, isLoading, error } = useBillingModules();
 
@@ -27,7 +27,7 @@ export const ModuleCatalogTable: React.FC<{
               <TableHead>Pricing Strategy</TableHead>
               <TableHead>Base Price</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Action</TableHead>
+              {onEdit && <TableHead className="text-right">Action</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -37,14 +37,14 @@ export const ModuleCatalogTable: React.FC<{
                 <TableCell><Badge variant="outline">{mod.pricingType}</Badge></TableCell>
                 <TableCell><MoneyDisplay amountPaise={mod.activeVersionId?.monthlyPricePaise || 0} /></TableCell>
                 <TableCell><BillingStatusBadge status={mod.status} /></TableCell>
-                <TableCell className="text-right">
+                {onEdit && <TableCell className="text-right">
                   <Button variant="ghost" size="sm" onClick={() => onEdit(mod._id)}>Configure</Button>
-                </TableCell>
+                </TableCell>}
               </TableRow>
             ))}
             {modules?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={onEdit ? 5 : 4} className="h-24 text-center text-muted-foreground">
                   No modules found.
                 </TableCell>
               </TableRow>
@@ -62,14 +62,14 @@ export const ModuleEditorDrawer: React.FC<{
   onClose: () => void;
 }> = ({ isOpen, onClose }) => {
   const { mutateAsync: createModule, isPending } = useCreateModule();
-  const [formData, setFormData] = useState({ name: '', code: '', pricingType: 'FIXED', price: '' });
+  const [formData, setFormData] = useState({ name: '', code: '', category: '', pricingType: 'FIXED' });
 
   const handleSave = async () => {
     await createModule({
       name: formData.name,
       code: formData.code,
+      category: formData.category,
       pricingType: formData.pricingType,
-      monthlyPricePaise: Number(formData.price) // Simplified, actual form would have version fields too
     });
     onClose();
   };
@@ -89,22 +89,26 @@ export const ModuleEditorDrawer: React.FC<{
             <Label>System Code</Label>
             <Input value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="MOD_ADV_ANALYTICS" className="font-mono" />
           </div>
+          <div className="grid gap-2">
+            <Label>Category</Label>
+            <Input value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} placeholder="Academic, Finance, Communication..." />
+          </div>
           
           <ModulePricingTypeSelector value={formData.pricingType} onChange={v => setFormData({ ...formData, pricingType: v })} />
-          
-          <div className="grid gap-2 pt-4 border-t">
-            <Label>Unit Price (Paise)</Label>
-            <Input type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} placeholder="50000" />
-            <p className="text-xs text-muted-foreground flex items-center mt-1">
-              <Info className="w-3 h-3 mr-1" /> Applied per billing cycle based on pricing strategy.
-            </p>
-          </div>
+          <p className="text-xs text-muted-foreground flex items-center mt-1">
+            <Info className="w-3 h-3 mr-1" /> Save the module first, then publish a separately versioned price.
+          </p>
         </div>
         <SheetFooter>
           <SheetClose asChild>
             <Button variant="outline">Cancel</Button>
           </SheetClose>
-          <Button onClick={handleSave} disabled={isPending}>{isPending ? 'Saving...' : 'Save Module'}</Button>
+          <Button
+            onClick={handleSave}
+            disabled={isPending || !formData.name.trim() || !formData.code.trim() || !formData.category.trim()}
+          >
+            {isPending ? 'Saving...' : 'Save Module'}
+          </Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>

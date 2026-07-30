@@ -42,6 +42,7 @@ import billingInvoiceRoutes from "./super-admin/billing-invoice.routes.js";
 import billingRevenueRoutes from "./super-admin/billing-revenue.routes.js";
 import billingSubscriptionRoutes from "./super-admin/billing-subscription.routes.js";
 import billingTransactionsRoutes from "./super-admin/billing-transactions.routes.js";
+import billingExportsRoutes from "./super-admin/billing-exports.routes.js";
 import { requireSuperAdminBillingAccess } from "../middlewares/billingPermissions.js";
 import { validateBillingRequest } from "../middlewares/billingValidation.js";
 
@@ -97,6 +98,7 @@ router.use("/billing/invoices", billingInvoiceRoutes);
 router.use("/billing/revenue", billingRevenueRoutes);
 router.use("/billing/subscriptions", billingSubscriptionRoutes);
 router.use("/billing/transactions", billingTransactionsRoutes);
+router.use("/billing/export-jobs", billingExportsRoutes);
 
 // Backward-compatible aliases for older deployed clients.
 router.use("/billing/catalog", billingCatalogRoutes);

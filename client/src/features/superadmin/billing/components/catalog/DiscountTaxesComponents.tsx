@@ -16,7 +16,7 @@ import { useDiscounts, useCreateDiscount, useTaxRules, useCreateTaxRule, useGran
 
 // 60. DiscountCatalogTable
 export const DiscountCatalogTable: React.FC<{
-  onEdit: (id: string) => void;
+  onEdit?: (id: string) => void;
 }> = ({ onEdit }) => {
   const { data: discounts, isLoading, error } = useDiscounts();
 
@@ -55,14 +55,14 @@ export const DiscountCatalogTable: React.FC<{
             </Badge>
           ),
         },
-        {
+        ...(onEdit ? [{
           id: 'actions',
           header: '',
-          align: 'right',
-          cell: (row) => (
+          align: 'right' as const,
+          cell: (row: any) => (
             <Button variant="ghost" size="sm" onClick={() => onEdit(row.id || row._id)}>Edit</Button>
           ),
-        }
+        }] : [])
       ]}
       emptyTitle="No discounts found"
       emptyDescription="Create a discount code to offer promotions."
@@ -209,7 +209,7 @@ export const CreditGrantDialog: React.FC<{
 
 // 63. TaxRuleTable
 export const TaxRuleTable: React.FC<{
-  onEdit: (id: string) => void;
+  onEdit?: (id: string) => void;
 }> = ({ onEdit }) => {
   const { data: rules, isLoading, error } = useTaxRules();
 
@@ -244,14 +244,14 @@ export const TaxRuleTable: React.FC<{
             </Badge>
           ),
         },
-        {
+        ...(onEdit ? [{
           id: 'actions',
           header: '',
-          align: 'right',
-          cell: (row) => (
+          align: 'right' as const,
+          cell: (row: any) => (
             <Button variant="ghost" size="sm" onClick={() => onEdit(row.id || row._id)}>Edit</Button>
           ),
-        }
+        }] : [])
       ]}
       emptyTitle="No tax rules found"
       emptyDescription="Create tax rules to apply GST or localized taxes automatically."

@@ -1,0 +1,54 @@
+import BillingExportJob from "../../models/BillingExportJob.js";
+import { getPrivateDownloadUrl } from "../../config/r2Client.js";
+
+function serializeJob(job) {
+    return {
+        _id: job._id,
+        exportType: job.exportType,
+        format: job.format,
+        status: job.status,
+        fileName: job.fileName,
+        contentType: job.contentType,
+        sizeBytes: job.sizeBytes,
+        expiresAt: job.expiresAt,
+        completedAt: job.completedAt,
+        errorDetails: job.status === "FAILED" ? job.errorDetails : null,
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+    };
+}
+
+export const getExportJob = async (req, res) => {
+    try {
+        const job = await BillingExportJob.findById(req.params.jobId);
+        if (!job) return res.status(404).json({ success: false, message: "Export job not found" });
+        if (job.expiresAt <= new Date() && job.status !== "EXPIRED") {
+            job.status = "EXPIRED";
+            await job.save();
+        }
+        res.json({ success: true, data: serializeJob(job) });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const getExportDownload = async (req, res) => {
+    try {
+        const job = await BillingExportJob.findById(req.params.jobId).select("+storageKey");
+        if (!job) return res.status(404).json({ success: false, message: "Export job not found" });
+        if (job.expiresAt <= new Date() || job.status === "EXPIRED") {
+            return res.status(410).json({ success: false, message: "Export job has expired" });
+        }
+        if (job.status !== "COMPLETED" || !job.storageKey) {
+            return res.status(409).json({ success: false, message: `Export is ${job.status.toLowerCase()}` });
+        }
+        const expiresInSeconds = 300;
+        const url = await getPrivateDownloadUrl(job.storageKey, expiresInSeconds);
+        res.json({
+            success: true,
+            data: { url, fileName: job.fileName, expiresInSeconds },
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

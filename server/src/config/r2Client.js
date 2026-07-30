@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
@@ -68,6 +68,31 @@ export async function uploadBufferToR2(buffer, originalName, mimeType, customPat
 
     // Return the public URL for DB storage
     return `${R2_PUBLIC_URL}/${uniqueFilename}`;
+}
+
+export async function uploadPrivateBufferToR2(buffer, objectKey, mimeType) {
+    if (!objectKey || objectKey.startsWith("/") || objectKey.includes("..")) {
+        throw new Error("A safe private R2 object key is required");
+    }
+    await r2Client.send(new PutObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: objectKey,
+        Body: buffer,
+        ContentType: mimeType,
+    }));
+    return objectKey;
+}
+
+export async function getPrivateDownloadUrl(objectKey, expiresInSeconds = 300) {
+    if (!objectKey || objectKey.startsWith("/") || objectKey.includes("..")) {
+        throw new Error("A safe private R2 object key is required");
+    }
+    const expiresIn = Math.min(Math.max(Number(expiresInSeconds) || 300, 60), 900);
+    return getSignedUrl(
+        r2Client,
+        new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: objectKey }),
+        { expiresIn },
+    );
 }
 
 /**

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Chip } from '@/components/marketing_ui/chip';
 import { SelectAdvanced } from '@/components/marketing_ui/select-advanced';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/marketing_ui/table';
 import { StatusButton } from '@/components/marketing_ui/status-button';
@@ -9,40 +8,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Button } from '@/components/marketing_ui/button';
 import { Badge } from '@/components/marketing_ui/badge';
 import { Label } from '@/components/marketing_ui/label';
-import { X, Building2, Package, RefreshCw } from 'lucide-react';
+import { Building2, Package, RefreshCw } from 'lucide-react';
 import { BillingStatusBadge, AsyncBillingState, MoneyDisplay } from '../shared/BillingStateComponents';
 import { useSubscriptions, useSubscriptionDetail, useAssignSubscriptionPlan } from '../../hooks/useBillingSubscriptions';
 import { useBillingPlans } from '../../hooks/useBillingCatalog';
 
-// 11. ModuleEligibilityEditor
-export const ModuleEligibilityEditor: React.FC<{
-  allowedTypes: string[];
-  orgTypeOptions: { label: string; value: string }[];
-  onAdd: (type: string) => void;
-  onRemove: (type: string) => void;
-}> = ({ allowedTypes, orgTypeOptions, onAdd, onRemove }) => {
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {allowedTypes.map(type => (
-          <Chip key={type} variant="default" className="flex items-center gap-1">
-            {type}
-            <button onClick={() => onRemove(type)} className="hover:bg-muted-foreground/20 rounded-full p-0.5">
-              <X className="h-3 w-3" />
-            </button>
-          </Chip>
-        ))}
-        {allowedTypes.length === 0 && <span className="text-sm text-muted-foreground">Available to all organization types.</span>}
-      </div>
-      <SelectAdvanced
-        options={orgTypeOptions}
-        value=""
-        onChange={onAdd}
-        placeholder="Restrict to org type..."
-      />
-    </div>
-  );
-};
+export { ModuleEligibilityEditor } from './PlanCatalogComponents';
 
 // 12. BillingMetricSelector
 export const BillingMetricSelector: React.FC<{

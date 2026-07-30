@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchPlans, fetchModules, fetchPlanVersions, fetchPlanVersionDetail, createPlan, fetchModuleVersions, createModule, fetchPlan, updatePlanEligibility, fetchModule, updateModuleEligibility } from '../services/superAdminBillingApi';
+import { fetchPlans, fetchModules, fetchPlanVersions, fetchPlanVersionDetail, createPlan, fetchModuleVersions, createModule, fetchPlan, updatePlanEligibility, fetchModule, updateModuleEligibility, fetchBillingMetrics } from '../services/superAdminBillingApi';
 
 export const useBillingPlans = () => {
   return useQuery({
@@ -12,6 +12,14 @@ export const useBillingModules = () => {
   return useQuery({
     queryKey: ['billing-modules'],
     queryFn: fetchModules,
+  });
+};
+
+export const useBillingMetrics = () => {
+  return useQuery({
+    queryKey: ['billing-metrics'],
+    queryFn: fetchBillingMetrics,
+    staleTime: 10 * 60 * 1000,
   });
 };
 

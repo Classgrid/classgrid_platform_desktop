@@ -15,6 +15,7 @@ import {
   useRevenueByInvoice,
   useRevenueByOrg,
 } from '../../hooks/useBillingFinance';
+import { useBillingExportDownload, useBillingExportJob } from '../../hooks/useBillingExports';
 
 export {
   RevenueViewTabs,
@@ -138,6 +139,9 @@ export const RevenueDetailDrawer: React.FC<{
 export const RevenueExportDialog: React.FC = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const exportMutation = useExportRevenue();
+  const jobId = exportMutation.data?._id || '';
+  const exportJob = useBillingExportJob(jobId);
+  const downloadExport = useBillingExportDownload();
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -145,12 +149,25 @@ export const RevenueExportDialog: React.FC = () => {
       <DialogContent>
         <DialogHeader><DialogTitle>Prepare revenue export</DialogTitle></DialogHeader>
         <p className="text-sm text-muted-foreground">The backend will create an expiring export job from captured Classgrid subscription payments.</p>
-        {exportMutation.isSuccess && <p className="text-sm text-primary">Export job queued: {exportMutation.data?._id}</p>}
+        {exportMutation.isSuccess && (
+          <div className="space-y-2 text-sm">
+            <p className="text-primary">Export status: {exportJob.data?.status || 'PENDING'}</p>
+            <p className="font-mono text-xs text-muted-foreground">{jobId}</p>
+            {exportJob.data?.status === 'COMPLETED' && (
+              <Button size="sm" onClick={() => downloadExport.mutate(jobId)} disabled={downloadExport.isPending}>
+                {downloadExport.isPending ? 'Opening...' : 'Download CSV'}
+              </Button>
+            )}
+            {exportJob.data?.status === 'FAILED' && (
+              <p className="text-destructive">{exportJob.data.errorDetails || 'Export generation failed.'}</p>
+            )}
+          </div>
+        )}
         {exportMutation.error && <p className="text-sm text-destructive">{(exportMutation.error as Error).message}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
-          <Button disabled={exportMutation.isPending} onClick={() => exportMutation.mutate()}>
-            {exportMutation.isPending ? 'Preparing...' : 'Prepare export'}
+          <Button disabled={exportMutation.isPending || !!jobId} onClick={() => exportMutation.mutate()}>
+            {exportMutation.isPending ? 'Preparing...' : jobId ? 'Queued' : 'Prepare export'}
           </Button>
         </DialogFooter>
       </DialogContent>

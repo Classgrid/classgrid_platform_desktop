@@ -9,6 +9,7 @@ import { initPromotionSchedulerCron } from './promotion-scheduler.cron.js';
 import { initScheduledNotificationWorker } from './scheduled-notification.worker.js';
 import { initOrganizationUsageDailyWorker } from './organization-usage-daily.worker.js';
 import { initMonthlyInvoiceWorker } from './monthly-invoice.worker.js';
+import { initBillingExportWorker } from './billing-export.worker.js';
 
 initCronJobs();
 initAdmissionCronJobs();
@@ -16,6 +17,7 @@ initPromotionSchedulerCron();
 initScheduledNotificationWorker();
 initOrganizationUsageDailyWorker();
 initMonthlyInvoiceWorker();
+initBillingExportWorker();
 // import './analytics.worker.js';
 
 console.log('👷 Background Workers Initialized');

@@ -41,8 +41,8 @@ export const PlansBillingTabs: React.FC<{
 
 // 2. PlanCatalogTable
 export const PlanCatalogTable: React.FC<{
-  onEdit: (id: string) => void;
-  onViewHistory: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onViewHistory?: (id: string) => void;
 }> = ({ onEdit, onViewHistory }) => {
   const { data: plans, isLoading, error } = useBillingPlans();
 
@@ -57,7 +57,7 @@ export const PlanCatalogTable: React.FC<{
               <TableHead>Active Version</TableHead>
               <TableHead>Base Monthly</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              {(onEdit || onViewHistory) && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -68,7 +68,7 @@ export const PlanCatalogTable: React.FC<{
                 <TableCell>v{plan.activeVersionId?.versionNumber || 1}</TableCell>
                 <TableCell><MoneyDisplay amountPaise={plan.activeVersionId?.monthlyBasePricePaise || 0} /></TableCell>
                 <TableCell><BillingStatusBadge status={plan.status} /></TableCell>
-                <TableCell className="text-right">
+                {(onEdit || onViewHistory) && <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0">
@@ -77,16 +77,16 @@ export const PlanCatalogTable: React.FC<{
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEdit(plan._id)}>Edit Draft</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onViewHistory(plan._id)}>Version History</DropdownMenuItem>
+                      {onEdit && <DropdownMenuItem onClick={() => onEdit(plan._id)}>Edit Draft</DropdownMenuItem>}
+                      {onViewHistory && <DropdownMenuItem onClick={() => onViewHistory(plan._id)}>Version History</DropdownMenuItem>}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </TableCell>
+                </TableCell>}
               </TableRow>
             ))}
             {plans?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={onEdit || onViewHistory ? 6 : 5} className="h-24 text-center text-muted-foreground">
                   No plans found. Create one to get started.
                 </TableCell>
               </TableRow>
@@ -297,61 +297,7 @@ export const PlanEligibilityEditor: React.FC<{ planId: string }> = ({ planId }) 
   );
 };
 
-// 86. ModuleVersionHistory
-export const ModuleVersionHistory: React.FC<{ moduleId: string }> = ({ moduleId }) => {
-  const { data: versions, isLoading, error } = useModuleVersions(moduleId);
-
-  return (
-    <div className="rounded-md border bg-card p-4 space-y-4">
-      <h3 className="font-semibold flex items-center gap-2"><History className="w-4 h-4" /> Version History</h3>
-      <AsyncBillingState loading={isLoading} error={error} skeletonType="table">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Version</TableHead>
-              <TableHead>Pricing Model</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Active From</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {versions?.map((v: any) => (
-              <TableRow key={v.versionNumber} className={v.status === 'ARCHIVED' ? 'opacity-50' : ''}>
-                <TableCell>v{v.versionNumber}</TableCell>
-                <TableCell>
-                  {v.pricingModel === 'FLAT_FEE' ? `Flat Fee (` : `Per User (`}
-                  <MoneyDisplay amountPaise={v.monthlyBasePricePaise} />)
-                </TableCell>
-                <TableCell><BillingStatusBadge status={v.status} /></TableCell>
-                <TableCell>{new Date(v.createdAt).toLocaleDateString()}</TableCell>
-              </TableRow>
-            ))}
-            {versions?.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
-                  No versions history found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </AsyncBillingState>
-    </div>
-  );
-};
-
-// 87. ModulePricingTypeSelector
-export const ModulePricingTypeSelector: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
-  <Select value={value} onValueChange={(nextValue) => nextValue && onChange(nextValue)}>
-    <SelectTrigger><SelectValue placeholder="Select Pricing Model" /></SelectTrigger>
-    <SelectContent>
-      <SelectItem value="FLAT_FEE">Flat Fee (Monthly)</SelectItem>
-      <SelectItem value="PER_USER">Per User</SelectItem>
-      <SelectItem value="USAGE_BASED">Usage Based (Tiered)</SelectItem>
-      <SelectItem value="PERCENTAGE">Percentage of Revenue</SelectItem>
-    </SelectContent>
-  </Select>
-);
+export { ModuleVersionHistory, ModulePricingTypeSelector } from './ModuleCatalogComponents';
 
 // 88. ModuleEligibilityEditor
 export const ModuleEligibilityEditor: React.FC<{ moduleId: string }> = ({ moduleId }) => {
@@ -426,22 +372,23 @@ export const SubscriptionChangeReasonDialog: React.FC<{ isOpen: boolean; onConfi
 // 91. UsageMetricTable
 export const UsageMetricTable: React.FC<{ data: any[] }> = ({ data }) => (
   <Table>
-    <TableHeader><TableRow><TableHead>Metric</TableHead><TableHead>Current Usage</TableHead><TableHead>Limit</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+    <TableHeader><TableRow><TableHead>Metric</TableHead><TableHead>Unit</TableHead><TableHead>Aggregation</TableHead><TableHead>Supported organization types</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
     <TableBody>
       {data?.map((item, idx) => (
-        <TableRow key={idx}>
-          <TableCell>{item.metricName}</TableCell>
-          <TableCell>{item.currentUsage}</TableCell>
-          <TableCell>{item.limit || 'Unlimited'}</TableCell>
+        <TableRow key={item._id || item.code || idx}>
+          <TableCell><p className="font-medium">{item.name}</p><p className="font-mono text-xs text-muted-foreground">{item.code}</p></TableCell>
+          <TableCell>{item.unitLabel}</TableCell>
+          <TableCell>{item.aggregationType}</TableCell>
+          <TableCell>{item.supportedOrgTypes?.length ? item.supportedOrgTypes.join(', ') : 'All organization types'}</TableCell>
           <TableCell>
-            <Badge variant={item.isNearLimit ? 'warning' : 'success'}>
-              {item.isNearLimit ? 'Near Limit' : 'Normal'}
+            <Badge variant={item.isActive ? 'success' : 'secondary'}>
+              {item.isActive ? 'Active' : 'Inactive'}
             </Badge>
           </TableCell>
         </TableRow>
       ))}
       {(!data || data.length === 0) && (
-        <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No usage data found.</TableCell></TableRow>
+        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No billing metrics found.</TableCell></TableRow>
       )}
     </TableBody>
   </Table>
@@ -471,20 +418,11 @@ export const InvoiceRulesPanel: React.FC<{ planId: string }> = ({ planId }) => {
   return (
     <div className="p-4 border rounded-lg space-y-4">
       <h3 className="font-semibold flex items-center gap-2"><FileText className="w-4 h-4" /> Invoicing Rules</h3>
-      <div className="flex items-center gap-4 text-sm">
-        <div className="flex-1 space-y-1"><Label>Billing Cycle</Label>
-          <Select value={plan?.invoiceRules?.cycle || "MONTHLY"}>
-            <SelectTrigger><SelectValue/></SelectTrigger>
-            <SelectContent><SelectItem value="MONTHLY">Monthly</SelectItem><SelectItem value="ANNUALLY">Annually</SelectItem></SelectContent>
-          </Select>
-        </div>
-        <div className="flex-1 space-y-1"><Label>Net Terms</Label>
-          <Select value={plan?.invoiceRules?.netTerms || "NET15"}>
-            <SelectTrigger><SelectValue/></SelectTrigger>
-            <SelectContent><SelectItem value="NET15">Net 15</SelectItem><SelectItem value="NET30">Net 30</SelectItem></SelectContent>
-          </Select>
-        </div>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        {plan?.invoiceRules
+          ? `Cycle: ${plan.invoiceRules.cycle}; terms: ${plan.invoiceRules.netTerms}.`
+          : 'No plan-specific invoice rule is configured. Subscription cycle and invoice due dates remain authoritative.'}
+      </p>
     </div>
   );
 };
@@ -521,7 +459,7 @@ export const SubscriptionHistoryTimeline: React.FC<{ history: any[] }> = ({ hist
 export const TerminologyPricingPreview: React.FC<{ planName: string; features: string; pricePaise: number; interval: string }> = ({ planName, features, pricePaise, interval }) => (
   <div className="p-4 border border-dashed rounded-lg bg-muted/10">
     <h4 className="text-sm font-semibold mb-2">Checkout Preview</h4>
-    <p className="text-xs text-muted-foreground mb-4">How this plan appears to school administrators during checkout:</p>
+    <p className="text-xs text-muted-foreground mb-4">How this plan appears to organization administrators during checkout:</p>
     <div className="bg-background p-4 rounded border shadow-sm flex justify-between items-center">
       <div>
         <p className="font-medium">{planName || 'Unnamed Plan'}</p>

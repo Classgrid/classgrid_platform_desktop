@@ -23,6 +23,28 @@ const billingExportJobSchema = new mongoose.Schema(
             type: String, // Path to R2 bucket or signed URL
             default: null,
         },
+        storageKey: {
+            type: String,
+            default: null,
+            select: false,
+        },
+        fileName: {
+            type: String,
+            default: null,
+        },
+        contentType: {
+            type: String,
+            default: null,
+        },
+        sizeBytes: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+        completedAt: {
+            type: Date,
+            default: null,
+        },
         expiresAt: {
             type: Date, // Exports shouldn't live forever
             required: true,
