@@ -75,6 +75,7 @@ import { JoinRequestPage } from "@/features/chat/pages/JoinRequestPage";
 import { OnboardingWizardPage } from "@/features/auth/pages/OnboardingWizardPage";
 import NewRoleWelcomePage from "@/features/auth/pages/NewRoleWelcomePage";
 import { CheckoutPage } from "@/features/billing-portal/pages/CheckoutPage";
+import { StudentBillingPortalPage } from "@/features/billing-portal/pages/StudentBillingPortalPage";
 
 import { StudentHomePage } from "@/features/student/pages/StudentHomePage";
 import { StudentWorkPage } from "@/features/student/pages/StudentWorkPage";
@@ -146,6 +147,7 @@ export function AppRouter() {
   const isSuperAdmin = subdomain === "superadmin";
   const isOnboarding = subdomain === "onboard" || subdomain === "onboarding" || window.location.pathname.startsWith("/onboard");
   const isBilling = subdomain === "billing" || window.location.pathname.startsWith("/checkout");
+  const isStudentBilling = subdomain === "studentbilling";
 
   if (isOnboarding) {
     return (
@@ -160,6 +162,14 @@ export function AppRouter() {
       <Routes>
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="*" element={<Navigate to="/checkout" replace />} />
+      </Routes>
+    );
+  }
+
+  if (isStudentBilling) {
+    return (
+      <Routes>
+        <Route path="*" element={<StudentBillingPortalPage />} />
       </Routes>
     );
   }
