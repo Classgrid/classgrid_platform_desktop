@@ -129,22 +129,22 @@ export function DashboardHomePage() {
           <StatCard
             title="Total Organizations"
             value={isLoading && orgsLoading ? "..." : (overview?.totalOrganizations ?? orgs.length)}
-            icon={<Building2 />}
+            icon={Building2}
           />
           <StatCard
             title="Total Users"
             value={isLoading && orgsLoading ? "..." : (overview?.totalUsers ?? liveUserCount)}
-            icon={<Users />}
+            icon={Users}
           />
           <StatCard
             title="Demo Leads Pending"
             value={leadsLoading ? "..." : pendingLeads}
-            icon={<ClipboardList />}
+            icon={ClipboardList}
           />
           <StatCard
             title="System Status"
             value={isLoading ? "..." : (isError || orgsError ? "Action needed" : "Healthy")}
-            icon={<ShieldCheck />}
+            icon={ShieldCheck}
           />
         </div>
 
