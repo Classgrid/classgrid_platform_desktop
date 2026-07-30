@@ -14,6 +14,7 @@
 
 import nodemailer from "nodemailer";
 import { sendViaResend } from "./resend.service.js";
+import accessLogger from "../config/logger.js";
 
 // ─────────────────────────────────────────────────
 // CHANNEL CONFIGURATION
@@ -137,7 +138,12 @@ export const sendEmail = async ({ to, subject, html, text, channel, fromName, fr
       });
     }
 
-    console.log("=== EMAIL SENT SUCCESSFULLY ===");
+    accessLogger.info(`Email sent successfully via ${channel || 'noreply'}`, {
+      provider,
+      channel: channel || 'noreply',
+      to,
+      messageId: result.messageId || 'unknown'
+    });
     return result;
   } catch (err) {
     console.error("=== EMAIL ERROR ===", err);

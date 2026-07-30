@@ -34,12 +34,12 @@ const ProgressCircle = ({ value, colorClass, children, size = 64, strokeWidth = 
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (value / 100) * circumference;
-  
+
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg className="transform -rotate-90 w-full h-full">
-        <circle className="text-gray-100 dark:text-gray-800" strokeWidth={strokeWidth} stroke="currentColor" fill="transparent" r={radius} cx={size/2} cy={size/2} />
-        <circle className={`${colorClass} transition-all duration-1000 ease-in-out`} strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" stroke="currentColor" fill="transparent" r={radius} cx={size/2} cy={size/2} />
+        <circle className="text-gray-100 dark:text-gray-800" strokeWidth={strokeWidth} stroke="currentColor" fill="transparent" r={radius} cx={size / 2} cy={size / 2} />
+        <circle className={`${colorClass} transition-all duration-1000 ease-in-out`} strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" stroke="currentColor" fill="transparent" r={radius} cx={size / 2} cy={size / 2} />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center text-sm font-medium">
         {children}
@@ -52,7 +52,7 @@ export function BillingPage() {
   const queryClient = useQueryClient();
   const { data: billingData, isLoading, isError } = useOrgBilling();
   const { mutateAsync: payInvoice } = usePayInvoice();
-  
+
   const [billingEmail, setBillingEmail] = useState("");
   const [billingPhone, setBillingPhone] = useState("");
   const [billingGstin, setBillingGstin] = useState("");
@@ -62,12 +62,12 @@ export function BillingPage() {
   const [billingState, setBillingState] = useState("");
   const [billingPincode, setBillingPincode] = useState("");
   const [billingContactName, setBillingContactName] = useState("");
-  
+
   const [emailVerified, setEmailVerified] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
-  
+
   const [isSavingSettings, setIsSavingSettings] = useState(false);
-  
+
   const [isEmailVerifyModalOpen, setIsEmailVerifyModalOpen] = useState(false);
   const [isPhoneVerifyModalOpen, setIsPhoneVerifyModalOpen] = useState(false);
   const [phoneOtp, setPhoneOtp] = useState("");
@@ -227,7 +227,7 @@ export function BillingPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-8">
       {/* BILLING SETTINGS */}
       <div className="space-y-6">
-        
+
         {/* Billing Profile Card */}
         <div className="bg-card border border-border rounded-xl p-6 flex flex-col gap-6 shadow-sm hover:shadow-md transition-all">
           <div className="border-b border-border pb-4 flex flex-col gap-2">
@@ -243,17 +243,17 @@ export function BillingPage() {
             <div className="space-y-3">
               <Label className="text-sm font-medium">Billing Name</Label>
               <div className="flex gap-2">
-                <Input 
-                  value={billingContactName} 
-                  onChange={(e) => setBillingContactName(e.target.value)} 
+                <Input
+                  value={billingContactName}
+                  onChange={(e) => setBillingContactName(e.target.value)}
                   placeholder="John Doe"
                   className="flex-1"
                   disabled={isNameSaved}
                 />
                 {!isNameSaved ? (
-                  <Button 
-                    variant="primary" 
-                    onClick={handleSaveSettings} 
+                  <Button
+                    variant="primary"
+                    onClick={handleSaveSettings}
                     disabled={isSavingSettings || !billingContactName?.trim()}
                     isLoading={isSavingSettings}
                   >
@@ -264,26 +264,26 @@ export function BillingPage() {
                 )}
               </div>
             </div>
-            
+
             <div className="space-y-3">
               <Label className="text-sm font-medium">GSTIN (Optional)</Label>
-              <Input 
-                value={billingGstin} 
-                onChange={(e) => setBillingGstin(e.target.value)} 
+              <Input
+                value={billingGstin}
+                onChange={(e) => setBillingGstin(e.target.value)}
                 placeholder="27AADCB2230M1Z2"
                 disabled={!phoneVerified}
               />
             </div>
-            
+
             <div className="space-y-3">
               <Label className="text-sm font-medium">Billing Email</Label>
               <div className="flex gap-2">
-                <Input 
-                  value={billingEmail} 
+                <Input
+                  value={billingEmail}
                   onChange={(e) => {
                     setBillingEmail(e.target.value);
                     setEmailVerified(false);
-                  }} 
+                  }}
                   placeholder="accounts@school.edu"
                   className="flex-1"
                   disabled={!billingContactName?.trim()}
@@ -291,9 +291,9 @@ export function BillingPage() {
                 {emailVerified ? (
                   <VerifiedButton />
                 ) : (
-                  <Button 
-                    variant="secondary" 
-                    onClick={handleSendEmailVerification} 
+                  <Button
+                    variant="secondary"
+                    onClick={handleSendEmailVerification}
                     disabled={isSendingEmailOtp || !billingEmail?.trim()}
                     isLoading={isSendingEmailOtp}
                   >
@@ -302,16 +302,16 @@ export function BillingPage() {
                 )}
               </div>
             </div>
-            
+
             <div className="space-y-3">
               <Label className="text-sm font-medium">Billing Phone Number</Label>
               <div className="flex gap-2">
-                <Input 
-                  value={billingPhone} 
+                <Input
+                  value={billingPhone}
                   onChange={(e) => {
                     setBillingPhone(e.target.value);
                     setPhoneVerified(false);
-                  }} 
+                  }}
                   placeholder="9876543210"
                   className="flex-1"
                   disabled={!emailVerified}
@@ -319,9 +319,9 @@ export function BillingPage() {
                 {phoneVerified ? (
                   <VerifiedButton />
                 ) : (
-                  <Button 
-                    variant="secondary" 
-                    onClick={handleSendPhoneOtp} 
+                  <Button
+                    variant="secondary"
+                    onClick={handleSendPhoneOtp}
                     disabled={isSendingPhoneOtp || !billingPhone?.trim() || !emailVerified}
                     isLoading={isSendingPhoneOtp}
                   >
@@ -331,7 +331,7 @@ export function BillingPage() {
               </div>
             </div>
           </div>
-          
+
         </div>
 
         {/* Billing Address Card */}
@@ -344,13 +344,13 @@ export function BillingPage() {
               Set your primary address for invoices and tax purposes.
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
             <div className="space-y-3 md:col-span-2">
               <Label className="text-sm font-medium">Address Line 1</Label>
-              <Input 
-                value={billingAddress1} 
-                onChange={(e) => setBillingAddress1(e.target.value)} 
+              <Input
+                value={billingAddress1}
+                onChange={(e) => setBillingAddress1(e.target.value)}
                 placeholder="Street address, P.O. box, company name, c/o"
                 disabled={!phoneVerified}
               />
@@ -358,19 +358,19 @@ export function BillingPage() {
 
             <div className="space-y-3 md:col-span-2">
               <Label className="text-sm font-medium">Address Line 2 (Optional)</Label>
-              <Input 
-                value={billingAddress2} 
-                onChange={(e) => setBillingAddress2(e.target.value)} 
+              <Input
+                value={billingAddress2}
+                onChange={(e) => setBillingAddress2(e.target.value)}
                 placeholder="Apartment, suite, unit, building, floor, etc."
                 disabled={!phoneVerified}
               />
             </div>
-            
+
             <div className="space-y-3">
               <Label className="text-sm font-medium">City</Label>
-              <Input 
-                value={billingCity} 
-                onChange={(e) => setBillingCity(e.target.value)} 
+              <Input
+                value={billingCity}
+                onChange={(e) => setBillingCity(e.target.value)}
                 placeholder="Mumbai"
                 disabled={!phoneVerified}
               />
@@ -394,20 +394,20 @@ export function BillingPage() {
 
             <div className="space-y-3">
               <Label className="text-sm font-medium">ZIP / Postal Code</Label>
-              <Input 
-                value={billingPincode} 
-                onChange={(e) => setBillingPincode(e.target.value)} 
+              <Input
+                value={billingPincode}
+                onChange={(e) => setBillingPincode(e.target.value)}
                 placeholder="400001"
                 disabled={!phoneVerified}
               />
             </div>
           </div>
-          
+
           <div className="flex justify-end pt-4 border-t border-border">
-            <Button 
-              variant="primary" 
-              onClick={handleSaveSettings} 
-              disabled={isSavingSettings || !phoneVerified} 
+            <Button
+              variant="primary"
+              onClick={handleSaveSettings}
+              disabled={isSavingSettings || !phoneVerified}
               className="px-6"
               isLoading={isSavingSettings}
             >
@@ -430,7 +430,7 @@ export function BillingPage() {
           <div className="py-4 space-y-4">
             <div className="space-y-2 flex flex-col items-center">
               <Label>Enter 6-digit Code</Label>
-              <InputOTP 
+              <InputOTP
                 value={emailOtp}
                 onChange={setEmailOtp}
                 maxLength={6}
@@ -469,7 +469,7 @@ export function BillingPage() {
           <div className="py-4 space-y-4">
             <div className="space-y-2 flex flex-col items-center">
               <Label>Enter 6-digit Code</Label>
-              <InputOTP 
+              <InputOTP
                 value={phoneOtp}
                 onChange={setPhoneOtp}
                 maxLength={6}

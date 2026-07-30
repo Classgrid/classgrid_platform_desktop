@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import accessLogger from "../config/logger.js";
 
 // ─────────────────────────────────────────────────
 // AWS SES SMTP TRANSPORTER (STOCKHOLM REGION)
@@ -42,8 +43,13 @@ export const sendEmail = async ({ to, subject, html, text, fromName, fromEmail, 
     html,
   });
 
-  console.log(`[AWS SES] ✅ Email sent to: ${to} | ID: ${info.messageId}`);
-  console.log(`          Org ID: ${organizationId || 'N/A'}`);
-  console.log(`          User ID: ${userId || 'N/A'}`);
+
+  accessLogger.info(`[AWS SES] ✅ Email sent to: ${to} | ID: ${info.messageId}`, {
+      provider: "aws_ses",
+      to,
+      messageId: info.messageId,
+      ...(organizationId && { orgId: organizationId }),
+      ...(userId && { userId: userId })
+  });
   return { ...info, provider: "aws_ses" };
 };

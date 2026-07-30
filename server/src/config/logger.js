@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import crypto from "crypto";
+import { asyncContext } from "../utils/async-context.js";
 
 // Ensure env variables are loaded if used directly
 dotenv.config();
@@ -19,6 +20,19 @@ const consoleFormat = printf(({ level, message, timestamp, ...meta }) => {
     return `${timestamp} ${level}: ${message} ${Object.keys(meta).length ? JSON.stringify(meta) : ""}`;
 });
 
+// Format that injects contextual data from AsyncLocalStorage
+const injectContextFormat = winston.format((info) => {
+    const context = asyncContext.getStore();
+    if (context) {
+        // Only inject if not explicitly provided in the log
+        if (info.userId === undefined) info.userId = context.userId;
+        if (info.orgId === undefined) info.orgId = context.orgId;
+        if (info.traceId === undefined) info.traceId = context.traceId;
+        if (info.ip === undefined) info.ip = context.ip;
+    }
+    return info;
+});
+
 // Create rotating file transport for API access logs
 const fileTransport = new winston.transports.DailyRotateFile({
     filename: path.join(__dirname, "../../../logs", "api-%DATE%.log"),
@@ -26,13 +40,13 @@ const fileTransport = new winston.transports.DailyRotateFile({
     zippedArchive: true,
     maxSize: "20m",
     maxFiles: "14d",
-    format: combine(timestamp(), json())
+    format: combine(injectContextFormat(), timestamp(), json())
 });
 
 const transports = [
     fileTransport,
     new winston.transports.Console({
-        format: combine(colorize(), timestamp(), consoleFormat)
+        format: combine(injectContextFormat(), colorize(), timestamp(), consoleFormat)
     })
 ];
 
@@ -45,7 +59,7 @@ if (mongoUri) {
             // Store ALL logs (info, warn, error) — no level filter
             db: mongoUri,
             collection: "systemlogs",
-            format: combine(timestamp(), metadata()),
+            format: combine(injectContextFormat(), timestamp(), metadata()),
             expireAfterSeconds: 432000, // 5 days
             capped: true,
             cappedSize: 10485760, // 10MB
@@ -116,7 +130,17 @@ export const winstonMiddleware = (req, res, next) => {
         }
     });
 
-    next();
+    const runContext = {
+        traceId: req.traceId,
+        ip: req.ip,
+        orgId: req.effectiveOrganizationId || (req.user ? req.user.organization_id : "none"),
+        userId: req.user ? req.user.id : "unauthenticated"
+    };
+
+    // Run the rest of the request within this context
+    asyncContext.run(runContext, () => {
+        next();
+    });
 };
 
 export default accessLogger;

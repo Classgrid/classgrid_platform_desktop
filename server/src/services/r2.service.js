@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import accessLogger from "../config/logger.js";
 
 // We initialize the S3 client for Cloudflare R2
 // Credentials should be provided in your .env file
@@ -27,6 +28,12 @@ export async function generateR2UploadUrl(fileName, fileType) {
 
   // URL expires in 5 minutes
   const signedUrl = await getSignedUrl(r2, command, { expiresIn: 300 });
+
+  accessLogger.info(`Generated Cloudflare R2 presigned URL`, { 
+    provider: 'cloudflare_r2', 
+    fileName, 
+    fileType 
+  });
 
   // R2 public URL format: https://<your-custom-domain>/<fileName>
   // Or the default R2 dev URL. User should define R2_PUBLIC_URL in .env

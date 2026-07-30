@@ -1,6 +1,7 @@
 import pkg from 'agora-token';
 const { RtcTokenBuilder, RtcRole, RtmTokenBuilder } = pkg;
 import "../../env.js";
+import accessLogger from "../config/logger.js";
 
 const APP_ID = process.env.AGORA_APP_ID || "PLACEHOLDER_APP_ID";
 const APP_CERTIFICATE = process.env.AGORA_APP_CERTIFICATE || "PLACEHOLDER_CERTIFICATE";
@@ -28,6 +29,12 @@ export const generateRtcToken = (channelName, uid, role = 'publisher', expiryTim
         privilegeExpireTime
     );
 
+    accessLogger.info(`Generated Agora RTC token for channel ${channelName}`, {
+        provider: 'agora',
+        channel: channelName,
+        role: role
+    });
+
     return token;
 };
 
@@ -48,6 +55,10 @@ export const generateRtmToken = (uid, expiryTime = 3600) => {
         uid,
         privilegeExpireTime
     );
+
+    accessLogger.info(`Generated Agora RTM token`, {
+        provider: 'agora'
+    });
 
     return token;
 };

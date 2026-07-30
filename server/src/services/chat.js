@@ -1,6 +1,7 @@
 // api/services/chat.js
 import Groq from 'groq-sdk';
 import { GoogleGenAI } from '@google/genai';
+import accessLogger from '../config/logger.js';
 
 // Initialize clients
 const groq = new Groq({
@@ -287,7 +288,7 @@ async function getGroqReply(message, modePrompt = '') {
       error.message.includes('ECONNREFUSED');
 
     if (shouldFallback) {
-      console.log(`Groq error detected (${error.status || 'unknown'}), switching to Gemini`);
+      accessLogger.warn(`Groq error detected (${error.status || 'unknown'}), switching to Gemini`, { provider: 'ai', model: 'groq' });
     }
 
     throw error; // Propagate error to trigger fallback
@@ -349,20 +350,20 @@ export async function getChatReply(message, modelArg = 'groq', mode = 'chat', cl
     }
 
     const responseTime = Date.now() - startTime;
-    console.log(`✓ [${mode}] Response from ${modelUsed} in ${responseTime}ms`);
+    accessLogger.info(`[${mode}] Response from ${modelUsed} in ${responseTime}ms`, { provider: 'ai', model: modelUsed, mode, durationMs: responseTime });
     return reply;
 
   } catch (error) {
-    console.log(`✗ Selected model (${modelArg}) failed: ${error.message}`);
+    accessLogger.error(`Selected model (${modelArg}) failed: ${error.message}`, { provider: 'ai', model: modelArg });
 
     // Fallback to Gemini ONLY if the primary default (Groq) failed
     if (modelArg === 'groq') {
       try {
-        console.log(`Attempting Gemini fallback...`);
+        accessLogger.info(`Attempting Gemini fallback...`, { provider: 'ai', fallback: true });
         const startTime = Date.now();
         const reply = await getGeminiReply(fullMessage, modePrompt);
         const responseTime = Date.now() - startTime;
-        console.log(`✓ Fallback response from Gemini 2.5 Flash in ${responseTime}ms`);
+        accessLogger.info(`Fallback response from Gemini 2.5 Flash in ${responseTime}ms`, { provider: 'ai', model: 'gemini-2.5-flash', mode, durationMs: responseTime });
         return reply;
       } catch (fallbackError) {
         console.error('Both primary and fallback models failed:', fallbackError.message);
@@ -432,7 +433,7 @@ export async function getVisionReply(message, base64Image, mimeType, modelArg = 
     // Default fallback to Gemini which handles vision exceptionally well and is cost-effective
     const prompt = message ? `${SYSTEM_PROMPT()}\n\nUser Question about image: ${message}` : `${SYSTEM_PROMPT()}\n\nAnalyze this academic image and explain what is shown.`;
 
-    console.log("Sending image to Gemini Vision...");
+    accessLogger.info("Sending image to Gemini Vision...", { provider: 'ai', model: 'gemini-vision' });
 
     const response = await genAI.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -447,7 +448,7 @@ export async function getVisionReply(message, base64Image, mimeType, modelArg = 
       ]
     });
 
-    console.log("Vision response received");
+    accessLogger.info("Vision response received", { provider: 'ai', model: 'gemini-vision' });
     return response.text;
   } catch (error) {
     console.error("Vision API Error:", error);

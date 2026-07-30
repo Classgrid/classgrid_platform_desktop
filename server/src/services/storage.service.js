@@ -1,5 +1,6 @@
 import { primarySupabaseClient } from "../config/supabaseClient.js";
 import { v4 as uuidv4 } from "uuid";
+import accessLogger from "../config/logger.js";
 
 /**
  * StorageService — Wrapper for Supabase Storage operations.
@@ -39,7 +40,7 @@ class StorageService {
                 uploadedAt: new Date()
             };
         } catch (error) {
-            console.error("❌ StorageService.uploadDocument Error:", error.message);
+            accessLogger.error(`StorageService.uploadDocument Error: ${error.message}`, { provider: 'storage', fileName });
             throw new Error(`Failed to upload document: ${error.message}`);
         }
     }
@@ -64,7 +65,7 @@ class StorageService {
             if (error) throw error;
             return data.signedUrl;
         } catch (error) {
-            console.error("❌ StorageService.getSignedUrl Error:", error.message);
+            accessLogger.error(`StorageService.getSignedUrl Error: ${error.message}`, { provider: 'storage', path });
             return null;
         }
     }
@@ -77,9 +78,10 @@ class StorageService {
         try {
             const { deleteFromR2 } = await import("../config/r2Client.js");
             await deleteFromR2(path);
+            accessLogger.info(`Deleted document from storage`, { provider: 'storage', path });
             return true;
         } catch (error) {
-            console.error("❌ StorageService.deleteDocument Error:", error.message);
+            accessLogger.error(`StorageService.deleteDocument Error: ${error.message}`, { provider: 'storage', path });
             return false;
         }
     }
