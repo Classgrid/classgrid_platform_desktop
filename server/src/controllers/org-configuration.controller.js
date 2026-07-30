@@ -194,6 +194,20 @@ export async function getOrganizationBilling(req, res) {
         const subtotal = Number((platformFee + moduleChargesTotal + emailCharges.total + smsCharges.total + storageCharges.total + aiUsageCharges.total + liveClassCharges.total).toFixed(2)), gstPercent = 18, gstAmount = Number((subtotal * gstPercent / 100).toFixed(2)); const fees = feeSummary[0] || {};
         const monthlyHistory = invoices.map(inv => ({ month: `${inv.billingPeriod?.month || ''} ${inv.billingPeriod?.year || ''}`.trim(), totalAmount: asNumber(inv.totalAmountInr), status: inv.status })).reverse();
 
+        return res.json({
+            plan: subscription?.plan || "free",
+            status: subscription?.status || "active",
+            nextBillingDate: subscription?.expiresAt || null,
+            moduleLineItems,
+            charges: { platformFee, emailCharges, smsCharges, storageCharges, aiUsageCharges, liveClassCharges, moduleChargesTotal, subtotal, gstPercent, gstAmount, total: subtotal + gstAmount },
+            history: monthlyHistory
+        });
+    } catch (error) {
+        console.error("[OrgBilling] load failed:", error.message);
+        return res.status(500).json({ message: "Unable to load organization billing." });
+    }
+}
+
 export const downloadInvoicePdf = async (req, res) => {
     try {
         const orgId = (req.effectiveOrganizationId || req.user?.organization_id || req.headers['x-org-id']);
