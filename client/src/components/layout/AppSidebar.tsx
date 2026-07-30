@@ -94,7 +94,12 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="!bg-background !border-r-0">
       <SidebarHeader className={showStorageMenu ? "gap-1 p-2 pb-0" : ""}>
-        <div className="flex items-center w-full group-data-[collapsible=icon]:justify-center">
+        <div className="flex h-14 shrink-0 items-center px-4 group-data-[collapsible=icon]:justify-center">
+          <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-transparent group-data-[collapsible=icon]:hidden">
+            Classgrid
+          </span>
+        </div>
+        <div className="flex items-center w-full group-data-[collapsible=icon]:justify-center mt-2">
           <SidebarSwitcher user={user ?? null} />
         </div>
         <div className={showStorageMenu ? "group-data-[collapsible=icon]:hidden mb-1" : "group-data-[collapsible=icon]:hidden"}>
