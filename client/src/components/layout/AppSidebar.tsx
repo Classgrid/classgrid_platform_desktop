@@ -119,9 +119,9 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                   {index > 0 && (
                     <div className="mx-4 my-2 h-px bg-border group-data-[collapsible=icon]:mx-2 group-data-[collapsible=icon]:my-1" />
                   )}
-                  {section.label && (
+                  {/* section.label && (
                     <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
-                  )}
+                  ) */}
                   <SidebarGroupContent>
                     <SidebarMenu>
                       {section.items.map((item) => {
@@ -161,7 +161,16 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                                     </div>
                                   </div>
                                 ) : (
-                                  <Link to={item.to || "#"} className="flex items-center gap-3 w-full justify-between">
+                                  <Link 
+                                    to={item.to || "#"} 
+                                    className="flex items-center gap-3 w-full justify-between"
+                                    onClick={(e) => {
+                                      if (item.hasNestedNav) {
+                                        e.preventDefault();
+                                        setShowStorageMenu(true);
+                                      }
+                                    }}
+                                  >
                                     <div className="flex items-center gap-3">
                                       {item.icon && <item.icon size={20} />}
                                       <span className="truncate">{item.label}</span>
