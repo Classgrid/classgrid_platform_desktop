@@ -12,7 +12,7 @@ export function StudentBillingPortalPage() {
 
       <h1 className="text-3xl font-bold tracking-tight mb-2">Student Fee Portal</h1>
       <p className="text-muted-foreground mb-8 max-w-md">
-        View your fee records and make secure payments. This portal is currently being set up by your institution.
+        The unified student fee payment portal is currently under development. Check back soon.
       </p>
 
       <div className="rounded-xl border border-border bg-card/50 p-6 max-w-sm w-full backdrop-blur-sm">

@@ -107,6 +107,7 @@ export function BillingPage() {
   }, [billingData]);
 
   const isNameSaved = Boolean(billingData?.billingSettings?.billing_contact_name);
+  const isEmailSaved = Boolean(billingData?.billingSettings?.invoice_email);
 
   const handleSaveSettings = async () => {
     try {
@@ -246,7 +247,7 @@ export function BillingPage() {
                 <Input
                   value={billingContactName}
                   onChange={(e) => setBillingContactName(e.target.value)}
-                  placeholder="John Doe"
+                  placeholder="e.g. John Doe"
                   className="flex-1"
                   disabled={isNameSaved}
                 />
@@ -270,7 +271,7 @@ export function BillingPage() {
               <Input
                 value={billingGstin}
                 onChange={(e) => setBillingGstin(e.target.value)}
-                placeholder="27AADCB2230M1Z2"
+                placeholder="e.g. 22AAAAA0000A1Z5"
                 disabled={!phoneVerified}
               />
             </div>
@@ -284,9 +285,9 @@ export function BillingPage() {
                     setBillingEmail(e.target.value);
                     setEmailVerified(false);
                   }}
-                  placeholder="accounts@school.edu"
+                  placeholder="e.g. accounts@company.com"
                   className="flex-1"
-                  disabled={!billingContactName?.trim()}
+                  disabled={isEmailSaved || !billingContactName?.trim()}
                 />
                 {emailVerified ? (
                   <VerifiedButton />
@@ -312,7 +313,7 @@ export function BillingPage() {
                     setBillingPhone(e.target.value);
                     setPhoneVerified(false);
                   }}
-                  placeholder="9876543210"
+                  placeholder="e.g. 9999999999"
                   className="flex-1"
                   disabled={!emailVerified}
                 />
@@ -351,7 +352,7 @@ export function BillingPage() {
               <Input
                 value={billingAddress1}
                 onChange={(e) => setBillingAddress1(e.target.value)}
-                placeholder="Street address, P.O. box, company name, c/o"
+                placeholder="e.g. Flat, House no., Building, Company"
                 disabled={!phoneVerified}
               />
             </div>
@@ -361,7 +362,7 @@ export function BillingPage() {
               <Input
                 value={billingAddress2}
                 onChange={(e) => setBillingAddress2(e.target.value)}
-                placeholder="Apartment, suite, unit, building, floor, etc."
+                placeholder="e.g. Area, Street, Sector, Village"
                 disabled={!phoneVerified}
               />
             </div>
@@ -371,7 +372,7 @@ export function BillingPage() {
               <Input
                 value={billingCity}
                 onChange={(e) => setBillingCity(e.target.value)}
-                placeholder="Mumbai"
+                placeholder="e.g. New Delhi"
                 disabled={!phoneVerified}
               />
             </div>
@@ -397,7 +398,7 @@ export function BillingPage() {
               <Input
                 value={billingPincode}
                 onChange={(e) => setBillingPincode(e.target.value)}
-                placeholder="400001"
+                placeholder="e.g. 110001"
                 disabled={!phoneVerified}
               />
             </div>

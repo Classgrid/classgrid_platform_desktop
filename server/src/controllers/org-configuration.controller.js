@@ -424,9 +424,15 @@ export const updateOrganizationBillingSettings = async (req, res) => {
 
         if (!org.billing_settings) org.billing_settings = {};
 
-        const fields = ['address_line1', 'address_line2', 'city', 'state', 'pincode', 'billing_contact_name', 'phone', 'gstin'];
+        const fields = ['invoice_email', 'address_line1', 'address_line2', 'city', 'state', 'pincode', 'billing_contact_name', 'phone', 'gstin'];
         for (const field of fields) {
             if (req.body[field] !== undefined) {
+                if (field === 'invoice_email' && org.billing_settings.invoice_email !== req.body[field]) {
+                    org.billing_settings.email_verified = false;
+                }
+                if (field === 'phone' && org.billing_settings.phone !== req.body[field]) {
+                    org.billing_settings.phone_verified = false;
+                }
                 org.billing_settings[field] = req.body[field];
             }
         }
