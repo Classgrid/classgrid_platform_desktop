@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/marketing_ui/card";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { Button } from "@/components/marketing_ui/button";
 import { 
   GraduationCap, FileText, FileEdit, BarChart, Clock, IndianRupee, Slash,
@@ -85,16 +85,8 @@ export function StudentWorkPage() {
           <Button variant="outline" size="sm">View All</Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <StatCard 
-            title="Total Assignments" 
-            value="0" 
-            icon={FileText} 
-          />
-          <StatCard 
-            title="Pending" 
-            value="0" 
-            icon={FileEdit} 
-          />
+          
+          
         </div>
       </div>
     </DashboardLayout>

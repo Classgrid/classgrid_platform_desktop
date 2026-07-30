@@ -6,8 +6,47 @@ import ProrationEngine from "../../services/billing/ProrationEngine.js";
 
 export const listSubscriptions = async (req, res) => {
     try {
-        const subscriptions = await OrganizationSubscription.find().populate("billingPlanVersionId").sort({ createdAt: -1 });
+        const subscriptions = await OrganizationSubscription.find().populate("billingPlanVersionId organizationId").sort({ createdAt: -1 });
         res.json({ success: true, data: subscriptions });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const getSubscriptionOverview = async (req, res) => {
+    try {
+        const Organization = (await import("../../models/Organization.js")).default;
+        const User = (await import("../../models/User.js")).default;
+        
+        const [orgStats, totalUsers] = await Promise.all([
+            Organization.aggregate([
+                {
+                    $group: {
+                        _id: null,
+                        totalOrgs: { $sum: 1 },
+                        activeOrgs: { 
+                            $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] } 
+                        },
+                        demoOrgs: {
+                            $sum: { $cond: [{ $in: ["$org_type", ["DEMO", "TRIAL"]] }, 1, 0] }
+                        }
+                    }
+                }
+            ]),
+            User.countDocuments({ status: "active" })
+        ]);
+
+        const stats = orgStats[0] || { totalOrgs: 0, activeOrgs: 0, demoOrgs: 0 };
+        
+        res.json({
+            success: true,
+            data: {
+                totalOrganizations: stats.totalOrgs,
+                activeOrgs: stats.activeOrgs,
+                demoTrialOrgs: stats.demoOrgs,
+                totalUsersAcrossOrgs: totalUsers
+            }
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

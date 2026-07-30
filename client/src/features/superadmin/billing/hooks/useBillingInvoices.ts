@@ -1,10 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchInvoices, fetchInvoiceDetail, previewInvoice, fetchInvoiceDeliveryHistory, billingApi } from '../services/superAdminBillingApi';
+import { fetchInvoices, fetchInvoiceDetail, previewInvoice, fetchInvoiceDeliveryHistory, billingApi } from '../../services/superAdminBillingApi';
 
-export const useInvoices = (filters: any) => {
+export interface InvoiceFilters {
+  status?: string;
+  organizationId?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export const useInvoices = (filters: InvoiceFilters) => {
   return useQuery({
     queryKey: ['billing-invoices', filters],
     queryFn: () => fetchInvoices(filters),
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 };
 
@@ -13,6 +22,8 @@ export const useInvoiceDetail = (invoiceId: string) => {
     queryKey: ['billing-invoice-detail', invoiceId],
     queryFn: () => fetchInvoiceDetail(invoiceId),
     enabled: !!invoiceId,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 };
 
@@ -21,6 +32,8 @@ export const useInvoicePreview = (payload: any) => {
     queryKey: ['billing-invoice-preview', payload],
     queryFn: () => previewInvoice(payload),
     enabled: !!payload && !!payload.organizationId,
+    staleTime: 10 * 60 * 1000, // Preview is static for a given payload
+    retry: 1,
   });
 };
 
@@ -29,6 +42,8 @@ export const useInvoiceDeliveryHistory = (invoiceId: string) => {
     queryKey: ['billing-invoice-delivery', invoiceId],
     queryFn: () => fetchInvoiceDeliveryHistory(invoiceId),
     enabled: !!invoiceId,
+    staleTime: 60 * 1000,
+    retry: 2,
   });
 };
 
@@ -36,7 +51,7 @@ export const useGenerateInvoice = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: any) => {
-      const res = await billingApi.post('/invoices/generate', payload);
+      const res = await billingApi.post('/invoice/generate', payload);
       return res.data;
     },
     onSuccess: () => {
@@ -49,7 +64,7 @@ export const useIssueInvoice = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (invoiceId: string) => {
-      const res = await billingApi.post(`/invoices/${invoiceId}/issue`);
+      const res = await billingApi.post(`/invoice/${invoiceId}/issue`);
       return res.data;
     },
     onSuccess: (_, invoiceId) => {

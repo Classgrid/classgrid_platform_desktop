@@ -94,8 +94,34 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
         const SaasInvoice = (await import("../models/SaasInvoice.js")).default;
         const FeeTransaction = (await import("../models/FeeTransaction.js")).default;
         const OrgSubscription = (await import("../models/OrgSubscription.js")).default;
+        const WebhookEvent = (await import("../models/WebhookEvent.js")).default;
+        const mongoose = (await import("mongoose")).default;
 
-        switch (event) {
+        // ── 3. Idempotency Lock via WebhookEvent ──
+        const eventId = req.headers["x-razorpay-event-id"] || crypto.randomUUID();
+        try {
+            await WebhookEvent.create({
+                provider: "RAZORPAY",
+                providerEventId: eventId,
+                eventType: event,
+                payloadHash: crypto.createHash("sha256").update(rawBody).digest("hex"),
+                signatureValid: true,
+                payload: body,
+                processingStatus: "PENDING"
+            });
+        } catch (err) {
+            if (err.code === 11000) {
+                console.log(`[Razorpay Webhook] 🔁 Duplicate event ignored: ${eventId}`);
+                return res.status(200).json({ received: true, duplicate: true });
+            }
+            throw err;
+        }
+
+        let processingStatus = "PROCESSED";
+        let lastError = null;
+
+        try {
+            switch (event) {
 
             // ═══════════════════════════════════════════
             // PAYMENT CAPTURED — Money received successfully
@@ -138,12 +164,28 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
 
                     // Update SaaS Invoice status to paid
                     if (invoiceId) {
-                        await SaasInvoice.findByIdAndUpdate(invoiceId, {
-                            status: "paid",
-                            paidAt: new Date(),
-                            razorpayPaymentId: paymentId,
-                            razorpayOrderId: orderId,
-                        });
+                        const session = await mongoose.startSession();
+                        session.startTransaction();
+                        try {
+                            const invoice = await SaasInvoice.findById(invoiceId).session(session);
+                            if (invoice && invoice.status !== "paid") {
+                                invoice.status = "paid";
+                                invoice.paidAt = new Date();
+                                invoice.razorpay = {
+                                    orderId,
+                                    paymentId,
+                                    paymentMethod: method,
+                                    paidAt: new Date()
+                                };
+                                await invoice.save({ session });
+                            }
+                            await session.commitTransaction();
+                        } catch (err) {
+                            await session.abortTransaction();
+                            throw err;
+                        } finally {
+                            session.endSession();
+                        }
                     }
 
                     // Extend subscription
@@ -368,11 +410,19 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                 console.log(`[Razorpay Webhook] Unhandled event: ${event}`);
         }
 
+        // Mark WebhookEvent as processed
+        await WebhookEvent.findOneAndUpdate({ providerEventId: eventId }, {
+            processingStatus,
+            processedAt: new Date(),
+            lastError
+        });
+
         // Always return 200 to Razorpay to prevent retries
         res.status(200).json({ received: true, event });
     } catch (err) {
         console.error("[Razorpay Webhook] 🔥 Error:", err);
-        // Return 200 even on error to prevent infinite Razorpay retries
+        // We don't mark WebhookEvent as FAILED here because the try/catch might have thrown before we got the eventId
+        // The webhook retry process will handle it.
         res.status(200).json({ received: true, error: "internal" });
     }
 });

@@ -1,0 +1,60 @@
+/**
+ * billingEnums.js
+ * Core configuration for billing constants and enums to maintain strict type safety.
+ */
+
+export const PLAN_STATUS = {
+    DRAFT: "DRAFT",
+    SCHEDULED: "SCHEDULED",
+    ACTIVE: "ACTIVE",
+    SUPERSEDED: "SUPERSEDED",
+    RETIRED: "RETIRED"
+};
+
+export const SUBSCRIPTION_STATUS = {
+    TRIALING: "TRIALING",
+    ACTIVE: "ACTIVE",
+    PAST_DUE: "PAST_DUE",
+    CANCELED: "CANCELED",
+    UNPAID: "UNPAID"
+};
+
+export const INVOICE_STATUS = {
+    DRAFT: "DRAFT",
+    ISSUED: "ISSUED",
+    PARTIALLY_PAID: "PARTIALLY_PAID",
+    PAID: "PAID",
+    OVERDUE: "OVERDUE",
+    VOID: "VOID",
+    UNCOLLECTIBLE: "UNCOLLECTIBLE"
+};
+
+export const PAYMENT_STATUS = {
+    PENDING: "PENDING",
+    AUTHORIZED: "AUTHORIZED",
+    CAPTURED: "CAPTURED",
+    FAILED: "FAILED",
+    REFUNDED: "REFUNDED"
+};
+
+export const BILLING_CYCLE = {
+    MONTHLY: "MONTHLY",
+    QUARTERLY: "QUARTERLY",
+    BIANNUAL: "BIANNUAL",
+    ANNUAL: "ANNUAL"
+};
+
+export const METRIC_CODES = {
+    ACTIVE_LEARNERS: "ACTIVE_LEARNERS",
+    ACTIVE_STAFF: "ACTIVE_STAFF",
+    NATIVE_BATCHES: "NATIVE_BATCHES",
+    SUB_BATCHES: "SUB_BATCHES",
+    VISIBLE_DIVISIONS: "VISIBLE_DIVISIONS",
+    STORAGE_GB: "STORAGE_GB",
+    SMS_CREDITS: "SMS_CREDITS"
+};
+
+export const DISCOUNT_TYPE = {
+    PERCENTAGE: "PERCENTAGE",
+    FIXED_AMOUNT: "FIXED_AMOUNT"
+};

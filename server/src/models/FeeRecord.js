@@ -21,17 +21,21 @@ const feeRecordSchema = new mongoose.Schema(
             enum: ['college', 'exam', 'library', 'canteen', 'hostel', 'other'],
             default: 'college',
         },
-        amount: {
+        amountPaise: {
             type: Number,
             required: true,
+            min: 0,
+            validate: { validator: Number.isInteger, message: "{VALUE} is not an integer paise value" }
         },
         dueDate: {
             type: Date,
             required: true,
         },
-        paidAmount: {
+        paidAmountPaise: {
             type: Number,
             default: 0,
+            min: 0,
+            validate: { validator: Number.isInteger, message: "{VALUE} is not an integer paise value" }
         },
         status: {
             type: String,

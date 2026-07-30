@@ -1,5 +1,6 @@
 import express from "express";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import BillingHandoff from "../models/BillingHandoff.js";
 import Organization from "../models/Organization.js";
 
@@ -23,9 +24,26 @@ router.post("/verify-otp", async (req, res) => {
              return res.status(400).json({ error: "Payment already completed" });
         }
 
-        if (handoff.otp !== otp) {
+        if (handoff.lockoutUntil && handoff.lockoutUntil > new Date()) {
+            return res.status(429).json({ error: "Too many failed attempts. Try again later." });
+        }
+
+        const isMatch = await bcrypt.compare(otp, handoff.otp);
+        
+        if (!isMatch) {
+            handoff.attempts += 1;
+            if (handoff.attempts >= 3) {
+                handoff.lockoutUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+            }
+            await handoff.save();
             return res.status(400).json({ error: "Invalid OTP" });
         }
+
+        // Consume OTP atomically so it cannot be re-used
+        handoff.otp = "CONSUMED";
+        handoff.attempts = 0;
+        handoff.lockoutUntil = null;
+        await handoff.save();
 
         const org = await Organization.findById(handoff.organization_id).select("name");
 

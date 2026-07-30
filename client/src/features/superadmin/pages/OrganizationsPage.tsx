@@ -10,7 +10,7 @@ import { DataTable } from "@/components/marketing_ui/data-table";
 import { formatOrgType } from "@/utils/orgHelpers";
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 
 
 import { formatDate } from "@/utils/dateUtils";
@@ -143,9 +143,9 @@ export function OrganizationsPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard title="Total Organizations" value={isLoading ? "..." : stats.total} icon={<Building2 size={16} />} />
-        <StatCard title="Active Organizations" value={isLoading ? "..." : stats.active} icon={<ShieldCheck size={16} />} />
-        <StatCard title="Users In Orgs" value={isLoading ? "..." : stats.totalUsers} icon={<Users size={16} />} />
+        } />
+        } />
+        } />
       </div>
 
       <SectionPanel

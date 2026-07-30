@@ -18,8 +18,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/marketing_ui/input-otp";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
 
-// Charts
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 
 // Icons & Utils
 import { CreditCard, Download, IndianRupee, ShieldCheck, Plus, CheckCircle2, Loader2, MapPin } from "lucide-react";
@@ -302,6 +300,48 @@ export function BillingPage() {
             No pending invoices found.
           </div>
         )}
+      </div>
+
+      {/* BILLING METHOD */}
+      <div className="bg-card border border-border rounded-xl p-6 flex flex-col gap-6 shadow-sm hover:shadow-md transition-all">
+        <div className="border-b border-border pb-4 flex flex-col gap-2">
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <CreditCard size={18} /> Billing method
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1 opacity-80">
+            Manage your primary payment method.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {billingData?.paymentMethod ? (
+            <div className="flex items-start justify-between p-4 border rounded-lg bg-muted/20">
+              <div className="space-y-1">
+                <p className="font-medium">Primary</p>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <CreditCard size={16} />
+                    <span>•••• •••• •••• {billingData.paymentMethod.last4}</span>
+                  </div>
+                  <span>Expires {billingData.paymentMethod.expMonth}/{billingData.paymentMethod.expYear}</span>
+                </div>
+                <p className="text-sm pt-1">{billingContactName || billingData.paymentMethod.nameOnCard}</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" size="sm">Update</Button>
+                <Button variant="destructive" size="sm">Delete</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground py-2">
+              No additional payment method on file
+            </div>
+          )}
+
+          <Button variant="secondary" className="w-full sm:w-auto">
+            <Plus size={16} className="mr-2" /> Add
+          </Button>
+        </div>
       </div>
 
       {/* BILLING SETTINGS */}

@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Users, Building2, ShieldAlert, CheckCircle, RefreshCw, MoreVertical } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { Badge } from "@/components/marketing_ui/badge";
 import { DataTable } from "@/components/marketing_ui/data-table";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/marketing_ui/avatar";
@@ -195,25 +195,13 @@ export function UsersPage() {
 
       {/* Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Users"
-          value={isLoading ? "—" : stats.total}
-          icon={<Users size={16} />}
+        }
         />
-        <StatCard
-          title="Super Admins"
-          value={isLoading ? "—" : stats.superAdmins}
-          icon={<ShieldAlert size={16} />}
+        }
         />
-        <StatCard
-          title="Org Admins"
-          value={isLoading ? "—" : stats.orgAdmins}
-          icon={<Building2 size={16} />}
+        }
         />
-        <StatCard
-          title="Suspended"
-          value={isLoading ? "—" : stats.suspended}
-          icon={<CheckCircle size={16} />}
+        }
         />
       </div>
 

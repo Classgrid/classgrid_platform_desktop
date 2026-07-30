@@ -34,15 +34,17 @@ const invoiceLineItemSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        unitRateInr: {
+        unitRatePaise: {
             type: Number,
             required: true,
             min: 0,
+            validate: { validator: Number.isInteger, message: "{VALUE} is not an integer paise value" }
         },
-        amountInr: {
+        amountPaise: {
             type: Number,
             required: true,
             min: 0,
+            validate: { validator: Number.isInteger, message: "{VALUE} is not an integer paise value" }
         },
     },
     { _id: false }
@@ -72,25 +74,28 @@ const saasInvoiceSchema = new mongoose.Schema(
             type: [invoiceLineItemSchema],
             default: [],
         },
-        subtotalInr: {
+        subtotalPaise: {
             type: Number,
             required: true,
             min: 0,
+            validate: { validator: Number.isInteger, message: "{VALUE} is not an integer paise value" }
         },
         taxPercent: {
             type: Number,
             default: 18, // GST 18%
             min: 0,
         },
-        taxAmountInr: {
+        taxAmountPaise: {
             type: Number,
             default: 0,
             min: 0,
+            validate: { validator: Number.isInteger, message: "{VALUE} is not an integer paise value" }
         },
-        totalAmountInr: {
+        totalAmountPaise: {
             type: Number,
             required: true,
             min: 0,
+            validate: { validator: Number.isInteger, message: "{VALUE} is not an integer paise value" }
         },
         currency: {
             type: String,

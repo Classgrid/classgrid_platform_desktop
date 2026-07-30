@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
 import { DataTable } from "@/components/marketing_ui/data-table";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -155,10 +155,10 @@ export function ContentModerationPage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Pending Reports" value={isLoading ? "—" : pendingCount} icon={<Clock size={15} />} />
-        <StatCard title="High Severity" value={isLoading ? "—" : criticalCount} icon={<AlertTriangle size={15} />} />
-        <StatCard title="Resolved" value={isLoading ? "—" : resolvedCount} icon={<CheckCircle2 size={15} />} />
-        <StatCard title="Total Reports" value={isLoading ? "—" : total} icon={<Flag size={15} />} />
+        } />
+        } />
+        } />
+        } />
       </div>
 
       <div >

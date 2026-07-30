@@ -1,62 +1,103 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useTransactions } from '../hooks/useBillingFinance';
+import { Card, CardHeader, CardTitle, CardContent } from '../../../../components/marketing_ui/card';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../../../components/marketing_ui/table';
+import { Badge } from '../../../../components/marketing_ui/badge';
+import { Spinner } from '../../../../components/marketing_ui/spinner';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../../../components/marketing_ui/select';
+import { Input } from '../../../../components/marketing_ui/input'; // Assuming marketing_ui input
 
 const TransactionsPage = () => {
+  const [filterType, setFilterType] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const { data: transactions, isLoading } = useTransactions({
+    type: filterType !== 'ALL' ? filterType : undefined,
+    search: searchQuery,
+  });
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center p-6 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">All Network Transactions</h2>
-        <div className="flex gap-2">
-          <select className="px-3 py-1.5 border border-gray-300 rounded-md text-sm">
-            <option value="ALL">All Flows</option>
-            <option value="CLASSGRID_SUBSCRIPTION">Classgrid Subscriptions</option>
-            <option value="STUDENT_FEE">Student Fees</option>
-            <option value="REFUND">Refunds</option>
-          </select>
-          <input type="text" placeholder="Search Txn ID..." className="px-3 py-1.5 border border-gray-300 rounded-md text-sm w-64" />
+    <div className="flex flex-col h-full bg-background text-foreground">
+      <div className="flex justify-between items-center p-6 border-b border-border bg-card">
+        <h2 className="text-xl font-semibold tracking-tight">All Network Transactions</h2>
+        <div className="flex gap-2 items-center">
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Flows" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Flows</SelectItem>
+              <SelectItem value="CLASSGRID_SUBSCRIPTION">Classgrid Subscriptions</SelectItem>
+              <SelectItem value="STUDENT_FEE">Student Fees</SelectItem>
+              <SelectItem value="REFUND">Refunds</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input 
+            type="text" 
+            placeholder="Search Txn ID..." 
+            className="w-64"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
       </div>
 
-      <div className="p-6">
-        <p className="text-sm text-gray-500 mb-4">
+      <div className="p-6 space-y-6">
+        <p className="text-sm text-muted-foreground">
           This table displays all transactions across the platform, including student-to-institution payments.
         </p>
 
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Txn ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Flow</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200 text-sm">
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500">2026-07-30 14:00</td>
-                <td className="px-6 py-4 whitespace-nowrap font-mono text-xs text-gray-600">pay_NM2x9P...</td>
-                <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Delhi Public School</td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500">Student Fee</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900">₹4,500</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Captured</span>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500">2026-07-30 11:30</td>
-                <td className="px-6 py-4 whitespace-nowrap font-mono text-xs text-gray-600">pay_NM1x8A...</td>
-                <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Delhi Public School</td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500">SaaS Subscription</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900">₹25,000</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Captured</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Transactions Log</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center p-6"><Spinner /></div>
+            ) : transactions?.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Txn ID</TableHead>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Flow</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((txn: any) => (
+                    <TableRow key={txn._id}>
+                      <TableCell>{new Date(txn.createdAt).toLocaleString()}</TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">
+                        {txn.gatewayTransactionId || txn._id}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {txn.organizationId?.name || 'Unknown Org'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {txn.paymentFlow?.replace(/_/g, ' ')}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        ₹{(txn.amountPaise || 0) / 100}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={txn.status === 'CAPTURED' ? 'default' : 'secondary'}>
+                          {txn.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center p-6 border rounded-lg bg-muted/50 text-muted-foreground text-sm">
+                No transactions match your search.
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

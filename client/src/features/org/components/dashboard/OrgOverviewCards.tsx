@@ -1,6 +1,6 @@
 import React from "react";
 import { GraduationCap, Users, IndianRupee, CalendarCheck, Building } from "lucide-react";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { useOrgDashboardMetrics } from "../../queries/useOrgDashboard";
 
@@ -35,26 +35,10 @@ export function OrgOverviewCards({ profile }: OrgOverviewCardsProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <StatCard
-        title={`Total ${profile?.terminology?.learner || "Students"}`} 
-        value={metrics?.totalStudents?.toLocaleString() || "0"} 
-        icon={GraduationCap} 
-      />
-      <StatCard
-        title={`Total ${profile?.terminology?.educator || "Faculty"}`} 
-        value={metrics?.totalFaculty?.toLocaleString() || "0"} 
-        icon={Users} 
-      />
-      <StatCard
-        title={metrics?.structureMetricLabel || "Classes"} 
-        value={metrics?.structureMetric?.toLocaleString() || "0"} 
-        icon={Building} 
-      />
-      <StatCard
-        title="Attendance %" 
-        value="0%" 
-        icon={CalendarCheck} 
-      />
+      
+      
+      
+      
     </div>
   );
 }

@@ -2,7 +2,7 @@ import React from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/marketing_ui/card";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { Badge } from "@/components/marketing_ui/badge";
 import { ScrollArea } from "@/components/marketing_ui/scroll-area";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
@@ -99,21 +99,9 @@ export function FacultyHomePage() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <StatCard 
-          title={`Today's ${sessionLabel}`} 
-          value={data?.metrics?.todayLectures?.toString() || "0"} 
-          icon={CalendarCheck} 
-        />
-        <StatCard 
-          title="Pending Grading" 
-          value={data?.metrics?.pendingGrading?.toString() || "0"} 
-          icon={FileText} 
-        />
-        <StatCard 
-          title="Upcoming Meetings" 
-          value={data?.metrics?.upcomingMeetings?.toString() || "0"} 
-          icon={Users} 
-        />
+        
+        
+        
       </div>
 
       {/* Main Content Grid */}

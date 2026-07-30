@@ -1,10 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchRevenueOverview, fetchRevenueByOrg, fetchRevenueByModule, fetchRevenueByInvoice, exportRevenue, fetchTransactions, fetchTransactionDetail, fetchTransactionWebhooks, fetchTransactionTimeline, fetchFailedPayments, billingApi } from '../services/superAdminBillingApi';
+import { fetchRevenueOverview, fetchRevenueByOrg, fetchRevenueByModule, fetchRevenueByInvoice, exportRevenue, fetchTransactions, fetchTransactionDetail, fetchTransactionWebhooks, fetchTransactionTimeline, fetchFailedPayments, billingApi } from '../../services/superAdminBillingApi';
+
+export interface TransactionFilters {
+  status?: string;
+  type?: string;
+  organizationId?: string;
+  startDate?: string;
+  endDate?: string;
+}
 
 export const useRevenueOverview = () => {
   return useQuery({
     queryKey: ['billing-revenue-overview'],
     queryFn: fetchRevenueOverview,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -12,6 +21,7 @@ export const useRevenueByOrg = () => {
   return useQuery({
     queryKey: ['billing-revenue-org'],
     queryFn: fetchRevenueByOrg,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -19,6 +29,7 @@ export const useRevenueByModule = () => {
   return useQuery({
     queryKey: ['billing-revenue-module'],
     queryFn: fetchRevenueByModule,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -26,6 +37,7 @@ export const useRevenueByInvoice = () => {
   return useQuery({
     queryKey: ['billing-revenue-by-invoice'],
     queryFn: fetchRevenueByInvoice,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -45,10 +57,12 @@ export const useExportRevenue = () => {
   });
 };
 
-export const useTransactions = (filters: any) => {
+export const useTransactions = (filters: TransactionFilters) => {
   return useQuery({
     queryKey: ['billing-transactions', filters],
     queryFn: () => fetchTransactions(filters),
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 };
 
@@ -57,6 +71,7 @@ export const useTransactionDetail = (txId: string) => {
     queryKey: ['billing-transaction-detail', txId],
     queryFn: () => fetchTransactionDetail(txId),
     enabled: !!txId,
+    staleTime: 60 * 1000,
   });
 };
 
@@ -65,6 +80,7 @@ export const useTransactionWebhooks = (txId: string) => {
     queryKey: ['billing-transaction-webhooks', txId],
     queryFn: () => fetchTransactionWebhooks(txId),
     enabled: !!txId,
+    staleTime: 60 * 1000,
   });
 };
 
@@ -73,6 +89,7 @@ export const useTransactionTimeline = (txId: string) => {
     queryKey: ['billing-transaction-timeline', txId],
     queryFn: () => fetchTransactionTimeline(txId),
     enabled: !!txId,
+    staleTime: 60 * 1000,
   });
 };
 

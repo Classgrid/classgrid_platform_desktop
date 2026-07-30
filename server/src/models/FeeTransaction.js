@@ -16,9 +16,11 @@ const feeTransactionSchema = new mongoose.Schema({
         ref: 'Organization',
         required: true
     },
-    amount: {
+    amountPaise: {
         type: Number,
-        required: true
+        required: true,
+        min: 0,
+        validate: { validator: Number.isInteger, message: "{VALUE} is not an integer paise value" }
     },
     paymentDate: {
         type: Date,

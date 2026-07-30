@@ -1,53 +1,96 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useFailedPaymentsList, useFailureOverview } from '../hooks/useBillingFailures';
+import { Card, CardHeader, CardTitle, CardContent } from '../../../../components/marketing_ui/card';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../../../components/marketing_ui/table';
+import { Badge } from '../../../../components/marketing_ui/badge';
+import { Button } from '../../../../components/marketing_ui/button';
+import { Spinner } from '../../../../components/marketing_ui/spinner';
+import { AlertCircle, IndianRupee, Building2 } from 'lucide-react';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../../../components/marketing_ui/select';
 
 const FailedPaymentsPage = () => {
+  const [filterType, setFilterType] = useState('ALL');
+  
+  const { data: overview, isLoading: overviewLoading } = useFailureOverview();
+  const { data: failures, isLoading: failuresLoading } = useFailedPaymentsList();
+
+  const filteredFailures = filterType === 'ALL' 
+    ? failures 
+    : failures?.filter((f: any) => filterType === 'RESOLVED' ? f.resolved : !f.resolved);
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center p-6 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Failed Payments Triage</h2>
-        <div className="flex gap-2">
-          <select className="px-3 py-1.5 border border-gray-300 rounded-md text-sm">
-            <option value="ALL">All Failures</option>
-            <option value="UNRESOLVED">Unresolved</option>
-            <option value="RESOLVED">Resolved</option>
-          </select>
-          <button className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md">
+    <div className="flex flex-col h-full bg-background text-foreground">
+      <div className="flex justify-between items-center p-6 border-b border-border bg-card">
+        <h2 className="text-xl font-semibold tracking-tight">Failed Payments Triage</h2>
+        <div className="flex gap-2 items-center">
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Failures" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Failures</SelectItem>
+              <SelectItem value="UNRESOLVED">Unresolved</SelectItem>
+              <SelectItem value="RESOLVED">Resolved</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="default">
             Generate Recovery Link
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="p-6">
-        <p className="text-sm text-gray-500 mb-4">
+      <div className="p-6 space-y-6">
+        <p className="text-sm text-muted-foreground">
           Triage and recover failed payment attempts. Never automatically retry a charge; generate a new secure checkout link instead.
         </p>
 
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Flow</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200 text-sm">
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500">2026-07-30 15:45</td>
-                <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Delhi Public School</td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500">SaaS Subscription</td>
-                <td className="px-6 py-4 whitespace-nowrap text-red-600">INSUFFICIENT_FUNDS</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900">₹25,000</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Unresolved</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+
+
+        {/* Log Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Failed Transaction Log</CardTitle>
+            <p className="text-sm text-muted-foreground">All failed or incomplete platform subscription payments.</p>
+          </CardHeader>
+          <CardContent>
+            {failuresLoading ? (
+              <div className="flex justify-center p-6"><Spinner /></div>
+            ) : filteredFailures?.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Flow</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredFailures.map((failure: any) => (
+                    <TableRow key={failure._id}>
+                      <TableCell>{new Date(failure.createdAt).toLocaleString()}</TableCell>
+                      <TableCell className="font-medium">{failure.organizationId?.name || 'Unknown Org'}</TableCell>
+                      <TableCell className="text-muted-foreground">SaaS Subscription</TableCell>
+                      <TableCell className="text-destructive font-medium">{failure.errorCode || 'UNKNOWN_ERROR'}</TableCell>
+                      <TableCell className="text-right">₹{(failure.amountPaise || 0) / 100}</TableCell>
+                      <TableCell>
+                        <Badge variant={failure.resolved ? "secondary" : "destructive"}>
+                          {failure.resolved ? 'Resolved' : 'Unresolved'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center p-6 border rounded-lg bg-muted/50 text-muted-foreground text-sm">
+                No failures found.
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

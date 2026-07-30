@@ -34,14 +34,30 @@ import {
 } from "../controllers/support-communication.controller.js";
 
 import notificationRoutes from "./super-admin/notification.routes.js";
+import billingCatalogRoutes from "./super-admin/billing-catalog.routes.js";
+import billingDiscountsTaxesRoutes from "./super-admin/billing-discounts-taxes.routes.js";
+import billingEligibilityPricingRoutes from "./super-admin/billing-eligibility-pricing.routes.js";
+import billingFailuresRoutes from "./super-admin/billing-failures.routes.js";
+import billingInvoiceRoutes from "./super-admin/billing-invoice.routes.js";
+import billingRevenueRoutes from "./super-admin/billing-revenue.routes.js";
+import billingSubscriptionRoutes from "./super-admin/billing-subscription.routes.js";
+import billingTransactionsRoutes from "./super-admin/billing-transactions.routes.js";
 
 const router = express.Router();
 const PRIMARY_SUPER_ADMIN_EMAIL = (process.env.SUPER_ADMIN_EMAIL || "support@classgrid.in").trim().toLowerCase();
 
-router.use("/notifications-sys", notificationRoutes);
-
 // All routes require super_admin role
 router.use(isAuthenticated, requireRole("super_admin"));
+
+router.use("/notifications-sys", notificationRoutes);
+router.use("/billing/catalog", billingCatalogRoutes);
+router.use("/billing/discounts-taxes", billingDiscountsTaxesRoutes);
+router.use("/billing/eligibility-pricing", billingEligibilityPricingRoutes);
+router.use("/billing/failures", billingFailuresRoutes);
+router.use("/billing/invoice", billingInvoiceRoutes);
+router.use("/billing/revenue", billingRevenueRoutes);
+router.use("/billing/subscription", billingSubscriptionRoutes);
+router.use("/billing/transactions", billingTransactionsRoutes);
 
 function isPrimarySuperAdmin(user) {
     return (user?.email || "").trim().toLowerCase() === PRIMARY_SUPER_ADMIN_EMAIL;

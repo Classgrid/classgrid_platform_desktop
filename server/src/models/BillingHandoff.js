@@ -21,7 +21,10 @@ const billingHandoffSchema = new mongoose.Schema(
         context: { type: mongoose.Schema.Types.Mixed },
         
         // Status tracking
+        // Status tracking
         verified: { type: Boolean, default: false },
+        attempts: { type: Number, default: 0 },
+        lockoutUntil: { type: Date },
         
         // TTL Index: automatically delete document after 10 minutes
         createdAt: { type: Date, default: Date.now, expires: 600 } 

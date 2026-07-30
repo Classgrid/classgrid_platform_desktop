@@ -1,10 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchSubscriptions, fetchSubscriptionDetail, fetchPricingOverrides, setPricingOverride, previewProration } from '../services/superAdminBillingApi';
+import { fetchSubscriptions, fetchSubscriptionDetail, fetchPricingOverrides, setPricingOverride, previewProration, fetchSubscriptionOverview } from '../../services/superAdminBillingApi';
 
 export const useSubscriptions = () => {
   return useQuery({
     queryKey: ['billing-subscriptions'],
     queryFn: fetchSubscriptions,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
+  });
+};
+
+export const useSubscriptionOverview = () => {
+  return useQuery({
+    queryKey: ['billing-subscription-overview'],
+    queryFn: fetchSubscriptionOverview,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 };
 
@@ -13,6 +24,7 @@ export const useSubscriptionDetail = (orgId: string) => {
     queryKey: ['billing-subscription-detail', orgId],
     queryFn: () => fetchSubscriptionDetail(orgId),
     enabled: !!orgId,
+    staleTime: 60 * 1000,
   });
 };
 
@@ -21,6 +33,7 @@ export const usePricingOverrides = (orgId: string) => {
     queryKey: ['billing-pricing-overrides', orgId],
     queryFn: () => fetchPricingOverrides(orgId),
     enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
   });
 };
 

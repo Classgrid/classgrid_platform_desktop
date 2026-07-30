@@ -108,8 +108,49 @@ export const ModuleOverrideDialog: React.FC<{
 };
 
 // 18. OrganizationPricingOverrideTable
-export const OrganizationPricingOverrideTable: React.FC<{
+export const OrganizationPricingOverrideTable: React.FC<{ orgId: string }> = ({ orgId }) => {
+  const { data: overrides, isLoading } = usePricingOverrides(orgId);
+  const [selectedModule, setSelectedModule] = useState<any>(null);
+
+  if (isLoading) return <AsyncBillingState loading={true} skeletonType="table" />;
+
+  return (
+    <div className="space-y-4">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Module</TableHead>
+            <TableHead>Custom Price</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {overrides?.length ? overrides.map((override: any) => (
+            <TableRow key={override._id}>
+              <TableCell>{override.moduleId?.name}</TableCell>
+              <TableCell><MoneyDisplay amountPaise={override.overridePricePaise} /></TableCell>
+              <TableCell>
+                <Button variant="outline" size="sm" onClick={() => setSelectedModule(override.moduleId)}>Edit</Button>
+              </TableCell>
+            </TableRow>
+          )) : (
+            <TableRow>
+              <TableCell colSpan={3} className="text-center text-muted-foreground">No overrides found.</TableCell>
+            </TableRow>
+          )}
+        </TableBody>
       </Table>
+      
+      {selectedModule && (
+        <ModuleOverrideDialog 
+          isOpen={!!selectedModule}
+          onClose={() => setSelectedModule(null)}
+          orgId={orgId}
+          moduleId={selectedModule._id}
+          moduleName={selectedModule.name}
+          currentPricePaise={0}
+        />
+      )}
     </div>
   );
 };

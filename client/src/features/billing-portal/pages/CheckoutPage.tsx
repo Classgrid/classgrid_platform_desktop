@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/marketing_ui/input-otp";
+import { Button } from "@/components/marketing_ui/button";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 
@@ -28,11 +29,19 @@ export function CheckoutPage() {
     }
 
     setToken(tokenParam);
-    // Ideally, we'd verify the token exists and is valid here.
-    // For now, we'll assume it's valid and get the email if possible from the backend, 
-    // or just let them enter the OTP. The OTP goes to the email that initiated it.
-    // Let's just set it to ready. The backend expects the token and OTP.
-    setStatus("ready");
+    
+    // Verify token validity with backend
+    apiClient.get(`/api/billing/checkout/session?token=${tokenParam}`)
+      .then((res) => {
+        if (res.data?.success) {
+          setStatus("ready");
+        } else {
+          setStatus("invalid");
+        }
+      })
+      .catch(() => {
+        setStatus("invalid");
+      });
   }, [location.search]);
 
   async function handleResendOtp() {
@@ -130,9 +139,9 @@ export function CheckoutPage() {
       <main className="relative min-h-screen overflow-hidden bg-background text-foreground flex flex-col items-center justify-center text-center p-6">
         <h2 className="text-2xl font-bold mb-2">Payment Completed or Link Expired</h2>
         <p className="text-muted-foreground mb-6">This checkout link is no longer valid.</p>
-        <button onClick={() => window.history.back()} className="h-10 px-6 rounded-lg bg-primary font-semibold text-primary-foreground transition hover:brightness-110">
+        <Button onClick={() => window.history.back()} size="lg" className="px-6 rounded-lg font-semibold">
           Go Back
-        </button>
+        </Button>
       </main>
     );
   }
@@ -195,14 +204,14 @@ export function CheckoutPage() {
                     </div>
 
                     <div className="flex justify-center mt-6">
-                       <button
-                          type="button"
+                       <Button
+                          variant="ghost"
                           onClick={handleResendOtp}
                           disabled={sendingOtp || submitting}
-                          className="text-sm font-medium text-primary transition hover:text-primary/80 disabled:opacity-60"
+                          className="text-sm font-medium text-primary hover:text-primary/80"
                         >
                           {sendingOtp ? "Resending..." : "Didn't receive the code? Resend"}
-                        </button>
+                        </Button>
                     </div>
                   </div>
 
@@ -212,14 +221,14 @@ export function CheckoutPage() {
                     </p>
                   ) : null}
 
-                  <button
-                    type="button"
+                  <Button
                     onClick={handleVerifyOtp}
                     disabled={submitting || otp.length !== 6}
-                    className="mt-6 h-12 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 shadow-lg shadow-primary/25"
+                    className="mt-6 h-12 w-full rounded-xl font-semibold shadow-lg shadow-primary/25"
+                    size="lg"
                   >
                     {submitting ? "Processing..." : "Verify & Pay"}
-                  </button>
+                  </Button>
                 </div>
                 
                 <div className="mt-8 flex items-center justify-center gap-2">

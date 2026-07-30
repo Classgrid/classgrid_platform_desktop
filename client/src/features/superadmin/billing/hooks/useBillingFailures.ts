@@ -5,13 +5,31 @@ import {
   generatePaymentLink, 
   assignFailure, 
   addFailureNote, 
-  resolveFailure 
-} from '../services/superAdminBillingApi';
+  resolveFailure,
+  fetchFailureOverview
+} from '../../services/superAdminBillingApi';
+
+export interface PaymentLinkPayload {
+  amountPaise: number;
+  expiryHours?: number;
+  sendEmail?: boolean;
+}
 
 export const useFailedPaymentsList = () => {
   return useQuery({
     queryKey: ['billing-failed-payments'],
     queryFn: fetchFailedPayments,
+    staleTime: 60 * 1000,
+    retry: 2,
+  });
+};
+
+export const useFailureOverview = () => {
+  return useQuery({
+    queryKey: ['billing-failed-payments-overview'],
+    queryFn: fetchFailureOverview,
+    staleTime: 60 * 1000,
+    retry: 2,
   });
 };
 
@@ -20,13 +38,14 @@ export const useFailedPaymentDetail = (failureId: string) => {
     queryKey: ['billing-failed-payment-detail', failureId],
     queryFn: () => fetchFailedPaymentDetail(failureId),
     enabled: !!failureId,
+    staleTime: 60 * 1000,
   });
 };
 
 export const useGeneratePaymentLink = (failureId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: any) => generatePaymentLink(failureId, payload),
+    mutationFn: (payload: PaymentLinkPayload) => generatePaymentLink(failureId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['billing-failed-payment-detail', failureId] });
     },

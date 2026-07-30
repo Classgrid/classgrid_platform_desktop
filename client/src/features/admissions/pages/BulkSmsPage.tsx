@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {  MessageSquare } from "lucide-react";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { getSmsBudget } from "../api";
 
 import { Button } from "@/components/marketing_ui/button";
@@ -33,10 +33,10 @@ export function BulkSmsPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Daily Limit" value={(data?.daily_limit ?? 0).toLocaleString()} icon={<MessageSquare size={20} />} />
-            <StatCard title="Sent Today" value={(data?.sent_today ?? 0).toLocaleString()} icon={<MessageSquare size={20} />} />
-            <StatCard title="Remaining" value={(data?.remaining ?? 0).toLocaleString()} icon={<MessageSquare size={20} />} />
-            <StatCard title="Monthly Total" value={(data?.total_sent_this_month ?? 0).toLocaleString()} icon={<MessageSquare size={20} />} />
+            } />
+            } />
+            } />
+            } />
           </div>
 
           <div className="bg-card border border-border rounded-xl shadow-sm">

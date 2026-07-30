@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { dashboardApi } from "../services/superAdminApi";
 
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
 import { DataTable } from "@/components/marketing_ui/data-table";
 import { Badge } from "@/components/marketing_ui/badge";
@@ -103,27 +103,15 @@ export function RevenuePage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Monthly Recurring Revenue (MRR)"
-          value={isLoading ? "—" : formatCurrency(revenueData.mrr)}
-          icon={<TrendingUp size={16} />}
+        }
           trend={{ value: 12, label: "from last month" }}
         />
-        <StatCard
-          title="Total Platform Income"
-          value={isLoading ? "—" : formatCurrency(revenueData.totalIncome)}
-          icon={<IndianRupee size={16} />}
+        }
         />
-        <StatCard
-          title="Lost / Pending Revenue"
-          value={isLoading ? "—" : formatCurrency(revenueData.lostRevenue)}
-          icon={<TrendingDown size={16} />}
+        }
           trend={{ value: -5, label: "from last month" }}
         />
-        <StatCard
-          title="Active Paid Orgs"
-          value={isLoading ? "—" : revenueData.activeSubs}
-          icon={<Users size={16} />}
+        }
         />
       </div>
 

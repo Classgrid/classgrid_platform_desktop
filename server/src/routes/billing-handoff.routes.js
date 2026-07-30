@@ -1,5 +1,6 @@
 import express from "express";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import BillingHandoff from "../models/BillingHandoff.js";
 import Organization from "../models/Organization.js";
 import { sendEmail } from "../services/aws-ses.service.js";
@@ -65,14 +66,14 @@ router.post("/initiate", generalLimiter, async (req, res) => {
 
         let razorpayOrder;
         try {
-            razorpayOrder = await razorpayService.createOrder({
-                amount: amount,
-                currency: currency,
-                receipt: receiptId,
-                organizationId: organization_id,
-                type: payment_type,
-                notes: notes
-            });
+            razorpayOrder = await razorpayService.createOrder(
+                organization_id,
+                amount,
+                currency,
+                receiptId,
+                payment_type, // Maps to moduleName in RazorpayService
+                notes
+            );
         } catch (error) {
             console.error("[Billing Handoff] Failed to create Razorpay Order:", error);
             return res.status(500).json({ error: "Failed to initiate payment order" });
@@ -90,10 +91,13 @@ router.post("/initiate", generalLimiter, async (req, res) => {
             frontendKeyId = org.canteen_config.canteen_razorpay_key_id;
         }
 
+        // Hash OTP before storing
+        const hashedOtp = await bcrypt.hash(otp, 10);
+
         const handoff = await BillingHandoff.create({
             token,
             email,
-            otp,
+            otp: hashedOtp,
             organization_id,
             razorpay_order_id: razorpayOrder.id,
             amount,
@@ -116,7 +120,12 @@ router.post("/initiate", generalLimiter, async (req, res) => {
             </div>
         `;
 
-        await sendEmail(email, "Your Secure Payment Checkout Code", emailHtml, organization_id);
+        await sendEmail({
+            to: email,
+            subject: "Your Secure Payment Checkout Code",
+            html: emailHtml,
+            organizationId: organization_id
+        });
 
         res.json({
             success: true,
@@ -148,7 +157,10 @@ router.post("/resend-otp", generalLimiter, async (req, res) => {
         
         // Generate new OTP
         const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        handoff.otp = newOtp;
+        const hashedOtp = await bcrypt.hash(newOtp, 10);
+        handoff.otp = hashedOtp;
+        handoff.attempts = 0; // Reset attempts on new OTP
+        handoff.lockoutUntil = null;
         await handoff.save();
 
         const emailHtml = `
@@ -160,7 +172,12 @@ router.post("/resend-otp", generalLimiter, async (req, res) => {
             </div>
         `;
 
-        await sendEmail(handoff.email, "Your Secure Payment Checkout Code", emailHtml, handoff.organization_id);
+        await sendEmail({
+            to: handoff.email,
+            subject: "Your Secure Payment Checkout Code",
+            html: emailHtml,
+            organizationId: handoff.organization_id
+        });
 
         res.json({ success: true, message: "OTP resent successfully" });
     } catch (error) {

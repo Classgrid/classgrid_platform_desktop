@@ -27,7 +27,7 @@ const notificationLogSchema = new mongoose.Schema(
         },
         status: { 
             type: String, 
-            enum: ["PENDING", "SENT", "DELIVERED", "FAILED", "BOUNCED"],
+            enum: ["PENDING", "SENT", "DELIVERED", "FAILED", "BOUNCED", "COMPLAINED"],
             default: "PENDING"
         },
         providerMessageId: { 
@@ -38,12 +38,22 @@ const notificationLogSchema = new mongoose.Schema(
         },
         metadata: { 
             type: mongoose.Schema.Types.Mixed 
+        },
+        idempotencyKey: {
+            type: String,
+            unique: true,
+            sparse: true
+        },
+        retryCount: {
+            type: Number,
+            default: 0
         }
     },
     { timestamps: true }
 );
 
 // Indexes for fast querying in the super admin dashboard
+notificationLogSchema.index({ idempotencyKey: 1 });
 notificationLogSchema.index({ organizationId: 1, createdAt: -1 });
 notificationLogSchema.index({ status: 1 });
 notificationLogSchema.index({ recipient: 1 });

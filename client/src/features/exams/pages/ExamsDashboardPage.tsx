@@ -2,7 +2,7 @@ import React from "react";
 import { FileEdit, CheckSquare, Clock, GraduationCap } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/marketing_ui/card";
 import { DataTable } from "@/components/marketing_ui/data-table";
 
@@ -28,10 +28,10 @@ export function ExamsDashboardPage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <StatCard title="Active Exams" value="12" icon={FileEdit} trend="Currently running" trendDirection="neutral" />
-        <StatCard title="Results Published" value="84" icon={CheckSquare} trend="This semester" trendDirection="up" />
-        <StatCard title="Pending Grading" value="3" icon={Clock} trend="Action required" trendDirection="neutral" />
-        <StatCard title="Pass Percentage" value="94%" icon={GraduationCap} trend="3% from last year" trendDirection="up" />
+        
+        
+        
+        
       </div>
 
       <div className="grid grid-cols-1 gap-6">

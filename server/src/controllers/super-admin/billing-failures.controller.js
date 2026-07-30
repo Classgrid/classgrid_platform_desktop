@@ -10,6 +10,35 @@ export const listFailedPayments = async (req, res) => {
     }
 };
 
+export const getFailureOverview = async (req, res) => {
+    try {
+        const failures = await PaymentFailure.aggregate([
+            { $match: { resolved: { $ne: true } } },
+            {
+                $group: {
+                    _id: null,
+                    failedPaymentsCount: { $sum: 1 },
+                    revenueAtRiskPaise: { $sum: "$amountPaise" },
+                    uniqueOrgs: { $addToSet: "$organizationId" }
+                }
+            }
+        ]);
+
+        const stats = failures[0] || { failedPaymentsCount: 0, revenueAtRiskPaise: 0, uniqueOrgs: [] };
+
+        res.json({
+            success: true,
+            data: {
+                failedPayments: stats.failedPaymentsCount,
+                revenueAtRiskPaise: stats.revenueAtRiskPaise,
+                affectedOrgs: stats.uniqueOrgs.length
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 export const getFailedPayment = async (req, res) => {
     try {
         const failure = await PaymentFailure.findById(req.params.failureId).populate("organizationId paymentOrderId paymentAttemptId assignedTo");

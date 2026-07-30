@@ -54,6 +54,28 @@ const webhookEventSchema = new mongoose.Schema(
     }
 );
 
+// Redact sensitive payload data before saving
+webhookEventSchema.pre("save", function(next) {
+    if (this.isModified("payload") && this.payload) {
+        const redact = (obj) => {
+            if (!obj || typeof obj !== 'object') return;
+            const sensitiveKeys = ["email", "contact", "name", "vpa", "card_id", "card", "billing_address"];
+            for (const key in obj) {
+                if (typeof obj[key] === 'object') {
+                    redact(obj[key]);
+                } else if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
+                    obj[key] = "[REDACTED]";
+                }
+            }
+        };
+        // Deep clone payload to avoid modifying the original request object reference
+        const safePayload = JSON.parse(JSON.stringify(this.payload));
+        redact(safePayload);
+        this.payload = safePayload;
+    }
+    next();
+});
+
 // Deduplication index
 webhookEventSchema.index({ provider: 1, providerEventId: 1 }, { unique: true });
 

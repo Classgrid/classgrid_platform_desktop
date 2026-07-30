@@ -8,7 +8,7 @@ import { Badge } from "@/components/marketing_ui/badge";
 import { RefreshButton } from "@/components/marketing_ui/refresh-button";
 import { Button } from "@/components/marketing_ui/button";
 import { DataTable } from "@/components/marketing_ui/data-table";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/marketing_ui/card";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -126,25 +126,13 @@ export function DashboardHomePage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <StatCard
-            title="Total Organizations"
-            value={isLoading && orgsLoading ? "..." : (overview?.totalOrganizations ?? orgs.length)}
-            icon={<Building2 />}
+          }
           />
-          <StatCard
-            title="Total Users"
-            value={isLoading && orgsLoading ? "..." : (overview?.totalUsers ?? liveUserCount)}
-            icon={<Users />}
+          }
           />
-          <StatCard
-            title="Demo Leads Pending"
-            value={leadsLoading ? "..." : pendingLeads}
-            icon={<ClipboardList />}
+          }
           />
-          <StatCard
-            title="System Status"
-            value={isLoading ? "..." : (isError || orgsError ? "Action needed" : "Healthy")}
-            icon={<ShieldCheck />}
+          }
           />
         </div>
 

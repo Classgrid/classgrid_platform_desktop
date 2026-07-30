@@ -5,7 +5,7 @@ import { IndianRupee, RefreshCw, Plus, RotateCcw, CheckCircle2, XCircle, Clock, 
 import type { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { Badge } from "@/components/marketing_ui/badge";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
@@ -153,10 +153,10 @@ export function TransactionsPage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Revenue" value={isLoading ? "—" : INR(totalRevenue)} icon={<IndianRupee size={15} />} />
-        <StatCard title="Total Refunds" value={isLoading ? "—" : INR(totalRefunds)} icon={<RotateCcw size={15} />} />
-        <StatCard title="Successful Payments" value={isLoading ? "—" : successCount} icon={<CheckCircle2 size={15} />} />
-        <StatCard title="Refund Count" value={isLoading ? "—" : refundCount} icon={<AlertTriangle size={15} />} />
+        } />
+        } />
+        } />
+        } />
       </div>
 
       <div >

@@ -4,6 +4,7 @@ import * as Controller from "../../controllers/super-admin/billing-failures.cont
 const router = express.Router();
 
 router.get("/failed-payments", Controller.listFailedPayments);
+router.get("/failed-payments/overview", Controller.getFailureOverview);
 router.get("/failed-payments/:failureId", Controller.getFailedPayment);
 
 router.post("/failed-payments/:failureId/generate-payment-link", Controller.generatePaymentLink);

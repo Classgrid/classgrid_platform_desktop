@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import { Download, FileBarChart, Users, GraduationCap, Building2, RefreshCw } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { DataTable } from "@/components/marketing_ui/data-table";
 import { useAuditData } from "../queries/useAudit";
 import { apiClient } from "@/lib/apiClient";
@@ -164,24 +164,12 @@ export function AuditPage() {
         <>
           {/* Enrollment Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              title="Total Students"
-              value={isLoading ? "—" : audit?.enrollment?.totalStudents ?? 0}
-              icon={<Users size={16} />}
+            }
             />
-            <StatCard
-              title="Total Faculty"
-              value={isLoading ? "—" : audit?.enrollment?.totalFaculty ?? 0}
-              icon={<GraduationCap size={16} />}
+            }
             />
-            <StatCard
-              title="Student-Faculty Ratio"
-              value={isLoading ? "—" : audit?.enrollment?.studentFacultyRatio ?? "0:1"}
-            />
-            <StatCard
-              title="Classrooms"
-              value={isLoading ? "—" : audit?.enrollment?.totalClassrooms ?? 0}
-              icon={<Building2 size={16} />}
+            
+            }
             />
           </div>
 

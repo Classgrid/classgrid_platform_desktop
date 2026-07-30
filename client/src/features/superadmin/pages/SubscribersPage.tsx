@@ -16,7 +16,7 @@ import { Button } from "@/components/marketing_ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/marketing_ui/card";
 import { Input } from "@/components/marketing_ui/input";
 import { RecentActivityTable, DataTable } from "@/components/marketing_ui/data-table";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { Switch } from "@/components/marketing_ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/marketing_ui/tooltip";
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
@@ -292,19 +292,13 @@ export function SubscribersPage() {
 
         {/* Stats Row 1 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard
-          title="Total Subscribers"
-          value={isLoading ? <Skeleton className="h-9 w-24" /> : stats.total}
+         : stats.total}
           icon={<Users size={16} />}
         />
-        <StatCard
-          title="Delivery Ready (Active)"
-          value={isLoading ? <Skeleton className="h-9 w-24" /> : stats.deliveryReady}
+         : stats.deliveryReady}
           icon={<UserCheck size={16} />}
         />
-        <StatCard
-          title="Paused / Unsubscribed"
-          value={isLoading ? <Skeleton className="h-9 w-24" /> : stats.inactive}
+         : stats.inactive}
           icon={<UserMinus size={16} />}
         />
       </div>

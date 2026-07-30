@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { DataTable } from "@/components/marketing_ui/data-table";
 import {
   Dialog, DialogContent, DialogHeader,
@@ -180,25 +180,13 @@ export function BillingPage() {
 
       {/* ── Summary cards ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Active Orgs"
-          value={orgsLoading ? "—" : activeCount}
-          icon={<CheckCircle size={15} />}
+        }
         />
-        <StatCard
-          title="Demo / Trial"
-          value={orgsLoading ? "—" : demoCount}
-          icon={<Clock size={15} />}
+        }
         />
-        <StatCard
-          title="Total Users Across Orgs"
-          value={orgsLoading ? "—" : totalUsers}
-          icon={<Users size={15} />}
+        }
         />
-        <StatCard
-          title="Total Organizations"
-          value={orgsLoading ? "—" : allOrgs.length}
-          icon={<ShieldCheck size={15} />}
+        }
         />
       </div>
 

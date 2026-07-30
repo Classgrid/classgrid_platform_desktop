@@ -91,6 +91,11 @@ export const fetchSubscriptions = async () => {
   return res.data.data;
 };
 
+export const fetchSubscriptionOverview = async () => {
+  const res = await billingApi.get('/subscriptions/overview');
+  return res.data.data;
+};
+
 export const fetchSubscriptionDetail = async (orgId: string) => {
   const res = await billingApi.get(`/subscriptions/${orgId}`);
   return res.data.data;
@@ -210,7 +215,12 @@ export const grantCredits = async (orgId: string, payload: any) => {
 // --- FAILED PAYMENTS API ---
 
 export const fetchFailedPayments = async () => {
-  const res = await billingApi.get('/finance/failures');
+  const res = await billingApi.get('/failures/failed-payments');
+  return res.data.data;
+};
+
+export const fetchFailureOverview = async () => {
+  const res = await billingApi.get('/failures/failed-payments/overview');
   return res.data.data;
 };
 

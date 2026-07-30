@@ -4,6 +4,7 @@ import * as Controller from "../../controllers/super-admin/billing-subscription.
 const router = express.Router();
 
 router.get("/subscriptions", Controller.listSubscriptions);
+router.get("/subscriptions/overview", Controller.getSubscriptionOverview);
 router.get("/subscriptions/:organizationId", Controller.getSubscription);
 
 router.post("/subscriptions/:organizationId/preview", Controller.previewSubscriptionChange);

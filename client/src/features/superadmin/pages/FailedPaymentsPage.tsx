@@ -4,7 +4,7 @@ import { AlertTriangle, RefreshCw, XCircle, Building2, IndianRupee, Clock } from
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { Badge } from "@/components/marketing_ui/badge";
 import { Button } from "@/components/marketing_ui/button";
 import { DataTable } from "@/components/marketing_ui/data-table";
@@ -153,20 +153,11 @@ export function FailedPaymentsPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Failed Payments"
-          value={isLoading ? "—" : total}
-          icon={<XCircle size={15} />}
+        }
         />
-        <StatCard
-          title="Revenue at Risk"
-          value={isLoading ? "—" : INR(totalLost)}
-          icon={<IndianRupee size={15} />}
+        }
         />
-        <StatCard
-          title="Affected Orgs"
-          value={isLoading ? "—" : new Set(txns.map((t) => t.organizationId?.toString() ?? t.organizationName)).size}
-          icon={<Building2 size={15} />}
+        }
         />
       </div>
 

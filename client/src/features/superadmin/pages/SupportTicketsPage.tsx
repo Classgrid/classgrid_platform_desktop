@@ -23,7 +23,7 @@ import {
   Edit2,
 } from "lucide-react";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
-import { StatCard } from "@/components/marketing_ui/StatCard";
+
 import { RecentActivityTable } from "@/components/marketing_ui/data-table";
 import { Button } from "@/components/marketing_ui/button";
 import { Switch } from "@/components/marketing_ui/switch";
@@ -615,25 +615,13 @@ export function SupportTicketsPage() {
 
         {/* Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Open"
-            value={isLoading ? "—" : displayStats.open}
-            icon={<AlertCircle size={16} />}
+          }
           />
-          <StatCard
-            title="In Progress"
-            value={isLoading ? "—" : displayStats.inProgress}
-            icon={<Clock size={16} />}
+          }
           />
-          <StatCard
-            title="Resolved"
-            value={isLoading ? "—" : displayStats.resolved}
-            icon={<CheckCircle2 size={16} />}
+          }
           />
-          <StatCard
-            title="Loaded"
-            value={isLoading ? "—" : displayStats.total}
-            icon={<MessageSquare size={16} />}
+          }
           />
         </div>
 

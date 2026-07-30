@@ -180,18 +180,18 @@ function SemesterCard({ result, isCollegeMode }: { result: StudentResult; isColl
           {/* Stat Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-5 pb-4">
             {isCollegeMode && result.sgpa != null && (
-              <StatCard icon={<TrendingUp size={20} />} label="SGPA" value={result.sgpa.toFixed(2)} />
+              } label="SGPA" value={result.sgpa.toFixed(2)} />
             )}
             {isCollegeMode && result.earn_credits != null && (
-              <StatCard icon={<BookOpen size={20} />} label="Credits Earned" value={`${result.earn_credits} / ${result.total_credits}`} />
+              } label="Credits Earned" value={`${result.earn_credits} / ${result.total_credits}`} />
             )}
-            <StatCard icon={<Award size={20} />} label="Percentage" value={`${(result.percentage ?? 0).toFixed(2)}%`} />
-            <StatCard icon={<GraduationCap size={20} />} label="Grade" value={result.grade} />
+            } label="Percentage" value={`${(result.percentage ?? 0).toFixed(2)}%`} />
+            } label="Grade" value={result.grade} />
             {!isCollegeMode && (
-              <StatCard icon={<BookOpen size={20} />} label="Marks" value={`${result.total_marks} / ${result.max_total_marks}`} />
+              } label="Marks" value={`${result.total_marks} / ${result.max_total_marks}`} />
             )}
             {result.scheme_rank && (
-              <StatCard icon={<Award size={20} />} label="Rank" value={`#${result.scheme_rank}`} />
+              } label="Rank" value={`#${result.scheme_rank}`} />
             )}
           </div>
 
@@ -291,11 +291,11 @@ function CumulativeView({ cgpaData }: { cgpaData: any | null }) {
       {/* CGPA Header */}
       <div className="bg-card border border-border rounded-xl shadow-sm p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard icon={<TrendingUp size={20} />} label="Cumulative CGPA" value={cgpaData.cgpa.toFixed(2)} />
+          } label="Cumulative CGPA" value={cgpaData.cgpa.toFixed(2)} />
           {cgpaData.percentage_equivalent != null && (
-            <StatCard icon={<Award size={20} />} label="Equivalent %" value={`${cgpaData.percentage_equivalent}%`} />
+            } label="Equivalent %" value={`${cgpaData.percentage_equivalent}%`} />
           )}
-          <StatCard icon={<BookOpen size={20} />} label="Semesters Completed" value={String(cgpaData.total_semesters)} />
+          } label="Semesters Completed" value={String(cgpaData.total_semesters)} />
         </div>
       </div>
 
