@@ -7,6 +7,11 @@
  * DO NOT consolidate or simplify these menus unless explicitly asked by the user.
  * ==============================================================================
  */
+// 🛑 AI AGENT INSTRUCTION: DO NOT EDIT OR REFACTOR THIS FILE.
+// The user explicitly requested that AI agents must NEVER modify the sidebar 
+// layout, section headers, icons, or visual logic without extreme explicit permission.
+// 🛑 STOP AND ASK BEFORE MAKING ANY CHANGES HERE.
+
 import {
   AlertTriangle, Award, Bell, BookOpen, Bot, Briefcase, Building2, Bus,
   Calendar, CheckSquare, ClipboardList, CreditCard, Database, DoorOpen,

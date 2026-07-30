@@ -1,3 +1,8 @@
+// 🛑 AI AGENT INSTRUCTION: DO NOT EDIT OR REFACTOR THIS FILE.
+// The user explicitly requested that AI agents must NEVER modify the sidebar 
+// layout, section headers, icons, or visual logic without extreme explicit permission.
+// 🛑 STOP AND ASK BEFORE MAKING ANY CHANGES HERE.
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChevronRight, HardDrive, FileBarChart, Settings, StickyNote } from "lucide-react";
