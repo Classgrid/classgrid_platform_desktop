@@ -230,18 +230,23 @@ export function AppRouter() {
           <Route path="/superadmin/leads" element={<LeadsPage />} />
           <Route path="/superadmin/leads/:id" element={<LeadDetailsPage />} />
           {/* NEW BILLING ROUTES */}
-          <Route path="/superadmin/billing" element={<BillingShell />}>
-            <Route index element={<Navigate to="/superadmin/billing/plans" replace />} />
+          <Route path="/super-admin/billing" element={<BillingShell />}>
+            <Route index element={<Navigate to="/super-admin/billing/plans" replace />} />
             <Route path="plans" element={<PlansAndBillingPage />} />
             <Route path="revenue" element={<RevenuePage />} />
             <Route path="transactions" element={<TransactionsPage />} />
             <Route path="failed-payments" element={<FailedPaymentsPage />} />
           </Route>
+          <Route path="/superadmin/billing" element={<Navigate to="/super-admin/billing/plans" replace />} />
+          <Route path="/superadmin/billing/plans" element={<Navigate to="/super-admin/billing/plans" replace />} />
+          <Route path="/superadmin/billing/revenue" element={<Navigate to="/super-admin/billing/revenue" replace />} />
+          <Route path="/superadmin/billing/transactions" element={<Navigate to="/super-admin/billing/transactions" replace />} />
+          <Route path="/superadmin/billing/failed-payments" element={<Navigate to="/super-admin/billing/failed-payments" replace />} />
           
           {/* LEGACY REDIRECTS (if users visit the old URLs) */}
-          <Route path="/superadmin/revenue" element={<Navigate to="/superadmin/billing/revenue" replace />} />
-          <Route path="/superadmin/transactions" element={<Navigate to="/superadmin/billing/transactions" replace />} />
-          <Route path="/superadmin/failed-payments" element={<Navigate to="/superadmin/billing/failed-payments" replace />} />
+          <Route path="/superadmin/revenue" element={<Navigate to="/super-admin/billing/revenue" replace />} />
+          <Route path="/superadmin/transactions" element={<Navigate to="/super-admin/billing/transactions" replace />} />
+          <Route path="/superadmin/failed-payments" element={<Navigate to="/super-admin/billing/failed-payments" replace />} />
           <Route path="/superadmin/users" element={<UsersPage />} />
           <Route path="/superadmin/global-users" element={<GlobalUsersPage />} />
           <Route path="/superadmin/global-users/:userId" element={<UserDetailPage />} />

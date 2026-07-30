@@ -105,15 +105,15 @@ export const PlanEditorDrawer: React.FC<{
   mode: 'create' | 'edit';
 }> = ({ isOpen, onClose, mode }) => {
   const { mutateAsync: createPlan, isPending } = useCreatePlan();
-  const [formData, setFormData] = useState({ name: '', code: '', monthlyPrice: '', annualPrice: '', taxCategory: '' });
+  const [formData, setFormData] = useState({ name: '', code: '', description: '' });
 
   const handleSave = async () => {
     if (mode === 'create') {
       await createPlan({
         name: formData.name,
         code: formData.code,
-        monthlyBasePricePaise: Number(formData.monthlyPrice),
-        annualBasePricePaise: Number(formData.annualPrice)
+        description: formData.description,
+        currency: 'INR',
       });
       onClose();
     }
@@ -134,32 +134,17 @@ export const PlanEditorDrawer: React.FC<{
             <Label>System Code</Label>
             <Input value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="ENT_SCHOOL_BASE" className="font-mono" disabled={mode === 'edit'} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label>Monthly Price (Paise)</Label>
-              <Input type="number" value={formData.monthlyPrice} onChange={e => setFormData({ ...formData, monthlyPrice: e.target.value })} placeholder="2500000" />
-            </div>
-            <div className="grid gap-2">
-              <Label>Annual Price (Paise)</Label>
-              <Input type="number" value={formData.annualPrice} onChange={e => setFormData({ ...formData, annualPrice: e.target.value })} placeholder="25000000" />
-            </div>
-          </div>
           <div className="grid gap-2">
-            <Label>Tax Category</Label>
-            <Select onValueChange={v => v && setFormData({ ...formData, taxCategory: String(v) })}>
-              <SelectTrigger><SelectValue placeholder="Select tax rule" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="SOFTWARE_SERVICES">Software Services (18%)</SelectItem>
-                <SelectItem value="EXEMPT">Exempt (0%)</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Description</Label>
+            <Textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Describe who this plan is for." />
           </div>
+          <p className="text-xs text-muted-foreground">Pricing is published separately as an immutable plan version.</p>
         </div>
         <SheetFooter>
           <SheetClose asChild>
             <Button variant="outline">Cancel</Button>
           </SheetClose>
-          <Button onClick={handleSave} disabled={isPending}>{isPending ? 'Saving...' : 'Save Draft'}</Button>
+          <Button onClick={handleSave} disabled={isPending || !formData.name.trim() || !formData.code.trim()}>{isPending ? 'Saving...' : 'Save Draft'}</Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>

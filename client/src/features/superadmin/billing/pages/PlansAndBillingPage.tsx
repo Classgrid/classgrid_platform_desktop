@@ -1,237 +1,170 @@
 import React, { useState } from 'react';
-import { useSubscriptions, useSubscriptionOverview } from '../hooks/useBillingSubscriptions';
-import { useBillingPlans, useBillingModules, useCreatePlan } from '../hooks/useBillingCatalog';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../../components/marketing_ui/tabs';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../../components/marketing_ui/card';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../../../components/marketing_ui/table';
-import { Badge } from '../../../../components/marketing_ui/badge';
-import { Button } from '../../../../components/marketing_ui/button';
-import { Spinner } from '../../../../components/marketing_ui/spinner';
-import { Globe, Users, Clock, Building2, Server } from 'lucide-react';
-import { StatCard } from '../../../../components/marketing_ui/StatCard';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../../../../components/marketing_ui/dialog';
-import { Input } from '../../../../components/marketing_ui/input';
-import { Label } from '../../../../components/marketing_ui/label';
+import { Button } from '@/components/marketing_ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/marketing_ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/marketing_ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/marketing_ui/tabs';
+import { AsyncBillingState } from '../components/shared/BillingStateComponents';
+import { OrganizationSelector } from '../components/shared/BillingFilterComponents';
+import {
+  InvoiceRulesPanel,
+  OrganizationCreditLedger,
+  UsageMetricTable,
+} from '../components/catalog/PlansBillingComponents';
+import {
+  PlanCatalogTable,
+  PlanEditorDrawer,
+} from '../components/catalog/PlanCatalogComponents';
+import {
+  ModuleCatalogTable,
+  ModuleEditorDrawer,
+} from '../components/catalog/ModuleCatalogComponents';
+import {
+  OrganizationSubscriptionDrawer,
+  OrganizationSubscriptionTable,
+} from '../components/catalog/SubscriptionComponents';
+import { OrganizationPricingOverrideTable } from '../components/catalog/OverrideAndProrationComponents';
+import {
+  CreditGrantDialog,
+  DiscountCatalogTable,
+  DiscountEditorDrawer,
+  TaxRuleEditorDrawer,
+  TaxRuleTable,
+} from '../components/catalog/DiscountTaxesComponents';
+import { useBillingMetrics, useBillingPlans } from '../hooks/useBillingCatalog';
 
 const PlansAndBillingPage = () => {
-  const [createOpen, setCreateOpen] = useState(false);
-  const [planName, setPlanName] = useState('');
-  const [planCode, setPlanCode] = useState('');
-  const createPlan = useCreatePlan();
-  const { data: overviewData, isLoading: overviewLoading } = useSubscriptionOverview();
-  const { data: subscriptionsData = [], isLoading: subscriptionsLoading } = useSubscriptions();
-  const { data: plansData = [], isLoading: plansLoading } = useBillingPlans();
-  const { data: modulesData = [], isLoading: modulesLoading } = useBillingModules();
+  const [activeTab, setActiveTab] = useState('plans');
+  const [planEditorOpen, setPlanEditorOpen] = useState(false);
+  const [moduleEditorOpen, setModuleEditorOpen] = useState(false);
+  const [discountEditorOpen, setDiscountEditorOpen] = useState(false);
+  const [taxEditorOpen, setTaxEditorOpen] = useState(false);
+  const [creditGrantOpen, setCreditGrantOpen] = useState(false);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
+  const [managedOrganizationId, setManagedOrganizationId] = useState('');
+  const [selectedPlanId, setSelectedPlanId] = useState('');
+  const { data: plans = [] } = useBillingPlans();
+  const { data: metrics = [], isLoading: metricsLoading, error: metricsError } = useBillingMetrics();
 
   return (
-    <div className="flex flex-col h-full bg-background text-foreground">
-      {/* Page Header */}
-      <div className="flex justify-between items-center p-6 border-b border-border bg-card">
-        <h2 className="text-xl font-semibold tracking-tight">Plans & Billing Ecosystem</h2>
-        <Button variant="default" onClick={() => setCreateOpen(true)}>+ Create Plan</Button>
+    <div className="flex h-full flex-col bg-background text-foreground">
+      <div className="border-b border-border bg-card p-6">
+        <h2 className="text-xl font-semibold tracking-tight">Plans & Billing</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Manage the versioned catalog and organization billing configuration.
+        </p>
       </div>
 
-      <div className="p-6 space-y-6">
-        {/* Overview Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <StatCard 
-            title="Total Organizations" 
-            value={overviewLoading ? "..." : (overviewData?.totalOrganizations || 0)} 
-            icon={Building2} 
-          />
-          <StatCard 
-            title="Active Subscriptions" 
-            value={overviewLoading ? "..." : (overviewData?.activeOrgs || 0)} 
-            icon={Server} 
-          />
-          <StatCard 
-            title="Demo / Trial Orgs" 
-            value={overviewLoading ? "..." : (overviewData?.demoTrialOrgs || 0)} 
-            icon={Clock} 
-          />
-          <StatCard 
-            title="Total Platform Users" 
-            value={overviewLoading ? "..." : (overviewData?.totalUsersAcrossOrgs || 0)} 
-            icon={Users} 
-          />
-        </div>
-
-        {/* Tabs for detailed view */}
-        <Tabs defaultValue="organizations" className="w-full">
-          <TabsList>
-            <TabsTrigger value="organizations">Organizations</TabsTrigger>
+      <div className="p-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
             <TabsTrigger value="plans">Plans</TabsTrigger>
             <TabsTrigger value="modules">Modules</TabsTrigger>
+            <TabsTrigger value="subscriptions">Organization Subscriptions</TabsTrigger>
+            <TabsTrigger value="overrides">Pricing Overrides</TabsTrigger>
+            <TabsTrigger value="metrics">Usage Metrics</TabsTrigger>
+            <TabsTrigger value="invoice-rules">Invoice Rules</TabsTrigger>
+            <TabsTrigger value="discounts">Discounts</TabsTrigger>
+            <TabsTrigger value="credits">Credits</TabsTrigger>
+            <TabsTrigger value="taxes">Taxes</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="organizations" className="mt-4">
+
+          <TabsContent value="plans" className="mt-6 space-y-4">
+            <div className="flex justify-end">
+              <Button onClick={() => setPlanEditorOpen(true)}>Create plan</Button>
+            </div>
+            <PlanCatalogTable />
+          </TabsContent>
+
+          <TabsContent value="modules" className="mt-6 space-y-4">
+            <div className="flex justify-end">
+              <Button onClick={() => setModuleEditorOpen(true)}>Create module</Button>
+            </div>
+            <ModuleCatalogTable />
+          </TabsContent>
+
+          <TabsContent value="subscriptions" className="mt-6">
+            <OrganizationSubscriptionTable onManage={setManagedOrganizationId} />
+          </TabsContent>
+
+          <TabsContent value="overrides" className="mt-6 space-y-4">
+            <OrganizationSelector selectedId={selectedOrganizationId} onSelect={setSelectedOrganizationId} />
             <Card>
-              <CardHeader>
-                <CardTitle>Organizations</CardTitle>
-                <p className="text-sm text-muted-foreground">Click 'Manage Plan' to update a subscription.</p>
-              </CardHeader>
+              <CardHeader><CardTitle>Organization pricing overrides</CardTitle></CardHeader>
               <CardContent>
-                {subscriptionsLoading ? (
-                  <div className="flex justify-center p-6"><Spinner /></div>
-                ) : subscriptionsData?.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Organization ID</TableHead>
-                        <TableHead>Plan</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {subscriptionsData.map((sub: any) => (
-                        <TableRow key={sub._id}>
-                          <TableCell className="font-medium">{sub.organizationId?.name || sub.organizationId}</TableCell>
-                          <TableCell>
-                            {sub.billingPlanVersionId?.version
-                              ? `Version ${sub.billingPlanVersionId.version}`
-                              : "Not assigned"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={sub.status === "ACTIVE" ? "default" : "secondary"}>
-                              {sub.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center p-6 border rounded-lg bg-muted/50 text-muted-foreground text-sm">
-                    No organizations match your search.
-                  </div>
-                )}
+                {selectedOrganizationId
+                  ? <OrganizationPricingOverrideTable orgId={selectedOrganizationId} />
+                  : <p className="text-sm text-muted-foreground">Select an organization to inspect its active price overrides.</p>}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="plans" className="mt-4">
-             <Card>
-              <CardHeader>
-                <CardTitle>Plans</CardTitle>
-              </CardHeader>
+          <TabsContent value="metrics" className="mt-6">
+            <Card>
+              <CardHeader><CardTitle>Billing metric definitions</CardTitle></CardHeader>
               <CardContent>
-                {plansLoading ? (
-                  <div className="flex justify-center p-6"><Spinner /></div>
-                ) : plansData?.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Plan Name</TableHead>
-                        <TableHead>Tier Code</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {plansData.map((plan: any) => (
-                        <TableRow key={plan._id}>
-                          <TableCell className="font-medium">{plan.name}</TableCell>
-                          <TableCell>{plan.code}</TableCell>
-                          <TableCell>
-                            <Badge variant={plan.status === "ACTIVE" ? "default" : "secondary"}>
-                              {plan.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center p-6 border rounded-lg bg-muted/50 text-muted-foreground text-sm">
-                    No plans found.
-                  </div>
-                )}
+                <AsyncBillingState loading={metricsLoading} error={metricsError} skeletonType="table">
+                  <UsageMetricTable data={metrics} />
+                </AsyncBillingState>
               </CardContent>
             </Card>
           </TabsContent>
-          
-          <TabsContent value="modules" className="mt-4">
-             <Card>
-              <CardHeader>
-                <CardTitle>Modules</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {modulesLoading ? (
-                  <div className="flex justify-center p-6"><Spinner /></div>
-                ) : modulesData?.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Module Name</TableHead>
-                        <TableHead>Code</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {modulesData.map((mod: any) => (
-                        <TableRow key={mod._id}>
-                          <TableCell className="font-medium">{mod.name}</TableCell>
-                          <TableCell>{mod.code}</TableCell>
-                          <TableCell>
-                            <Badge variant={mod.status === "ACTIVE" ? "default" : "secondary"}>
-                              {mod.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center p-6 border rounded-lg bg-muted/50 text-muted-foreground text-sm">
-                    No modules found.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+
+          <TabsContent value="invoice-rules" className="mt-6 space-y-4">
+            <Select value={selectedPlanId} onValueChange={(value) => value && setSelectedPlanId(value)}>
+              <SelectTrigger className="w-full max-w-sm"><SelectValue placeholder="Select a plan" /></SelectTrigger>
+              <SelectContent>
+                {plans.map((plan: any) => (
+                  <SelectItem key={plan._id} value={plan._id}>{plan.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedPlanId
+              ? <InvoiceRulesPanel planId={selectedPlanId} />
+              : <p className="text-sm text-muted-foreground">Select a plan to view its authoritative invoice rules.</p>}
+          </TabsContent>
+
+          <TabsContent value="discounts" className="mt-6 space-y-4">
+            <div className="flex justify-end">
+              <Button onClick={() => setDiscountEditorOpen(true)}>Create discount</Button>
+            </div>
+            <DiscountCatalogTable />
+          </TabsContent>
+
+          <TabsContent value="credits" className="mt-6 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <OrganizationSelector selectedId={selectedOrganizationId} onSelect={setSelectedOrganizationId} />
+              <Button disabled={!selectedOrganizationId} onClick={() => setCreditGrantOpen(true)}>Grant credit</Button>
+            </div>
+            {selectedOrganizationId
+              ? <OrganizationCreditLedger orgId={selectedOrganizationId} />
+              : <p className="text-sm text-muted-foreground">Select an organization to view its credit ledger.</p>}
+          </TabsContent>
+
+          <TabsContent value="taxes" className="mt-6 space-y-4">
+            <div className="flex justify-end">
+              <Button onClick={() => setTaxEditorOpen(true)}>Create tax rule</Button>
+            </div>
+            <TaxRuleTable />
           </TabsContent>
         </Tabs>
       </div>
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create billing plan</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="plan-name">Plan name</Label>
-              <Input id="plan-name" value={planName} onChange={(event) => setPlanName(event.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="plan-code">Plan code</Label>
-              <Input
-                id="plan-code"
-                value={planCode}
-                onChange={(event) => setPlanCode(event.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
-              />
-            </div>
-            {createPlan.error && (
-              <p className="text-sm text-destructive">{(createPlan.error as Error).message}</p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button
-              disabled={!planName.trim() || !planCode.trim() || createPlan.isPending}
-              onClick={() => createPlan.mutate(
-                { name: planName.trim(), code: planCode.trim(), currency: 'INR' },
-                {
-                  onSuccess: () => {
-                    setPlanName('');
-                    setPlanCode('');
-                    setCreateOpen(false);
-                  },
-                }
-              )}
-            >
-              {createPlan.isPending ? 'Creating...' : 'Create plan'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+      <PlanEditorDrawer isOpen={planEditorOpen} onClose={() => setPlanEditorOpen(false)} mode="create" />
+      <ModuleEditorDrawer isOpen={moduleEditorOpen} onClose={() => setModuleEditorOpen(false)} />
+      <DiscountEditorDrawer isOpen={discountEditorOpen} onClose={() => setDiscountEditorOpen(false)} />
+      <TaxRuleEditorDrawer isOpen={taxEditorOpen} onClose={() => setTaxEditorOpen(false)} />
+      <CreditGrantDialog
+        orgId={selectedOrganizationId}
+        isOpen={creditGrantOpen}
+        onClose={() => setCreditGrantOpen(false)}
+      />
+      {managedOrganizationId && (
+        <OrganizationSubscriptionDrawer
+          isOpen
+          orgId={managedOrganizationId}
+          onClose={() => setManagedOrganizationId('')}
+        />
+      )}
     </div>
   );
 };

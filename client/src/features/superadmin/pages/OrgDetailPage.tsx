@@ -581,7 +581,7 @@ export function OrgDetailPage() {
           <div className="p-5">
             <div className="flex flex-col gap-2">
               <Button variant="outline" className="justify-start" asChild>
-                <Link to={`/superadmin/billing`}>
+                <Link to="/super-admin/billing/plans">
                   <CreditCard size={14} className="mr-2" /> Manage Plan &amp; Subscription
                 </Link>
               </Button>

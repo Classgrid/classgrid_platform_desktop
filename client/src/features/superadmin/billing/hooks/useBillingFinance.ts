@@ -5,6 +5,11 @@ export interface TransactionFilters {
   status?: string;
   type?: string;
   organizationId?: string;
+  organizationType?: string;
+  method?: string;
+  settlementStatus?: string;
+  refundStatus?: string;
+  search?: string;
   startDate?: string;
   endDate?: string;
 }

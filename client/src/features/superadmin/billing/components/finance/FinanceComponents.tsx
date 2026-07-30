@@ -70,7 +70,7 @@ export const ModulePriceBreakdown: React.FC<{ moduleName: string; stats: any }> 
     </CardHeader>
     <CardContent className="space-y-3 p-4 text-sm">
       <div className="flex justify-between"><span>Active subscriptions</span><span>{stats?.activeCount || 0}</span></div>
-      <div className="flex justify-between"><span>Monthly revenue</span><MoneyDisplay amountPaise={stats?.mrrPaise || 0} /></div>
+      <div className="flex justify-between"><span>Recognized revenue</span><MoneyDisplay amountPaise={stats?.recognizedRevenuePaise || 0} /></div>
     </CardContent>
   </Card>
 );

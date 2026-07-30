@@ -2,10 +2,10 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 
 const navItems = [
-  { name: 'Revenue', path: '/superadmin/billing/revenue' },
-  { name: 'Transactions', path: '/superadmin/billing/transactions' },
-  { name: 'Failed Payments', path: '/superadmin/billing/failed-payments' },
-  { name: 'Plans & Billing', path: '/superadmin/billing/plans' },
+  { name: 'Revenue', path: '/super-admin/billing/revenue' },
+  { name: 'Transactions', path: '/super-admin/billing/transactions' },
+  { name: 'Failed Payments', path: '/super-admin/billing/failed-payments' },
+  { name: 'Plans & Billing', path: '/super-admin/billing/plans' },
 ];
 
 export const BillingNavigation = () => {

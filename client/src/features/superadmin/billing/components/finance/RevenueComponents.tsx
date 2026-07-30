@@ -15,13 +15,14 @@ export const RevenueViewTabs: React.FC<{
 }> = ({ activeTab, onTabChange }) => {
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full mb-6">
-      <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+      <TabsList className="grid w-full grid-cols-3 lg:w-[560px]">
         <TabsTrigger value="organizations" className="flex items-center gap-2">
           <Building2 className="w-4 h-4" /> By Organization
         </TabsTrigger>
         <TabsTrigger value="modules" className="flex items-center gap-2">
           <Package className="w-4 h-4" /> By Add-on Module
         </TabsTrigger>
+        <TabsTrigger value="invoices">By Invoice</TabsTrigger>
       </TabsList>
     </Tabs>
   );
@@ -38,9 +39,9 @@ export const RevenueOrganizationTable: React.FC = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Organization</TableHead>
-              <TableHead>Active Plan</TableHead>
-              <TableHead className="text-right">Current MRR</TableHead>
-              <TableHead className="text-right">YTD Revenue</TableHead>
+              <TableHead className="text-right">Captured revenue</TableHead>
+              <TableHead className="text-right">Transactions</TableHead>
+              <TableHead>Latest capture</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -52,13 +53,11 @@ export const RevenueOrganizationTable: React.FC = () => {
                     {item.organization?.sidebar_name || item.organization?.name || item._id}
                   </div>
                 </TableCell>
-                <TableCell>Classgrid subscription</TableCell>
                 <TableCell className="text-right font-medium text-primary">
                   <MoneyDisplay amountPaise={item.grossRevenuePaise} />
                 </TableCell>
-                <TableCell className="text-right">
-                  <MoneyDisplay amountPaise={item.grossRevenuePaise} />
-                </TableCell>
+                <TableCell className="text-right">{item.transactionCount}</TableCell>
+                <TableCell>{item.latestTransactionDate ? new Date(item.latestTransactionDate).toLocaleString() : 'Unavailable'}</TableCell>
               </TableRow>
             ))}
             {revenueData?.length === 0 && (
@@ -87,8 +86,8 @@ export const RevenueModuleTable: React.FC = () => {
             <TableRow>
               <TableHead>Add-on Module</TableHead>
               <TableHead className="text-right">Active Subscriptions</TableHead>
-              <TableHead className="text-right">Monthly Revenue</TableHead>
-              <TableHead className="text-right">% of Total Add-on MRR</TableHead>
+              <TableHead className="text-right">Recognized revenue</TableHead>
+              <TableHead className="text-right">% of module revenue</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -102,7 +101,7 @@ export const RevenueModuleTable: React.FC = () => {
                 </TableCell>
                 <TableCell className="text-right">{item.activeCount}</TableCell>
                 <TableCell className="text-right font-medium text-primary">
-                  <MoneyDisplay amountPaise={item.mrrPaise} />
+                  <MoneyDisplay amountPaise={item.recognizedRevenuePaise} />
                 </TableCell>
                 <TableCell className="text-right">
                   <Badge variant="secondary">{item.percentageOfTotal}%</Badge>

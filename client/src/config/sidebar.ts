@@ -90,7 +90,7 @@ export const dashboardConfigs: DashboardConfig[] = [
           { label: "Revenue", to: "/superadmin/revenue", icon: IndianRupee },
           { label: "Transactions", to: "/superadmin/transactions", icon: CreditCard },
           { label: "Failed Payments", to: "/superadmin/failed-payments", icon: AlertTriangle },
-          { label: "Plans & Billing", to: "/superadmin/billing", icon: CreditCard },
+          { label: "Plans & Billing", to: "/super-admin/billing/plans", icon: CreditCard },
         ]
       },
       {

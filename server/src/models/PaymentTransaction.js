@@ -87,6 +87,16 @@ const paymentTransactionSchema = new mongoose.Schema(
             enum: ["CAPTURED", "REFUNDED", "PARTIALLY_REFUNDED", "FAILED", "DISPUTED"],
             default: "CAPTURED",
         },
+        settlementStatus: {
+            type: String,
+            enum: ["UNSETTLED", "SETTLED", "FAILED"],
+            default: "UNSETTLED",
+        },
+        paymentSettlementId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "PaymentSettlement",
+            default: null,
+        },
         capturedAt: {
             type: Date,
             default: Date.now,

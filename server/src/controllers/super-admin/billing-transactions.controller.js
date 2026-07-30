@@ -4,6 +4,7 @@ import PaymentRefund from "../../models/PaymentRefund.js";
 import PaymentOrder from "../../models/PaymentOrder.js";
 import WebhookEvent from "../../models/WebhookEvent.js";
 import BillingAuditLog from "../../models/BillingAuditLog.js";
+import Organization from "../../models/Organization.js";
 import razorpayService from "../../services/razorpay.service.js";
 
 function auditContext(req) {
@@ -67,6 +68,58 @@ export const listTransactions = async (req, res) => {
         if (req.query.status) filter.status = req.query.status;
         if (req.query.paymentFlow) filter.paymentFlow = req.query.paymentFlow;
         if (req.query.organizationId) filter.organizationId = req.query.organizationId;
+        if (req.query.method) filter.method = req.query.method;
+        if (req.query.settlementStatus) filter.settlementStatus = req.query.settlementStatus;
+        if (req.query.startDate || req.query.endDate) {
+            filter.capturedAt = {};
+            if (req.query.startDate) {
+                const startDate = new Date(req.query.startDate);
+                if (Number.isNaN(startDate.getTime())) {
+                    return res.status(400).json({ success: false, message: "startDate must be a valid date" });
+                }
+                filter.capturedAt.$gte = startDate;
+            }
+            if (req.query.endDate) {
+                const endDate = new Date(req.query.endDate);
+                if (Number.isNaN(endDate.getTime())) {
+                    return res.status(400).json({ success: false, message: "endDate must be a valid date" });
+                }
+                endDate.setHours(23, 59, 59, 999);
+                filter.capturedAt.$lte = endDate;
+            }
+        }
+        if (req.query.organizationType) {
+            const organizations = await Organization.find({ org_type: req.query.organizationType }).select("_id").lean();
+            const organizationIds = organizations.map((organization) => organization._id);
+            filter.organizationId = filter.organizationId
+                ? { $in: organizationIds.filter((id) => String(id) === String(req.query.organizationId)) }
+                : { $in: organizationIds };
+        }
+        if (req.query.refundStatus) {
+            const refundFilter = req.query.refundStatus === "NONE"
+                ? {}
+                : { status: req.query.refundStatus };
+            const transactionIds = await PaymentRefund.distinct("paymentTransactionId", refundFilter);
+            filter._id = req.query.refundStatus === "NONE"
+                ? { $nin: transactionIds }
+                : { $in: transactionIds };
+        }
+        if (req.query.search) {
+            const safeSearch = String(req.query.search).trim().slice(0, 100);
+            const escaped = safeSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const organizations = await Organization.find({
+                $or: [
+                    { name: { $regex: escaped, $options: "i" } },
+                    { sidebar_name: { $regex: escaped, $options: "i" } },
+                ],
+            }).select("_id").limit(100).lean();
+            const searchConditions = [
+                { providerPaymentId: { $regex: escaped, $options: "i" } },
+                { organizationId: { $in: organizations.map((organization) => organization._id) } },
+            ];
+            if (mongoose.isValidObjectId(safeSearch)) searchConditions.push({ _id: safeSearch });
+            filter.$or = searchConditions;
+        }
 
         const [items, total] = await Promise.all([
             PaymentTransaction.find(filter)

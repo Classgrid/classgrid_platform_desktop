@@ -198,17 +198,10 @@ export const fetchBillingExportDownload = (jobId: string) =>
 
 // Transactions
 export const fetchTransactions = async (filters: any = {}) => {
-  const { type, search, ...params } = filters;
+  const { type, ...params } = filters;
   if (type) params.paymentFlow = type;
   const response = await apiClient.get<ApiEnvelope<any[]>>(`${BILLING_BASE}/transactions`, { params });
-  const normalized = response.data.data.map(normalizeTransaction);
-  if (!search) return normalized;
-  const term = String(search).trim().toLowerCase();
-  return normalized.filter((item) =>
-    [item.id, item.providerPaymentId, item.organization?.name]
-      .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(term))
-  );
+  return response.data.data.map(normalizeTransaction);
 };
 export const fetchTransactionDetail = async (transactionId: string) => {
   const [transaction, events] = await Promise.all([

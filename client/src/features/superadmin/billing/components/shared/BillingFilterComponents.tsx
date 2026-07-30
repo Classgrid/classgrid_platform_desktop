@@ -77,6 +77,8 @@ export const OrganizationTypeFilter: React.FC<{
       <SelectItem value="junior_college">Junior College</SelectItem>
       <SelectItem value="engineering">Engineering College</SelectItem>
       <SelectItem value="coaching">Coaching</SelectItem>
+      <SelectItem value="diploma">Diploma Institution</SelectItem>
+      <SelectItem value="other">Other</SelectItem>
     </SelectContent>
   </Select>
 );

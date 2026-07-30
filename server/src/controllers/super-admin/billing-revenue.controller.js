@@ -1,6 +1,7 @@
 import PaymentTransaction from "../../models/PaymentTransaction.js";
 import Invoice from "../../models/Invoice.js";
 import InvoiceLineItem from "../../models/InvoiceLineItem.js";
+import OrganizationSubscriptionItem from "../../models/OrganizationSubscriptionItem.js";
 import BillingExportJob from "../../models/BillingExportJob.js";
 import ReconciliationRun from "../../models/ReconciliationRun.js";
 import ReconciliationMismatch from "../../models/ReconciliationMismatch.js";
@@ -73,8 +74,88 @@ export const getRevenueByOrganization = async (req, res) => {
 
 export const getRevenueByModule = async (req, res) => {
     try {
-        // This is a simplified aggregate, real logic requires joining Payment -> Invoice -> InvoiceLineItem
-        res.json({ success: true, data: [] });
+        const invoiceFilter = {
+            status: { $in: ["PAID", "PARTIALLY_PAID"] },
+            amountPaidPaise: { $gt: 0 },
+        };
+        if (req.query.startDate || req.query.endDate) {
+            invoiceFilter.issueDate = {};
+            if (req.query.startDate) {
+                const startDate = new Date(req.query.startDate);
+                if (Number.isNaN(startDate.getTime())) {
+                    return res.status(400).json({ success: false, message: "startDate must be a valid date" });
+                }
+                invoiceFilter.issueDate.$gte = startDate;
+            }
+            if (req.query.endDate) {
+                const endDate = new Date(req.query.endDate);
+                if (Number.isNaN(endDate.getTime())) {
+                    return res.status(400).json({ success: false, message: "endDate must be a valid date" });
+                }
+                invoiceFilter.issueDate.$lte = endDate;
+            }
+        }
+
+        const invoices = await Invoice.find(invoiceFilter).select("_id totalAmountPaise amountPaidPaise").lean();
+        const invoiceById = new Map(invoices.map((invoice) => [invoice._id.toString(), invoice]));
+        const [lineItems, activeItems] = await Promise.all([
+            InvoiceLineItem.find({
+                invoiceId: { $in: invoices.map((invoice) => invoice._id) },
+                moduleVersionId: { $ne: null },
+            })
+                .populate({ path: "moduleVersionId", populate: { path: "moduleId", select: "name code" } })
+                .lean(),
+            OrganizationSubscriptionItem.find({ status: "ACTIVE" })
+                .populate("billingModuleId", "name code")
+                .lean(),
+        ]);
+
+        const activeCounts = new Map();
+        for (const item of activeItems) {
+            const moduleId = (item.billingModuleId?._id || item.billingModuleId)?.toString();
+            if (moduleId) activeCounts.set(moduleId, (activeCounts.get(moduleId) || 0) + 1);
+        }
+
+        const byModule = new Map();
+        for (const line of lineItems) {
+            const module = line.moduleVersionId?.moduleId;
+            const moduleId = (module?._id || module)?.toString();
+            if (!moduleId) continue;
+            const invoice = invoiceById.get(line.invoiceId.toString());
+            const paidRatio = Math.min(
+                Number(invoice?.amountPaidPaise || 0) / Math.max(Number(invoice?.totalAmountPaise || 0), 1),
+                1,
+            );
+            const recognizedPaise = Math.round(Number(line.totalAmountPaise || line.subtotalPaise || 0) * paidRatio);
+            const current = byModule.get(moduleId) || {
+                moduleId,
+                module: { _id: moduleId, name: module?.name, code: module?.code },
+                activeCount: activeCounts.get(moduleId) || 0,
+                recognizedRevenuePaise: 0,
+            };
+            current.recognizedRevenuePaise += recognizedPaise;
+            byModule.set(moduleId, current);
+        }
+        for (const item of activeItems) {
+            const module = item.billingModuleId;
+            const moduleId = (module?._id || module)?.toString();
+            if (moduleId && !byModule.has(moduleId)) {
+                byModule.set(moduleId, {
+                    moduleId,
+                    module: { _id: moduleId, name: module?.name, code: module?.code },
+                    activeCount: activeCounts.get(moduleId) || 0,
+                    recognizedRevenuePaise: 0,
+                });
+            }
+        }
+        const results = [...byModule.values()].sort((a, b) => b.recognizedRevenuePaise - a.recognizedRevenuePaise);
+        const totalRevenuePaise = results.reduce((sum, item) => sum + item.recognizedRevenuePaise, 0);
+        for (const item of results) {
+            item.percentageOfTotal = totalRevenuePaise
+                ? Math.round((item.recognizedRevenuePaise / totalRevenuePaise) * 10000) / 100
+                : 0;
+        }
+        res.json({ success: true, data: results });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
