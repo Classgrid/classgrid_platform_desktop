@@ -218,15 +218,15 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                           isActive={isActive}
                           tooltip={item.label}
                           className={isActive ? "font-semibold bg-secondary text-secondary-foreground" : ""}
-                          asChild
-                        >
-                          <Link to={item.to} className="flex items-center gap-3 w-full justify-between">
-                            <div className="flex items-center gap-3">
-                              <item.icon size={20} />
-                              <span className="truncate">{item.label}</span>
-                            </div>
-                          </Link>
-                        </SidebarMenuButton>
+                          render={
+                            <Link to={item.to} className="flex items-center gap-3 w-full justify-between">
+                              <div className="flex items-center gap-3">
+                                <item.icon size={20} />
+                                <span className="truncate">{item.label}</span>
+                              </div>
+                            </Link>
+                          }
+                        />
                       </SidebarMenuItem>
                     );
                   })}
