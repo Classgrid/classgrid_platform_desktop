@@ -4,15 +4,16 @@ import { generateInvoicePdfBuffer } from "../services/pdf-invoice.service.js";
 
 async function run() {
     const org = {
-        name: "Demo International School",
-        email: "admin@demo-school.com",
+        name: "Classgrid Demo Institution",
         billing_settings: {
-            billing_contact_name: "Principal Sharma",
-            phone: "+91 9876543210",
-            address_line1: "123 Education Hub, Sector 4",
-            city: "Bangalore",
-            state: "Karnataka",
-            gstin: "29AABCU9603R1ZJ"
+            billing_contact_name: "Demo Admin",
+            invoice_email: "demo@classgrid.in",
+            phone: "+91 86239 47038",
+            address_line1: "Sample Education Campus",
+            address_line2: "",
+            city: "Pune",
+            state: "Maharashtra",
+            gstin: ""
         }
     };
 
