@@ -174,8 +174,8 @@ export function CheckoutPage() {
 
           <form onSubmit={handleVerifyOtp} className="space-y-5">
             <div className="flex flex-col items-center gap-3">
-              <p className="mb-4 text-center text-[14px] leading-relaxed text-slate-500 dark:text-[#888888] max-w-[280px]">
-                We sent a 6-digit code to <span className="font-medium text-slate-900 dark:text-[#f1f1f1]">{email}</span>
+              <p className="mb-4 text-center text-[14px] leading-relaxed text-slate-500 dark:text-[#888888] max-w-[320px]">
+                Enter the 6-digit code sent to <span className="font-medium text-slate-900 dark:text-[#f1f1f1]">{email}</span>. After verifying, the payment checkout will open.
               </p>
               
               <InputOTP
