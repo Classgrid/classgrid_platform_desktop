@@ -472,10 +472,6 @@ export function BillingLandingPage() {
               <p>Support: <a href="mailto:support@classgrid.in" className="transition hover:text-foreground">support@classgrid.in</a></p>
               
               <div className="flex flex-wrap justify-center gap-x-3 gap-y-2 mt-2">
-                <a href="https://classgrid.in/pricing" target="_blank" className="transition hover:text-foreground underline-offset-2 hover:underline">
-                  Pricing
-                </a>
-                <span className="text-border">•</span>
                 <a href="https://classgrid.in/refund-policy" target="_blank" className="transition hover:text-foreground underline-offset-2 hover:underline">
                   Refund & Cancellation Policy
                 </a>
