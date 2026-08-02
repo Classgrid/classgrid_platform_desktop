@@ -156,17 +156,25 @@ export function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans checkout-otp-container">
+    <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans checkout-otp-container" style={{ "--ring": "#444444", "--color-ring": "#444444" } as any}>
       <style>{`
+        .checkout-otp-container,
+        .checkout-otp-container *,
+        .checkout-otp-container *:focus-visible,
+        .checkout-otp-container *:focus {
+          outline: none !important;
+          box-shadow: none !important;
+          --tw-ring-color: transparent !important;
+          --tw-ring-shadow: none !important;
+        }
+        /* Specifically target the hidden input that input-otp creates */
         .checkout-otp-container input,
         .checkout-otp-container input:focus,
         .checkout-otp-container input:focus-visible {
-          box-shadow: none !important;
-          outline: none !important;
           border: none !important;
           background: transparent !important;
-          --tw-ring-color: transparent !important;
-          --tw-ring-shadow: none !important;
+          outline: none !important;
+          box-shadow: none !important;
         }
       `}</style>
       
