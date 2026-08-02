@@ -108,6 +108,7 @@ router.post("/session", async (req, res) => {
             ipAddress: req.ip || "127.0.0.1",
             userAgent: String(req.headers["user-agent"] || "demo").slice(0, 300),
             createdBy: new mongoose.Types.ObjectId(),
+            providerPaymentId: `demo_attempt_${crypto.randomBytes(8).toString("hex")}`,
         });
 
         // Hash OTP 123456
