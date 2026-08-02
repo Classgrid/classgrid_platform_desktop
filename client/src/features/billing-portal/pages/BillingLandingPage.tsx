@@ -257,7 +257,7 @@ function DemoCard() {
                   Understanding Our Domains (Security Architecture)
                 </h3>
                 <ul className="list-disc pl-5 space-y-2 mt-2">
-                  <li><strong>classgrid.in (Marketing Site):</strong> This is simply our public brochure and marketing website, exactly like how <em>razorpay.com</em> is your public marketing site. Our actual software is not hosted here.</li>
+                  <li><strong><a href="https://classgrid.in" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">classgrid.in</a> (Marketing Site):</strong> This is simply our public brochure and marketing website, exactly like how <em>razorpay.com</em> is your public marketing site. Our actual software is not hosted here.</li>
                   <li><strong>[school-name].classgrid.in (The Product):</strong> Every school gets their own secure subdomain to manage their ERP, staff, and students. This is a highly secure, closed system that requires a strict login, exactly like how your <em>dashboard.razorpay.com</em> works.</li>
                   <li><strong>billing.classgrid.in (Payment Microservice):</strong> For maximum security and compliance, we completely decoupled the checkout flow. When an admin is inside their school's dashboard and clicks "Pay Subscription", they are securely redirected to this isolated portal to process the payment safely.</li>
                 </ul>
