@@ -3,30 +3,19 @@ import { Link } from "react-router-dom";
 const steps = [
   {
     number: "01",
-    title: "Open your secure link",
-    desc: "Click the payment link sent by your institution or Classgrid.",
+    title: "Get your invoice",
+    desc: "Classgrid sends an invoice to your registered email when a payment is due.",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+        <polyline points="22,6 12,13 2,6" />
       </svg>
     ),
   },
   {
     number: "02",
-    title: "Enter & verify OTP",
-    desc: "A 6-digit code is sent to your registered email. Enter it to verify your identity.",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-      </svg>
-    ),
-  },
-  {
-    number: "03",
-    title: "Click Pay",
-    desc: "After OTP is verified, the Razorpay checkout opens. Complete your payment securely.",
+    title: "Click Pay Now",
+    desc: "Open the invoice on your admin dashboard and click the Pay Now button. You'll be redirected here.",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
@@ -35,9 +24,20 @@ const steps = [
     ),
   },
   {
+    number: "03",
+    title: "Verify with OTP",
+    desc: "A 6-digit code is sent to your admin email. Enter it to confirm your identity.",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+      </svg>
+    ),
+  },
+  {
     number: "04",
-    title: "Redirected back",
-    desc: "Payment confirmed. You're instantly redirected back to your dashboard.",
+    title: "Complete payment",
+    desc: "Razorpay checkout opens. Pay via UPI, card, or net banking. You're redirected back to your dashboard with a receipt.",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="20 6 9 17 4 12" />
@@ -71,7 +71,7 @@ export function BillingLandingPage() {
               <span className="relative inline-flex h-2 w-2 rounded-[2px] bg-emerald-500">
                 <span className="absolute inset-0 animate-ping rounded-[2px] bg-emerald-500 opacity-70" />
               </span>
-              <span className="font-medium">Secure Billing Portal</span>
+              <span className="font-medium">Billing Portal</span>
             </div>
           </div>
         </header>
@@ -86,14 +86,14 @@ export function BillingLandingPage() {
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
-                Classgrid Secure Checkout
+                Classgrid Billing Portal
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-[2rem]">
-                Secure Payment Portal
+                SaaS Subscription Payments
               </h1>
               <p className="text-sm leading-6 text-muted-foreground">
-                India's unified ERP infrastructure for modern institutions.<br />
-                All payments are OTP-verified and processed via Razorpay.
+                This portal is for institution admins to pay their<br />
+                Classgrid subscription invoice. All payments go via Razorpay.
               </p>
             </div>
 
@@ -109,7 +109,7 @@ export function BillingLandingPage() {
                 <div className="space-y-0">
                   {steps.map((step, i) => (
                     <div key={i} className="flex gap-4">
-                      {/* Left: number + connector line */}
+                      {/* Left: icon + connector line */}
                       <div className="flex flex-col items-center">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground">
                           {step.icon}
@@ -134,16 +134,16 @@ export function BillingLandingPage() {
                 {/* Divider */}
                 <div className="my-6 flex items-center gap-3">
                   <div className="h-px flex-1 bg-border" />
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Security</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Verified by</span>
                   <div className="h-px flex-1 bg-border" />
                 </div>
 
-                {/* Security badges */}
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {/* Trust badges */}
+                <div className="grid grid-cols-3 gap-2">
                   {[
-                    { label: "256-bit SSL", sub: "Encrypted connection" },
+                    { label: "256-bit SSL", sub: "Encrypted" },
                     { label: "PCI-DSS", sub: "Via Razorpay" },
-                    { label: "OTP-verified", sub: "Identity confirmation" },
+                    { label: "OTP-verified", sub: "Identity check" },
                   ].map((badge) => (
                     <div
                       key={badge.label}
@@ -157,7 +157,7 @@ export function BillingLandingPage() {
 
                 {/* CTA note */}
                 <p className="mt-6 text-center text-xs text-muted-foreground">
-                  To complete a payment, use the secure link provided by your institution.
+                  To pay your invoice, open it from your admin dashboard and click Pay Now.
                 </p>
               </div>
             </div>
