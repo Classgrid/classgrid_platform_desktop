@@ -20,7 +20,6 @@ const paymentAttemptSchema = new mongoose.Schema(
         },
         providerPaymentId: { // Razorpay payment_id (can be null if attempt failed before getting one)
             type: String,
-            default: null,
         },
         method: { // e.g. "UPI", "CARD", "NET_BANKING", "WALLET"
             type: String,
