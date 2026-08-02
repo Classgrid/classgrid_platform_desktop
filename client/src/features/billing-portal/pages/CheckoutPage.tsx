@@ -44,6 +44,17 @@ export function CheckoutPage() {
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
+    
+    // Support inheriting theme from dashboard via URL
+    const themeParam = searchParams.get("theme");
+    if (themeParam === "dark") {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("vite-ui-theme", "dark");
+    } else if (themeParam === "light") {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("vite-ui-theme", "light");
+    }
+
     const tokenParam = searchParams.get("token");
     if (!tokenParam) {
       setStatus("invalid");
