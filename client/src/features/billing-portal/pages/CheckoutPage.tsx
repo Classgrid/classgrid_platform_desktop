@@ -65,7 +65,7 @@ export function CheckoutPage() {
       .then((res) => {
         if (res.data?.success) {
           setStatus("ready");
-          setEmail(res.data.email || "your registered email");
+          setEmail(res.data.data?.maskedEmail || res.data.email || "your registered email");
           startCountdown();
         } else {
           setStatus("invalid");
@@ -95,7 +95,14 @@ export function CheckoutPage() {
         token,
         otp
       });
-      const { razorpay_order_id, razorpay_key_id, amount, currency, email: customerEmail, return_url } = response.data;
+      const { 
+        razorpay_order_id, 
+        razorpay_key_id, 
+        amountPaise: amount, 
+        currency, 
+        email: customerEmail, 
+        return_url 
+      } = response.data.data || response.data;
       
       const options = {
         key: razorpay_key_id,
