@@ -62,10 +62,10 @@ export function BillingLandingPage() {
           <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
             <a
               href="https://classgrid.in"
-              className="flex items-center gap-2.5 text-foreground hover:opacity-80 transition-opacity"
+              className="flex items-center gap-1.5 text-foreground transition-colors hover:text-foreground/90"
             >
-              <img src="/logo.png" alt="Classgrid" className="h-7 w-7 object-contain" />
-              <span className="text-xl font-black tracking-tighter">CLASSGRID.</span>
+              <img src="/logo.png" alt="Classgrid" className="h-10 w-auto object-contain" />
+              <span className="text-xl font-semibold tracking-tight">Classgrid</span>
             </a>
             <div className="flex items-center gap-2 rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground">
               <span className="relative inline-flex h-2 w-2 rounded-[2px] bg-emerald-500">

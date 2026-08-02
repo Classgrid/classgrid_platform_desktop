@@ -190,8 +190,9 @@ export function CheckoutPage() {
       `}</style>
       
       {/* Top Left Logo - exactly like marketing */}
-      <Link to="/" className="absolute top-6 left-8 flex items-center gap-3 hover:opacity-80 transition-opacity">
-        <img src="/logo.png" alt="Classgrid Logo" className="w-8 h-8 object-contain" />
+      <Link to="/" className="absolute top-6 left-8 flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+        <img src="/logo.png" alt="Classgrid Logo" className="h-10 w-auto object-contain" />
+        <span className="text-xl font-semibold tracking-tight text-slate-900 dark:text-[#f1f1f1]">Classgrid</span>
       </Link>
 
       <div className="flex-1 flex flex-col items-center justify-center p-4">
