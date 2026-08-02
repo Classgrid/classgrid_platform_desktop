@@ -53,11 +53,8 @@ router.post("/session", async (req, res) => {
             });
         }
 
-        // Expire any existing demo sessions cleanly
-        await BillingHandoff.updateMany(
-            { payment_type: "saas_invoice", "context.isDemo": true, consumedAt: null },
-            { $set: { consumedAt: new Date(), expiresAt: new Date() } }
-        );
+        // Previous demo sessions expire naturally via MongoDB TTL (48h).
+        // No cleanup needed — multiple sessions can coexist safely.
 
         // Resolve the Classgrid org (super admin org) — use a dummy ObjectId if none exists
         // We use a placeholder org_id since this is a demo
