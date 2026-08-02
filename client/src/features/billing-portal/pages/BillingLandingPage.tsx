@@ -206,7 +206,7 @@ function DemoCard() {
                 </div>
 
                 <div className="bg-muted/30 p-3 rounded-lg border border-border mb-3">
-                  <h4 className="font-semibold text-foreground text-xs mb-2 uppercase tracking-wider">Layer 2 — A-la-carte Module Fees</h4>
+                  <h4 className="font-semibold text-foreground text-xs mb-2 uppercase tracking-wider">Layer 2 — Add-on Module Fees</h4>
                   <p className="text-xs mb-2">Institutions toggle modules ON/OFF. They are billed only for active modules. Our full module catalog:</p>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px]">
                     <span>• Attendance System</span>
