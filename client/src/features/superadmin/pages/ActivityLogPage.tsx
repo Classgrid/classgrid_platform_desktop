@@ -183,8 +183,10 @@ const columns: ColumnDef<AuditLog>[] = [
     accessorKey: "metadata",
     header: "Details",
     size: 250,
-    cell: ({ getValue }) => {
+    cell: ({ row, getValue }) => {
       const meta = getValue<Record<string, unknown>>();
+      const d = row.original.timestamp;
+      
       if (!meta || Object.keys(meta).length === 0) return <span className="text-muted-foreground">—</span>;
       return (
         <div className="text-xs space-y-1">
@@ -193,6 +195,9 @@ const columns: ColumnDef<AuditLog>[] = [
           {meta.contact && <div><span className="font-semibold">Phone:</span> {meta.contact as string}</div>}
           {meta.amountInr && <div><span className="font-semibold">Amount:</span> ₹{meta.amountInr as number}</div>}
           {meta.providerPaymentId && <div><span className="font-semibold">Txn:</span> {meta.providerPaymentId as string}</div>}
+          {meta.providerPaymentId && d && (
+             <div className="pt-1 text-muted-foreground"><span className="font-semibold">Paid at:</span> {formatDate(d)} - {formatTime(d)}</div>
+          )}
         </div>
       );
     },
