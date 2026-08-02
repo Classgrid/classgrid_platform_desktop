@@ -1,23 +1,73 @@
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/marketing_ui/input-otp";
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
+import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
 
+// A simple spinner icon matching the marketing site's one
+function Spinner({ className }: { className?: string }) {
+  return (
+    <svg
+      className={`animate-spin ${className || ""}`}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      ></circle>
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      ></path>
+    </svg>
+  );
+}
 
+const OTP_TTL_SECONDS = 60;
+
+function formatCountdown(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+}
 
 export function CheckoutPage() {
   const location = useLocation();
   const [token, setToken] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "invalid">("loading");
   const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(true);
-  const [sendingOtp, setSendingOtp] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  
+  const [email, setEmail] = useState("");
+  
+  const [countdown, setCountdown] = useState(0);
+  const [otpExpired, setOtpExpired] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startCountdown = () => {
+    setCountdown(OTP_TTL_SECONDS);
+    setOtpExpired(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          setOtpExpired(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -31,6 +81,8 @@ export function CheckoutPage() {
       .then((res) => {
         if (res.data?.success) {
           setStatus("ready");
+          setEmail(res.data.email || "your registered email");
+          startCountdown();
         } else {
           setStatus("invalid");
         }
@@ -38,34 +90,29 @@ export function CheckoutPage() {
       .catch(() => {
         setStatus("invalid");
       });
+      
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [location.search]);
 
-  async function handleSendOtp() {
-    setSendingOtp(true);
-    setError(null);
-    setMessage(null);
-    try {
-      await apiClient.post("/api/billing/handoff/resend-otp", { token });
-      setOtp("");
-      setOtpSent(true);
-      setMessage("Your 6-digit login code is on its way.");
-    } catch (err: any) {
-      setError(err.response?.data?.error || "We couldn't send your login code.");
-    } finally {
-      setSendingOtp(false);
-    }
-  }
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
 
-  async function handleVerifyOtp() {
-    setSubmitting(true);
-    setError(null);
-    setMessage(null);
+    if (otp.length !== 6) {
+      setError("Please enter the 6-digit code");
+      return;
+    }
+
+    setLoading(true);
     try {
       const response = await apiClient.post("/api/billing/checkout/verify-otp", {
         token,
         otp
       });
-      const { razorpay_order_id, razorpay_key_id, amount, currency, email, return_url } = response.data;
+      const { razorpay_order_id, razorpay_key_id, amount, currency, email: customerEmail, return_url } = response.data;
+      
       const options = {
         key: razorpay_key_id,
         amount,
@@ -91,11 +138,11 @@ export function CheckoutPage() {
             toast.error("Payment verification failed. Please contact support.", { id: "payment-verify" });
           }
         },
-        prefill: { email },
+        prefill: { email: customerEmail },
         theme: { color: "#10b981" },
         modal: {
           ondismiss: function() {
-            setSubmitting(false);
+            setLoading(false);
           }
         }
       };
@@ -103,171 +150,137 @@ export function CheckoutPage() {
       rzp.on("payment.failed", function (response: any) {
         console.error(response.error);
         toast.error(response.error.description || "Payment failed");
-        setSubmitting(false);
+        setLoading(false);
       });
       rzp.open();
     } catch (err: any) {
       console.error(err);
       setError(err.response?.data?.error || "Invalid OTP or session expired.");
-      setSubmitting(false);
+      setLoading(false);
     }
   }
 
   if (status === "loading") {
-    return <div className="h-screen w-screen bg-background dark:bg-[#080808]" />;
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <Spinner className="w-6 h-6 text-muted-foreground" />
+      </div>
+    );
   }
 
   if (status === "invalid") {
     return (
-      <main className="relative min-h-screen overflow-hidden bg-background text-foreground flex flex-col items-center justify-center text-center p-6">
+      <main className="relative min-h-screen overflow-hidden bg-background text-foreground flex flex-col items-center justify-center text-center p-6 font-sans">
         <h2 className="text-2xl font-bold mb-2">Payment Completed or Link Expired</h2>
         <p className="text-muted-foreground mb-6">This checkout link is no longer valid.</p>
-        <button onClick={() => window.history.back()} className="h-12 rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition hover:brightness-110">
+        <button onClick={() => window.history.back()} className="h-12 rounded-xl bg-slate-900 px-6 font-semibold text-white transition hover:brightness-110 dark:bg-[#2a2a2a]">
           Go Back
         </button>
       </main>
     );
   }
 
-  {/* ─── BELOW IS EXACT COPY OF marketing/app/login/LoginPageClient.tsx render ─── */}
   return (
-    <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.18),transparent_60%)]" />
-        <div className="absolute inset-0 opacity-[0.04] [background-image:linear-gradient(to_right,rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:32px_32px]" />
-      </div>
+    <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans">
+      
+      {/* Top Left Logo - exactly like marketing */}
+      <Link to="/" className="absolute top-6 left-8 flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <img src="/logo.png" alt="Classgrid Logo" className="w-8 h-8 object-contain" />
+      </Link>
 
-      <div className="relative flex min-h-screen flex-col">
-        <div className="px-6 pt-6 sm:px-8 sm:pt-8">
-          <Link
-            to="/"
-            className="inline-flex items-center text-xl font-black tracking-tighter text-foreground"
-          >
-            CLASSGRID.
-          </Link>
-        </div>
+      <div className="flex-1 flex flex-col items-center justify-center p-4">
+        
+        <div className="w-full max-w-[400px]">
+          
+          <div className="mb-8 text-center space-y-1">
+            <h1 className="text-3xl font-medium tracking-tight text-slate-900 dark:text-[#f1f1f1]">Verify your identity</h1>
+            <p className="text-[15px] text-slate-500 dark:text-[#888888]">Secure Checkout via Razorpay</p>
+          </div>
 
-        <div className="flex flex-1 items-center justify-center px-6 py-12">
-          <div className="w-full max-w-[460px]">
-            <div className="rounded-2xl border border-border bg-card/90 shadow-[0_30px_100px_rgba(0,0,0,0.38)] backdrop-blur-sm">
-              <div className="p-8 sm:p-10">
-                <div className="mb-8 space-y-3">
-                  <div className="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-                    Secure Checkout
-                  </div>
-                  <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-[2.1rem]">
-                      Verify your identity
-                    </h1>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-[15px]">
-                      Unified ERP infrastructure for modern institutions
-                    </p>
-                  </div>
-                </div>
+          <form onSubmit={handleVerifyOtp} className="space-y-5">
+            <div className="flex flex-col items-center gap-3">
+              <label className="text-center text-[13px] font-medium text-slate-500 dark:text-[#888888]">
+                Enter the 6-digit code sent to <span className="text-slate-900 dark:text-[#f1f1f1]">{email}</span>
+              </label>
+              
+              <InputOTP
+                maxLength={6}
+                pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+                value={otp}
+                onChange={(val) => setOtp(val)}
+                disabled={otpExpired}
+              >
+                <InputOTPGroup className="gap-2">
+                  <InputOTPSlot index={0} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                  <InputOTPSlot index={1} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                  <InputOTPSlot index={2} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                  <InputOTPSlot index={3} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                  <InputOTPSlot index={4} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                  <InputOTPSlot index={5} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                </InputOTPGroup>
+              </InputOTP>
 
-                <div className="space-y-5">
-
-                  {otpSent ? (
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">
-                          Enter your code
-                        </label>
-                        <InputOTP
-                          maxLength={6}
-                          value={otp}
-                          onChange={setOtp}
-                          pattern="\d*"
-                          containerClassName="w-full"
-                        >
-                          <InputOTPGroup className="w-full justify-center gap-2">
-                            {Array.from({ length: 6 }).map((_, index) => (
-                              <InputOTPSlot
-                                key={index}
-                                index={index}
-                                className="h-12 w-full rounded-xl border border-input bg-background/80 text-base font-semibold data-[active=true]:border-primary data-[active=true]:ring-2 data-[active=true]:ring-primary/25"
-                              />
-                            ))}
-                          </InputOTPGroup>
-                        </InputOTP>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setOtpSent(true);
-                            setOtp("");
-                            setMessage(null);
-                            setError(null);
-                          }}
-                          className="font-medium text-muted-foreground transition hover:text-foreground"
-                        >
-                          Back to email
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleSendOtp}
-                          disabled={sendingOtp || submitting}
-                          className="font-medium text-primary transition hover:text-primary/80 disabled:opacity-60"
-                        >
-                          {sendingOtp ? "Resending..." : "Resend code"}
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {error ? (
-                    <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-red-200">
-                      {error}
-                    </p>
-                  ) : null}
-
-                  {message ? (
-                    <p className="rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
-                      {message}
-                    </p>
-                  ) : null}
-
-                  {otpSent ? (
-                    <button
-                      type="button"
-                      onClick={handleVerifyOtp}
-                      disabled={submitting || otp.length !== 6}
-                      className="h-12 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {submitting ? "Processing..." : "Verify & Pay"}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleSendOtp}
-                      disabled={sendingOtp || submitting}
-                      className="h-12 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {sendingOtp ? "Sending code..." : "Continue"}
-                    </button>
-                  )}
-                </div>
-
-                <div className="mt-8 text-center text-sm text-muted-foreground">
-                  Secured by Razorpay
-                </div>
+              {/* Timer / Resend */}
+              <div className="text-[13px] text-center">
+                {otpExpired ? (
+                  <span className="text-red-400">Code expired. </span>
+                ) : countdown > 0 ? (
+                  <span className="text-slate-500 dark:text-[#888888]">
+                    Code expires in{" "}
+                    <span className={`font-mono font-semibold tabular-nums ${
+                      countdown <= 10 ? "text-red-400" : "text-slate-900 dark:text-[#f1f1f1]"
+                    }`}>
+                      {formatCountdown(countdown)}
+                    </span>
+                  </span>
+                ) : null}
+                {" "}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setError("");
+                    setOtp("");
+                    setLoading(true);
+                    try {
+                      await apiClient.post("/api/billing/handoff/resend-otp", { token });
+                      startCountdown();
+                    } catch (err: any) {
+                      setError(err.response?.data?.error || "Failed to resend");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  disabled={loading || (countdown > 0 && !otpExpired)}
+                  className="text-slate-900 underline underline-offset-2 transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30 dark:text-[#f1f1f1]"
+                >
+                  Resend code
+                </button>
               </div>
             </div>
 
-            <div className="mt-7 text-center text-sm text-muted-foreground">
-              <Link to="/privacy" className="transition hover:text-foreground">
-                Privacy Policy
-              </Link>{" "}
-              and{" "}
-              <Link to="/terms" className="transition hover:text-foreground">
-                Terms of Service
-              </Link>
-            </div>
-          </div>
+            {error && <p className="text-red-400 text-sm font-medium text-center">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={loading || otp.length !== 6 || otpExpired}
+              className="flex w-full items-center justify-center rounded-md bg-slate-900 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2a2a2a] dark:text-[#f1f1f1] dark:hover:bg-[#333]"
+            >
+              {loading ? <><Spinner className="w-4 h-4 text-inherit mr-2" /> Verify & Pay</> : "Verify & Pay"}
+            </button>
+          </form>
+
         </div>
+
       </div>
-    </main>
+
+      <div className="absolute bottom-6 w-full text-center">
+        <p className="text-[13px] text-slate-400 dark:text-[#666666]">
+          <Link to="/terms" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Terms of Service</Link>
+          {" "}and{" "}
+          <Link to="/privacy" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Privacy Policy</Link>
+        </p>
+      </div>
+
+    </div>
   );
 }
