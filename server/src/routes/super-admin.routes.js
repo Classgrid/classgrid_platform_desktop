@@ -1166,7 +1166,7 @@ router.post("/team/invite", async (req, res) => {
                 
                 <tr>
                   <td style="padding:30px;border-bottom:1px solid #eaeaea;text-align:center;">
-                    <img src="https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/android-chrome-512x512.png" alt="Classgrid" width="48" height="48" style="display:block;margin:0 auto 16px;border-radius:10px;background:linear-gradient(#0f0f0f,#0f0f0f);padding:6px;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+                    <img src="https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/android-chrome-512x512.png" alt="Classgrid" width="48" height="48" style="display:block;margin:0 auto 16px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
                     <h1 style="color:#111111;margin:0;font-size:22px;">Welcome to the Classgrid team, ${name}!</h1>
                   </td>
                 </tr>
