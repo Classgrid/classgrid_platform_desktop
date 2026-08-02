@@ -67,6 +67,7 @@ function DemoCard() {
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState(false);
+  const [showPurposeModal, setShowPurposeModal] = useState(false);
 
   // On mount, check if active session exists
   useEffect(() => {
@@ -112,7 +113,7 @@ function DemoCard() {
 
       <button
         id="demo-create-session-btn"
-        onClick={createSession}
+        onClick={() => setShowPurposeModal(true)}
         disabled={loading || created}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:opacity-60"
       >
@@ -152,6 +153,77 @@ function DemoCard() {
       <p className="text-[10px] text-muted-foreground/60 text-center">
         This test session expires in 48 hours. No real money is charged.
       </p>
+
+      {/* Purpose Modal for Payment Gateways */}
+      {showPurposeModal && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setShowPurposeModal(false)} />
+          <div className="relative flex w-full max-w-lg max-h-[85vh] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+            
+            {/* Header */}
+            <div className="border-b border-border bg-muted/30 p-5">
+              <h2 className="text-xl font-bold text-foreground tracking-tight">Statement of Purpose & Architecture</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Please review our flow before testing the integration.</p>
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 text-sm leading-relaxed text-muted-foreground">
+              <div>
+                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">1</span>
+                  Who We Are (The Business)
+                </h3>
+                <p>Classgrid is a comprehensive B2B Software-as-a-Service (SaaS) platform designed for educational institutions. We provide institutional ERP, student information management, and academic tracking. <strong className="text-foreground">We do not sell physical products or consumer goods.</strong></p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">2</span>
+                  Why billing.classgrid.in exists
+                </h3>
+                <p>Our main marketing website is <code className="text-xs bg-muted px-1 py-0.5 rounded">classgrid.in</code>. However, our actual software is a highly secure, closed system that schools log into.</p>
+                <p className="mt-2">For PCI-DSS compliance and maximum security, we decoupled our payment system. When a school administrator logs into our core application and clicks "Pay Subscription", they are securely redirected to this dedicated microservice (<code className="text-xs bg-muted px-1 py-0.5 rounded">billing.classgrid.in</code>) to complete the transaction safely.</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">3</span>
+                  The Checkout Flow
+                </h3>
+                <ul className="list-disc pl-5 space-y-1.5 mt-2">
+                  <li>The administrator lands on this portal with a secure token.</li>
+                  <li>They verify their identity using a 6-digit OTP sent to their registered email.</li>
+                  <li>Upon successful OTP verification, the Razorpay checkout securely loads to process the SaaS subscription fee.</li>
+                </ul>
+              </div>
+
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+                <p className="text-xs font-semibold text-amber-500 uppercase tracking-wider mb-1">Testing the Integration</p>
+                <p className="text-xs text-foreground/80 leading-5">By clicking the button below, you will simulate this exact B2B SaaS payment flow using Razorpay test credentials.</p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-border bg-muted/30 p-5 flex justify-end gap-3">
+              <button 
+                onClick={() => setShowPurposeModal(false)}
+                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowPurposeModal(false);
+                  createSession();
+                }}
+                className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-400"
+              >
+                I Understand — Proceed to Test
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
