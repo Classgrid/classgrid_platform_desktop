@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 const steps = [
   {
@@ -46,6 +46,121 @@ const steps = [
   },
 ];
 
+const DEMO_ENABLED = import.meta.env.VITE_BILLING_DEMO_MODE === "true";
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.classgrid.in";
+
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={() => { navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+      className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-semibold transition bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
+    >
+      {copied ? "Copied!" : "Copy"}
+    </button>
+  );
+}
+
+function DemoCard() {
+  const [loading, setLoading] = useState(false);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [created, setCreated] = useState(false);
+
+  // On mount, check if active session exists
+  useEffect(() => {
+    fetch(`${API_BASE}/api/billing/demo/status`)
+      .then(r => r.json())
+      .then(d => { if (d.enabled && d.has_active_session) setCheckoutUrl(null); })
+      .catch(() => {});
+  }, []);
+
+  const createSession = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/billing/demo/session`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed");
+      setCheckoutUrl(data.data.checkout_url);
+      setCreated(true);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5 space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+          </svg>
+        </span>
+        <p className="text-xs font-semibold text-amber-400 uppercase tracking-[0.15em]">
+          Razorpay Review — Test Checkout
+        </p>
+      </div>
+
+      <p className="text-xs text-muted-foreground leading-5">
+        This creates a real Razorpay test session. Enter the OTP below, then complete checkout with the test card credentials.
+      </p>
+
+      {!checkoutUrl ? (
+        <button
+          id="demo-create-session-btn"
+          onClick={createSession}
+          disabled={loading}
+          className="w-full rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:opacity-60"
+        >
+          {loading ? "Creating session…" : "Open Test Checkout →"}
+        </button>
+      ) : (
+        <a
+          id="demo-checkout-link"
+          href={checkoutUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full rounded-xl bg-amber-500 py-2.5 text-center text-sm font-semibold text-black transition hover:bg-amber-400"
+        >
+          Open Checkout →
+        </a>
+      )}
+
+      {error && <p className="text-xs text-red-400">{error}</p>}
+
+      {/* Test credentials — always visible */}
+      <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-2.5">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Test Credentials</p>
+
+        {[
+          { label: "OTP", value: "123456" },
+          { label: "Card Number", value: "4111 1111 1111 1111" },
+          { label: "Card Expiry", value: "12/27" },
+          { label: "CVV", value: "123" },
+          { label: "Card OTP", value: "123456" },
+          { label: "UPI ID", value: "success@razorpay" },
+        ].map(item => (
+          <div key={item.label} className="flex items-center justify-between">
+            <span className="text-[11px] text-muted-foreground">{item.label}</span>
+            <div className="flex items-center">
+              <code className="text-xs font-mono font-bold text-foreground">{item.value}</code>
+              <CopyButton value={item.value} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-[10px] text-muted-foreground/60 text-center">
+        This test session expires in 48 hours. No real money is charged.
+      </p>
+    </div>
+  );
+}
+
 export function BillingLandingPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground font-sans">
@@ -57,7 +172,7 @@ export function BillingLandingPage() {
 
       <div className="relative flex min-h-screen flex-col">
 
-        {/* Header — exact match with marketing */}
+        {/* Header */}
         <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur-xl">
           <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
             <a
@@ -97,11 +212,13 @@ export function BillingLandingPage() {
               </p>
             </div>
 
-            {/* Card */}
+            {/* Demo card — only visible when VITE_BILLING_DEMO_MODE=true */}
+            {DEMO_ENABLED && <DemoCard />}
+
+            {/* How it works card */}
             <div className="rounded-2xl border border-border bg-card/80 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-sm">
               <div className="p-7 sm:p-8">
 
-                {/* How it works */}
                 <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   How it works
                 </p>
@@ -109,7 +226,6 @@ export function BillingLandingPage() {
                 <div className="space-y-0">
                   {steps.map((step, i) => (
                     <div key={i} className="flex gap-4">
-                      {/* Left: icon + connector line */}
                       <div className="flex flex-col items-center">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground">
                           {step.icon}
@@ -119,7 +235,6 @@ export function BillingLandingPage() {
                         )}
                       </div>
 
-                      {/* Right: content */}
                       <div className={`pb-5 ${i === steps.length - 1 ? "pb-0" : ""}`}>
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className="text-[10px] font-bold tracking-widest text-muted-foreground/60">{step.number}</span>
@@ -131,14 +246,12 @@ export function BillingLandingPage() {
                   ))}
                 </div>
 
-                {/* Divider */}
                 <div className="my-6 flex items-center gap-3">
                   <div className="h-px flex-1 bg-border" />
                   <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Verified by</span>
                   <div className="h-px flex-1 bg-border" />
                 </div>
 
-                {/* Trust badges */}
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { label: "256-bit SSL", sub: "Encrypted" },
@@ -155,7 +268,6 @@ export function BillingLandingPage() {
                   ))}
                 </div>
 
-                {/* CTA note */}
                 <p className="mt-6 text-center text-xs text-muted-foreground">
                   To pay your invoice, open it from your admin dashboard and click Pay Now.
                 </p>
