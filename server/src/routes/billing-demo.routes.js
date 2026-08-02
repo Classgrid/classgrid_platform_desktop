@@ -17,6 +17,7 @@ import PaymentAttempt from "../models/PaymentAttempt.js";
 import razorpayService from "../services/razorpay.service.js";
 import { hashHandoffToken } from "../services/billing-handoff.service.js";
 import { PAYMENT_ATTEMPT_STAGE } from "../utils/billing.utils.js";
+import connectDB from "../../config/db.js";
 
 const router = express.Router();
 
@@ -44,6 +45,7 @@ function checkoutUrl(rawToken) {
  */
 router.post("/session", async (req, res) => {
     try {
+        await connectDB(); // Ensure DB is connected in serverless
         if (!isDemoEnabled()) {
             return res.status(403).json({
                 success: false,
@@ -167,23 +169,29 @@ router.post("/session", async (req, res) => {
  * Called by the landing page on load to get the current demo link.
  */
 router.get("/status", async (req, res) => {
-    if (!isDemoEnabled()) {
-        return res.json({ enabled: false });
+    try {
+        await connectDB(); // Ensure DB is connected in serverless
+        if (!isDemoEnabled()) {
+            return res.json({ enabled: false });
+        }
+
+        // Find the latest active demo session
+        const handoff = await BillingHandoff.findOne({
+            payment_type: "saas_invoice",
+            "context.isDemo": true,
+            consumedAt: null,
+            expiresAt: { $gt: new Date() },
+        }).select("expiresAt").lean();
+
+        return res.json({
+            enabled: true,
+            has_active_session: !!handoff,
+            expires_at: handoff?.expiresAt || null,
+        });
+    } catch (err) {
+        console.error("[Demo Status] DB Error:", err);
+        return res.json({ enabled: false, error: err.message });
     }
-
-    // Find the latest active demo session
-    const handoff = await BillingHandoff.findOne({
-        payment_type: "saas_invoice",
-        "context.isDemo": true,
-        consumedAt: null,
-        expiresAt: { $gt: new Date() },
-    }).select("expiresAt").lean();
-
-    return res.json({
-        enabled: true,
-        has_active_session: !!handoff,
-        expires_at: handoff?.expiresAt || null,
-    });
 });
 
 export default router;
