@@ -7,6 +7,7 @@ import SaasInvoice from "../models/SaasInvoice.js";
 import razorpayService from "../services/razorpay.service.js";
 import { finalizeCapturedPayment } from "../services/billing-payment-finalization.service.js";
 import { sendEmail, sendTemplateEmail } from "../services/aws-ses.service.js";
+import { baseTemplate } from "../services/email-templates.service.js";
 import { generateInvoicePdfBuffer } from "../services/pdf-invoice.service.js";
 import { generalLimiter } from "../middleware/rateLimiter.js";
 import {
@@ -207,24 +208,29 @@ router.post("/confirm", async (req, res) => {
         }
 
         // Send a direct confirmation email (no template dependency)
+        const emailTitle = `Payment Successful — ${amountFormatted} | Classgrid`;
+        const emailBody = `
+            <p>Hello ${payerName},</p>
+            <p>Your payment to <strong>${orgName}</strong> was completed successfully through Classgrid.</p>
+            <table style="border-collapse:collapse;width:100%;max-width:420px;margin:16px 0;">
+              <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Amount Paid</td><td style="padding:6px 12px;color:#059669;font-weight:700;">${amountFormatted}</td></tr>
+              <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Payment ID</td><td style="padding:6px 12px;font-family:monospace;">${providerPayment.id}</td></tr>
+              <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Payment Method</td><td style="padding:6px 12px;">${providerPayment.method || "Razorpay"}</td></tr>
+              <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Paid At</td><td style="padding:6px 12px;">${paidAt} IST</td></tr>
+              <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Organization</td><td style="padding:6px 12px;">${orgName}</td></tr>
+            </table>
+            <p>Your subscription remains active. Keep this email for your records.</p>
+            <p style="color:#9ca3af;font-size:12px;">This is an automated receipt from Classgrid Billing.</p>
+        `;
+
+        const compiledHtml = baseTemplate({ content: emailBody, title: emailTitle });
+
         await sendEmail({
             to: handoff.email,
-            subject: `Payment Successful — ${amountFormatted} | Classgrid`,
+            subject: emailTitle,
             fromName: "Classgrid Billing",
             fromEmail: "billing@classgrid.in",
-            html: `
-                <p>Hello ${payerName},</p>
-                <p>Your payment to <strong>${orgName}</strong> was completed successfully through Classgrid.</p>
-                <table style="border-collapse:collapse;width:100%;max-width:420px;margin:16px 0;">
-                  <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Amount Paid</td><td style="padding:6px 12px;color:#059669;font-weight:700;">${amountFormatted}</td></tr>
-                  <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Payment ID</td><td style="padding:6px 12px;font-family:monospace;">${providerPayment.id}</td></tr>
-                  <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Payment Method</td><td style="padding:6px 12px;">${providerPayment.method || "Razorpay"}</td></tr>
-                  <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Paid At</td><td style="padding:6px 12px;">${paidAt} IST</td></tr>
-                  <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Organization</td><td style="padding:6px 12px;">${orgName}</td></tr>
-                </table>
-                <p>Your subscription remains active. Keep this email for your records.</p>
-                <p style="color:#9ca3af;font-size:12px;">This is an automated receipt from Classgrid Billing.</p>
-            `,
+            html: compiledHtml,
             attachments,
             userId: finalized.order.createdBy || null,
             organizationId: handoff.organization_id,
