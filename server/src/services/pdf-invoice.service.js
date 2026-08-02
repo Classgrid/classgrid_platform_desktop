@@ -47,7 +47,7 @@ export const generateInvoicePdfBuffer = async (invoice, org) => {
                         <div>Status: ${invoice.status.toUpperCase()}</div>
                     </div>
                     <div class="details">
-                        <div><strong>Classgrid EdTech Pvt. Ltd.</strong></div>
+                        <div><strong>Classgrid Technology</strong></div>
                         <div>support@classgrid.in</div>
                         <div>Date: ${new Date(invoice.createdAt).toLocaleDateString()}</div>
                         <div>Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}</div>
