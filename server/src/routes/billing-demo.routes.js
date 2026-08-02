@@ -22,7 +22,7 @@ import connectDB from "../../config/db.js";
 const router = express.Router();
 
 const DEMO_OTP = "123456";
-const DEMO_AMOUNT_PAISE = 99900; // ₹999 demo subscription
+const DEMO_AMOUNT_PAISE = 50000; // ₹500 demo subscription
 const DEMO_48H = 48 * 60 * 60 * 1000;
 
 function isDemoEnabled() {
@@ -144,7 +144,7 @@ router.post("/session", async (req, res) => {
             data: {
                 checkout_url: url,
                 demo_otp: DEMO_OTP,
-                amount: "₹999",
+                amount: "₹500",
                 expires_at: handoff.expiresAt,
                 test_card: {
                     number: "4111 1111 1111 1111",
