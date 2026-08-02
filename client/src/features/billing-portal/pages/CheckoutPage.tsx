@@ -148,70 +148,78 @@ export function CheckoutPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      {/* Background gradients matching Marketing UI but adapted for light/dark mode */}
+      {/* Background — EXACT copy from marketing LoginPageClient.tsx */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.15),transparent_60%)] dark:bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.18),transparent_60%)]" />
-        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04] [background-image:linear-gradient(to_right,rgba(0,0,0,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.1)_1px,transparent_1px)] dark:[background-image:linear-gradient(to_right,rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:32px_32px]" />
+        <div className="absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.18),transparent_60%)]" />
+        <div className="absolute inset-0 opacity-[0.04] [background-image:linear-gradient(to_right,rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:32px_32px]" />
       </div>
 
       <div className="relative flex min-h-screen flex-col">
-        <div className="px-6 pt-6 sm:px-8 sm:pt-8 flex justify-center sm:justify-start">
-          <Link to="/" className="inline-flex items-center">
-            <img src="/classgrid-icon.png" alt="Classgrid" className="h-8 w-auto hidden dark:block" onError={(e) => { e.currentTarget.src = "/logo.png"; }} />
-            <img src="/classgrid-icon-light.png" alt="Classgrid" className="h-8 w-auto block dark:hidden" onError={(e) => { e.currentTarget.src = "/logo.png"; }} />
-            <span className="ml-3 text-xl font-black tracking-tighter text-foreground">CLASSGRID.</span>
+        {/* Header — EXACT copy from marketing LoginPageClient.tsx */}
+        <div className="px-6 pt-6 sm:px-8 sm:pt-8">
+          <Link
+            to="/"
+            className="inline-flex items-center text-xl font-black tracking-tighter text-foreground"
+          >
+            CLASSGRID.
           </Link>
         </div>
 
         <div className="flex flex-1 items-center justify-center px-6 py-12">
           <div className="w-full max-w-[460px]">
+            {/* Card — EXACT copy from marketing LoginPageClient.tsx */}
             <div className="rounded-2xl border border-border bg-card/90 shadow-[0_30px_100px_rgba(0,0,0,0.38)] backdrop-blur-sm">
               <div className="p-8 sm:p-10">
-                <div className="mb-8 space-y-3 text-center">
+                <div className="mb-8 space-y-3">
                   <div className="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
                     Secure Checkout
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl mt-4">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-[2.1rem]">
                       Verify your identity
                     </h1>
-                    <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-[15px]">
                       We sent a 6-digit code to your registered email.
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-5">
+                  {/* OTP — centered and bigger */}
                   <div className="space-y-3">
-                    <div className="space-y-2 flex flex-col items-center">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">
+                        Enter your code
+                      </label>
                       <InputOTP
                         maxLength={6}
                         value={otp}
                         onChange={setOtp}
                         pattern="\d*"
-                        containerClassName="w-full justify-center"
+                        containerClassName="w-full"
                       >
-                        <InputOTPGroup className="gap-3 sm:gap-4">
+                        <InputOTPGroup className="w-full justify-center gap-3">
                           {Array.from({ length: 6 }).map((_, index) => (
                             <InputOTPSlot
                               key={index}
                               index={index}
-                              className="h-16 w-12 sm:h-[72px] sm:w-[60px] rounded-xl border-2 border-input bg-background text-2xl sm:text-3xl font-black data-[active=true]:border-primary data-[active=true]:ring-4 data-[active=true]:ring-primary/20 shadow-sm transition-all"
+                              className="h-14 w-12 sm:h-14 sm:w-14 rounded-xl border border-input bg-background/80 text-xl font-bold data-[active=true]:border-primary data-[active=true]:ring-2 data-[active=true]:ring-primary/25"
                             />
                           ))}
                         </InputOTPGroup>
                       </InputOTP>
                     </div>
 
-                    <div className="flex justify-center mt-6">
-                       <Button
-                          variant="ghost"
-                          onClick={handleResendOtp}
-                          disabled={sendingOtp || submitting}
-                          className="text-sm font-medium text-primary hover:text-primary/80"
-                        >
-                          {sendingOtp ? "Resending..." : "Didn't receive the code? Resend"}
-                        </Button>
+                    <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                      <span className="font-medium">Check your email inbox</span>
+                      <button
+                        type="button"
+                        onClick={handleResendOtp}
+                        disabled={sendingOtp || submitting}
+                        className="font-medium text-primary transition hover:text-primary/80 disabled:opacity-60"
+                      >
+                        {sendingOtp ? "Resending..." : "Resend code"}
+                      </button>
                     </div>
                   </div>
 
@@ -221,24 +229,25 @@ export function CheckoutPage() {
                     </p>
                   ) : null}
 
-                  <Button
+                  {/* Button — EXACT same classes from marketing LoginPageClient.tsx */}
+                  <button
+                    type="button"
                     onClick={handleVerifyOtp}
                     disabled={submitting || otp.length !== 6}
-                    className="mt-6 h-12 w-full rounded-xl font-semibold shadow-lg shadow-primary/25"
-                    size="lg"
+                    className="h-12 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting ? "Processing..." : "Verify & Pay"}
-                  </Button>
+                  </button>
                 </div>
-                
-                <div className="mt-8 flex items-center justify-center gap-2">
-                   <LockIcon /> <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-[0.15em]">Secured by Razorpay</span>
+
+                <div className="mt-8 text-center text-sm text-muted-foreground">
+                  <LockIcon /> Secured by Razorpay
                 </div>
               </div>
             </div>
 
-            {/* Legal Links Footer */}
-            <div className="mt-8 text-center text-sm text-muted-foreground">
+            {/* Footer — EXACT copy from marketing LoginPageClient.tsx */}
+            <div className="mt-7 text-center text-sm text-muted-foreground">
               <Link to="/privacy" className="transition hover:text-foreground">
                 Privacy Policy
               </Link>{" "}
@@ -256,7 +265,7 @@ export function CheckoutPage() {
 
 function LockIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block mr-1.5 text-muted-foreground">
       <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
       <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
     </svg>
