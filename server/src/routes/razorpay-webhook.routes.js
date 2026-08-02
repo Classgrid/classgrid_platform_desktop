@@ -164,7 +164,7 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     });
 
                     // RULE 6 ENFORCEMENT: Audit Log
-                    const { logAdminAction } = await import("../../services/auditLog.service.js");
+                    const { logAdminAction } = await import("../services/auditLog.service.js");
                     await logAdminAction(
                         req, 
                         "WEBHOOK_EVENT", 
@@ -241,7 +241,7 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     });
 
                     // RULE 6 ENFORCEMENT: Audit Log
-                    const { logAdminAction } = await import("../../services/auditLog.service.js");
+                    const { logAdminAction } = await import("../services/auditLog.service.js");
                     await logAdminAction(
                         req, 
                         "WEBHOOK_EVENT", 
@@ -293,7 +293,7 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                             console.log(`[Razorpay Webhook] ✅ Admission Fee handled via controller for ${applicationId}`);
 
                             // RULE 6 ENFORCEMENT: Audit Log
-                            const { logAdminAction } = await import("../../services/auditLog.service.js");
+                            const { logAdminAction } = await import("../services/auditLog.service.js");
                             await logAdminAction(
                                 req, 
                                 "WEBHOOK_EVENT", 
@@ -334,7 +334,7 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                             });
 
                             // RULE 6 ENFORCEMENT: Audit Log
-                            const { logAdminAction } = await import("../../services/auditLog.service.js");
+                            const { logAdminAction } = await import("../services/auditLog.service.js");
                             await logAdminAction(
                                 req, 
                                 "WEBHOOK_EVENT", 
@@ -401,7 +401,7 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                 });
 
                 // RULE 6 ENFORCEMENT: Audit Log
-                const { logAdminAction } = await import("../../services/auditLog.service.js");
+                const { logAdminAction } = await import("../services/auditLog.service.js");
                 await logAdminAction(
                     req, 
                     "WEBHOOK_EVENT", 
@@ -460,7 +460,7 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                 }
 
                 // RULE 6 ENFORCEMENT: Audit Log
-                const { logAdminAction } = await import("../../services/auditLog.service.js");
+                const { logAdminAction } = await import("../services/auditLog.service.js");
                 await logAdminAction(
                     req, 
                     "WEBHOOK_EVENT", 
