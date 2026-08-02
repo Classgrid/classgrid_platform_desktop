@@ -15,7 +15,7 @@ function formatCountdown(seconds: number) {
 export function CheckoutPage() {
   const location = useLocation();
   const [token, setToken] = useState<string | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "invalid">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "invalid" | "success">("loading");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -115,16 +115,15 @@ export function CheckoutPage() {
         handler: async function (response: any) {
           try {
             toast.loading("Verifying payment...", { id: "payment-verify" });
-            const confirmResponse = await apiClient.post("/api/billing/checkout/confirm", {
+            await apiClient.post("/api/billing/checkout/confirm", {
               token,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature
             });
-            toast.success("Payment Successful! Redirecting...", { id: "payment-verify" });
-            setTimeout(() => {
-              window.location.href = confirmResponse.data.return_url || return_url;
-            }, 1500);
+            toast.success("Payment verified!", { id: "payment-verify" });
+            // Do not redirect; show the success page!
+            setStatus("success");
           } catch (confirmError) {
             console.error("Confirmation error", confirmError);
             toast.error("Payment verification failed. Please contact support.", { id: "payment-verify" });
@@ -173,6 +172,70 @@ export function CheckoutPage() {
           Go Back
         </button>
       </main>
+    );
+  }
+
+  if (status === "success") {
+    return (
+      <div className="relative min-h-screen overflow-hidden bg-background text-foreground flex items-center justify-center p-4">
+        {/* Confetti or subtle background */}
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_55%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.12),transparent_45%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.08)_1px,transparent_1px)] bg-[size:42px_42px] [mask-image:radial-gradient(ellipse_at_center,black_45%,transparent_95%)]" />
+        </div>
+
+        <section className="w-full max-w-lg">
+          <div className="rounded-3xl border border-border/70 bg-background/90 p-8 sm:p-10 shadow-[0_20px_70px_-35px_rgba(16,185,129,0.35)] backdrop-blur-md flex flex-col items-center text-center">
+            
+            <style dangerouslySetInnerHTML={{ __html: `
+              .animate-spin-once { animation: spinOnce 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+              @keyframes spinOnce {
+                0% { transform: rotate(0deg); opacity: 1; border-width: 3px; }
+                70% { transform: rotate(720deg); border-width: 3px; opacity: 1; }
+                100% { transform: rotate(900deg); opacity: 0; border-width: 0px; }
+              }
+              .animate-pop-in {
+                animation: popIn 0.55s cubic-bezier(0.34, 1.2, 0.64, 1) 0.75s forwards;
+                transform: scale(0); opacity: 0;
+              }
+              @keyframes popIn {
+                0% { transform: scale(0); opacity: 0; }
+                50% { transform: scale(1.1); }
+                100% { transform: scale(1); opacity: 1; }
+              }
+              .animate-fade-up { animation: fadeUp 0.5s ease-out 0.2s both; }
+              @keyframes fadeUp {
+                from { opacity: 0; transform: translateY(12px); }
+                to { opacity: 1; transform: translateY(0); }
+              }
+            `}} />
+
+            <div className="relative flex h-24 w-24 items-center justify-center mb-6">
+              <div className="animate-spin-once absolute inset-0 box-border rounded-full border-[3px] border-b-emerald-500/20 border-l-emerald-500/10 border-r-emerald-500 border-t-emerald-500"></div>
+              <div className="animate-pop-in absolute inset-0 flex items-center justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 shadow-[0_10px_20px_-5px_rgba(16,185,129,0.4)]">
+                  <svg className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            
+            <div className="animate-fade-up space-y-4">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-500">
+                Payment Successful
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                Transaction Complete
+              </h1>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Your payment was successfully processed. You can now close this tab. A receipt has been securely recorded on your Classgrid Super Admin dashboard.
+              </p>
+            </div>
+
+          </div>
+        </section>
+      </div>
     );
   }
 
