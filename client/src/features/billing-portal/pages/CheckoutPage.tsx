@@ -112,7 +112,9 @@ export function CheckoutPage() {
           }
         },
         prefill: { email: customerEmail },
-        theme: { color: "#10b981" },
+        theme: { 
+          color: document.documentElement.classList.contains("dark") ? "#ffffff" : "#000000" 
+        },
         modal: {
           ondismiss: function() {
             setLoading(false);
