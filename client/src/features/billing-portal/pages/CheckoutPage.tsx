@@ -257,9 +257,9 @@ export function CheckoutPage() {
 
       <div className="absolute bottom-6 w-full text-center">
         <p className="text-[13px] text-slate-400 dark:text-[#666666]">
-          <Link to="/terms" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Terms of Service</Link>
+          <a href="https://classgrid.in/terms" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Terms of Service</a>
           {" "}and{" "}
-          <Link to="/privacy" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Privacy Policy</Link>
+          <a href="https://classgrid.in/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Privacy Policy</a>
         </p>
       </div>
 
