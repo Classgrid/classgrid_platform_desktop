@@ -6,6 +6,9 @@ import { Spinner } from "@/components/marketing_ui/spinner";
 
 const OTP_TTL_SECONDS = 60;
 
+// Demo mode flag — name/email fields only show in demo
+const IS_DEMO = true; // Hardcoded for live test. Set false for production.
+
 function formatCountdown(seconds: number) {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
@@ -91,11 +94,11 @@ export function CheckoutPage() {
     e.preventDefault();
     setError("");
 
-    if (!payerName.trim()) {
+    if (IS_DEMO && !payerName.trim()) {
       setError("Please enter your name");
       return;
     }
-    if (!payerEmail.trim() || !/\S+@\S+\.\S+/.test(payerEmail)) {
+    if (IS_DEMO && (!payerEmail.trim() || !/\S+@\S+\.\S+/.test(payerEmail))) {
       setError("Please enter a valid email address");
       return;
     }
@@ -284,8 +287,6 @@ export function CheckoutPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans checkout-otp-container" style={{ "--ring": "#444444", "--color-ring": "#444444" } as any}>
       <style>{`
-        .checkout-otp-container,
-        .checkout-otp-container *,
         .checkout-otp-container *:focus-visible,
         .checkout-otp-container *:focus {
           outline: none !important;
@@ -293,10 +294,10 @@ export function CheckoutPage() {
           --tw-ring-color: transparent !important;
           --tw-ring-shadow: none !important;
         }
-        /* Specifically target the hidden input that input-otp creates */
-        .checkout-otp-container input,
-        .checkout-otp-container input:focus,
-        .checkout-otp-container input:focus-visible {
+        /* Only target the hidden OTP input, NOT the name/email inputs */
+        .checkout-otp-container .otp-hidden-input,
+        .checkout-otp-container .otp-hidden-input:focus,
+        .checkout-otp-container .otp-hidden-input:focus-visible {
           border: none !important;
           background: transparent !important;
           outline: none !important;
@@ -320,34 +321,43 @@ export function CheckoutPage() {
           </div>
 
           <form onSubmit={handleVerifyOtp} className="space-y-5">
-            {/* Name & Email inputs */}
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[13px] font-medium text-slate-700 dark:text-[#ccc] mb-1.5">Full Name</label>
-                <input
-                  type="text"
-                  value={payerName}
-                  onChange={(e) => setPayerName(e.target.value)}
-                  placeholder="e.g. Nikhil Sharma"
-                  className="w-full rounded-md border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#161616] px-3 py-2.5 text-sm text-slate-900 dark:text-[#f1f1f1] placeholder:text-slate-400 dark:placeholder:text-[#555] transition focus:border-slate-400 dark:focus:border-[#555]"
-                />
+            {/* Name & Email inputs — only visible in demo/test mode */}
+            {IS_DEMO && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-[13px] font-medium text-slate-700 dark:text-[#ccc] mb-1.5">Full Name</label>
+                  <input
+                    type="text"
+                    value={payerName}
+                    onChange={(e) => setPayerName(e.target.value)}
+                    placeholder="e.g. Nikhil Sharma"
+                    className="w-full rounded-md border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#161616] px-3 py-2.5 text-sm text-slate-900 dark:text-[#f1f1f1] placeholder:text-slate-400 dark:placeholder:text-[#555] transition focus:border-slate-400 dark:focus:border-[#555]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-slate-700 dark:text-[#ccc] mb-1.5">Email Address</label>
+                  <input
+                    type="email"
+                    value={payerEmail}
+                    onChange={(e) => setPayerEmail(e.target.value)}
+                    placeholder="e.g. admin@institution.edu"
+                    className="w-full rounded-md border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#161616] px-3 py-2.5 text-sm text-slate-900 dark:text-[#f1f1f1] placeholder:text-slate-400 dark:placeholder:text-[#555] transition focus:border-slate-400 dark:focus:border-[#555]"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-[13px] font-medium text-slate-700 dark:text-[#ccc] mb-1.5">Email Address</label>
-                <input
-                  type="email"
-                  value={payerEmail}
-                  onChange={(e) => setPayerEmail(e.target.value)}
-                  placeholder="e.g. admin@institution.edu"
-                  className="w-full rounded-md border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#161616] px-3 py-2.5 text-sm text-slate-900 dark:text-[#f1f1f1] placeholder:text-slate-400 dark:placeholder:text-[#555] transition focus:border-slate-400 dark:focus:border-[#555]"
-                />
-              </div>
-            </div>
+            )}
 
             <div className="flex flex-col items-center gap-3">
               <label className="block text-[13px] font-medium text-slate-700 dark:text-[#ccc] self-start">Verification Code</label>
-              {/* Custom OTP implementation to guarantee no hidden styles/green lines */}
-              <div className="flex items-center gap-2" dir="ltr">
+              {/* Custom OTP implementation - click anywhere in the box area to focus */}
+              <div
+                className="relative flex items-center gap-2 cursor-text"
+                dir="ltr"
+                onClick={() => {
+                  const otpInput = document.getElementById('otp-hidden-input');
+                  if (otpInput) otpInput.focus();
+                }}
+              >
                 {[0, 1, 2, 3, 4, 5].map((index) => {
                   const isActive = otp.length === index;
                   return (
@@ -370,16 +380,17 @@ export function CheckoutPage() {
                 })}
               </div>
               <input 
+                id="otp-hidden-input"
                 type="text" 
                 value={otp} 
                 onChange={(e) => {
                   const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6);
                   setOtp(val);
                 }}
+                onFocus={() => {}}
                 disabled={otpExpired}
-                className="absolute opacity-0 w-[240px] h-12 z-20 cursor-text"
-                style={{ top: 'auto', left: 'auto', outline: 'none', border: 'none', boxShadow: 'none' }}
-                autoFocus
+                className="otp-hidden-input"
+                style={{ position: 'absolute', opacity: 0, width: '240px', height: '48px', marginTop: '-48px', zIndex: 30, outline: 'none', border: 'none', boxShadow: 'none', cursor: 'text' }}
               />
 
               {/* Timer / Resend */}
