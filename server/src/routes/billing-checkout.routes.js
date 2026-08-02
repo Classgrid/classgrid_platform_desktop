@@ -201,7 +201,7 @@ router.post("/confirm", async (req, res) => {
                 portal_url: handoff.return_url,
             },
         }).catch((notificationError) => {
-            console.error("[Billing Checkout] Payment captured but success notification failed:", notificationError.message);
+            console.warn("[Billing Checkout] Payment captured but success notification failed:", notificationError.message);
         });
 
         return res.json({

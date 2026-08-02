@@ -130,7 +130,7 @@ export const sendTemplateEmail = async ({ templateName, to, data, userId, organi
 
         return info;
     } catch (error) {
-        console.error(`[AWS SES] Failed to send template email (${templateName}):`, error.message);
+        console.warn(`[AWS SES] Failed to send template email (${templateName}):`, error.message);
         await NotificationLog.create({
             organizationId,
             userId,
