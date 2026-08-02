@@ -203,8 +203,8 @@ export function CheckoutPage() {
                       key={index}
                       className={`relative flex h-12 w-10 items-center justify-center rounded-md border text-lg font-medium transition-all ${
                         isActive
-                          ? "border-slate-400 dark:border-[#444] z-10"
-                          : "border-slate-200 dark:border-[#2a2a2a]"
+                          ? "border-slate-400 dark:border-[#555] z-10"
+                          : "border-slate-200 dark:border-[#2a2a2a] hover:border-slate-300 dark:hover:border-[#3a3a3a]"
                       } bg-white text-slate-900 dark:bg-[#161616] dark:text-[#f1f1f1]`}
                     >
                       {otp[index] || ""}
