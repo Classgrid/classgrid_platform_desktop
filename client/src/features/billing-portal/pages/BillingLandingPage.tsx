@@ -162,45 +162,72 @@ function DemoCard() {
             
             {/* Header */}
             <div className="border-b border-border bg-muted/30 p-5">
-              <h2 className="text-xl font-bold text-foreground tracking-tight">Statement of Purpose & Architecture</h2>
+              <h2 className="text-xl font-bold text-foreground tracking-tight">Classgrid: Platform Purpose & Operational Flow</h2>
               <p className="mt-1 text-xs text-muted-foreground">Please review our flow before testing the integration.</p>
             </div>
             
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6 text-sm leading-relaxed text-muted-foreground">
+              
               <div>
-                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">1</span>
-                  Who We Are (The Business)
+                  Our Purpose
                 </h3>
-                <p>Classgrid is a comprehensive B2B Software-as-a-Service (SaaS) platform designed for educational institutions. We provide institutional ERP, student information management, and academic tracking. <strong className="text-foreground">We do not sell physical products or consumer goods.</strong></p>
+                <p>Classgrid Technologies provides a comprehensive, cloud-based ERP (Enterprise Resource Planning) and SaaS platform tailored specifically for educational institutions (schools, colleges, and coaching centers). Our mission is to digitize and streamline school administration, student management, and internal communications into a single unified platform.</p>
               </div>
 
               <div>
-                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">2</span>
-                  Why billing.classgrid.in exists
+                  Our Core Services
                 </h3>
-                <p>Our main marketing website is <code className="text-xs bg-muted px-1 py-0.5 rounded">classgrid.in</code>. However, our actual software is a highly secure, closed system that schools log into.</p>
-                <p className="mt-2">For PCI-DSS compliance and maximum security, we decoupled our payment system. When a school administrator logs into our core application and clicks "Pay Subscription", they are securely redirected to this dedicated microservice (<code className="text-xs bg-muted px-1 py-0.5 rounded">billing.classgrid.in</code>) to complete the transaction safely.</p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">3</span>
-                  The Checkout Flow
-                </h3>
-                <ul className="list-disc pl-5 space-y-1.5 mt-2">
-                  <li>The administrator lands on this portal with a secure token.</li>
-                  <li>They verify their identity using a 6-digit OTP sent to their registered email.</li>
-                  <li>Upon successful OTP verification, the Razorpay checkout securely loads to process the SaaS subscription fee.</li>
+                <p className="mb-2">The Classgrid platform offers the following modules to institutions:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li><strong>Fee Management System:</strong> Automated fee collection, receipt generation, and tracking.</li>
+                  <li><strong>Admission Portal:</strong> End-to-end digital admission engine for processing student applications.</li>
+                  <li><strong>Live Interactive Classes:</strong> Integration with Agora and Zoom for seamless online lectures.</li>
+                  <li><strong>Student Documentation:</strong> Secure storage for student records and notes via AWS S3.</li>
+                  <li><strong>Campus Canteen Management:</strong> Digital ordering and payment processing for campus cafeterias.</li>
+                  <li><strong>Unified Chat:</strong> Real-time communication for students and staff (powered by Supabase).</li>
                 </ul>
               </div>
 
-              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
-                <p className="text-xs font-semibold text-amber-500 uppercase tracking-wider mb-1">Testing the Integration</p>
-                <p className="text-xs text-foreground/80 leading-5">By clicking the button below, you will simulate this exact B2B SaaS payment flow using Razorpay test credentials.</p>
+              <div>
+                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">3</span>
+                  The Payment Flow (Why we need Razorpay)
+                </h3>
+                <p className="mb-2">Classgrid utilizes Razorpay for two distinct payment flows:</p>
+                
+                <div className="bg-muted/30 p-3 rounded-lg border border-border mb-3">
+                  <h4 className="font-semibold text-foreground text-xs mb-1 uppercase tracking-wider">A. B2B Flow (SaaS Subscription Payments) - Current Demo</h4>
+                  <p className="text-xs mb-2">When an educational institution subscribes to Classgrid's ERP software:</p>
+                  <ol className="list-decimal pl-4 space-y-1 text-xs">
+                    <li>Classgrid generates a SaaS subscription invoice for the institution.</li>
+                    <li>The institution's administrator receives an email with a secure billing link.</li>
+                    <li>The administrator clicks the link and arrives at this Billing Landing Page.</li>
+                    <li>To ensure security, the administrator must authenticate their identity using a 6-digit OTP sent to their registered email.</li>
+                    <li>Upon successful OTP verification, the Razorpay Checkout modal opens.</li>
+                    <li>The administrator completes the payment (via UPI, Card, or Netbanking).</li>
+                    <li>The Classgrid backend verifies the Razorpay signature and provisions the software license for the institution.</li>
+                  </ol>
+                </div>
+
+                <div className="bg-muted/30 p-3 rounded-lg border border-border">
+                  <h4 className="font-semibold text-foreground text-xs mb-1 uppercase tracking-wider">B. B2C/B2B2C Flow (Institution Fee Collection)</h4>
+                  <p className="text-xs">Once onboarded, institutions can plug in their own Razorpay API credentials into the Classgrid dashboard to collect tuition fees and canteen payments directly from their students. Classgrid facilitates this routing securely.</p>
+                </div>
               </div>
+
+              <div>
+                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">4</span>
+                  Refund & Cancellation Policy
+                </h3>
+                <p>As a SaaS provider, subscriptions can be cancelled at any time from the admin dashboard. Refunds for software subscriptions are processed on a pro-rata basis within 5-7 business days in accordance with our Terms of Service.</p>
+              </div>
+
             </div>
 
             {/* Footer */}
