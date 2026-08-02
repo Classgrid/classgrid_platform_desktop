@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Spinner } from "@/components/marketing_ui/spinner";
 
 const steps = [
   {
@@ -84,9 +85,9 @@ function DemoCard() {
       if (!res.ok || !data.success) throw new Error(data.error || "Failed");
       setCheckoutUrl(data.data.checkout_url);
       setCreated(true);
+      window.location.href = data.data.checkout_url;
     } catch (e: any) {
       setError(e.message);
-    } finally {
       setLoading(false);
     }
   };
@@ -109,26 +110,20 @@ function DemoCard() {
         This creates a real Razorpay test session. Enter the OTP below, then complete checkout with the test card credentials.
       </p>
 
-      {!checkoutUrl ? (
-        <button
-          id="demo-create-session-btn"
-          onClick={createSession}
-          disabled={loading}
-          className="w-full rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:opacity-60"
-        >
-          {loading ? "Creating session…" : "Open Test Checkout →"}
-        </button>
-      ) : (
-        <a
-          id="demo-checkout-link"
-          href={checkoutUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full rounded-xl bg-amber-500 py-2.5 text-center text-sm font-semibold text-black transition hover:bg-amber-400"
-        >
-          Open Checkout →
-        </a>
-      )}
+      <button
+        id="demo-create-session-btn"
+        onClick={createSession}
+        disabled={loading || created}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:opacity-60"
+      >
+        {loading || created ? (
+          <>
+            <Spinner className="h-4 w-4 text-black" /> {created ? "Redirecting…" : "Creating session…"}
+          </>
+        ) : (
+          "Open Test Checkout →"
+        )}
+      </button>
 
       {error && <p className="text-xs text-red-400">{error}</p>}
 
