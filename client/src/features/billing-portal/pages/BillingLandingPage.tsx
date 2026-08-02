@@ -228,6 +228,26 @@ function DemoCard() {
                 <p>As a SaaS provider, subscriptions can be cancelled at any time from the admin dashboard. Refunds for software subscriptions are processed on a pro-rata basis within 5-7 business days in accordance with our Terms of Service.</p>
               </div>
 
+              <div>
+                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">5</span>
+                  Invoice Generation Engine
+                </h3>
+                <p className="mb-3">Our backend dynamically calculates institutional usage via scheduled Node.js workers. We utilize <strong>Puppeteer</strong> (headless Chrome) to render raw HTML line items into a high-fidelity PDF invoice, which is securely emailed to the administrator before they ever reach this checkout page.</p>
+                <a 
+                  href="/sample-invoice.pdf" 
+                  download="Classgrid_Sample_SaaS_Invoice.pdf"
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-4 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary/20"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  Download Sample ₹500 Invoice (Generated via Backend)
+                </a>
+              </div>
+
             </CardContent>
 
             {/* Footer */}
