@@ -108,8 +108,9 @@ export function CheckoutPage() {
         key: razorpay_key_id,
         amount,
         currency,
-        name: "Secure Checkout",
-        description: "Complete your payment",
+        name: "Classgrid",
+        description: "SaaS Subscription Payment",
+        image: "https://billing.classgrid.in/logo.png",
         order_id: razorpay_order_id,
         handler: async function (response: any) {
           try {
