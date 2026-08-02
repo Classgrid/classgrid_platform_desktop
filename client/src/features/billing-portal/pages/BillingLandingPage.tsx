@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Spinner } from "@/components/marketing_ui/spinner";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/marketing_ui/card";
 
 const steps = [
   {
@@ -156,18 +157,17 @@ function DemoCard() {
 
       {/* Purpose Modal for Payment Gateways */}
       {showPurposeModal && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4">
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setShowPurposeModal(false)} />
-          <div className="relative flex w-full max-w-lg max-h-[85vh] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 sm:p-6 bg-background/95">
+          <Card className="relative flex w-full max-w-3xl max-h-[90vh] flex-col shadow-2xl">
             
             {/* Header */}
-            <div className="border-b border-border bg-muted/30 p-5">
-              <h2 className="text-xl font-bold text-foreground tracking-tight">Classgrid: Platform Purpose & Operational Flow</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Please review our flow before testing the integration.</p>
-            </div>
+            <CardHeader className="border-b border-border bg-muted/30 pb-4">
+              <CardTitle className="text-xl tracking-tight">Classgrid: Platform Purpose & Operational Flow</CardTitle>
+              <CardDescription>Please review our flow before testing the integration.</CardDescription>
+            </CardHeader>
             
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 text-sm leading-relaxed text-muted-foreground">
+            <CardContent className="flex-1 overflow-y-scroll p-6 space-y-6 text-sm leading-relaxed text-muted-foreground">
               
               <div>
                 <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
@@ -228,10 +228,10 @@ function DemoCard() {
                 <p>As a SaaS provider, subscriptions can be cancelled at any time from the admin dashboard. Refunds for software subscriptions are processed on a pro-rata basis within 5-7 business days in accordance with our Terms of Service.</p>
               </div>
 
-            </div>
+            </CardContent>
 
             {/* Footer */}
-            <div className="border-t border-border bg-muted/30 p-5 flex justify-end gap-3">
+            <CardFooter className="border-t border-border bg-muted/30 p-5 flex justify-end gap-3 rounded-b-lg">
               <button 
                 onClick={() => setShowPurposeModal(false)}
                 className="rounded-xl px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition"
@@ -247,8 +247,8 @@ function DemoCard() {
               >
                 I Understand — Proceed to Test
               </button>
-            </div>
-          </div>
+            </CardFooter>
+          </Card>
         </div>
       )}
     </div>
