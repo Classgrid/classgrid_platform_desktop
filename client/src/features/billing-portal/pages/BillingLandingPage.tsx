@@ -321,22 +321,30 @@ function DemoCard() {
             </CardContent>
 
             {/* Footer */}
-            <CardFooter className="border-t border-border bg-muted/30 p-5 flex justify-end gap-3 rounded-b-lg">
-              <button 
-                onClick={() => setShowPurposeModal(false)}
-                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setShowPurposeModal(false);
-                  createSession();
-                }}
-                className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-400"
-              >
-                I Understand — Proceed to Test
-              </button>
+            <CardFooter className="border-t border-border bg-muted/30 p-5 flex items-center justify-between gap-3 rounded-b-lg">
+              <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                </svg>
+                <span>Test Card OTP: <strong className="text-foreground tracking-widest bg-muted px-1.5 py-0.5 rounded border border-border">123456</strong></span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setShowPurposeModal(false)}
+                  className="rounded-xl px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPurposeModal(false);
+                    createSession();
+                  }}
+                  className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-400"
+                >
+                  I Understand — Proceed to Test
+                </button>
+              </div>
             </CardFooter>
           </Card>
         </div>
