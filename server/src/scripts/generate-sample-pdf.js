@@ -18,16 +18,41 @@ async function run() {
 
     const invoice = {
         invoiceNumber: "INV-DEMO-001",
-        status: "DRAFT",
+        status: "SENT",
         createdAt: new Date(),
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // Due on 5th
         lineItems: [
             {
-                resourceLabel: "Classgrid Core ERP Software License (Monthly)",
+                provider: "classgrid",
+                resourceLabel: "Base platform fee",
                 totalQuantity: 1,
-                unit: "license",
-                unitRateInr: 423.73,
-                amountInr: 423.73
+                unit: "month",
+                unitRateInr: 200.00,
+                amountInr: 200.00
+            },
+            {
+                provider: "classgrid",
+                resourceLabel: "Module: Fee Management",
+                totalQuantity: 1,
+                unit: "month",
+                unitRateInr: 100.00,
+                amountInr: 100.00
+            },
+            {
+                provider: "classgrid",
+                resourceLabel: "Active Student Profiles",
+                totalQuantity: 200,
+                unit: "students",
+                unitRateInr: 0.50,
+                amountInr: 100.00
+            },
+            {
+                provider: "aws",
+                resourceLabel: "Cloud Storage (AWS S3)",
+                totalQuantity: 5,
+                unit: "GB",
+                unitRateInr: 4.746,
+                amountInr: 23.73
             }
         ],
         subtotal: 423.73,
