@@ -64,6 +64,7 @@ export function OrgAdminDashboard() {
                 currency: order.currency,
                 name: "Classgrid Platform",
                 description: `Invoice Payment: ${data.latestInvoice.invoiceNumber}`,
+                image: "https://billing.classgrid.in/logo.png",
                 order_id: order.order_id,
                 handler: async function (response: any) {
                     try {

@@ -17,6 +17,7 @@ export function usePayInvoice() {
           order_id,
           name: "Classgrid",
           description: "Platform Invoice Payment",
+          image: "https://billing.classgrid.in/logo.png",
           handler: async (response: any) => {
             try {
               // Step 3: Verify payment
