@@ -163,7 +163,10 @@ export function CheckoutPage() {
         .checkout-otp-container input:focus-visible {
           box-shadow: none !important;
           outline: none !important;
-          border-color: transparent !important;
+          border: none !important;
+          background: transparent !important;
+          --tw-ring-color: transparent !important;
+          --tw-ring-shadow: none !important;
         }
       `}</style>
       
