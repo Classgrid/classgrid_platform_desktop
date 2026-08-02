@@ -196,15 +196,59 @@ function DemoCard() {
               <div>
                 <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">3</span>
-                  Pricing (B2B SaaS Pay-As-You-Go)
+                  Pricing (B2B SaaS — 3-Layer Billing)
                 </h3>
-                <p className="mb-2">Classgrid operates on a dynamic, usage-based pricing model. We do not charge fixed annual fees. Educational institutions are billed at the end of each month based entirely on their consumption:</p>
-                <ul className="list-disc pl-5 space-y-1 mb-4">
-                  <li><strong>Base Platform Fee:</strong> A nominal monthly maintenance fee for core cloud hosting.</li>
-                  <li><strong>A-la-carte Modules:</strong> Institutions toggle specific features (e.g., Admissions, Canteen) and are billed only for active modules.</li>
-                  <li><strong>Resource Usage:</strong> Micro-billing based on active seats and consumption (e.g., per active student profile, per live-class minute, or per GB of AWS S3 storage).</li>
-                </ul>
-                <p className="text-xs text-muted-foreground mb-6">Note: This variable structure allows schools to scale costs proportionally with their enrollment. A sample calculated invoice is available below.</p>
+                <p className="mb-3">Classgrid operates a dynamic, usage-based billing model. There are no fixed annual fees. Each institution is billed monthly across three layers:</p>
+                
+                <div className="bg-muted/30 p-3 rounded-lg border border-border mb-3">
+                  <h4 className="font-semibold text-foreground text-xs mb-1 uppercase tracking-wider">Layer 1 — Base Platform Fee</h4>
+                  <p className="text-xs">A nominal monthly fee covering core cloud hosting and platform maintenance. Set per institution by the Super Admin.</p>
+                </div>
+
+                <div className="bg-muted/30 p-3 rounded-lg border border-border mb-3">
+                  <h4 className="font-semibold text-foreground text-xs mb-2 uppercase tracking-wider">Layer 2 — A-la-carte Module Fees</h4>
+                  <p className="text-xs mb-2">Institutions toggle modules ON/OFF. They are billed only for active modules. Our full module catalog:</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px]">
+                    <span>• Attendance System</span>
+                    <span>• Admission Management</span>
+                    <span>• Digital Classroom</span>
+                    <span>• Fee Collection System</span>
+                    <span>• Automated Timetable</span>
+                    <span>• Staff Leave & Payroll</span>
+                    <span>• Academic Planning</span>
+                    <span>• Canteen Management</span>
+                    <span>• Homework & Assignments</span>
+                    <span>• AI Assistant</span>
+                    <span>• Student Notes Sharing</span>
+                    <span>• Advanced Analytics</span>
+                    <span>• Teacher Planner</span>
+                    <span>• Institution Website</span>
+                    <span>• Subject Management</span>
+                    <span>• Digital Certificates</span>
+                    <span>• Online Exam Platform</span>
+                    <span>• Holiday Management</span>
+                    <span>• Examination Management</span>
+                    <span>• Digital ID Cards</span>
+                    <span>• Grade Entry & Results</span>
+                    <span>• Events Management</span>
+                    <span>• Feedback System</span>
+                    <span>• 7+ Dedicated Dashboards</span>
+                  </div>
+                </div>
+
+                <div className="bg-muted/30 p-3 rounded-lg border border-border mb-3">
+                  <h4 className="font-semibold text-foreground text-xs mb-1 uppercase tracking-wider">Layer 3 — Infrastructure Resource Usage</h4>
+                  <p className="text-xs mb-2">Micro-billing for actual infrastructure consumed. Tracked daily, aggregated monthly:</p>
+                  <ul className="list-disc pl-4 space-y-0.5 text-[11px]">
+                    <li><strong>Cloud storage</strong> — billed per GB-day of files stored</li>
+                    <li><strong>Transactional emails</strong> — billed per email sent</li>
+                    <li><strong>SMS notifications</strong> — billed per SMS segment</li>
+                    <li><strong>AI assistant tokens</strong> — billed per token consumed</li>
+                    <li><strong>Live class minutes</strong> — billed per participant-minute</li>
+                    <li><strong>API requests</strong> — billed per request served</li>
+                  </ul>
+                </div>
+                <p className="text-xs text-muted-foreground">A sample calculated invoice demonstrating all three layers is available for download below.</p>
               </div>
 
               <div>

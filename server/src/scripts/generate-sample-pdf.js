@@ -17,48 +17,115 @@ async function run() {
     };
 
     const invoice = {
-        invoiceNumber: "INV-DEMO-001",
+        invoiceNumber: "CG-DEMOIN-202608",
         status: "SENT",
         createdAt: new Date(),
-        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // Due on 5th
+        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
         lineItems: [
+            // Layer 1: Base Platform Fee (from OrgSubscription.billing.basePricePerMonth)
             {
                 provider: "classgrid",
                 resourceLabel: "Base platform fee",
                 totalQuantity: 1,
                 unit: "month",
-                unitRateInr: 200.00,
-                amountInr: 200.00
+                unitRateInr: 99.00,
+                amountInr: 99.00
             },
+            // Layer 2: Module Fees (from OrgSubscription.billing.modulePrices per active feature_flag)
             {
                 provider: "classgrid",
-                resourceLabel: "Module: Fee Management",
+                resourceLabel: "Module: Attendance System",
                 totalQuantity: 1,
                 unit: "month",
-                unitRateInr: 100.00,
-                amountInr: 100.00
+                unitRateInr: 30.00,
+                amountInr: 30.00
             },
             {
                 provider: "classgrid",
-                resourceLabel: "Active Student Profiles",
-                totalQuantity: 200,
-                unit: "students",
-                unitRateInr: 0.50,
-                amountInr: 100.00
+                resourceLabel: "Module: Fee Collection System",
+                totalQuantity: 1,
+                unit: "month",
+                unitRateInr: 40.00,
+                amountInr: 40.00
             },
             {
-                provider: "aws",
-                resourceLabel: "Cloud Storage (AWS S3)",
-                totalQuantity: 5,
-                unit: "GB",
-                unitRateInr: 4.746,
-                amountInr: 23.73
+                provider: "classgrid",
+                resourceLabel: "Module: Admission Management",
+                totalQuantity: 1,
+                unit: "month",
+                unitRateInr: 40.00,
+                amountInr: 40.00
+            },
+            {
+                provider: "classgrid",
+                resourceLabel: "Module: Digital Classroom Management",
+                totalQuantity: 1,
+                unit: "month",
+                unitRateInr: 25.00,
+                amountInr: 25.00
+            },
+            {
+                provider: "classgrid",
+                resourceLabel: "Module: Online Exam Platform",
+                totalQuantity: 1,
+                unit: "month",
+                unitRateInr: 25.00,
+                amountInr: 25.00
+            },
+            // Layer 3: Resource Usage (from OrganizationUsageDaily aggregation)
+            {
+                provider: "cloudflare_r2",
+                resourceLabel: "Cloud storage (GB-days)",
+                totalQuantity: 45.2,
+                unit: "gb_day",
+                unitRateInr: 0.16,
+                amountInr: 7.23
+            },
+            {
+                provider: "aws_ses",
+                resourceLabel: "Transactional emails sent",
+                totalQuantity: 312,
+                unit: "email",
+                unitRateInr: 0.05,
+                amountInr: 15.60
+            },
+            {
+                provider: "aws_sns",
+                resourceLabel: "SMS notifications sent",
+                totalQuantity: 87,
+                unit: "sms",
+                unitRateInr: 0.25,
+                amountInr: 21.75
+            },
+            {
+                provider: "openai",
+                resourceLabel: "AI assistant tokens consumed",
+                totalQuantity: 48500,
+                unit: "token",
+                unitRateInr: 0.00025,
+                amountInr: 12.13
+            },
+            {
+                provider: "agora",
+                resourceLabel: "Live class participant-minutes",
+                totalQuantity: 540,
+                unit: "minute",
+                unitRateInr: 0.02,
+                amountInr: 10.80
+            },
+            {
+                provider: "ec2",
+                resourceLabel: "API requests served",
+                totalQuantity: 95400,
+                unit: "request",
+                unitRateInr: 0.0001,
+                amountInr: 9.54
             }
         ],
-        subtotal: 423.73,
+        subtotal: 336.05,
         taxPercent: 18,
-        taxAmount: 76.27,
-        total: 500.00
+        taxAmount: 60.49,
+        total: 396.54
     };
 
     console.log("Generating 500 Rupee Sample PDF Invoice via Puppeteer...");
