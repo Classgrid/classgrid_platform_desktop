@@ -174,9 +174,9 @@ export function CheckoutPage() {
 
           <form onSubmit={handleVerifyOtp} className="space-y-5">
             <div className="flex flex-col items-center gap-3">
-              <label className="text-center text-[13px] font-medium text-slate-500 dark:text-[#888888]">
-                Enter the 6-digit code sent to <span className="text-slate-900 dark:text-[#f1f1f1]">{email}</span>
-              </label>
+              <p className="mb-4 text-center text-[14px] leading-relaxed text-slate-500 dark:text-[#888888] max-w-[280px]">
+                If you have a Classgrid account, we sent a code to your email.
+              </p>
               
               <InputOTP
                 maxLength={6}
