@@ -1,6 +1,18 @@
 import puppeteer from 'puppeteer';
+import fs from 'fs';
+import path from 'path';
 
 export const generateInvoicePdfBuffer = async (invoice, org) => {
+    let logoSrc = 'https://classgrid.in/logo.png';
+    try {
+        const localLogoPath = path.resolve(process.cwd(), '../client/public/logo.png');
+        if (fs.existsSync(localLogoPath)) {
+            logoSrc = 'data:image/png;base64,' + fs.readFileSync(localLogoPath).toString('base64');
+        }
+    } catch (e) {
+        console.error("Failed to load local logo for PDF", e);
+    }
+
     // Generate HTML for the invoice
     const htmlContent = `
         <!DOCTYPE html>
@@ -28,8 +40,7 @@ export const generateInvoicePdfBuffer = async (invoice, org) => {
                 <div class="header">
                     <div>
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
-                            <!-- Fallback to live logo if local fails in prod -->
-                            <img src="https://classgrid.in/logo.png" alt="Classgrid Logo" style="height: 48px; width: auto; object-fit: contain;" onerror="this.onerror=null; this.src='https://billing.classgrid.in/logo.png';"/>
+                            <img src="${logoSrc}" alt="Classgrid Logo" style="height: 48px; width: auto; object-fit: contain;" onerror="this.onerror=null; this.src='https://billing.classgrid.in/logo.png';"/>
                             <div class="title" style="margin: 0; font-size: 28px;">Classgrid ERP</div>
                         </div>
                         <div>Invoice: ${invoice.invoiceNumber}</div>
