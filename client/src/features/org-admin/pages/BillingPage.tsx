@@ -60,9 +60,6 @@ export function BillingPage() {
   const [billingState, setBillingState] = useState("");
   const [billingPincode, setBillingPincode] = useState("");
   const [billingContactName, setBillingContactName] = useState("");
-  const [razorpayKeyId, setRazorpayKeyId] = useState("");
-  const [razorpayKeySecret, setRazorpayKeySecret] = useState("");
-  const [razorpayWebhookSecret, setRazorpayWebhookSecret] = useState("");
 
   const [emailVerified, setEmailVerified] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
@@ -105,9 +102,6 @@ export function BillingPage() {
       setEmailVerified(billingData.billingSettings.email_verified || false);
       setPhoneVerified(billingData.billingSettings.phone_verified || false);
     }
-    if (billingData?.paymentGateway) {
-      setRazorpayKeyId(billingData.paymentGateway.fees_razorpay_key_id || "");
-    }
   }, [billingData]);
 
   const isNameSaved = Boolean(billingData?.billingSettings?.billing_contact_name);
@@ -126,13 +120,10 @@ export function BillingPage() {
         state: billingState,
         pincode: billingPincode,
         billing_contact_name: billingContactName,
-        fees_razorpay_key_id: razorpayKeyId,
-        fees_razorpay_key_secret: razorpayKeySecret || undefined, // only send if not empty
-        fees_razorpay_webhook_secret: razorpayWebhookSecret || undefined
+
       });
       toast.success("Saved successfully!");
-      setRazorpayKeySecret(""); // clear secrets from UI after save
-      setRazorpayWebhookSecret("");
+
       queryClient.invalidateQueries({ queryKey: ["orgBilling"] });
     } catch (err: any) {
       toast.error(err.message || "Could not save");
@@ -535,71 +526,7 @@ export function BillingPage() {
           </div>
         </div>
 
-        {/* Payment Gateway Setup Card */}
-        <div className="bg-card border border-border rounded-xl p-6 flex flex-col gap-6 shadow-sm hover:shadow-md transition-all">
-          <div className="border-b border-border pb-4 flex flex-col gap-2">
-            <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-              <ShieldCheck size={18} /> Payment Gateway Setup (Student Fees)
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1 opacity-80">
-              Configure your Razorpay credentials to accept fee payments directly into your college account.
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
-            <div className="space-y-3 md:col-span-2">
-              <Label className="text-sm font-medium">Razorpay Key ID</Label>
-              <Input
-                value={razorpayKeyId}
-                onChange={(e) => setRazorpayKeyId(e.target.value)}
-                placeholder="rzp_live_xxxxxxxxxxx"
-              />
-            </div>
-
-            <div className="space-y-3 md:col-span-2">
-              <Label className="text-sm font-medium">Razorpay Key Secret</Label>
-              <div className="relative">
-                <Input
-                  type="password"
-                  value={razorpayKeySecret}
-                  onChange={(e) => setRazorpayKeySecret(e.target.value)}
-                  placeholder={billingData?.paymentGateway?.has_fees_razorpay_key_secret ? "•••••••••••••••••••• (Saved)" : "Enter Key Secret"}
-                />
-                {billingData?.paymentGateway?.has_fees_razorpay_key_secret && !razorpayKeySecret && (
-                  <Badge className="absolute right-2 top-2" variant="success">Set</Badge>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">Only enter a new secret if you wish to update the existing one.</p>
-            </div>
-
-            <div className="space-y-3 md:col-span-2">
-              <Label className="text-sm font-medium">Webhook Secret (Optional)</Label>
-              <div className="relative">
-                <Input
-                  type="password"
-                  value={razorpayWebhookSecret}
-                  onChange={(e) => setRazorpayWebhookSecret(e.target.value)}
-                  placeholder={billingData?.paymentGateway?.has_fees_razorpay_webhook_secret ? "•••••••••••••••••••• (Saved)" : "Enter Webhook Secret"}
-                />
-                {billingData?.paymentGateway?.has_fees_razorpay_webhook_secret && !razorpayWebhookSecret && (
-                  <Badge className="absolute right-2 top-2" variant="success">Set</Badge>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-4 border-t border-border">
-            <Button
-              variant="primary"
-              onClick={handleSaveSettings}
-              disabled={isSavingSettings}
-              className="px-6"
-              isLoading={isSavingSettings}
-            >
-              {isSavingSettings ? "Saving..." : "Save Gateway Settings"}
-            </Button>
-          </div>
-        </div>
 
       </div>
 
