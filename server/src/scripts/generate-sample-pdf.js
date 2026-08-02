@@ -37,95 +37,95 @@ async function run() {
                 resourceLabel: "Module: Attendance System",
                 totalQuantity: 1,
                 unit: "month",
-                unitRateInr: 30.00,
-                amountInr: 30.00
+                unitRateInr: 40.00,
+                amountInr: 40.00
             },
             {
                 provider: "classgrid",
                 resourceLabel: "Module: Fee Collection System",
                 totalQuantity: 1,
                 unit: "month",
-                unitRateInr: 40.00,
-                amountInr: 40.00
+                unitRateInr: 50.00,
+                amountInr: 50.00
             },
             {
                 provider: "classgrid",
                 resourceLabel: "Module: Admission Management",
                 totalQuantity: 1,
                 unit: "month",
-                unitRateInr: 40.00,
-                amountInr: 40.00
+                unitRateInr: 50.00,
+                amountInr: 50.00
             },
             {
                 provider: "classgrid",
                 resourceLabel: "Module: Digital Classroom Management",
                 totalQuantity: 1,
                 unit: "month",
-                unitRateInr: 25.00,
-                amountInr: 25.00
+                unitRateInr: 30.00,
+                amountInr: 30.00
             },
             {
                 provider: "classgrid",
                 resourceLabel: "Module: Online Exam Platform",
                 totalQuantity: 1,
                 unit: "month",
-                unitRateInr: 25.00,
-                amountInr: 25.00
+                unitRateInr: 30.00,
+                amountInr: 30.00
             },
             // Layer 3: Resource Usage (from OrganizationUsageDaily aggregation)
             {
                 provider: "cloudflare_r2",
                 resourceLabel: "Cloud storage (GB-days)",
-                totalQuantity: 45.2,
+                totalQuantity: 110,
                 unit: "gb_day",
                 unitRateInr: 0.16,
-                amountInr: 7.23
+                amountInr: 17.60
             },
             {
                 provider: "aws_ses",
                 resourceLabel: "Transactional emails sent",
-                totalQuantity: 312,
+                totalQuantity: 600,
                 unit: "email",
                 unitRateInr: 0.05,
-                amountInr: 15.60
+                amountInr: 30.00
             },
             {
                 provider: "aws_sns",
                 resourceLabel: "SMS notifications sent",
-                totalQuantity: 87,
+                totalQuantity: 120,
                 unit: "sms",
                 unitRateInr: 0.25,
-                amountInr: 21.75
+                amountInr: 30.00
             },
             {
                 provider: "openai",
                 resourceLabel: "AI assistant tokens consumed",
-                totalQuantity: 48500,
+                totalQuantity: 55000,
                 unit: "token",
                 unitRateInr: 0.00025,
-                amountInr: 12.13
+                amountInr: 13.75
             },
             {
                 provider: "agora",
                 resourceLabel: "Live class participant-minutes",
-                totalQuantity: 540,
+                totalQuantity: 750,
                 unit: "minute",
                 unitRateInr: 0.02,
-                amountInr: 10.80
+                amountInr: 15.00
             },
             {
                 provider: "ec2",
                 resourceLabel: "API requests served",
-                totalQuantity: 95400,
+                totalQuantity: 183800,
                 unit: "request",
                 unitRateInr: 0.0001,
-                amountInr: 9.54
+                amountInr: 18.38
             }
         ],
-        subtotal: 336.05,
+        subtotal: 423.73,
         taxPercent: 18,
-        taxAmount: 60.49,
-        total: 396.54
+        taxAmount: 76.27,
+        total: 500.00
     };
 
     console.log("Generating 500 Rupee Sample PDF Invoice via Puppeteer...");
