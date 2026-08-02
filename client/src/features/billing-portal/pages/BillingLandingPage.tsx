@@ -286,7 +286,7 @@ function DemoCard() {
 
                 <div className="bg-muted/30 p-3 rounded-lg border border-border">
                   <h4 className="font-semibold text-foreground text-xs mb-1 uppercase tracking-wider">B. B2C/B2B2C Flow (Institution Fee Collection)</h4>
-                  <p className="text-xs">Once onboarded, institutions can plug in their own Razorpay API credentials into the Classgrid dashboard to collect tuition fees and canteen payments directly from their students. Classgrid facilitates this routing securely.</p>
+                  <p className="text-xs">For student fee payments (tuition, admission, examination), Classgrid uses an RBI-licensed Payment Aggregator's Sub-Merchant API. Each institution is onboarded as a sub-merchant. Student payments are settled directly to the institution's bank account via the PA's escrow. Classgrid never holds or settles institutional funds — we are purely the technology layer.</p>
                 </div>
               </div>
 
