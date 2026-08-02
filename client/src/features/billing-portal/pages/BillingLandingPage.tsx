@@ -68,7 +68,7 @@ function DemoCard() {
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState(false);
-  const [showPurposeModal, setShowPurposeModal] = useState(false);
+  const [showPurposeModal, setShowPurposeModal] = useState(true);
 
   // On mount, check if active session exists
   useEffect(() => {
