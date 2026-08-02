@@ -196,6 +196,18 @@ function DemoCard() {
               <div>
                 <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">3</span>
+                  Understanding Our Domains (Security Architecture)
+                </h3>
+                <ul className="list-disc pl-5 space-y-2 mt-2">
+                  <li><strong>classgrid.in (Marketing Site):</strong> This is simply our public brochure and marketing website, exactly like how <em>razorpay.com</em> is your public marketing site. Our actual software is not hosted here.</li>
+                  <li><strong>[school-name].classgrid.in (The Product):</strong> Every school gets their own secure subdomain to manage their ERP, staff, and students. This is a highly secure, closed system that requires a strict login, exactly like how your <em>dashboard.razorpay.com</em> works.</li>
+                  <li><strong>billing.classgrid.in (Payment Microservice):</strong> For maximum security and compliance, we completely decoupled the checkout flow. When an admin is inside their school's dashboard and clicks "Pay Subscription", they are securely redirected to this isolated portal to process the payment safely.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">4</span>
                   The Payment Flow (Why we need Razorpay)
                 </h3>
                 <p className="mb-2">Classgrid utilizes Razorpay for two distinct payment flows:</p>
@@ -222,7 +234,7 @@ function DemoCard() {
 
               <div>
                 <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">4</span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">5</span>
                   Refund & Cancellation Policy
                 </h3>
                 <p>As a SaaS provider, subscriptions can be cancelled at any time from the admin dashboard. Refunds for software subscriptions are processed on a pro-rata basis within 5-7 business days in accordance with our Terms of Service.</p>
@@ -230,7 +242,7 @@ function DemoCard() {
 
               <div>
                 <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">5</span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">6</span>
                   Invoice Generation Engine
                 </h3>
                 <p className="mb-3">Our backend dynamically calculates institutional usage via scheduled Node.js workers. We utilize <strong>Puppeteer</strong> (headless Chrome) to render raw HTML line items into a high-fidelity PDF invoice, which is securely emailed to the administrator before they ever reach this checkout page.</p>
