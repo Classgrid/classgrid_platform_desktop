@@ -62,6 +62,9 @@ router.post("/session", async (req, res) => {
         const demoOrgId = process.env.CLASSGRID_ORG_ID
             || new mongoose.Types.ObjectId().toString();
 
+        // Create stub PaymentOrder and Invoice FIRST to get IDs
+        const demoPlaceholderRefId = new mongoose.Types.ObjectId();
+
         // Create a real Razorpay order using platform keys (test or live)
         const receiptId = `demo_${crypto.randomBytes(8).toString("hex")}`;
         let razorpayOrder;
@@ -69,7 +72,12 @@ router.post("/session", async (req, res) => {
             razorpayOrder = await razorpayService.createPlatformOrderPaise(
                 DEMO_AMOUNT_PAISE,
                 receiptId,
-                { payment_type: "demo_session", is_demo: "true" }
+                { 
+                    payment_type: "saas_invoice", 
+                    is_demo: "true",
+                    orgId: demoOrgId.toString(),
+                    invoiceId: demoPlaceholderRefId.toString()
+                }
             );
         } catch (rzpErr) {
             console.error("[Demo] Razorpay order creation failed:", rzpErr.message);
@@ -79,9 +87,6 @@ router.post("/session", async (req, res) => {
                 detail: rzpErr.message,
             });
         }
-
-        // Create stub PaymentOrder
-        const demoPlaceholderRefId = new mongoose.Types.ObjectId();
         
         await SaasInvoice.create({
             _id: demoPlaceholderRefId,

@@ -133,8 +133,20 @@ const columns: ColumnDef<AuditLog>[] = [
     accessorKey: "action",
     header: "Action",
     size: 200,
-    cell: ({ getValue }) => {
+    cell: ({ getValue, row }) => {
       const action = getValue<string>();
+      if (action === "WEBHOOK_EVENT") {
+        const meta = row.original.metadata;
+        if (meta?.providerPaymentId) {
+          return (
+            <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold text-sm">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Payment Successful
+            </div>
+          );
+        }
+        return <Badge variant="info">Webhook Event</Badge>;
+      }
       return (
         <Badge variant={getSeverity(action)}>
           {ACTION_LABELS[action] ?? action.replace(/_/g, " ")}
@@ -188,6 +200,25 @@ const columns: ColumnDef<AuditLog>[] = [
       const d = row.original.timestamp;
       
       if (!meta || Object.keys(meta).length === 0) return <span className="text-muted-foreground">—</span>;
+
+      // Special rendering for successful payments
+      if (row.original.action === "WEBHOOK_EVENT" && meta.providerPaymentId) {
+        return (
+          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs space-y-1 text-emerald-700 dark:text-emerald-300 shadow-sm w-full min-w-[200px]">
+            <div className="font-bold mb-1 border-b border-emerald-500/20 pb-1 flex justify-between items-center">
+              <span>Receipt</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-mono">{meta.providerPaymentId as string}</span>
+            </div>
+            <div className="grid grid-cols-[60px_1fr] gap-x-2">
+              <span className="font-semibold opacity-80">Amount:</span> <span>₹{meta.amountInr as number}</span>
+              <span className="font-semibold opacity-80">Name:</span> <span>{meta.payerName as string}</span>
+              <span className="font-semibold opacity-80">Email:</span> <span>{meta.email as string}</span>
+              <span className="font-semibold opacity-80">Phone:</span> <span>{meta.contact as string}</span>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div className="text-xs space-y-1">
           {meta.payerName && <div><span className="font-semibold">Name:</span> {meta.payerName as string}</div>}
