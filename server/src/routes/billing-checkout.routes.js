@@ -8,6 +8,7 @@ import razorpayService from "../services/razorpay.service.js";
 import { finalizeCapturedPayment } from "../services/billing-payment-finalization.service.js";
 import { sendEmail, sendTemplateEmail } from "../services/aws-ses.service.js";
 import { baseTemplate } from "../services/email-templates.service.js";
+import PDFDocument from "pdfkit";
 import { generalLimiter } from "../middleware/rateLimiter.js";
 import {
     formatPaise,
@@ -196,7 +197,6 @@ router.post("/confirm", async (req, res) => {
             const invoice = await SaasInvoice.findById(handoff.referenceId).lean();
             if (invoice) {
                 // Generate receipt PDF using PDFKit (no Puppeteer/Chrome needed)
-                const PDFDocument = (await import("pdfkit")).default;
                 const pdfBuffer = await new Promise((resolve, reject) => {
                     try {
                         const doc = new PDFDocument({ size: "A4", margin: 50 });
