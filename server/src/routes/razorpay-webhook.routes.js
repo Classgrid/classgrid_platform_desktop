@@ -132,8 +132,9 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
 
                 const { id: paymentId, order_id: orderId, amount, currency, notes, method, email, contact } = paymentEntity;
                 const amountInr = amount / 100; // Razorpay sends in paise
+                const payerName = notes?.payerName || "Unknown Name";
 
-                console.log(`[Razorpay Webhook] 💰 Payment ${event}: ₹${amountInr} | Order: ${orderId} | Payment: ${paymentId}`);
+                console.log(`[Razorpay Webhook] 💰 Payment ${event}: ₹${amountInr} | Email: ${email || 'N/A'} | Phone: ${contact || 'N/A'} | Order: ${orderId}`);
 
                 // Determine payment type from notes
                 const invoiceId = notes?.invoice_id || notes?.invoiceId || null;
@@ -170,7 +171,7 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                         "organization", 
                         organizationId, 
                         "Processed platform SaaS payment webhook", 
-                        { paymentId, amountInr, orderId }
+                        { paymentId, amountInr, orderId, email, contact, payerName }
                     );
 
                     // Update SaaS Invoice status to paid
