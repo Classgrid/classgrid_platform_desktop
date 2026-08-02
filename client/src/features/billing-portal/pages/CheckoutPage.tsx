@@ -43,18 +43,18 @@ export function CheckoutPage() {
   };
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    
-    // Support inheriting theme from dashboard via URL
-    const themeParam = searchParams.get("theme");
-    if (themeParam === "dark") {
+    // Better approach: Read from localStorage or cross-subdomain cookie instead of ugly URL params
+    const localTheme = localStorage.getItem("vite-ui-theme");
+    const themeCookie = document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1];
+    const themeToUse = themeCookie || localTheme;
+
+    if (themeToUse === "dark") {
       document.documentElement.classList.add("dark");
-      localStorage.setItem("vite-ui-theme", "dark");
-    } else if (themeParam === "light") {
+    } else if (themeToUse === "light") {
       document.documentElement.classList.remove("dark");
-      localStorage.setItem("vite-ui-theme", "light");
     }
 
+    const searchParams = new URLSearchParams(location.search);
     const tokenParam = searchParams.get("token");
     if (!tokenParam) {
       setStatus("invalid");
