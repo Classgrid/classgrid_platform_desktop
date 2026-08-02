@@ -13,13 +13,27 @@ export const generateInvoicePdfBuffer = async (invoice, org) => {
         console.error("Failed to load local logo for PDF", e);
     }
 
+    // Normalize invoice amounts (handle SaasInvoice Mongoose schema which uses Paise)
+    const normalizedInvoice = {
+        ...invoice,
+        subtotal: invoice.subtotal !== undefined ? invoice.subtotal : (invoice.subtotalPaise || 0) / 100,
+        taxPercent: invoice.taxPercent || 18,
+        taxAmount: invoice.taxAmount !== undefined ? invoice.taxAmount : (invoice.taxAmountPaise || 0) / 100,
+        total: invoice.total !== undefined ? invoice.total : (invoice.totalAmountPaise || 0) / 100,
+        lineItems: (invoice.lineItems || []).map(item => ({
+            ...item,
+            unitRateInr: item.unitRateInr !== undefined ? item.unitRateInr : (item.unitRatePaise || 0) / 100,
+            amountInr: item.amountInr !== undefined ? item.amountInr : (item.amountPaise || 0) / 100,
+        }))
+    };
+
     // Generate HTML for the invoice
     const htmlContent = `
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="utf-8">
-            <title>Invoice ${invoice.invoiceNumber}</title>
+            <title>Invoice ${normalizedInvoice.invoiceNumber}</title>
             <style>
                 body { font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; color: #333; margin: 0; padding: 40px; }
                 .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; box-shadow: 0 0 10px rgba(0, 0, 0, .15); }
@@ -43,14 +57,14 @@ export const generateInvoicePdfBuffer = async (invoice, org) => {
                             <img src="${logoSrc}" alt="Classgrid Logo" style="height: 48px; width: auto; object-fit: contain;" onerror="this.onerror=null; this.src='https://billing.classgrid.in/logo.png';"/>
                             <div class="title" style="margin: 0; font-size: 28px;">Classgrid ERP</div>
                         </div>
-                        <div>Invoice: ${invoice.invoiceNumber}</div>
-                        <div>Status: ${invoice.status.toUpperCase()}</div>
+                        <div>Invoice: ${normalizedInvoice.invoiceNumber}</div>
+                        <div>Status: ${(normalizedInvoice.status || 'SENT').toUpperCase()}</div>
                     </div>
                     <div class="details">
                         <div><strong>Classgrid Technology</strong></div>
                         <div>support@classgrid.in</div>
-                        <div>Date: ${new Date(invoice.createdAt).toLocaleDateString()}</div>
-                        <div>Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}</div>
+                        <div>Date: ${new Date(normalizedInvoice.createdAt || Date.now()).toLocaleDateString()}</div>
+                        <div>Due Date: ${new Date(normalizedInvoice.dueDate || Date.now()).toLocaleDateString()}</div>
                     </div>
                 </div>
 
@@ -75,29 +89,36 @@ export const generateInvoicePdfBuffer = async (invoice, org) => {
                         </tr>
                     </thead>
                     <tbody>
-                        ${invoice.lineItems.map(item => `
+                        ${normalizedInvoice.lineItems.length > 0 ? normalizedInvoice.lineItems.map(item => `
                             <tr>
-                                <td>${item.resourceLabel}</td>
-                                <td class="right">${item.totalQuantity} ${item.unit}</td>
-                                <td class="right">₹${item.unitRateInr.toFixed(2)}</td>
-                                <td class="right">₹${item.amountInr.toFixed(2)}</td>
+                                <td>${item.resourceLabel || 'Base Platform Fee'}</td>
+                                <td class="right">${item.totalQuantity || 1} ${item.unit || 'unit'}</td>
+                                <td class="right">₹${(item.unitRateInr || 0).toFixed(2)}</td>
+                                <td class="right">₹${(item.amountInr || 0).toFixed(2)}</td>
                             </tr>
-                        `).join('')}
+                        `).join('') : `
+                            <tr>
+                                <td>Classgrid Demo Invoice</td>
+                                <td class="right">1 unit</td>
+                                <td class="right">₹${normalizedInvoice.subtotal.toFixed(2)}</td>
+                                <td class="right">₹${normalizedInvoice.subtotal.toFixed(2)}</td>
+                            </tr>
+                        `}
                     </tbody>
                 </table>
 
                 <table style="width: 50%; margin-left: auto;">
                     <tr>
                         <td>Subtotal:</td>
-                        <td class="right">₹${invoice.subtotal.toFixed(2)}</td>
+                        <td class="right">₹${normalizedInvoice.subtotal.toFixed(2)}</td>
                     </tr>
                     <tr>
-                        <td>GST (${invoice.taxPercent}%):</td>
-                        <td class="right">₹${invoice.taxAmount.toFixed(2)}</td>
+                        <td>GST (${normalizedInvoice.taxPercent}%):</td>
+                        <td class="right">₹${normalizedInvoice.taxAmount.toFixed(2)}</td>
                     </tr>
                     <tr class="total-row">
                         <td>Total Amount:</td>
-                        <td class="right">₹${invoice.total.toFixed(2)}</td>
+                        <td class="right">₹${normalizedInvoice.total.toFixed(2)}</td>
                     </tr>
                 </table>
 
