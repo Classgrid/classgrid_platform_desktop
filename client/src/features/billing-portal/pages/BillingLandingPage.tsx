@@ -269,15 +269,32 @@ export function BillingLandingPage() {
               </div>
             </div>
 
-            {/* Footer links */}
-            <div className="text-center text-xs text-muted-foreground">
-              <a href="https://classgrid.in/privacy" className="transition hover:text-foreground underline-offset-2 hover:underline">
-                Privacy Policy
-              </a>
-              {" · "}
-              <a href="https://classgrid.in/terms" className="transition hover:text-foreground underline-offset-2 hover:underline">
-                Terms of Service
-              </a>
+            {/* Compliance & Contact Footer for Payment Gateways */}
+            <div className="flex flex-col items-center gap-2 text-center text-[11px] text-muted-foreground mt-8">
+              <p className="text-foreground/80 font-medium text-xs">Classgrid Technologies</p>
+              <p>Support: <a href="mailto:support@classgrid.in" className="transition hover:text-foreground">support@classgrid.in</a></p>
+              
+              <div className="flex flex-wrap justify-center gap-x-3 gap-y-2 mt-2">
+                <a href="https://classgrid.in/pricing" target="_blank" className="transition hover:text-foreground underline-offset-2 hover:underline">
+                  Pricing
+                </a>
+                <span className="text-border">•</span>
+                <a href="https://classgrid.in/refund-policy" target="_blank" className="transition hover:text-foreground underline-offset-2 hover:underline">
+                  Refund & Cancellation Policy
+                </a>
+                <span className="text-border">•</span>
+                <a href="https://classgrid.in/privacy" target="_blank" className="transition hover:text-foreground underline-offset-2 hover:underline">
+                  Privacy Policy
+                </a>
+                <span className="text-border">•</span>
+                <a href="https://classgrid.in/terms" target="_blank" className="transition hover:text-foreground underline-offset-2 hover:underline">
+                  Terms & Conditions
+                </a>
+                <span className="text-border">•</span>
+                <a href="https://classgrid.in/contact" target="_blank" className="transition hover:text-foreground underline-offset-2 hover:underline">
+                  Contact Us
+                </a>
+              </div>
             </div>
 
           </div>
