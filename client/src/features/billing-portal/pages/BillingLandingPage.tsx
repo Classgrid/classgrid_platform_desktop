@@ -196,15 +196,15 @@ function DemoCard() {
               <div>
                 <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">3</span>
-                  Pricing (B2B SaaS Subscriptions)
+                  Pricing (B2B SaaS Pay-As-You-Go)
                 </h3>
-                <p className="mb-2">Our ERP modules are billed on an annual subscription basis per institution. Standard pricing:</p>
-                <ul className="list-disc pl-5 space-y-1 mb-6">
-                  <li><strong>Core ERP & Student Info System:</strong> ₹50,000 / year</li>
-                  <li><strong>Fee Management & Admission Portal:</strong> ₹25,000 / year</li>
-                  <li><strong>Live Interactive Classes Add-on:</strong> ₹15,000 / year</li>
-                  <li><strong>Custom Mobile App (White-labeled):</strong> ₹40,000 / year</li>
+                <p className="mb-2">Classgrid operates on a dynamic, usage-based pricing model. We do not charge fixed annual fees. Educational institutions are billed at the end of each month based entirely on their consumption:</p>
+                <ul className="list-disc pl-5 space-y-1 mb-4">
+                  <li><strong>Base Platform Fee:</strong> A nominal monthly maintenance fee for core cloud hosting.</li>
+                  <li><strong>A-la-carte Modules:</strong> Institutions toggle specific features (e.g., Admissions, Canteen) and are billed only for active modules.</li>
+                  <li><strong>Resource Usage:</strong> Micro-billing based on active seats and consumption (e.g., per active student profile, per live-class minute, or per GB of AWS S3 storage).</li>
                 </ul>
+                <p className="text-xs text-muted-foreground mb-6">Note: This variable structure allows schools to scale costs proportionally with their enrollment. A sample calculated invoice is available below.</p>
               </div>
 
               <div>
