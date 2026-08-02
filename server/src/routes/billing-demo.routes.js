@@ -25,7 +25,7 @@ const DEMO_AMOUNT_PAISE = 99900; // ₹999 demo subscription
 const DEMO_48H = 48 * 60 * 60 * 1000;
 
 function isDemoEnabled() {
-    return process.env.BILLING_DEMO_ENABLED === "true";
+    return true; // Hardcoded for Razorpay review. See cleanup plan to remove.
 }
 
 function checkoutUrl(rawToken) {

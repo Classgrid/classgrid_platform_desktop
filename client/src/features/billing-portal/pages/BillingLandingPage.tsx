@@ -46,7 +46,7 @@ const steps = [
   },
 ];
 
-const DEMO_ENABLED = import.meta.env.VITE_BILLING_DEMO_MODE === "true";
+const DEMO_ENABLED = true; // Hardcoded for Razorpay review. See cleanup plan to remove.
 const API_BASE = import.meta.env.VITE_API_URL || "https://api.classgrid.in";
 
 function CopyButton({ value }: { value: string }) {
