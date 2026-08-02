@@ -193,13 +193,13 @@ router.post("/initiate", generalLimiter, isAuthenticated, async (req, res) => {
         });
     } catch (error) {
         if (handoff) {
-            await BillingHandoff.findByIdAndUpdate(handoff._id, { expiresAt: new Date(), consumedAt: new Date() }).catch(() => {});
+            await BillingHandoff.findByIdAndUpdate(handoff._id, { expiresAt: new Date(), consumedAt: new Date() }).catch(() => { });
         }
         if (paymentAttempt) {
-            await PaymentAttempt.findByIdAndUpdate(paymentAttempt._id, { stage: PAYMENT_ATTEMPT_STAGE.FAILED }).catch(() => {});
+            await PaymentAttempt.findByIdAndUpdate(paymentAttempt._id, { stage: PAYMENT_ATTEMPT_STAGE.FAILED }).catch(() => { });
         }
         if (paymentOrder) {
-            await PaymentOrder.findByIdAndUpdate(paymentOrder._id, { status: "CANCELLED" }).catch(() => {});
+            await PaymentOrder.findByIdAndUpdate(paymentOrder._id, { status: "CANCELLED" }).catch(() => { });
         }
         return publicError(res, error);
     }
