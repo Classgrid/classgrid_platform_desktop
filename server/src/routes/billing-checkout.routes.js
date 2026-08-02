@@ -8,7 +8,7 @@ import razorpayService from "../services/razorpay.service.js";
 import { finalizeCapturedPayment } from "../services/billing-payment-finalization.service.js";
 import { sendEmail, sendTemplateEmail } from "../services/aws-ses.service.js";
 import { baseTemplate } from "../services/email-templates.service.js";
-import PDFDocument from "pdfkit";
+import { generateInvoicePdfBuffer } from "../services/pdf-invoice.service.js";
 import { generalLimiter } from "../middleware/rateLimiter.js";
 import {
     formatPaise,
@@ -196,76 +196,10 @@ router.post("/confirm", async (req, res) => {
         try {
             const invoice = await SaasInvoice.findById(handoff.referenceId).lean();
             if (invoice) {
-                // Generate receipt PDF using PDFKit (no Puppeteer/Chrome needed)
-                const pdfBuffer = await new Promise((resolve, reject) => {
-                    try {
-                        const doc = new PDFDocument({ size: "A4", margin: 50 });
-                        const buffers = [];
-                        doc.on("data", buffers.push.bind(buffers));
-                        doc.on("end", () => resolve(Buffer.concat(buffers)));
-
-                        // Header
-                        doc.fontSize(22).font("Helvetica-Bold").text("Classgrid", { align: "center" });
-                        doc.fontSize(10).font("Helvetica").fillColor("#666").text("Payment Receipt", { align: "center" });
-                        doc.moveDown(0.5);
-                        doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor("#ddd").stroke();
-                        doc.moveDown(1);
-
-                        // Receipt meta
-                        doc.fillColor("#333").fontSize(10).font("Helvetica");
-                        doc.text(`Invoice #: ${invoice.invoiceNumber}`, 50);
-                        doc.text(`Date: ${paidAt} IST`);
-                        doc.text(`Payment ID: ${providerPayment.id}`);
-                        doc.text(`Method: ${providerPayment.method || "Razorpay"}`);
-                        doc.moveDown(1);
-
-                        // Bill To
-                        doc.font("Helvetica-Bold").fontSize(12).fillColor("#111").text("Bill To:");
-                        doc.font("Helvetica").fontSize(10).fillColor("#333");
-                        doc.text(payerName);
-                        doc.text(handoff.email || "");
-                        doc.text(orgName);
-                        doc.moveDown(1);
-
-                        // Table header
-                        const tableTop = doc.y;
-                        doc.rect(50, tableTop, 495, 22).fill("#f3f4f6");
-                        doc.fillColor("#111").font("Helvetica-Bold").fontSize(10);
-                        doc.text("Description", 60, tableTop + 6, { width: 250 });
-                        doc.text("Amount", 400, tableTop + 6, { width: 130, align: "right" });
-
-                        // Table row
-                        const rowY = tableTop + 28;
-                        doc.font("Helvetica").fillColor("#333").fontSize(10);
-                        const label = handoff.context?.label || "Classgrid Platform Subscription";
-                        doc.text(label, 60, rowY, { width: 250 });
-                        doc.text(amountFormatted, 400, rowY, { width: 130, align: "right" });
-
-                        // Subtotal / Total
-                        const subtotalY = rowY + 30;
-                        doc.moveTo(50, subtotalY).lineTo(545, subtotalY).strokeColor("#ddd").stroke();
-                        doc.font("Helvetica-Bold").fillColor("#111");
-                        doc.text("Total Paid:", 300, subtotalY + 8, { width: 100, align: "right" });
-                        doc.fontSize(13).fillColor("#059669").text(amountFormatted, 400, subtotalY + 8, { width: 130, align: "right" });
-
-                        // Status badge
-                        doc.moveDown(3);
-                        doc.fontSize(14).fillColor("#059669").font("Helvetica-Bold").text("✓ PAYMENT SUCCESSFUL", { align: "center" });
-
-                        // Footer
-                        doc.moveDown(4);
-                        doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor("#ddd").stroke();
-                        doc.moveDown(0.5);
-                        doc.fontSize(8).fillColor("#999").font("Helvetica");
-                        doc.text("This is a computer-generated receipt from Classgrid Billing. No signature required.", { align: "center" });
-                        doc.text("support@classgrid.in | classgrid.in", { align: "center" });
-
-                        doc.end();
-                    } catch (e) { reject(e); }
-                });
+                const pdfBuffer = await generateInvoicePdfBuffer(invoice, organization);
 
                 attachments.push({
-                    filename: `Classgrid_Receipt_${invoice.invoiceNumber}.pdf`,
+                    filename: `Classgrid_Invoice_${invoice.invoiceNumber}.pdf`,
                     content: pdfBuffer,
                     contentType: "application/pdf"
                 });
