@@ -130,16 +130,9 @@ export const generateInvoicePdfBuffer = async (invoice, org) => {
         </html>
     `;
 
-    // Find the correct chromium path based on OS (Ubuntu uses /usr/bin/chromium-browser via snap)
-    const executablePath = fs.existsSync('/usr/bin/chromium-browser') 
-        ? '/usr/bin/chromium-browser' 
-        : fs.existsSync('/usr/bin/chromium') 
-            ? '/usr/bin/chromium' 
-            : undefined;
-
     const browser = await puppeteer.launch({
         headless: "new",
-        executablePath: executablePath,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     });
     
