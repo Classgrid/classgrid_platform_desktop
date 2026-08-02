@@ -1,9 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/marketing_ui/input-otp";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
-import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
 import { Spinner } from "@/components/marketing_ui/spinner";
 
 const OTP_TTL_SECONDS = 60;
@@ -196,22 +194,41 @@ export function CheckoutPage() {
             <div className="flex flex-col items-center gap-3">
 
               
-              <InputOTP
-                maxLength={6}
-                pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
-                value={otp}
-                onChange={(val) => setOtp(val)}
+              {/* Custom OTP implementation to guarantee no hidden styles/green lines */}
+              <div className="flex items-center gap-2" dir="ltr">
+                {[0, 1, 2, 3, 4, 5].map((index) => {
+                  const isActive = otp.length === index;
+                  return (
+                    <div
+                      key={index}
+                      className={`relative flex h-12 w-10 items-center justify-center rounded-md border text-lg font-medium transition-all ${
+                        isActive
+                          ? "border-slate-400 dark:border-[#444] z-10"
+                          : "border-slate-200 dark:border-[#2a2a2a]"
+                      } bg-white text-slate-900 dark:bg-[#161616] dark:text-[#f1f1f1]`}
+                    >
+                      {otp[index] || ""}
+                      {isActive && !otpExpired && (
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                          <div className="h-4 w-px animate-pulse bg-slate-900 dark:bg-[#f1f1f1]" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <input 
+                type="text" 
+                value={otp} 
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6);
+                  setOtp(val);
+                }}
                 disabled={otpExpired}
-              >
-                <InputOTPGroup className="gap-2">
-                  <InputOTPSlot index={0} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 data-[active=true]:!ring-0 data-[active=true]:!border-slate-400 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:data-[active=true]:!border-[#444]" />
-                  <InputOTPSlot index={1} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 data-[active=true]:!ring-0 data-[active=true]:!border-slate-400 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:data-[active=true]:!border-[#444]" />
-                  <InputOTPSlot index={2} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 data-[active=true]:!ring-0 data-[active=true]:!border-slate-400 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:data-[active=true]:!border-[#444]" />
-                  <InputOTPSlot index={3} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 data-[active=true]:!ring-0 data-[active=true]:!border-slate-400 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:data-[active=true]:!border-[#444]" />
-                  <InputOTPSlot index={4} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 data-[active=true]:!ring-0 data-[active=true]:!border-slate-400 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:data-[active=true]:!border-[#444]" />
-                  <InputOTPSlot index={5} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 data-[active=true]:!ring-0 data-[active=true]:!border-slate-400 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:data-[active=true]:!border-[#444]" />
-                </InputOTPGroup>
-              </InputOTP>
+                className="absolute opacity-0 w-[240px] h-12 z-20 cursor-text"
+                style={{ top: 'auto', left: 'auto', outline: 'none', border: 'none', boxShadow: 'none' }}
+                autoFocus
+              />
 
               {/* Timer / Resend */}
               <div className="text-[13px] text-center">
