@@ -87,13 +87,16 @@ router.post("/session", async (req, res) => {
             _id: demoPlaceholderRefId,
             organizationId: demoOrgId,
             invoiceNumber: `DEMO-${Date.now()}`,
-            billingCycle: "monthly",
-            billingPeriodStart: new Date(),
-            billingPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            billingPeriod: {
+                month: new Date().getMonth() + 1,
+                year: new Date().getFullYear(),
+                startDate: new Date(),
+                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+            },
+            subtotalPaise: DEMO_AMOUNT_PAISE,
             totalAmountPaise: DEMO_AMOUNT_PAISE,
             dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            status: "generated",
-            metricsData: {},
+            status: "draft",
             lineItems: []
         });
 
