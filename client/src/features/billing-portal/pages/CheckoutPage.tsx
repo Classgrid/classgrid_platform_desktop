@@ -131,10 +131,9 @@ export function CheckoutPage() {
         },
         prefill: { email: customerEmail },
         theme: { 
-          // Razorpay standard checkout does not have a true "dark mode" for the modal body.
-          // The color property sets the header and button colors. 
-          // Using our brand slate-900 ensures good contrast and a premium look in both themes.
-          color: "#0f172a" 
+          // Our app background stays exactly the same.
+          // Razorpay's modal body doesn't have a true dark mode, but we match the header to our theme.
+          color: document.documentElement.classList.contains("dark") ? "#0f172a" : "#000000" 
         },
         modal: {
           ondismiss: function() {
