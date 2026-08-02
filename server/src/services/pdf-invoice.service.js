@@ -27,7 +27,11 @@ export const generateInvoicePdfBuffer = async (invoice, org) => {
             <div class="invoice-box">
                 <div class="header">
                     <div>
-                        <div class="title">Classgrid SaaS</div>
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                            <!-- Fallback to live logo if local fails in prod -->
+                            <img src="https://classgrid.in/logo.png" alt="Classgrid Logo" style="height: 48px; width: auto; object-fit: contain;" onerror="this.onerror=null; this.src='https://billing.classgrid.in/logo.png';"/>
+                            <div class="title" style="margin: 0; font-size: 28px;">Classgrid ERP</div>
+                        </div>
                         <div>Invoice: ${invoice.invoiceNumber}</div>
                         <div>Status: ${invoice.status.toUpperCase()}</div>
                     </div>
