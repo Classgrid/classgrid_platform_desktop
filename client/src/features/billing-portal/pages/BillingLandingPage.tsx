@@ -48,7 +48,7 @@ const steps = [
   },
 ];
 
-const DEMO_ENABLED = false; // Hardcoded for Razorpay review. See cleanup plan to remove.
+const DEMO_ENABLED = true; // Hardcoded for live test
 const API_BASE = import.meta.env.VITE_API_URL || "https://api.classgrid.in";
 
 function CopyButton({ value }: { value: string }) {
@@ -314,7 +314,7 @@ function DemoCard() {
                     <polyline points="7 10 12 15 17 10" />
                     <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
-                  Download Sample ₹500 Invoice
+                  Download Sample ₹2 Invoice
                 </a>
               </div>
 
