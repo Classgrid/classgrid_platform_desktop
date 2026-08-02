@@ -3,9 +3,11 @@ import bcrypt from "bcryptjs";
 import BillingHandoff from "../models/BillingHandoff.js";
 import PaymentAttempt from "../models/PaymentAttempt.js";
 import Organization from "../models/Organization.js";
+import SaasInvoice from "../models/SaasInvoice.js";
 import razorpayService from "../services/razorpay.service.js";
 import { finalizeCapturedPayment } from "../services/billing-payment-finalization.service.js";
 import { sendEmail, sendTemplateEmail } from "../services/aws-ses.service.js";
+import { generateInvoicePdfBuffer } from "../services/pdf-invoice.service.js";
 import { generalLimiter } from "../middleware/rateLimiter.js";
 import {
     formatPaise,
@@ -183,11 +185,26 @@ router.post("/confirm", async (req, res) => {
             },
         });
 
-        const organization = await Organization.findById(handoff.organization_id).select("name").lean();
+        const organization = await Organization.findById(handoff.organization_id).lean() || { name: handoff.context?.organizationName || "Organization" };
         const payerName = handoff.context?.payerName || "Payer";
         const orgName = organization?.name || "Organization";
         const amountFormatted = formatPaise(handoff.amountPaise, handoff.currency);
         const paidAt = new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+
+        let attachments = [];
+        try {
+            const invoice = await SaasInvoice.findById(handoff.referenceId).lean();
+            if (invoice) {
+                const pdfBuffer = await generateInvoicePdfBuffer(invoice, organization);
+                attachments.push({
+                    filename: `Classgrid_Receipt_${invoice.invoiceNumber}.pdf`,
+                    content: pdfBuffer,
+                    contentType: "application/pdf"
+                });
+            }
+        } catch (err) {
+            console.error("[Billing Checkout] Failed to generate PDF for email attachment:", err.message);
+        }
 
         // Send a direct confirmation email (no template dependency)
         await sendEmail({
@@ -208,6 +225,7 @@ router.post("/confirm", async (req, res) => {
                 <p>Your subscription remains active. Keep this email for your records.</p>
                 <p style="color:#9ca3af;font-size:12px;">This is an automated receipt from Classgrid Billing.</p>
             `,
+            attachments,
             userId: finalized.order.createdBy || null,
             organizationId: handoff.organization_id,
         }).catch((emailErr) => {

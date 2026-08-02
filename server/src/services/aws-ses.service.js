@@ -29,7 +29,7 @@ transporter.verify((err) => {
 // ─────────────────────────────────────────────────
 // SEND VIA AWS SES
 // ─────────────────────────────────────────────────
-export const sendEmail = async ({ to, subject, html, text, fromName, fromEmail, replyTo, userId, organizationId, maxRetries = 3 }) => {
+export const sendEmail = async ({ to, subject, html, text, fromName, fromEmail, replyTo, userId, organizationId, maxRetries = 3, attachments }) => {
   console.log(`[AWS SES] Sending to: ${to} | From: ${fromEmail || "default"}`);
 
   // Note: AWS SES is verified for the entire classgrid.in domain.
@@ -48,6 +48,7 @@ export const sendEmail = async ({ to, subject, html, text, fromName, fromEmail, 
               subject,
               text,
               html,
+              attachments,
           });
 
           accessLogger.info(`[AWS SES] ✅ Email sent to: ${to} | ID: ${info.messageId} | Attempt: ${attempt}`, {
