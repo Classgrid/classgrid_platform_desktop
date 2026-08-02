@@ -109,6 +109,5 @@ const paymentTransactionSchema = new mongoose.Schema(
 
 paymentTransactionSchema.index({ status: 1, createdAt: 1 });
 paymentTransactionSchema.index({ paymentFlow: 1, status: 1, capturedAt: -1 });
-paymentTransactionSchema.index({ providerPaymentId: 1 }, { unique: true });
 
 export default mongoose.models.PaymentTransaction || mongoose.model("PaymentTransaction", paymentTransactionSchema);

@@ -53,7 +53,6 @@ const notificationLogSchema = new mongoose.Schema(
 );
 
 // Indexes for fast querying in the super admin dashboard
-notificationLogSchema.index({ idempotencyKey: 1 });
 notificationLogSchema.index({ organizationId: 1, createdAt: -1 });
 notificationLogSchema.index({ status: 1 });
 notificationLogSchema.index({ recipient: 1 });

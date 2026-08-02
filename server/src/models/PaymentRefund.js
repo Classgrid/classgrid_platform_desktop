@@ -68,7 +68,4 @@ const paymentRefundSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
-
-paymentRefundSchema.index({ providerRefundId: 1 }, { unique: true });
-
 export default mongoose.models.PaymentRefund || mongoose.model("PaymentRefund", paymentRefundSchema);

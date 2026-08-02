@@ -45,6 +45,7 @@ const paymentOrderSchema = new mongoose.Schema(
             type: String,
             required: true,
             unique: true,
+            sparse: true
         },
         receiptId: { // Our internal receipt id passed to Razorpay
             type: String,
@@ -66,6 +67,5 @@ const paymentOrderSchema = new mongoose.Schema(
 );
 
 paymentOrderSchema.index({ invoiceId: 1 });
-paymentOrderSchema.index({ providerOrderId: 1 }, { unique: true, sparse: true });
 
 export default mongoose.models.PaymentOrder || mongoose.model("PaymentOrder", paymentOrderSchema);

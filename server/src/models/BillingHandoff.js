@@ -41,7 +41,7 @@ const billingHandoffSchema = new mongoose.Schema(
         consumedAt: { type: Date, default: null },
         resendCount: { type: Number, default: 0 },
         lastOtpSentAt: { type: Date, default: Date.now },
-        expiresAt: { type: Date, required: true, index: true },
+        expiresAt: { type: Date, required: true },
     },
     { timestamps: true }
 );
