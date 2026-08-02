@@ -156,7 +156,16 @@ export function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans">
+    <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans checkout-otp-container">
+      <style>{`
+        .checkout-otp-container input,
+        .checkout-otp-container input:focus,
+        .checkout-otp-container input:focus-visible {
+          box-shadow: none !important;
+          outline: none !important;
+          border-color: transparent !important;
+        }
+      `}</style>
       
       {/* Top Left Logo - exactly like marketing */}
       <Link to="/" className="absolute top-6 left-8 flex items-center gap-3 hover:opacity-80 transition-opacity">
