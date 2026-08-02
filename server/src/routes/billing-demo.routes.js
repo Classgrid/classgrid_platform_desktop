@@ -14,6 +14,7 @@ import mongoose from "mongoose";
 import BillingHandoff from "../models/BillingHandoff.js";
 import PaymentOrder from "../models/PaymentOrder.js";
 import PaymentAttempt from "../models/PaymentAttempt.js";
+import SaasInvoice from "../models/SaasInvoice.js";
 import razorpayService from "../services/razorpay.service.js";
 import { hashHandoffToken } from "../services/billing-handoff.service.js";
 import { PAYMENT_ATTEMPT_STAGE } from "../utils/billing.utils.js";
@@ -81,6 +82,21 @@ router.post("/session", async (req, res) => {
 
         // Create stub PaymentOrder
         const demoPlaceholderRefId = new mongoose.Types.ObjectId();
+        
+        await SaasInvoice.create({
+            _id: demoPlaceholderRefId,
+            organizationId: demoOrgId,
+            invoiceNumber: `DEMO-${Date.now()}`,
+            billingCycle: "monthly",
+            billingPeriodStart: new Date(),
+            billingPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            totalAmountPaise: DEMO_AMOUNT_PAISE,
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            status: "generated",
+            metricsData: {},
+            lineItems: []
+        });
+
         const paymentOrder = await PaymentOrder.create({
             organizationId: demoOrgId,
             invoiceId: demoPlaceholderRefId,
