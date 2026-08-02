@@ -5,7 +5,7 @@ import PaymentAttempt from "../models/PaymentAttempt.js";
 import Organization from "../models/Organization.js";
 import razorpayService from "../services/razorpay.service.js";
 import { finalizeCapturedPayment } from "../services/billing-payment-finalization.service.js";
-import { sendTemplateEmail } from "../services/aws-ses.service.js";
+import { sendEmail, sendTemplateEmail } from "../services/aws-ses.service.js";
 import { generalLimiter } from "../middleware/rateLimiter.js";
 import {
     formatPaise,
@@ -64,7 +64,7 @@ router.get("/session", async (req, res) => {
 
 router.post("/verify-otp", async (req, res) => {
     try {
-        const { token: rawToken, otp } = req.body;
+        const { token: rawToken, otp, payerName, payerEmail } = req.body;
         if (!rawToken || !/^\d{6}$/.test(String(otp || ""))) {
             return res.status(400).json({ success: false, error: "A valid token and 6-digit OTP are required" });
         }
@@ -90,16 +90,19 @@ router.post("/verify-otp", async (req, res) => {
             return res.status(400).json({ success: false, error: "Invalid OTP" });
         }
 
+        // Save user-provided name/email into context and email field
+        const updateFields = {
+            otp: "CONSUMED",
+            otpVerifiedAt: new Date(),
+            attempts: 0,
+            lockoutUntil: null,
+        };
+        if (payerName) updateFields["context.payerName"] = payerName.trim();
+        if (payerEmail) updateFields.email = payerEmail.trim();
+
         const verified = await BillingHandoff.findOneAndUpdate(
             { _id: handoff._id, otpVerifiedAt: null, consumedAt: null, verified: false },
-            {
-                $set: {
-                    otp: "CONSUMED",
-                    otpVerifiedAt: new Date(),
-                    attempts: 0,
-                    lockoutUntil: null,
-                },
-            },
+            { $set: updateFields },
             { returnDocument: 'after' }
         );
         if (!verified) {
@@ -181,27 +184,34 @@ router.post("/confirm", async (req, res) => {
         });
 
         const organization = await Organization.findById(handoff.organization_id).select("name").lean();
-        const templateName = handoff.payment_type === "saas_invoice"
-            ? "SAAS_PAYMENT_SUCCESSFUL"
-            : "INSTITUTION_PAYMENT_SUCCESSFUL_PAYER";
-        await sendTemplateEmail({
-            templateName,
+        const payerName = handoff.context?.payerName || "Payer";
+        const orgName = organization?.name || "Organization";
+        const amountFormatted = formatPaise(handoff.amountPaise, handoff.currency);
+        const paidAt = new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+
+        // Send a direct confirmation email (no template dependency)
+        await sendEmail({
             to: handoff.email,
+            subject: `Payment Successful — ${amountFormatted} | Classgrid`,
+            fromName: "Classgrid Billing",
+            fromEmail: "billing@classgrid.in",
+            html: `
+                <p>Hello ${payerName},</p>
+                <p>Your payment to <strong>${orgName}</strong> was completed successfully through Classgrid.</p>
+                <table style="border-collapse:collapse;width:100%;max-width:420px;margin:16px 0;">
+                  <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Amount Paid</td><td style="padding:6px 12px;color:#059669;font-weight:700;">${amountFormatted}</td></tr>
+                  <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Payment ID</td><td style="padding:6px 12px;font-family:monospace;">${providerPayment.id}</td></tr>
+                  <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Payment Method</td><td style="padding:6px 12px;">${providerPayment.method || "Razorpay"}</td></tr>
+                  <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Paid At</td><td style="padding:6px 12px;">${paidAt} IST</td></tr>
+                  <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Organization</td><td style="padding:6px 12px;">${orgName}</td></tr>
+                </table>
+                <p>Your subscription remains active. Keep this email for your records.</p>
+                <p style="color:#9ca3af;font-size:12px;">This is an automated receipt from Classgrid Billing.</p>
+            `,
             userId: finalized.order.createdBy || null,
             organizationId: handoff.organization_id,
-            idempotencyKey: `payment-success:${providerPayment.id}:email`,
-            data: {
-                payer_name: handoff.context?.payerName || "Payer",
-                organization_name: organization?.name || "Organization",
-                fee_name: handoff.context?.label || "Payment",
-                amount: formatPaise(handoff.amountPaise, handoff.currency),
-                transaction_id: providerPayment.id,
-                payment_method: providerPayment.method || "Razorpay",
-                payment_time: new Date().toISOString(),
-                portal_url: handoff.return_url,
-            },
-        }).catch((notificationError) => {
-            console.warn("[Billing Checkout] Payment captured but success notification failed:", notificationError.message);
+        }).catch((emailErr) => {
+            console.warn("[Billing Checkout] Payment captured but confirmation email failed:", emailErr.message);
         });
 
         return res.json({

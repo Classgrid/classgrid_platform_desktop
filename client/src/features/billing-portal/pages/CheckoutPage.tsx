@@ -21,6 +21,13 @@ export function CheckoutPage() {
   const [error, setError] = useState("");
   
   const [email, setEmail] = useState("");
+  const [payerName, setPayerName] = useState("");
+  const [payerEmail, setPayerEmail] = useState("");
+  
+  // Receipt data for success screen
+  const [receiptData, setReceiptData] = useState<{
+    name: string; email: string; amount: string; txnId: string; paidAt: string;
+  } | null>(null);
   
   const [countdown, setCountdown] = useState(0);
   const [otpExpired, setOtpExpired] = useState(false);
@@ -84,6 +91,14 @@ export function CheckoutPage() {
     e.preventDefault();
     setError("");
 
+    if (!payerName.trim()) {
+      setError("Please enter your name");
+      return;
+    }
+    if (!payerEmail.trim() || !/\S+@\S+\.\S+/.test(payerEmail)) {
+      setError("Please enter a valid email address");
+      return;
+    }
     if (otp.length !== 6) {
       setError("Please enter the 6-digit code");
       return;
@@ -93,7 +108,9 @@ export function CheckoutPage() {
     try {
       const response = await apiClient.post("/api/billing/checkout/verify-otp", {
         token,
-        otp
+        otp,
+        payerName: payerName.trim(),
+        payerEmail: payerEmail.trim()
       });
       const { 
         razorpay_order_id, 
@@ -115,14 +132,22 @@ export function CheckoutPage() {
         handler: async function (response: any) {
           try {
             toast.loading("Verifying payment...", { id: "payment-verify" });
-            await apiClient.post("/api/billing/checkout/confirm", {
+            const confirmRes = await apiClient.post("/api/billing/checkout/confirm", {
               token,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature
             });
             toast.success("Payment verified!", { id: "payment-verify" });
-            // Do not redirect; show the success page!
+            // Store receipt data for the success screen
+            const now = new Date();
+            setReceiptData({
+              name: payerName,
+              email: payerEmail,
+              amount: `₹${(amount / 100).toFixed(0)}`,
+              txnId: confirmRes.data?.data?.providerPaymentId || response.razorpay_payment_id,
+              paidAt: now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' - ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
+            });
             setStatus("success");
           } catch (confirmError) {
             console.error("Confirmation error", confirmError);
@@ -221,15 +246,32 @@ export function CheckoutPage() {
               </div>
             </div>
             
-            <div className="animate-fade-up space-y-4">
+            <div className="animate-fade-up space-y-4 w-full">
               <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-500">
                 Payment Successful
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-foreground">
                 Transaction Complete
               </h1>
+
+              {/* Receipt Details */}
+              {receiptData && (
+                <div className="mt-4 w-full rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-5 text-left space-y-2 text-sm">
+                  <div className="flex justify-between items-center border-b border-emerald-500/20 pb-2 mb-3">
+                    <span className="font-bold text-foreground">Receipt</span>
+                    <span className="font-mono text-xs text-emerald-600 dark:text-emerald-400">{receiptData.txnId}</span>
+                  </div>
+                  <div className="grid grid-cols-[90px_1fr] gap-y-1.5 text-muted-foreground">
+                    <span className="font-semibold text-foreground">Name:</span><span>{receiptData.name}</span>
+                    <span className="font-semibold text-foreground">Email:</span><span>{receiptData.email}</span>
+                    <span className="font-semibold text-foreground">Amount:</span><span className="font-semibold text-emerald-600 dark:text-emerald-400">{receiptData.amount}</span>
+                    <span className="font-semibold text-foreground">Paid at:</span><span>{receiptData.paidAt}</span>
+                  </div>
+                </div>
+              )}
+
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Your payment was successfully processed. You can now close this tab. A receipt has been securely recorded on your Classgrid Super Admin dashboard.
+                A confirmation email has been sent. You can now close this tab.
               </p>
             </div>
 
@@ -273,14 +315,37 @@ export function CheckoutPage() {
         <div className="w-full max-w-[400px]">
           
           <div className="mb-8 text-center space-y-1">
-            <h1 className="text-3xl font-medium tracking-tight text-slate-900 dark:text-[#f1f1f1]">Check your email</h1>
-            <p className="text-[14px] text-slate-500 dark:text-[#888888]">After verifying, the payment checkout will open.</p>
+            <h1 className="text-3xl font-medium tracking-tight text-slate-900 dark:text-[#f1f1f1]">Complete Checkout</h1>
+            <p className="text-[14px] text-slate-500 dark:text-[#888888]">Enter your details and the verification code to proceed.</p>
           </div>
 
           <form onSubmit={handleVerifyOtp} className="space-y-5">
-            <div className="flex flex-col items-center gap-3">
+            {/* Name & Email inputs */}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[13px] font-medium text-slate-700 dark:text-[#ccc] mb-1.5">Full Name</label>
+                <input
+                  type="text"
+                  value={payerName}
+                  onChange={(e) => setPayerName(e.target.value)}
+                  placeholder="e.g. Nikhil Sharma"
+                  className="w-full rounded-md border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#161616] px-3 py-2.5 text-sm text-slate-900 dark:text-[#f1f1f1] placeholder:text-slate-400 dark:placeholder:text-[#555] transition focus:border-slate-400 dark:focus:border-[#555]"
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] font-medium text-slate-700 dark:text-[#ccc] mb-1.5">Email Address</label>
+                <input
+                  type="email"
+                  value={payerEmail}
+                  onChange={(e) => setPayerEmail(e.target.value)}
+                  placeholder="e.g. admin@institution.edu"
+                  className="w-full rounded-md border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#161616] px-3 py-2.5 text-sm text-slate-900 dark:text-[#f1f1f1] placeholder:text-slate-400 dark:placeholder:text-[#555] transition focus:border-slate-400 dark:focus:border-[#555]"
+                />
+              </div>
+            </div>
 
-              
+            <div className="flex flex-col items-center gap-3">
+              <label className="block text-[13px] font-medium text-slate-700 dark:text-[#ccc] self-start">Verification Code</label>
               {/* Custom OTP implementation to guarantee no hidden styles/green lines */}
               <div className="flex items-center gap-2" dir="ltr">
                 {[0, 1, 2, 3, 4, 5].map((index) => {
