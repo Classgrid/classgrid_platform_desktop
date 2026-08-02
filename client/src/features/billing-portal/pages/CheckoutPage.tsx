@@ -186,12 +186,12 @@ export function CheckoutPage() {
                 disabled={otpExpired}
               >
                 <InputOTPGroup className="gap-2">
-                  <InputOTPSlot index={0} data-no-ring className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
-                  <InputOTPSlot index={1} data-no-ring className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
-                  <InputOTPSlot index={2} data-no-ring className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
-                  <InputOTPSlot index={3} data-no-ring className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
-                  <InputOTPSlot index={4} data-no-ring className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
-                  <InputOTPSlot index={5} data-no-ring className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                  <InputOTPSlot index={0} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 data-[active=true]:!ring-0 data-[active=true]:!border-slate-400 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:data-[active=true]:!border-[#444]" />
+                  <InputOTPSlot index={1} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 data-[active=true]:!ring-0 data-[active=true]:!border-slate-400 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:data-[active=true]:!border-[#444]" />
+                  <InputOTPSlot index={2} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 data-[active=true]:!ring-0 data-[active=true]:!border-slate-400 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:data-[active=true]:!border-[#444]" />
+                  <InputOTPSlot index={3} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 data-[active=true]:!ring-0 data-[active=true]:!border-slate-400 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:data-[active=true]:!border-[#444]" />
+                  <InputOTPSlot index={4} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 data-[active=true]:!ring-0 data-[active=true]:!border-slate-400 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:data-[active=true]:!border-[#444]" />
+                  <InputOTPSlot index={5} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 data-[active=true]:!ring-0 data-[active=true]:!border-slate-400 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:data-[active=true]:!border-[#444]" />
                 </InputOTPGroup>
               </InputOTP>
 
