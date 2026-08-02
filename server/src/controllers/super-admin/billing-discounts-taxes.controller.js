@@ -38,7 +38,7 @@ export const createDiscount = async (req, res) => {
 
 export const updateDiscount = async (req, res) => {
     try {
-        const discount = await Discount.findByIdAndUpdate(req.params.discountId, req.body, { new: true });
+        const discount = await Discount.findByIdAndUpdate(req.params.discountId, req.body, { returnDocument: 'after' });
         
         // RULE 6 ENFORCEMENT: Audit Log
         await logAdminAction(
@@ -58,7 +58,7 @@ export const updateDiscount = async (req, res) => {
 
 export const archiveDiscount = async (req, res) => {
     try {
-        const discount = await Discount.findByIdAndUpdate(req.params.discountId, { status: "ARCHIVED" }, { new: true });
+        const discount = await Discount.findByIdAndUpdate(req.params.discountId, { status: "ARCHIVED" }, { returnDocument: 'after' });
         
         // RULE 6 ENFORCEMENT: Audit Log
         await logAdminAction(

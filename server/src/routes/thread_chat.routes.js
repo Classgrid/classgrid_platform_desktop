@@ -1050,7 +1050,7 @@ router.post('/dm/:userId', isAuthenticated, async (req, res) => {
     broadcastToChannel(`user:${myId}`, 'thread_updated', { threadId: newThread.id, action: 'new_group' });
     broadcastToChannel(`user:${otherId}`, 'thread_updated', { threadId: newThread.id, action: 'new_group' });
 
-    res.status(201).json({ thread: newThread, isNew: true });
+    res.status(201).json({ thread: newThread, isreturnDocument: 'after' });
   } catch (err) {
     console.error('DM create error:', err);
     res.status(500).json({ error: err.message });

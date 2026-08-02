@@ -115,7 +115,7 @@ export const sendInvoice = async (req, res) => {
 
 export const voidInvoice = async (req, res) => {
     try {
-        const invoice = await Invoice.findByIdAndUpdate(req.params.invoiceId, { status: INVOICE_STATUS.VOID }, { new: true });
+        const invoice = await Invoice.findByIdAndUpdate(req.params.invoiceId, { status: INVOICE_STATUS.VOID }, { returnDocument: 'after' });
         
         // RULE 6 ENFORCEMENT: Audit Log
         await logAdminAction(

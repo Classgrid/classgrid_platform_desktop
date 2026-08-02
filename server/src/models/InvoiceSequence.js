@@ -26,7 +26,7 @@ invoiceSequenceSchema.statics.getNextNumber = async function (financialYear, pre
     const sequence = await this.findOneAndUpdate(
         { financialYear },
         { $inc: { currentNumber: 1 }, $setOnInsert: { prefix } },
-        { new: true, upsert: true, setDefaultsOnInsert: true }
+        { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
     );
     return `${sequence.prefix}${financialYear}-${sequence.currentNumber.toString().padStart(5, '0')}`;
 };

@@ -164,7 +164,7 @@ export async function processNextBillingExportJob() {
     const job = await BillingExportJob.findOneAndUpdate(
         { status: "PENDING", expiresAt: { $gt: new Date() } },
         { $set: { status: "PROCESSING", errorDetails: null } },
-        { new: true, sort: { createdAt: 1 } },
+        { returnDocument: 'after', sort: { createdAt: 1 } },
     );
     if (!job) return null;
 

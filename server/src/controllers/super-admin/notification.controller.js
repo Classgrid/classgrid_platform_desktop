@@ -66,7 +66,7 @@ export const updateTemplate = async (req, res) => {
         const template = await NotificationTemplate.findByIdAndUpdate(
             req.params.id,
             { subject, htmlBody, textBody, requiredPlaceholders, description, isActive, updatedBy: req.user?._id },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!template) return res.status(404).json({ success: false, message: "Template not found" });

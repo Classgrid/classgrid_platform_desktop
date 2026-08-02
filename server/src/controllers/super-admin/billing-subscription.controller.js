@@ -129,7 +129,7 @@ export const assignPlan = async (req, res) => {
 export const changePlan = async (req, res) => {
     try {
         const { organizationId } = req.params;
-        const subscription = await OrganizationSubscription.findOneAndUpdate({ organizationId }, req.body, { new: true });
+        const subscription = await OrganizationSubscription.findOneAndUpdate({ organizationId }, req.body, { returnDocument: 'after' });
         
         // RULE 6 ENFORCEMENT: Audit Log
         await logAdminAction(
@@ -227,7 +227,7 @@ export const changeBillingCycle = async (req, res) => {
 export const pauseSubscription = async (req, res) => {
     try {
         const { organizationId } = req.params;
-        const subscription = await OrganizationSubscription.findOneAndUpdate({ organizationId }, { status: "PAUSED" }, { new: true });
+        const subscription = await OrganizationSubscription.findOneAndUpdate({ organizationId }, { status: "PAUSED" }, { returnDocument: 'after' });
         
         // RULE 6 ENFORCEMENT: Audit Log
         await logAdminAction(
@@ -248,7 +248,7 @@ export const pauseSubscription = async (req, res) => {
 export const resumeSubscription = async (req, res) => {
     try {
         const { organizationId } = req.params;
-        const subscription = await OrganizationSubscription.findOneAndUpdate({ organizationId }, { status: "ACTIVE" }, { new: true });
+        const subscription = await OrganizationSubscription.findOneAndUpdate({ organizationId }, { status: "ACTIVE" }, { returnDocument: 'after' });
         
         // RULE 6 ENFORCEMENT: Audit Log
         await logAdminAction(
@@ -269,7 +269,7 @@ export const resumeSubscription = async (req, res) => {
 export const cancelSubscription = async (req, res) => {
     try {
         const { organizationId } = req.params;
-        const subscription = await OrganizationSubscription.findOneAndUpdate({ organizationId }, { status: "CANCELLED", cancelledAt: new Date() }, { new: true });
+        const subscription = await OrganizationSubscription.findOneAndUpdate({ organizationId }, { status: "CANCELLED", cancelledAt: new Date() }, { returnDocument: 'after' });
         
         // RULE 6 ENFORCEMENT: Audit Log
         await logAdminAction(

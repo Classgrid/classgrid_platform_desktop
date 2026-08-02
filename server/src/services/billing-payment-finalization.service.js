@@ -99,7 +99,7 @@ export async function finalizeCapturedPayment({ handoffId, providerPayment, requ
                     expiresAt: { $gt: new Date() },
                 },
                 { $set: { verified: true, consumedAt: new Date() } },
-                { new: true, session }
+                { returnDocument: 'after', session }
             ).select("+token +otp");
             if (!handoff) throw conflict("Payment session was already consumed or expired", "PAYMENT_SESSION_CONSUMED");
 
@@ -148,7 +148,7 @@ export async function finalizeCapturedPayment({ handoffId, providerPayment, requ
                             : new Date(),
                     },
                 },
-                { new: true, upsert: true, setDefaultsOnInsert: true, session }
+                { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true, session }
             );
 
             order.status = "PAID";

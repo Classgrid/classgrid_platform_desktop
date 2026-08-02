@@ -218,7 +218,7 @@ export const updateBillingSettings = async (req, res) => {
         const org = await Organization.findOneAndUpdate(
             { _id: orgId },
             { $set: { "billing_settings.invoice_email": invoice_email, "billing_settings.state": state, "billing_settings.address": address } },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
         return res.json({ message: "Settings updated successfully.", settings: org?.billing_settings || {} });
     } catch (error) {

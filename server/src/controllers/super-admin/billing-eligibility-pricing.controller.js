@@ -37,7 +37,7 @@ export const createEligibilityRule = async (req, res) => {
 
 export const updateEligibilityRule = async (req, res) => {
     try {
-        const rule = await BillingEligibilityRule.findByIdAndUpdate(req.params.ruleId, req.body, { new: true });
+        const rule = await BillingEligibilityRule.findByIdAndUpdate(req.params.ruleId, req.body, { returnDocument: 'after' });
         
         // RULE 6 ENFORCEMENT: Audit Log
         await logAdminAction(
@@ -141,7 +141,7 @@ export const createPriceOverride = async (req, res) => {
 
 export const updatePriceOverride = async (req, res) => {
     try {
-        const override = await OrganizationPriceOverride.findByIdAndUpdate(req.params.overrideId, req.body, { new: true });
+        const override = await OrganizationPriceOverride.findByIdAndUpdate(req.params.overrideId, req.body, { returnDocument: 'after' });
         
         // RULE 6 ENFORCEMENT: Audit Log
         await logAdminAction(

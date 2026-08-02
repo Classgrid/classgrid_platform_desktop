@@ -55,7 +55,7 @@ export const updatePlanEligibility = async (req, res) => {
         const plan = await BillingPlan.findByIdAndUpdate(
             req.params.planId, 
             { allowedOrgTypes, allowedStructureTypes, updatedBy: req.user?._id }, 
-            { new: true }
+            { returnDocument: 'after' }
         );
         if (!plan) return res.status(404).json({ success: false, message: "Plan not found" });
 
@@ -134,7 +134,7 @@ export const listPlanVersions = async (req, res) => {
 
 export const archivePlan = async (req, res) => {
     try {
-        const plan = await BillingPlan.findByIdAndUpdate(req.params.planId, { status: "ARCHIVED" }, { new: true });
+        const plan = await BillingPlan.findByIdAndUpdate(req.params.planId, { status: "ARCHIVED" }, { returnDocument: 'after' });
         
         // RULE 6 ENFORCEMENT: Audit Log
         await logAdminAction(
@@ -202,7 +202,7 @@ export const updateModuleEligibility = async (req, res) => {
         const module = await BillingModule.findByIdAndUpdate(
             req.params.moduleId, 
             { allowedOrgTypes, allowedStructureTypes, updatedBy: req.user?._id }, 
-            { new: true }
+            { returnDocument: 'after' }
         );
         if (!module) return res.status(404).json({ success: false, message: "Module not found" });
 
@@ -264,7 +264,7 @@ export const listModuleVersions = async (req, res) => {
 
 export const archiveModule = async (req, res) => {
     try {
-        const module = await BillingModule.findByIdAndUpdate(req.params.moduleId, { status: "ARCHIVED" }, { new: true });
+        const module = await BillingModule.findByIdAndUpdate(req.params.moduleId, { status: "ARCHIVED" }, { returnDocument: 'after' });
         
         // RULE 6 ENFORCEMENT: Audit Log
         await logAdminAction(

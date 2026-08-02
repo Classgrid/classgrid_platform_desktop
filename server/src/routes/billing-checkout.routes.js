@@ -100,7 +100,7 @@ router.post("/verify-otp", async (req, res) => {
                     lockoutUntil: null,
                 },
             },
-            { new: true }
+            { returnDocument: 'after' }
         );
         if (!verified) {
             return res.status(409).json({ success: false, error: "OTP was already consumed" });

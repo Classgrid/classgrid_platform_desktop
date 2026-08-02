@@ -55,7 +55,7 @@ const webhookEventSchema = new mongoose.Schema(
 );
 
 // Redact sensitive payload data before saving
-webhookEventSchema.pre("save", function(next) {
+webhookEventSchema.pre("save", function() {
     if (this.isModified("payload") && this.payload) {
         const redact = (obj) => {
             if (!obj || typeof obj !== 'object') return;
@@ -73,7 +73,6 @@ webhookEventSchema.pre("save", function(next) {
         redact(safePayload);
         this.payload = safePayload;
     }
-    next();
 });
 
 // Deduplication index
