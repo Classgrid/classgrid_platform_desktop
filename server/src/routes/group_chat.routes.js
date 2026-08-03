@@ -295,7 +295,7 @@ router.get('/join-requests/unified', isAuthenticated, async (req, res) => {
     const userId = req.user._id.toString();
     
     const { data: outgoing, error: outErr } = await sb.from('chat_group_join_requests')
-      .select('*, group:chat_groups(name, avatar, description)')
+      .select('*, group:chat_groups(name, avatar_url, description)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
       
@@ -315,7 +315,7 @@ router.get('/join-requests/unified', isAuthenticated, async (req, res) => {
           
           if (groupIds.length > 0) {
              const { data: inReqs, error: inErr } = await sb.from('chat_group_join_requests')
-               .select('*, group:chat_groups(name, avatar)')
+               .select('*, group:chat_groups(name, avatar_url)')
                .in('group_id', groupIds)
                .eq('status', 'pending')
                .order('created_at', { ascending: false });

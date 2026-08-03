@@ -1,4 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import hljs from 'highlight.js';
+import 'highlight.js/styles/atom-one-dark.css';
 import { format } from "date-fns";
 
 import DOMPurify from "dompurify";
@@ -111,6 +113,14 @@ export function ChatBubble({
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [showProfileLightbox, setShowProfileLightbox] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (message.message) {
+      document.querySelectorAll(`#msg-${message.id} pre code`).forEach((block) => {
+        hljs.highlightElement(block as HTMLElement);
+      });
+    }
+  }, [message.message, isTextExpanded]);
 
   const isLongMessage = message.message && message.message.length > 800;
 
@@ -467,7 +477,7 @@ export function ChatBubble({
 
                         {/* Text Message */}
                         {message.message && !poll && (
-                          <div className="relative text-[15px] leading-relaxed max-w-full overflow-hidden prose prose-sm dark:prose-invert [&_*]:!bg-transparent [&_*:not(a)]:!text-current [&_a:not([data-mention])]:text-blue-500 [&_a:not([data-mention])]:underline [&_a:not([data-mention])]:hover:text-blue-600 [&_a[data-mention]]:!text-emerald-600 [&_a[data-mention]]:dark:!text-emerald-500 [&_a[data-mention]]:!no-underline [&_a[data-mention]]:font-semibold [&_a[data-mention]]:hover:underline [&_p]:mb-1 [&_p]:last:mb-0 [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:my-1 [&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:my-1 [&_li]:my-0 [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline [&_s]:line-through [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-[15px] [&_h3]:font-bold [&_h1]:mb-1 [&_h2]:mb-1 [&_h3]:mb-1" style={{ overflowWrap: 'anywhere' }}>
+                          <div className="relative text-[15px] leading-relaxed max-w-full overflow-hidden prose prose-sm dark:prose-invert [&_*:not(pre):not(code)]:!bg-transparent [&_*:not(a):not(pre):not(code)]:!text-current [&_a:not([data-mention])]:text-blue-500 [&_a:not([data-mention])]:underline [&_a:not([data-mention])]:hover:text-blue-600 [&_a[data-mention]]:!text-emerald-600 [&_a[data-mention]]:dark:!text-emerald-500 [&_a[data-mention]]:!no-underline [&_a[data-mention]]:font-semibold [&_a[data-mention]]:hover:underline [&_p]:mb-1 [&_p]:last:mb-0 [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:my-1 [&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:my-1 [&_li]:my-0 [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline [&_s]:line-through [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-[15px] [&_h3]:font-bold [&_h1]:mb-1 [&_h2]:mb-1 [&_h3]:mb-1 [&_pre]:bg-[#1e1e1e] [&_pre]:dark:bg-[#111111] [&_pre]:text-[#d4d4d4] [&_pre]:p-4 [&_pre]:rounded-xl [&_pre]:my-2 [&_pre]:border [&_pre]:border-black/20 [&_pre]:dark:border-white/10 [&_pre]:shadow-sm [&_code]:font-mono [&_code]:text-[13px] [&_pre_code]:bg-transparent [&_pre_code]:text-inherit [&_code:not(pre_code)]:bg-black/5 [&_code:not(pre_code)]:dark:bg-white/10 [&_code:not(pre_code)]:px-1.5 [&_code:not(pre_code)]:py-0.5 [&_code:not(pre_code)]:rounded-md [&_code:not(pre_code)]:text-emerald-700 [&_code:not(pre_code)]:dark:text-emerald-300" style={{ overflowWrap: 'anywhere' }}>
                             <div style={!isTextExpanded && isLongMessage ? {
                               display: '-webkit-box',
                               WebkitLineClamp: 15,

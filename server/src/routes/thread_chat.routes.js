@@ -1479,6 +1479,7 @@ router.post('/:id/messages', isAuthenticated, upload.array('files', 80), async (
                 message: lastMsgText,
                 link: `/platform/chat?threadId=${threadId}`,
                 relatedId: threadId,
+                organization_id: thread.org_id || req.user.organization_id,
                 isRead: false,
                 emailSent: false,
                 createdAt: new Date()
