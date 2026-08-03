@@ -34,6 +34,10 @@ const billingHandoffSchema = new mongoose.Schema(
         // Additional context (e.g., studentId, invoiceId, etc.) stored as a flexible object if needed
         context: { type: mongoose.Schema.Types.Mixed },
         
+        // Browser/Environment Fingerprinting (Next-level security)
+        clientIp: { type: String, required: true },
+        userAgent: { type: String, required: true },
+        
         verified: { type: Boolean, default: false },
         attempts: { type: Number, default: 0 },
         lockoutUntil: { type: Date },

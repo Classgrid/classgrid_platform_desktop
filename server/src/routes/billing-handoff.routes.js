@@ -86,7 +86,7 @@ router.post("/initiate", generalLimiter, isAuthenticated, async (req, res) => {
         const referenceId = referenceFromBody(req.body);
 
         const organization = await Organization.findById(organizationId)
-            .select("name subdomain custom_domain erp_domain fees_razorpay_key_id canteen_config.canteen_razorpay_key_id")
+            .select("name subdomain custom_domain erp_domain fees_razorpay_key_id canteen_config.canteen_razorpay_key_id billing_settings address org_type")
             .lean();
         if (!organization) {
             return res.status(404).json({ success: false, code: "ORGANIZATION_NOT_FOUND", error: "Organization not found" });
@@ -154,11 +154,15 @@ router.post("/initiate", generalLimiter, isAuthenticated, async (req, res) => {
             createdBy: req.user._id,
         });
 
+        const billingEmail = organization.billing_settings?.invoice_email || req.user.email;
+        const payerName = organization.billing_settings?.billing_contact_name || req.user.name || "Payer";
+
         const otp = crypto.randomInt(100000, 1000000).toString();
-        const rawToken = crypto.randomBytes(32).toString("base64url");
+        // Generating a highly secure 512-bit (64-byte) cryptographic token. This is NOT a MongoDB ID.
+        const rawToken = crypto.randomBytes(64).toString("base64url");
         handoff = await BillingHandoff.create({
             token: hashHandoffToken(rawToken),
-            email: req.user.email,
+            email: billingEmail,
             otp: await bcrypt.hash(otp, 12),
             organization_id: organizationId,
             paymentOrderId: paymentOrder._id,
@@ -171,7 +175,9 @@ router.post("/initiate", generalLimiter, isAuthenticated, async (req, res) => {
             razorpay_key_id: frontendKeyId(organization, payable.providerModule),
             payment_type: paymentType,
             return_url: safeReturnUrl,
-            context: { label: payable.label, payerName: req.user.name || "Payer" },
+            clientIp: req.ip,
+            userAgent: String(req.headers["user-agent"] || "").slice(0, 300),
+            context: { label: payable.label, payerName: payerName, phone: organization.billing_settings?.phone || "" },
             expiresAt: new Date(Date.now() + HANDOFF_TTL_MS),
         });
 
@@ -215,6 +221,8 @@ router.post("/resend-otp", generalLimiter, async (req, res) => {
             verified: false,
             consumedAt: null,
             expiresAt: { $gt: new Date() },
+            clientIp: req.ip,
+            userAgent: String(req.headers["user-agent"] || "").slice(0, 300),
         }).select("+token +otp");
         if (!handoff) return res.status(404).json({ success: false, error: "Invalid or expired session" });
         if (handoff.resendCount >= MAX_OTP_RESENDS) {

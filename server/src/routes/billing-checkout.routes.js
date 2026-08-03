@@ -30,12 +30,14 @@ function checkoutError(res, error) {
     });
 }
 
-function activeTokenQuery(rawToken) {
+function activeTokenQuery(rawToken, req) {
     return {
         token: { $in: handoffTokenCandidates(rawToken) },
         verified: false,
         consumedAt: null,
         expiresAt: { $gt: new Date() },
+        clientIp: req.ip,
+        userAgent: String(req.headers["user-agent"] || "").slice(0, 300),
     };
 }
 
@@ -43,7 +45,7 @@ router.get("/session", async (req, res) => {
     try {
         const rawToken = req.query.token;
         if (!rawToken) return res.status(400).json({ success: false, error: "Token is required" });
-        const handoff = await BillingHandoff.findOne(activeTokenQuery(rawToken)).lean();
+        const handoff = await BillingHandoff.findOne(activeTokenQuery(rawToken, req)).lean();
         if (!handoff) return res.status(404).json({ success: false, error: "Invalid or expired session" });
         const organization = await Organization.findById(handoff.organization_id).select("name").lean();
 
@@ -72,7 +74,7 @@ router.post("/verify-otp", async (req, res) => {
             return res.status(400).json({ success: false, error: "A valid token and 6-digit OTP are required" });
         }
 
-        const handoff = await BillingHandoff.findOne(activeTokenQuery(rawToken)).select("+token +otp");
+        const handoff = await BillingHandoff.findOne(activeTokenQuery(rawToken, req)).select("+token +otp");
         if (!handoff) return res.status(404).json({ success: false, error: "Invalid or expired session" });
         if (handoff.otpVerifiedAt) {
             return res.status(409).json({ success: false, error: "OTP was already verified" });
@@ -144,7 +146,7 @@ router.post("/confirm", async (req, res) => {
         }
 
         const handoff = await BillingHandoff.findOne({
-            ...activeTokenQuery(rawToken),
+            ...activeTokenQuery(rawToken, req),
             otpVerifiedAt: { $ne: null },
         }).select("+token +otp");
         if (!handoff) return res.status(404).json({ success: false, error: "Invalid, expired, or unverified session" });
