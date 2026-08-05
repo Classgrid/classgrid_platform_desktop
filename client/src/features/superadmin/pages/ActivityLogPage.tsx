@@ -207,13 +207,13 @@ const columns: ColumnDef<AuditLog>[] = [
           <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs space-y-1 text-emerald-700 dark:text-emerald-300 shadow-sm w-full min-w-[200px]">
             <div className="font-bold mb-1 border-b border-emerald-500/20 pb-1 flex justify-between items-center">
               <span>Receipt</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-mono">{meta.providerPaymentId as string}</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-mono">{typeof meta.providerPaymentId === 'string' ? meta.providerPaymentId : JSON.stringify(meta.providerPaymentId)}</span>
             </div>
             <div className="grid grid-cols-[60px_1fr] gap-x-2">
               <span className="font-semibold opacity-80">Amount:</span> <span>₹{meta.amountInr as number}</span>
-              <span className="font-semibold opacity-80">Name:</span> <span>{meta.payerName as string}</span>
-              <span className="font-semibold opacity-80">Email:</span> <span>{meta.email as string}</span>
-              <span className="font-semibold opacity-80">Phone:</span> <span>{meta.contact as string}</span>
+              <span className="font-semibold opacity-80">Name:</span> <span>{typeof meta.payerName === 'string' ? meta.payerName : JSON.stringify(meta.payerName)}</span>
+              <span className="font-semibold opacity-80">Email:</span> <span>{typeof meta.email === 'string' ? meta.email : JSON.stringify(meta.email)}</span>
+              <span className="font-semibold opacity-80">Phone:</span> <span>{typeof meta.contact === 'string' ? meta.contact : JSON.stringify(meta.contact)}</span>
             </div>
           </div>
         );
@@ -221,11 +221,11 @@ const columns: ColumnDef<AuditLog>[] = [
 
       return (
         <div className="text-xs space-y-1">
-          {meta.payerName && <div><span className="font-semibold">Name:</span> {meta.payerName as string}</div>}
-          {meta.email && <div><span className="font-semibold">Email:</span> {meta.email as string}</div>}
-          {meta.contact && <div><span className="font-semibold">Phone:</span> {meta.contact as string}</div>}
+          {meta.payerName && <div><span className="font-semibold">Name:</span> {typeof meta.payerName === 'string' ? meta.payerName : JSON.stringify(meta.payerName)}</div>}
+          {meta.email && <div><span className="font-semibold">Email:</span> {typeof meta.email === 'string' ? meta.email : JSON.stringify(meta.email)}</div>}
+          {meta.contact && <div><span className="font-semibold">Phone:</span> {typeof meta.contact === 'string' ? meta.contact : JSON.stringify(meta.contact)}</div>}
           {meta.amountInr && <div><span className="font-semibold">Amount:</span> ₹{meta.amountInr as number}</div>}
-          {meta.providerPaymentId && <div><span className="font-semibold">Txn:</span> {meta.providerPaymentId as string}</div>}
+          {meta.providerPaymentId && <div><span className="font-semibold">Txn:</span> {typeof meta.providerPaymentId === 'string' ? meta.providerPaymentId : JSON.stringify(meta.providerPaymentId)}</div>}
           {meta.providerPaymentId && d && (
              <div className="pt-1 text-muted-foreground"><span className="font-semibold">Paid at:</span> {formatDate(d)} - {formatTime(d)}</div>
           )}
