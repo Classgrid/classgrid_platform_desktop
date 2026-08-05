@@ -296,6 +296,22 @@ export function CheckoutPage() {
           </div>
 
           <form onSubmit={handleVerifyOtp} className="space-y-5">
+            {/* Name & Email inputs — only visible in demo/test mode */}
+            {IS_DEMO && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-[13px] font-medium text-slate-700 dark:text-[#ccc] mb-1.5">Full Name</label>
+                  <input
+                    type="text"
+                    value={payerName}
+                    onChange={(e) => setPayerName(e.target.value)}
+                    placeholder="e.g. Nikhil Sharma"
+                    className="w-full rounded-md border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#161616] px-3 py-2.5 text-sm text-slate-900 dark:text-[#f1f1f1] placeholder:text-slate-400 dark:placeholder:text-[#555] transition focus:border-slate-400 dark:focus:border-[#555]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-slate-700 dark:text-[#ccc] mb-1.5">Email Address</label>
+                  <input
                     type="email"
                     value={payerEmail}
                     onChange={(e) => setPayerEmail(e.target.value)}
