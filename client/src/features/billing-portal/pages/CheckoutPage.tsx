@@ -22,7 +22,10 @@ export function CheckoutPage() {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [sessionDetails, setSessionDetails] = useState<any>(null);
+  
+  const [email, setEmail] = useState("");
+  const [payerName, setPayerName] = useState("");
+  const [payerEmail, setPayerEmail] = useState("");
   
   // Receipt data for success screen
   const [receiptData, setReceiptData] = useState<{
@@ -50,6 +53,7 @@ export function CheckoutPage() {
   };
 
   useEffect(() => {
+    // Better approach: Read from localStorage or cross-subdomain cookie instead of ugly URL params
     const localTheme = localStorage.getItem("vite-ui-theme");
     const themeCookie = document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1];
     const themeToUse = themeCookie || localTheme;
@@ -71,7 +75,7 @@ export function CheckoutPage() {
       .then((res) => {
         if (res.data?.success) {
           setStatus("ready");
-          setSessionDetails(res.data.data);
+          setEmail(res.data.data?.maskedEmail || res.data.email || "your registered email");
           startCountdown();
         } else {
           setStatus("invalid");
@@ -90,6 +94,14 @@ export function CheckoutPage() {
     e.preventDefault();
     setError("");
 
+    if (IS_DEMO && !payerName.trim()) {
+      setError("Please enter your name");
+      return;
+    }
+    if (IS_DEMO && (!payerEmail.trim() || !/\S+@\S+\.\S+/.test(payerEmail))) {
+      setError("Please enter a valid email address");
+      return;
+    }
     if (otp.length !== 6) {
       setError("Please enter the 6-digit code");
       return;
@@ -99,7 +111,9 @@ export function CheckoutPage() {
     try {
       const response = await apiClient.post("/api/billing/checkout/verify-otp", {
         token,
-        otp
+        otp,
+        payerName: payerName.trim(),
+        payerEmail: payerEmail.trim()
       });
       const { 
         razorpay_order_id, 
@@ -128,10 +142,11 @@ export function CheckoutPage() {
               razorpay_signature: response.razorpay_signature
             });
             toast.success("Payment verified!", { id: "payment-verify" });
+            // Store receipt data for the success screen
             const now = new Date();
             setReceiptData({
-              name: sessionDetails?.organizationName || "User",
-              email: customerEmail,
+              name: payerName,
+              email: payerEmail,
               amount: `₹${(amount / 100).toFixed(0)}`,
               txnId: confirmRes.data?.data?.providerPaymentId || response.razorpay_payment_id,
               paidAt: now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' - ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
@@ -144,6 +159,8 @@ export function CheckoutPage() {
         },
         prefill: { email: customerEmail },
         theme: { 
+          // Our app background stays exactly the same.
+          // Razorpay's modal body doesn't have a true dark mode, but we match the header to our theme.
           color: document.documentElement.classList.contains("dark") ? "#0f172a" : "#000000" 
         },
         modal: {
@@ -189,6 +206,7 @@ export function CheckoutPage() {
   if (status === "success") {
     return (
       <div className="relative min-h-screen overflow-hidden bg-background text-foreground flex items-center justify-center p-4">
+        {/* Confetti or subtle background */}
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_55%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.12),transparent_45%)]" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.08)_1px,transparent_1px)] bg-[size:42px_42px] [mask-image:radial-gradient(ellipse_at_center,black_45%,transparent_95%)]" />
@@ -196,6 +214,7 @@ export function CheckoutPage() {
 
         <section className="w-full max-w-lg">
           <div className="rounded-3xl border border-border/70 bg-background/90 p-8 sm:p-10 shadow-[0_20px_70px_-35px_rgba(16,185,129,0.35)] backdrop-blur-md flex flex-col items-center text-center">
+            
             <style dangerouslySetInnerHTML={{ __html: `
               .animate-spin-once { animation: spinOnce 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
               @keyframes spinOnce {
@@ -238,6 +257,7 @@ export function CheckoutPage() {
                 Transaction Complete
               </h1>
 
+              {/* Receipt Details */}
               {receiptData && (
                 <div className="mt-4 w-full rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-5 text-left space-y-2 text-sm">
                   <div className="flex justify-between items-center border-b border-emerald-500/20 pb-2 mb-3">
@@ -257,6 +277,7 @@ export function CheckoutPage() {
                 A confirmation email has been sent. You can now close this tab.
               </p>
             </div>
+
           </div>
         </section>
       </div>
@@ -273,6 +294,7 @@ export function CheckoutPage() {
           --tw-ring-color: transparent !important;
           --tw-ring-shadow: none !important;
         }
+        /* Only target the hidden OTP input, NOT the name/email inputs */
         .checkout-otp-container .otp-hidden-input,
         .checkout-otp-container .otp-hidden-input:focus,
         .checkout-otp-container .otp-hidden-input:focus-visible {
@@ -283,16 +305,19 @@ export function CheckoutPage() {
         }
       `}</style>
       
+      {/* Top Left Logo - exactly like marketing */}
       <Link to="/" className="absolute top-6 left-8 flex items-center gap-1.5 hover:opacity-80 transition-opacity">
         <img src="/logo.png" alt="Classgrid Logo" className="h-10 w-auto object-contain" />
         <span className="text-xl font-semibold tracking-tight text-slate-900 dark:text-[#f1f1f1]">Classgrid</span>
       </Link>
 
       <div className="flex-1 flex flex-col items-center justify-center p-4">
+        
         <div className="w-full max-w-[400px]">
+          
           <div className="mb-8 text-center space-y-1">
             <h1 className="text-3xl font-medium tracking-tight text-slate-900 dark:text-[#f1f1f1]">Complete Checkout</h1>
-            <p className="text-[14px] text-slate-500 dark:text-[#888888]">A verification code has been sent to your registered email.</p>
+            <p className="text-[14px] text-slate-500 dark:text-[#888888]">Enter your details and the verification code to proceed.</p>
           </div>
 
           <form onSubmit={handleVerifyOtp} className="space-y-5">
