@@ -156,6 +156,8 @@ router.post("/session", async (req, res) => {
                 payerName: "Demo Admin",
                 isDemo: true,
             },
+            clientIp: req.ip || "127.0.0.1",
+            userAgent: String(req.headers["user-agent"] || "demo").slice(0, 300),
             expiresAt: new Date(Date.now() + DEMO_48H),
         });
 

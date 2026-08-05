@@ -1,0 +1,1462 @@
+[
+  {
+    "prn": "125B1B001",
+    "firstName": "Yash",
+    "email": "yash.raskar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B002",
+    "firstName": "Rana",
+    "email": "rana.kartik25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B003",
+    "firstName": "Sohan",
+    "email": "sohan.pawar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B004",
+    "firstName": "Shrawani",
+    "email": "shrawani.bhandalkar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B005",
+    "firstName": "Krutika",
+    "email": "krutika.ambekar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B006",
+    "firstName": "Dyuthi",
+    "email": "dyuthi.alva25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B007",
+    "firstName": "Avantika",
+    "email": "avantika.pawar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B008",
+    "firstName": "Durvesh",
+    "email": "durvesh.sole25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B009",
+    "firstName": "Aadira",
+    "email": "aadira.chaudhary25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B010",
+    "firstName": "Mallik",
+    "email": "mallik.ziya25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B011",
+    "firstName": "Shivam",
+    "email": "shivam.mohite25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B012",
+    "firstName": "Hambir",
+    "email": "hambir.rajvardhan25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B013",
+    "firstName": "Kimaya",
+    "email": "kimaya.suryawanshi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B014",
+    "firstName": "Harsh",
+    "email": "harsh.sarode25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B015",
+    "firstName": "Supriya",
+    "email": "supriya.muthe25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B016",
+    "firstName": "Prashant",
+    "email": "prashant.parth25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B017",
+    "firstName": "Varad",
+    "email": "varad.deshpande25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B018",
+    "firstName": "Vrushali",
+    "email": "vrushali.bhangale25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B019",
+    "firstName": "Piyush",
+    "email": "piyush.desai25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B020",
+    "firstName": "Shreya",
+    "email": "shreya.gaikwad25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B021",
+    "firstName": "Anjali",
+    "email": "anjali.kadam25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B022",
+    "firstName": "Pratik",
+    "email": "pratik.bhoi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B023",
+    "firstName": "Nilesh",
+    "email": "nilesh.mane25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B024",
+    "firstName": "Agneya",
+    "email": "agneya.bharale25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B025",
+    "firstName": "Sania",
+    "email": "sania.warghade25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B026",
+    "firstName": "Prajwal",
+    "email": "prajwal.kharche25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B027",
+    "firstName": "Piyush",
+    "email": "piyush.waghmare25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B028",
+    "firstName": "Nikhil",
+    "email": "nikhil.shinde25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B029",
+    "firstName": "Aditya",
+    "email": "aditya.bodkhe25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B030",
+    "firstName": "Aditya",
+    "email": "aditya.patil25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B031",
+    "firstName": "Aniket",
+    "email": "aniket.khope25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B032",
+    "firstName": "Om",
+    "email": "om.malghe25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B033",
+    "firstName": "Aryan",
+    "email": "aryan.chavan25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B034",
+    "firstName": "Jagdish",
+    "email": "jagdish.tejas25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B035",
+    "firstName": "Sachi",
+    "email": "sachi.jondhale25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B036",
+    "firstName": "Gaurav",
+    "email": "gaurav.rokade25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B037",
+    "firstName": "Kamlesh",
+    "email": "kamlesh.jadhav25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B038",
+    "firstName": "Sidharth",
+    "email": "sidharth.pawar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B039",
+    "firstName": "Vijay",
+    "email": "vijay.sanket25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B040",
+    "firstName": "Suresh",
+    "email": "suresh.vaishnavi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B041",
+    "firstName": "Pratik",
+    "email": "pratik.jagdale25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B042",
+    "firstName": "Sunil",
+    "email": "sunil.atharva25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B043",
+    "firstName": "Aditi",
+    "email": "aditi.gharmalkar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B045",
+    "firstName": "Koul",
+    "email": "koul.sohani25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B046",
+    "firstName": "Bhan",
+    "email": "bhan.denesh25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B047",
+    "firstName": "Satish",
+    "email": "satish.rohit25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B048",
+    "firstName": "Devendra",
+    "email": "devendra.abhaas25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B049",
+    "firstName": "Santosh",
+    "email": "santosh.sanchita25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B284",
+    "firstName": "Ajay",
+    "email": "ajay.raee25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B285",
+    "firstName": "Ahmad",
+    "email": "ahmad.sarve25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B286",
+    "firstName": "Parth",
+    "email": "parth.asati25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B287",
+    "firstName": "Sakshant",
+    "email": "sakshant.hanwate25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B288",
+    "firstName": "Harikrishna",
+    "email": "harikrishna.polisetty25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B289",
+    "firstName": "Shirish",
+    "email": "shirish.sanskar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B291",
+    "firstName": "Hanamant",
+    "email": "hanamant.sanskar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B292",
+    "firstName": "Eshaan",
+    "email": "eshaan.ashtekar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B293",
+    "firstName": "Vishwajeet",
+    "email": "vishwajeet.patil25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B294",
+    "firstName": "Tejas",
+    "email": "tejas.tohare25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B296",
+    "firstName": "Shrutika",
+    "email": "shrutika.birkalwar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B297",
+    "firstName": "Aafreen",
+    "email": "aafreen.mujawar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B298",
+    "firstName": "Atharva",
+    "email": "atharva.deshpande25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B299",
+    "firstName": "Aditya",
+    "email": "aditya.gaikwad25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B300",
+    "firstName": "Nitesh",
+    "email": "nitesh.patil25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B301",
+    "firstName": "Bhawani",
+    "email": "bhawani.yashi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B302",
+    "firstName": "Apurv",
+    "email": "apurv.fating25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B303",
+    "firstName": "Shivam",
+    "email": "shivam.hande25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B304",
+    "firstName": "Varun",
+    "email": "varun.umardand25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B305",
+    "firstName": "Aryan",
+    "email": "aryan.dhobe25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B306",
+    "firstName": "Haresh",
+    "email": "haresh.kavya25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B361",
+    "firstName": "Chourasia",
+    "email": "chourasia.neel25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B362",
+    "firstName": "Abhishek",
+    "email": "abhishek.arnav25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B363",
+    "firstName": "Kumar",
+    "email": "kumar.chandan25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B365",
+    "firstName": "Kumar",
+    "email": "kumar.kunal25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B050",
+    "firstName": "Ramdas",
+    "email": "ramdas.vaishnavi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B051",
+    "firstName": "Pravin",
+    "email": "pravin.srushti25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B052",
+    "firstName": "Ahmad",
+    "email": "ahmad.adnan25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B053",
+    "firstName": "Kuwarsing",
+    "email": "kuwarsing.pradyumnasing25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B054",
+    "firstName": "Santosh",
+    "email": "santosh.abhishek25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B055",
+    "firstName": "Gunvant",
+    "email": "gunvant.aashutosh25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B056",
+    "firstName": "Sanjay",
+    "email": "sanjay.vishwajeet25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B057",
+    "firstName": "Anil",
+    "email": "anil.samarth25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B058",
+    "firstName": "Gajanan",
+    "email": "gajanan.aditya25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B059",
+    "firstName": "Sudhir",
+    "email": "sudhir.aditya25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B060",
+    "firstName": "Vishnu",
+    "email": "vishnu.vishal25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B061",
+    "firstName": "Vaibhav",
+    "email": "vaibhav.pranav25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B062",
+    "firstName": "Sunil",
+    "email": "sunil.somay25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B063",
+    "firstName": "Dagadu",
+    "email": "dagadu.aaditi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B064",
+    "firstName": "Sachin",
+    "email": "sachin.rudra25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B065",
+    "firstName": "Balasaheb",
+    "email": "balasaheb.prasad25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B066",
+    "firstName": "Anandrao",
+    "email": "anandrao.aashish25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B067",
+    "firstName": "Santosh",
+    "email": "santosh.yash25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B068",
+    "firstName": "Vinayak",
+    "email": "vinayak.hrishikesh25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B069",
+    "firstName": "Satish",
+    "email": "satish.yash25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B070",
+    "firstName": "Abhijit",
+    "email": "abhijit.sahil25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B071",
+    "firstName": "Mukund",
+    "email": "mukund.yash25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B072",
+    "firstName": "Shravan",
+    "email": "shravan.gaurav25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B073",
+    "firstName": "Ambadas",
+    "email": "ambadas.siddhant25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B074",
+    "firstName": "Someshwar",
+    "email": "someshwar.sumit25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B075",
+    "firstName": "Vitthal",
+    "email": "vitthal.pranav25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B076",
+    "firstName": "Sachin",
+    "email": "sachin.om25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B077",
+    "firstName": "Atul",
+    "email": "atul.tanishqa25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B078",
+    "firstName": "Narayan",
+    "email": "narayan.jaydeep25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B079",
+    "firstName": "Nilesh",
+    "email": "nilesh.netal25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B080",
+    "firstName": "Pravin",
+    "email": "pravin.jeevan25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B081",
+    "firstName": "Tanaji",
+    "email": "tanaji.disha25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B082",
+    "firstName": "Suresh",
+    "email": "suresh.tanuja25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B083",
+    "firstName": "Suresh",
+    "email": "suresh.shivam25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B084",
+    "firstName": "Sakharam",
+    "email": "sakharam.khushi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B085",
+    "firstName": "Vedika",
+    "email": "vedika.vedika25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B086",
+    "firstName": "Pankaj",
+    "email": "pankaj.prajwal25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B090",
+    "firstName": "Sameer",
+    "email": "sameer.aayush25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B092",
+    "firstName": "Balasaheb",
+    "email": "balasaheb.avdhut25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B093",
+    "firstName": "Anil",
+    "email": "anil.shravani25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B094",
+    "firstName": "Raju",
+    "email": "raju.vedanshu25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B095",
+    "firstName": "Bandu",
+    "email": "bandu.anushka25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B096",
+    "firstName": "Umesh",
+    "email": "umesh.nilesh25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B097",
+    "firstName": "Vanji",
+    "email": "vanji.aditya25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B098",
+    "firstName": "Ravindra",
+    "email": "ravindra.tanay25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B099",
+    "firstName": "Keshav",
+    "email": "keshav.vedant25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B100",
+    "firstName": "Girish",
+    "email": "girish.premanshu25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B101",
+    "firstName": "Bhaskar",
+    "email": "bhaskar.soham25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B307",
+    "firstName": "Vijay",
+    "email": "vijay.varad25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B308",
+    "firstName": "Sethi",
+    "email": "sethi.uday25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B309",
+    "firstName": "Jain",
+    "email": "jain.diti25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B310",
+    "firstName": "Yogesh",
+    "email": "yogesh.ishwari25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B311",
+    "firstName": "Pravin",
+    "email": "pravin.snehal25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B312",
+    "firstName": "Deepak",
+    "email": "deepak.soham25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B313",
+    "firstName": "Sanjay",
+    "email": "sanjay.shruti25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B314",
+    "firstName": "Sachin",
+    "email": "sachin.akash25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B315",
+    "firstName": "Sanjeev",
+    "email": "sanjeev.aryan25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B316",
+    "firstName": "Kalyan",
+    "email": "kalyan.om25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B317",
+    "firstName": "Ghanshyam",
+    "email": "ghanshyam.rohan25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B318",
+    "firstName": "Deepak",
+    "email": "deepak.riya25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B319",
+    "firstName": "Sushil",
+    "email": "sushil.gayatree25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B320",
+    "firstName": "Prashant",
+    "email": "prashant.darshan25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B321",
+    "firstName": "Swapnil",
+    "email": "swapnil.darsh25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B322",
+    "firstName": "Ajit",
+    "email": "ajit.omkar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B323",
+    "firstName": "Shrimant",
+    "email": "shrimant.shaurya25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B324",
+    "firstName": "Asaram",
+    "email": "asaram.sanskruti25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B325",
+    "firstName": "Dadasaheb",
+    "email": "dadasaheb.tejas25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B326",
+    "firstName": "Ravishankar",
+    "email": "ravishankar.chaitanya25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B327",
+    "firstName": "Subhash",
+    "email": "subhash.roshan25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B366",
+    "firstName": "Singh",
+    "email": "singh.suraj25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B367",
+    "firstName": "Sarraf",
+    "email": "sarraf.akash25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B368",
+    "firstName": "Kumar",
+    "email": "kumar.akash25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B369",
+    "firstName": "Karn",
+    "email": "karn.priyesh25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B370",
+    "firstName": "Jha",
+    "email": "jha.divyanshu25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B102",
+    "firstName": "Sanika",
+    "email": "sanika.pawar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B103",
+    "firstName": "Divyesh",
+    "email": "divyesh.khachane25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B104",
+    "firstName": "Vedant",
+    "email": "vedant.deore25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B105",
+    "firstName": "Swayam",
+    "email": "swayam.vibhute25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B106",
+    "firstName": "Dhananjay",
+    "email": "dhananjay.aryan25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B107",
+    "firstName": "Piyush",
+    "email": "piyush.pitrubhakta25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B108",
+    "firstName": "Pramod",
+    "email": "pramod.maitreya25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B109",
+    "firstName": "Swarali",
+    "email": "swarali.hande25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B112",
+    "firstName": "Prasad",
+    "email": "prasad.advait25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B113",
+    "firstName": "Utkarsh",
+    "email": "utkarsh.dixit25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B114",
+    "firstName": "Mayuresh",
+    "email": "mayuresh.wankhade25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B115",
+    "firstName": "Aryan",
+    "email": "aryan.darode25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B117",
+    "firstName": "Prithviraj",
+    "email": "prithviraj.wagh25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B118",
+    "firstName": "Ganesh",
+    "email": "ganesh.roshani25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B119",
+    "firstName": "Satyajit",
+    "email": "satyajit.shinde25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B120",
+    "firstName": "Om",
+    "email": "om.wagh25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B121",
+    "firstName": "Perkare",
+    "email": "perkare.hitenrao25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B122",
+    "firstName": "Prayag",
+    "email": "prayag.kasar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B123",
+    "firstName": "Abhijit",
+    "email": "abhijit.krishna25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B124",
+    "firstName": "Arpita",
+    "email": "arpita.nikam25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B125",
+    "firstName": "Sanket",
+    "email": "sanket.mane25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B127",
+    "firstName": "Prathamesh",
+    "email": "prathamesh.khule25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B128",
+    "firstName": "Prisha",
+    "email": "prisha.gawande25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B129",
+    "firstName": "Sanskruti",
+    "email": "sanskruti.patil25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B130",
+    "firstName": "Krushna",
+    "email": "krushna.bagul25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B131",
+    "firstName": "Saurabh",
+    "email": "saurabh.rakhonde25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B132",
+    "firstName": "Karishma",
+    "email": "karishma.katkar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B133",
+    "firstName": "Pranav",
+    "email": "pranav.kotgire25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B134",
+    "firstName": "Achal",
+    "email": "achal.dandhare25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B135",
+    "firstName": "Tanishq",
+    "email": "tanishq.suryawanshi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B136",
+    "firstName": "Chandrashekhar",
+    "email": "chandrashekhar.ganisha25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B138",
+    "firstName": "Ravinder",
+    "email": "ravinder.lakshit25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B139",
+    "firstName": "Tushar",
+    "email": "tushar.mitesh25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B140",
+    "firstName": "Gauri",
+    "email": "gauri.khachane25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B141",
+    "firstName": "Pranjal",
+    "email": "pranjal.swami25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B143",
+    "firstName": "Dhairysheel",
+    "email": "dhairysheel.patil25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B145",
+    "firstName": "Arun",
+    "email": "arun.pruthviraj25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B153",
+    "firstName": "Lakshya",
+    "email": "lakshya.yeole25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B179",
+    "firstName": "Ajay",
+    "email": "ajay.pranjal25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B180",
+    "firstName": "Ayush",
+    "email": "ayush.karmore25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B181",
+    "firstName": "Tanmay",
+    "email": "tanmay.rane25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B186",
+    "firstName": "Srisai",
+    "email": "srisai.atipamulu25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B188",
+    "firstName": "Vedant",
+    "email": "vedant.gharate25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B189",
+    "firstName": "Yogesh",
+    "email": "yogesh.shubham25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B190",
+    "firstName": "Mahesh",
+    "email": "mahesh.sagane25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B191",
+    "firstName": "Samarth",
+    "email": "samarth.patare25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B328",
+    "firstName": "Atharva",
+    "email": "atharva.vichare25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B329",
+    "firstName": "Tanishka",
+    "email": "tanishka.nikam25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B330",
+    "firstName": "Arnav",
+    "email": "arnav.potdar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B331",
+    "firstName": "Kailas",
+    "email": "kailas.arnav25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B332",
+    "firstName": "Amit",
+    "email": "amit.raj25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B333",
+    "firstName": "Nilesh",
+    "email": "nilesh.rudrank25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B334",
+    "firstName": "Praniti",
+    "email": "praniti.gangad25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B335",
+    "firstName": "Janhavi",
+    "email": "janhavi.geete25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B336",
+    "firstName": "Shashikant",
+    "email": "shashikant.shardul25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B337",
+    "firstName": "Aryan",
+    "email": "aryan.solapure25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B338",
+    "firstName": "Pranav",
+    "email": "pranav.borude25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B339",
+    "firstName": "Tanish",
+    "email": "tanish.chavan25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B340",
+    "firstName": "Arya",
+    "email": "arya.kothari25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B341",
+    "firstName": "Omkar",
+    "email": "omkar.aradhye25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B342",
+    "firstName": "Amogh",
+    "email": "amogh.pitake25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B343",
+    "firstName": "Bhargavi",
+    "email": "bhargavi.keche25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B344",
+    "firstName": "Ayush",
+    "email": "ayush.chitnis25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B345",
+    "firstName": "Arnav",
+    "email": "arnav.tambe25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B346",
+    "firstName": "Snehal",
+    "email": "snehal.wavare25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B347",
+    "firstName": "Shreyash",
+    "email": "shreyash.yadav25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B348",
+    "firstName": "Patange",
+    "email": "patange.yash25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B349",
+    "firstName": "Vijay",
+    "email": "vijay.aatmaja25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B351",
+    "firstName": "Samarth",
+    "email": "samarth.mhatre25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B352",
+    "firstName": "Pranav",
+    "email": "pranav.jagdale25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B353",
+    "firstName": "Mundra",
+    "email": "mundra.avi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B354",
+    "firstName": "Jain",
+    "email": "jain.rishabh25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B192",
+    "firstName": "Mayank",
+    "email": "mayank.patel25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B194",
+    "firstName": "Vipul",
+    "email": "vipul.jadhav25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B195",
+    "firstName": "Paavan",
+    "email": "paavan.shah25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B197",
+    "firstName": "Uday",
+    "email": "uday.aniruddha25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B200",
+    "firstName": "Aditi",
+    "email": "aditi.magar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B203",
+    "firstName": "Rakshit",
+    "email": "rakshit.gogulwar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B205",
+    "firstName": "Janavi",
+    "email": "janavi.thorat25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B206",
+    "firstName": "Sudarshan",
+    "email": "sudarshan.shivpuje25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B207",
+    "firstName": "Gauri",
+    "email": "gauri.wanave25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B209",
+    "firstName": "Yash",
+    "email": "yash.saiwal25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B212",
+    "firstName": "Yuvraj",
+    "email": "yuvraj.baglane25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B213",
+    "firstName": "Anil",
+    "email": "anil.rudresh25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B214",
+    "firstName": "Aniket",
+    "email": "aniket.jadhav25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B217",
+    "firstName": "Nirjara",
+    "email": "nirjara.mattikalli25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B218",
+    "firstName": "Sanjay",
+    "email": "sanjay.karishma25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B220",
+    "firstName": "Pankaj",
+    "email": "pankaj.damale25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B222",
+    "firstName": "Shivam",
+    "email": "shivam.patil25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B223",
+    "firstName": "Chidvilasini",
+    "email": "chidvilasini.patil25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B226",
+    "firstName": "Singh",
+    "email": "singh.suryadev25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B227",
+    "firstName": "Tanishka",
+    "email": "tanishka.lonkalkar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B228",
+    "firstName": "Omkar",
+    "email": "omkar.gajre25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B229",
+    "firstName": "Bhumika",
+    "email": "bhumika.pandav25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B230",
+    "firstName": "Abhishek",
+    "email": "abhishek.patil25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B231",
+    "firstName": "Prem",
+    "email": "prem.kothari25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B232",
+    "firstName": "Bhushan",
+    "email": "bhushan.chandak25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B233",
+    "firstName": "Shailesh",
+    "email": "shailesh.arya25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B234",
+    "firstName": "Parth",
+    "email": "parth.ghumade25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B237",
+    "firstName": "Anjali",
+    "email": "anjali.argulwar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B238",
+    "firstName": "Aradhya",
+    "email": "aradhya.ingle25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B240",
+    "firstName": "Deep",
+    "email": "deep.rahate25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B241",
+    "firstName": "Tejas",
+    "email": "tejas.bhalerao25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B242",
+    "firstName": "Aditya",
+    "email": "aditya.pachpute25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B246",
+    "firstName": "Prashant",
+    "email": "prashant.paras25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B247",
+    "firstName": "Tanishk",
+    "email": "tanishk.malge25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B248",
+    "firstName": "Maher",
+    "email": "maher.patel25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B249",
+    "firstName": "Srushti",
+    "email": "srushti.nandre25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B251",
+    "firstName": "Tanmoy",
+    "email": "tanmoy.nandi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B252",
+    "firstName": "Umesh",
+    "email": "umesh.vedant25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B253",
+    "firstName": "Vaibhav",
+    "email": "vaibhav.kothawade25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B254",
+    "firstName": "Prathmesh",
+    "email": "prathmesh.vagshette25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B255",
+    "firstName": "Jaysingh",
+    "email": "jaysingh.darshan25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B256",
+    "firstName": "Vedant",
+    "email": "vedant.mahadik25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B258",
+    "firstName": "Vivek",
+    "email": "vivek.viraj25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B259",
+    "firstName": "Sandesh",
+    "email": "sandesh.waghmare25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B260",
+    "firstName": "Sariputt",
+    "email": "sariputt.aditya25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B261",
+    "firstName": "Sujeet",
+    "email": "sujeet.samrudhi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B262",
+    "firstName": "Rajeev",
+    "email": "rajeev.variya25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B263",
+    "firstName": "Manav",
+    "email": "manav.joshi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B264",
+    "firstName": "Harshit",
+    "email": "harshit.dhonde25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B265",
+    "firstName": "Nilam",
+    "email": "nilam.rajvaibhav25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B266",
+    "firstName": "Om",
+    "email": "om.kharbas25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B267",
+    "firstName": "Vedant",
+    "email": "vedant.rokamwar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B268",
+    "firstName": "Sneha",
+    "email": "sneha.vibhute25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B269",
+    "firstName": "Mayur",
+    "email": "mayur.gunjal25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B270",
+    "firstName": "Anushka",
+    "email": "anushka.gundale25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B271",
+    "firstName": "Vishal",
+    "email": "vishal.aditya25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B272",
+    "firstName": "Raju",
+    "email": "raju.vishnuvardhan25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B273",
+    "firstName": "Nikhil",
+    "email": "nikhil.satre25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B274",
+    "firstName": "Om",
+    "email": "om.jilhawar25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B275",
+    "firstName": "Sanjay",
+    "email": "sanjay.pallavi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B276",
+    "firstName": "Vivek",
+    "email": "vivek.deven25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B277",
+    "firstName": "Kushal",
+    "email": "kushal.chaudhari25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B278",
+    "firstName": "Siddhant",
+    "email": "siddhant.verma25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B279",
+    "firstName": "Sahil",
+    "email": "sahil.ingale25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B280",
+    "firstName": "Sankalp",
+    "email": "sankalp.mohta25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B283",
+    "firstName": "Prafulla",
+    "email": "prafulla.om25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B355",
+    "firstName": "Ramakrishnan",
+    "email": "ramakrishnan.abhinav25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B356",
+    "firstName": "Ulhas",
+    "email": "ulhas.aditi25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B357",
+    "firstName": "Pratish",
+    "email": "pratish.krushna25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B359",
+    "firstName": "Kumar",
+    "email": "kumar.abhishek25@pccoepune.org"
+  },
+  {
+    "prn": "125B1B360",
+    "firstName": "Saxena",
+    "email": "saxena.tanya25@pccoepune.org"
+  },
+  {
+    "prn": "124B1B033",
+    "firstName": "Sakshi",
+    "email": "sakshi.walkulwad25@pccoepune.org"
+  },
+  {
+    "prn": "FACULTY",
+    "firstName": "Suvarna",
+    "email": "suvarna.patil@pccoepune.org"
+  }
+]
