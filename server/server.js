@@ -7,11 +7,6 @@ process.env.AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE = "1";
 
 import util from "util";
 import "./env.js"; // 🔥 Load env first so MONGODB_URI is available
-
-// 💥 FATAL CRASH REQUESTED BY NIKHIL FOR TESTING
-// This will permanently crash the main server, forcing PM2 to start the Rescue Server
-import "this-module-does-not-exist-forcing-a-crash";
-
 import accessLogger from "./src/config/logger.js";
 
 const origLog = console.log;
@@ -28,14 +23,6 @@ console.info = (...args) => { const msg = util.format(...args); origInfo(msg); a
 // 🔥 ENV is loaded at the top now
 
 import app from "./api/index.js";
-
-// ─────────────────────────────────────────────────────────
-// 🚨 DELIBERATE CRASH ENDPOINT FOR TESTING (NIKHIL REQUESTED)
-// ─────────────────────────────────────────────────────────
-app.get('/api/test-crash', (req, res) => {
-  console.error("💥 TESTING CRASH: Deliberately killing the Node.js process...");
-  process.exit(1); 
-});
 import http from "http";
 
 // 👷 Start Background Workers
