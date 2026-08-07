@@ -9,6 +9,7 @@ import util from "util";
 import "./env.js"; // 🔥 Load env first so MONGODB_URI is available
 import accessLogger from "./src/config/logger.js";
 
+// Testing that clean deployments no longer trigger false alarms in incident.io!
 
 const origLog = console.log;
 const origError = console.error;
