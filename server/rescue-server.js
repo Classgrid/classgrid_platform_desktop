@@ -157,49 +157,71 @@ app.listen(PORT, async () => {
   console.log(`🚑 Rescue Server running on port ${PORT}`);
   
   // ─────────────────────────────────────────────────────────
-  // 🚨 TRIGGER THE AWS ALARM (INCIDENT.IO + EMAIL)
+  // 🚨 MONITOR MAIN SERVER AND TRIGGER AWS ALARM ONLY ON REAL CRASH
   // ─────────────────────────────────────────────────────────
-  try {
-    const sns = new SNSClient({ 
-      region: "eu-north-1",
-      credentials: {
-        accessKeyId: env.AWS_S3_ERP_ACCESS_KEY || process.env.AWS_S3_ERP_ACCESS_KEY,
-        secretAccessKey: env.AWS_S3_ERP_SECRET_KEY || process.env.AWS_S3_ERP_SECRET_KEY
-      }
-    });
-    
-    // FAKE A CLOUDWATCH ALARM PAYLOAD SO INCIDENT.IO ACCEPTS IT
-    // (Written in customer-friendly English since this goes to the public status page)
-    const cloudWatchPayload = {
-      AlarmName: "Platform Service Disruption",
-      AlarmDescription: "We are currently experiencing a brief disruption in our core platform services. Our automated systems have already engaged backup servers to keep you online, and our engineers are actively restoring full performance.",
-      AWSAccountId: "459600194137",
-      NewStateValue: "ALARM",
-      NewStateReason: "Threshold Crossed: 1 out of 1 datapoints was [1.0].",
-      StateChangeTime: new Date().toISOString(),
-      Region: "EU (Stockholm)",
-      AlarmArn: "arn:aws:cloudwatch:eu-north-1:459600194137:alarm:Classgrid-API-Crash",
-      OldStateValue: "OK",
-      Trigger: {
-        MetricName: "StatusCheckFailed",
-        Namespace: "AWS/EC2",
-        StatisticType: "Statistic",
-        Statistic: "MAXIMUM",
-        Dimensions: [{ value: "i-rescueserver", name: "InstanceId" }],
-        Period: 60,
-        EvaluationPeriods: 1,
-        ComparisonOperator: "GreaterThanOrEqualToThreshold",
-        Threshold: 1.0,
-      }
-    };
+  const MAIN_PORT = process.env.PORT || 3000;
+  let failureCount = 0;
+  let hasFiredAlarm = false;
 
-    await sns.send(new PublishCommand({
-      TopicArn: "arn:aws:sns:eu-north-1:459600194137:classgrid-incident-alerts",
-      Subject: "ALARM: \"Classgrid-API-Crash\" in EU (Stockholm)",
-      Message: JSON.stringify(cloudWatchPayload)
-    }));
-    console.log("🚨 SNS Alarm Fired! Incident.io and Team Email triggered.");
-  } catch(err) {
-    console.error("❌ Failed to fire SNS Alarm:", err.message);
-  }
+  console.log(`📡 Rescue Server started monitoring main server on port ${MAIN_PORT}...`);
+
+  setInterval(async () => {
+    try {
+      // Ping the main server (node fetch is built-in for Node 18+)
+      const response = await fetch(`http://localhost:${MAIN_PORT}/`);
+      failureCount = 0; // Reset on success
+      hasFiredAlarm = false; // Reset alarm flag if it recovers
+    } catch (err) {
+      // Fetch failed (server is down/unreachable)
+      failureCount++;
+    }
+
+    if (failureCount >= 3 && !hasFiredAlarm) {
+      hasFiredAlarm = true; // Only fire once per downtime
+      console.log(`⚠️ Main server failed 3 checks! Firing SNS Alarm...`);
+      
+      try {
+        const sns = new SNSClient({ 
+          region: "eu-north-1",
+          credentials: {
+            accessKeyId: env.AWS_S3_ERP_ACCESS_KEY || process.env.AWS_S3_ERP_ACCESS_KEY,
+            secretAccessKey: env.AWS_S3_ERP_SECRET_KEY || process.env.AWS_S3_ERP_SECRET_KEY
+          }
+        });
+        
+        // FAKE A CLOUDWATCH ALARM PAYLOAD SO INCIDENT.IO ACCEPTS IT
+        const cloudWatchPayload = {
+          AlarmName: "Platform Service Disruption",
+          AlarmDescription: "We are currently experiencing a brief disruption in our core platform services. Our automated systems have already engaged backup servers to keep you online, and our engineers are actively restoring full performance.",
+          AWSAccountId: "459600194137",
+          NewStateValue: "ALARM",
+          NewStateReason: "Threshold Crossed: 1 out of 1 datapoints was [1.0].",
+          StateChangeTime: new Date().toISOString(),
+          Region: "EU (Stockholm)",
+          AlarmArn: "arn:aws:cloudwatch:eu-north-1:459600194137:alarm:Classgrid-API-Crash",
+          OldStateValue: "OK",
+          Trigger: {
+            MetricName: "StatusCheckFailed",
+            Namespace: "AWS/EC2",
+            StatisticType: "Statistic",
+            Statistic: "MAXIMUM",
+            Dimensions: [{ value: "i-rescueserver", name: "InstanceId" }],
+            Period: 60,
+            EvaluationPeriods: 1,
+            ComparisonOperator: "GreaterThanOrEqualToThreshold",
+            Threshold: 1.0,
+          }
+        };
+
+        await sns.send(new PublishCommand({
+          TopicArn: "arn:aws:sns:eu-north-1:459600194137:classgrid-incident-alerts",
+          Subject: "ALARM: \"Classgrid-API-Crash\" in EU (Stockholm)",
+          Message: JSON.stringify(cloudWatchPayload)
+        }));
+        console.log("🚨 SNS Alarm Fired! Incident.io and Team Email triggered.");
+      } catch(err) {
+        console.error("❌ Failed to fire SNS Alarm:", err.message);
+      }
+    }
+  }, 10000); // Check every 10 seconds
 });
