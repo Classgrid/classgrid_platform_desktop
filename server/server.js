@@ -25,7 +25,7 @@ console.info = (...args) => { const msg = util.format(...args); origInfo(msg); a
 import app from "./api/index.js";
 
 // ─────────────────────────────────────────────────────────
-// 🚨 DELIBERATE CRASH ENDPOINT FOR TESTING (USER REQUESTED)
+// 🚨 DELIBERATE CRASH ENDPOINT FOR TESTING (NIKHIL REQUESTED)
 // ─────────────────────────────────────────────────────────
 app.get('/api/test-crash', (req, res) => {
   console.error("💥 TESTING CRASH: Deliberately killing the Node.js process...");
