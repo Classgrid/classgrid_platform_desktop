@@ -169,9 +169,10 @@ app.listen(PORT, async () => {
     });
     
     // FAKE A CLOUDWATCH ALARM PAYLOAD SO INCIDENT.IO ACCEPTS IT
+    // (Written in customer-friendly English since this goes to the public status page)
     const cloudWatchPayload = {
-      AlarmName: "Classgrid-API-Crash",
-      AlarmDescription: "Software Crash: Node.js API encountered a fatal error (503) and Rescue Server took over.",
+      AlarmName: "Platform Service Disruption",
+      AlarmDescription: "We are currently experiencing a brief disruption in our core platform services. Our automated systems have already engaged backup servers to keep you online, and our engineers are actively restoring full performance.",
       AWSAccountId: "459600194137",
       NewStateValue: "ALARM",
       NewStateReason: "Threshold Crossed: 1 out of 1 datapoints was [1.0].",
