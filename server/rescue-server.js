@@ -159,7 +159,8 @@ app.listen(PORT, async () => {
   // ─────────────────────────────────────────────────────────
   // 🚨 MONITOR MAIN SERVER FOR AUTO-RED AND AUTO-GREEN
   // ─────────────────────────────────────────────────────────
-  const MAIN_PORT = process.env.PORT || 3000;
+  // HARDCODED to 3000 because process.env.PORT is 4000 (Rescue Server's own port)
+  const MAIN_PORT = 3000;
   let failureCount = 0;
   let isDown = false; // Tracks if we are currently in ALARM state
 
