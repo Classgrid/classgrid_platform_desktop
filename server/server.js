@@ -7,6 +7,10 @@ process.env.AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE = "1";
 
 import util from "util";
 import "./env.js"; // 🔥 Load env first so MONGODB_URI is available
+
+// 💥 FATAL CRASH REQUESTED BY NIKHIL FOR TESTING (ROUND 2)
+import "this-module-does-not-exist-forcing-a-crash";
+
 import accessLogger from "./src/config/logger.js";
 
 const origLog = console.log;
