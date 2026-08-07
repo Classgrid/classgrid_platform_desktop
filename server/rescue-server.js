@@ -161,8 +161,15 @@ app.listen(PORT, async () => {
   // ─────────────────────────────────────────────────────────
   // HARDCODED to 3000 because process.env.PORT is 4000 (Rescue Server's own port)
   const MAIN_PORT = 3000;
+  const STATE_FILE = path.join(__dirname, "rescue-state.json");
   let failureCount = 0;
   let isDown = false; // Tracks if we are currently in ALARM state
+  
+  if (fs.existsSync(STATE_FILE)) {
+    try {
+      isDown = JSON.parse(fs.readFileSync(STATE_FILE, "utf-8")).isDown;
+    } catch(e) {}
+  }
 
   console.log(`📡 Rescue Server started monitoring main server on port ${MAIN_PORT}...`);
 
@@ -220,6 +227,7 @@ app.listen(PORT, async () => {
           console.log(`✅ Main server recovered! Sending OK (Green) signal...`);
           await sendCloudWatchSignal("OK");
           isDown = false;
+          fs.writeFileSync(STATE_FILE, JSON.stringify({ isDown }));
         }
       } else {
         failureCount++;
@@ -232,6 +240,7 @@ app.listen(PORT, async () => {
     // IF WE FAIL 3 TIMES (30 SECONDS) AND WE AREN'T ALREADY DOWN
     if (failureCount >= 3 && !isDown) {
       isDown = true;
+      fs.writeFileSync(STATE_FILE, JSON.stringify({ isDown }));
       console.log(`⚠️ Main server crashed! Sending ALARM (Red) signal...`);
       await sendCloudWatchSignal("ALARM");
     }
