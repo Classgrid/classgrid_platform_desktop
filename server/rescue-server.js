@@ -156,4 +156,83 @@ app.get("/api/rescue/status", (req, res) => {
 app.listen(PORT, async () => {
   console.log(`🚑 Rescue Server running on port ${PORT}`);
   
+  // ─────────────────────────────────────────────────────────
+  // 🚨 MONITOR MAIN SERVER FOR AUTO-RED AND AUTO-GREEN
+  // ─────────────────────────────────────────────────────────
+  const MAIN_PORT = process.env.PORT || 3000;
+  let failureCount = 0;
+  let isDown = false; // Tracks if we are currently in ALARM state
+
+  console.log(`📡 Rescue Server started monitoring main server on port ${MAIN_PORT}...`);
+
+  const sendCloudWatchSignal = async (stateValue) => {
+    try {
+      const sns = new SNSClient({ 
+        region: "eu-north-1",
+        credentials: {
+          accessKeyId: env.AWS_S3_ERP_ACCESS_KEY || process.env.AWS_S3_ERP_ACCESS_KEY,
+          secretAccessKey: env.AWS_S3_ERP_SECRET_KEY || process.env.AWS_S3_ERP_SECRET_KEY
+        }
+      });
+      
+      const cloudWatchPayload = {
+        AlarmName: "Platform Service Disruption",
+        AlarmDescription: "We are currently experiencing a brief disruption in our core platform services.",
+        AWSAccountId: "459600194137",
+        NewStateValue: stateValue, // "ALARM" or "OK"
+        NewStateReason: stateValue === "ALARM" ? "Threshold Crossed: 1 out of 1 datapoints was [1.0]." : "Threshold Crossed: 1 out of 1 datapoints was [0.0].",
+        StateChangeTime: new Date().toISOString(),
+        Region: "EU (Stockholm)",
+        AlarmArn: "arn:aws:cloudwatch:eu-north-1:459600194137:alarm:Classgrid-API-Crash",
+        OldStateValue: stateValue === "ALARM" ? "OK" : "ALARM",
+        Trigger: {
+          MetricName: "StatusCheckFailed",
+          Namespace: "AWS/EC2",
+          StatisticType: "Statistic",
+          Statistic: "MAXIMUM",
+          Dimensions: [{ value: "i-rescueserver", name: "InstanceId" }],
+          Period: 60,
+          EvaluationPeriods: 1,
+          ComparisonOperator: "GreaterThanOrEqualToThreshold",
+          Threshold: 1.0,
+        }
+      };
+
+      await sns.send(new PublishCommand({
+        TopicArn: "arn:aws:sns:eu-north-1:459600194137:classgrid-incident-alerts",
+        Subject: `ALARM: "Classgrid-API-Crash" in EU (Stockholm)`,
+        Message: JSON.stringify(cloudWatchPayload)
+      }));
+      console.log(`🚨 Sent ${stateValue} signal to Incident.io!`);
+    } catch(err) {
+      console.error(`❌ Failed to send ${stateValue} signal:`, err.message);
+    }
+  };
+
+  setInterval(async () => {
+    try {
+      const response = await fetch(`http://localhost:${MAIN_PORT}/`);
+      if (response.ok) {
+        failureCount = 0; 
+        if (isDown) {
+          // WE JUST RECOVERED! TURN IT GREEN!
+          console.log(`✅ Main server recovered! Sending OK (Green) signal...`);
+          await sendCloudWatchSignal("OK");
+          isDown = false;
+        }
+      } else {
+        failureCount++;
+      }
+    } catch (err) {
+      // Server is unreachable
+      failureCount++;
+    }
+
+    // IF WE FAIL 3 TIMES (30 SECONDS) AND WE AREN'T ALREADY DOWN
+    if (failureCount >= 3 && !isDown) {
+      isDown = true;
+      console.log(`⚠️ Main server crashed! Sending ALARM (Red) signal...`);
+      await sendCloudWatchSignal("ALARM");
+    }
+  }, 10000); // Check every 10 seconds
 });
