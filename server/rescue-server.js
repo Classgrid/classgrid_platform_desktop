@@ -184,21 +184,21 @@ app.listen(PORT, async () => {
       });
       
       const cloudWatchPayload = {
-        AlarmName: "Platform Service Disruption",
-        AlarmDescription: "We are currently experiencing a brief disruption in our core platform services.",
+        AlarmName: "Classgrid-Backend-Server-Crash",
+        AlarmDescription: "This alarm triggers if the main Classgrid EC2 backend server fails its status check (meaning it crashed, ran out of memory, or lost connection). It automatically notifies incident.io via SNS.",
         AWSAccountId: "459600194137",
         NewStateValue: stateValue, // "ALARM" or "OK"
         NewStateReason: stateValue === "ALARM" ? "Threshold Crossed: 1 out of 1 datapoints was [1.0]." : "Threshold Crossed: 1 out of 1 datapoints was [0.0].",
         StateChangeTime: new Date().toISOString(),
         Region: "EU (Stockholm)",
-        AlarmArn: "arn:aws:cloudwatch:eu-north-1:459600194137:alarm:Classgrid-API-Crash",
+        AlarmArn: "arn:aws:cloudwatch:eu-north-1:459600194137:alarm:Classgrid-Backend-Server-Crash",
         OldStateValue: stateValue === "ALARM" ? "OK" : "ALARM",
         Trigger: {
           MetricName: "StatusCheckFailed",
           Namespace: "AWS/EC2",
           StatisticType: "Statistic",
           Statistic: "MAXIMUM",
-          Dimensions: [{ value: "i-rescueserver", name: "InstanceId" }],
+          Dimensions: [{ value: "i-0ca30be8b89079f9f", name: "InstanceId" }],
           Period: 60,
           EvaluationPeriods: 1,
           ComparisonOperator: "GreaterThanOrEqualToThreshold",
