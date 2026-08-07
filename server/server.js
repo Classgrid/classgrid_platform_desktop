@@ -9,8 +9,6 @@ import util from "util";
 import "./env.js"; // 🔥 Load env first so MONGODB_URI is available
 import accessLogger from "./src/config/logger.js";
 
-// 💥 FATAL CRASH TO TEST INCIDENT.IO STATUS PAGE ROUTE
-import "this-module-does-not-exist-forcing-a-crash";
 
 const origLog = console.log;
 const origError = console.error;
