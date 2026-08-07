@@ -23,6 +23,14 @@ console.info = (...args) => { const msg = util.format(...args); origInfo(msg); a
 // 🔥 ENV is loaded at the top now
 
 import app from "./api/index.js";
+
+// ─────────────────────────────────────────────────────────
+// 🚨 DELIBERATE CRASH ENDPOINT FOR TESTING (USER REQUESTED)
+// ─────────────────────────────────────────────────────────
+app.get('/api/test-crash', (req, res) => {
+  console.error("💥 TESTING CRASH: Deliberately killing the Node.js process...");
+  process.exit(1); 
+});
 import http from "http";
 
 // 👷 Start Background Workers
