@@ -6,6 +6,7 @@ import cors from "cors";
 import { MongoClient } from "mongodb";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -152,6 +153,20 @@ app.get("/api/rescue/status", (req, res) => {
   res.json({ success: true, status: "online" });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚑 Rescue Server running on port ${PORT}`);
+  
+  // ─────────────────────────────────────────────────────────
+  // 🚨 TRIGGER THE AWS ALARM (INCIDENT.IO + EMAIL)
+  // ─────────────────────────────────────────────────────────
+  try {
+    const sns = new SNSClient({ region: "eu-north-1" });
+    await sns.send(new PublishCommand({
+      TopicArn: "arn:aws:sns:eu-north-1:459600194137:classgrid-incident-alerts",
+      Message: "Node.js API Crashed! The application went down and the Rescue Server has taken over serving traffic."
+    }));
+    console.log("🚨 SNS Alarm Fired! Incident.io and Team Email triggered.");
+  } catch(err) {
+    console.error("❌ Failed to fire SNS Alarm:", err.message);
+  }
 });
