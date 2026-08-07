@@ -167,9 +167,35 @@ app.listen(PORT, async () => {
         secretAccessKey: env.AWS_S3_ERP_SECRET_KEY || process.env.AWS_S3_ERP_SECRET_KEY
       }
     });
+    
+    // FAKE A CLOUDWATCH ALARM PAYLOAD SO INCIDENT.IO ACCEPTS IT
+    const cloudWatchPayload = {
+      AlarmName: "Classgrid-API-Crash",
+      AlarmDescription: "Software Crash: Node.js API encountered a fatal error (503) and Rescue Server took over.",
+      AWSAccountId: "459600194137",
+      NewStateValue: "ALARM",
+      NewStateReason: "Threshold Crossed: 1 out of 1 datapoints was [1.0].",
+      StateChangeTime: new Date().toISOString(),
+      Region: "EU (Stockholm)",
+      AlarmArn: "arn:aws:cloudwatch:eu-north-1:459600194137:alarm:Classgrid-API-Crash",
+      OldStateValue: "OK",
+      Trigger: {
+        MetricName: "StatusCheckFailed",
+        Namespace: "AWS/EC2",
+        StatisticType: "Statistic",
+        Statistic: "MAXIMUM",
+        Dimensions: [{ value: "i-rescueserver", name: "InstanceId" }],
+        Period: 60,
+        EvaluationPeriods: 1,
+        ComparisonOperator: "GreaterThanOrEqualToThreshold",
+        Threshold: 1.0,
+      }
+    };
+
     await sns.send(new PublishCommand({
       TopicArn: "arn:aws:sns:eu-north-1:459600194137:classgrid-incident-alerts",
-      Message: "Node.js API Crashed! The application went down and the Rescue Server has taken over serving traffic."
+      Subject: "ALARM: \"Classgrid-API-Crash\" in EU (Stockholm)",
+      Message: JSON.stringify(cloudWatchPayload)
     }));
     console.log("🚨 SNS Alarm Fired! Incident.io and Team Email triggered.");
   } catch(err) {
