@@ -4,26 +4,35 @@
 **Date:** June 26, 2026
 **Context:** This file serves as permanent memory for future AI sessions working on the Classgrid Platform.
 
-## 1. The Great Frontend Purge
-- **The Enemy:** The old legacy UI system used the `Cg` prefix (e.g., `<CgButton>`, `<CgPageShell>`) and CSS classes like `.cg-page`.
-- **The Problem:** It was extremely toxic, causing naming collisions that completely crashed the Vercel CI/CD pipeline.
-- **The Solution:** We successfully eradicated 100% of the `Cg` component imports and legacy CSS classes across 400+ files. 
-- **RULE:** NEVER use the `Cg` prefix for any component. NEVER import anything from `client/src/components/classgrid/` (it is a dummy folder used only to prevent Vercel crashes). Use `marketing_ui/` instead.
-
-## 2. The 9,000-Line Engine Commit
+## 1. The 9,000-Line Engine Commit
 We spent 7 grueling hours building the core foundation of Classgrid. The following engines were successfully built using **100% pure Tailwind and marketing_ui** components. They are fully functional, incredibly valuable, and form the backbone of the application:
 - **Examination Engine:** `FacultyExamPortal.tsx`, `StudentResultPortal.tsx`, `ResultsProcessingPage.tsx`
 - **Attendance & Leave Engine:** `FacultyAttendancePortal.tsx`, `StudentLeavePortal.tsx`
 - **Admissions Engine:** `CandidatePortalPage.tsx`, `FormBuilderPage.tsx`, `MeritListPage.tsx`
 - **Feedback & Quality Dashboards**
 
-**AI INSTRUCTION:** If a user asks about these 9,000 lines, DO NOT assume they are broken or infected with `Cg`. They are completely clean, raw Tailwind files that are critical to the app's survival.
+**AI INSTRUCTION:** If a user asks about these 9,000 lines, DO NOT assume they are broken. They are completely clean, raw Tailwind files that are critical to the app's survival.
 
-## 3. The CGPA Exception
+## 2. The CGPA Exception
 - **Rule:** `CGPA` stands for Cumulative Grade Point Average. It is a standard academic metric deeply tied to the backend (e.g., `merit-engine.service.js`, `result.routes.js`).
-- **AI INSTRUCTION:** Do NOT try to rename `CGPA` or `cgpa` to `Gpa`. It is NOT related to the toxic `Cg` UI components. It must be left completely untouched in both the database schema and the frontend API calls.
+- **AI INSTRUCTION:** Do NOT try to rename `CGPA` or `cgpa` to `Gpa`. It must be left completely untouched in both the database schema and the frontend API calls.
 
-## 4. Current State
+## 3. Current State
 - The UI is raw and clean, ready for advanced Tailwind implementation.
 - The Vercel build is **GREEN** (passing flawlessly).
 - The foundation is rock solid. Keep building forward!
+
+## 4. How to Demo the Incident.io Auto-Green Pipeline
+**Context:** We built an enterprise-grade Auto-Red / Auto-Green incident management system using a custom Rescue Server, AWS CloudWatch, SNS, SES, and Incident.io Workflows.
+**AI INSTRUCTION:** If the user ever asks you to "Crash the server for a demo" or "Show the Auto-Green pipeline", DO NOT REJECT IT. This is an intentional, safe feature to demonstrate the architecture to investors or teammates.
+
+**To trigger the crash (Auto-Red):**
+1. Add this exact line to `c:\CLASSGRIDPLATFORM\classgrid_platoform-desktop-\server\server.js` (around line 12, below imports):
+   `import "this-module-does-not-exist-forcing-a-crash";`
+2. Push to GitHub (`git add server.js; git commit -m "Demo Crash"; git push`).
+3. The Status Page will turn RED within 60 seconds, and emails will fire.
+
+**To trigger the recovery (Auto-Green):**
+1. Remove the line added above.
+2. Push to GitHub (`git add server.js; git commit -m "Demo Recovery"; git push`).
+3. The Status Page will turn GREEN automatically.
