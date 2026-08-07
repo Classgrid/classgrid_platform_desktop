@@ -160,7 +160,13 @@ app.listen(PORT, async () => {
   // 🚨 TRIGGER THE AWS ALARM (INCIDENT.IO + EMAIL)
   // ─────────────────────────────────────────────────────────
   try {
-    const sns = new SNSClient({ region: "eu-north-1" });
+    const sns = new SNSClient({ 
+      region: "eu-north-1",
+      credentials: {
+        accessKeyId: env.AWS_S3_ERP_ACCESS_KEY || process.env.AWS_S3_ERP_ACCESS_KEY,
+        secretAccessKey: env.AWS_S3_ERP_SECRET_KEY || process.env.AWS_S3_ERP_SECRET_KEY
+      }
+    });
     await sns.send(new PublishCommand({
       TopicArn: "arn:aws:sns:eu-north-1:459600194137:classgrid-incident-alerts",
       Message: "Node.js API Crashed! The application went down and the Rescue Server has taken over serving traffic."
