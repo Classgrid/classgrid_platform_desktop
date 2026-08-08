@@ -14,8 +14,7 @@ const SANITY_TOKEN = process.env.SANITY_API_WRITE_TOKEN || "";
 // Supabase Config
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://bumxgscngzjadyozdpce.supabase.co";
 // Using Anon key since that's what was in the backend .env, or use service role if available. 
-// Vercel marketing uses anon key for NEXT_PUBLIC_SUPABASE_ANON_KEY.
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: false },
 });
