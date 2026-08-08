@@ -212,12 +212,12 @@ function buildNotificationEmailHtml(post, unsubscribeUrl, recentBlogs, recentCha
 
   const headerTitle = isLegalPage ? "Classgrid Legal Notice" : "New from Classgrid";
 
-  return \`<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>\${escapeHtml(headerTitle)}</title>
+  <title>${escapeHtml(headerTitle)}</title>
 </head>
 <body style="margin:0;padding:0;background:#f5f5f5;font-family:sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;background:#f5f5f5;">
@@ -227,26 +227,26 @@ function buildNotificationEmailHtml(post, unsubscribeUrl, recentBlogs, recentCha
 <tr>
 <td style="padding:30px;border-bottom:1px solid #eaeaea;text-align:center;">
 <img src="https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/android-chrome-512x512.png" alt="Classgrid" height="42" style="display:block;margin:0 auto 16px;" />
-<h1 style="color:#111111;margin:0;font-size:22px;">\${escapeHtml(headerTitle)}</h1>
-\${eyebrow ? \`<p style="color:#6b7280;margin-top:8px;font-size:13px;">\${escapeHtml(eyebrow)}</p>\` : ""}
+<h1 style="color:#111111;margin:0;font-size:22px;">${escapeHtml(headerTitle)}</h1>
+${eyebrow ? `<p style="color:#6b7280;margin-top:8px;font-size:13px;">${escapeHtml(eyebrow)}</p>` : ""}
 </td>
 </tr>
 <tr>
 <td style="padding:30px;color:#374151;font-size:14px;line-height:1.7;">
-\${coverImageHtml}
-<h2 style="color:#111111;font-size:20px;margin:0 0 8px;">\${escapeHtml(post.resolvedTitle)}</h2>
-\${metaLine && !isLegalPage ? \`<p style="color:#6b7280;font-size:12px;margin:0 0 20px;">\${escapeHtml(metaLine)}</p>\` : ""}
-<p style="color:#374151;font-size:14px;line-height:1.7;margin:0 0 25px;">\${isLegalPage ? summary : escapeHtml(summary)}</p>
+${coverImageHtml}
+<h2 style="color:#111111;font-size:20px;margin:0 0 8px;">${escapeHtml(post.resolvedTitle)}</h2>
+${metaLine && !isLegalPage ? `<p style="color:#6b7280;font-size:12px;margin:0 0 20px;">${escapeHtml(metaLine)}</p>` : ""}
+<p style="color:#374151;font-size:14px;line-height:1.7;margin:0 0 25px;">${isLegalPage ? summary : escapeHtml(summary)}</p>
 <div style="text-align:center;margin:30px 0;">
-<a href="\${escapeHtml(itemUrl)}" style="background:#34d399;color:#000;padding:14px 32px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block;">\${escapeHtml(ctaLabel)}</a>
+<a href="${escapeHtml(itemUrl)}" style="background:#34d399;color:#000;padding:14px 32px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block;">${escapeHtml(ctaLabel)}</a>
 </div>
 </td>
 </tr>
 <tr>
 <td style="padding:20px;text-align:center;border-top:1px solid #eaeaea;color:#9ca3af;font-size:12px;">
 <p style="margin-bottom:8px;">You received this because you subscribed to Classgrid Updates.</p>
-<p style="margin-bottom:12px;"><a href="\${escapeHtml(unsubscribeUrl)}" style="color:#6b7280;text-decoration:underline;font-size:11px;">Unsubscribe from these emails</a></p>
-&copy; \${currentYear} Classgrid. All rights reserved.
+<p style="margin-bottom:12px;"><a href="${escapeHtml(unsubscribeUrl)}" style="color:#6b7280;text-decoration:underline;font-size:11px;">Unsubscribe from these emails</a></p>
+&copy; ${currentYear} Classgrid. All rights reserved.
 </td>
 </tr>
 </table>
@@ -254,7 +254,7 @@ function buildNotificationEmailHtml(post, unsubscribeUrl, recentBlogs, recentCha
 </tr>
 </table>
 </body>
-</html>\`;
+</html>`;
 }
 
 // ─── Processor ───────────────────────────────────────────────────────────────
@@ -269,25 +269,25 @@ async function processQueueItem(item) {
   let publishedDocument = null;
   if (item.document_type === "post") {
     publishedDocument = await fetchSanity(
-      \`*[_type == "post" && _id == $documentId][0]{
+      `*[_type == "post" && _id == $documentId][0]{
         _id, _type, title, "slug": slug.current, excerpt, publishedAt, coverImage, author, "authorNames": authors[].name
-      }\`, { documentId: item.document_id }
+      }`, { documentId: item.document_id }
     );
   } else if (item.document_type === "changelogEntry") {
     publishedDocument = await fetchSanity(
-      \`*[_type == "changelogEntry" && _id == $documentId][0]{
+      `*[_type == "changelogEntry" && _id == $documentId][0]{
         _id, _type, title, "slug": slug.current, summary, releaseDate, updateType, versionLabel, image
-      }\`, { documentId: item.document_id }
+      }`, { documentId: item.document_id }
     );
   } else {
     publishedDocument = await fetchSanity(
-      \`*[_type == "legalPage" && _id == $documentId][0]{
+      `*[_type == "legalPage" && _id == $documentId][0]{
         _id, _type, title, "slug": slug.current, summary, _updatedAt
-      }\`, { documentId: item.document_id }
+      }`, { documentId: item.document_id }
     );
   }
 
-  if (!publishedDocument?.slug) throw new Error(\`Document not found: \${item.document_id}\`);
+  if (!publishedDocument?.slug) throw new Error(`Document not found: ${item.document_id}`);
 
   let resolvedPost = { ...publishedDocument };
   if (item.document_type === "post") {
@@ -474,7 +474,7 @@ export const initMarketingEmailWorker = () => {
               failed_count: (item.failed_count || 0) + failed,
               processed_at: new Date().toISOString(),
             }).eq("id", item.id);
-            console.log(\`[EmailBlast] ✅ Completed \${item.document_type}: "\${item.title}" (\${alreadySent + sent} sent)\`);
+            console.log(`[EmailBlast] ✅ Completed ${item.document_type}: "${item.title}" (${alreadySent + sent} sent)`);
           } else {
             await supabaseAdmin.from("email_notification_queue").update({
               status: "pending",
@@ -482,7 +482,7 @@ export const initMarketingEmailWorker = () => {
               failed_count: (item.failed_count || 0) + failed,
               processed_at: new Date().toISOString(),
             }).eq("id", item.id);
-            console.log(\`[EmailBlast] ⏳ Partial \${item.document_type}: "\${item.title}" (\${alreadySent + sent} sent so far)\`);
+            console.log(`[EmailBlast] ⏳ Partial ${item.document_type}: "${item.title}" (${alreadySent + sent} sent so far)`);
           }
         } catch (err) {
           const newRetryCount = (item.retry_count || 0) + 1;
@@ -492,7 +492,7 @@ export const initMarketingEmailWorker = () => {
             error_message: err.message,
             processed_at: new Date().toISOString(),
           }).eq("id", item.id);
-          console.error(\`[EmailBlast] ❌ Failed \${item.title}: \${err.message}\`);
+          console.error(`[EmailBlast] ❌ Failed ${item.title}: ${err.message}`);
         }
       }
     } catch (err) {
