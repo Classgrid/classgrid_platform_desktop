@@ -8,7 +8,7 @@ export function useSubscribers(
   enabled = true
 ) {
   return useQuery({
-    queryKey: [SUBSCRIBERS_KEY, options],
+    queryKey: [...SUBSCRIBERS_KEY, options],
     queryFn: () => subscribersApi.getBlogSubscribers(options),
     staleTime: 30_000,
     placeholderData: (previous) => previous,

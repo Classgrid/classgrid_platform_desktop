@@ -1,0 +1,30 @@
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+
+dotenv.config({ path: "../.env" });
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://bumxgscngzjadyozdpce.supabase.co";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+
+async function checkQueue() {
+  console.log("Checking Email Notification Queue...");
+  const { data, error } = await supabaseAdmin
+    .from("email_notification_queue")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (error) {
+    console.error("Error fetching queue:", error.message);
+    return;
+  }
+
+  console.log("Recent Queue Items:");
+  data.forEach((item) => {
+    console.log(`- [${item.status}] Type: ${item.document_type}, Title: ${item.title}, Sent: ${item.sent_count}, Failed: ${item.failed_count}, Processed At: ${item.processed_at}`);
+  });
+}
+
+checkQueue();

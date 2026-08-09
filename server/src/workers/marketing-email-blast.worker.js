@@ -165,14 +165,17 @@ function buildNotificationEmailHtml(post, unsubscribeUrl, recentBlogs, recentCha
       })();
       
   let summary = post.resolvedSummary;
-  let ctaLabel = "Read Blog";
+  let bodyOutro = "We just published a new article on the Classgrid Blog with insights, ideas, and practical perspectives for building and managing modern educational institutions.";
+  let ctaLabel = "Read the Full Article";
   let eyebrow = "";
   
   if (isChangelog) {
-    summary = post.resolvedSummary || "We just published a new update. Click below to read the full entry.";
+    summary = post.resolvedSummary || "";
+    bodyOutro = "See what's changed, what's improved, and what you need to know about the latest Classgrid release.";
     ctaLabel = "View Product Update";
     eyebrow = "";
   } else if (isLegalPage) {
+    bodyOutro = "";
     const effectiveDateStr = post._updatedAt ? formatDate(post._updatedAt) : "immediately";
     const changeSummary = post.resolvedSummary || "Important updates to our legal terms and policies.";
 
@@ -235,7 +238,8 @@ ${eyebrow ? `<p style="color:#6b7280;margin-top:8px;font-size:13px;">${escapeHtm
 ${coverImageHtml}
 <h2 style="color:#111111;font-size:20px;margin:0 0 8px;">${escapeHtml(post.resolvedTitle)}</h2>
 ${metaLine && !isLegalPage ? `<p style="color:#6b7280;font-size:12px;margin:0 0 20px;">${escapeHtml(metaLine)}</p>` : ""}
-<p style="color:#374151;font-size:14px;line-height:1.7;margin:0 0 25px;">${isLegalPage ? summary : escapeHtml(summary)}</p>
+<p style="color:#374151;font-size:14px;line-height:1.7;margin:0 0 ${bodyOutro ? '16px' : '25px'};">${isLegalPage ? summary : escapeHtml(summary)}</p>
+${bodyOutro ? `<p style="color:#374151;font-size:14px;line-height:1.7;margin:0 0 25px;">${escapeHtml(bodyOutro)}</p>` : ""}
 <div style="text-align:center;margin:30px 0;">
 <a href="${escapeHtml(itemUrl)}" style="background:#34d399;color:#000;padding:14px 32px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block;">${escapeHtml(ctaLabel)}</a>
 </div>
@@ -382,7 +386,9 @@ async function processQueueItem(item) {
 
   if (batch.length === 0) return { sent: 0, failed: 0, done: true };
 
-  let subject = item.document_type === "changelogEntry" ? `Product Update: ${resolvedPost.resolvedTitle}` : `New Post: ${resolvedPost.resolvedTitle}`;
+  let subject = item.document_type === "changelogEntry" 
+    ? `Classgrid Update: ${resolvedPost.resolvedTitle}` 
+    : `New from the Classgrid Blog: ${resolvedPost.resolvedTitle}`;
   
   if (item.document_type === "legalPage") {
     const dateStr = resolvedPost._updatedAt ? formatDate(resolvedPost._updatedAt) : "immediately";
