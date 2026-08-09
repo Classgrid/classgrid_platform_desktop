@@ -79,7 +79,6 @@ export function SubscribersPage() {
   const isMutating =
     pauseSubscriber.isPending ||
     resumeSubscriber.isPending ||
-    removeSubscriber.isPending ||
     updatePreferences.isPending;
 
   const subscribers = data?.data ?? [];

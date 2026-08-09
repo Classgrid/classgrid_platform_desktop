@@ -36,7 +36,26 @@ export function useRemoveSubscriber() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (email: string) => subscribersApi.remove(email),
-    onSuccess: () => {
+    onMutate: async (email: string) => {
+      await qc.cancelQueries({ queryKey: SUBSCRIBERS_KEY });
+      const previousData = qc.getQueryData(SUBSCRIBERS_KEY);
+      
+      // Optimistically remove from list
+      qc.setQueriesData({ queryKey: SUBSCRIBERS_KEY }, (oldData: any) => {
+        if (!oldData || !oldData.data) return oldData;
+        return {
+          ...oldData,
+          data: oldData.data.filter((sub: any) => sub.email !== email),
+          total: oldData.total - 1,
+        };
+      });
+      
+      return { previousData };
+    },
+    onError: (err, email, context: any) => {
+      qc.setQueriesData({ queryKey: SUBSCRIBERS_KEY }, context?.previousData);
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: SUBSCRIBERS_KEY });
     },
   });
