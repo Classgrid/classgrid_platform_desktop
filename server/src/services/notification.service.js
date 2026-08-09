@@ -95,10 +95,23 @@ export async function bulkDispatchNotification({
     message,
     link = '',
     relatedId = '',
-    sendPush = true
+    sendPush = true,
+    orgId = null
 }) {
     try {
+        if (!recipientIds || recipientIds.length === 0) return;
+        let effectiveOrgId = orgId;
+        if (!effectiveOrgId) {
+            effectiveOrgId = (await User.findById(recipientIds[0]).select("organization_id").lean())?.organization_id;
+        }
+
+        if (!effectiveOrgId) {
+            console.error('[NotificationService] Bulk Dispatch Error: Could not determine organization_id');
+            return;
+        }
+
         const notifications = recipientIds.map(rid => ({
+            organization_id: effectiveOrgId,
             recipient: rid,
             type,
             title,

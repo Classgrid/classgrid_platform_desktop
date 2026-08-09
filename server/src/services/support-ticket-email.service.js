@@ -246,8 +246,8 @@ export async function notifyTicketCreatorOfAdminReply({ ticket, replyMessage, ad
         text: buildTicketReplyPlainText({ ticket, replyMessage, conversationUrl, adminName, adminEmail }),
         type: "support_ticket_reply",
         channel: "support",
-        userId: ticket.submittedBy || null,
-        organizationId: ticket.organization_id || null,
+        userId: (ticket.submittedBy && ticket.submittedBy !== "unauthenticated") ? ticket.submittedBy : null,
+        organizationId: (ticket.organization_id && ticket.organization_id !== "platform" && ticket.organization_id !== "superadmin") ? ticket.organization_id : null,
     });
 
     return { queued: Boolean(job), jobId: job?._id, conversationUrl };
@@ -433,8 +433,8 @@ export async function notifyUserOfTicketCreation({ ticket }) {
         text: buildTicketCreationPlainText({ ticket, trackingUrl }),
         type: "support_ticket_new",
         channel: "support",
-        userId: ticket.submittedBy || null,
-        organizationId: ticket.organization_id || null,
+        userId: (ticket.submittedBy && ticket.submittedBy !== "unauthenticated") ? ticket.submittedBy : null,
+        organizationId: (ticket.organization_id && ticket.organization_id !== "platform" && ticket.organization_id !== "superadmin") ? ticket.organization_id : null,
     });
 
     return { queued: Boolean(job), jobId: job?._id, trackingUrl };
@@ -790,8 +790,8 @@ export async function notifyUserOfTalkRequestCreation({ ticket }) {
         html: buildTalkRequestCreationEmailHtml({ ticket, trackingUrl }),
         text: buildTalkRequestCreationPlainText({ ticket, trackingUrl }),
         type: "talk_request_new",
-        userId: ticket.submittedBy || null,
-        organizationId: ticket.organization_id || null,
+        userId: (ticket.submittedBy && ticket.submittedBy !== "unauthenticated") ? ticket.submittedBy : null,
+        organizationId: (ticket.organization_id && ticket.organization_id !== "platform" && ticket.organization_id !== "superadmin") ? ticket.organization_id : null,
     });
 
     return { queued: Boolean(job), jobId: job?._id, trackingUrl };
@@ -812,8 +812,8 @@ export async function notifyTalkCreatorOfAdminReply({ ticket, replyMessage, admi
         html: buildTalkRequestReplyEmailHtml({ ticket, replyMessage, conversationUrl, adminName, adminAvatar, adminEmail }),
         text: buildTalkRequestReplyPlainText({ ticket, replyMessage, conversationUrl, adminName, adminEmail }),
         type: "talk_request_reply",
-        userId: ticket.submittedBy || null,
-        organizationId: ticket.organization_id || null,
+        userId: (ticket.submittedBy && ticket.submittedBy !== "unauthenticated") ? ticket.submittedBy : null,
+        organizationId: (ticket.organization_id && ticket.organization_id !== "platform" && ticket.organization_id !== "superadmin") ? ticket.organization_id : null,
     });
 
     return { queued: Boolean(job), jobId: job?._id, conversationUrl };
