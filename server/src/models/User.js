@@ -512,7 +512,7 @@ userSchema.index(
 );
 
 // 🛡️ Auto-verify all @classgrid.in emails
-userSchema.pre('save', function() {
+userSchema.pre('save', async function() {
   if (this.email && this.email.toLowerCase().endsWith('@classgrid.in')) {
     this.isEmailVerified = true;
     this.verification_status = 'verified';
@@ -520,18 +520,16 @@ userSchema.pre('save', function() {
 });
 
 // 🔄 Auto-sync newly created users to Supabase blog_subscribers
-userSchema.post('save', function(doc, next) {
-  // Only trigger on initial document creation, not on updates
-  if (this.$wasNew) {
-    syncUserToBlogSubscribers(doc.email, doc.name).catch(console.error);
-  }
-  next();
+// Track isNew before save fires (isNew becomes false after save)
+userSchema.pre('save', async function() {
+  this.$wasNew = this.isNew;
 });
 
-// Helper to track if document is new for the post-save hook
-userSchema.pre('save', function(next) {
-  this.$wasNew = this.isNew;
-  next();
+userSchema.post('save', function(doc) {
+  // Only trigger on initial document creation, not on updates
+  if (doc.$wasNew) {
+    syncUserToBlogSubscribers(doc.email, doc.name).catch(console.error);
+  }
 });
 
 export default mongoose.models.User || mongoose.model("User", userSchema);

@@ -1,14 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
-import dotenv from "dotenv";
-dotenv.config();
 
-const SUPABASE_URL = process.env.SUPABASE_CHAT_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+let _supabaseAdmin = null;
 
-// Create admin client once to bypass RLS
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-  auth: { persistSession: false }
-});
+function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    const url = process.env.SUPABASE_CHAT_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) return null;
+    _supabaseAdmin = createClient(url, key, { auth: { persistSession: false } });
+  }
+  return _supabaseAdmin;
+}
 
 /**
  * Synchronizes a newly created user (from MongoDB) into the Supabase blog_subscribers table.
@@ -19,7 +21,9 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
  */
 export async function syncUserToBlogSubscribers(email, name = "") {
     if (!email) return;
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) {
         console.warn("[Subscriber Sync] Supabase credentials missing. Skipping sync.");
         return;
     }
@@ -28,7 +32,6 @@ export async function syncUserToBlogSubscribers(email, name = "") {
         const normalizedEmail = email.toLowerCase().trim();
         const firstName = (name || "").trim().split(/\s+/)[0] || "";
 
-        // Attempt insert. If email already exists (violates unique constraint), Supabase returns an error which we catch or ignore.
         const { error } = await supabaseAdmin
             .from("blog_subscribers")
             .insert({
@@ -37,11 +40,11 @@ export async function syncUserToBlogSubscribers(email, name = "") {
                 is_active: true
             });
             
-        // Ignore duplicate key errors (code 23505) because the user might already be subscribed via the blog.
+        // Ignore duplicate key errors (code 23505) — user already subscribed via blog
         if (error && error.code !== "23505") {
             console.error(`[Subscriber Sync] Failed to sync ${normalizedEmail}:`, error.message);
         } else if (!error) {
-            console.log(`[Subscriber Sync] Synced ${normalizedEmail} to blog_subscribers.`);
+            console.log(`[Subscriber Sync] ✅ Synced ${normalizedEmail} to blog_subscribers.`);
         }
     } catch (err) {
         console.error(`[Subscriber Sync] Exception syncing ${email}:`, err.message);
