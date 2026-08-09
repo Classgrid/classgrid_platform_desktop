@@ -386,6 +386,38 @@ router.patch("/subscribers/:email/resume", async (req, res) => {
     }
 });
 
+router.patch("/subscribers/:email/preferences", async (req, res) => {
+    try {
+        const subscriberEmail = decodeURIComponent(req.params.email || "").trim();
+        if (!subscriberEmail) {
+            return res.status(400).json({ success: false, message: "Subscriber email is required." });
+        }
+
+        const { receives_blog, receives_changelog, receives_legal } = req.body;
+        
+        const updatePayload = { updated_at: new Date().toISOString() };
+        if (typeof receives_blog === 'boolean') updatePayload.receives_blog = receives_blog;
+        if (typeof receives_changelog === 'boolean') updatePayload.receives_changelog = receives_changelog;
+        if (typeof receives_legal === 'boolean') updatePayload.receives_legal = receives_legal;
+
+        const subscribersSb = getBlogSubscribersSb();
+        const { error } = await subscribersSb
+            .from("blog_subscribers")
+            .update(updatePayload)
+            .eq("email", subscriberEmail);
+
+        if (error) {
+            console.error("[SuperAdmin] subscriber preference error:", error.message);
+            return res.status(500).json({ success: false, message: "Failed to update subscriber preferences." });
+        }
+
+        return res.json({ success: true, message: "Subscriber preferences updated successfully." });
+    } catch (err) {
+        console.error("[SuperAdmin] subscriber preferences route error:", err.message);
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
 router.delete("/subscribers/:email", async (req, res) => {
     try {
         const subscriberEmail = decodeURIComponent(req.params.email || "").trim();

@@ -1,0 +1,80 @@
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+import { createClient } from "@supabase/supabase-js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, "../.env") });
+
+const MONGO_URI = process.env.MONGO_URI;
+const SUPABASE_URL = process.env.SUPABASE_CHAT_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+  auth: { persistSession: false }
+});
+
+async function runTest() {
+  try {
+    console.log("\n📡 Connecting to MongoDB...");
+    await mongoose.connect(MONGO_URI);
+    console.log("✅ Connected to MongoDB.");
+
+    // Import User model (this loads the post-save hook)
+    const { default: User } = await import("../src/models/User.js");
+
+    const TEST_EMAIL = "lasttry@gmail.com";
+
+    // Cleanup: remove if already exists from a previous test run
+    await User.deleteOne({ email: TEST_EMAIL });
+    await supabaseAdmin.from("blog_subscribers").delete().eq("email", TEST_EMAIL);
+    console.log(`🧹 Cleaned up any existing test data for ${TEST_EMAIL}`);
+
+    // Step 1: Create user in MongoDB via User model → triggers post('save') hook
+    console.log(`\n🔨 Creating demo user in MongoDB: ${TEST_EMAIL}`);
+    const demoUser = await User.create({
+      name: "Demo User",
+      email: TEST_EMAIL,
+      password: "hashedpassword_not_real",
+      role: "student",
+      isEmailVerified: true,
+      isSandbox: true,
+    });
+    console.log(`✅ MongoDB user created! ID: ${demoUser._id}`);
+    console.log(`⏳ post('save') hook fired — waiting 2 seconds for Supabase sync...`);
+
+    // Step 2: Wait briefly for the async sync to complete
+    await new Promise(res => setTimeout(res, 2000));
+
+    // Step 3: Check Supabase
+    console.log(`\n🔍 Checking Supabase blog_subscribers for ${TEST_EMAIL}...`);
+    const { data, error } = await supabaseAdmin
+      .from("blog_subscribers")
+      .select("*")
+      .eq("email", TEST_EMAIL)
+      .single();
+
+    if (error || !data) {
+      console.error("❌ NOT FOUND in Supabase! Auto-sync failed.", error?.message);
+    } else {
+      console.log("🎉 AUTO-SYNC WORKS! User found in Supabase:");
+      console.log(`   Email     : ${data.email}`);
+      console.log(`   Name      : ${data.name}`);
+      console.log(`   is_active : ${data.is_active}`);
+      console.log(`   Created   : ${data.created_at}`);
+    }
+
+    console.log(`\n✅ Done! lasttry@gmail.com is now live in Supabase.`);
+    console.log(`👉 Go check it at: https://supabase.com/dashboard/project/bumxgscngzjadyozdpce/editor`);
+    console.log(`   Table: blog_subscribers | Filter: email = lasttry@gmail.com`);
+
+    process.exit(0);
+  } catch (err) {
+    console.error("❌ Test failed:", err.message);
+    console.error(err.stack);
+    process.exit(1);
+  }
+}
+
+runTest();

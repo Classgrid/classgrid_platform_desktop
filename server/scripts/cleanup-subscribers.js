@@ -1,0 +1,32 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: 'c:/CLASSGRIDPLATFORM/classgrid_platoform-desktop-/server/.env' });
+import { createClient } from '@supabase/supabase-js';
+import mongoose from 'mongoose';
+
+const supabase = createClient(process.env.SUPABASE_CHAT_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+async function cleanup() {
+  await mongoose.connect(process.env.MONGO_URI);
+  console.log('Connected to MongoDB');
+
+  const { data: subscribers, error } = await supabase.from('blog_subscribers').select('email');
+  if (error) throw error;
+  console.log(`Found ${subscribers.length} subscribers in Supabase`);
+
+  const platformUsers = await mongoose.connection.db.collection('users').find({}, { projection: { email: 1 } }).toArray();
+  const platformEmails = new Set(platformUsers.map(u => u.email.toLowerCase()));
+
+  const toDelete = subscribers.filter(sub => platformEmails.has(sub.email.toLowerCase()));
+  console.log(`Found ${toDelete.length} subscribers who are actually platform users.`);
+
+  if (toDelete.length > 0) {
+    const emailsToDelete = toDelete.map(sub => sub.email);
+    const { error: delError } = await supabase.from('blog_subscribers').delete().in('email', emailsToDelete);
+    if (delError) throw delError;
+    console.log(`Deleted ${emailsToDelete.length} synced platform users from Supabase.`);
+  }
+
+  mongoose.disconnect();
+}
+
+cleanup().catch(console.error);

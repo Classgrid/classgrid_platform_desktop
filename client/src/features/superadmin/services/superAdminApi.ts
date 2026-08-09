@@ -60,6 +60,9 @@ export type BlogSubscriber = {
   id: string;
   email: string;
   is_active: boolean;
+  receives_blog?: boolean;
+  receives_changelog?: boolean;
+  receives_legal?: boolean;
   created_at: string | null;
   updated_at: string | null;
 };
@@ -199,6 +202,14 @@ export const subscribersApi = {
     apiClient
       .patch<{ success: boolean; message: string }>(
         `/api/super-admin/subscribers/${encodeURIComponent(email)}/resume`
+      )
+      .then((r) => r.data),
+
+  updatePreferences: (email: string, preferences: { receives_blog?: boolean; receives_changelog?: boolean; receives_legal?: boolean }) =>
+    apiClient
+      .patch<{ success: boolean; message: string }>(
+        `/api/super-admin/subscribers/${encodeURIComponent(email)}/preferences`,
+        preferences
       )
       .then((r) => r.data),
 
