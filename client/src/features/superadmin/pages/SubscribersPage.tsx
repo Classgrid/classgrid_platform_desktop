@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { useNavigate } from "react-router-dom";
+import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
 
 import { formatDate } from "@/utils/dateUtils";
 
@@ -372,36 +373,28 @@ export function SubscribersPage() {
         </Card>
 
       <div className="mt-6 flex flex-col gap-4">
-        {/* Top Action Bar (Separated from the table) */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex flex-1 items-center gap-4 w-full sm:w-auto">
-                <div className="relative w-full sm:w-80">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                        type="text"
-                        placeholder="Search subscriber email..."
-                        className="w-full bg-background border border-border rounded-md py-1.5 pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-ring focus:ring-1 focus:ring-ring transition-colors h-8 shadow-sm"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                </div>
-                <div className="w-[180px]">
-                    <ResponsiveSelect
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="h-8 text-sm bg-background border-border shadow-sm"
-                    >
-                        {STATUS_OPTIONS.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </ResponsiveSelect>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-                <div className="text-sm text-muted-foreground whitespace-nowrap">
-                    Showing {subscribers.length} rows
-                </div>
+        {/* ═══ FILTER BAR ═══ */}
+        <SuperadminFilterBar
+          searchQuery={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search subscriber email..."
+        >
+          <div className="w-[150px]">
+            <ResponsiveSelect
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
+            >
+              {STATUS_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </ResponsiveSelect>
+          </div>
+        </SuperadminFilterBar>
+        
+        <div className="flex justify-end">
+            <div className="text-sm text-muted-foreground whitespace-nowrap">
+                Showing {subscribers.length} rows
             </div>
         </div>
 
