@@ -24,7 +24,7 @@ export async function dispatchNotification({
     try {
         const effectiveOrgId = orgId || (await User.findById(recipientId).select("organization_id").lean())?.organization_id;
         if (!effectiveOrgId) {
-            throw new Error("Notification recipient does not belong to an organization");
+            console.log('[NotificationService] Dispatch: No organization_id found, proceeding as a system notification.');
         }
 
         // 1. Throttling Check (Persistent in MongoDB or Redis - using simple DB check for now)
@@ -104,10 +104,13 @@ export async function bulkDispatchNotification({
         if (!effectiveOrgId) {
             effectiveOrgId = (await User.findById(recipientIds[0]).select("organization_id").lean())?.organization_id;
         }
-
-        if (!effectiveOrgId) {
-            console.error('[NotificationService] Bulk Dispatch Error: Could not determine organization_id');
-            return;
+        
+        // Ensure effectiveOrgId is a string if it's an ObjectId (to prevent React BSON crashes if logged)
+        if (effectiveOrgId) {
+            effectiveOrgId = effectiveOrgId.toString();
+        } else {
+            console.log('[NotificationService] Bulk Dispatch: Proceeding with null organization_id (e.g. System/SuperAdmin target).');
+            effectiveOrgId = null;
         }
 
         const notifications = recipientIds.map(rid => ({
