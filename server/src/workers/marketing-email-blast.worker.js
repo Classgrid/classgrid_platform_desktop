@@ -338,7 +338,18 @@ async function processQueueItem(item) {
 
   targetEmails.push({ email: "support@classgrid.in" });
 
-  const uniqueEmails = Array.from(new Map(targetEmails.filter(u => u.email).map(u => [u.email.toLowerCase(), u])).values());
+  // Deduplicate by email
+  let uniqueEmails = Array.from(new Map(targetEmails.filter(u => u.email).map(u => [u.email.toLowerCase(), u])).values());
+
+  // 🛡️ Remove unsubscribed users — fetch the blocklist from Supabase
+  const { data: unsubscribed } = await supabaseAdmin.from("blog_subscribers").select("email").eq("is_active", false);
+  if (unsubscribed && unsubscribed.length > 0) {
+    const blocklist = new Set(unsubscribed.map(u => u.email.toLowerCase()));
+    const beforeCount = uniqueEmails.length;
+    uniqueEmails = uniqueEmails.filter(u => !blocklist.has(u.email.toLowerCase()));
+    const removed = beforeCount - uniqueEmails.length;
+    if (removed > 0) console.log(`[EmailBlast] 🛡️ Filtered out ${removed} unsubscribed email(s).`);
+  }
 
   if (uniqueEmails.length === 0) return { sent: 0, failed: 0, done: true };
 
