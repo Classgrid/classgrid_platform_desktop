@@ -422,10 +422,14 @@ router.patch("/subscribers/:email/preferences", async (req, res) => {
 
         const { receives_blog, receives_changelog, receives_legal } = req.body;
         
+        console.log("[SuperAdmin] PATCH preferences req.body:", req.body);
+        
         const updatePayload = { updated_at: new Date().toISOString() };
         if (typeof receives_blog === 'boolean') updatePayload.receives_blog = receives_blog;
         if (typeof receives_changelog === 'boolean') updatePayload.receives_changelog = receives_changelog;
         if (typeof receives_legal === 'boolean') updatePayload.receives_legal = receives_legal;
+
+        console.log("[SuperAdmin] PATCH preferences updatePayload:", updatePayload);
 
         const subscribersSb = getBlogSubscribersSb();
         const { error } = await subscribersSb

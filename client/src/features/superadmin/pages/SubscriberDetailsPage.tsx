@@ -136,7 +136,6 @@ export function SubscriberDetailsPage() {
               <Switch 
                 checked={receivesBlog} 
                 onCheckedChange={(checked) => handlePreferenceChange('receives_blog', checked)} 
-                disabled={updatePreferences.isPending}
               />
             </div>
 
@@ -148,7 +147,6 @@ export function SubscriberDetailsPage() {
               <Switch 
                 checked={receivesChangelog} 
                 onCheckedChange={(checked) => handlePreferenceChange('receives_changelog', checked)} 
-                disabled={updatePreferences.isPending}
               />
             </div>
 
@@ -160,7 +158,6 @@ export function SubscriberDetailsPage() {
               <Switch 
                 checked={receivesLegal} 
                 onCheckedChange={(checked) => handlePreferenceChange('receives_legal', checked)} 
-                disabled={updatePreferences.isPending}
               />
             </div>
           </CardContent>
