@@ -12,6 +12,8 @@ import { Download, FileJson, Link } from "lucide-react";
 
 // A small wrapper to use the marketing tooltip cleanly
 function IconButton({ icon: Icon, label, onClick, className = "", isActive = false }: any) {
+
+const safeString = (val: any) => typeof val === 'object' && val !== null ? (val.toString ? val.toString() : JSON.stringify(val)) : String(val || "");
   return (
     <TooltipProvider>
       <Tooltip>
@@ -401,11 +403,11 @@ export function AuditLogsPage() {
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1 font-semibold">Org ID</div>
-                      <div className="font-mono text-sm truncate text-foreground" title={selectedLog.metadata?.orgId}>{selectedLog.metadata?.orgId || "N/A"}</div>
+                      <div className="font-mono text-sm truncate text-foreground" title={safeString(selectedLog.metadata?.orgId)}>{selectedLog.metadata?.orgId ? safeString(selectedLog.metadata.orgId) : "N/A"}</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1 font-semibold">User ID</div>
-                      <div className="font-mono text-sm truncate text-foreground" title={selectedLog.metadata?.userId}>{selectedLog.metadata?.userId || "N/A"}</div>
+                      <div className="font-mono text-sm truncate text-foreground" title={safeString(selectedLog.metadata?.userId)}>{selectedLog.metadata?.userId ? safeString(selectedLog.metadata.userId) : "N/A"}</div>
                     </div>
                     <div className="col-span-2">
                       <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1 font-semibold">IP Address</div>
