@@ -131,9 +131,9 @@ export function SubscribersPage() {
 
   const handleRemove = (email: string) => {
     removeSubscriber.mutate(email, {
-      onSuccess: () => toast.success("Subscriber removed."),
+      onSuccess: () => toast.success(`${email} removed successfully.`),
       onError: (err: any) =>
-        toast.error(err?.message || "Failed to remove subscriber."),
+        toast.error(err?.message || `Failed to remove ${email}.`),
     });
   };
 
