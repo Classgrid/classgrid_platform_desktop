@@ -21,14 +21,27 @@ const consoleFormat = printf(({ level, message, timestamp, ...meta }) => {
 });
 
 // Format that injects contextual data from AsyncLocalStorage
+const safeStr = (val) => {
+    if (val === null || val === undefined) return val;
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object' && typeof val.toString === 'function') return val.toString();
+    return String(val);
+};
+
 const injectContextFormat = winston.format((info) => {
     const context = asyncContext.getStore();
     if (context) {
         // Only inject if not explicitly provided in the log
-        if (info.userId === undefined) info.userId = context.userId;
-        if (info.orgId === undefined) info.orgId = context.orgId;
+        if (info.userId === undefined) info.userId = safeStr(context.userId);
+        else info.userId = safeStr(info.userId);
+        if (info.orgId === undefined) info.orgId = safeStr(context.orgId);
+        else info.orgId = safeStr(info.orgId);
         if (info.traceId === undefined) info.traceId = context.traceId;
         if (info.ip === undefined) info.ip = context.ip;
+    } else {
+        // Even without context, sanitize whatever was passed explicitly
+        if (info.userId !== undefined) info.userId = safeStr(info.userId);
+        if (info.orgId !== undefined) info.orgId = safeStr(info.orgId);
     }
     return info;
 });
