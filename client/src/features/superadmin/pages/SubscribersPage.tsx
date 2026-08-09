@@ -211,20 +211,20 @@ export function SubscribersPage() {
         width: "w-[200px]",
         render: (_val: any, row: BlogSubscriber) => (
              <div className="flex items-center gap-4">
-                <Switch 
-                    checked={row.is_active} 
-                    onCheckedChange={(checked) => handleToggleActive(row, checked)} 
-                    disabled={isMutating} 
-                />
                  <Button
                     size="sm"
                     variant="ghost"
-                    className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                    className="text-destructive hover:bg-destructive/10"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Remove ${row.email}?`)) {
+                            removeSubscriber.mutate(row.email);
+                        }
+                    }}
                     disabled={isMutating}
-                    onClick={() => handleRemove(row.email)}
-                  >
+                 >
                     Remove
-                  </Button>
+                 </Button>
              </div>
         )
       }
