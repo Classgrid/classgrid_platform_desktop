@@ -400,11 +400,14 @@ async function processQueueItem(item) {
   let failCount = 0;
   let rateLimitHit = false;
 
-  for (let i = 0; i < batch.length; i++) {
+    for (let i = 0; i < batch.length; i++) {
     const sub = batch[i];
     try {
-      const hash = generateUnsubscribeHash(sub.email);
-      const unsubscribeUrl = `${siteUrl}/api/blog/unsubscribe?email=${encodeURIComponent(sub.email)}&token=${hash}`;
+      let unsubscribeType = "blog";
+      if (item.document_type === "changelogEntry") unsubscribeType = "changelog";
+      if (item.document_type === "legalPage") unsubscribeType = "legal";
+      
+      const unsubscribeUrl = `${siteUrl}/login?intent=unsubscribe&type=${unsubscribeType}&next=${encodeURIComponent(`/api/preferences/unsubscribe?type=${unsubscribeType}`)}`;
 
       const mailOptions = {
         replyTo: supportEmail,

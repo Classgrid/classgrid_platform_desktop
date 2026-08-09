@@ -33,22 +33,22 @@ export function useResumeSubscriber() {
 }
 
 export function useRemoveSubscriber() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (email: string) => subscribersApi.remove(email),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["superadmin", "subscribers"] });
+      qc.invalidateQueries({ queryKey: SUBSCRIBERS_KEY });
     },
   });
 }
 
 export function useUpdateSubscriberPreferences() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ email, preferences }: { email: string, preferences: { receives_blog?: boolean; receives_changelog?: boolean; receives_legal?: boolean } }) => 
       subscribersApi.updatePreferences(email, preferences),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["superadmin", "subscribers"] });
+      qc.invalidateQueries({ queryKey: SUBSCRIBERS_KEY });
     },
   });
 }
