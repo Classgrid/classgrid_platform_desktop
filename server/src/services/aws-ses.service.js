@@ -56,8 +56,8 @@ export const sendEmail = async ({ to, subject, html, text, fromName, fromEmail, 
               to,
               messageId: info.messageId,
               attempt,
-              ...(organizationId && { orgId: organizationId }),
-              ...(userId && { userId: userId })
+              ...(organizationId && { orgId: organizationId?.toString ? organizationId.toString() : organizationId }),
+              ...(userId && { userId: userId?.toString ? userId.toString() : userId })
           });
           return { ...info, provider: "aws_ses", retryCount: attempt - 1 };
       } catch (error) {

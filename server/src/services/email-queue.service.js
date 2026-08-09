@@ -193,8 +193,8 @@ export async function processEmailQueue(batchSize = MAX_BATCH_SIZE) {
                         jobId: job._id?.toString(),
                         to: job.to,
                         attempt: job.attempts,
-                        userId: job.userId || undefined,
-                        orgId: job.organizationId || undefined
+                        userId: job.userId ? job.userId.toString() : undefined,
+                        orgId: job.organizationId ? job.organizationId.toString() : undefined
                     }
                 );
             } catch (sendErr) {
@@ -229,8 +229,8 @@ export async function processEmailQueue(batchSize = MAX_BATCH_SIZE) {
                         error: sendErr.message,
                         nextStatus,
                         nextRetry: nextRetry.toISOString(),
-                        userId: job.userId || undefined,
-                        orgId: job.organizationId || undefined
+                        userId: job.userId ? job.userId.toString() : undefined,
+                        orgId: job.organizationId ? job.organizationId.toString() : undefined
                     }
                 );
             }
