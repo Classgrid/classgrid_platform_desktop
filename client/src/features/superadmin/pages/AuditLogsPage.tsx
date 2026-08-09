@@ -186,9 +186,9 @@ export function AuditLogsPage() {
       render: (_: any, log: ErrorLog) => (
         <div className="text-foreground break-words font-mono text-[13px] tracking-wide">
           <span className={log.level === 'error' ? 'text-destructive' : ''}>
-            {log.message}
+            {safeString(log.message)}
           </span>
-          {log.context && <span className="ml-2 text-muted-foreground text-xs font-sans">[{log.context}]</span>}
+          {log.context && <span className="ml-2 text-muted-foreground text-xs font-sans">[{safeString(log.context)}]</span>}
         </div>
       ),
     },
