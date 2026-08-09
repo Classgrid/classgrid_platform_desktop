@@ -330,23 +330,17 @@ async function processQueueItem(item) {
   if (item.document_type === "changelogEntry") filterColumn = "receives_changelog";
   else if (item.document_type === "legalPage") filterColumn = "receives_legal";
 
-  // Fetch all active subscribers
+  // Fetch subscribers who have this specific preference enabled
   const { data: subscribers } = await supabaseAdmin
     .from("blog_subscribers")
-    .select("email, is_active, receives_blog, receives_changelog, receives_legal");
+    .select("email, receives_blog, receives_changelog, receives_legal");
     
   if (subscribers) {
-      // Manually filter in memory to be absolutely safe and handle nulls correctly
+      // Manually filter in memory to strictly obey the specific toggle
       const activeForThisType = subscribers.filter(sub => {
-          // If they are globally unsubscribed/paused, they get NOTHING.
-          if (sub.is_active === false) return false;
-          
-          // Otherwise, check the specific flag. 
-          // (If the flag is null/undefined, we assume true for backward compatibility until migration finishes)
           if (filterColumn === "receives_blog" && sub.receives_blog === false) return false;
           if (filterColumn === "receives_changelog" && sub.receives_changelog === false) return false;
           if (filterColumn === "receives_legal" && sub.receives_legal === false) return false;
-          
           return true;
       });
       targetEmails.push(...activeForThisType);
@@ -364,12 +358,11 @@ async function processQueueItem(item) {
   // Deduplicate by email
   let uniqueEmails = Array.from(new Map(targetEmails.filter(u => u.email).map(u => [u.email.toLowerCase(), u])).values());
 
-  // 🛡️ Remove unsubscribed users — fetch the global blocklist from Supabase
-  // We double-check the database directly to ensure we don't accidentally email someone who just unsubscribed
+  // 🛡️ Remove specifically opted-out users — fetch the strict blocklist
   const { data: unsubscribed } = await supabaseAdmin
     .from("blog_subscribers")
     .select("email")
-    .or(`is_active.eq.false,${filterColumn}.eq.false`); 
+    .eq(filterColumn, false); 
 
   if (unsubscribed && unsubscribed.length > 0) {
     const blocklist = new Set(unsubscribed.map(u => u.email.toLowerCase()));

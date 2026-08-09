@@ -258,7 +258,16 @@ router.get("/subscribers", async (req, res) => {
         }
 
         const subscribers = (data || [])
-            .map((row, index) => normalizeSubscriber(row, index))
+            .map((row, index) => {
+                const normalized = normalizeSubscriber(row, index);
+                // Dynamically calculate is_active: if ANY preference is true, they are active.
+                // If they are all false, they are paused/inactive.
+                normalized.receives_blog = row.receives_blog !== false;
+                normalized.receives_changelog = row.receives_changelog !== false;
+                normalized.receives_legal = row.receives_legal !== false;
+                normalized.is_active = normalized.receives_blog || normalized.receives_changelog || normalized.receives_legal;
+                return normalized;
+            })
             .filter((row) => row.email)
             .sort(sortSubscribers);
         const activeSubscribers = subscribers.filter((row) => row.is_active);
@@ -346,7 +355,12 @@ router.patch("/subscribers/:email/pause", async (req, res) => {
         const subscribersSb = getBlogSubscribersSb();
         const { error } = await subscribersSb
             .from("blog_subscribers")
-            .update({ is_active: false, updated_at: new Date().toISOString() })
+            .update({ 
+                receives_blog: false, 
+                receives_changelog: false, 
+                receives_legal: false, 
+                updated_at: new Date().toISOString() 
+            })
             .eq("email", subscriberEmail);
 
         if (error) {
@@ -371,7 +385,12 @@ router.patch("/subscribers/:email/resume", async (req, res) => {
         const subscribersSb = getBlogSubscribersSb();
         const { error } = await subscribersSb
             .from("blog_subscribers")
-            .update({ is_active: true, updated_at: null })
+            .update({ 
+                receives_blog: true, 
+                receives_changelog: true, 
+                receives_legal: true, 
+                updated_at: null 
+            })
             .eq("email", subscriberEmail);
 
         if (error) {

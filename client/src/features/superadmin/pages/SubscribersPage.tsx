@@ -18,10 +18,11 @@ import { Input } from "@/components/marketing_ui/input";
 import { RecentActivityTable, DataTable } from "@/components/marketing_ui/data-table";
 import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Switch } from "@/components/marketing_ui/switch";
+import { Switch } from "@/components/marketing_ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/marketing_ui/tooltip";
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/marketing_ui/sheet";
+import { useNavigate } from "react-router-dom";
 
 import { formatDate } from "@/utils/dateUtils";
 
@@ -53,7 +54,7 @@ function formatFullSubscriberDate(value?: string | null) {
 export function SubscribersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedSubscriber, setSelectedSubscriber] = useState<BlogSubscriber | null>(null);
+  const navigate = useNavigate();
 
   const {
     data,
@@ -74,25 +75,6 @@ export function SubscribersPage() {
   const resumeSubscriber = useResumeSubscriber();
   const removeSubscriber = useRemoveSubscriber();
   const updatePreferences = useUpdateSubscriberPreferences();
-
-  const handlePreferenceChange = (key: 'receives_blog' | 'receives_changelog' | 'receives_legal', checked: boolean) => {
-    if (!selectedSubscriber) return;
-    
-    // Optimistic update in UI
-    setSelectedSubscriber(prev => prev ? { ...prev, [key]: checked } : null);
-
-    updatePreferences.mutate(
-      { email: selectedSubscriber.email, preferences: { [key]: checked } },
-      {
-        onSuccess: () => toast.success("Preferences updated successfully."),
-        onError: (err: any) => {
-          toast.error(err?.message || "Failed to update preferences.");
-          // Revert optimistic update
-          setSelectedSubscriber(prev => prev ? { ...prev, [key]: !checked } : null);
-        }
-      }
-    );
-  };
 
   const isMutating =
     pauseSubscriber.isPending ||
@@ -166,10 +148,10 @@ export function SubscribersPage() {
         render: (_val: any, row: BlogSubscriber) => (
           <div 
             className="flex flex-col gap-1 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => setSelectedSubscriber(row)}
+            onClick={() => navigate(`/superadmin/subscribers/${encodeURIComponent(row.email)}`)}
           >
             <span className="font-mono text-sm text-emerald-600 dark:text-emerald-500 hover:underline">{row.email}</span>
-            <span className="text-xs text-muted-foreground">Click to manage preferences</span>
+            <span className="text-xs text-muted-foreground">Click to view details</span>
           </div>
         )
       },
@@ -419,97 +401,6 @@ export function SubscribersPage() {
             className="max-h-[600px] overflow-auto"
         />
       </div>
-
-      {/* Subscriber Details Drawer */}
-      <Sheet open={!!selectedSubscriber} onOpenChange={(open) => !open && setSelectedSubscriber(null)}>
-        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-          <SheetHeader className="mb-6">
-            <SheetTitle>Subscriber Details</SheetTitle>
-            <SheetDescription>
-              Manage email preferences for this subscriber.
-            </SheetDescription>
-          </SheetHeader>
-
-          {selectedSubscriber && (
-            <div className="flex flex-col gap-6">
-              {/* Info Section */}
-              <div className="flex flex-col gap-4 p-4 rounded-lg border border-border bg-card/50">
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Email Address</span>
-                  <span className="font-mono text-sm font-semibold">{selectedSubscriber.email}</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                   <div className="flex flex-col gap-1">
-                      <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Status</span>
-                      {selectedSubscriber.is_active ? (
-                          <Badge variant="success" dot className="w-fit">Active</Badge>
-                      ) : (
-                          <Badge variant="warning" className="w-fit">Paused</Badge>
-                      )}
-                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Subscribed Date</span>
-                      <span className="text-sm">{formatSubscriberDate(selectedSubscriber.created_at)}</span>
-                    </div>
-                    {!selectedSubscriber.is_active && (
-                        <div className="flex flex-col gap-1">
-                          <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Paused Date</span>
-                          <span className="text-sm">{formatSubscriberDate(selectedSubscriber.updated_at)}</span>
-                        </div>
-                    )}
-                </div>
-              </div>
-
-              {/* Preferences Section */}
-              <div className="flex flex-col gap-4">
-                <h3 className="text-sm font-semibold border-b border-border pb-2">Email Preferences</h3>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-medium">Blog Posts</span>
-                    <span className="text-xs text-muted-foreground">Receive updates when new articles are published.</span>
-                  </div>
-                  <Switch 
-                    checked={selectedSubscriber.receives_blog !== false} 
-                    onCheckedChange={(checked) => handlePreferenceChange('receives_blog', checked)} 
-                    disabled={updatePreferences.isPending}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-medium">Product Changelogs</span>
-                    <span className="text-xs text-muted-foreground">Receive updates about new platform features.</span>
-                  </div>
-                  <Switch 
-                    checked={selectedSubscriber.receives_changelog !== false} 
-                    onCheckedChange={(checked) => handlePreferenceChange('receives_changelog', checked)} 
-                    disabled={updatePreferences.isPending}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-medium">Legal Notices</span>
-                    <span className="text-xs text-muted-foreground">Receive required terms and policy updates.</span>
-                  </div>
-                  <Switch 
-                    checked={selectedSubscriber.receives_legal !== false} 
-                    onCheckedChange={(checked) => handlePreferenceChange('receives_legal', checked)} 
-                    disabled={updatePreferences.isPending}
-                  />
-                </div>
-              </div>
-
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
-
     </div>
   );
 }

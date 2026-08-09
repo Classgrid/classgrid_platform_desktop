@@ -37,7 +37,6 @@ export async function syncUserToBlogSubscribers(email, name = "") {
             .insert({
                 email: normalizedEmail,
                 name: firstName,
-                is_active: true, // Legacy compatibility
                 receives_blog: false,
                 receives_changelog: false,
                 receives_legal: true

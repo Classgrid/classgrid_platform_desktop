@@ -45,6 +45,7 @@ import PlansAndBillingPage from "@/features/superadmin/billing/pages/PlansAndBil
 import RevenuePage from "@/features/superadmin/billing/pages/RevenuePage";
 import { FeedbackPage } from "@/features/superadmin/pages/FeedbackPage";
 import { SubscribersPage } from "@/features/superadmin/pages/SubscribersPage";
+import { SubscriberDetailsPage } from "@/features/superadmin/pages/SubscriberDetailsPage";
 import { ChatPage } from "@/features/chat/pages/ChatPage";
 import { LogoutPage } from "@/features/auth/pages/LogoutPage";
 import { SystemHealthPage } from "@/features/superadmin/pages/SystemHealthPage";
@@ -274,6 +275,7 @@ export function AppRouter() {
           <Route path="/superadmin/settings" element={<SharedSettingsPage />} />
           <Route path="/superadmin/chat" element={<ChatPage />} />
           <Route path="/superadmin/subscribers" element={<SubscribersPage />} />
+          <Route path="/superadmin/subscribers/:email" element={<SubscriberDetailsPage />} />
           
 
           <Route path="/superadmin/*" element={<ComingSoonPage />} />
