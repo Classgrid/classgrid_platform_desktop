@@ -25,7 +25,7 @@ const normalizeMeetingProvider = (value = "") => {
 };
 
 async function verifyTurnstileToken(token, req) {
-  const secret = process.env.TURNSTILE_SECRET_KEY || process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
+  const secret = process.env.TURNSTILE_SECRET || process.env.TURNSTILE_SECRET_KEY || process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
 
   if (!secret) {
     return { verified: true, skipped: true };
