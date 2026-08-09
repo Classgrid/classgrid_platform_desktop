@@ -142,7 +142,7 @@ export function SubscribersPage() {
         render: (_val: any, row: BlogSubscriber) => (
           <div className="flex flex-col gap-1">
             <span className="font-mono text-sm text-foreground">{row.email}</span>
-            <span className="text-xs text-muted-foreground">Marketing blog and changelog</span>
+            <span className="text-xs text-muted-foreground">Marketing blog, changelog and legal notices</span>
           </div>
         )
       },
@@ -282,7 +282,7 @@ export function SubscribersPage() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Subscribers</h1>
           <p className="text-sm text-muted-foreground">
-            Track growth, unsubscribes, and audience health for blog and changelog emails.
+            Track growth, unsubscribes, and audience health for blog, changelog and legal notice emails.
           </p>
         </div>
         <div className="flex items-center gap-2">
