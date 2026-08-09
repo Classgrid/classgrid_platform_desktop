@@ -46,9 +46,12 @@ const STATUS_OPTIONS = [
 
 const PREFERENCE_OPTIONS = [
   { label: "Preference: All", value: "all" },
-  { label: "Blog", value: "blog" },
-  { label: "Changelog", value: "changelog" },
-  { label: "Legal", value: "legal" },
+  { label: "Receives Blog", value: "blog" },
+  { label: "Receives Changelog", value: "changelog" },
+  { label: "Receives Legal", value: "legal" },
+  { label: "Turned OFF Blog", value: "blog-off" },
+  { label: "Turned OFF Changelog", value: "changelog-off" },
+  { label: "Turned OFF Legal", value: "legal-off" },
 ];
 
 function formatSubscriberDate(value?: string | null) {
@@ -388,7 +391,7 @@ export function SubscribersPage() {
           onSearchChange={setSearch}
           searchPlaceholder="Search subscriber email..."
         >
-          <div className="w-[150px]">
+          <div className="w-[180px]">
             <ResponsiveSelect
               value={preferenceFilter}
               onChange={(e) => setPreferenceFilter(e.target.value)}

@@ -286,8 +286,11 @@ router.get("/subscribers", async (req, res) => {
                         
             const matchesPreference = 
                 preferenceFilter === "blog" ? row.receives_blog :
+                preferenceFilter === "blog-off" ? !row.receives_blog :
                 preferenceFilter === "changelog" ? row.receives_changelog :
+                preferenceFilter === "changelog-off" ? !row.receives_changelog :
                 preferenceFilter === "legal" ? row.receives_legal :
+                preferenceFilter === "legal-off" ? !row.receives_legal :
                 true;
 
             return matchesSearch && matchesStatus && matchesPreference;
