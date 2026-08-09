@@ -76,22 +76,9 @@ export function SubscriberDetailsPage() {
     return <div className="p-8">Subscriber not found.</div>;
   }
 
-  // Optimistic UI state from cache or real state
   const receivesBlog = subscriber.receives_blog !== false;
   const receivesChangelog = subscriber.receives_changelog !== false;
   const receivesLegal = subscriber.receives_legal !== false;
-
-  React.useEffect(() => {
-    if (subscriber) {
-      useBreadcrumbStore.getState().setItems([
-        { label: "Subscribers", href: "/superadmin/subscribers" },
-        { label: subscriber.email }
-      ]);
-    }
-    return () => {
-      useBreadcrumbStore.getState().setItems([]);
-    };
-  }, [subscriber]);
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 pb-12">
