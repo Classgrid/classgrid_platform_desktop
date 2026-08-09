@@ -233,7 +233,7 @@ export function SubscribersPage() {
                     className="text-destructive hover:bg-destructive/10 shrink-0"
                     onClick={(e) => {
                         e.stopPropagation();
-                        removeSubscriber.mutate(row.email);
+                        handleRemove(row.email);
                     }}
                     disabled={isMutating}
                  >
