@@ -4,12 +4,12 @@ import { subscribersApi } from "../services/superAdminApi";
 export const SUBSCRIBERS_KEY = ["super-admin", "subscribers"] as const;
 
 export function useSubscribers(
-  params?: { q?: string; status?: string },
+  options?: { q?: string; status?: string; preference?: string },
   enabled = true
 ) {
   return useQuery({
-    queryKey: [...SUBSCRIBERS_KEY, params],
-    queryFn: () => subscribersApi.list(params),
+    queryKey: [SUBSCRIBERS_KEY, options],
+    queryFn: () => subscribersApi.getBlogSubscribers(options),
     staleTime: 30_000,
     placeholderData: (previous) => previous,
     enabled,

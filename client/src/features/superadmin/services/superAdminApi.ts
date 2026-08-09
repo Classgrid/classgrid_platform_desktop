@@ -187,10 +187,19 @@ export const leadsApi = {
 };
 
 export const subscribersApi = {
-  list: (params?: { q?: string; status?: string }) =>
-    apiClient
-      .get<SubscribersResponse>("/api/super-admin/subscribers", { params })
-      .then((r) => r.data),
+  getBlogSubscribers: async (options?: { q?: string; status?: string; preference?: string }) => {
+    let url = "/api/super-admin/subscribers";
+    const params = new URLSearchParams();
+    if (options?.q) params.append("q", options.q);
+    if (options?.status) params.append("status", options.status);
+    if (options?.preference) params.append("preference", options.preference);
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    return apiClient.get<SubscribersResponse>(url).then((r) => r.data);
+  },
 
   pause: (email: string) =>
     apiClient

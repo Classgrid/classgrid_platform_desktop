@@ -44,6 +44,13 @@ const STATUS_OPTIONS = [
   { label: "Paused", value: "inactive" },
 ];
 
+const PREFERENCE_OPTIONS = [
+  { label: "Preference: All", value: "all" },
+  { label: "Blog", value: "blog" },
+  { label: "Changelog", value: "changelog" },
+  { label: "Legal", value: "legal" },
+];
+
 function formatSubscriberDate(value?: string | null) {
   return value ? formatDate(value, "dd MMM, yyyy") : "—";
 }
@@ -55,6 +62,7 @@ function formatFullSubscriberDate(value?: string | null) {
 export function SubscribersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [preferenceFilter, setPreferenceFilter] = useState("all");
   const navigate = useNavigate();
 
   const {
@@ -68,6 +76,7 @@ export function SubscribersPage() {
     {
       q: search || undefined,
       status: statusFilter === "all" ? undefined : statusFilter,
+      preference: preferenceFilter === "all" ? undefined : preferenceFilter,
     },
     true
   );
@@ -379,6 +388,17 @@ export function SubscribersPage() {
           onSearchChange={setSearch}
           searchPlaceholder="Search subscriber email..."
         >
+          <div className="w-[150px]">
+            <ResponsiveSelect
+              value={preferenceFilter}
+              onChange={(e) => setPreferenceFilter(e.target.value)}
+              className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
+            >
+              {PREFERENCE_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </ResponsiveSelect>
+          </div>
           <div className="w-[150px]">
             <ResponsiveSelect
               value={statusFilter}

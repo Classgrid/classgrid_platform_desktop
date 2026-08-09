@@ -249,6 +249,7 @@ router.get("/subscribers", async (req, res) => {
     try {
         const searchQuery = typeof req.query.q === "string" ? req.query.q.trim().toLowerCase() : "";
         const statusFilter = typeof req.query.status === "string" ? req.query.status.trim().toLowerCase() : "all";
+        const preferenceFilter = typeof req.query.preference === "string" ? req.query.preference.trim().toLowerCase() : "all";
 
         const subscribersSb = getBlogSubscribersSb();
         const { data, error } = await subscribersSb.from("blog_subscribers").select("*");
@@ -282,8 +283,14 @@ router.get("/subscribers", async (req, res) => {
                     : statusFilter === "inactive"
                         ? !row.is_active
                         : true;
+                        
+            const matchesPreference = 
+                preferenceFilter === "blog" ? row.receives_blog :
+                preferenceFilter === "changelog" ? row.receives_changelog :
+                preferenceFilter === "legal" ? row.receives_legal :
+                true;
 
-            return matchesSearch && matchesStatus;
+            return matchesSearch && matchesStatus && matchesPreference;
         });
 
         const inactiveSubscribersForList = inactiveSubscribers.filter((row) =>
