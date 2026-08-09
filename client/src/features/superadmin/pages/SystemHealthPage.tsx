@@ -95,19 +95,27 @@ export function SystemHealthPage() {
       accessorKey: "message",
       header: "Message",
       size: 320,
-      cell: ({ getValue }) => (
-        <span >
-          {getValue<string>()}
-        </span>
-      ),
+      cell: ({ getValue }) => {
+        const val = getValue<any>();
+        const strVal = typeof val === 'object' ? JSON.stringify(val) : String(val || "");
+        return (
+          <span >
+            {strVal}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "context",
       header: "Context",
       size: 150,
-      cell: ({ getValue }) => (
-        <Badge variant="neutral">{getValue<string>() || "—"}</Badge>
-      ),
+      cell: ({ getValue }) => {
+        const val = getValue<any>();
+        const strVal = typeof val === 'object' ? JSON.stringify(val) : String(val || "");
+        return (
+          <Badge variant="neutral">{strVal || "—"}</Badge>
+        );
+      },
     },
     {
       accessorKey: "timestamp",
