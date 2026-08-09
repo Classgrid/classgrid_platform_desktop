@@ -326,7 +326,7 @@ router.post("/public/tickets", enforceStrictSession, multipleUploads("files", 5)
                 actorRole: 'user',
                 createdAt: now
             }],
-            // No submittedBy (ObjectId) since user is not logged in
+            submittedBy: fullUser ? fullUser._id : null
         });
 
         // ── Send email notification for new ticket ──
