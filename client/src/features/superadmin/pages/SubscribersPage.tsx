@@ -144,7 +144,7 @@ export function SubscribersPage() {
       {
         key: "email",
         header: "Email",
-        width: "w-[300px]",
+        width: "w-[250px]",
         render: (_val: any, row: BlogSubscriber) => (
           <div 
             className="flex flex-col gap-1 cursor-pointer hover:opacity-80 transition-opacity"
@@ -187,7 +187,7 @@ export function SubscribersPage() {
       {
         key: "updated_at",
         header: "Preferences / Unsubscribed",
-        width: "w-[250px]",
+        width: "w-[200px]",
         render: (_val: any, row: BlogSubscriber) => {
              if (!row.is_active) {
                  return (
@@ -226,9 +226,9 @@ export function SubscribersPage() {
       {
         key: "actions",
         header: "Actions",
-        width: "w-[150px]",
+        width: "w-[100px]",
         render: (_val: any, row: BlogSubscriber) => (
-             <div className="flex items-center gap-4">
+             <div className="flex items-center">
                  <Button
                     size="sm"
                     variant="ghost"
