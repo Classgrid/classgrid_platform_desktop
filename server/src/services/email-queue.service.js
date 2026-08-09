@@ -33,8 +33,11 @@ export async function enqueueEmail({
 }) {
     try {
         const context = asyncContext.getStore();
-        const effectiveUserId = userId || context?.userId || null;
-        const effectiveOrgId = organizationId || context?.orgId || null;
+        let effectiveUserId = userId || context?.userId || null;
+        if (effectiveUserId && typeof effectiveUserId === 'string' && !/^[0-9a-fA-F]{24}$/.test(effectiveUserId)) effectiveUserId = null;
+
+        let effectiveOrgId = organizationId || context?.orgId || null;
+        if (effectiveOrgId && typeof effectiveOrgId === 'string' && !/^[0-9a-fA-F]{24}$/.test(effectiveOrgId)) effectiveOrgId = null;
 
         const job = await EmailJob.create({
             to,
@@ -71,20 +74,28 @@ export async function enqueueBulkEmails(payloads) {
     try {
         const context = asyncContext.getStore();
         
-        const docs = payloads.map((p) => ({
-            to: p.to,
-            subject: p.subject,
-            html: p.html,
-            text: p.text || "",
-            type: p.type || "other",
-            channel: p.channel || null,
-            userId: p.userId || context?.userId || null,
-            classroomId: p.classroomId || null,
-            organizationId: p.organizationId || context?.orgId || null,
-            status: "pending",
-            attempts: 0,
-            nextRetryAt: new Date(),
-        }));
+        const docs = payloads.map((p) => {
+            let eUserId = p.userId || context?.userId || null;
+            if (eUserId && typeof eUserId === 'string' && !/^[0-9a-fA-F]{24}$/.test(eUserId)) eUserId = null;
+
+            let eOrgId = p.organizationId || context?.orgId || null;
+            if (eOrgId && typeof eOrgId === 'string' && !/^[0-9a-fA-F]{24}$/.test(eOrgId)) eOrgId = null;
+
+            return {
+                to: p.to,
+                subject: p.subject,
+                html: p.html,
+                text: p.text || "",
+                type: p.type || "other",
+                channel: p.channel || null,
+                userId: eUserId,
+                classroomId: p.classroomId || null,
+                organizationId: eOrgId,
+                status: "pending",
+                attempts: 0,
+                nextRetryAt: new Date(),
+            };
+        });
 
         const jobs = await EmailJob.insertMany(docs, { ordered: false });
         console.log(
