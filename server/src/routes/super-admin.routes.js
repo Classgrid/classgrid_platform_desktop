@@ -131,6 +131,7 @@ function normalizeSubscriber(row, index) {
     return {
         id: row?.id ?? row?._id ?? `${row?.email || "subscriber"}-${index}`,
         email: typeof row?.email === "string" ? row.email.trim() : "",
+        name: typeof row?.name === "string" ? row.name.trim() : "",
         is_active: row?.is_active !== false,
         created_at: typeof row?.created_at === "string" ? row.created_at : null,
         updated_at: typeof row?.updated_at === "string" ? row.updated_at : null,

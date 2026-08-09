@@ -56,9 +56,10 @@ export type LeadsResponse = {
   total: number;
 };
 
-export type BlogSubscriber = {
+export interface BlogSubscriber {
   id: string;
   email: string;
+  name?: string;
   is_active: boolean;
   receives_blog?: boolean;
   receives_changelog?: boolean;
