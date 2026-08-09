@@ -33,7 +33,13 @@ export function SubscriberDetailsPage() {
       { email: subscriber.email, preferences: { [key]: checked } },
       {
         onSuccess: () => {
-          toast.success("Preferences updated successfully.");
+          let type = "Preferences";
+          if (key === 'receives_blog') type = "Blog";
+          if (key === 'receives_changelog') type = "Changelog";
+          if (key === 'receives_legal') type = "Legal";
+          
+          const action = checked ? "updated" : "paused";
+          toast.success(`${type} ${action}.`);
         },
         onError: (err: any) => {
           toast.error(err?.message || "Failed to update preferences.");
