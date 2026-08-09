@@ -242,10 +242,32 @@ ${metaLine && !isLegalPage ? `<p style="color:#6b7280;font-size:12px;margin:0 0 
 </td>
 </tr>
 <tr>
-<td style="padding:20px;text-align:center;border-top:1px solid #eaeaea;color:#9ca3af;font-size:12px;">
-<p style="margin-bottom:8px;">You received this because you subscribed to Classgrid Updates.</p>
-<p style="margin-bottom:12px;"><a href="${escapeHtml(unsubscribeUrl)}" style="color:#6b7280;text-decoration:underline;font-size:11px;">Unsubscribe from these emails</a></p>
-&copy; ${currentYear} Classgrid. All rights reserved.
+<td style="padding:30px;border-top:1px solid #eaeaea;">
+<p style="color:#374151;font-size:14px;margin:0 0 8px;">Build smarter academic workflows</p>
+<a href="${siteUrl}" style="color:#6b7280;text-decoration:underline;font-size:13px;margin-bottom:24px;display:inline-block;">classgrid.in &rarr;</a>
+
+<div style="margin-bottom:24px;">
+  <a href="https://www.instagram.com/classgridedu/" target="_blank" style="display:inline-block;border:1px solid #eaeaea;border-radius:6px;padding:8px;margin-right:8px;text-decoration:none;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" alt="Instagram" width="16" height="16" style="display:block;opacity:0.8;">
+  </a>
+  <a href="https://www.facebook.com/profile.php?id=61588646851017" target="_blank" style="display:inline-block;border:1px solid #eaeaea;border-radius:6px;padding:8px;margin-right:8px;text-decoration:none;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg" alt="Facebook" width="16" height="16" style="display:block;opacity:0.8;">
+  </a>
+  <a href="https://www.youtube.com/@classgrid-y7f" target="_blank" style="display:inline-block;border:1px solid #eaeaea;border-radius:6px;padding:8px;margin-right:8px;text-decoration:none;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg" alt="YouTube" width="16" height="16" style="display:block;opacity:0.8;">
+  </a>
+</div>
+
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="color:#9ca3af;font-size:12px;text-align:left;">
+      &copy; ${currentYear} Classgrid. All rights reserved.
+    </td>
+    <td style="color:#9ca3af;font-size:12px;text-align:right;">
+      <a href="${escapeHtml(unsubscribeUrl)}" style="color:#9ca3af;text-decoration:none;">Unsubscribe</a>
+    </td>
+  </tr>
+</table>
 </td>
 </tr>
 </table>
