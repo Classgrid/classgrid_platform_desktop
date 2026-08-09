@@ -130,8 +130,6 @@ export function SubscribersPage() {
   };
 
   const handleRemove = (email: string) => {
-    if (!window.confirm(`Remove ${email} permanently from subscribers?`)) return;
-
     removeSubscriber.mutate(email, {
       onSuccess: () => toast.success("Subscriber removed."),
       onError: (err: any) =>
@@ -235,9 +233,7 @@ export function SubscribersPage() {
                     className="text-destructive hover:bg-destructive/10 shrink-0"
                     onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm(`Remove ${row.email}?`)) {
-                            removeSubscriber.mutate(row.email);
-                        }
+                        removeSubscriber.mutate(row.email);
                     }}
                     disabled={isMutating}
                  >
