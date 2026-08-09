@@ -24,7 +24,7 @@ async function runTest() {
     // Import User model (this loads the post-save hook)
     const { default: User } = await import("../src/models/User.js");
 
-    const TEST_EMAIL = "lasttry@gmail.com";
+    const TEST_EMAIL = "gemini@classgrid.in";
 
     // Cleanup: remove if already exists from a previous test run
     await User.deleteOne({ email: TEST_EMAIL });
@@ -34,7 +34,7 @@ async function runTest() {
     // Step 1: Create user in MongoDB via User model → triggers post('save') hook
     console.log(`\n🔨 Creating demo user in MongoDB: ${TEST_EMAIL}`);
     const demoUser = await User.create({
-      name: "Demo User",
+      name: "Gemini AI",
       email: TEST_EMAIL,
       password: "hashedpassword_not_real",
       role: "student",
@@ -65,9 +65,9 @@ async function runTest() {
       console.log(`   Created   : ${data.created_at}`);
     }
 
-    console.log(`\n✅ Done! lasttry@gmail.com is now live in Supabase.`);
+    console.log(`\n✅ Done! gemini@classgrid.in is now live in Supabase.`);
     console.log(`👉 Go check it at: https://supabase.com/dashboard/project/bumxgscngzjadyozdpce/editor`);
-    console.log(`   Table: blog_subscribers | Filter: email = lasttry@gmail.com`);
+    console.log(`   Table: blog_subscribers | Filter: email = gemini@classgrid.in`);
 
     process.exit(0);
   } catch (err) {
