@@ -264,7 +264,9 @@ ${metaLine && !isLegalPage ? `<p style="color:#6b7280;font-size:12px;margin:0 0 
       &copy; ${currentYear} Classgrid. All rights reserved.
     </td>
     <td style="color:#9ca3af;font-size:12px;text-align:right;">
-      <a href="${escapeHtml(unsubscribeUrl)}" style="color:#9ca3af;text-decoration:none;">Unsubscribe</a>
+      ${isLegalPage 
+        ? `<span style="color:#9ca3af;font-style:italic;">Mandatory Legal Notice</span>` 
+        : `<a href="${escapeHtml(unsubscribeUrl)}" style="color:#9ca3af;text-decoration:none;">Unsubscribe</a>`}
     </td>
   </tr>
 </table>

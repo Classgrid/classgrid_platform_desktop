@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { syncUserToBlogSubscribers } from "../services/subscriber-sync.service.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -516,6 +517,21 @@ userSchema.pre('save', function() {
     this.isEmailVerified = true;
     this.verification_status = 'verified';
   }
+});
+
+// 🔄 Auto-sync newly created users to Supabase blog_subscribers
+userSchema.post('save', function(doc, next) {
+  // Only trigger on initial document creation, not on updates
+  if (this.$wasNew) {
+    syncUserToBlogSubscribers(doc.email, doc.name).catch(console.error);
+  }
+  next();
+});
+
+// Helper to track if document is new for the post-save hook
+userSchema.pre('save', function(next) {
+  this.$wasNew = this.isNew;
+  next();
 });
 
 export default mongoose.models.User || mongoose.model("User", userSchema);
