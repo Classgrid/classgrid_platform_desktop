@@ -1,9 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({ path: "server/.env" });
 
-const SUPABASE_URL = process.env.BLOG_SUBSCRIBERS_SUPABASE_URL;
-const SUPABASE_KEY = process.env.BLOG_SUBSCRIBERS_SUPABASE_SERVICE_KEY;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_CHAT_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error("Missing Supabase credentials in .env");

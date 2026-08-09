@@ -214,7 +214,7 @@ export function SubscribersPage() {
              return (
                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                      <Badge variant="outline" className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0 ${blogStyle}`}>Blog</Badge>
-                     <Badge variant="outline" className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0 ${changelogStyle}`}>Log</Badge>
+                     <Badge variant="outline" className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0 ${changelogStyle}`}>Changelog</Badge>
                      <Badge variant="outline" className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0 ${legalStyle}`}>Legal</Badge>
                  </div>
              );
