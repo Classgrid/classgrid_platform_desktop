@@ -119,8 +119,8 @@ export const winstonMiddleware = (req, res, next) => {
             status: res.statusCode,
             ip: req.ip,
             durationMs: duration,
-            orgId: isCronOrWebhook ? "system" : (req.effectiveOrganizationId || (req.user ? (req.user.organization_id || "none") : "none")),
-            userId: isCronOrWebhook ? "system_service" : (req.user ? (req.user.id || req.user._id || "unauthenticated") : "unauthenticated"),
+            orgId: isCronOrWebhook ? "system" : (req.effectiveOrganizationId?.toString() || (req.user ? (req.user.organization_id?.toString() || "none") : "none")),
+            userId: isCronOrWebhook ? "system_service" : (req.user ? ((req.user.id || req.user._id)?.toString() || "unauthenticated") : "unauthenticated"),
             ...(safeBody && { body: safeBody })
         };
 
@@ -136,11 +136,11 @@ export const winstonMiddleware = (req, res, next) => {
         ip: req.ip,
         get orgId() { 
             if (req.originalUrl.includes("/api/cron") || req.originalUrl.includes("/api/webhooks")) return "system";
-            return req.effectiveOrganizationId || (req.user ? (req.user.organization_id || "none") : "none"); 
+            return req.effectiveOrganizationId?.toString() || (req.user ? (req.user.organization_id?.toString() || "none") : "none"); 
         },
         get userId() { 
             if (req.originalUrl.includes("/api/cron") || req.originalUrl.includes("/api/webhooks")) return "system_service";
-            return req.user ? (req.user.id || req.user._id || "unauthenticated") : "unauthenticated"; 
+            return req.user ? ((req.user.id || req.user._id)?.toString() || "unauthenticated") : "unauthenticated"; 
         }
     };
 
