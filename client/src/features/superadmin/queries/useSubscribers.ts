@@ -47,7 +47,23 @@ export function useUpdateSubscriberPreferences() {
   return useMutation({
     mutationFn: ({ email, preferences }: { email: string, preferences: { receives_blog?: boolean; receives_changelog?: boolean; receives_legal?: boolean } }) => 
       subscribersApi.updatePreferences(email, preferences),
-    onSuccess: () => {
+    onMutate: async (variables) => {
+      await qc.cancelQueries({ queryKey: SUBSCRIBERS_KEY });
+      
+      // Optimistically update all queries (both list and detail views)
+      qc.setQueriesData({ queryKey: SUBSCRIBERS_KEY }, (oldData: any) => {
+        if (!oldData || !oldData.data) return oldData;
+        return {
+          ...oldData,
+          data: oldData.data.map((sub: any) => 
+            sub.email === variables.email 
+              ? { ...sub, ...variables.preferences } 
+              : sub
+          )
+        };
+      });
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: SUBSCRIBERS_KEY });
     },
   });
