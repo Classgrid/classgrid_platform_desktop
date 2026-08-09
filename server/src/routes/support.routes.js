@@ -44,7 +44,7 @@ async function enforceStrictSession(req, res, next) {
             const user = await User.findOne({ email: req.loggedInUserEmail }).lean();
             if (user && user.role !== "super_admin") {
                 req.user = user;
-                req.effectiveOrganizationId = user.organization_id;
+                req.effectiveOrganizationId = user.organization_id ? user.organization_id.toString() : null;
             }
         } catch (err) {}
     } else if (token && token !== "null" && token !== "undefined") {
@@ -55,7 +55,7 @@ async function enforceStrictSession(req, res, next) {
             if (user && user.role !== "super_admin") {
                 req.loggedInUserEmail = user.email.toLowerCase();
                 req.user = user;
-                req.effectiveOrganizationId = user.organization_id;
+                req.effectiveOrganizationId = user.organization_id ? user.organization_id.toString() : null;
             }
         } catch (err) {}
     }
