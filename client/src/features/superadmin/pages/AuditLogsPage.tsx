@@ -10,10 +10,10 @@ import { RefreshButton } from "@/components/marketing_ui/refresh-button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/marketing_ui/dropdown-menu";
 import { Download, FileJson, Link } from "lucide-react";
 
+const safeString = (val: any) => typeof val === 'object' && val !== null ? (val.toString ? val.toString() : JSON.stringify(val)) : String(val || "");
+
 // A small wrapper to use the marketing tooltip cleanly
 function IconButton({ icon: Icon, label, onClick, className = "", isActive = false }: any) {
-
-const safeString = (val: any) => typeof val === 'object' && val !== null ? (val.toString ? val.toString() : JSON.stringify(val)) : String(val || "");
   return (
     <TooltipProvider>
       <Tooltip>
