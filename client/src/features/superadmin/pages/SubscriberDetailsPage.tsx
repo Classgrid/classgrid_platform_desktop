@@ -22,6 +22,7 @@ export function SubscriberDetailsPage() {
 
   const { data, isLoading } = useSubscribers({ q: email }, true);
   const updatePreferences = useUpdateSubscriberPreferences();
+  const setBreadcrumbs = useBreadcrumbStore((state) => state.setBreadcrumbs);
 
   const subscriber = data?.data?.find((s) => s.email === email);
 
@@ -43,15 +44,15 @@ export function SubscriberDetailsPage() {
 
   useEffect(() => {
     if (subscriber) {
-      useBreadcrumbStore.getState().setItems([
+      setBreadcrumbs([
         { label: "Subscribers", href: "/superadmin/subscribers" },
         { label: subscriber.email }
       ]);
     }
     return () => {
-      useBreadcrumbStore.getState().setItems([]);
+      setBreadcrumbs([]);
     };
-  }, [subscriber]);
+  }, [subscriber, setBreadcrumbs]);
 
   if (isLoading) {
     return (
