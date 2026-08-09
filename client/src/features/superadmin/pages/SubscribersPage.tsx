@@ -186,30 +186,24 @@ export function SubscribersPage() {
       },
       {
         key: "updated_at",
-        header: "Unsubscribed",
-        width: "w-[160px]",
-        render: (_val: any, row: BlogSubscriber) => (
-             !row.is_active ? (
-                <TooltipProvider>
-                    <Tooltip delay={0}>
-                        <TooltipTrigger className="text-sm text-muted-foreground">
-                            {formatSubscriberDate(row.updated_at)}
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            Unsubscribed: {formatFullSubscriberDate(row.updated_at)}
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-             ) : (
-                 <span className="text-sm text-muted-foreground">—</span>
-             )
-        )
-      },
-      {
-        key: "actions",
-        header: "Preferences & Actions",
-        width: "w-[350px]",
+        header: "Preferences / Unsubscribed",
+        width: "w-[250px]",
         render: (_val: any, row: BlogSubscriber) => {
+             if (!row.is_active) {
+                 return (
+                    <TooltipProvider>
+                        <Tooltip delay={0}>
+                            <TooltipTrigger className="text-sm text-muted-foreground">
+                                {formatSubscriberDate(row.updated_at)}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                Unsubscribed: {formatFullSubscriberDate(row.updated_at)}
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                 );
+             }
+
              const blogStyle = row.receives_blog !== false 
                 ? "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/20" 
                 : "text-red-600 bg-red-50 border-red-200 dark:bg-red-500/10 dark:border-red-500/20 opacity-60";
@@ -219,31 +213,38 @@ export function SubscribersPage() {
              const legalStyle = row.receives_legal !== false 
                 ? "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/20" 
                 : "text-red-600 bg-red-50 border-red-200 dark:bg-red-500/10 dark:border-red-500/20 opacity-60";
-                
+
              return (
-                 <div className="flex items-center justify-between gap-4 w-full">
-                     <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                         <Badge variant="outline" className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0 ${blogStyle}`}>Blog</Badge>
-                         <Badge variant="outline" className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0 ${changelogStyle}`}>Log</Badge>
-                         <Badge variant="outline" className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0 ${legalStyle}`}>Legal</Badge>
-                     </div>
-                     <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive hover:bg-destructive/10 shrink-0"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm(`Remove ${row.email}?`)) {
-                                removeSubscriber.mutate(row.email);
-                            }
-                        }}
-                        disabled={isMutating}
-                     >
-                        Remove
-                     </Button>
+                 <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                     <Badge variant="outline" className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0 ${blogStyle}`}>Blog</Badge>
+                     <Badge variant="outline" className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0 ${changelogStyle}`}>Log</Badge>
+                     <Badge variant="outline" className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0 ${legalStyle}`}>Legal</Badge>
                  </div>
              );
         }
+      },
+      {
+        key: "actions",
+        header: "Actions",
+        width: "w-[150px]",
+        render: (_val: any, row: BlogSubscriber) => (
+             <div className="flex items-center gap-4">
+                 <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:bg-destructive/10 shrink-0"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Remove ${row.email}?`)) {
+                            removeSubscriber.mutate(row.email);
+                        }
+                    }}
+                    disabled={isMutating}
+                 >
+                    Remove
+                 </Button>
+             </div>
+        )
       }
     ],
     [isMutating]
