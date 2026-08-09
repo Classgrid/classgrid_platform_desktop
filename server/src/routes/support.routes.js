@@ -40,13 +40,22 @@ async function enforceStrictSession(req, res, next) {
 
     if (proxySecret && proxySecret === JWT_SECRET && proxyEmail) {
         req.loggedInUserEmail = proxyEmail.trim().toLowerCase();
+        try {
+            const user = await User.findOne({ email: req.loggedInUserEmail }).lean();
+            if (user && user.role !== "super_admin") {
+                req.user = user;
+                req.effectiveOrganizationId = user.organization_id;
+            }
+        } catch (err) {}
     } else if (token && token !== "null" && token !== "undefined") {
         try {
             const jwt = await import("jsonwebtoken");
             const decoded = jwt.default.verify(token, JWT_SECRET);
-            const user = await User.findById(decoded.id).select("email role").lean();
+            const user = await User.findById(decoded.id).lean();
             if (user && user.role !== "super_admin") {
                 req.loggedInUserEmail = user.email.toLowerCase();
+                req.user = user;
+                req.effectiveOrganizationId = user.organization_id;
             }
         } catch (err) {}
     }
