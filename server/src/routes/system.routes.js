@@ -9,8 +9,13 @@ const router = express.Router();
  */
 router.get("/status", async (req, res) => {
   try {
-    const pageId = req.query.pageId || "classgrid1";
-    const response = await axios.get(`https://${pageId}.statuspage.io/api/v2/summary.json`);
+    const pageId = req.query.pageId || "status.classgrid.in";
+    // If pageId contains a dot, it's a custom domain (e.g. status.classgrid.in on Incident.io)
+    let url = `https://${pageId}.statuspage.io/api/v2/summary.json`;
+    if (pageId.includes('.')) {
+      url = `https://${pageId}/api/v2/summary.json`;
+    }
+    const response = await axios.get(url);
     
     return res.json(response.data);
   } catch (error) {

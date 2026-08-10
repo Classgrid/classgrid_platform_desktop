@@ -36,7 +36,7 @@ export function SidebarUserMenu({ user, customTrigger }: { user: { name: string;
   useEffect(() => {
     // Fetch immediately on mount, then poll every 30s — same as the marketing website's SWR config
     const fetchStatus = () => {
-      fetchLiveStatus("classgrid1").then((res) => {
+      fetchLiveStatus("status.classgrid.in").then((res) => {
         if (res) setStatus(res);
       });
     };

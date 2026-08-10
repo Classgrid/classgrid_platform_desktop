@@ -97,9 +97,6 @@ export function resolveFooterCopyrightText(
 
 import { apiClient } from "./apiClient";
 
-// Direct public Statuspage URL — works even when our main server is down
-const STATUSPAGE_DIRECT_URL = "https://classgrid1.statuspage.io/api/v2/summary.json";
-
 function parseStatuspageData(data: any): { state: FooterStatusState; label: string } | null {
   // 1. Check for active maintenance
   if (data.scheduled_maintenances && data.scheduled_maintenances.length > 0) {
@@ -141,23 +138,20 @@ function parseStatuspageData(data: any): { state: FooterStatusState; label: stri
 }
 
 export async function fetchLiveStatus(pageId: string): Promise<{ state: FooterStatusState; label: string } | null> {
-  // ─── Strategy 1: Call Statuspage directly from the browser ───────────────
-  // This works even when our main server is DOWN — Statuspage is a public
-  // third-party API with no CORS restrictions on its summary endpoint.
   try {
-    const response = await fetch(`https://${pageId}.statuspage.io/api/v2/summary.json`);
-    if (response.ok) {
-      const data = await response.json();
-      return parseStatuspageData(data);
+    // Build the URL using the same logic as the marketing site:
+    // If pageId contains a dot (e.g. "status.classgrid.in"), it's a custom domain
+    // hosted on Incident.io — call it directly. Incident.io returns a response
+    // that is backwards-compatible with the Atlassian Statuspage API format.
+    let url = `https://${pageId}.statuspage.io/api/v2/summary.json`;
+    if (pageId.includes('.')) {
+      url = `https://${pageId}/api/v2/summary.json`;
     }
-  } catch {
-    // Direct call failed (network issue?) — fall through to backend proxy
-  }
 
-  // ─── Strategy 2: Backend proxy (fallback, only if main server is up) ──────
-  try {
-    const response = await apiClient.get(`/api/system/status?pageId=${pageId}`);
-    return parseStatuspageData(response.data);
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return parseStatuspageData(data);
   } catch (error) {
     console.error("Failed to fetch live status:", error);
     return null;
