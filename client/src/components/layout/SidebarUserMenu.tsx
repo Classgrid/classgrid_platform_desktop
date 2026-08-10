@@ -34,10 +34,17 @@ export function SidebarUserMenu({ user, customTrigger }: { user: { name: string;
   });
 
   useEffect(() => {
-    // using 'classgrid1' as pageId for statuspage
-    fetchLiveStatus("classgrid1").then((res) => {
-      if (res) setStatus(res);
-    });
+    // Fetch immediately on mount, then poll every 30s — same as the marketing website's SWR config
+    const fetchStatus = () => {
+      fetchLiveStatus("classgrid1").then((res) => {
+        if (res) setStatus(res);
+      });
+    };
+
+    fetchStatus(); // initial fetch
+    const interval = setInterval(fetchStatus, 30_000); // 30-second polling
+
+    return () => clearInterval(interval); // cleanup on unmount
   }, []);
 
   if (!user) return null;

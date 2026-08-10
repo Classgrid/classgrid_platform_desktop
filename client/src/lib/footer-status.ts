@@ -97,50 +97,67 @@ export function resolveFooterCopyrightText(
 
 import { apiClient } from "./apiClient";
 
+// Direct public Statuspage URL — works even when our main server is down
+const STATUSPAGE_DIRECT_URL = "https://classgrid1.statuspage.io/api/v2/summary.json";
+
+function parseStatuspageData(data: any): { state: FooterStatusState; label: string } | null {
+  // 1. Check for active maintenance
+  if (data.scheduled_maintenances && data.scheduled_maintenances.length > 0) {
+    const activeMaintenance = data.scheduled_maintenances.find(
+      (m: any) => m.status === "in_progress" || m.status === "verifying"
+    );
+    if (activeMaintenance) {
+      return { state: "maintenance", label: "Under Maintenance" };
+    }
+  }
+
+  // Safely check if status object exists before reading it
+  if (!data.status || typeof data.status !== "object") {
+    return null;
+  }
+
+  // 2. Map Statuspage indicators to our FooterStatusState
+  const indicator = data.status.indicator;
+
+  // Default to the generic description (e.g. "All Systems Operational")
+  let description = data.status.description;
+
+  // If there is an active incident, use the actual custom incident name!
+  if (data.incidents && data.incidents.length > 0) {
+    const activeIncident = data.incidents.find((i: any) =>
+      i.status === "investigating" || i.status === "identified" || i.status === "monitoring"
+    );
+    if (activeIncident && activeIncident.name) {
+      description = activeIncident.name;
+    }
+  }
+
+  let state: FooterStatusState = "operational";
+  if (indicator === "minor") state = "degraded";
+  if (indicator === "major") state = "partial_outage";
+  if (indicator === "critical") state = "major_outage";
+
+  return { state, label: description };
+}
+
 export async function fetchLiveStatus(pageId: string): Promise<{ state: FooterStatusState; label: string } | null> {
+  // ─── Strategy 1: Call Statuspage directly from the browser ───────────────
+  // This works even when our main server is DOWN — Statuspage is a public
+  // third-party API with no CORS restrictions on its summary endpoint.
   try {
-    // Proxy request through backend to avoid CORS, using apiClient for correct prod URL
+    const response = await fetch(`https://${pageId}.statuspage.io/api/v2/summary.json`);
+    if (response.ok) {
+      const data = await response.json();
+      return parseStatuspageData(data);
+    }
+  } catch {
+    // Direct call failed (network issue?) — fall through to backend proxy
+  }
+
+  // ─── Strategy 2: Backend proxy (fallback, only if main server is up) ──────
+  try {
     const response = await apiClient.get(`/api/system/status?pageId=${pageId}`);
-    const data = response.data;
-
-    // 1. Check for active maintenance
-    if (data.scheduled_maintenances && data.scheduled_maintenances.length > 0) {
-      const activeMaintenance = data.scheduled_maintenances.find(
-        (m: any) => m.status === "in_progress" || m.status === "verifying"
-      );
-      if (activeMaintenance) {
-        return { state: "maintenance", label: "Under Maintenance" };
-      }
-    }
-
-    // Safely check if status object exists before reading it
-    if (!data.status || typeof data.status !== "object") {
-      return null;
-    }
-
-    // 2. Map Statuspage indicators to our FooterStatusState
-    // Statuspage indicators: none, minor, major, critical
-    const indicator = data.status.indicator; 
-    
-    // Default to the generic description (e.g. "All Systems Operational")
-    let description = data.status.description; 
-
-    // If there is an active incident, use the actual custom incident name!
-    if (data.incidents && data.incidents.length > 0) {
-      const activeIncident = data.incidents.find((i: any) => 
-        i.status === "investigating" || i.status === "identified" || i.status === "monitoring"
-      );
-      if (activeIncident && activeIncident.name) {
-        description = activeIncident.name;
-      }
-    }
-
-    let state: FooterStatusState = "operational";
-    if (indicator === "minor") state = "degraded";
-    if (indicator === "major") state = "partial_outage";
-    if (indicator === "critical") state = "major_outage";
-
-    return { state, label: description };
+    return parseStatuspageData(response.data);
   } catch (error) {
     console.error("Failed to fetch live status:", error);
     return null;
