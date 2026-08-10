@@ -51,7 +51,7 @@ export function NoteCard({ note, isActive, onClick }: NoteCardProps) {
           <div className="flex items-center gap-1">
             <Folder className="w-2.5 h-2.5 text-muted-foreground/60" />
             <span className="text-[10px] font-medium text-muted-foreground/80 uppercase tracking-wide">
-              {note.category}
+              {typeof note.category === 'string' ? note.category : (note.category as any)?.value || ''}
             </span>
           </div>
         )}

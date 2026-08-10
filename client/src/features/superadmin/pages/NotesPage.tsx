@@ -504,8 +504,11 @@ export function NotesPage() {
 
   const displayedNotes = filterMode === "Pinned" ? notes.filter((n) => n.isPinned) : notes;
   const allTags = Array.from(new Set(notes.flatMap((n) => n.tags)));
-  const allCategories = Array.from(new Set(notes.map((n) => n.category).filter(Boolean)));
-  
+  // Defensive parsing: in case old notes have {value, label} objects saved in DB as category
+  const allCategories = Array.from(new Set(notes
+    .map((n) => typeof n.category === 'string' ? n.category : (n.category as any)?.value)
+    .filter(Boolean)
+  )) as string[];
   const editorCategoryOptions = [
     ...CATEGORY_PRESETS,
     ...allCategories
