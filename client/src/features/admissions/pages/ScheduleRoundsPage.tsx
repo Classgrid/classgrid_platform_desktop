@@ -8,6 +8,7 @@ import {
   PieChart as PieIcon, Activity, TrendingUp,
   Play, Users, CheckCircle, AlertTriangle
 } from "lucide-react";
+import { StatCard } from "@/components/marketing_ui/StatCard";
 
 import {
   getAdmissionConfigFull,
@@ -163,24 +164,24 @@ export function ScheduleRoundsPage() {
 
         {/* ── KPIs ── */}
         <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div
+          <StatCard
             title="Current Round"
             value={`${currentRound} / ${maxRounds}`}
             icon={<Activity className="w-4 h-4" />}
-            trend={{ value: 0, label: "Admission rounds" }}
+            trend="0 Admission rounds"
           />
-          <div
+          <StatCard
             title="Total Applications"
             value={totalApps.toLocaleString()}
             icon={<Users className="w-4 h-4" />}
-            trend={{ value: 8, label: "This session" }}
+            trend="8 This session"
           />
-          <div
+          <StatCard
             title="Conversion Rate"
             value={convRate}
             icon={<TrendingUp className="w-4 h-4" />}
           />
-          <div
+          <StatCard
             title="Fee Paid"
             value={`${feePaidCount} students`}
             icon={<CheckCircle className="w-4 h-4" />}

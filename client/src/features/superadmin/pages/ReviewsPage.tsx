@@ -164,7 +164,7 @@ export function ReviewsPage() {
           title="Average Rating"
           value={isLoading ? "—" : stats.avg}
           icon={<Star size={16} />}
-          trend={{ value: 4, label: "vs last month" }}
+          trend="+4 vs last month"
         />
         <StatCard
           title="Publicly Visible"

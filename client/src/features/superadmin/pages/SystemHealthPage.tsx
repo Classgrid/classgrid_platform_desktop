@@ -180,9 +180,9 @@ export function SystemHealthPage() {
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
         <StatCard title="Total Users" value={metricsLoading ? "—" : m?.users?.total ?? 0} icon={<Activity size={15} />}
-          trend={{ value: m?.users?.new7d ?? 0, label: "new this week" }} />
+          trend={`+${m?.users?.new7d ?? 0} new this week`} />
         <StatCard title="Active Orgs" value={metricsLoading ? "—" : m?.orgs?.active ?? 0} icon={<CheckCircle2 size={15} />}
-          trend={{ value: m?.orgs?.new7d ?? 0, label: "new this week" }} />
+          trend={`+${m?.orgs?.new7d ?? 0} new this week`} />
         <StatCard title="Suspended Orgs" value={metricsLoading ? "—" : m?.orgs?.suspended ?? 0} icon={<AlertTriangle size={15} />} />
         <StatCard title="Email Queue" value={metricsLoading ? "—" : m?.emails?.pending ?? 0} icon={<Mail size={15} />} />
         <StatCard title="Errors (24h)" value={metricsLoading ? "—" : m?.logs?.errors24h ?? 0} icon={<XCircle size={15} />} />
