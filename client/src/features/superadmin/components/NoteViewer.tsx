@@ -149,9 +149,9 @@ export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin, onDele
 
           {/* Title Area - 100% width */}
           <div className="flex items-center gap-4 min-w-0 mb-8 w-full">
-            <span className="text-4xl sm:text-5xl shrink-0">{note.icon || "📄"}</span>
+            <span className="text-4xl sm:text-5xl shrink-0">{typeof note.icon === 'string' ? note.icon : (note.icon as any)?.value || (note.icon as any)?.label || "📄"}</span>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground break-words min-w-0 w-full">
-              {note.title}
+              {typeof note.title === 'string' ? note.title : (note.title as any)?.value || (note.title as any)?.label || "Untitled"}
             </h1>
           </div>
 

@@ -32,8 +32,8 @@ export function NoteCard({ note, isActive, onClick }: NoteCardProps) {
     >
       <div className="flex items-start justify-between gap-2 mb-1">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="text-base leading-none">{note.icon || "📄"}</span>
-          <h4 className="font-medium text-sm line-clamp-1 truncate">{note.title}</h4>
+          <span className="text-base leading-none">{typeof note.icon === 'string' ? note.icon : (note.icon as any)?.value || (note.icon as any)?.label || "📄"}</span>
+          <h4 className="font-medium text-sm line-clamp-1 truncate">{typeof note.title === 'string' ? note.title : (note.title as any)?.value || (note.title as any)?.label || "Untitled"}</h4>
         </div>
         <div className="flex items-center gap-1.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
           {note.visibility === "Private" && <Lock className="w-3 h-3 text-muted-foreground" />}
