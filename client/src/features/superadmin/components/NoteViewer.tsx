@@ -178,7 +178,7 @@ export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin, onDele
               <div className="flex flex-wrap gap-1 mt-0.5">
                 {note.tags?.length ? note.tags.slice(0, 2).map((tag) => (
                   <span key={tag} className={cn("px-1.5 py-0.5 rounded text-[10px] font-medium border", getTagColor(tag))}>
-                    {tag}
+                    {typeof tag === 'string' ? tag : (tag as any)?.value || (tag as any)?.label || ''}
                   </span>
                 )) : <span className="text-sm text-muted-foreground">No tags</span>}
                 {note.tags?.length > 2 && (

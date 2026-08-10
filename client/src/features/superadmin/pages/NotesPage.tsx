@@ -503,7 +503,7 @@ export function NotesPage() {
   }, [leftWidth]);
 
   const displayedNotes = filterMode === "Pinned" ? notes.filter((n) => n.isPinned) : notes;
-  const allTags = Array.from(new Set(notes.flatMap((n) => n.tags)));
+  const allTags = Array.from(new Set(notes.flatMap((n) => n.tags?.map((t: any) => typeof t === 'string' ? t : t?.value || t?.label || '')).filter(Boolean)));
   // Defensive parsing: in case old notes have {value, label} objects saved in DB as category
   const allCategories = Array.from(new Set(notes
     .map((n) => typeof n.category === 'string' ? n.category : (n.category as any)?.value)
@@ -826,7 +826,7 @@ export function NotesPage() {
                         key={tag}
                         className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border", getTagColor(tag))}
                       >
-                        {tag}
+                        {typeof tag === 'string' ? tag : (tag as any)?.value || (tag as any)?.label || ''}
                         <button type="button" onClick={() => removeTag(tag)} className="hover:opacity-70 transition-opacity">
                           <X className="w-2.5 h-2.5" />
                         </button>

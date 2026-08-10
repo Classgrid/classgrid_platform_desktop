@@ -59,14 +59,17 @@ export function NoteCard({ note, isActive, onClick }: NoteCardProps) {
         {/* Tags - always blue */}
         {note.tags && note.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {note.tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="px-1.5 py-0.5 rounded border text-[10px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30"
-              >
-                {tag}
-              </span>
-            ))}
+            {note.tags.slice(0, 3).map((tagRaw, idx) => {
+              const tag = typeof tagRaw === 'string' ? tagRaw : (tagRaw as any)?.value || (tagRaw as any)?.label || String(tagRaw);
+              return (
+                <span
+                  key={`${tag}-${idx}`}
+                  className="px-1.5 py-0.5 rounded border text-[10px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30"
+                >
+                  {tag}
+                </span>
+              );
+            })}
             {note.tags.length > 3 && (
               <span className="px-1.5 py-0.5 rounded border border-muted bg-muted text-[10px] font-medium text-muted-foreground">
                 +{note.tags.length - 3}
