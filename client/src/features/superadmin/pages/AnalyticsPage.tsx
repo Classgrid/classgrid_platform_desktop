@@ -45,7 +45,7 @@ export function AnalyticsPage() {
               title="Active Usage Score"
               value={isLoading ? "—" : activeUsage}
               icon={<TrendingUp size={16} />}
-              trend={{ value: 4.5, label: "from last week" }}
+              trend="+4.5% from last week"
             />
             <StatCard
               title="New Users (Period)"
