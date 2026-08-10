@@ -874,9 +874,9 @@ export function NotesPage() {
               }
               setEditContent(cleanContent);
               
-              setEditTags(activeNote.tags || []);
-              setEditCategory(activeNote.category || "General");
-              setEditIcon(activeNote.icon || "📄");
+              setEditTags(activeNote.tags?.map((t: any) => typeof t === 'string' ? t : t?.value || t?.label || '').filter(Boolean) || []);
+              setEditCategory(typeof activeNote.category === 'string' ? activeNote.category : (activeNote.category as any)?.value || (activeNote.category as any)?.label || "General");
+              setEditIcon(typeof activeNote.icon === 'string' ? activeNote.icon : (activeNote.icon as any)?.value || (activeNote.icon as any)?.label || "📄");
               setEditVisibility(activeNote.visibility || "Private");
               setEditStatus(activeNote.status || "Published");
               setIsEditing(true);
