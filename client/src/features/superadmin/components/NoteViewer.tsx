@@ -176,11 +176,14 @@ export function NoteViewer({ note, onEdit, onRestoreVersion, onTogglePin, onDele
                 <Tags className="w-3.5 h-3.5" /> Tags
               </span>
               <div className="flex flex-wrap gap-1 mt-0.5">
-                {note.tags?.length ? note.tags.slice(0, 2).map((tag) => (
-                  <span key={tag} className={cn("px-1.5 py-0.5 rounded text-[10px] font-medium border", getTagColor(tag))}>
-                    {typeof tag === 'string' ? tag : (tag as any)?.value || (tag as any)?.label || ''}
-                  </span>
-                )) : <span className="text-sm text-muted-foreground">No tags</span>}
+                {note.tags?.length ? note.tags.slice(0, 2).map((tagRaw, idx) => {
+                  const tag = typeof tagRaw === 'string' ? tagRaw : (tagRaw as any)?.value || (tagRaw as any)?.label || String(tagRaw);
+                  return (
+                    <span key={`${tag}-${idx}`} className={cn("px-1.5 py-0.5 rounded text-[10px] font-medium border", getTagColor(tag))}>
+                      {tag}
+                    </span>
+                  );
+                }) : <span className="text-sm text-muted-foreground">No tags</span>}
                 {note.tags?.length > 2 && (
                   <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
                     +{note.tags.length - 2}
