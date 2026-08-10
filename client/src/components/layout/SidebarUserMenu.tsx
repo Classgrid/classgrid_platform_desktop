@@ -42,7 +42,7 @@ export function SidebarUserMenu({ user, customTrigger }: { user: { name: string;
     };
 
     fetchStatus(); // initial fetch
-    const interval = setInterval(fetchStatus, 30_000); // 30-second polling
+    const interval = setInterval(fetchStatus, 10_000); // 10-second polling
 
     return () => clearInterval(interval); // cleanup on unmount
   }, []);
