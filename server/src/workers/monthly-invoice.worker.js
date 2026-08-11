@@ -122,12 +122,15 @@ async function generateMonthlyInvoices({ month, year } = {}) {
             });
 
             const lineItems = [...aggregated.values()].map((item) => ({
-                ...item,
+                provider: item.provider,
+                resourceLabel: item.resourceLabel,
                 totalQuantity: Number(item.totalQuantity.toFixed(4)),
-                amountInr: money(item.amountInr),
+                unit: item.unit,
+                unitRatePaise: Math.round((item.unitRateInr || 0) * 100),
+                amountPaise: Math.round(money(item.amountInr) * 100),
             }));
 
-            const subtotalInr = money(lineItems.reduce((sum, item) => sum + item.amountInr, 0));
+            const subtotalInr = money(lineItems.reduce((sum, item) => sum + (item.amountPaise / 100), 0));
 
             // Add base platform fee if configured
             const sub = subMap.get(orgId);
@@ -138,8 +141,8 @@ async function generateMonthlyInvoices({ month, year } = {}) {
                     resourceLabel: "Base platform fee",
                     totalQuantity: 1,
                     unit: "month",
-                    unitRateInr: baseFee,
-                    amountInr: baseFee,
+                    unitRatePaise: Math.round(baseFee * 100),
+                    amountPaise: Math.round(baseFee * 100),
                 });
             }
 
@@ -156,14 +159,14 @@ async function generateMonthlyInvoices({ month, year } = {}) {
                             resourceLabel: `Module: ${flagKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
                             totalQuantity: 1,
                             unit: "month",
-                            unitRateInr: price,
-                            amountInr: price,
+                            unitRatePaise: Math.round(price * 100),
+                            amountPaise: Math.round(price * 100),
                         });
                     }
                 }
             });
 
-            const finalSubtotal = money(lineItems.reduce((sum, item) => sum + item.amountInr, 0));
+            const finalSubtotal = money(lineItems.reduce((sum, item) => sum + (item.amountPaise / 100), 0));
             const taxPercent = 18; // GST
             const taxAmountInr = money(finalSubtotal * (taxPercent / 100));
             const totalAmountInr = money(finalSubtotal + taxAmountInr);
@@ -188,10 +191,10 @@ async function generateMonthlyInvoices({ month, year } = {}) {
                     endDate: periodEnd,
                 },
                 lineItems,
-                subtotalInr: finalSubtotal,
+                subtotalPaise: Math.round(finalSubtotal * 100),
                 taxPercent,
-                taxAmountInr,
-                totalAmountInr,
+                taxAmountPaise: Math.round(taxAmountInr * 100),
+                totalAmountPaise: Math.round(totalAmountInr * 100),
                 currency: "INR",
                 status: "sent",
                 dueDate,
