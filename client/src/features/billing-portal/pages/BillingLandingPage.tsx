@@ -95,40 +95,6 @@ function DemoCard() {
   };
 
   return (
-    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5 space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-2">
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
-          </svg>
-        </span>
-        <p className="text-xs font-semibold text-amber-400 uppercase tracking-[0.15em]">
-          Razorpay Review — Test Checkout
-        </p>
-      </div>
-
-      <p className="text-xs text-muted-foreground leading-5">
-        This creates a real Razorpay test session. Enter the OTP below, then complete checkout with the test card credentials.
-      </p>
-
-      <button
-        id="demo-create-session-btn"
-        onClick={() => setShowPurposeModal(true)}
-        disabled={loading || created}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:opacity-60"
-      >
-        {loading || created ? (
-          <>
-            <Spinner className="h-4 w-4 text-black" /> {created ? "Redirecting…" : "Creating session…"}
-          </>
-        ) : (
-          "Open Test Checkout →"
-        )}
-      </button>
-
-      {error && <p className="text-xs text-red-400">{error}</p>}
-
 
 
       {/* Purpose Modal for Payment Gateways */}
