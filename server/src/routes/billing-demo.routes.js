@@ -9,6 +9,8 @@
 
 import express from "express";
 import crypto from "crypto";
+import { sendEmail } from "../services/aws-ses.service.js";
+import { baseTemplate } from "../services/email-templates.service.js";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import BillingHandoff from "../models/BillingHandoff.js";
@@ -22,7 +24,6 @@ import connectDB from "../../config/db.js";
 
 const router = express.Router();
 
-const DEMO_OTP = "123456";
 const DEMO_AMOUNT_PAISE = 200; // ₹2 live test
 const DEMO_48H = 48 * 60 * 60 * 1000;
 
@@ -132,8 +133,9 @@ router.post("/session", async (req, res) => {
             providerPaymentId: `demo_attempt_${crypto.randomBytes(8).toString("hex")}`,
         });
 
-        // Hash OTP 123456
-        const otpHash = await bcrypt.hash(DEMO_OTP, 12);
+        // Generate real random 6-digit OTP and send via AWS SES
+        const realOtp = crypto.randomInt(100000, 1000000).toString();
+        const otpHash = await bcrypt.hash(realOtp, 12);
         const rawToken = crypto.randomBytes(32).toString("base64url");
 
         const handoff = await BillingHandoff.create({
@@ -161,6 +163,31 @@ router.post("/session", async (req, res) => {
             expiresAt: new Date(Date.now() + DEMO_48H),
         });
 
+        // Send real OTP via AWS SES
+        const demoEmail = req.body.email || "demo@classgrid.in";
+        try {
+            const otpContent = `
+                <div style="text-align:center;padding:24px 0;">
+                    <h2 style="margin:0 0 16px;color:#1e293b;">Payment Verification</h2>
+                    <p style="color:#475569;margin-bottom:24px;">Your one-time verification code is:</p>
+                    <div style="font-size:32px;font-weight:bold;letter-spacing:8px;text-align:center;padding:16px;background:#f1f5f9;border-radius:8px;margin:16px 0;color:#0f172a;">${realOtp}</div>
+                    <p style="color:#64748b;font-size:13px;margin-top:24px;">This code expires in 60 seconds. Do not share it with anyone.</p>
+                </div>
+            `;
+            const compiledHtml = baseTemplate({ content: otpContent, title: "Payment Verification Code" });
+
+            await sendEmail({
+                to: demoEmail,
+                subject: "Your Payment Verification Code — Classgrid",
+                html: compiledHtml,
+                fromName: "Classgrid Billing",
+                fromEmail: "billing@classgrid.in",
+            });
+            console.log(`[Demo] Real OTP sent to ${demoEmail}`);
+        } catch (emailErr) {
+            console.error("[Demo] Failed to send OTP email:", emailErr.message);
+        }
+
         const url = checkoutUrl(rawToken);
 
         console.log(`[Demo] Session created → ${url} | Expires: ${handoff.expiresAt}`);
@@ -169,16 +196,9 @@ router.post("/session", async (req, res) => {
             success: true,
             data: {
                 checkout_url: url,
-                demo_otp: DEMO_OTP,
+                otp_sent_to: demoEmail,
                 amount: "₹2",
                 expires_at: handoff.expiresAt,
-                test_card: {
-                    number: "4111 1111 1111 1111",
-                    expiry: "12/27",
-                    cvv: "123",
-                    otp: "123456",
-                },
-                test_upi: "success@razorpay",
             },
         });
     } catch (err) {

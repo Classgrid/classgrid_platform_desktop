@@ -1,6 +1,9 @@
 import express from "express";
 import crypto from "crypto";
 import connectDB from "../../config/db.js";
+import Razorpay from "razorpay";
+import { detectFraud, FRAUD_ADMIN_EMAIL, buildFraudAlertHtml, buildUserFraudAlertHtml, parseUserAgent } from "../services/fraud.service.js";
+import { sendEmail } from "../services/aws-ses.service.js";
 
 const router = express.Router();
 
@@ -140,6 +143,111 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                 const invoiceId = notes?.invoice_id || notes?.invoiceId || null;
                 const studentId = notes?.student_id || notes?.studentId || null;
                 const feeRecordId = notes?.fee_record_id || notes?.feeRecordId || null;
+
+                // ── FRAUD DETECTION LAYER ──
+                let isFraudulent = false;
+                try {
+                    const PaymentAttempt = (await import("../models/PaymentAttempt.js")).default;
+                    // Find the most recent payment attempt for this order to get the IP address
+                    const PaymentOrder = (await import("../models/PaymentOrder.js")).default;
+                    const pOrder = await PaymentOrder.findOne({ providerOrderId: orderId }).select("_id").lean();
+                    
+                    let payerIp = null;
+                    let payerUserAgent = null;
+                    if (pOrder) {
+                        const attempt = await PaymentAttempt.findOne({ paymentOrderId: pOrder._id }).sort({ createdAt: -1 }).lean();
+                        payerIp = attempt?.ipAddress;
+                        payerUserAgent = attempt?.userAgent;
+                    }
+
+                    if (payerIp) {
+                        const fraudCheck = await detectFraud(payerIp);
+                        if (fraudCheck.isFraud) {
+                            isFraudulent = true;
+                            console.error(`[Fraud Engine] 🚨 FRAUD DETECTED! Blocking payment ${paymentId}. Score: ${fraudCheck.score}`);
+                            
+                            // 1. Auto Refund via Razorpay API
+                            try {
+                                const rzp = new Razorpay({
+                                    key_id: process.env.RAZORPAY_KEY_ID,
+                                    key_secret: process.env.RAZORPAY_KEY_SECRET,
+                                });
+                                await rzp.payments.refund(paymentId, {
+                                    amount: amount, // amount is in paise
+                                    notes: { reason: "Fraud Detection Engine Block" }
+                                });
+                                console.log(`[Fraud Engine] ✅ Refund issued for blocked payment ${paymentId}`);
+                            } catch (refundErr) {
+                                console.error("[Fraud Engine] ❌ Auto-refund failed:", refundErr.message);
+                            }
+
+                            // 2. Send Fraud Alert Email to Admin
+                            try {
+                                const fraudHtml = buildFraudAlertHtml({
+                                    ip: fraudCheck.ip,
+                                    country: fraudCheck.country,
+                                    isp: fraudCheck.isp,
+                                    score: fraudCheck.score,
+                                    reason: fraudCheck.reason,
+                                    amount: `₹${amountInr}`,
+                                    paymentId,
+                                    payerEmail: email || "N/A",
+                                    paidAt: new Date().toLocaleString(),
+                                    device: parseUserAgent(payerUserAgent),
+                                    location: `${fraudCheck.city || 'Unknown City'}, ${fraudCheck.country || 'Unknown Country'}`,
+                                    time: new Date().toLocaleString('en-IN', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) + ' IST'
+                                });
+
+                                await sendEmail({
+                                    to: FRAUD_ADMIN_EMAIL,
+                                    subject: `🚨 FRAUD ALERT — Suspicious Payment Blocked (Score: ${(fraudCheck.score * 100).toFixed(0)}%)`,
+                                    html: fraudHtml,
+                                    fromName: "Classgrid Security",
+                                    fromEmail: "security@classgrid.in"
+                                });
+                                console.log(`[Fraud Engine] ✅ Alert email sent to ${FRAUD_ADMIN_EMAIL}`);
+                                
+                                if (email) {
+                                    const userFraudHtml = buildUserFraudAlertHtml({
+                                        amount: `₹${amountInr}`,
+                                        paymentId,
+                                        paidAt: new Date().toLocaleString()
+                                    });
+                                    await sendEmail({
+                                        to: email,
+                                        subject: `Payment Declined — Security Alert`,
+                                        html: userFraudHtml,
+                                        fromName: "Classgrid Security",
+                                        fromEmail: "security@classgrid.in"
+                                    });
+                                    console.log(`[Fraud Engine] ✅ User alert email sent to ${email}`);
+                                }
+                            } catch (emailErr) {
+                                console.error("[Fraud Engine] ❌ Failed to send alert email:", emailErr.message);
+                            }
+
+                            // 3. Log the blocked transaction
+                            const PlatformTransaction = (await import("../models/PlatformTransaction.js")).default;
+                            await PlatformTransaction.create({
+                                organizationId: organizationId || null,
+                                type: "razorpay",
+                                amount: amountInr,
+                                currency,
+                                status: "failed", // Mark as failed due to fraud
+                                razorpayOrderId: orderId,
+                                razorpayPaymentId: paymentId,
+                                note: `BLOCKED BY FRAUD ENGINE | Score: ${fraudCheck.score} | Reason: ${fraudCheck.reason}`,
+                            });
+
+                            // End processing for this webhook — do not generate receipts or activate plans
+                            break;
+                        }
+                    } else {
+                        console.log(`[Fraud Engine] No IP found for order ${orderId}, skipping check`);
+                    }
+                } catch (fraudErr) {
+                    console.error("[Fraud Engine] Error during fraud check:", fraudErr.message);
+                }
 
                 // ── Platform SaaS Payment ──
                 if (paymentType === "saas_invoice" || paymentType === "platform" || invoiceId) {
