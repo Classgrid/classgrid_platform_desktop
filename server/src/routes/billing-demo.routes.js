@@ -63,6 +63,21 @@ router.post("/session", async (req, res) => {
             return res.status(400).json({ success: false, error: "Email is required." });
         }
 
+        // Validate that this is a real platform user in MongoDB
+        const User = (await import("../models/User.js")).default;
+        const user = await User.findOne({ email: email.toLowerCase() }).lean();
+        if (!user) {
+            return res.status(404).json({ success: false, error: "Email not found in Classgrid platform." });
+        }
+        
+        // Ensure they have admin privileges
+        const isAdmin = ["super_admin", "co_super_admin", "org_admin"].includes(user.role) || 
+                        user.additional_roles?.some(r => ["super_admin", "co_super_admin", "org_admin"].includes(r));
+                        
+        if (!isAdmin) {
+            return res.status(403).json({ success: false, error: "Only platform administrators can access billing." });
+        }
+
         // Resolve the Classgrid org (super admin org) — use a dummy ObjectId if none exists
         // We use a placeholder org_id since this is a demo
         const demoOrgId = process.env.CLASSGRID_ORG_ID
