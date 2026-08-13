@@ -162,7 +162,7 @@ export function buildFraudAlertHtml({ ip, country, isp, score, reason, amount, p
     return baseTemplate({ content, title: "🚨 FRAUD ALERT — Payment Blocked" });
 }
 
-export function buildUserFraudAlertHtml({ amount, paymentId, paidAt }) {
+export function buildUserFraudAlertHtml({ amount, paymentId, paidAt, device, location, ip, isp, time }) {
     const content = `
         <div style="background:#fef2f2; border-left:4px solid #dc2626; padding:16px; margin-bottom:24px; border-radius:4px;">
             <p style="font-size:16px;color:#991b1b;font-weight:bold;margin:0;">Your recent payment was declined for security reasons.</p>
@@ -187,6 +187,28 @@ export function buildUserFraudAlertHtml({ amount, paymentId, paidAt }) {
                 <td style="padding:10px 12px;">${paidAt}</td>
             </tr>
         </table>
+        
+        <div style="margin-top:24px;border-top:2px dashed #e5e7eb;padding-top:16px;">
+            <h3 style="margin:0 0 12px 0;font-size:15px;color:#111827;">Attempt Details</h3>
+            <table style="width:100%;border-collapse:collapse;">
+                <tr>
+                    <td style="padding:6px 0;font-weight:600;color:#4b5563;width:30%;">Device</td>
+                    <td style="padding:6px 0;color:#111827;">${device}</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0;font-weight:600;color:#4b5563;">Location</td>
+                    <td style="padding:6px 0;color:#111827;">${location}</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0;font-weight:600;color:#4b5563;">IP Address</td>
+                    <td style="padding:6px 0;color:#111827;font-family:monospace;">${ip} (${isp || "Unknown ISP"})</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0;font-weight:600;color:#4b5563;">Time</td>
+                    <td style="padding:6px 0;color:#111827;">${time}</td>
+                </tr>
+            </table>
+        </div>
         
         <p style="color:#374151;font-size:15px;line-height:1.5;margin-top:24px;">
             <strong>What happens next?</strong><br>

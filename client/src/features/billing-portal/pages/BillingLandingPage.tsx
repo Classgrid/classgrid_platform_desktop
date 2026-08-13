@@ -67,7 +67,7 @@ function DemoCard() {
       const res = await fetch(`${API_BASE}/api/billing/demo/session`, { 
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), payerName: "Razorpay Reviewer" })
+        body: JSON.stringify({ email: email.trim(), payerName: "Payer" })
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || "Failed");
@@ -84,10 +84,10 @@ function DemoCard() {
         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-500">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </div>
-        <h3 className="text-xs font-bold uppercase tracking-widest text-amber-500">Razorpay Review — Test Checkout</h3>
+        <h3 className="text-xs font-bold uppercase tracking-widest text-amber-500">SaaS Subscription Checkout</h3>
       </div>
       <p className="text-sm text-muted-foreground mb-5">
-        This creates a real Razorpay test session. Enter your email to receive the OTP, then complete checkout with the test card credentials.
+        Proceed with your invoice payment. Enter your email to receive a secure OTP and proceed to the payment gateway.
       </p>
       <div className="space-y-3">
         <input 
@@ -103,7 +103,7 @@ function DemoCard() {
           className="w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-black transition hover:bg-amber-400 flex justify-center items-center gap-2 disabled:opacity-50"
         >
           {loading ? <Spinner className="w-4 h-4 text-black" /> : null}
-          {loading ? "Creating Session..." : "Open Test Checkout →"}
+          {loading ? "Verifying..." : "Proceed to Payment →"}
         </button>
         {error && <p className="text-xs font-medium text-red-500">{error}</p>}
       </div>

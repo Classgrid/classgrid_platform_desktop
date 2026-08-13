@@ -191,9 +191,12 @@ export function CheckoutPage() {
               paidAt: now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' - ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
             });
             setStatus("success");
-          } catch (confirmError) {
+          } catch (confirmError: any) {
             console.error("Confirmation error", confirmError);
-            toast.error("Payment verification failed. Please contact support.", { id: "payment-verify" });
+            toast.error("Payment verification failed.", { id: "payment-verify" });
+            setError(confirmError.response?.data?.error || "Your payment was rejected or could not be verified.");
+            setStep("failed");
+            setLoading(false);
           }
         },
         prefill: { email: customerEmail },
@@ -212,6 +215,8 @@ export function CheckoutPage() {
       rzp.on("payment.failed", function (response: any) {
         console.error(response.error);
         toast.error(response.error.description || "Payment failed");
+        setError(response.error.description || "Your payment was declined by the bank.");
+        setStep("failed");
         setLoading(false);
       });
       rzp.open();
@@ -239,6 +244,47 @@ export function CheckoutPage() {
           Go Back
         </button>
       </main>
+    );
+  }
+
+  if (step === "failed") {
+    return (
+      <div className="relative min-h-screen overflow-hidden bg-background text-foreground flex items-center justify-center p-4">
+        {/* Subtle red background */}
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(239,68,68,0.14),transparent_55%),radial-gradient(circle_at_bottom_right,rgba(239,68,68,0.05),transparent_45%)]" />
+        </div>
+        <section className="w-full max-w-lg">
+          <div className="rounded-3xl border border-red-500/30 bg-background/90 p-8 sm:p-10 shadow-[0_20px_70px_-35px_rgba(239,68,68,0.25)] backdrop-blur-md flex flex-col items-center text-center">
+            
+            <div className="relative flex h-24 w-24 items-center justify-center mb-6">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500 shadow-[0_10px_20px_-5px_rgba(239,68,68,0.4)]">
+                  <svg className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4 w-full">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-red-500/35 bg-red-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-red-500">
+                Payment Failed
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                Transaction Blocked
+              </h1>
+              <p className="text-muted-foreground text-sm leading-relaxed mb-6">
+                {error || "Your payment could not be processed. This may be due to security reasons or a bank decline."}
+              </p>
+              <button onClick={() => window.history.back()} className="h-12 w-full rounded-xl bg-slate-900 px-6 font-semibold text-white transition hover:bg-slate-800 dark:bg-[#2a2a2a] dark:hover:bg-[#333]">
+                Go Back
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
     );
   }
 

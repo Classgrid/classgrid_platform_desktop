@@ -211,7 +211,12 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                                     const userFraudHtml = buildUserFraudAlertHtml({
                                         amount: `₹${amountInr}`,
                                         paymentId,
-                                        paidAt: new Date().toLocaleString()
+                                        paidAt: new Date().toLocaleString(),
+                                        device: parseUserAgent(payerUserAgent),
+                                        location: `${fraudCheck.city || 'Unknown City'}, ${fraudCheck.country || 'Unknown Country'}`,
+                                        ip: fraudCheck.ip,
+                                        isp: fraudCheck.isp,
+                                        time: new Date().toLocaleString('en-IN', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) + ' IST'
                                     });
                                     await sendEmail({
                                         to: email,

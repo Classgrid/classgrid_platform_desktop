@@ -172,14 +172,19 @@ router.post("/session", async (req, res) => {
         const demoEmail = req.body.email || "demo@classgrid.in";
         try {
             const otpContent = `
-                <div style="text-align:center;padding:24px 0;">
-                    <h2 style="margin:0 0 16px;color:#1e293b;">Payment Verification</h2>
-                    <p style="color:#475569;margin-bottom:24px;">Your one-time verification code is:</p>
-                    <div style="font-size:32px;font-weight:bold;letter-spacing:8px;text-align:center;padding:16px;background:#f1f5f9;border-radius:8px;margin:16px 0;color:#0f172a;">${realOtp}</div>
-                    <p style="color:#64748b;font-size:13px;margin-top:24px;">This code expires in 60 seconds. Do not share it with anyone.</p>
+                <h1>Payment Verification</h1>
+                <p>Hello,</p>
+                <p>You requested a secure verification code to proceed with your Classgrid billing payment.</p>
+                
+                <div class="box" style="margin-bottom: 24px;">
+                    <div class="meta">Verification Code</div>
+                    <div class="code" style="color: #3b82f6;">${realOtp}</div>
+                    <p style="margin: 12px 0 0; font-size: 13px; color: #6b7280;">This code will expire in 60 seconds.</p>
                 </div>
+                
+                <p style="font-size: 13px; color: #6b7280; margin-bottom: 0;">For your security, do not share this code with anyone. If you didn't request this code, you can safely ignore this email.</p>
             `;
-            const compiledHtml = baseTemplate({ content: otpContent, title: "Payment Verification Code" });
+            const compiledHtml = baseTemplate({ content: otpContent, title: "Payment Verification Code", ignoreText: "If you did not request this code, you can safely ignore this email." });
 
             await sendEmail({
                 to: demoEmail,
