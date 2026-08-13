@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Spinner } from "@/components/marketing_ui/spinner";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/marketing_ui/card";
 
@@ -51,23 +51,42 @@ const steps = [
 const DEMO_ENABLED = true; // Hardcoded for live test
 const API_BASE = import.meta.env.VITE_API_URL || "https://api.classgrid.in";
 
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={() => { navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+      className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-semibold transition bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
+    >
+      {copied ? "Copied!" : "Copy"}
+    </button>
+  );
+}
+
 function DemoCard() {
   const [loading, setLoading] = useState(false);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
-  const [showPurposeModal, setShowPurposeModal] = useState(false);
+  const [created, setCreated] = useState(false);
+  const [showPurposeModal, setShowPurposeModal] = useState(true);
+
+  // On mount, check if active session exists
+  useEffect(() => {
+    fetch(`${API_BASE}/api/billing/demo/status`)
+      .then(r => r.json())
+      .then(d => { if (d.enabled && d.has_active_session) setCheckoutUrl(null); })
+      .catch(() => {});
+  }, []);
 
   const createSession = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/billing/demo/session`, { 
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), payerName: "Payer" })
-      });
+      const res = await fetch(`${API_BASE}/api/billing/demo/session`, { method: "POST" });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || "Failed");
+      setCheckoutUrl(data.data.checkout_url);
+      setCreated(true);
       window.location.href = data.data.checkout_url;
     } catch (e: any) {
       setError(e.message);
@@ -76,40 +95,41 @@ function DemoCard() {
   };
 
   return (
-    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6 shadow-sm mb-8">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-500">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        </div>
-        <h3 className="text-xs font-bold uppercase tracking-widest text-amber-500">SaaS Subscription Checkout</h3>
+    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5 space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+          </svg>
+        </span>
+        <p className="text-xs font-semibold text-amber-400 uppercase tracking-[0.15em]">
+          Razorpay Review — Test Checkout
+        </p>
       </div>
-      <p className="text-sm text-muted-foreground mb-5">
-        Proceed with your invoice payment. Enter your email to receive a secure OTP and proceed to the payment gateway.
+
+      <p className="text-xs text-muted-foreground leading-5">
+        This creates a real Razorpay test session. Enter the OTP below, then complete checkout with the test card credentials.
       </p>
-      <div className="space-y-3">
-        <input 
-          type="email" 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)} 
-          placeholder="Enter your email to receive OTP" 
-          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-amber-500 transition-colors"
-        />
-        <button 
-          onClick={() => {
-            if (!email.trim()) {
-              setError("Email is required.");
-              return;
-            }
-            setShowPurposeModal(true);
-          }} 
-          disabled={loading}
-          className="w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-black transition hover:bg-amber-400 flex justify-center items-center gap-2 disabled:opacity-50"
-        >
-          {loading ? <Spinner className="w-4 h-4 text-black" /> : null}
-          {loading ? "Verifying..." : "Proceed to Payment →"}
-        </button>
-        {error && <p className="text-xs font-medium text-red-500">{error}</p>}
-      </div>
+
+      <button
+        id="demo-create-session-btn"
+        onClick={() => setShowPurposeModal(true)}
+        disabled={loading || created}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:opacity-60"
+      >
+        {loading || created ? (
+          <>
+            <Spinner className="h-4 w-4 text-black" /> {created ? "Redirecting…" : "Creating session…"}
+          </>
+        ) : (
+          "Open Test Checkout →"
+        )}
+      </button>
+
+      {error && <p className="text-xs text-red-400">{error}</p>}
+
+
 
       {/* Purpose Modal for Payment Gateways */}
       {showPurposeModal && (
@@ -227,7 +247,7 @@ function DemoCard() {
                 <p className="mb-2">Classgrid utilizes Razorpay for two distinct payment flows:</p>
                 
                 <div className="bg-muted/30 p-3 rounded-lg border border-border mb-3">
-                  <h4 className="font-semibold text-foreground text-xs mb-1 uppercase tracking-wider">A. B2B Flow (SaaS Subscription Payments)</h4>
+                  <h4 className="font-semibold text-foreground text-xs mb-1 uppercase tracking-wider">A. B2B Flow (SaaS Subscription Payments) - Current Demo</h4>
                   <p className="text-xs mb-2">When an educational institution subscribes to Classgrid's ERP software:</p>
                   <ol className="list-decimal pl-4 space-y-1 text-xs">
                     <li>Classgrid generates a SaaS subscription invoice for the institution.</li>
