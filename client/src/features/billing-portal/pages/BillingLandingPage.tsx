@@ -51,42 +51,26 @@ const steps = [
 const DEMO_ENABLED = true; // Hardcoded for live test
 const API_BASE = import.meta.env.VITE_API_URL || "https://api.classgrid.in";
 
-function CopyButton({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      onClick={() => { navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-      className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-semibold transition bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
-    >
-      {copied ? "Copied!" : "Copy"}
-    </button>
-  );
-}
-
 function DemoCard() {
   const [loading, setLoading] = useState(false);
-  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [created, setCreated] = useState(false);
-  const [showPurposeModal, setShowPurposeModal] = useState(true);
-
-  // On mount, check if active session exists
-  useEffect(() => {
-    fetch(`${API_BASE}/api/billing/demo/status`)
-      .then(r => r.json())
-      .then(d => { if (d.enabled && d.has_active_session) setCheckoutUrl(null); })
-      .catch(() => {});
-  }, []);
+  const [email, setEmail] = useState("");
 
   const createSession = async () => {
+    if (!email.trim()) {
+      setError("Email is required.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/billing/demo/session`, { method: "POST" });
+      const res = await fetch(`${API_BASE}/api/billing/demo/session`, { 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), payerName: "Razorpay Reviewer" })
+      });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || "Failed");
-      setCheckoutUrl(data.data.checkout_url);
-      setCreated(true);
       window.location.href = data.data.checkout_url;
     } catch (e: any) {
       setError(e.message);
@@ -95,198 +79,34 @@ function DemoCard() {
   };
 
   return (
-
-
-      {/* Purpose Modal for Payment Gateways */}
-      {showPurposeModal && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 sm:p-6 bg-background/95">
-          <Card className="relative flex w-full max-w-3xl max-h-[90vh] flex-col shadow-2xl">
-            
-            {/* Header */}
-            <CardHeader className="border-b border-border bg-muted/30 pb-4">
-              <CardTitle className="text-xl tracking-tight">Classgrid: Platform Purpose & Operational Flow</CardTitle>
-              <CardDescription>Please review our flow before testing the integration.</CardDescription>
-            </CardHeader>
-            
-            {/* Scrollable Content */}
-            <CardContent className="flex-1 overflow-y-scroll p-6 space-y-6 text-sm leading-relaxed text-muted-foreground">
-              
-              <div>
-                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">1</span>
-                  Our Purpose
-                </h3>
-                <p>Classgrid Technologies provides a comprehensive, cloud-based ERP (Enterprise Resource Planning) and SaaS platform tailored specifically for educational institutions (schools, colleges, and coaching centers). Our mission is to digitize and streamline school administration, student management, and internal communications into a single unified platform.</p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">2</span>
-                  Our Core Services
-                </h3>
-                <p className="mb-2">The Classgrid platform offers the following modules to institutions:</p>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li><strong>Fee Management System:</strong> Automated fee collection, receipt generation, and tracking.</li>
-                  <li><strong>Admission Portal:</strong> End-to-end digital admission engine for processing student applications.</li>
-                  <li><strong>Live Interactive Classes:</strong> Integration with Agora and Zoom for seamless online lectures.</li>
-                  <li><strong>Student Documentation:</strong> Secure storage for student records and notes via AWS S3.</li>
-                  <li><strong>Campus Canteen Management:</strong> Digital ordering and payment processing for campus cafeterias.</li>
-                  <li><strong>Unified Chat:</strong> Real-time communication for students and staff (powered by Supabase).</li>
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">3</span>
-                  Pricing (B2B SaaS — 3-Layer Billing)
-                </h3>
-                <p className="mb-3">Classgrid operates a dynamic, usage-based billing model. There are no fixed annual fees. Each institution is billed monthly across three layers:</p>
-                
-                <div className="bg-muted/30 p-3 rounded-lg border border-border mb-3">
-                  <h4 className="font-semibold text-foreground text-xs mb-1 uppercase tracking-wider">Layer 1 — Base Platform Fee</h4>
-                  <p className="text-xs">A nominal monthly fee covering core cloud hosting and platform maintenance. Set per institution by the Super Admin.</p>
-                </div>
-
-                <div className="bg-muted/30 p-3 rounded-lg border border-border mb-3">
-                  <h4 className="font-semibold text-foreground text-xs mb-2 uppercase tracking-wider">Layer 2 — Add-on Module Fees</h4>
-                  <p className="text-xs mb-2">Institutions toggle modules ON/OFF. They are billed only for active modules. Our full module catalog:</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px]">
-                    <span>• Attendance System</span>
-                    <span>• Admission Management</span>
-                    <span>• Digital Classroom</span>
-                    <span>• Fee Collection System</span>
-                    <span>• Automated Timetable</span>
-                    <span>• Staff Leave & Payroll</span>
-                    <span>• Academic Planning</span>
-                    <span>• Canteen Management</span>
-                    <span>• Homework & Assignments</span>
-                    <span>• AI Assistant</span>
-                    <span>• Student Notes Sharing</span>
-                    <span>• Advanced Analytics</span>
-                    <span>• Teacher Planner</span>
-                    <span>• Institution Website</span>
-                    <span>• Subject Management</span>
-                    <span>• Digital Certificates</span>
-                    <span>• Online Exam Platform</span>
-                    <span>• Holiday Management</span>
-                    <span>• Examination Management</span>
-                    <span>• Digital ID Cards</span>
-                    <span>• Grade Entry & Results</span>
-                    <span>• Events Management</span>
-                    <span>• Feedback System</span>
-                    <span>• 7+ Dedicated Dashboards</span>
-                  </div>
-                </div>
-
-                <div className="bg-muted/30 p-3 rounded-lg border border-border mb-3">
-                  <h4 className="font-semibold text-foreground text-xs mb-1 uppercase tracking-wider">Layer 3 — Infrastructure Resource Usage</h4>
-                  <p className="text-xs mb-2">Micro-billing for actual infrastructure consumed. Tracked daily, aggregated monthly:</p>
-                  <ul className="list-disc pl-4 space-y-0.5 text-[11px]">
-                    <li><strong>Cloud storage</strong> — billed per GB-day of files stored</li>
-                    <li><strong>Transactional emails</strong> — billed per email sent</li>
-                    <li><strong>SMS notifications</strong> — billed per SMS segment</li>
-                    <li><strong>AI assistant tokens</strong> — billed per token consumed</li>
-                    <li><strong>Live class minutes</strong> — billed per participant-minute</li>
-                    <li><strong>API requests</strong> — billed per request served</li>
-                  </ul>
-                </div>
-                <p className="text-xs text-muted-foreground">A sample calculated invoice demonstrating all three layers is available for download below.</p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">4</span>
-                  Understanding Our Domains (Security Architecture)
-                </h3>
-                <ul className="list-disc pl-5 space-y-2 mt-2">
-                  <li><strong><a href="https://classgrid.in" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">classgrid.in</a> (Marketing Site):</strong> This is simply our public brochure and marketing website, exactly like how <em>razorpay.com</em> is your public marketing site. Our actual software is not hosted here.</li>
-                  <li><strong>[school-name].classgrid.in (The Product):</strong> Every school gets their own secure subdomain to manage their ERP, staff, and students. This is a highly secure, closed system that requires a strict login, exactly like how your <em>dashboard.razorpay.com</em> works.</li>
-                  <li><strong>billing.classgrid.in (Payment Microservice):</strong> For maximum security and compliance, we completely decoupled the checkout flow. When an admin is inside their school's dashboard and clicks "Pay Subscription", they are securely redirected to this isolated portal to process the payment safely.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">5</span>
-                  The Payment Flow (Why we need Razorpay)
-                </h3>
-                <p className="mb-2">Classgrid utilizes Razorpay for two distinct payment flows:</p>
-                
-                <div className="bg-muted/30 p-3 rounded-lg border border-border mb-3">
-                  <h4 className="font-semibold text-foreground text-xs mb-1 uppercase tracking-wider">A. B2B Flow (SaaS Subscription Payments) - Current Demo</h4>
-                  <p className="text-xs mb-2">When an educational institution subscribes to Classgrid's ERP software:</p>
-                  <ol className="list-decimal pl-4 space-y-1 text-xs">
-                    <li>Classgrid generates a SaaS subscription invoice for the institution.</li>
-                    <li>The institution's administrator receives an email with a secure billing link.</li>
-                    <li>The administrator clicks the link and arrives at this Billing Landing Page.</li>
-                    <li>To ensure security, the administrator must authenticate their identity using a 6-digit OTP sent to their registered email.</li>
-                    <li>Upon successful OTP verification, the Razorpay Checkout modal opens.</li>
-                    <li>The administrator completes the payment (via UPI, Card, or Netbanking).</li>
-                    <li>The Classgrid backend verifies the Razorpay signature and provisions the software license for the institution.</li>
-                  </ol>
-                </div>
-
-                <div className="bg-muted/30 p-3 rounded-lg border border-border">
-                  <h4 className="font-semibold text-foreground text-xs mb-1 uppercase tracking-wider">B. B2C/B2B2C Flow (Institution Fee Collection)</h4>
-                  <p className="text-xs">For student fee payments (tuition, admission, examination), Classgrid uses an RBI-licensed Payment Aggregator's Sub-Merchant API. Each institution is onboarded as a sub-merchant. Student payments are settled directly to the institution's bank account via the PA's escrow. Classgrid never holds or settles institutional funds — we are purely the technology layer.</p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">6</span>
-                  Refund & Cancellation Policy
-                </h3>
-                <p>As a SaaS provider, subscriptions can be cancelled at any time from the admin dashboard. Refunds for software subscriptions are processed on a pro-rata basis within 5-7 business days in accordance with our Terms of Service.</p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/20 text-[11px] text-primary">7</span>
-                  Invoice Generation Engine
-                </h3>
-                <p className="mb-3">Our backend dynamically calculates institutional usage via scheduled Node.js workers. We utilize <strong>Puppeteer</strong> (headless Chrome) to render raw HTML line items into a high-fidelity PDF invoice, which is securely emailed to the administrator before they ever reach this checkout page.</p>
-                <a 
-                  href="/sample-invoice.pdf" 
-                  download="Classgrid_Sample_SaaS_Invoice.pdf"
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-4 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary/20"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                  Download Sample ₹2 Invoice
-                </a>
-              </div>
-
-            </CardContent>
-
-            {/* Footer */}
-            <CardFooter className="border-t border-border bg-muted/30 p-4 sm:p-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 sm:gap-3 rounded-b-lg">
-              <div className="text-sm font-medium flex items-center gap-2">
-              </div>
-              <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3">
-                <button 
-                  onClick={() => setShowPurposeModal(false)}
-                  className="w-full sm:w-auto rounded-xl px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition text-center border border-border sm:border-transparent"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPurposeModal(false);
-                    createSession();
-                  }}
-                  className="w-full sm:w-auto rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-400 text-center shadow-md"
-                >
-                  I Understand — Proceed
-                </button>
-              </div>
-            </CardFooter>
-          </Card>
+    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6 shadow-sm mb-8">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-500">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </div>
-      )}
+        <h3 className="text-xs font-bold uppercase tracking-widest text-amber-500">Razorpay Review — Test Checkout</h3>
+      </div>
+      <p className="text-sm text-muted-foreground mb-5">
+        This creates a real Razorpay test session. Enter your email to receive the OTP, then complete checkout with the test card credentials.
+      </p>
+      <div className="space-y-3">
+        <input 
+          type="email" 
+          value={email} 
+          onChange={(e) => setEmail(e.target.value)} 
+          placeholder="Enter your email to receive OTP" 
+          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-amber-500 transition-colors"
+        />
+        <button 
+          onClick={createSession} 
+          disabled={loading}
+          className="w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-black transition hover:bg-amber-400 flex justify-center items-center gap-2 disabled:opacity-50"
+        >
+          {loading ? <Spinner className="w-4 h-4 text-black" /> : null}
+          {loading ? "Creating Session..." : "Open Test Checkout →"}
+        </button>
+        {error && <p className="text-xs font-medium text-red-500">{error}</p>}
+      </div>
     </div>
   );
 }
