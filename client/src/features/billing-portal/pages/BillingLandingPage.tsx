@@ -119,7 +119,7 @@ function DemoCard() {
             {/* Header */}
             <CardHeader className="border-b border-border bg-muted/30 pb-4">
               <CardTitle className="text-xl tracking-tight">Classgrid: Platform Purpose & Operational Flow</CardTitle>
-              <CardDescription>Please review our flow before testing the integration.</CardDescription>
+              <CardDescription>Please review our flow before proceeding to checkout.</CardDescription>
             </CardHeader>
             
             {/* Scrollable Content */}
