@@ -129,31 +129,7 @@ function DemoCard() {
 
       {error && <p className="text-xs text-red-400">{error}</p>}
 
-      {/* Test credentials — always visible */}
-      <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-2.5">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Test Credentials</p>
 
-        {[
-          { label: "OTP", value: "123456" },
-          { label: "Card Number", value: "4111 1111 1111 1111" },
-          { label: "Card Expiry", value: "12/27" },
-          { label: "CVV", value: "123" },
-          { label: "Card OTP", value: "123456" },
-          { label: "UPI ID", value: "success@razorpay" },
-        ].map(item => (
-          <div key={item.label} className="flex items-center justify-between">
-            <span className="text-[11px] text-muted-foreground">{item.label}</span>
-            <div className="flex items-center">
-              <code className="text-xs font-mono font-bold text-foreground">{item.value}</code>
-              <CopyButton value={item.value} />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <p className="text-[10px] text-muted-foreground/60 text-center">
-        This test session expires in 48 hours. No real money is charged.
-      </p>
 
       {/* Purpose Modal for Payment Gateways */}
       {showPurposeModal && (
@@ -322,11 +298,7 @@ function DemoCard() {
 
             {/* Footer */}
             <CardFooter className="border-t border-border bg-muted/30 p-4 sm:p-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 sm:gap-3 rounded-b-lg">
-              <div className="text-xs text-muted-foreground flex items-center justify-center sm:justify-start gap-1.5">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
-                </svg>
-                <span>Test Card OTP: <strong className="text-foreground tracking-widest bg-muted px-1.5 py-0.5 rounded border border-border">123456</strong></span>
+              <div className="text-sm font-medium flex items-center gap-2">
               </div>
               <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3">
                 <button 

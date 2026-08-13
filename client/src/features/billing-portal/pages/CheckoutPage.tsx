@@ -5,9 +5,7 @@ import { apiClient } from "@/lib/apiClient";
 import { Spinner } from "@/components/marketing_ui/spinner";
 
 const OTP_TTL_SECONDS = 60;
-
-// Demo mode flag — name/email fields only show in demo
-const IS_DEMO = true; // Hardcoded for live test. Set false for production.
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.classgrid.in";
 
 function formatCountdown(seconds: number) {
   const minutes = Math.floor(seconds / 60);
@@ -18,7 +16,8 @@ function formatCountdown(seconds: number) {
 export function CheckoutPage() {
   const location = useLocation();
   const [token, setToken] = useState<string | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "invalid" | "success">("loading");
+  // "email_step" = show name+email first, "otp_step" = OTP sent, show OTP input
+  const [step, setStep] = useState<"loading" | "email_step" | "otp_step" | "invalid" | "success">("loading");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -53,7 +52,6 @@ export function CheckoutPage() {
   };
 
   useEffect(() => {
-    // Better approach: Read from localStorage or cross-subdomain cookie instead of ugly URL params
     const localTheme = localStorage.getItem("vite-ui-theme");
     const themeCookie = document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1];
     const themeToUse = themeCookie || localTheme;
@@ -66,40 +64,81 @@ export function CheckoutPage() {
 
     const searchParams = new URLSearchParams(location.search);
     const tokenParam = searchParams.get("token");
-    if (!tokenParam) {
-      setStatus("invalid");
-      return;
+
+    // If a token is in the URL, validate it and go straight to OTP step
+    if (tokenParam) {
+      setToken(tokenParam);
+      apiClient.get(`/api/billing/checkout/session?token=${tokenParam}`)
+        .then((res) => {
+          if (res.data?.success) {
+            setStep("otp_step");
+            setEmail(res.data.data?.maskedEmail || res.data.email || "your registered email");
+            startCountdown();
+          } else {
+            setStep("invalid");
+          }
+        })
+        .catch(() => {
+          setStep("invalid");
+        });
+    } else {
+      // No token = fresh visit → show Name + Email form first
+      const emailParam = searchParams.get("email");
+      if (emailParam) setPayerEmail(emailParam);
+      setStep("email_step");
     }
-    setToken(tokenParam);
-    apiClient.get(`/api/billing/checkout/session?token=${tokenParam}`)
-      .then((res) => {
-        if (res.data?.success) {
-          setStatus("ready");
-          setEmail(res.data.data?.maskedEmail || res.data.email || "your registered email");
-          startCountdown();
-        } else {
-          setStatus("invalid");
-        }
-      })
-      .catch(() => {
-        setStatus("invalid");
-      });
       
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [location.search]);
 
+  // Step 1: User enters Name + Email → click "Send OTP" → creates session, sends OTP
+  async function handleSendOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    if (!payerName.trim()) {
+      setError("Please enter your name");
+      return;
+    }
+    if (!payerEmail.trim() || !/\S+@\S+\.\S+/.test(payerEmail)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/billing/demo/session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: payerEmail.trim(), payerName: payerName.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed to create session");
+      
+      // Extract token from the checkout URL returned by the backend
+      const checkoutUrl = new URL(data.data.checkout_url);
+      const newToken = checkoutUrl.searchParams.get("token");
+      if (!newToken) throw new Error("No token returned from server");
+      
+      setToken(newToken);
+      setStep("otp_step");
+      startCountdown();
+      toast.success(`Verification code sent to ${payerEmail.trim()}`);
+    } catch (err: any) {
+      setError(err.message || "Failed to send OTP. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
-    if (IS_DEMO && !payerName.trim()) {
-      setError("Please enter your name");
-      return;
-    }
-    if (IS_DEMO && (!payerEmail.trim() || !/\S+@\S+\.\S+/.test(payerEmail))) {
-      setError("Please enter a valid email address");
+    if (otp.length !== 6) {
+      setError("Please enter the 6-digit code");
       return;
     }
     if (otp.length !== 6) {
@@ -183,7 +222,7 @@ export function CheckoutPage() {
     }
   }
 
-  if (status === "loading") {
+  if (step === "loading") {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <Spinner className="w-6 h-6 text-muted-foreground" />
@@ -191,7 +230,7 @@ export function CheckoutPage() {
     );
   }
 
-  if (status === "invalid") {
+  if (step === "invalid") {
     return (
       <main className="relative min-h-screen overflow-hidden bg-background text-foreground flex flex-col items-center justify-center text-center p-6 font-sans">
         <h2 className="text-2xl font-bold mb-2">Payment Completed or Link Expired</h2>
@@ -203,7 +242,7 @@ export function CheckoutPage() {
     );
   }
 
-  if (status === "success") {
+  if (step === "success") {
     return (
       <div className="relative min-h-screen overflow-hidden bg-background text-foreground flex items-center justify-center p-4">
         {/* Confetti or subtle background */}
@@ -284,45 +323,23 @@ export function CheckoutPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans checkout-otp-container" style={{ "--ring": "#444444", "--color-ring": "#444444" } as any}>
-      <style>{`
-        .checkout-otp-container *:focus-visible,
-        .checkout-otp-container *:focus {
-          outline: none !important;
-          box-shadow: none !important;
-          --tw-ring-color: transparent !important;
-          --tw-ring-shadow: none !important;
-        }
-        /* Only target the hidden OTP input, NOT the name/email inputs */
-        .checkout-otp-container .otp-hidden-input,
-        .checkout-otp-container .otp-hidden-input:focus,
-        .checkout-otp-container .otp-hidden-input:focus-visible {
-          border: none !important;
-          background: transparent !important;
-          outline: none !important;
-          box-shadow: none !important;
-        }
-      `}</style>
-      
-      {/* Top Left Logo - exactly like marketing */}
-      <Link to="/" className="absolute top-6 left-8 flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-        <img src="/logo.png" alt="Classgrid Logo" className="h-10 w-auto object-contain" />
-        <span className="text-xl font-semibold tracking-tight text-slate-900 dark:text-[#f1f1f1]">Classgrid</span>
-      </Link>
+  // ─── Step 1: Name + Email Form ───
+  if (step === "email_step") {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans">
+        <Link to="/" className="absolute top-6 left-8 flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+          <img src="/logo.png" alt="Classgrid Logo" className="h-10 w-auto object-contain" />
+          <span className="text-xl font-semibold tracking-tight text-slate-900 dark:text-[#f1f1f1]">Classgrid</span>
+        </Link>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-4">
-        
-        <div className="w-full max-w-[400px]">
-          
-          <div className="mb-8 text-center space-y-1">
-            <h1 className="text-3xl font-medium tracking-tight text-slate-900 dark:text-[#f1f1f1]">Complete Checkout</h1>
-            <p className="text-[14px] text-slate-500 dark:text-[#888888]">Enter your details and the verification code to proceed.</p>
-          </div>
+        <div className="flex-1 flex flex-col items-center justify-center p-4">
+          <div className="w-full max-w-[400px]">
+            <div className="mb-8 text-center space-y-1">
+              <h1 className="text-3xl font-medium tracking-tight text-slate-900 dark:text-[#f1f1f1]">Complete Checkout</h1>
+              <p className="text-[14px] text-slate-500 dark:text-[#888888]">Enter your details to receive a verification code.</p>
+            </div>
 
-          <form onSubmit={handleVerifyOtp} className="space-y-5">
-            {/* Name & Email inputs — only visible in demo/test mode */}
-            {IS_DEMO && (
+            <form onSubmit={handleSendOtp} className="space-y-5">
               <div className="space-y-3">
                 <div>
                   <label className="block text-[13px] font-medium text-slate-700 dark:text-[#ccc] mb-1.5">Full Name</label>
@@ -345,8 +362,65 @@ export function CheckoutPage() {
                   />
                 </div>
               </div>
-            )}
 
+              {error && <p className="text-red-400 text-sm font-medium text-center">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full items-center justify-center rounded-md bg-slate-900 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2a2a2a] dark:text-[#f1f1f1] dark:hover:bg-[#333]"
+              >
+                {loading ? <><Spinner className="w-4 h-4 text-inherit mr-2" /> Sending OTP...</> : "Send Verification Code"}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div className="absolute bottom-6 w-full text-center">
+          <p className="text-[13px] text-slate-400 dark:text-[#666666]">
+            <a href="https://classgrid.in/terms" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Terms of Service</a>
+            {" "}and{" "}
+            <a href="https://classgrid.in/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Privacy Policy</a>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Step 2: OTP Verification ───
+  return (
+    <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans checkout-otp-container" style={{ "--ring": "#444444", "--color-ring": "#444444" } as any}>
+      <style>{`
+        .checkout-otp-container *:focus-visible,
+        .checkout-otp-container *:focus {
+          outline: none !important;
+          box-shadow: none !important;
+          --tw-ring-color: transparent !important;
+          --tw-ring-shadow: none !important;
+        }
+        .checkout-otp-container .otp-hidden-input,
+        .checkout-otp-container .otp-hidden-input:focus,
+        .checkout-otp-container .otp-hidden-input:focus-visible {
+          border: none !important;
+          background: transparent !important;
+          outline: none !important;
+          box-shadow: none !important;
+        }
+      `}</style>
+      
+      <Link to="/" className="absolute top-6 left-8 flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+        <img src="/logo.png" alt="Classgrid Logo" className="h-10 w-auto object-contain" />
+        <span className="text-xl font-semibold tracking-tight text-slate-900 dark:text-[#f1f1f1]">Classgrid</span>
+      </Link>
+
+      <div className="flex-1 flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-[400px]">
+          <div className="mb-8 text-center space-y-1">
+            <h1 className="text-3xl font-medium tracking-tight text-slate-900 dark:text-[#f1f1f1]">Verify & Pay</h1>
+            <p className="text-[14px] text-slate-500 dark:text-[#888888]">Enter the 6-digit code sent to <strong className="text-slate-900 dark:text-[#f1f1f1]">{payerEmail || email}</strong></p>
+          </div>
+
+          <form onSubmit={handleVerifyOtp} className="space-y-5">
             <div className="flex flex-col items-center gap-3">
               <label className="block text-[13px] font-medium text-slate-700 dark:text-[#ccc] self-start">Verification Code</label>
               {/* Custom OTP implementation - click anywhere in the box area to focus */}

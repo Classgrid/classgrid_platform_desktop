@@ -58,6 +58,11 @@ router.post("/session", async (req, res) => {
         // Previous demo sessions expire naturally via MongoDB TTL (48h).
         // No cleanup needed — multiple sessions can coexist safely.
 
+        const { email, payerName } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, error: "Email is required." });
+        }
+
         // Resolve the Classgrid org (super admin org) — use a dummy ObjectId if none exists
         // We use a placeholder org_id since this is a demo
         const demoOrgId = process.env.CLASSGRID_ORG_ID
@@ -140,7 +145,7 @@ router.post("/session", async (req, res) => {
 
         const handoff = await BillingHandoff.create({
             token: hashHandoffToken(rawToken),
-            email: "demo@classgrid.in",
+            email: email.toLowerCase(),
             otp: otpHash,
             organization_id: demoOrgId,
             paymentOrderId: paymentOrder._id,
@@ -155,7 +160,7 @@ router.post("/session", async (req, res) => {
             return_url: process.env.BILLING_PORTAL_URL || "https://billing.classgrid.in",
             context: {
                 label: "Classgrid Platform — Demo Subscription",
-                payerName: "Demo Admin",
+                payerName: payerName || "Payer",
                 isDemo: true,
             },
             clientIp: req.ip || "127.0.0.1",
