@@ -190,7 +190,7 @@ export function CheckoutPage() {
               txnId: confirmRes.data?.data?.providerPaymentId || response.razorpay_payment_id,
               paidAt: now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' - ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
             });
-            setStatus("success");
+            setStep("success");
           } catch (confirmError: any) {
             console.error("Confirmation error", confirmError);
             toast.error("Payment verification failed.", { id: "payment-verify" });
@@ -199,7 +199,7 @@ export function CheckoutPage() {
             setLoading(false);
           }
         },
-        prefill: { email: customerEmail },
+        prefill: { email: customerEmail, name: payerName },
         theme: { 
           // Our app background stays exactly the same.
           // Razorpay's modal body doesn't have a true dark mode, but we match the header to our theme.

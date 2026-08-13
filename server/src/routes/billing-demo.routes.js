@@ -189,7 +189,7 @@ router.post("/session", async (req, res) => {
                     <p style="margin: 12px 0 0; font-size: 13px; color: #6b7280;">This code will expire in 60 seconds.</p>
                 </div>
                 
-                <p style="font-size: 13px; color: #6b7280; margin-bottom: 0;">For your security, do not share this code with anyone. If you didn't request this code, you can safely ignore this email.</p>
+                <p style="font-size: 13px; color: #6b7280; margin-bottom: 0;">For your security, do not share this code with anyone.</p>
             `;
             const compiledHtml = baseTemplate({ content: otpContent, title: "Payment Verification Code", ignoreText: "If you did not request this code, you can safely ignore this email." });
 

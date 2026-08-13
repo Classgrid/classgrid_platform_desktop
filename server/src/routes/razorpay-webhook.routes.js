@@ -139,6 +139,14 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
 
                 console.log(`[Razorpay Webhook] 💰 Payment ${event}: ₹${amountInr} | Email: ${email || 'N/A'} | Phone: ${contact || 'N/A'} | Order: ${orderId}`);
 
+                // Check if this payment was already processed (e.g. authorized vs captured)
+                const PlatformTransaction = (await import("../models/PlatformTransaction.js")).default;
+                const existingTxn = await PlatformTransaction.findOne({ razorpayPaymentId: paymentId });
+                if (existingTxn) {
+                    console.log(`[Razorpay Webhook] Payment ${paymentId} already processed (Status: ${existingTxn.status}), skipping duplicate fraud check.`);
+                    break; // Skip everything, we already handled this payment
+                }
+
                 // Determine payment type from notes
                 const invoiceId = notes?.invoice_id || notes?.invoiceId || null;
                 const studentId = notes?.student_id || notes?.studentId || null;
