@@ -414,7 +414,7 @@ async function processQueueItem(item) {
       if (item.document_type === "legalPage") unsubscribeType = "legal";
       
       const token = generateUnsubscribeHash(sub.email);
-      const unsubscribeUrl = `${siteUrl}/api/blog/unsubscribe?type=${unsubscribeType}&email=${encodeURIComponent(sub.email)}&token=${token}`;
+      const unsubscribeUrl = `${siteUrl}/api/preferences/unsubscribe?type=${unsubscribeType}&email=${encodeURIComponent(sub.email)}&token=${token}`;
 
       const mailOptions = {
         replyTo: supportEmail,
