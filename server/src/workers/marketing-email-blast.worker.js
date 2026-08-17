@@ -413,7 +413,8 @@ async function processQueueItem(item) {
       if (item.document_type === "changelogEntry") unsubscribeType = "changelog";
       if (item.document_type === "legalPage") unsubscribeType = "legal";
       
-      const unsubscribeUrl = `${siteUrl}/login?intent=unsubscribe&type=${unsubscribeType}&next=${encodeURIComponent(`/api/preferences/unsubscribe?type=${unsubscribeType}`)}`;
+      const token = generateUnsubscribeHash(sub.email);
+      const unsubscribeUrl = `${siteUrl}/api/blog/unsubscribe?type=${unsubscribeType}&email=${encodeURIComponent(sub.email)}&token=${token}`;
 
       const mailOptions = {
         replyTo: supportEmail,
