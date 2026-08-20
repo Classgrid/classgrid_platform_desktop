@@ -441,15 +441,12 @@ export function ClassgridTalkPage() {
     const ticketId = searchParams.get("ticketId");
     const autoAssign = searchParams.get("autoAssign") === "true";
 
-    if (ticketId && tickets.length > 0 && currentUser) {
-      const targetTicket = tickets.find((t) => t._id === ticketId);
-      if (targetTicket) {
-        // [IMPLEMENTED] Auto-open the ticket — After redirect, it should open that specific ticket directly, not just land on the list.
+    if (ticketId && currentUser) {
+      const processTicket = (targetTicket: SupportTicket) => {
         if (!selectedTicket || selectedTicket._id !== targetTicket._id) {
           setSelectedTicket(targetTicket);
         }
 
-        // [IMPLEMENTED] Auto-assign — Identify the logged-in admin after redirect and auto-assign
         const currentAssigneeId =
           typeof targetTicket.assignedTo === "object"
             ? targetTicket.assignedTo?._id
@@ -468,13 +465,26 @@ export function ClassgridTalkPage() {
           );
         }
 
-        // Clear the params from URL so it doesn't re-trigger on refresh
         searchParams.delete("ticketId");
         searchParams.delete("autoAssign");
         setSearchParams(searchParams);
+      };
+
+      const foundInList = tickets.find((t) => t._id === ticketId);
+      if (foundInList) {
+        processTicket(foundInList);
+      } else {
+        // Explicitly fetch the ticket if it's new and not in the cached list yet
+        import("../services/superAdminApi").then(({ supportApi }) => {
+          supportApi.getTicket(ticketId).then((res) => {
+            if (res.success && res.ticket) {
+              processTicket(res.ticket);
+            }
+          }).catch(console.error);
+        });
       }
     }
-  }, [tickets.length, searchParams, currentUser]);
+  }, [tickets, searchParams, currentUser]);
   const apiStats = data?.stats;
 
   const orgTypes = useMemo(() => {
