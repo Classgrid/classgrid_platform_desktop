@@ -1,5 +1,6 @@
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   MessageSquare,
   AlertCircle,
@@ -433,6 +434,47 @@ export function ClassgridTalkPage() {
   const editTicketReply = useEditTicketReply();
 
   const tickets = data?.tickets ?? [];
+
+  // ── Auto-Open & Auto-Assign from URL ──
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const ticketId = searchParams.get("ticketId");
+    const autoAssign = searchParams.get("autoAssign") === "true";
+
+    if (ticketId && tickets.length > 0 && currentUser) {
+      const targetTicket = tickets.find((t) => t._id === ticketId);
+      if (targetTicket) {
+        // Auto-open
+        if (!selectedTicket || selectedTicket._id !== targetTicket._id) {
+          setSelectedTicket(targetTicket);
+        }
+
+        // Auto-assign if requested and not already assigned to current user
+        const currentAssigneeId =
+          typeof targetTicket.assignedTo === "object"
+            ? targetTicket.assignedTo?._id
+            : targetTicket.assignedTo;
+
+        if (autoAssign && currentAssigneeId !== currentUser._id) {
+          updateTicket.mutate(
+            { id: targetTicket._id, assignedTo: currentUser._id },
+            {
+              onSuccess: (res) => {
+                toast.success("Ticket auto-assigned to you");
+                if (res.ticket) setSelectedTicket(res.ticket);
+                refetch();
+              },
+            }
+          );
+        }
+
+        // Clear the params from URL so it doesn't re-trigger on refresh
+        searchParams.delete("ticketId");
+        searchParams.delete("autoAssign");
+        setSearchParams(searchParams);
+      }
+    }
+  }, [tickets.length, searchParams, currentUser]);
   const apiStats = data?.stats;
 
   const orgTypes = useMemo(() => {
