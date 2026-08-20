@@ -55,6 +55,7 @@ function Sep() {
 export interface RichReplyEditorRef {
   clear: () => void;
   getHTML: () => string;
+  setHTML: (html: string) => void;
   getFiles: () => File[];
 }
 
@@ -151,7 +152,7 @@ const RichReplyEditor = forwardRef<RichReplyEditorRef, RichReplyEditorProps>(
       }
     }, []);
 
-    // Expose clear and getHTML methods
+    // Expose clear, getHTML, and setHTML methods
     useImperativeHandle(ref, () => ({
       clear: () => {
         if (editorRef.current) {
@@ -161,6 +162,12 @@ const RichReplyEditor = forwardRef<RichReplyEditorRef, RichReplyEditorProps>(
         setFiles([]);
       },
       getHTML: () => editorRef.current?.innerHTML || "",
+      setHTML: (html: string) => {
+        if (editorRef.current) {
+          editorRef.current.innerHTML = html;
+          onChange(html);
+        }
+      },
       getFiles: () => files,
     }), [onChange, files]);
 
