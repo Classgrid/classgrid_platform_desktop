@@ -813,12 +813,12 @@ export function SupportTicketsPage() {
                           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-blue-500 border-2 border-card" />
                         )}
                       </div>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-semibold text-foreground text-sm">
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="font-semibold text-foreground text-sm truncate" title={name}>
                           {name}
                         </span>
                         {(ticket as any).organization_id?.name && (
-                          <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+                          <span className="text-[10px] text-muted-foreground truncate">
                             {(ticket as any).organization_id.name}
                           </span>
                         )}
@@ -826,8 +826,8 @@ export function SupportTicketsPage() {
                     </div>
                   ),
                   subject: (
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-sm text-foreground font-medium">
+                    <div className="flex flex-col gap-1.5 min-w-0">
+                      <span className="text-sm text-foreground font-medium truncate" title={ticket.subject}>
                         {ticket.subject}
                       </span>
                       <div className="flex items-center gap-2 flex-wrap">
