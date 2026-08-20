@@ -9,8 +9,8 @@ import { asyncContext } from '../utils/async-context.js';
 const accountId = process.env.R2_ACCOUNT_ID;
 const accessKeyId = process.env.R2_ACCESS_KEY_ID;
 const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'classgrid';
-const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || 'https://pub-14d5af5a38c6456da3b086aeea5188e1.r2.dev';
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'classgrid-storage';
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || 'https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev';
 
 if (!accountId || !accessKeyId || !secretAccessKey) {
     console.error('⚠️ Missing Cloudflare R2 credentials. R2 uploads will fail.');
