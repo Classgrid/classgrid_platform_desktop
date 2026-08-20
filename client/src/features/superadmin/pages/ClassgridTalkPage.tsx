@@ -56,6 +56,8 @@ import {
   useUpdateTicket,
   useDeleteTicket,
   useEditTicketReply,
+  useTicketDraft,
+  useSaveTicketDraft,
 } from "../queries/useSupportTickets";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 import type {
@@ -371,6 +373,53 @@ export function ClassgridTalkPage() {
 
   const { data: currentUser } = useCurrentUser();
 
+  // ── AI Draft Support ──
+  const { data: draftData, isLoading: isDraftLoading } = useTicketDraft(selectedTicket?._id || null);
+  const saveDraftMutation = useSaveTicketDraft();
+  const [isAiDraft, setIsAiDraft] = useState(false);
+
+  // Load draft into editor when ticket changes or draft loads
+  useEffect(() => {
+    if (selectedTicket && draftData?.draft?.draftContent !== undefined) {
+      const draftContent = draftData.draft.draftContent || "";
+      let parsed = draftContent;
+      try {
+        const p = JSON.parse(draftContent);
+        if (p.text || p.content) parsed = p.content || p.text;
+      } catch(e) {}
+      
+      setReplyBody(parsed);
+      replyEditorRef.current?.setHTML(parsed);
+      setIsAiDraft(draftData.draft.source === "ai_generated");
+    } else if (selectedTicket && !isDraftLoading) {
+      setReplyBody("");
+      replyEditorRef.current?.clear();
+      setIsAiDraft(false);
+    }
+  }, [selectedTicket?._id, draftData?.draft?.draftContent, isDraftLoading]);
+
+  // Debounced auto-save draft
+  useEffect(() => {
+    if (!selectedTicket || replyBody === undefined) return;
+    
+    let parsedDraft = draftData?.draft?.draftContent || "";
+    try {
+      const p = JSON.parse(parsedDraft);
+      if (p.text || p.content) parsedDraft = p.content || p.text;
+    } catch(e) {}
+    
+    if (replyBody === parsedDraft) return;
+
+    const timer = setTimeout(() => {
+      saveDraftMutation.mutate({ id: selectedTicket._id, draftContent: replyBody });
+      if (isAiDraft && replyBody !== parsedDraft) {
+        setIsAiDraft(false);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [replyBody, selectedTicket?._id, draftData?.draft?.draftContent]);
+
   const { data, isLoading, isError, refetch, isFetching } = useSupportTickets({
     status: statusFilter || undefined,
     priority: priorityFilter || undefined,
@@ -576,6 +625,8 @@ export function ClassgridTalkPage() {
       setSelectedTicket(result.ticket);
       setReplyBody("");
       replyEditorRef.current?.clear();
+      // Clear draft on successful send
+      saveDraftMutation.mutate({ id: selectedTicket._id, draftContent: "" });
       refetch();
       
       setReplySent(true);
@@ -767,12 +818,12 @@ export function ClassgridTalkPage() {
                           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-blue-500 border-2 border-card" />
                         )}
                       </div>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-semibold text-foreground text-sm">
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="font-semibold text-foreground text-sm truncate" title={name}>
                           {name}
                         </span>
                         {(ticket as any).organization_id?.name && (
-                          <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+                          <span className="text-[10px] text-muted-foreground truncate">
                             {(ticket as any).organization_id.name}
                           </span>
                         )}
@@ -780,8 +831,8 @@ export function ClassgridTalkPage() {
                     </div>
                   ),
                   subject: (
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-sm text-foreground font-medium">
+                    <div className="flex flex-col gap-1.5 min-w-0">
+                      <span className="text-sm text-foreground font-medium truncate" title={ticket.subject}>
                         {ticket.subject}
                       </span>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -1160,14 +1211,38 @@ export function ClassgridTalkPage() {
                         if (replySentTimerRef.current) clearTimeout(replySentTimerRef.current);
                       }
                     }}
-                    placeholder="Type your reply here..."
+                    placeholder={isDraftLoading ? "Loading draft..." : "Type your reply here..."}
                     minHeight={300}
                     onSubmit={submitReply}
                   />
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs text-muted-foreground">
-                      Press Enter to send, Shift+Enter for new line.
-                    </p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <p>
+                        Press Enter to send, Shift+Enter for new line.
+                      </p>
+                      {isAiDraft && (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 font-medium">
+                          ✨ AI Draft 
+                          {draftData?.draft?.aiContext && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger className="cursor-help">
+                                  <AlertCircle className="w-3.5 h-3.5" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-[300px]">
+                                  <p><strong>AI Context:</strong> {draftData.draft.aiContext}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </span>
+                      )}
+                      {saveDraftMutation.isPending && (
+                        <span className="flex items-center gap-1 text-primary/70">
+                          <Spinner className="w-3 h-3" /> Saving...
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2" title="If checked, the user will receive an email about this reply.">
                         <label htmlFor="send-email-toggle" className="text-xs font-semibold text-foreground cursor-pointer">
