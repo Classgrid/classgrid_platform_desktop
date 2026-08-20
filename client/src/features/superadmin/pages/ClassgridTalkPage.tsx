@@ -389,6 +389,13 @@ export function ClassgridTalkPage() {
         if (p.text || p.content) parsed = p.content || p.text;
       } catch(e) {}
       
+      // Inject the current user's name if the AI left the [ADMIN_NAME] placeholder
+      if (currentUser?.name) {
+        parsed = parsed.replace(/\[ADMIN_NAME\]/g, currentUser.name);
+      } else {
+        parsed = parsed.replace(/\[ADMIN_NAME\]/g, "Customer Success Manager");
+      }
+      
       setReplyBody(parsed);
       replyEditorRef.current?.setHTML(parsed);
       setIsAiDraft(draftData.draft.source === "ai_generated");
