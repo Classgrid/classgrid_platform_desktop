@@ -282,6 +282,15 @@ export const supportApi = {
       .patch<{ success: boolean; ticket: SupportTicket }>(`/api/support/admin/tickets/${ticketId}/reply/${replyId}`, { message })
       .then((r) => r.data),
 
+  getTicketDraft: (id: string) =>
+    apiClient
+      .get<{ success: boolean; draft: any }>(`/api/support/admin/tickets/${id}/draft`)
+      .then((r) => r.data),
+
+  saveTicketDraft: (id: string, draftContent: string) =>
+    apiClient
+      .put<{ success: boolean; draft: any }>(`/api/support/admin/tickets/${id}/draft`, { draftContent })
+      .then((r) => r.data),
 
   deleteTicket: (id: string) =>
     apiClient

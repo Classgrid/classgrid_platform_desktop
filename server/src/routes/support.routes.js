@@ -1433,4 +1433,70 @@ router.patch("/admin/tickets/:id/reply/:replyId", isAuthenticated, requireRole("
     }
 });
 
+// ══════════════════════════════════════════════════════════════
+//  SUPER ADMIN: GET /api/support/admin/tickets/:id/draft — Get draft
+// ══════════════════════════════════════════════════════════════
+router.get("/admin/tickets/:id/draft", isAuthenticated, requireRole("super_admin"), async (req, res) => {
+    try {
+        const { default: MessageDraft } = await import("../models/MessageDraft.js");
+        const draft = await MessageDraft.findOne({
+            ticketId: req.params.id
+        }).lean();
+
+        res.json({ success: true, draft });
+    } catch (err) {
+        console.error("[Support] Get draft error:", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+// ══════════════════════════════════════════════════════════════
+//  SUPER ADMIN: PUT /api/support/admin/tickets/:id/draft — Save draft
+// ══════════════════════════════════════════════════════════════
+router.put("/admin/tickets/:id/draft", isAuthenticated, requireRole("super_admin"), async (req, res) => {
+    try {
+        const { draftContent, source, aiContext } = req.body;
+        const { default: MessageDraft } = await import("../models/MessageDraft.js");
+        
+        if (!draftContent) {
+            await MessageDraft.findOneAndDelete({
+                ticketId: req.params.id
+            });
+            return res.json({ success: true, message: "Draft deleted" });
+        }
+
+        const draft = await MessageDraft.findOneAndUpdate(
+            { ticketId: req.params.id },
+            { 
+                draftContent, 
+                source: source || "manual", 
+                aiContext: aiContext || "",
+                adminId: req.user._id
+            },
+            { new: true, upsert: true }
+        );
+
+        res.json({ success: true, draft });
+    } catch (err) {
+        console.error("[Support] Save draft error:", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+// ══════════════════════════════════════════════════════════════
+//  SUPER ADMIN: DELETE /api/support/admin/tickets/:id/draft — Delete draft
+// ══════════════════════════════════════════════════════════════
+router.delete("/admin/tickets/:id/draft", isAuthenticated, requireRole("super_admin"), async (req, res) => {
+    try {
+        const { default: MessageDraft } = await import("../models/MessageDraft.js");
+        await MessageDraft.findOneAndDelete({
+            ticketId: req.params.id
+        });
+        res.json({ success: true, message: "Draft deleted" });
+    } catch (err) {
+        console.error("[Support] Delete draft error:", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
 export default router;

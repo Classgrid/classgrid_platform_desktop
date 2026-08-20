@@ -68,3 +68,23 @@ export function useDeleteTicket() {
     }
   });
 }
+
+export function useTicketDraft(ticketId: string | null) {
+  return useQuery({
+    queryKey: ["super-admin", "ticket-draft", ticketId],
+    queryFn: () => ticketId ? supportApi.getTicketDraft(ticketId) : null,
+    enabled: !!ticketId,
+    staleTime: 0,
+  });
+}
+
+export function useSaveTicketDraft() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, draftContent }: { id: string; draftContent: string }) =>
+      supportApi.saveTicketDraft(id, draftContent),
+    onSuccess: (data, variables) => {
+      qc.invalidateQueries({ queryKey: ["super-admin", "ticket-draft", variables.id] });
+    },
+  });
+}

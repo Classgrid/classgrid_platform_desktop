@@ -4,7 +4,7 @@
   <h1>Classgrid | Platform Desktop</h1>
 
   <p>
-    <strong>The operating system for modern education - built for institutions, real-time learning, and scale.</strong>
+    <strong>The operating system for Educational Institutions - built for institutions, real-time learning, and scale.</strong>
   </p>
 
   <p>

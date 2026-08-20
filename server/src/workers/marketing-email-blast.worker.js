@@ -337,9 +337,11 @@ async function processQueueItem(item) {
   // Fetch subscribers who have this specific preference enabled
   const { data: subscribers } = await supabaseAdmin
     .from("blog_subscribers")
-    .select("email, receives_blog, receives_changelog, receives_legal");
+    .select("email, receives_blog, receives_changelog, receives_legal, short_code");
     
+  let subscriberMap = new Map();
   if (subscribers) {
+      subscribers.forEach(s => subscriberMap.set(s.email.toLowerCase(), s));
       // Manually filter in memory to strictly obey the specific toggle
       const activeForThisType = subscribers.filter(sub => {
           if (filterColumn === "receives_blog" && sub.receives_blog === false) return false;
@@ -386,6 +388,43 @@ async function processQueueItem(item) {
 
   if (batch.length === 0) return { sent: 0, failed: 0, done: true };
 
+  // ── Ensure short_codes exist for this batch ──
+  const missingShortCodes = [];
+  const generatedShortCodes = new Map(); // email -> short_code
+
+  for (const sub of batch) {
+    const lowerEmail = sub.email.toLowerCase();
+    const existing = subscriberMap.get(lowerEmail);
+    if (!existing?.short_code) {
+      const newCode = crypto.randomBytes(6).toString("base64url").slice(0, 8); // 8 chars
+      generatedShortCodes.set(lowerEmail, newCode);
+      
+      if (existing) {
+        missingShortCodes.push({ ...existing, short_code: newCode });
+      } else {
+        missingShortCodes.push({
+          email: sub.email,
+          name: "Subscriber",
+          receives_blog: true,
+          receives_changelog: true,
+          receives_legal: true,
+          unsubscribe_token: crypto.randomBytes(16).toString("hex"), // legacy token
+          short_code: newCode
+        });
+      }
+    }
+  }
+
+  if (missingShortCodes.length > 0) {
+    console.log(`[EmailBlast] Bulk upserting short_codes for ${missingShortCodes.length} subscribers...`);
+    const { error: upsertError } = await supabaseAdmin
+      .from("blog_subscribers")
+      .upsert(missingShortCodes, { onConflict: "email" });
+    if (upsertError) {
+      console.error("[EmailBlast] Failed to bulk upsert short_codes:", upsertError);
+    }
+  }
+
   let subject = item.document_type === "changelogEntry" 
     ? `Classgrid Update: ${resolvedPost.resolvedTitle}` 
     : `New from the Classgrid Blog: ${resolvedPost.resolvedTitle}`;
@@ -413,8 +452,11 @@ async function processQueueItem(item) {
       if (item.document_type === "changelogEntry") unsubscribeType = "changelog";
       if (item.document_type === "legalPage") unsubscribeType = "legal";
       
-      const token = generateUnsubscribeHash(sub.email);
-      const unsubscribeUrl = `${siteUrl}/api/preferences/unsubscribe?type=${unsubscribeType}&email=${encodeURIComponent(sub.email)}&token=${token}`;
+      const lowerEmail = sub.email.toLowerCase();
+      const existingShortCode = subscriberMap.get(lowerEmail)?.short_code;
+      const token = existingShortCode || generatedShortCodes.get(lowerEmail) || crypto.randomBytes(6).toString("base64url").slice(0, 8);
+      
+      const unsubscribeUrl = `${siteUrl}/api/preferences/unsubscribe?type=${unsubscribeType}&c=${token}`;
 
       const mailOptions = {
         replyTo: supportEmail,
