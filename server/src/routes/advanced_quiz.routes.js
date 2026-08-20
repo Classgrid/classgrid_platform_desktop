@@ -732,7 +732,7 @@ router.post("/:quizId/explain", isAuthenticated, requireRole("student"), async (
         const { question, options, correct_answer, selected_answer } = req.body;
         
         const Groq = (await import("groq-sdk")).default;
-        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
         if (!process.env.GROQ_API_KEY) return res.status(500).json({ error: "AI not configured" });
 
         const correctOption = typeof correct_answer === 'number' ? options[correct_answer] : correct_answer;

@@ -8,7 +8,7 @@ import { primarySupabaseClient as supabase } from '../config/supabaseClient.js';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
 
 router.use(isAuthenticated, attachInstitutionProfile({ required: false }));
 

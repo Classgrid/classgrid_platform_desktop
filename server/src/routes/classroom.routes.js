@@ -21,7 +21,7 @@ import pdfParse from "pdf-parse";
 import { Groq } from "groq-sdk";
 
 const router = express.Router();
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
 
 // Supabase Client — centralized via supabaseClient.js
 // getChatSb() is imported from config, no local createClient needed.

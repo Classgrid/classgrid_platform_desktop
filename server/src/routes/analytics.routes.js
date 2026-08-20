@@ -7,7 +7,7 @@ import { primarySupabaseClient as supabase } from "../config/supabaseClient.js";
 import Groq from "groq-sdk";
 
 const router = express.Router();
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
 
 // ═══════════════════════════════════════════════════════════════
 // STUDENT ANALYTICS

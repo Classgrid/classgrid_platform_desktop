@@ -4,7 +4,7 @@ import StudentMark from '../../models/StudentMark.js';
 import QuizSession from '../../models/QuizSession.js';
 import User from '../../models/User.js';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
 
 /**
  * generateStudentPersona

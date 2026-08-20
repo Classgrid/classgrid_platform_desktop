@@ -8,7 +8,7 @@ import Groq from "groq-sdk";
 import mongoose from "mongoose";
 
 const router = express.Router();
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
 
 // ═══════════════════════════════════════════════════════════════
 // VIVA SCHEDULE MODEL (Inline — Faculty schedules class-wide vivas)

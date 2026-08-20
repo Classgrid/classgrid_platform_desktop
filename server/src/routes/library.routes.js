@@ -177,7 +177,7 @@ router.post('/import', isAuthenticated, requireRole('org_admin', 'library_manage
                 const { default: Groq } = await import('groq-sdk').catch(() => ({ default: null }));
                 
                 if (Groq) {
-                    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+                    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
                     
                     const prompt = `You are a librarian AI. Categorize these books into standard broad academic subjects (like 'Physics', 'Computer Science', 'Literature', 'Commerce', etc.). 
 Respond ONLY with a valid JSON array of strings in the exact same order as the input. Do not include any markdown formatting, backticks, or explanation.
@@ -494,7 +494,7 @@ router.post('/student/book-info', isAuthenticated, async (req, res) => {
         const { default: Groq } = await import('groq-sdk').catch(() => ({ default: null }));
         if (!Groq) return res.json({ summary: "AI module not loaded." });
 
-        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
         
         const prompt = `You are a knowledgeable librarian. Provide a very concise, engaging, 2-3 sentence overview about the book titled "${book_name}" (Subject: ${subject || 'Unknown'}). Describe what the student will learn from it or what it's about. No markdown formatting.`;
 

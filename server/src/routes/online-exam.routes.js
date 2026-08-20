@@ -1080,7 +1080,7 @@ router.post("/:examId/verify-access", isAuthenticated, requireRole("student"), a
 });
 
 import { Groq } from "groq-sdk";
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
 
 // ─────────────────────────────────────────────────────────────
 // SUBMIT EXAM WITH BEHAVIORAL PENALTY

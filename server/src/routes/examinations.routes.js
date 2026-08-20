@@ -10,7 +10,7 @@ import { uploadBufferToR2, deleteFromR2, getPresignedUploadUrl } from "../config
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' }) : null;
 
 // Middleware to ensure user is logged in and profile context is available.
 router.use(isAuthenticated, attachInstitutionProfile({ required: false }));

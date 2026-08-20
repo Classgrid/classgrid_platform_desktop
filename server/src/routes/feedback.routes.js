@@ -7,7 +7,7 @@ import User from '../models/User.js';
 import { bulkDispatchNotification } from '../services/notification.service.js';
 
 const router = express.Router();
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' }) : null;
 
 function getOrgId(user) {
     return user?.organization?._id?.toString() || user?.organization?.toString() || user?.org_id?.toString();
