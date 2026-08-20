@@ -5,9 +5,8 @@ import accessLogger from '../config/logger.js';
 import { asyncContext } from '../utils/async-context.js';
 import AiUsageLog from '../models/AiUsageLog.js';
 
-// Initialize clients
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
+  apiKey: process.env.GROQ_API_KEY || 'missing-key',
 });
 
 const genAI = new GoogleGenAI({
