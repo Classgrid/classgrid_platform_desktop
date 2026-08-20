@@ -444,12 +444,12 @@ export function ClassgridTalkPage() {
     if (ticketId && tickets.length > 0 && currentUser) {
       const targetTicket = tickets.find((t) => t._id === ticketId);
       if (targetTicket) {
-        // Auto-open
+        // [IMPLEMENTED] Auto-open the ticket — After redirect, it should open that specific ticket directly, not just land on the list.
         if (!selectedTicket || selectedTicket._id !== targetTicket._id) {
           setSelectedTicket(targetTicket);
         }
 
-        // Auto-assign if requested and not already assigned to current user
+        // [IMPLEMENTED] Auto-assign — Identify the logged-in admin after redirect and auto-assign
         const currentAssigneeId =
           typeof targetTicket.assignedTo === "object"
             ? targetTicket.assignedTo?._id
