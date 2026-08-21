@@ -641,7 +641,7 @@ export function buildTalkRequestReplyEmailHtml({ ticket, replyMessage, conversat
 <tr>
 <td style="padding:30px;border-bottom:1px solid #eaeaea;text-align:center;">
 <img src="https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/android-chrome-512x512.png" alt="Classgrid" width="48" height="48" style="display:block;margin:0 auto 16px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
-<h1 style="color:#111111;margin:0;font-size:22px;">New Message from Your Classgrid Talk Specialist</h1>
+<h1 style="color:#111111;margin:0;font-size:22px;">New Reply on Your Request</h1>
 <p style="color:#6b7280;margin-top:8px;font-size:13px;">Request #CG-TALK-${escapeHtml(ticketIdShort)}</p>
 </td>
 </tr>
@@ -656,7 +656,7 @@ export function buildTalkRequestReplyEmailHtml({ ticket, replyMessage, conversat
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${isEmailInquiry ? `Re: ${escapeHtml(subject)}` : `New Message from Your Classgrid Talk Specialist – Request #CG-TALK-${escapeHtml(ticketIdShort)}`}</title>
+  <title>${isEmailInquiry ? `Re: ${escapeHtml(subject)}` : `New Reply on Your Request – #CG-TALK-${escapeHtml(ticketIdShort)}`}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body, html {
@@ -774,7 +774,7 @@ export function buildTalkRequestReplyPlainText({ ticket, replyMessage, conversat
             `Our specialist ${specialistName} has reviewed your email and personally replied to you below:`
         ]
         : [
-            `New Message from Your Classgrid Talk Specialist – Request #CG-TALK-${ticketIdShort}`,
+            `New Reply on Your Request – #CG-TALK-${ticketIdShort}`,
             "",
             `Dear ${userName},`,
             "",
