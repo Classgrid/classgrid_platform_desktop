@@ -196,7 +196,7 @@ function ensureInitialMessage(ticket) {
 // ──────────────────────────────────────────────────────────────
 router.post("/public/tickets", enforceStrictSession, multipleUploads("files", 5), async (req, res) => {
     try {
-        const { name, email, subject, message, category, priority, institution, role: submitterRoleInput } = req.body;
+        const { name, email, subject, message, category, priority, institution, role: submitterRoleInput, skipEmail } = req.body;
 
         if (!email?.trim() || !subject?.trim() || !message?.trim()) {
             return res.status(400).json({
@@ -331,10 +331,12 @@ router.post("/public/tickets", enforceStrictSession, multipleUploads("files", 5)
 
         // ── Send email notification for new ticket ──
         try {
-            if (isGeneralInquiry) {
-                await notifyUserOfTalkRequestCreation({ ticket });
-            } else {
-                await notifyUserOfTicketCreation({ ticket });
+            if (skipEmail !== "true" && skipEmail !== true) {
+                if (isGeneralInquiry) {
+                    await notifyUserOfTalkRequestCreation({ ticket });
+                } else {
+                    await notifyUserOfTicketCreation({ ticket });
+                }
             }
 
             // Notify Super Admins

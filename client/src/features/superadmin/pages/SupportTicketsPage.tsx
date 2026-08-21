@@ -368,6 +368,7 @@ export function SupportTicketsPage() {
 
   const { data: draftData, isLoading: isDraftLoading } = useTicketDraft(selectedTicket?._id || null);
   const saveDraftMutation = useSaveTicketDraft();
+  const isSendingRef = useRef(false);
   const [isAiDraft, setIsAiDraft] = useState(false);
 
   // Load draft into editor when ticket changes or draft loads
@@ -404,6 +405,7 @@ export function SupportTicketsPage() {
     if (replyBody === parsedDraft) return;
 
     const timer = setTimeout(() => {
+      if (isSendingRef.current) return;
       saveDraftMutation.mutate({ id: selectedTicket._id, draftContent: replyBody });
       if (isAiDraft && replyBody !== parsedDraft) {
         setIsAiDraft(false);
@@ -624,21 +626,22 @@ export function SupportTicketsPage() {
       setReplyBody("");
       replyEditorRef.current?.clear();
       refetch();
-
-      setReplySent(true);
-      if (replySentTimerRef.current) clearTimeout(replySentTimerRef.current);
-      replySentTimerRef.current = setTimeout(() => setReplySent(false), 10000);
-    } catch {
-      toast.error("Failed to send reply");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to add reply");
+    } finally {
+      setTimeout(() => {
+        isSendingRef.current = false;
+      }, 500);
     }
   };
 
   const submitEditReply = async (replyId: string) => {
-    if (!selectedTicket || !editEditorRef.current) return;
+    if (!selectedTicket || !editEditorRef.current || isSendingRef.current) return;
     const currentHTML = editEditorRef.current.getHTML() || "";
     const cleanText = currentHTML.replace(/<[^>]+>/g, "").trim();
     if (!cleanText) return;
 
+    isSendingRef.current = true;
     try {
       const result = await editTicketReply.mutateAsync({
         ticketId: selectedTicket._id,
@@ -1199,6 +1202,7 @@ export function SupportTicketsPage() {
                   <RichReplyEditor
                     ref={replyEditorRef}
                     onChange={(text) => {
+                      if (isSendingRef.current) return;
                       setReplyBody(text);
                       if (text.trim() && replySent) {
                         setReplySent(false);
@@ -1229,11 +1233,6 @@ export function SupportTicketsPage() {
                               </Tooltip>
                             </TooltipProvider>
                           )}
-                        </span>
-                      )}
-                      {saveDraftMutation.isPending && (
-                        <span className="flex items-center gap-1 text-primary/70">
-                          <Spinner className="w-3 h-3" /> Saving...
                         </span>
                       )}
                     </div>

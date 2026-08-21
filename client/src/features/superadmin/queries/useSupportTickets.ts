@@ -8,6 +8,7 @@ export const TICKETS_KEY = ["super-admin", "support-tickets"] as const;
 
 interface UseSupportTicketsProps {
   status?: string;
+  priority?: string;
   type?: "inquiry" | "support";
   page?: number;
   limit?: number;
