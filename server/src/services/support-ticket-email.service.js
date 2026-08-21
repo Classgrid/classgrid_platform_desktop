@@ -648,7 +648,7 @@ export function buildTalkRequestReplyEmailHtml({ ticket, replyMessage, conversat
 <tr>
 <td style="padding:30px;color:#374151;font-size:14px;line-height:1.7;">
 <p style="color:#374151;font-size:15px;margin:0 0 15px;">Dear ${escapeHtml(userName)},</p>
-<p style="color:#374151;margin:0 0 30px;">Your Classgrid Talk specialist has responded to your conversation. Please review the message below and continue the discussion at your convenience.</p>
+<p style="color:#374151;margin:0 0 30px;">You have received a new reply on your request. Please review the message below and continue the discussion at your convenience.</p>
 `;
 
     return `<!DOCTYPE html>
@@ -778,7 +778,7 @@ export function buildTalkRequestReplyPlainText({ ticket, replyMessage, conversat
             "",
             `Dear ${userName},`,
             "",
-            "Your Classgrid Talk specialist has responded to your conversation. Please review the message below and continue the discussion at your convenience."
+            "You have received a new reply on your request. Please review the message below and continue the discussion at your convenience."
         ];
 
     return [
@@ -840,7 +840,7 @@ export async function notifyTalkCreatorOfAdminReply({ ticket, replyMessage, admi
     const siteUrl = getMarketingSiteUrl();
     const conversationUrl = `${siteUrl}/support/requests/${ticket._id}`;
     const ticketIdShort = String(ticket._id).slice(0, 8);
-    const subject = `New Message from Your Classgrid Talk Specialist – Request #CG-TALK-${ticketIdShort}`;
+    const subject = `New Reply on Your Request – #CG-TALK-${ticketIdShort}`;
 
     const job = await enqueueEmail({
         to,
