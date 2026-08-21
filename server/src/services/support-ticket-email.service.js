@@ -622,12 +622,41 @@ export function buildTalkRequestReplyEmailHtml({ ticket, replyMessage, conversat
     const priorityLabel = formatTicketLabel(ticket.priority || "medium");
     const statusLabel = formatTicketLabel(ticket.status || "open");
 
+    const isEmailInquiry = ticket.institution === "Email Inquiry";
+    
+    const introHtml = isEmailInquiry
+        ? `
+<tr>
+<td style="padding:30px;border-bottom:1px solid #eaeaea;text-align:center;">
+<h1 style="color:#111111;margin:0;font-size:22px;">Re: ${escapeHtml(subject)}</h1>
+<p style="color:#6b7280;margin-top:8px;font-size:13px;">Request #CG-TALK-${escapeHtml(ticketIdShort)}</p>
+</td>
+</tr>
+<tr>
+<td style="padding:30px;color:#374151;font-size:14px;line-height:1.7;">
+<p style="color:#374151;font-size:15px;margin:0 0 15px;">Hi ${escapeHtml(userName)},</p>
+<p style="color:#374151;margin:0 0 30px;">Thank you for emailing Classgrid Support. Because your question requires personalized attention, our AI agent has escalated your email into a dedicated <strong>Classgrid Talk</strong> inquiry.<br><br><i>(Classgrid Talk is our specialized portal for pre-sales questions, product inquiries, and direct discussions with our team).</i><br><br>Our specialist <strong>${escapeHtml(specialistName)}</strong> has reviewed your email and personally replied to you below:</p>
+`
+        : `
+<tr>
+<td style="padding:30px;border-bottom:1px solid #eaeaea;text-align:center;">
+<img src="https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/android-chrome-512x512.png" alt="Classgrid" width="48" height="48" style="display:block;margin:0 auto 16px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+<h1 style="color:#111111;margin:0;font-size:22px;">New Message from Your Classgrid Talk Specialist</h1>
+<p style="color:#6b7280;margin-top:8px;font-size:13px;">Request #CG-TALK-${escapeHtml(ticketIdShort)}</p>
+</td>
+</tr>
+<tr>
+<td style="padding:30px;color:#374151;font-size:14px;line-height:1.7;">
+<p style="color:#374151;font-size:15px;margin:0 0 15px;">Dear ${escapeHtml(userName)},</p>
+<p style="color:#374151;margin:0 0 30px;">Your Classgrid Talk specialist has responded to your conversation. Please review the message below and continue the discussion at your convenience.</p>
+`;
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Message from Your Classgrid Talk Specialist – Request #CG-TALK-${escapeHtml(ticketIdShort)}</title>
+  <title>${isEmailInquiry ? `Re: ${escapeHtml(subject)}` : `New Message from Your Classgrid Talk Specialist – Request #CG-TALK-${escapeHtml(ticketIdShort)}`}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body, html {
@@ -643,17 +672,7 @@ export function buildTalkRequestReplyEmailHtml({ ticket, replyMessage, conversat
 <tr>
 <td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #eaeaea;border-radius:12px;overflow:hidden;margin:0 auto;max-width:600px;width:100%;">
-<tr>
-<td style="padding:30px;border-bottom:1px solid #eaeaea;text-align:center;">
-<img src="https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/android-chrome-512x512.png" alt="Classgrid" width="48" height="48" style="display:block;margin:0 auto 16px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
-<h1 style="color:#111111;margin:0;font-size:22px;">New Message from Your Classgrid Talk Specialist</h1>
-<p style="color:#6b7280;margin-top:8px;font-size:13px;">Request #CG-TALK-${escapeHtml(ticketIdShort)}</p>
-</td>
-</tr>
-<tr>
-<td style="padding:30px;color:#374151;font-size:14px;line-height:1.7;">
-<p style="color:#374151;font-size:15px;margin:0 0 15px;">Dear ${escapeHtml(userName)},</p>
-<p style="color:#374151;margin:0 0 30px;">Your Classgrid Talk specialist has responded to your conversation. Please review the message below and continue the discussion at your convenience.</p>
+${introHtml}
 
 <h3 style="color:#111111;font-size:16px;margin:0 0 15px;text-transform:uppercase;letter-spacing:0.5px;">Conversation Summary</h3>
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f9f9;border-radius:10px;border:1px solid #eaeaea;margin:0 0 25px;">
@@ -741,12 +760,29 @@ export function buildTalkRequestReplyPlainText({ ticket, replyMessage, conversat
     const categoryLabel = formatTicketLabel(ticket.category || "general");
     const priorityLabel = formatTicketLabel(ticket.priority || "medium");
     const statusLabel = formatTicketLabel(ticket.status || "open");
+    const isEmailInquiry = ticket.institution === "Email Inquiry";
+
+    const introText = isEmailInquiry
+        ? [
+            `Re: ${subject}`,
+            "",
+            `Hi ${userName},`,
+            "",
+            "Thank you for emailing Classgrid Support. Because your question requires personalized attention, our AI agent has escalated your email into a dedicated Classgrid Talk inquiry.",
+            "(Classgrid Talk is our specialized portal for pre-sales questions, product inquiries, and direct discussions with our team).",
+            "",
+            `Our specialist ${specialistName} has reviewed your email and personally replied to you below:`
+        ]
+        : [
+            `New Message from Your Classgrid Talk Specialist – Request #CG-TALK-${ticketIdShort}`,
+            "",
+            `Dear ${userName},`,
+            "",
+            "Your Classgrid Talk specialist has responded to your conversation. Please review the message below and continue the discussion at your convenience."
+        ];
+
     return [
-        `New Message from Your Classgrid Talk Specialist – Request #CG-TALK-${ticketIdShort}`,
-        "",
-        `Dear ${userName},`,
-        "",
-        "Your Classgrid Talk specialist has responded to your conversation. Please review the message below and continue the discussion at your convenience.",
+        ...introText,
         "",
         "CONVERSATION SUMMARY",
         `Request ID: #CG-TALK-${ticketIdShort}`,
