@@ -969,8 +969,6 @@ router.post("/tickets/:id/reply", isAuthenticated, multipleUploads("files", 5), 
             ticket.lastUserReplyAt = now;
             if (ticket.status === "resolved") {
                 ticket.status = "reopened";
-            } else {
-                ticket.status = "open";
             }
         }
 
