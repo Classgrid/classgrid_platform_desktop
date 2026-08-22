@@ -1405,6 +1405,11 @@ export function SupportTicketsPage() {
                     disabled={updateTicket.isPending}
                     className="flex-1 h-8 px-2 text-sm rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 min-w-0"
                   >
+                    {(pendingStatus || selectedTicket.status) === "reopened" && (
+                      <option value="reopened" disabled>
+                        Reopened
+                      </option>
+                    )}
                     {STATUS_CHANGE_OPTIONS.map((s) => (
                       <option key={s} value={s}>
                         {statusLabel(s)}
