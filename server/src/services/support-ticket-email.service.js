@@ -267,6 +267,7 @@ function buildTicketCreationEmailHtml({ ticket, trackingUrl }) {
     const statusLabel = formatTicketLabel(ticket.status || "open");
     const userName = ticket.submitterName || "User";
     const userMessage = ticket.message || "No description provided.";
+    const isAiEscalated = ticket.message?.includes("Auto-escalated from AI Email Support");
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -298,8 +299,11 @@ function buildTicketCreationEmailHtml({ ticket, trackingUrl }) {
 <tr>
 <td style="padding:30px;color:#374151;font-size:14px;line-height:1.7;">
 <p style="color:#374151;font-size:15px;margin:0 0 15px;">Dear ${escapeHtml(userName)},</p>
-<p style="color:#374151;margin:0 0 15px;">Thank you for contacting Classgrid Support. We have received your request regarding <strong>"${escapeHtml(subject)}"</strong>, and it has been registered in your support thread.</p>
-<p style="color:#374151;margin:0 0 30px;">Our team will review the details you shared and respond with the next step as soon as possible.</p>
+${isAiEscalated 
+  ? `<p style="color:#374151;margin:0 0 15px;">Your issue regarding <strong>"${escapeHtml(subject)}"</strong> has been automatically escalated into a formal Support Ticket by the Classgrid AI Support Agent.</p>
+<p style="color:#374151;margin:0 0 30px;">Our senior support team will review the details collected by the AI and respond with the next step as soon as possible.</p>`
+  : `<p style="color:#374151;margin:0 0 15px;">Thank you for contacting Classgrid Support. We have received your request regarding <strong>"${escapeHtml(subject)}"</strong>, and it has been registered in your support thread.</p>
+<p style="color:#374151;margin:0 0 30px;">Our team will review the details you shared and respond with the next step as soon as possible.</p>`}
 
 <h3 style="color:#111111;font-size:16px;margin:0 0 15px;text-transform:uppercase;letter-spacing:0.5px;">Ticket Details</h3>
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f9f9;border-radius:10px;border:1px solid #eaeaea;margin:0 0 25px;">
@@ -378,6 +382,7 @@ function buildTicketCreationPlainText({ ticket, trackingUrl }) {
     const ticketIdShort = String(ticket._id).slice(0, 8);
     const userName = ticket.submitterName || "User";
     const userMessage = ticket.message || "No description provided.";
+    const isAiEscalated = ticket.message?.includes("Auto-escalated from AI Email Support");
     const categoryLabel = formatTicketLabel(ticket.category || "general");
     const priorityLabel = formatTicketLabel(ticket.priority || "medium");
     const statusLabel = formatTicketLabel(ticket.status || "open");
@@ -387,9 +392,9 @@ function buildTicketCreationPlainText({ ticket, trackingUrl }) {
         "",
         `Dear ${userName},`,
         "",
-        `Thank you for contacting Classgrid Support. We have received your request regarding "${ticket.subject || "Support ticket"}", and it has been registered in your support thread.`,
+        isAiEscalated ? `Your issue regarding "${ticket.subject || "Support ticket"}" has been automatically escalated into a formal Support Ticket by the Classgrid AI Support Agent.` : `Thank you for contacting Classgrid Support. We have received your request regarding "${ticket.subject || "Support ticket"}", and it has been registered in your support thread.`,
         "",
-        "Our team will review the details you shared and respond with the next step as soon as possible.",
+        isAiEscalated ? "Our senior support team will review the details collected by the AI and respond with the next step as soon as possible." : "Our team will review the details you shared and respond with the next step as soon as possible.",
         "",
         "TICKET DETAILS",
         `Ticket ID: #${ticketIdShort}`,
