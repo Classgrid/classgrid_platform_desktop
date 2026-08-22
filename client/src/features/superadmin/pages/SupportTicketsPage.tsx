@@ -590,12 +590,24 @@ export function SupportTicketsPage() {
       const ticketToOpen = tickets.find((t) => t._id === urlTicketId);
       if (ticketToOpen) {
         setSelectedTicket(ticketToOpen);
+        
+        // Auto-assign if it's currently unassigned and we have a current user
+        if (!ticketToOpen.assignedTo && currentUser?._id) {
+          updateTicket.mutate({
+            id: ticketToOpen._id,
+            assignedTo: currentUser._id
+          }, {
+            onSuccess: () => {
+              toast.success("Ticket auto-assigned to you!");
+            }
+          });
+        }
       } else {
         toast.error("Ticket not found or you don't have access to it.");
         navigate("/superadmin/support", { replace: true });
       }
     }
-  }, [urlTicketId, tickets, selectedTicket, navigate]);
+  }, [urlTicketId, tickets, selectedTicket, navigate, currentUser?._id]);
 
   const { setBreadcrumbs } = useBreadcrumbStore();
 
