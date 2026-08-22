@@ -1,5 +1,10 @@
 /**
  * Classgrid - Minimalist Transactional Email Templates
+ *
+ * CRITICAL RULE: DO NOT ADD <h1> OR ANY LARGE HEADINGS TO EMAIL TEMPLATES.
+ * The Classgrid design system requires all emails to rely solely on the Classgrid Logo at the top.
+ * Adding huge static or dynamic headings (e.g. <h1>Re: Subject</h1> or <h1>Welcome</h1>) is COMPLETELY BANNED.
+ * This applies to all human developers and AI agents.
  */
 
 const getFrontendUrl = () => {
@@ -163,7 +168,6 @@ export const getFacultyWelcomeEmailHtml = (userName, orgName, dashboardUrl) => {
 <tr>
 <td style="padding:30px;border-bottom:1px solid #eaeaea;text-align:center;">
 <img src="${PLATFORM_LOGO_URL}" alt="Classgrid" width="48" height="48" style="display:block;margin:0 auto 16px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.2);">>
-<h1 style="color:#111111;margin:0;font-size:22px;">Welcome to Classgrid</h1>
 <p style="color:#6b7280;margin-top:8px;font-size:13px;">
 Organization: <strong style="color:#111111;">${orgName}</strong>
 </p>
@@ -241,7 +245,6 @@ export const getStudentWelcomeEmailHtml = (userName, dashboardUrl) => {
 <tr>
 <td style="padding:30px;border-bottom:1px solid #eaeaea;text-align:center;">
 <img src="${PLATFORM_LOGO_URL}" alt="Classgrid" width="48" height="48" style="display:block;margin:0 auto 16px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.2);">>
-<h1 style="color:#111111;margin:0;font-size:22px;">Welcome to Classgrid</h1>
 <p style="color:#6b7280;margin-top:8px;font-size:13px;">
 Ready to start your academic journey
 </p>
@@ -304,7 +307,6 @@ Join Classroom
 export const getLoginNotificationHtml = (user, provider = "manual") => {
   const config = providerConfig[provider] || providerConfig.manual;
   const content = `
-    <h1>New login to your account</h1>
     <p>Hi ${user.name},</p>
     <p>We noticed a new sign-in to your Classgrid account (${user.email}) on ${formatDate()} using ${config.name}.</p>
     <a href="${getFrontendUrl()}/reset-password" class="btn btn-danger">Secure My Account</a>
@@ -319,7 +321,6 @@ export const getLoginNotificationHtml = (user, provider = "manual") => {
 // ------------- VERIFICATION EMAIL -------------
 export const getVerificationEmailHtml = (name, verifyLink) => {
   const content = `
-    <h1>Verify your email</h1>
     <p>Hi ${name},</p>
     <p>Please verify your email address to complete your setup. This link expires in 24 hours.</p>
     <a href="${verifyLink}" class="btn">Verify Email</a>
@@ -334,7 +335,6 @@ export const getVerificationEmailHtml = (name, verifyLink) => {
 // ------------- PASSWORD RESET -------------
 export const getPasswordResetEmailHtml = (resetLink) => {
   const content = `
-    <h1>Reset your password</h1>
     <p>We received a request to reset the password for your Classgrid account. This link expires in <strong>5 minutes</strong>.</p>
     <a href="${resetLink}" class="btn">Reset Password</a>
     <p style="margin-top:20px;font-size:13px;color:#6b7280;">If you did not request this password reset, you can safely ignore this email. Your password will remain unchanged.</p>
@@ -357,7 +357,6 @@ export const getFacultyInviteEmailHtml = (facultyName, orgName, verifyLink, orgC
   ` : '';
 
   const content = `
-    <h1>You've been invited to ${orgName}</h1>
     <p>Hi ${facultyName},</p>
     <p>You have been invited by <strong>${adminName}</strong> (${adminEmail}) to join <strong>${orgName}</strong> as a faculty member on Classgrid.</p>
     
@@ -381,7 +380,6 @@ export const getFacultyInviteEmailHtml = (facultyName, orgName, verifyLink, orgC
 // ------------- ORG APPROVAL (New format requested by User) -------------
 export const getOrgApprovalEmailHtml = (orgName, ownerName, organizationCode, honorCode, frontendUrl) => {
   const content = `
-    <h1>?? ${orgName} is now live on Classgrid</h1>
     
     <p>Hi ${ownerName || "Admin"},</p>
     
@@ -487,7 +485,6 @@ export const getOrgApprovalEmailHtml = (orgName, ownerName, organizationCode, ho
 // ------------- ORG ADMIN INVITE (activation token email) -------------
 export const getOrgAdminInviteHtml = (adminName, orgName, activationLink) => {
   const content = `
-    <h1>Activate Your Admin Account</h1>
     <p>Hi ${adminName},</p>
     <p>Your organization <strong>${orgName}</strong> has been approved on Classgrid.</p>
 
@@ -527,7 +524,6 @@ export const getDeptAdminInviteEmailHtml = (recipientName, orgName, role, invite
   };
   const roleLabel = roleLabels[role] || role;
   const content = `
-    <h1>You've been invited to join ${orgName}</h1>
     <p>Hi ${recipientName || "there"},</p>
     <p>You have been invited by <strong>${invitedByName}</strong> to join <strong>${orgName}</strong> on Classgrid as a <strong>${roleLabel}</strong>.</p>
 
@@ -557,7 +553,6 @@ export const getDeptAdminInviteEmailHtml = (recipientName, orgName, role, invite
 // ------------- ADMIN: NEW ORG APPLICATION -------------
 export const getAdminOrgApplicationNotificationHtml = (data) => {
   const content = `
-    <h1>New Application: ${data.institute_name}</h1>
     <p>A new institution has applied and is pending review.</p>
     <ul>
       <li><strong>Owner:</strong> ${data.owner_name}</li>
@@ -575,7 +570,6 @@ export const getAdminOrgApplicationNotificationHtml = (data) => {
 // ------------- ADMIN: ORG APPROVED (INTERNAL) -------------
 export const getAdminOrgApprovalNotificationHtml = (orgName, ownerEmail, organizationCode, honorCode, dashboardUrl) => {
   const content = `
-    <h1>Organization Approved: ${orgName}</h1>
     <p>The organization (${ownerEmail}) has been approved.</p>
     <ul>
       <li><strong>Faculty Code:</strong> ${organizationCode}</li>
@@ -601,7 +595,6 @@ export const getOrgApplicationConfirmationHtml = (ownerName, instituteName, plan
   ` : '';
 
   const content = `
-    <h1>Application Received &#128229;</h1>
     <p>Hello ${ownerName},</p>
     <p>Thank you for registering <strong>${instituteName}</strong> on Classgrid${plan === "PRO" ? ' with the <strong>Pro Plan</strong>' : ''}.</p>
     <p>We have successfully received your application. ${plan === "PRO" ? 'Complete your payment to instantly activate your organization.' : 'It is now under review by our platform administration team.'}</p>
@@ -640,7 +633,6 @@ export const getOrgApplicationConfirmationHtml = (ownerName, instituteName, plan
 // ------------- APPLICANT: APP REJECTED -------------
 export const getOrgRejectionEmailHtml = (ownerName, instituteName, reason = null) => {
   const content = `
-    <h1>Application Update</h1>
     <p>Hi ${ownerName},</p>
     <p>We have reviewed your application for <strong>${instituteName}</strong>. Unfortunately, we are unable to approve it at this time.</p>
     ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
@@ -654,7 +646,6 @@ export const getOrgRejectionEmailHtml = (ownerName, instituteName, reason = null
 // ------------- ADMIN: ACCOUNT ACTIVATED -------------
 export const getOrgAdminActivatedHtml = (userName, dashboardLink, adminLoginLink) => {
   const content = `
-    <h1>Your Admin Account is Activated</h1>
     <p>Hi ${userName},</p>
     <p>Your Organization Admin account on Classgrid is now active. You have full control over your organization.</p>
 
@@ -677,7 +668,6 @@ export const getOrgAdminActivatedHtml = (userName, dashboardLink, adminLoginLink
 // ------------- ADMIN: SUPER ADMIN CREATED -------------
 export const getSuperAdminCredentialsHtml = (name, email, password, loginLink) => {
   const content = `
-    <h1>You have been assigned Super Admin access</h1>
     <p>Hi ${name},</p>
     <p>You have been granted elevated, platform-wide privileges on Classgrid. You are responsible for reviewing and approving organization applications, managing platform settings, and overseeing all activity across the system.</p>
 
@@ -709,7 +699,6 @@ export const getSuperAdminCredentialsHtml = (name, email, password, loginLink) =
 // ------------- ORG DELETE VERIFICATION -------------
 export const getOrgDeleteVerificationEmailHtml = (orgName, ownerName, verifyLink) => {
   const content = `
-    <h1>Confirm Organization Deletion</h1>
     <p>Hi ${ownerName},</p>
     <p>We received a request to permanently delete <strong>${orgName}</strong>.</p>
     
@@ -754,9 +743,7 @@ export const getPlanActivationHtml = (planName, activationDate, expiryDate, user
 <tr>
 <td style="padding:30px;text-align:center;border-bottom:1px solid #eaeaea;">
 <img src="${PLATFORM_LOGO_URL}" alt="Classgrid" width="48" height="48" style="display:block;margin:0 auto 16px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.2);">>
-<h1 style="margin:0;font-size:22px;color:#111111;font-weight:600;">
-?? Your PRO Plan is Now Active
-</h1>
+
 <p style="margin:10px 0 0;font-size:13px;color:#6b7280;">
 Payment confirmed — premium features unlocked
 </p>

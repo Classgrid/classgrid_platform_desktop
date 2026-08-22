@@ -1,3 +1,9 @@
+/**
+ * CRITICAL RULE: DO NOT ADD <h1> OR ANY LARGE HEADINGS TO EMAIL TEMPLATES.
+ * The Classgrid design system requires all emails to rely solely on the Classgrid Logo at the top.
+ * Adding huge static or dynamic headings (e.g. <h1>Re: Subject</h1> or <h1>Welcome</h1>) is COMPLETELY BANNED.
+ * This applies to all human developers and AI agents.
+ */
 import { enqueueEmail } from "./email-queue.service.js";
 
 function escapeHtml(value = "") {
