@@ -1,5 +1,6 @@
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   MessageSquare,
   AlertCircle,
@@ -338,6 +339,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function SupportTicketsPage() {
+  const { id: urlTicketId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
   const [orgTypeFilter, setOrgTypeFilter] = useState("");
@@ -580,6 +583,19 @@ export function SupportTicketsPage() {
       }, 50);
     }
   }, [selectedTicket?._id, selectedMessages.length]);
+
+  // Handle direct URL routing for a specific ticket
+  useEffect(() => {
+    if (urlTicketId && tickets.length > 0 && !selectedTicket) {
+      const ticketToOpen = tickets.find((t) => t._id === urlTicketId);
+      if (ticketToOpen) {
+        setSelectedTicket(ticketToOpen);
+      } else {
+        toast.error("Ticket not found or you don't have access to it.");
+        navigate("/superadmin/support", { replace: true });
+      }
+    }
+  }, [urlTicketId, tickets, selectedTicket, navigate]);
 
   const { setBreadcrumbs } = useBreadcrumbStore();
 
