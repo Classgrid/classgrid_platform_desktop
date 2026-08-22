@@ -91,7 +91,6 @@ function buildTicketReplyEmailHtml({ ticket, replyMessage, conversationUrl, admi
 <tr>
 <td style="padding:30px;border-bottom:1px solid #eaeaea;text-align:center;">
 <img src="https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/android-chrome-512x512.png" alt="Classgrid" width="48" height="48" style="display:block;margin:0 auto 16px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
-<h1 style="color:#111111;margin:0;font-size:22px;">New Reply on Your Support Ticket</h1>
 <p style="color:#6b7280;margin-top:8px;font-size:13px;">Ticket #${escapeHtml(ticketIdShort)}</p>
 </td>
 </tr>
@@ -287,7 +286,6 @@ function buildTicketCreationEmailHtml({ ticket, trackingUrl }) {
 <tr>
 <td style="padding:30px;border-bottom:1px solid #eaeaea;text-align:center;">
 <img src="https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/android-chrome-512x512.png" alt="Classgrid" width="48" height="48" style="display:block;margin:0 auto 16px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
-<h1 style="color:#111111;margin:0;font-size:22px;">Support Ticket Confirmation</h1>
 <p style="color:#6b7280;margin-top:8px;font-size:13px;">Ticket #${escapeHtml(ticketIdShort)}</p>
 </td>
 </tr>
@@ -476,7 +474,6 @@ export function buildTalkRequestCreationEmailHtml({ ticket, trackingUrl }) {
 <tr>
 <td style="padding:30px;border-bottom:1px solid #eaeaea;text-align:center;">
 <img src="https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/android-chrome-512x512.png" alt="Classgrid" width="48" height="48" style="display:block;margin:0 auto 16px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
-<h1 style="color:#111111;margin:0;font-size:22px;">Your Classgrid Talk Request Has Been Received</h1>
 <p style="color:#6b7280;margin-top:8px;font-size:13px;">Request #CG-TALK-${escapeHtml(ticketIdShort)}</p>
 </td>
 </tr>
