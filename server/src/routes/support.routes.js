@@ -561,8 +561,6 @@ router.post("/public/tickets/:id/reply", enforceStrictSession, multipleUploads("
         ticket.lastUserReplyAt = now;
         if (ticket.status === "resolved") {
             ticket.status = "reopened";
-        } else {
-            ticket.status = "open";
         }
 
         await ticket.save();
