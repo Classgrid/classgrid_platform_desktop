@@ -1,6 +1,6 @@
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   MessageSquare,
   AlertCircle,
@@ -340,6 +340,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export function SupportTicketsPage() {
   const { id: urlTicketId } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
@@ -591,8 +592,25 @@ export function SupportTicketsPage() {
       if (ticketToOpen) {
         setSelectedTicket(ticketToOpen);
         
-        // Auto-assign if it's currently unassigned and we have a current user
-        if (!ticketToOpen.assignedTo && currentUser?._id) {
+        const autoAssign = searchParams.get("autoAssign") === "true";
+        const currentAssigneeId = typeof ticketToOpen.assignedTo === 'object' ? (ticketToOpen.assignedTo as any)?._id : ticketToOpen.assignedTo;
+        
+        // Auto-assign if requested by URL AND it's not already assigned to the current user
+        if (autoAssign && currentAssigneeId !== currentUser?._id && currentUser?._id) {
+          updateTicket.mutate({
+            id: ticketToOpen._id,
+            assignedTo: currentUser._id
+          }, {
+            onSuccess: () => {
+              toast.success("Ticket auto-assigned to you!");
+            }
+          });
+          
+          // Clear the param so it doesn't keep assigning on refresh
+          searchParams.delete("autoAssign");
+          setSearchParams(searchParams, { replace: true });
+        } else if (!ticketToOpen.assignedTo && currentUser?._id) {
+          // Fallback: auto-assign if unassigned
           updateTicket.mutate({
             id: ticketToOpen._id,
             assignedTo: currentUser._id
@@ -607,7 +625,7 @@ export function SupportTicketsPage() {
         navigate("/superadmin/support", { replace: true });
       }
     }
-  }, [urlTicketId, tickets, selectedTicket, navigate, currentUser?._id]);
+  }, [urlTicketId, tickets, selectedTicket, navigate, currentUser?._id, searchParams, setSearchParams]);
 
   const { setBreadcrumbs } = useBreadcrumbStore();
 
