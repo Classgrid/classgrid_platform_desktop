@@ -196,7 +196,7 @@ function ensureInitialMessage(ticket) {
 // ──────────────────────────────────────────────────────────────
 router.post("/public/tickets", enforceStrictSession, multipleUploads("files", 5), async (req, res) => {
     try {
-        const { name, email, subject, message, category, priority, institution, role: submitterRoleInput, skipEmail } = req.body;
+        const { name, email, subject, message, category, priority, institution, role: submitterRoleInput, skipEmail, aiDraft } = req.body;
 
         if (!email?.trim() || !subject?.trim() || !message?.trim()) {
             return res.status(400).json({
@@ -328,6 +328,20 @@ router.post("/public/tickets", enforceStrictSession, multipleUploads("files", 5)
             }],
             submittedBy: fullUser ? fullUser._id : null
         });
+
+        if (aiDraft && aiDraft.trim()) {
+            try {
+                const { default: MessageDraft } = await import("../models/MessageDraft.js");
+                await MessageDraft.create({
+                    ticketId: ticket._id,
+                    draftContent: aiDraft.trim(),
+                    source: "ai_generated",
+                    aiContext: "Email AI auto-generated draft"
+                });
+            } catch (draftErr) {
+                console.error("[Support] Failed to save AI draft:", draftErr.message);
+            }
+        }
 
         // ── Send email notification for new ticket ──
         try {

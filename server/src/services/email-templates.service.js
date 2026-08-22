@@ -1339,7 +1339,6 @@ export const getClassroomActivityEmailHtml = ({ orgName, classroomName, facultyN
   const emoji = typeEmojis[contentType] || "??";
 
   const content = `
-  <h1>${emoji} New ${label} in ${classroomName}</h1>
     <p>Hi there,</p>
     <p>New content has been posted in your classroom.</p>
 
@@ -1386,7 +1385,6 @@ For contact, mail us at: support @classgrid.in
 // ------------- JOIN REQUEST NOTIFICATION (to Faculty) -------------
 export const getJoinRequestEmailHtml = ({ studentName, classroomName, reviewUrl }) => {
   const content = `
-  <h1>New Join Request</h1>
     <p>Hi,</p>
     <p><strong>${studentName}</strong> has requested to join <strong>${classroomName}</strong>.</p>
     <p>You can approve or reject this request from your dashboard.</p>
@@ -1417,7 +1415,6 @@ For contact, mail us at: support @classgrid.in
 // ------------- JOIN APPROVED NOTIFICATION (to Student) -------------
 export const getJoinApprovedEmailHtml = ({ classroomName, classroomUrl }) => {
   const content = `
-  <h1>You're In! ??</h1>
     <p>Your request to join <strong>${classroomName}</strong> has been approved.</p>
     <p>You can now access all classroom materials, announcements, and quizzes.</p>
     <a href="${classroomUrl}" class="btn">Open Classroom</a>
@@ -1447,7 +1444,6 @@ For contact, mail us at: support @classgrid.in
 // ------------- ATTENDANCE STARTED NOTIFICATION (to Students) -------------
 export const getAttendanceStartedEmailHtml = ({ classroomName, facultyName, classroomUrl }) => {
   const content = `
-    <h1>?? Attendance is Open!</h1>
     <p>Hi there,</p>
     <p>Your instructor has started an attendance session. You have <strong>4 minutes</strong> to mark your attendance.</p>
 
@@ -1485,7 +1481,6 @@ For contact, visit: https://classgrid.in/support
 // ------------- ABSENCE NOTIFICATION (to Students) -------------
 export const getAbsenceNotificationEmailHtml = ({ classroomName, sessionDate, classroomUrl }) => {
   const content = `
-    <h1>?? You Were Marked Absent</h1>
     <p>Hi there,</p>
     <p>You were absent from the attendance session in <strong>${classroomName}</strong>.</p>
 
@@ -1626,7 +1621,6 @@ export const getPlanExpiryReminderHtml = (orgName, ownerName, planName, expiryDa
   }
 
   const content = `
-    <h1 style="color:${accent};">${headline}</h1>
     <p>Hi ${ownerName},</p>
     <p>${intro}</p>
 
@@ -1761,8 +1755,6 @@ export const getConsolidatedApprovalEmailHtml = ({
   ` : '';
 
   const content = `
-    <h1>?? ${orgName} is now live on Classgrid</h1>
-
     <p>Hi ${adminName || "Admin"},</p>
 
     <p>Congratulations — your organization has been successfully reviewed and approved. You can now begin onboarding your faculty and students to your official Classgrid workspace.</p>
@@ -1968,7 +1960,6 @@ If you did not apply for a Classgrid organization, please raise a ticket at http
 // ------------- ACCOUNT SUSPENSION NOTIFICATION -------------
 export const getAccountSuspensionEmailHtml = (userName, reason) => {
   const content = `
-    <h1 style="color:#f59e0b;">?? Account Suspended</h1>
     <p>Hi ${userName || 'User'},</p>
     <p>Your Classgrid account has been suspended by an administrator.</p>
 
@@ -2009,7 +2000,6 @@ support@classgrid.in
 // ------------- ACCOUNT DELETION NOTIFICATION -------------
 export const getAccountDeletionEmailHtml = (userName, reason) => {
   const content = `
-    <h1 style="color:#ef4444;">??? Account Deleted</h1>
     <p>Hi ${userName || 'User'},</p>
     <p>Your Classgrid account has been permanently deleted by an administrator.</p>
 
@@ -2050,7 +2040,6 @@ support@classgrid.in
 // ------------- GENERIC NOTIFICATION -------------
 export const getGenericNotificationHtml = (title, message, link = "") => {
   const content = `
-    <h1>${title || "Classgrid Notification"}</h1>
     <p>${message || "You have a new Classgrid notification."}</p>
     ${link ? `<a href="${link}" class="btn">Open Classgrid</a>` : ""}
   `;
@@ -2071,7 +2060,6 @@ ${link ? `Open: ${link}` : ""}
 // ------------- DEMO LEAD NOTIFICATIONS -------------
 export const getDemoLeadAlertHtml = (data = {}) => {
   const content = `
-    <h1>New Demo Lead</h1>
     <p><strong>${data.institutionName || "Institution"}</strong> requested a Classgrid demo.</p>
     <div class="box">
       <p><strong>Admin:</strong> ${data.adminName || "Not provided"}</p>
@@ -2101,7 +2089,6 @@ ${data.dashboardUrl ? `Open Lead: ${data.dashboardUrl}` : ""}
 
 export const getWelcomeProspectHtml = (data = {}) => {
   const content = `
-    <h1>Demo Request Received</h1>
     <p>Hi ${data.adminName || "there"},</p>
     <p>We received your demo request for <strong>${data.institutionName || "your institution"}</strong>. Our team will follow up soon.</p>
     ${data.bookingUrl ? `<a href="${data.bookingUrl}" class="btn">Book Demo Slot</a>` : ""}
@@ -2186,7 +2173,6 @@ export const getAdmissionFeeReceiptHtml = (data = {}) => {
     maximumFractionDigits: 2,
   });
   const content = `
-    <h1>Fee Payment Receipt</h1>
     <p>Dear <strong>${data.candidate_name || "Student"}</strong>,</p>
     <p>We are pleased to confirm that your admission fee for <strong>${data.organization_name || "your institution"}</strong> has been successfully received.</p>
 
@@ -2295,7 +2281,6 @@ If you believe you should have access, please reach out to your institution admi
 // ------------- NEW DEVICE OTP -------------
 export const getNewDeviceOtpHtml = (userName, otp) => {
   const content = `
-    <h1>New Device Login Detected</h1>
     <p>Hi <strong>${userName}</strong>,</p>
     <p>We noticed a login attempt to your Classgrid account from a new device or browser. To protect your account, please verify this device using the code below.</p>
 
@@ -2333,7 +2318,6 @@ If you did not attempt to log in, please reset your password immediately.
 // ------------- BILLING EMAIL OTP -------------
 export const getBillingVerificationOtpHtml = (orgName, userName, otp) => {
   const content = `
-    <h1>Verify Your Billing Email</h1>
     <p>Hi <strong>${userName || orgName}</strong>,</p>
     <p>You requested to verify the billing email for <strong>${orgName}</strong>. Please use the verification code below to complete this process.</p>
 
