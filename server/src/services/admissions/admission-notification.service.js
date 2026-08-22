@@ -1,3 +1,9 @@
+/**
+ * CRITICAL RULE: DO NOT ADD <h1> OR ANY LARGE HEADINGS TO EMAIL TEMPLATES.
+ * The Classgrid design system requires all emails to rely solely on the Classgrid Logo at the top.
+ * Adding huge static or dynamic headings (e.g. <h1>Re: Subject</h1> or <h1>Welcome</h1>) is COMPLETELY BANNED.
+ * This applies to all human developers and AI agents.
+ */
 import { sendEmail } from "../aws-ses.service.js";
 
 /**
@@ -70,9 +76,6 @@ const TEMPLATES = {
         email_subject: (orgName) => `Application Received — ${orgName}`,
         email_body: (name, orgName, extra) => `
             <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;border-radius:12px;overflow:hidden;">
-                <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px;text-align:center;">
-                    <h1 style="color:white;margin:0;">📝 Application Received</h1>
-                </div>
                 <div style="padding:32px;">
                     <p>Dear <strong>${name}</strong>,</p>
                     <p>Your application to <strong>${orgName}</strong> has been successfully received.</p>
@@ -91,9 +94,6 @@ const TEMPLATES = {
         email_subject: (orgName) => `Documents Verified — ${orgName}`,
         email_body: (name, orgName, extra) => `
             <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;border-radius:12px;overflow:hidden;">
-                <div style="background:linear-gradient(135deg,#10b981,#059669);padding:32px;text-align:center;">
-                    <h1 style="color:white;margin:0;">✅ Documents Verified</h1>
-                </div>
                 <div style="padding:32px;">
                     <p>Dear <strong>${name}</strong>,</p>
                     <p>All your submitted documents for <strong>${orgName}</strong> have been verified.</p>
@@ -112,9 +112,6 @@ const TEMPLATES = {
         email_subject: (orgName) => `Document Issue — ${orgName}`,
         email_body: (name, orgName, reason) => `
             <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;border-radius:12px;overflow:hidden;">
-                <div style="background:linear-gradient(135deg,#ef4444,#dc2626);padding:32px;text-align:center;">
-                    <h1 style="color:white;margin:0;">⚠️ Document Rejected</h1>
-                </div>
                 <div style="padding:32px;">
                     <p>Dear <strong>${name}</strong>,</p>
                     <p>One or more of your documents for <strong>${orgName}</strong> require correction.</p>
@@ -131,9 +128,6 @@ const TEMPLATES = {
         email_subject: (orgName) => `Merit List Published — ${orgName}`,
         email_body: (name, orgName, rank) => `
             <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;border-radius:12px;overflow:hidden;">
-                <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:32px;text-align:center;">
-                    <h1 style="color:white;margin:0;">📊 Merit List Published</h1>
-                </div>
                 <div style="padding:32px;">
                     <p>Dear <strong>${name}</strong>,</p>
                     <p>The merit list for <strong>${orgName}</strong> has been published.</p>
@@ -150,9 +144,6 @@ const TEMPLATES = {
         email_subject: (orgName) => `🎉 Admission Offer — ${orgName}`,
         email_body: (name, orgName) => `
             <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;border-radius:12px;overflow:hidden;">
-                <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px;text-align:center;">
-                    <h1 style="color:white;margin:0;">🎉 Congratulations!</h1>
-                </div>
                 <div style="padding:32px;">
                     <p>Dear <strong>${name}</strong>,</p>
                     <p>We are pleased to inform you that you have been <strong>selected</strong> for admission at <strong>${orgName}</strong>.</p>
@@ -168,9 +159,6 @@ const TEMPLATES = {
         email_subject: (orgName) => `Waitlisted — ${orgName}`,
         email_body: (name, orgName, pos) => `
             <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;border-radius:12px;overflow:hidden;">
-                <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:32px;text-align:center;">
-                    <h1 style="color:white;margin:0;">⏳ Waitlisted</h1>
-                </div>
                 <div style="padding:32px;">
                     <p>Dear <strong>${name}</strong>,</p>
                     <p>You have been placed on the waitlist for <strong>${orgName}</strong>.</p>
@@ -187,9 +175,6 @@ const TEMPLATES = {
         email_subject: (orgName) => `Fee Payment Pending — ${orgName}`,
         email_body: (name, orgName) => `
             <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;border-radius:12px;overflow:hidden;">
-                <div style="background:linear-gradient(135deg,#f97316,#ea580c);padding:32px;text-align:center;">
-                    <h1 style="color:white;margin:0;">💳 Payment Pending</h1>
-                </div>
                 <div style="padding:32px;">
                     <p>Dear <strong>${name}</strong>,</p>
                     <p>Your admission fee payment for <strong>${orgName}</strong> is pending.</p>
@@ -205,9 +190,6 @@ const TEMPLATES = {
         email_subject: (orgName) => `🎓 Enrollment Confirmed — ${orgName}`,
         email_body: (name, orgName) => `
             <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;border-radius:12px;overflow:hidden;">
-                <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px;text-align:center;">
-                    <h1 style="color:white;margin:0;">🎓 Welcome to ${orgName}!</h1>
-                </div>
                 <div style="padding:32px;">
                     <p>Dear <strong>${name}</strong>,</p>
                     <p>Your enrollment at <strong>${orgName}</strong> is confirmed!</p>
@@ -223,9 +205,6 @@ const TEMPLATES = {
         email_subject: (orgName) => `Application Withdrawn — ${orgName}`,
         email_body: (name, orgName) => `
             <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;border-radius:12px;overflow:hidden;">
-                <div style="background:#262626;padding:32px;text-align:center;">
-                    <h1 style="color:white;margin:0;">Application Withdrawn</h1>
-                </div>
                 <div style="padding:32px;">
                     <p>Dear <strong>${name}</strong>,</p>
                     <p>Your application at <strong>${orgName}</strong> has been withdrawn.</p>
@@ -241,9 +220,6 @@ const TEMPLATES = {
         email_subject: (orgName) => `Application Under Review — ${orgName}`,
         email_body: (name, orgName) => `
             <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;border-radius:12px;overflow:hidden;">
-                <div style="background:linear-gradient(135deg,#3b82f6,#2563eb);padding:32px;text-align:center;">
-                    <h1 style="color:white;margin:0;">🔍 Under Review</h1>
-                </div>
                 <div style="padding:32px;">
                     <p>Dear <strong>${name}</strong>,</p>
                     <p>Your application for <strong>${orgName}</strong> is currently being reviewed.</p>
