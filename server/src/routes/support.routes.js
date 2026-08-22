@@ -584,7 +584,12 @@ router.post("/public/tickets/:id/reply", enforceStrictSession, multipleUploads("
             console.error("[Support] Public reply admin notification failed:", notifErr.message);
         }
 
-        res.json({ success: true, message: "Reply added", ticket: serializeTicket(ticket.toObject()) });
+        const populatedTicket = await SupportTicket.findById(ticket._id)
+            .populate("submittedBy", "name email role")
+            .populate("assignedTo", "name email")
+            .lean();
+
+        res.json({ success: true, message: "Reply added", ticket: serializeTicket(populatedTicket) });
     } catch (err) {
         console.error("[Support] Public reply error:", err.message);
         res.status(500).json({ success: false, message: "Server error" });
