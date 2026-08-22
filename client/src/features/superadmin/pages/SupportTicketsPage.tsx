@@ -371,9 +371,15 @@ export function SupportTicketsPage() {
   const isSendingRef = useRef(false);
   const [isAiDraft, setIsAiDraft] = useState(false);
 
+  const draftLoadedForTicketId = useRef<string | null>(null);
+
   // Load draft into editor when ticket changes or draft loads
   useEffect(() => {
-    if (selectedTicket && draftData?.draft?.draftContent !== undefined) {
+    if (!selectedTicket || isDraftLoading) return;
+    
+    if (draftLoadedForTicketId.current === selectedTicket._id) return;
+
+    if (draftData?.draft?.draftContent !== undefined) {
       const draftContent = draftData.draft.draftContent || "";
       let parsed = draftContent;
       try {
@@ -384,10 +390,12 @@ export function SupportTicketsPage() {
       setReplyBody(parsed);
       replyEditorRef.current?.setHTML(parsed);
       setIsAiDraft(draftData.draft.source === "ai_generated");
-    } else if (selectedTicket && !isDraftLoading) {
+      draftLoadedForTicketId.current = selectedTicket._id;
+    } else {
       setReplyBody("");
       replyEditorRef.current?.clear();
       setIsAiDraft(false);
+      draftLoadedForTicketId.current = selectedTicket._id;
     }
   }, [selectedTicket?._id, draftData?.draft?.draftContent, isDraftLoading]);
 

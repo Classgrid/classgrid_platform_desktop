@@ -380,9 +380,16 @@ export function ClassgridTalkPage() {
   const isSendingRef = useRef(false);
   const [isAiDraft, setIsAiDraft] = useState(false);
 
+  const draftLoadedForTicketId = useRef<string | null>(null);
+
   // Load draft into editor when ticket changes or draft loads
   useEffect(() => {
-    if (selectedTicket && draftData?.draft?.draftContent !== undefined) {
+    if (!selectedTicket || isDraftLoading) return;
+    
+    // Only load the draft ONCE per ticket activation to prevent cursor jumping
+    if (draftLoadedForTicketId.current === selectedTicket._id) return;
+
+    if (draftData?.draft?.draftContent !== undefined) {
       const draftContent = draftData.draft.draftContent || "";
       let parsed = draftContent;
       try {
@@ -400,12 +407,14 @@ export function ClassgridTalkPage() {
       setReplyBody(parsed);
       replyEditorRef.current?.setHTML(parsed);
       setIsAiDraft(draftData.draft.source === "ai_generated");
-    } else if (selectedTicket && !isDraftLoading) {
+      draftLoadedForTicketId.current = selectedTicket._id;
+    } else {
       setReplyBody("");
       replyEditorRef.current?.clear();
       setIsAiDraft(false);
+      draftLoadedForTicketId.current = selectedTicket._id;
     }
-  }, [selectedTicket?._id, draftData?.draft?.draftContent, isDraftLoading]);
+  }, [selectedTicket?._id, draftData?.draft?.draftContent, isDraftLoading, currentUser?.name]);
 
   // Debounced auto-save draft
   useEffect(() => {
@@ -416,6 +425,12 @@ export function ClassgridTalkPage() {
       const p = JSON.parse(parsedDraft);
       if (p.text || p.content) parsedDraft = p.content || p.text;
     } catch(e) {}
+    
+    if (currentUser?.name) {
+      parsedDraft = parsedDraft.replace(/\[ADMIN_NAME\]/g, currentUser.name);
+    } else {
+      parsedDraft = parsedDraft.replace(/\[ADMIN_NAME\]/g, "Customer Success Manager");
+    }
     
     if (replyBody === parsedDraft) return;
 
@@ -428,7 +443,7 @@ export function ClassgridTalkPage() {
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [replyBody, selectedTicket?._id, draftData?.draft?.draftContent]);
+  }, [replyBody, selectedTicket?._id, draftData?.draft?.draftContent, currentUser?.name]);
 
   const { data, isLoading, isError, refetch, isFetching } = useSupportTickets({
     status: statusFilter || undefined,
