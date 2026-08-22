@@ -259,8 +259,9 @@ export function AppRouter() {
           <Route path="/superadmin/announcements" element={<PlatformAnnouncementsPage />} />
           <Route path="/superadmin/config" element={<ConfigPage />} />
           <Route path="/superadmin/support" element={<SupportTicketsPage />} />
-          {/* Fallback for old email links so they don't hit Coming Soon */}
-          <Route path="/superadmin/support/view/:id" element={<Navigate to="/superadmin/support" replace />} />
+          <Route path="/superadmin/support/:id" element={<SupportTicketsPage />} />
+          {/* Support for email links so they auto-open the chat and assign */}
+          <Route path="/superadmin/support/view/:id" element={<SupportTicketsPage />} />
           <Route path="/superadmin/feedback" element={<FeedbackPage />} />
           <Route path="/superadmin/reviews" element={<ReviewsPage />} />
           <Route path="/superadmin/talk" element={<ClassgridTalkPage />} />
