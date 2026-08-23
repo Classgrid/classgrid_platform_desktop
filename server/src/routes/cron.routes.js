@@ -158,7 +158,7 @@ router.get("/auto-close-tickets", async (req, res) => {
         const SupportTicket = (await import("../models/SupportTicket.js")).default;
         
         const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        sevenDaysAgo.setMinutes(sevenDaysAgo.getMinutes() - 5);
 
         const result = await SupportTicket.updateMany(
             {
@@ -170,7 +170,7 @@ router.get("/auto-close-tickets", async (req, res) => {
                 $push: {
                     events: {
                         type: 'statusChanged',
-                        label: 'Ticket auto-closed after 7 days of inactivity',
+                        label: 'Ticket auto-closed after 5 minutes of inactivity (TEST MODE 2)',
                         from: 'resolved',
                         to: 'closed',
                         actorName: 'System',
