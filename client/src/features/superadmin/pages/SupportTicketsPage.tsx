@@ -1369,6 +1369,7 @@ export function SupportTicketsPage() {
                 label="Requester"
                 value={selectedRequester?.name || "-"}
                 avatar={selectedRequester?.profilePicture}
+                showFallbackAvatar={true}
               />
               <MetaRow
                 label="Email"
@@ -1703,12 +1704,14 @@ function MetaRow({
   mono,
   copyValue,
   avatar,
+  showFallbackAvatar,
 }: {
   label: string;
   value: string;
   mono?: boolean;
   copyValue?: string;
   avatar?: string;
+  showFallbackAvatar?: boolean;
 }) {
   return (
     <div className="flex items-start justify-between gap-2 min-w-0">
@@ -1721,7 +1724,7 @@ function MetaRow({
         {avatar && (
           <img src={avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
         )}
-        {!avatar && !mono && value !== "-" && !value.startsWith("#") && (
+        {!avatar && showFallbackAvatar && value !== "-" && !value.startsWith("#") && (
            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-[9px] ${getAvatarColor(value)}`}>
              {getInitials(value)}
            </div>

@@ -606,6 +606,7 @@ export const activateAdmin = async (req, res) => {
         if (!user.linkedProviders) user.linkedProviders = [];
         if (!user.linkedProviders.includes("manual")) user.linkedProviders.push("manual");
         user.authProvider = "manual";
+        if (user.status === "pending") user.status = "active";
         user.lastLoginAt = new Date();
         await user.save();
 
@@ -1456,6 +1457,7 @@ export const oauthCallback = async (req, res) => {
     await checkAndRegisterDevice(req.user, req);
 
     // Update last login
+    if (req.user.status === "pending") req.user.status = "active";
     req.user.lastLoginAt = new Date();
     await req.user.save();
 
@@ -1753,6 +1755,7 @@ export const setupOrgAdmin = async (req, res) => {
         user.mustResetPassword = false; // Password has been set — clear the flag
         if (!user.linkedProviders) user.linkedProviders = [];
         if (!user.linkedProviders.includes("manual")) user.linkedProviders.push("manual");
+        if (user.status === "pending") user.status = "active";
         user.lastLoginAt = new Date();
         user.authProvider = "manual";
 
@@ -2053,6 +2056,7 @@ export const verifyDeviceOtp = async (req, res) => {
             });
         }
 
+        if (user.status === "pending") user.status = "active";
         user.lastLoginAt = new Date();
         user.authProvider = "manual";
         await user.save();
