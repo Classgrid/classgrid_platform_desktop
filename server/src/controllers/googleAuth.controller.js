@@ -173,6 +173,10 @@ export const googleCallback = async (req, res) => {
             user.googleId = id;
             user.isEmailVerified = true;
             user.lastLoginAt = new Date();
+            
+            if (user.status === "pending") {
+                user.status = "active";
+            }
 
             if (picture && !user.profilePicture) {
                 user.profilePicture = picture;

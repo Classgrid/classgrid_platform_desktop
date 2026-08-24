@@ -1142,7 +1142,7 @@ router.get("/team", async (req, res) => {
 
         const platformRoles = ["super_admin", "co_super_admin"];
         const teamDocs = await User.find({ role: { $in: platformRoles } })
-            .select("name email role status isEmailVerified createdAt lastSeen profilePicture")
+            .select("name email role status isEmailVerified createdAt lastSeen lastLoginAt profilePicture")
             .sort({ createdAt: -1 })
             .lean();
         
