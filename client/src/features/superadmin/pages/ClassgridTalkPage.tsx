@@ -45,6 +45,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
 
 import { toast } from "sonner";
+import { socket } from "@/lib/socketClient";
 import RichReplyEditor, {
   type RichReplyEditorRef,
 } from "@/app/support/components/RichReplyEditor";
@@ -451,6 +452,15 @@ export function ClassgridTalkPage() {
     limit: 50,
     type: "inquiry",
   });
+
+  useEffect(() => {
+    socket.on("support_ticket_created", () => refetch());
+    socket.on("support_ticket_updated", () => refetch());
+    return () => {
+      socket.off("support_ticket_created");
+      socket.off("support_ticket_updated");
+    };
+  }, [refetch]);
 
   const updateTicket = useUpdateTicket();
   const replyToTicket = useReplyToTicket();
@@ -873,6 +883,12 @@ export function ClassgridTalkPage() {
                   ticket.name ??
                   "Unknown";
 
+                const profilePicture = 
+                  ticket.submittedBy?.profilePicture ??
+                  (ticket as any).createdBy?.profilePicture ??
+                  (ticket as any).requester?.profilePicture ??
+                  null;
+
                 const conversation = getConversation(ticket);
                 let unreadCount = 0;
                 for (let i = conversation.length - 1; i >= 0; i--) {
@@ -885,11 +901,15 @@ export function ClassgridTalkPage() {
                     <div className="flex items-center gap-3">
                       <div className="relative shrink-0">
                         <div
-                          className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs ${getAvatarColor(
+                          className={`w-9 h-9 rounded-full flex items-center justify-center overflow-hidden text-white font-bold text-xs ${getAvatarColor(
                             name
                           )}`}
                         >
-                          {getInitials(name)}
+                          {profilePicture ? (
+                            <img src={profilePicture} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            getInitials(name)
+                          )}
                         </div>
                         {unreadCount > 0 && (
                           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-blue-500 border-2 border-card" />
@@ -964,7 +984,9 @@ export function ClassgridTalkPage() {
                             <TooltipTrigger asChild>
                               <div className="flex items-center gap-2 px-2 py-1 rounded-full border border-border bg-card text-xs font-medium text-foreground w-fit cursor-default hover:border-foreground/20 transition-colors">
                                 <div className="w-5 h-5 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-border">
-                                  {currentUser?.profilePicture && ticket.assignedTo._id === currentUser._id ? (
+                                  {ticket.assignedTo.profilePicture ? (
+                                    <img src={ticket.assignedTo.profilePicture} alt="" className="w-full h-full object-cover" />
+                                  ) : currentUser?.profilePicture && ticket.assignedTo._id === currentUser._id ? (
                                     <img src={currentUser.profilePicture} alt="" className="w-full h-full object-cover" />
                                   ) : (
                                     <div className={`w-full h-full flex items-center justify-center text-white font-bold text-[9px] ${getAvatarColor(ticket.assignedTo.name)}`}>
@@ -1371,6 +1393,7 @@ export function ClassgridTalkPage() {
               <MetaRow
                 label="Requester"
                 value={selectedRequester?.name || "-"}
+                avatar={selectedRequester?.profilePicture}
               />
               <MetaRow
                 label="Email"
@@ -1409,7 +1432,16 @@ export function ClassgridTalkPage() {
                 </dt>
                 <dd className="text-right text-muted-foreground min-w-0 break-words text-sm flex items-center justify-end gap-2 flex-wrap">
                   {selectedTicket.assignedTo?.name ? (
-                    <span className="text-foreground font-medium">{selectedTicket.assignedTo.name}</span>
+                    <div className="flex items-center gap-1.5">
+                      {selectedTicket.assignedTo.profilePicture ? (
+                        <img src={selectedTicket.assignedTo.profilePicture} alt="" className="w-5 h-5 rounded-full object-cover" />
+                      ) : (
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-[9px] ${getAvatarColor(selectedTicket.assignedTo.name)}`}>
+                          {getInitials(selectedTicket.assignedTo.name)}
+                        </div>
+                      )}
+                      <span className="text-foreground font-medium">{selectedTicket.assignedTo.name}</span>
+                    </div>
                   ) : (
                     <>
                       <span>Unassigned</span>
@@ -1699,11 +1731,13 @@ function MetaRow({
   value,
   mono,
   copyValue,
+  avatar,
 }: {
   label: string;
   value: string;
   mono?: boolean;
   copyValue?: string;
+  avatar?: string;
 }) {
   return (
     <div className="flex items-start justify-between gap-2 min-w-0">
@@ -1713,6 +1747,14 @@ function MetaRow({
       <dd
         className={`text-right text-muted-foreground min-w-0 break-words ${mono ? "font-mono" : ""} text-sm flex items-center justify-end gap-1.5`}
       >
+        {avatar && (
+          <img src={avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
+        )}
+        {!avatar && !mono && value !== "-" && !value.startsWith("#") && (
+           <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-[9px] ${getAvatarColor(value)}`}>
+             {getInitials(value)}
+           </div>
+        )}
         <span>{value}</span>
         {copyValue && (
           <Button

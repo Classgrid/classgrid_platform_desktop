@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Shield, Trash2, Plus, MoreHorizontal, Search, XCircle, X, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/marketing_ui/badge";
 import { RefreshButton } from "@/components/marketing_ui/refresh-button";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { apiClient } from "@/lib/apiClient";
+import { socket } from "@/lib/socketClient";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -26,7 +27,9 @@ type TeamMember = {
   status: "active" | "suspended" | "pending";
   createdAt: string;
   lastLogin?: string;
+  lastSeen?: string;
   profilePicture?: string;
+  isOnline?: boolean;
 };
 
 // ── Role definitions ──────────────────────────────────────────────────────────
@@ -54,6 +57,21 @@ const ROLE_MAP: Record<PlatformRole, { label: string; variant: "danger" | "succe
 function fmtDate(iso?: string) {
   if (!iso) return "Never";
   return new Date(iso).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function getRelativeTime(iso?: string) {
+  if (!iso) return "Never";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "Never";
+  const seconds = Math.floor((new Date().getTime() - d.getTime()) / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  
+  // Show exact date and time if it's older than 24 hours
+  return d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
 // ── API calls ─────────────────────────────────────────────────────────────────
@@ -101,6 +119,19 @@ export function TeamPage() {
     staleTime: 60_000,
     retry: 1
   });
+
+  useEffect(() => {
+    socket.on("platform_team_updated", () => {
+      refetch();
+    });
+    socket.on("platform_user_status_changed", () => {
+      refetch();
+    });
+    return () => {
+      socket.off("platform_team_updated");
+      socket.off("platform_user_status_changed");
+    };
+  }, [refetch]);
 
   const team: TeamMember[] = data?.team ?? [];
   
@@ -248,12 +279,50 @@ export function TeamPage() {
     {
       key: "status",
       header: "Status",
-      width: "w-[120px]",
-      render: (_: any, row: TeamMember) => (
-        <Badge variant={row.status === "active" ? "success" : row.status === "suspended" ? "danger" : "warning"} dot>
-          {row.status === "pending" ? "Pending" : row.status === "active" ? "Active" : "Suspended"}
-        </Badge>
-      )
+      width: "w-[150px]",
+      render: (_: any, row: TeamMember) => {
+        if (row.status === "pending") {
+          return <Badge variant="warning" dot>Pending</Badge>;
+        }
+        if (row.status === "suspended") {
+          return <Badge variant="danger" dot>Suspended</Badge>;
+        }
+        
+        if (row.isOnline) {
+          return <Badge variant="success" dot>Online</Badge>;
+        }
+
+        // Offline state
+        let lastSeenText = "Never";
+        if (row.lastSeen) {
+          const d = new Date(row.lastSeen);
+          if (!isNaN(d.getTime())) {
+            const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+            const timeStr = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+            
+            const seconds = Math.floor((new Date().getTime() - d.getTime()) / 1000);
+            let relative = "";
+            if (seconds < 60) relative = `${seconds}s ago`;
+            else {
+              const minutes = Math.floor(seconds / 60);
+              if (minutes < 60) relative = `${minutes}m ago`;
+              else {
+                const hours = Math.floor(minutes / 60);
+                if (hours < 24) relative = `${hours}h ago`;
+                else relative = `${Math.floor(hours / 24)}d ago`;
+              }
+            }
+            lastSeenText = `${dateStr}, ${timeStr} (${relative})`;
+          }
+        }
+
+        return (
+          <div className="flex flex-col gap-1 items-start">
+            <Badge variant="neutral" dot>Offline</Badge>
+            <span className="text-[10px] text-muted-foreground ml-1 whitespace-nowrap" title={lastSeenText}>Seen: {lastSeenText}</span>
+          </div>
+        );
+      }
     },
     {
       key: "lastLogin",
