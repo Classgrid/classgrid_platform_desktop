@@ -152,6 +152,12 @@ function getRequester(ticket: SupportTicket) {
       (ticket as any).requester?.role ??
       (ticket as any).submitterRole ??
       "",
+    profilePicture:
+      ticket.submittedBy?.profilePicture ??
+      (ticket as any).createdBy?.profilePicture ??
+      (ticket as any).requester?.profilePicture ??
+      (ticket as any).profilePicture ??
+      "",
   };
 }
 
