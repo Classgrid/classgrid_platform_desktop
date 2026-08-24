@@ -1138,11 +1138,24 @@ router.patch("/helpdesk/threads/:threadId/read", markSuperAdminSupportConversati
 router.get("/team", async (req, res) => {
     try {
         const User = (await import("../models/User.js")).default;
+        const { getIO } = await import("../services/socket.service.js");
+
         const platformRoles = ["super_admin", "co_super_admin"];
         const teamDocs = await User.find({ role: { $in: platformRoles } })
-            .select("name email role status isEmailVerified createdAt lastLoginAt profilePicture")
+            .select("name email role status isEmailVerified createdAt lastSeen profilePicture")
             .sort({ createdAt: -1 })
             .lean();
+        
+        // Get online users using Socket.io
+        let onlineUserIds = new Set();
+        try {
+            const sockets = await getIO().fetchSockets();
+            sockets.forEach(s => {
+                if (s.userId) onlineUserIds.add(s.userId.toString());
+            });
+        } catch (e) {
+            console.error("[Team] error fetching sockets:", e.message);
+        }
         
         // Map lastLoginAt to lastLogin to match frontend expectations, and include profilePicture
         const team = teamDocs.map(user => {
@@ -1156,8 +1169,10 @@ router.get("/team", async (req, res) => {
                 status: user.status,
                 isEmailVerified: user.isEmailVerified,
                 createdAt: user.createdAt || fallbackDate,
-                lastLogin: user.lastLoginAt,
-                profilePicture: user.profilePicture
+                lastLogin: user.lastLoginAt, // Keep if frontend uses it for legacy
+                lastSeen: user.lastSeen,
+                profilePicture: user.profilePicture,
+                isOnline: onlineUserIds.has(user._id.toString())
             };
         });
 
@@ -1342,6 +1357,13 @@ router.post("/team/invite", async (req, res) => {
             console.log(`[Team Invite] ${classgridEmail} temp password: ${tempPassword}`);
         }
 
+        try {
+            const { getIO } = await import("../services/socket.service.js");
+            getIO().emit("platform_team_updated");
+        } catch (e) {
+            console.error("[Team] socket emit error:", e.message);
+        }
+
         res.status(201).json({
             success: true,
             message: `Invitation created for ${classgridEmail}. Welcome email sent to ${toEmail}.`,
@@ -1362,6 +1384,14 @@ router.patch("/team/:id/role", async (req, res) => {
         }
         const User = (await import("../models/User.js")).default;
         await User.findByIdAndUpdate(req.params.id, { $set: { role } });
+        
+        try {
+            const { getIO } = await import("../services/socket.service.js");
+            getIO().emit("platform_team_updated");
+        } catch (e) {
+            console.error("[Team] socket emit error:", e.message);
+        }
+        
         res.json({ success: true, message: "Role updated" });
     } catch (err) {
         console.error("[Team] role update error:", err.message);
@@ -1391,6 +1421,14 @@ router.delete("/team/:id", async (req, res) => {
         }
 
         await User.findByIdAndDelete(req.params.id);
+        
+        try {
+            const { getIO } = await import("../services/socket.service.js");
+            getIO().emit("platform_team_updated");
+        } catch (e) {
+            console.error("[Team] socket emit error:", e.message);
+        }
+        
         res.json({ success: true, message: "Team member removed" });
     } catch (err) {
         console.error("[Team] remove error:", err.message);

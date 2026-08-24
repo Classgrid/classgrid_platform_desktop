@@ -328,6 +328,11 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    lastSeen: {
+      type: Date,
+      default: null,
+    },
+
     // 🔒 Trusted devices — suppress login notification emails for known devices
     trustedDevices: [{
       fingerprint: { type: String, required: true }, // SHA-256 hash of userAgent + IP

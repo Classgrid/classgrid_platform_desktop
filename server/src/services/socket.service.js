@@ -7,6 +7,7 @@ import Message from "../models/Message.js";
 import MeetingChat from "../models/MeetingChat.js";
 import GoLive from "../models/GoLive.js";
 import { dispatchNotification } from "./notification.service.js";
+import User from "../models/User.js";
 import accessLogger from "../config/logger.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
@@ -78,6 +79,10 @@ export const initSocket = (server) => {
             orgId: orgId,
             ip: socket.handshake.address
         });
+
+        if (socket.userId) {
+            io.emit("platform_user_status_changed", { userId: socket.userId, isOnline: true });
+        }
 
         // Ensure consumer group exists (catch if it already exists)
         if (orgId && redisClient) {
@@ -319,7 +324,7 @@ export const initSocket = (server) => {
             console.log(`🍔 User ${socket.userId} joined CANTEEN KDS room: ${roomName}`);
         });
 
-        socket.on("disconnect", () => {
+        socket.on("disconnect", async () => {
             accessLogger.info(`🔌 Socket disconnected: ${socket.userId}`, {
                 provider: 'socket',
                 event: 'disconnect',
@@ -327,6 +332,16 @@ export const initSocket = (server) => {
                 orgId: orgId,
                 ip: socket.handshake.address
             });
+            
+            if (socket.userId) {
+                const now = new Date();
+                try {
+                    await User.findByIdAndUpdate(socket.userId, { lastSeen: now });
+                } catch (e) {
+                    console.error("[Socket] Failed to update lastSeen:", e.message);
+                }
+                io.emit("platform_user_status_changed", { userId: socket.userId, isOnline: false, lastSeen: now });
+            }
         });
     });
 

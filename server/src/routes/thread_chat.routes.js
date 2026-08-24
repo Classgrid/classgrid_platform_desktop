@@ -1028,7 +1028,7 @@ router.post('/dm/:userId', isAuthenticated, async (req, res) => {
       .from('chat_threads')
       .insert([{
         type: 'dm',
-        org_id: threadOrgId,
+        org_id: threadOrgId || null,
         group_id: null,
         last_message: null,
         last_message_at: null,

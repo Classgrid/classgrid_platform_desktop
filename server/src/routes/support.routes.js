@@ -7,6 +7,7 @@ import { multipleUploads } from "../middleware/upload.middleware.js";
 import storageService from "../services/storage.service.js";
 import { notifyTicketCreatorOfAdminReply, notifyUserOfTicketCreation, notifyUserOfTalkRequestCreation, notifyTalkCreatorOfAdminReply } from "../services/support-ticket-email.service.js";
 import { dispatchNotification, bulkDispatchNotification } from "../services/notification.service.js";
+import { getIO } from "../services/socket.service.js";
 
 
 
@@ -166,8 +167,15 @@ function serializeTicket(ticket) {
         requester: {
             name: ticket.submitterName || ticket.submittedBy?.name || "Unknown",
             email: ticket.submitterEmail || ticket.submittedBy?.email || "",
-            role: ticket.submitterRole || ticket.submittedBy?.role || ""
-        }
+            role: ticket.submitterRole || ticket.submittedBy?.role || "",
+            profilePicture: ticket.requesterProfilePicture || ticket.submittedBy?.profilePicture || ""
+        },
+        assignedTo: ticket.assignedTo ? {
+            _id: ticket.assignedTo._id,
+            name: ticket.assignedTo.name,
+            email: ticket.assignedTo.email,
+            profilePicture: ticket.assignedTo.profilePicture || ""
+        } : null
     };
 }
 
@@ -372,6 +380,12 @@ router.post("/public/tickets", enforceStrictSession, multipleUploads("files", 5)
             console.error("[Support] New ticket email notification failed:", emailErr.message);
         }
 
+        try {
+            getIO().emit("support_ticket_created");
+        } catch (socketErr) {
+            console.error("[Support] Socket emit failed:", socketErr.message);
+        }
+
         res.status(201).json({
             success: true,
             message: "Ticket created successfully",
@@ -452,7 +466,7 @@ router.get("/public/tickets/:id", enforceStrictSession, async (req, res) => {
         }
 
         const ticket = await SupportTicket.findById(req.params.id)
-            .populate("assignedTo", "name email")
+            .populate("assignedTo", "name email profilePicture")
             .lean();
 
         if (!ticket) {
@@ -600,8 +614,14 @@ router.post("/public/tickets/:id/reply", enforceStrictSession, multipleUploads("
 
         const populatedTicket = await SupportTicket.findById(ticket._id)
             .populate("submittedBy", "name email role")
-            .populate("assignedTo", "name email")
+            .populate("assignedTo", "name email profilePicture")
             .lean();
+
+        try {
+            getIO().emit("support_ticket_updated", { ticketId: ticket._id });
+        } catch (socketErr) {
+            console.error("[Support] Socket emit failed:", socketErr.message);
+        }
 
         res.json({ success: true, message: "Reply added", ticket: serializeTicket(populatedTicket) });
     } catch (err) {
@@ -770,6 +790,12 @@ router.post("/tickets", isAuthenticated, multipleUploads("files", 5), async (req
             console.error("[Support] Admin notification failed:", notifErr.message);
         }
 
+        try {
+            getIO().emit("support_ticket_created");
+        } catch (socketErr) {
+            console.error("[Support] Socket emit failed:", socketErr.message);
+        }
+
         res.status(201).json({ success: true, message: "Ticket created", ticket: serializeTicket(ticket.toObject()) });
     } catch (err) {
         console.error("[Support] Create error:", err.message);
@@ -808,8 +834,8 @@ router.get("/tickets", isAuthenticated, async (req, res) => {
 router.get("/tickets/:id", isAuthenticated, async (req, res) => {
     try {
         let ticket = await SupportTicket.findById(req.params.id)
-            .populate("submittedBy", "name email role")
-            .populate("assignedTo", "name email")
+            .populate("submittedBy", "name email role profilePicture")
+            .populate("assignedTo", "name email profilePicture")
             .lean();
 
         // Fallback for public tickets where submittedBy is missing
@@ -820,6 +846,7 @@ router.get("/tickets/:id", isAuthenticated, async (req, res) => {
             ).populate("organization_id", "name").lean();
             if (user) {
                 ticket.submitterRole = user.role;
+                ticket.requesterProfilePicture = user.profilePicture;
                 if (!ticket.organization_id && user.organization_id) {
                     ticket.organization_id = user.organization_id;
                 }
@@ -1054,9 +1081,15 @@ router.post("/tickets/:id/reply", isAuthenticated, multipleUploads("files", 5), 
         }
 
         const populatedTicket = await SupportTicket.findById(ticket._id)
-            .populate("submittedBy", "name email role")
-            .populate("assignedTo", "name email")
+            .populate("submittedBy", "name email role profilePicture")
+            .populate("assignedTo", "name email profilePicture")
             .lean();
+            
+        try {
+            getIO().emit("support_ticket_updated", { ticketId: ticket._id });
+        } catch (socketErr) {
+            console.error("[Support] Socket emit failed:", socketErr.message);
+        }
 
         res.json({
             success: true,
@@ -1094,9 +1127,9 @@ router.get("/admin/tickets", isAuthenticated, requireRole("super_admin"), async 
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
-                .populate("submittedBy", "name email role")
+                .populate("submittedBy", "name email role profilePicture")
                 .populate("organization_id", "name slug org_type logo_url")
-                .populate("assignedTo", "name email")
+                .populate("assignedTo", "name email profilePicture")
                 .lean(),
             SupportTicket.countDocuments(filter)
         ]);
@@ -1106,11 +1139,12 @@ router.get("/admin/tickets", isAuthenticated, requireRole("super_admin"), async 
             if (!ticket.submittedBy && ticket.submitterEmail) {
                 const user = await User.findOne(
                     { email: ticket.submitterEmail.toLowerCase() },
-                    "name email role organization_id"
+                    "name email role profilePicture organization_id"
                 ).populate("organization_id", "name org_type").lean();
                 
                 if (user) {
                     ticket.submitterRole = user.role;
+                    ticket.requesterProfilePicture = user.profilePicture;
                     if (!ticket.organization_id && user.organization_id) {
                         ticket.organization_id = user.organization_id;
                     }
@@ -1216,8 +1250,14 @@ router.patch("/admin/tickets/:id", isAuthenticated, requireRole("super_admin"), 
         await ticket.save();
         const updated = await SupportTicket.findById(ticket._id)
             .populate("submittedBy", "name email role")
-            .populate("assignedTo", "name email")
+            .populate("assignedTo", "name email profilePicture")
             .lean();
+
+        try {
+            getIO().emit("support_ticket_updated", { ticketId: ticket._id });
+        } catch (socketErr) {
+            console.error("[Support] Socket emit failed:", socketErr.message);
+        }
 
         res.json({ success: true, message: "Ticket updated", ticket: serializeTicket(updated) });
     } catch (err) {
@@ -1248,8 +1288,14 @@ router.patch("/admin/tickets/:id/reply/:replyId", isAuthenticated, requireRole("
 
         const updated = await SupportTicket.findById(ticket._id)
             .populate("submittedBy", "name email role")
-            .populate("assignedTo", "name email")
+            .populate("assignedTo", "name email profilePicture")
             .lean();
+
+        try {
+            getIO().emit("support_ticket_updated", { ticketId: ticket._id });
+        } catch (socketErr) {
+            console.error("[Support] Socket emit failed:", socketErr.message);
+        }
 
         res.json({ success: true, message: "Reply updated", ticket: serializeTicket(updated) });
     } catch (err) {
@@ -1291,6 +1337,13 @@ router.post("/admin/tickets/:id/note", isAuthenticated, requireRole("super_admin
         });
 
         await ticket.save();
+        
+        try {
+            getIO().emit("support_ticket_updated", { ticketId: ticket._id });
+        } catch (socketErr) {
+            console.error("[Support] Socket emit failed:", socketErr.message);
+        }
+        
         res.json({ success: true, message: "Internal note added", ticket: serializeTicket(ticket.toObject()) });
     } catch (err) {
         console.error("[Support] Internal note error:", err.message);
@@ -1333,6 +1386,12 @@ router.post("/public/tickets/:id/reopen", enforceStrictSession, async (req, res)
         ticket.resolvedBy = null;
         await ticket.save();
 
+        try {
+            getIO().emit("support_ticket_updated", { ticketId: ticket._id });
+        } catch (socketErr) {
+            console.error("[Support] Socket emit failed:", socketErr.message);
+        }
+
         res.json({ success: true, message: "Ticket reopened", ticket: serializeTicket(ticket.toObject()) });
     } catch (err) {
         console.error("[Support] Reopen error:", err.message);
@@ -1363,6 +1422,13 @@ router.post("/public/tickets/:id/rate", enforceStrictSession, async (req, res) =
         };
 
         await ticket.save();
+        
+        try {
+            getIO().emit("support_ticket_updated", { ticketId: ticket._id });
+        } catch (socketErr) {
+            console.error("[Support] Socket emit failed:", socketErr.message);
+        }
+        
         res.json({ success: true, message: "Thank you for your feedback", ticket: serializeTicket(ticket.toObject()) });
     } catch (err) {
         console.error("[Support] Rating error:", err.message);

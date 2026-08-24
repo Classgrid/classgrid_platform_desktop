@@ -1067,6 +1067,7 @@ export const login = async (req, res) => {
         user.lockUntil = null;
         if (!user.linkedProviders) user.linkedProviders = [];
         if (!user.linkedProviders.includes("manual")) user.linkedProviders.push("manual");
+        if (user.status === "pending") user.status = "active";
         await user.save();
 
         // Send welcome email on first login only

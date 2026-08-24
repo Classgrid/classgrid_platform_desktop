@@ -16,7 +16,9 @@ async function clearCollections() {
       "support_tickets",
       "support_inquiries",
       "inquiries",
-      "tickets"
+      "tickets",
+      "emailconversations",
+      "supportconversations"
     ];
 
     for (const name of collectionsToClear) {
