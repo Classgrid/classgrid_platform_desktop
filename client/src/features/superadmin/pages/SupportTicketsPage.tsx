@@ -45,13 +45,11 @@ import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-di
 import { motion, AnimatePresence } from "framer-motion";
 
 import { toast } from "sonner";
-import { socket } from "@/lib/socketClient";
-import RichReplyEditor, {
-  type RichReplyEditorRef,
-} from "@/app/support/components/RichReplyEditor";
-import FilePreviewModal, {
-  type FilePreviewSource,
-} from "@/app/support/components/FilePreviewModal";
+import { getSocket } from "@/lib/socketClient";
+import RichReplyEditor from "@/app/support/components/RichReplyEditor";
+import type { RichReplyEditorRef } from "@/app/support/components/RichReplyEditor";
+import FilePreviewModal from "@/app/support/components/FilePreviewModal";
+import type { FilePreviewSource } from "@/app/support/components/FilePreviewModal";
 import {
   useReplyToTicket,
   useSupportTickets,
@@ -436,6 +434,9 @@ export function SupportTicketsPage() {
   });
 
   useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    
     socket.on("support_ticket_created", () => refetch());
     socket.on("support_ticket_updated", () => refetch());
     return () => {

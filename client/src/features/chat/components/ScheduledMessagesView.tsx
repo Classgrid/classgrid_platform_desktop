@@ -6,7 +6,8 @@ import { Spinner } from "@/components/marketing_ui/spinner";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import DOMPurify from 'dompurify';
 import React, { useRef } from "react";
-import RichReplyEditor, { type RichReplyEditorRef } from "@/app/support/components/RichReplyEditor";
+import RichReplyEditor from "@/app/support/components/RichReplyEditor";
+import type { RichReplyEditorRef } from "@/app/support/components/RichReplyEditor";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 
 interface ScheduledMessagesViewProps {

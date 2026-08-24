@@ -2,7 +2,8 @@ import React, { useRef } from "react";
 import { X, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ChatMessage } from "../../services/chatApi";
-import RichReplyEditor, { type RichReplyEditorRef } from "@/app/support/components/RichReplyEditor";
+import RichReplyEditor from "@/app/support/components/RichReplyEditor";
+import type { RichReplyEditorRef } from "@/app/support/components/RichReplyEditor";
 
 interface EditMessageModalProps {
   message: ChatMessage;

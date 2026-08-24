@@ -12,7 +12,7 @@ import { Badge } from "@/components/marketing_ui/badge";
 import { RefreshButton } from "@/components/marketing_ui/refresh-button";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { apiClient } from "@/lib/apiClient";
-import { socket } from "@/lib/socketClient";
+import { getSocket } from "@/lib/socketClient";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -121,6 +121,9 @@ export function TeamPage() {
   });
 
   useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    
     socket.on("platform_team_updated", () => {
       refetch();
     });
