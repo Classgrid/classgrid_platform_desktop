@@ -396,14 +396,12 @@ export function OrgBrandingCard() {
       if (data.site_title) {
         document.title = data.site_title;
         setLocalSiteTitle(data.site_title);
-        localStorage.setItem("org_title", data.site_title);
       }
       if (data.name) setLocalName(data.name);
       if (data.sidebar_name) setLocalSidebarName(data.sidebar_name);
       setBrandColors(resolveBrandColors(data));
       
       if (data.favicon_url) {
-        localStorage.setItem("org_favicon", data.favicon_url);
         const link1 = document.getElementById('favicon-32') as HTMLLinkElement;
         const link2 = document.getElementById('favicon-16') as HTMLLinkElement;
         const link3 = document.getElementById('favicon-ico') as HTMLLinkElement;

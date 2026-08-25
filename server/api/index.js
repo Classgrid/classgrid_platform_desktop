@@ -6,6 +6,8 @@ import { fileURLToPath } from "url";
 import passport from "passport";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import fs from "fs";
+import Organization from "../src/models/Organization.js";
 
 import connectDB from "../config/db.js";
 import passportConfig from "../src/services/passport.service.js";
@@ -425,8 +427,65 @@ app.get("*", (req, res) => {
   }
 
   if (isProduction) {
-    res.sendFile(path.join(clientDistPath, "index.html"), err => {
-      if (err) res.status(500).send("React build missing.");
+    const indexPath = path.join(clientDistPath, "index.html");
+    fs.readFile(indexPath, "utf8", async (err, html) => {
+      if (err) {
+        return res.status(500).send("React build missing.");
+      }
+
+      try {
+        const host = req.tenantHost || "";
+        const slug = req.tenantSlug || "";
+        const isMainPlatform = host.endsWith("classgrid.in") || host === "localhost" || host === "127.0.0.1";
+
+        let favicon = "/logos/favicon-32x32.png?v=2";
+        let title = "Classgrid ERP";
+        let manifest = '<link rel="manifest" href="/site.webmanifest" />';
+
+        if (!isMainPlatform) {
+          const query = [];
+          if (slug) query.push({ subdomain: slug });
+          if (host && host !== "classgrid.in" && host !== "localhost" && host !== "127.0.0.1") {
+            query.push({
+              "custom_domain.domain": host,
+              "custom_domain.status": { $in: ["verified", "active"] },
+              "custom_domain.is_enabled": { $ne: false },
+            });
+            query.push({
+              "erp_domain.domain": host,
+              "erp_domain.status": { $in: ["verified", "active"] },
+              "erp_domain.is_enabled": { $ne: false },
+            });
+          }
+
+          if (query.length > 0) {
+            const org = await Organization.findOne({ $or: query })
+              .select("site_title favicon_url")
+              .lean();
+
+            if (org) {
+              if (org.favicon_url) favicon = org.favicon_url;
+              if (org.site_title) title = org.site_title;
+              manifest = ""; // Only load manifest on main platform
+            }
+          }
+        }
+
+        const modifiedHtml = html
+          .replace("%FAVICON_URL%", favicon)
+          .replace("%PAGE_TITLE%", title)
+          .replace("%MANIFEST_LINK%", manifest);
+
+        res.send(modifiedHtml);
+      } catch (dbErr) {
+        console.error("Failed to query organization branding:", dbErr);
+        res.send(
+          html
+            .replace("%FAVICON_URL%", "/logos/favicon-32x32.png?v=2")
+            .replace("%PAGE_TITLE%", "Classgrid ERP")
+            .replace("%MANIFEST_LINK%", '<link rel="manifest" href="/site.webmanifest" />')
+        );
+      }
     });
   } else {
     // In development, Vite dev server handles all client routing

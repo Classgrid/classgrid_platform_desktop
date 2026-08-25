@@ -68,12 +68,9 @@ export function CustomDomainUserLoginPage({ preferredRole }: { preferredRole?: A
     const browserTitle = branding?.siteTitle || branding?.shortName || branding?.name;
     if (browserTitle) {
       document.title = browserTitle;
-      localStorage.setItem("org_title", browserTitle);
     }
 
     if (branding?.faviconUrl) {
-      localStorage.setItem("org_favicon", branding.faviconUrl);
-
       const existingLinks = document.querySelectorAll("link[rel~='icon']");
       existingLinks.forEach(link => link.remove());
 

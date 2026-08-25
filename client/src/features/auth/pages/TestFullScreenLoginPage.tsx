@@ -71,15 +71,11 @@ export function TestFullScreenLoginPage({ preferredRole }: { preferredRole?: Aut
   useEffect(() => {
     if (branding?.siteTitle) {
       document.title = branding.siteTitle;
-      localStorage.setItem("org_title", branding.siteTitle);
     } else if (branding?.name) {
       document.title = branding.name;
-      localStorage.setItem("org_title", branding.name);
     }
 
     if (branding?.faviconUrl) {
-      localStorage.setItem("org_favicon", branding.faviconUrl);
-      
       const existingLinks = document.querySelectorAll("link[rel~='icon']");
       existingLinks.forEach(link => link.remove());
       
