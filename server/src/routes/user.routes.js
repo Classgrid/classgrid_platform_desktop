@@ -7,6 +7,7 @@ import { isAuthenticated } from "../middleware/auth.middleware.js";
 import { attachInstitutionProfile } from "../middleware/institution-profile.middleware.js";
 import { getChatSb } from "../config/supabaseClient.js";
 import { generateR2UploadUrl } from "../services/r2.service.js";
+import { getAwsS3PresignedUploadUrl } from "../config/awsS3Client.js";
 import redis from "../config/redis.js";
 
 import { getProfileSchema } from "../utils/profile-schemas.js";
@@ -478,6 +479,29 @@ router.post("/upload-url", isAuthenticated, async (req, res) => {
   } catch (error) {
     console.error("GET UPLOAD URL ERROR:", error);
     res.status(500).json({ message: "Failed to generate upload URL" });
+  }
+});
+
+// =======================
+// GET AWS S3 UPLOAD URL (For Branding CDN)
+// =======================
+router.post("/upload-aws-url", isAuthenticated, async (req, res) => {
+  try {
+    const { fileName, fileType } = req.body;
+    if (!fileName || !fileType) {
+      return res.status(400).json({ message: "Filename and file type are required" });
+    }
+
+    // Ensure the filename is unique to prevent overwriting (saved under org branding structure)
+    const orgId = req.user.organization_id || req.user._id;
+    const uniqueFileName = `${orgId}/branding/${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+
+    const { uploadUrl, publicUrl } = await getAwsS3PresignedUploadUrl(fileName, fileType, 3600, uniqueFileName);
+
+    res.json({ uploadUrl, publicUrl });
+  } catch (error) {
+    console.error("GET AWS S3 UPLOAD URL ERROR:", error);
+    res.status(500).json({ message: "Failed to generate AWS upload URL" });
   }
 });
 

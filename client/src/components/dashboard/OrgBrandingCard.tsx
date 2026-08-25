@@ -423,13 +423,13 @@ export function OrgBrandingCard() {
     };
   };
 
-  const uploadToR2 = async (blob: Blob, type: "logo" | "sidebar_logo" | "favicon" | "campus") => {
+  const uploadToS3 = async (blob: Blob, type: "logo" | "sidebar_logo" | "favicon" | "campus") => {
     const loadingToast = toast.loading(`Uploading ${type}...`);
     try {
       const ext = blob.type === "image/png" ? "png" : "jpg";
       const fileName = `org-${type}-${Date.now()}.${ext}`;
       
-      const { data } = await apiClient.post("/api/user/upload-url", {
+      const { data } = await apiClient.post("/api/user/upload-aws-url", {
         fileName,
         fileType: blob.type
       });
@@ -879,9 +879,8 @@ export function OrgBrandingCard() {
         aspectRatio={cropType === "favicon" ? 1 : cropType === "campus" ? 0.75 : undefined}
         circularCrop={cropType === "favicon"}
         title={`Crop ${cropType}`}
-        onCropComplete={(blob) => uploadToR2(blob, cropType)}
+        onCropComplete={(blob) => uploadToS3(blob, cropType)}
       />
     </div>
   );
 }
-
