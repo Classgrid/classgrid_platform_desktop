@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev-fullstack.mjs",
     "dev:client": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/generate-branding-shell.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "preview": "vite preview"

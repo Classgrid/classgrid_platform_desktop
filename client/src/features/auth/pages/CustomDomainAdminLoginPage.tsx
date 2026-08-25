@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { applyBootstrappedBranding } from "@/lib/tenant-bootstrap";
 import { Mail, MapPin, HelpCircle, Lock, Eye, EyeOff, Globe, Github, ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -39,6 +40,11 @@ export function CustomDomainAdminLoginPage() {
     setRememberedRole(readStoredAuthRole());
   }, []);
 
+  // Apply edge-injected branding IMMEDIATELY (before any API call)
+  useEffect(() => {
+    applyBootstrappedBranding();
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
     const hostname = window.location.hostname;
@@ -69,13 +75,10 @@ export function CustomDomainAdminLoginPage() {
     }
 
     if (branding?.faviconUrl) {
-      const existingLinks = document.querySelectorAll("link[rel~='icon']");
-      existingLinks.forEach(link => link.remove());
-
-      const newLink = document.createElement("link");
-      newLink.rel = "icon";
-      newLink.href = branding.faviconUrl;
-      document.head.appendChild(newLink);
+      const link = document.getElementById("favicon-link") as HTMLLinkElement | null;
+      if (link) {
+        link.href = branding.faviconUrl;
+      }
     }
   }, [branding]);
 
