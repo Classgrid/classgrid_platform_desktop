@@ -151,10 +151,10 @@ function setCachedResult(key, result) {
 }
 
 // ─── Matcher Configuration ────────────────────────────────────────
-// Only match navigation/document requests. Exclude ALL static assets.
+// Only match navigation/document requests and favicon.ico. Exclude ALL other static assets.
 export const config = {
   matcher: [
-    "/((?!_next|_vercel|assets|logos|fonts|images|site\\.webmanifest|favicon|robots\\.txt|sitemap|sw\\.js|workbox).*)",
+    "/((?!_next|_vercel|assets|logos|fonts|images|site\\.webmanifest|robots\\.txt|sitemap|sw\\.js|workbox).*)",
   ],
 };
 
@@ -163,12 +163,12 @@ export default async function middleware(request) {
   const url = new URL(request.url);
   const hostname = request.headers.get("host") || url.hostname;
 
-  // Skip static asset requests (belt-and-suspenders with matcher)
+  // Skip static asset requests (except favicon.ico)
   const lastSegment = url.pathname.split("/").pop() || "";
-  if (lastSegment.includes(".")) {
+  if (lastSegment.includes(".") && url.pathname !== "/favicon.ico") {
     const ext = lastSegment.split(".").pop()?.toLowerCase();
     const staticExtensions = new Set([
-      "js", "css", "png", "jpg", "jpeg", "gif", "svg", "ico", "woff", "woff2",
+      "js", "css", "png", "jpg", "jpeg", "gif", "svg", "woff", "woff2",
       "ttf", "eot", "webp", "avif", "mp4", "webm", "map", "json", "xml", "txt",
       "pdf", "zip", "gz", "br"
     ]);
@@ -177,9 +177,20 @@ export default async function middleware(request) {
     }
   }
 
-  // Main platform hosts get default branding — no modification needed
+  // Main platform hosts get default branding
   if (isMainPlatformHost(hostname)) {
-    return; // Serve index.html as-is with Classgrid branding
+    return; // Serve index.html or /favicon.ico as-is
+  }
+
+  // Intercept background requests for /favicon.ico on tenant domains
+  if (url.pathname === "/favicon.ico") {
+    const branding = await fetchBranding(hostname);
+    if (branding && branding.favicon) {
+      // Redirect the browser's background request to the custom AWS CDN logo!
+      return Response.redirect(branding.favicon, 302);
+    }
+    // If no custom branding, return 404 to stop the browser from finding the Classgrid one
+    return new Response(null, { status: 404 });
   }
 
   // If build-time HTML embed isn't available, serve default
