@@ -493,8 +493,19 @@ router.post("/upload-aws-url", isAuthenticated, async (req, res) => {
     }
 
     // Ensure the filename is unique to prevent overwriting (saved under org branding structure)
-    const orgId = req.user.organization_id || req.user._id;
-    const uniqueFileName = `${orgId}/branding/${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+    let orgFolderName = req.user.organization_id ? req.user.organization_id.toString() : req.user._id.toString();
+    
+    if (req.user.organization_id) {
+      const Organization = (await import("../models/Organization.js")).default;
+      const org = await Organization.findById(req.user.organization_id).select("subdomain shortName name");
+      if (org) {
+        const rawName = org.subdomain || org.shortName || org.name || orgFolderName;
+        // Clean the name to only allow alphanumeric and hyphens, and make lowercase
+        orgFolderName = rawName.replace(/[^a-zA-Z0-9-]/g, "").toLowerCase();
+      }
+    }
+
+    const uniqueFileName = `${orgFolderName}/branding/${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
 
     const { uploadUrl, publicUrl } = await getAwsS3PresignedUploadUrl(fileName, fileType, 3600, uniqueFileName);
 
