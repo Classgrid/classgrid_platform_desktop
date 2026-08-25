@@ -427,7 +427,7 @@ export function OrgBrandingCard() {
     const loadingToast = toast.loading(`Uploading ${type}...`);
     try {
       const ext = blob.type === "image/png" ? "png" : "jpg";
-      const fileName = `org-${type}-${Date.now()}.${ext}`;
+      const fileName = `${type}.${ext}`;
       
       const { data } = await apiClient.post("/api/user/upload-aws-url", {
         fileName,

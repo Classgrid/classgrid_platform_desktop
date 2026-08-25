@@ -505,7 +505,7 @@ router.post("/upload-aws-url", isAuthenticated, async (req, res) => {
       }
     }
 
-    const uniqueFileName = `${orgFolderName}/branding/${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+    const uniqueFileName = `${orgFolderName}/branding/${fileName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
 
     const { uploadUrl, publicUrl } = await getAwsS3PresignedUploadUrl(fileName, fileType, 3600, uniqueFileName);
 
