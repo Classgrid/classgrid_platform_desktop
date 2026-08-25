@@ -7,7 +7,7 @@ import passport from "passport";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import fs from "fs";
-import Organization from "../src/models/Organization.js";
+import { getBrandingForHost, injectBranding } from "../src/services/branding-resolver.service.js";
 
 import connectDB from "../config/db.js";
 import passportConfig from "../src/services/passport.service.js";
@@ -247,8 +247,24 @@ app.get("/", (req, res, next) => {
 const isProduction = process.env.NODE_ENV === "production";
 const clientDistPath = path.join(__dirname, "../../client/dist");
 
+// ─── In-Memory HTML Template (loaded once at startup, not per request) ───
+let htmlTemplate = null;
 if (isProduction) {
-  app.use(express.static(clientDistPath));
+  try {
+    htmlTemplate = fs.readFileSync(path.join(clientDistPath, "index.html"), "utf8");
+    console.log("✅ [Branding] HTML template loaded into memory");
+  } catch (err) {
+    console.error("❌ [Branding] Failed to load HTML template:", err.message);
+  }
+
+  // Serve static assets (JS, CSS, images, fonts) but NOT index.html
+  // index: false → prevents express.static from auto-serving index.html for "/"
+  // This ensures ALL page requests go through our catch-all for tenant branding injection
+  app.use((req, res, next) => {
+    // Block direct /index.html requests from being served as static files
+    if (req.path === "/index.html") return next();
+    express.static(clientDistPath, { index: false })(req, res, next);
+  });
 }
 
 // 🛡️ Enforce Feature Flags
@@ -403,85 +419,55 @@ app.get("/api/config", (req, res) => {
 });
 
 /* ---------- REACT SPA ROUTING (CATCH-ALL) ---------- */
-// Any route not starting with /api will be handled by React Router
-app.get("*", (req, res) => {
+// Any route not starting with /api will be handled by React Router.
+// In production, this injects tenant branding into the HTML template
+// BEFORE sending it to the browser — zero flash, zero localStorage.
+app.get("*", async (req, res) => {
+  // API root status (api.classgrid.in or localhost)
   if (req.path === "/") {
-    return res.json({ 
-      name: "Ultimate Classgrid API", 
-      version: "3.0.0", 
-      status: "online", 
-      env: process.env.NODE_ENV
-      /* 
-      health: {
-        database: "✅ Connected",
-        redis: "✅ Working",
-        login_system: "✅ Works",
-        api_routes: "✅ 78 Modules Active",
-        production_app: "✅ Healthy"
-      }
-      */
-    });
+    const host = req.hostname || "";
+    if (host === "api.classgrid.in" || host.startsWith("api.localhost") || (!isProduction && host === "localhost")) {
+      return res.json({ 
+        name: "Ultimate Classgrid API", 
+        version: "3.0.0", 
+        status: "online", 
+        env: process.env.NODE_ENV
+      });
+    }
   }
   if (req.path.startsWith("/api")) {
     return res.status(404).json({ error: "API not found" });
   }
 
   if (isProduction) {
-    const indexPath = path.join(clientDistPath, "index.html");
-    fs.readFile(indexPath, "utf8", async (err, html) => {
-      if (err) {
-        return res.status(500).send("React build missing.");
-      }
+    if (!htmlTemplate) {
+      return res.status(500).send("React build missing.");
+    }
 
-      try {
-        const host = req.tenantHost || "";
-        const slug = req.tenantSlug || "";
-        const isMainPlatform = host.endsWith("classgrid.in") || host === "localhost" || host === "127.0.0.1";
+    try {
+      // Resolve tenant branding from hostname (LRU cached, ~0ms on cache hit)
+      const branding = await getBrandingForHost(req.tenantHost || req.hostname);
 
-        let favicon = "/logos/favicon-32x32.png?v=2";
-        let title = "Classgrid ERP";
-        let manifest = '<link rel="manifest" href="/site.webmanifest" />';
+      // Inject branding into in-memory template (deterministic string replace, ~0.1ms)
+      const html = injectBranding(htmlTemplate, branding);
 
-        if (!isMainPlatform) {
-          const query = [];
-          if (slug) query.push({ subdomain: slug });
-          if (host && host !== "classgrid.in" && host !== "localhost" && host !== "127.0.0.1") {
-            query.push({
-              "custom_domain.domain": host,
-              "custom_domain.status": { $in: ["verified", "active"] },
-              "custom_domain.is_enabled": { $ne: false },
-            });
-            query.push({
-              "erp_domain.domain": host,
-              "erp_domain.status": { $in: ["verified", "active"] },
-              "erp_domain.is_enabled": { $ne: false },
-            });
-          }
-
-          if (query.length > 0) {
-            const org = await Organization.findOne({ $or: query })
-              .select("site_title favicon_url")
-              .lean();
-
-            if (org) {
-              if (org.favicon_url) favicon = org.favicon_url;
-              if (org.site_title) title = org.site_title;
-              manifest = ""; // Only load manifest on main platform
-            }
-          }
-        }
-
-        const modifiedHtml = html
-          .replace(/<link id="favicon-link"[^>]*>/, `<link id="favicon-link" rel="icon" href="${favicon}" />`)
-          .replace(/<title>.*?<\/title>/, `<title>${title}</title>`)
-          .replace(/<link id="manifest-link"[^>]*>/, manifest);
-
-        res.send(modifiedHtml);
-      } catch (dbErr) {
-        console.error("Failed to query organization branding:", dbErr);
-        res.send(html);
-      }
-    });
+      // Prevent CDN/proxy from caching one tenant's HTML for another
+      res.set("Cache-Control", "private, no-cache, no-store, max-age=0");
+      res.set("Vary", "Host");
+      res.type("html").send(html);
+    } catch (err) {
+      console.error("[Branding] Catch-all error:", err);
+      // Fallback: send template with default Classgrid branding
+      const fallback = injectBranding(htmlTemplate, {
+        title: "Classgrid ERP",
+        favicon: "/logos/favicon-32x32.png?v=2",
+        manifest: '<link rel="manifest" href="/site.webmanifest" />',
+        isMainPlatform: true,
+        orgName: null,
+      });
+      res.set("Cache-Control", "private, no-cache, no-store, max-age=0");
+      res.type("html").send(fallback);
+    }
   } else {
     // In development, Vite dev server handles all client routing
     // This catch-all only runs for the Express server (port 3000)

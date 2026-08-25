@@ -402,13 +402,9 @@ export function OrgBrandingCard() {
       setBrandColors(resolveBrandColors(data));
       
       if (data.favicon_url) {
-        const link1 = document.getElementById('favicon-32') as HTMLLinkElement;
-        const link2 = document.getElementById('favicon-16') as HTMLLinkElement;
-        const link3 = document.getElementById('favicon-ico') as HTMLLinkElement;
+        const faviconLink = document.getElementById('favicon-link') as HTMLLinkElement;
         const cacheBustedUrl = `${data.favicon_url}?t=${Date.now()}`;
-        if (link1) link1.href = cacheBustedUrl;
-        if (link2) link2.href = cacheBustedUrl;
-        if (link3) link3.href = cacheBustedUrl;
+        if (faviconLink) faviconLink.href = cacheBustedUrl;
       }
     }
   }, [data]);
