@@ -208,14 +208,15 @@ export async function getBrandingForHost(host) {
 
 // ─── HTML Template Injection ────────────────────────────────────────
 /**
- * Injects tenant branding into the HTML template using deterministic
- * placeholder replacement (not regex). Placeholders are:
- *   __TENANT_TITLE__     → escaped site_title
- *   __TENANT_FAVICON__   → escaped favicon URL
- *   __TENANT_MANIFEST__  → manifest link tag or empty string
- *   __TENANT_BOOTSTRAP__ → inline <script> with window.__CLASSGRID_TENANT__
+ * Injects tenant branding into the HTML template using targeted regex
+ * replacement on standard HTML tags. The source index.html has real
+ * Classgrid defaults, so it always renders correctly even if served
+ * directly by Nginx. When Express intercepts, it replaces:
+ *   <title>...</title>           → org's site_title
+ *   <link id="favicon-link" ...> → org's favicon_url
+ *   <link rel="manifest" ...>    → removed for tenant domains
  *
- * @param {string} template - The in-memory HTML template with placeholders
+ * @param {string} template - The in-memory HTML template
  * @param {Object} branding - Result from getBrandingForHost()
  * @returns {string} The final HTML ready to send
  */
@@ -233,9 +234,19 @@ export function injectBranding(template, branding) {
         orgName: branding.orgName,
       })};</script>`;
 
-  return template
-    .replace("__TENANT_TITLE__", safeTitle)
-    .replace("__TENANT_FAVICON__", safeFavicon)
-    .replace("__TENANT_MANIFEST__", branding.manifest)
-    .replace("__TENANT_BOOTSTRAP__", bootstrap);
+  let html = template
+    .replace(/<title>.*?<\/title>/, `<title>${safeTitle}</title>`)
+    .replace(/<link id="favicon-link"[^>]*\/>/, `<link id="favicon-link" rel="icon" href="${safeFavicon}" />`);
+
+  // Remove manifest for tenant domains, keep for main platform
+  if (!branding.isMainPlatform) {
+    html = html.replace(/<link rel="manifest"[^>]*\/>/, "");
+  }
+
+  // Inject bootstrap script before </head>
+  if (bootstrap) {
+    html = html.replace("</head>", `${bootstrap}\n</head>`);
+  }
+
+  return html;
 }
