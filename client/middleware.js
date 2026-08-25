@@ -68,22 +68,17 @@ function escapeHtml(str) {
 }
 
 // ─── Favicon URL Validation ──────────────────────────────────────
-// Only allow safe URL schemes — prevents injection via malicious favicon_url
-const ALLOWED_FAVICON_ORIGINS = [
-  "https://cdn.classgrid.in",
-  "https://storage.googleapis.com",
-  "https://classgrid-uploads.s3.ap-south-1.amazonaws.com",
-  "https://res.cloudinary.com",
-  "https://i.imgur.com",
-];
-
+// Favicons are <img> resources — they cannot execute JavaScript.
+// We validate: must be HTTPS or relative path, and must not use
+// dangerous URI schemes. The value is also HTML-escaped before injection.
 function isSafeFaviconUrl(url) {
-  if (!url) return false;
-  if (url.startsWith("/")) return true; // Relative paths are safe
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (trimmed.startsWith("/")) return true; // Relative paths are safe
   try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "https:") return false;
-    return ALLOWED_FAVICON_ORIGINS.some(origin => url.startsWith(origin));
+    const parsed = new URL(trimmed);
+    // Only allow https: — block javascript:, data:, blob:, etc.
+    return parsed.protocol === "https:";
   } catch {
     return false;
   }
