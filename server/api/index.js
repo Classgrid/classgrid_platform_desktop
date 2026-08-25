@@ -472,19 +472,14 @@ app.get("*", (req, res) => {
         }
 
         const modifiedHtml = html
-          .replace("%FAVICON_URL%", favicon)
-          .replace("%PAGE_TITLE%", title)
-          .replace("%MANIFEST_LINK%", manifest);
+          .replace(/<link id="favicon-link"[^>]*>/, `<link id="favicon-link" rel="icon" href="${favicon}" />`)
+          .replace(/<title>.*?<\/title>/, `<title>${title}</title>`)
+          .replace(/<link id="manifest-link"[^>]*>/, manifest);
 
         res.send(modifiedHtml);
       } catch (dbErr) {
         console.error("Failed to query organization branding:", dbErr);
-        res.send(
-          html
-            .replace("%FAVICON_URL%", "/logos/favicon-32x32.png?v=2")
-            .replace("%PAGE_TITLE%", "Classgrid ERP")
-            .replace("%MANIFEST_LINK%", '<link rel="manifest" href="/site.webmanifest" />')
-        );
+        res.send(html);
       }
     });
   } else {
