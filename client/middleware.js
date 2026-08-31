@@ -31,7 +31,7 @@ const SYSTEM_SUBDOMAINS = new Set([
 // Note: This is per edge region / per lambda instance, NOT global.
 // At scale, consider Vercel Edge Config or KV for global shared cache.
 const brandingCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 60 * 1000; // 1 minute (reduced from 5 mins for faster branding updates)
 const MAX_CACHE_SIZE = 500;
 
 // ─── Host Classification ──────────────────────────────────────────
