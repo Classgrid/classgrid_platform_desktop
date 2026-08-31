@@ -26,6 +26,7 @@ import redis from '../config/redis.js';
 import { getDeptAdminInviteEmailHtml, getErpRoleInvitationHtml, getErpRoleRequestAdminHtml, getErpRoleApprovedHtml, getErpRoleInstantlyGrantedHtml, getErpRoleRejectedHtml } from '../services/email-templates.service.js';
 import { sendEmail } from '../services/aws-ses.service.js';
 import crypto from 'crypto';
+import { invalidateBrandingCache } from '../services/branding-resolver.service.js';
 
 const ERP_ROLE_LABELS = {
     admission_head: "Admissions Department Head",
@@ -3311,7 +3312,7 @@ router.patch("/branding", isAuthenticated, requireRole("org_admin"), async (req,
             orgId,
             { $set: updateData },
             { returnDocument: 'after', runValidators: true }
-        ).select("logo_url sidebar_logo_url favicon_url campus_photo_url social_links site_title name sidebar_name subdomain brand_colors branding.theme_colors");
+        ).select("logo_url sidebar_logo_url favicon_url campus_photo_url social_links site_title name sidebar_name subdomain brand_colors branding.theme_colors custom_domain.domain erp_domain.domain");
 
         if (!updatedOrg) return res.status(404).json({ message: "Organization not found." });
 
@@ -3325,6 +3326,18 @@ router.patch("/branding", isAuthenticated, requireRole("org_admin"), async (req,
             await redis.del(`branding:${String(updatedOrg.subdomain).toLowerCase().trim()}`);
         }
         await redis.del(`user:profile:${req.user._id}`);
+
+        // Invalidate the in-memory branding cache (used by branding-resolver for HTML injection)
+        // so the next page load picks up the new favicon/title immediately.
+        if (updatedOrg.subdomain) {
+            invalidateBrandingCache(`${updatedOrg.subdomain}.classgrid.in`);
+        }
+        if (updatedOrg.custom_domain?.domain) {
+            invalidateBrandingCache(updatedOrg.custom_domain.domain);
+        }
+        if (updatedOrg.erp_domain?.domain) {
+            invalidateBrandingCache(updatedOrg.erp_domain.domain);
+        }
 
         res.json({
             message: "Organization branding updated successfully",

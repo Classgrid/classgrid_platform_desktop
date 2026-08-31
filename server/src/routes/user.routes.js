@@ -505,7 +505,11 @@ router.post("/upload-aws-url", isAuthenticated, async (req, res) => {
       }
     }
 
-    const uniqueFileName = `${orgFolderName}/branding/${fileName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+    // Include timestamp in the key so each upload produces a unique CloudFront URL,
+    // which avoids CDN caching stale images (e.g., old favicon served after re-upload).
+    const baseName = fileName.replace(/[^a-zA-Z0-9.-]/g, "_").replace(/\.[^.]+$/, "");
+    const ext = fileName.match(/\.[^.]+$/)?.[0] || ".png";
+    const uniqueFileName = `${orgFolderName}/branding/${baseName}-${Date.now()}${ext}`;
 
     const { uploadUrl, publicUrl } = await getAwsS3PresignedUploadUrl(fileName, fileType, 3600, uniqueFileName);
 

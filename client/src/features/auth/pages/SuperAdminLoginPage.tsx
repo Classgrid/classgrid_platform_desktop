@@ -182,7 +182,7 @@ export function SuperAdminLoginPage() {
                     e.currentTarget.style.background = "white";
                   }}
                 >
-                  <img src="https://www.google.com/favicon.ico" alt="Google" style={{ width: "20px" }} />
+                  <img src="https://cdn.classgrid.in/svg__logo_collection/google-icon-logo-svgrepo-com.svg" alt="Google" className="h-[18px] w-[18px]" />
                   <span>Sign in with Google</span>
                 </button>
               </div>
