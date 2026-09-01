@@ -236,8 +236,8 @@ app.get("/", (req, res, next) => {
     return res.json({ 
       name: "Ultimate Classgrid API", 
       version: "3.0.0", 
-      status: "online", 
-      env: process.env.NODE_ENV
+      message: "Welcome to the Classgrid API! Documentation is available at https://classgrid.in/docs",
+      docs: "https://classgrid.in/docs"
     });
   }
   next();
@@ -430,8 +430,8 @@ app.get("*", async (req, res) => {
       return res.json({ 
         name: "Ultimate Classgrid API", 
         version: "3.0.0", 
-        status: "online", 
-        env: process.env.NODE_ENV
+        message: "Welcome to the Classgrid API! Documentation is available at https://classgrid.in/docs",
+        docs: "https://classgrid.in/docs"
       });
     }
   }
