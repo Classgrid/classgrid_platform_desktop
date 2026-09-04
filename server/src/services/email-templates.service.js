@@ -1701,258 +1701,139 @@ Classgrid pricing is handled separately from this reminder flow. Use the dashboa
 export const getConsolidatedApprovalEmailHtml = ({
   adminName,
   orgName,
-  organizationCode,
-  honorCode,
-  plan = "FREE",
+  subdomain,
   activationLink,
+  activationCode,
   activationDate,
   expiryDate,
-  planDuration = 31,
+  sandboxDuration = 31,
+  allocatedDashboards = [],
 }) => {
-  const isPro = plan === "PRO";
+  const dashboardLink = subdomain ? `https://${subdomain}.classgrid.in/admin/login` : `https://classgrid.in/admin/login`;
+  
+  const dashboardLabels = {
+    dashboard_admission: "Admissions",
+    dashboard_fees: "Fees Management",
+    dashboard_exam: "Exams & Grading",
+    dashboard_attendance: "Attendance",
+    dashboard_library: "Library",
+    dashboard_hr: "HR & Payroll",
+    dashboard_hostel: "Hostel Management",
+    dashboard_faculty: "Faculty Workspace",
+    dashboard_student: "Student Portal"
+  };
 
-  // PRO: full subscription details table (from getPlanActivationHtml, verbatim)
-  const proSubscriptionBlock = isPro ? `
-    <h3 style="color:#111111; margin-top:32px;">Subscription Details</h3>
-    <table width="100%" cellpadding="0" cellspacing="0"
-      style="background:#f9f9f9;border:1px solid #eaeaea;border-radius:10px;margin-bottom:20px;">
-      <tr>
-        <td style="padding:20px;">
-          <table width="100%" cellpadding="6" cellspacing="0" style="font-size:14px;color:#374151;">
-            <tr>
-              <td><strong style="color:#6b7280;">Plan Name</strong></td>
-              <td align="right">${plan}</td>
-            </tr>
-            <tr>
-              <td><strong style="color:#6b7280;">Activation Date</strong></td>
-              <td align="right">${formatDate(activationDate)}</td>
-            </tr>
-            <tr>
-              <td><strong style="color:#6b7280;">Expiry Date</strong></td>
-              <td align="right">${formatDate(expiryDate)}</td>
-            </tr>
-            <tr>
-              <td><strong style="color:#6b7280;">Plan Duration</strong></td>
-              <td align="right">${planDuration} Days</td>
-            </tr>
-
-          </table>
-        </td>
-      </tr>
-    </table>
-    <p style="font-size:13px;color:#6b7280;margin-bottom:24px;">
-      Your PRO plan remains active for ${planDuration} days from the activation date.
-      Please renew before expiry to maintain uninterrupted access.
-    </p>
-  ` : '';
-
-  // FREE: simple capacity note
-  const freeCapacityBlock = !isPro ? `
-    <div class="box" style="margin-bottom:24px;">
-      <p style="margin-bottom:8px; font-weight:600; color:#111111;">?? Plan</p>
-      <p style="margin-bottom:4px;">Plan: <strong>FREE</strong></p>
-    </div>
-  ` : '';
+  const dashboardsList = allocatedDashboards
+    .map(d => dashboardLabels[d])
+    .filter(Boolean)
+    .map(label => `<li style="margin-bottom: 6px;">${label}</li>`)
+    .join('');
 
   const content = `
     <p>Hi ${adminName || "Admin"},</p>
 
-    <p>Congratulations — your organization has been successfully reviewed and approved. You can now begin onboarding your faculty and students to your official Classgrid workspace.</p>
+    <p>Congratulations! Your Classgrid Sandbox for <strong>${orgName}</strong> is ready. You now have full access to explore the platform for the next ${sandboxDuration} days.</p>
 
-    ${isPro ? `<p>We're pleased to inform you that your payment has been successfully received and your <strong>Classgrid ${plan} Plan</strong> has been activated. You now have access to enhanced classroom capacity, smart attendance tools, and advanced analytics.</p>` : ''}
-
-    ${proSubscriptionBlock}
-    ${freeCapacityBlock}
-
-    <h3 style="color:#111111; margin-top:32px;">?? Your Organization Codes</h3>
-
-    <div class="box" style="margin-bottom: 16px;">
-      <div class="meta">Faculty Organization Code</div>
-      <div class="code" style="color: #60a5fa;">${organizationCode}</div>
-      <p style="margin: 12px 0 4px; font-weight: 500; font-size: 14px; color: #111111;">Share this only with faculty members.</p>
-      <p style="margin: 0 0 4px; font-size: 14px; color: #6b7280;">This code is required when a faculty member joins your organization.</p>
-      <p style="margin: 0; font-size: 14px; color: #ef4444;">Do not share this with students.</p>
+    <div class="box" style="margin-bottom:24px;">
+      <p style="margin-bottom:8px; font-weight:600; color:#111111;">📦 Sandbox Details</p>
+      <p style="margin-bottom:4px;">Organization: <strong>${orgName}</strong></p>
+      <p style="margin-bottom:4px;">Duration: <strong>${sandboxDuration} Days</strong></p>
+      <p style="margin-bottom:0;">Expires On: <strong>${formatDate(expiryDate)}</strong></p>
     </div>
+
+    <h3 style="color:#111111; margin-top:32px;">🛠️ Included Dashboards</h3>
+    <p style="color:#6b7280; font-size:14px; margin-bottom:12px;">Your sandbox includes access to the following modules:</p>
+    <ul style="margin-bottom:32px; color:#374151;">
+      ${dashboardsList || '<li>All core modules</li>'}
+    </ul>
+
+    <h3 style="color:#111111; margin-top:32px;">🔐 Set Up Your Account</h3>
 
     <div class="box" style="margin-bottom: 24px;">
-      <div class="meta">Student Honor Code</div>
-      <div class="code" style="color: #34d399;">${honorCode}</div>
-      <p style="margin: 12px 0 4px; font-weight: 500; font-size: 14px; color: #111111;">Share this with students.</p>
-      <p style="margin: 0 0 4px; font-size: 14px; color: #6b7280;">This allows students to connect directly to your organization without a classroom code.</p>
-      <p style="margin: 0; font-size: 14px; color: #6b7280;">This is not a classroom code.</p>
-    </div>
-
-    <h3 style="color:#111111; margin-top:32px;">?? Getting Started — Next Steps</h3>
-
-    <p style="font-weight: 600; color: #111111; margin-bottom: 8px;">1?? For Faculty</p>
-    <p style="margin-bottom: 12px;">Send faculty invitations from your Admin Dashboard.</p>
-    <p style="margin-bottom: 8px;">Each faculty member will:</p>
-    <ul style="margin-bottom: 8px;">
-      <li>Receive an invitation email</li>
-      <li>Verify their account</li>
-      <li>Set their password</li>
-      <li>Enter the Faculty Organization Code</li>
-    </ul>
-    <p style="margin-bottom: 24px; font-size: 13px; color: #6b7280;">After completion ? redirected to Faculty Dashboard.</p>
-
-    <p style="font-weight: 600; color: #111111; margin-bottom: 8px;">2?? For Students</p>
-    <p style="margin-bottom: 8px;">Students can join your organization in two ways:</p>
-    <ul style="margin-bottom: 24px;">
-      <li style="margin-bottom: 12px;"><strong>Enter the Student Honor Code</strong><br><span style="color: #6b7280;">? Directly connect to your organization</span></li>
-      <li><strong>Enter a Classroom Code (created by faculty)</strong><br><span style="color: #6b7280;">? Join a specific classroom<br>? Automatically linked to your organization</span></li>
-    </ul>
-
-    <p style="font-weight: 600; color: #111111; margin-bottom: 8px;">3?? After Joining</p>
-    <ul style="margin-bottom: 32px;">
-      <li><strong>Faculty</strong> ? Redirected to Faculty Dashboard</li>
-      <li><strong>Students</strong> ? Redirected to Student Dashboard</li>
-    </ul>
-
-    <div class="box" style="margin-bottom: 32px; border-left: 3px solid #3b82f6;">
-      <p style="margin-bottom: 12px; font-weight: 600; color: #111111;">?? Quick Access Tip</p>
-      <p style="margin-bottom: 16px;">Once your admin account is activated and you log in successfully, we recommend bookmarking your Admin Dashboard link in your browser for faster access.</p>
-      <p style="margin-bottom: 12px;">Your Admin Dashboard allows you to manage:</p>
-
-      <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 13px; color: #6b7280; margin-bottom: 16px;">
-        <tr>
-          <td valign="top" width="40%">
-            <strong style="color: #111111; display: block; margin-bottom: 6px;">Management</strong>
-            01 — Overview<br>02 — Faculty<br>03 — Students<br>04 — Classrooms<br>05 — Notes<br>06 — Announcements
-          </td>
-          <td valign="top" width="30%">
-            <strong style="color: #111111; display: block; margin-bottom: 6px;">Insights</strong>
-            07 — Analytics<br>08 — Attendance<br>09 — Billing
-          </td>
-          <td valign="top" width="30%">
-            <strong style="color: #111111; display: block; margin-bottom: 6px;">Settings</strong>
-            10 — Organization<br>11 — Security<br>12 — Role Sandbox
-          </td>
-        </tr>
-      </table>
-
-      <p style="margin-bottom: 0; font-size: 13px; color: #6b7280; font-style: italic;">Bookmarking ensures you can return directly without navigating through the main portal.</p>
-    </div>
-
-    <h3 style="color:#111111; margin-top:32px;">&#x1F511; Set Up Your Account</h3>
-
-    <div class="box" style="margin-bottom: 24px;">
-      <p style="margin-bottom: 8px;">Click the button below to securely activate your admin account and set your password.</p>
-      <p style="margin-bottom: 0; font-size: 13px; color: #6b7280;">&#x26A0;&#xFE0F; This link is <strong>single-use</strong> and expires in <strong>5 minutes</strong>. Do not share it.</p>
+      <p style="margin-bottom: 8px;">Click the button below to securely set up your admin profile and password. During setup, you'll also be able to configure your organization's login portal address.</p>
+      <p style="margin-bottom: 0; font-size: 13px; color: #6b7280;">⚠️ This secure link is <strong>single-use</strong> and expires in <strong>7 hours</strong>. Do not share it.</p>
     </div>
 
     <a href="${activationLink}" class="btn">Activate Admin Account</a>
 
-    <div style="text-align:center;margin: 32px 0;">
-      <p style="margin-bottom:12px;font-size:14px;color:#6b7280;">After activating your account, go directly to your dashboard:</p>
-      <a href="${getFrontendUrl()}/admin/login"
-         style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#00d4ff,#7c3aed);color:#000000;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;letter-spacing:0.3px;box-shadow:0 4px 20px rgba(0,212,255,0.3);"
-      >??? Open Org Admin Dashboard</a>
-      <p style="margin-top:10px;font-size:12px;color:#6b7280;">Bookmark this page for quick access in the future.</p>
-    </div>
+    <p style="margin-top: 24px; font-size: 14px; color: #374151;">
+      <strong>Backup Activation Code:</strong> If you are unable to click the link, go to <a href="https://onboard.classgrid.in" style="color:#3b82f6;">onboard.classgrid.in</a> and use the code: <strong style="font-size:18px; letter-spacing:2px; color:#111;">${activationCode || 'N/A'}</strong>
+    </p>
 
-    <p style="margin-top: 28px; font-size: 13px; color: #6b7280;">After activation, you can sign in anytime at <a href="${getFrontendUrl()}/admin/login" style="color:#111111;">/admin/login</a>.</p>
-    <p style="font-size: 13px; color: #6b7280;">If you did not apply for a Classgrid organization, please contact us at <a href="https://classgrid.in/support" style="color:#111111;">https://classgrid.in/support</a>.</p>
+    <h3 style="color:#111111; margin-top:32px;">🚀 Quick Access Link</h3>
+    <p style="font-size:14px; color:#374151;">Once your account is activated, your permanent login portal will be:</p>
+    <p style="margin-bottom: 32px;"><a href="${dashboardLink}" style="font-weight:700; color:#3b82f6;">${dashboardLink}</a></p>
 
     <p style="font-size: 14px; color: #6b7280; margin-bottom: 0;">If you need assistance during setup, our support team is always available at:<br><a href="https://classgrid.in/support" style="color:#111111;">https://classgrid.in/support</a></p>
   `;
 
   return baseTemplate({
     content,
-    title: isPro
-      ? "Activate Your Classgrid Admin Account – PRO Plan Active"
-      : "Activate Your Classgrid Admin Account – FREE Plan",
-    ignoreText: "This link expires in 5 minutes and can only be used once.",
+    title: "Activate Your Classgrid Sandbox Account",
+    ignoreText: "This link expires in 7 hours and can only be used once.",
   });
 };
 
 export const getConsolidatedApprovalEmailPlainText = ({
   adminName,
   orgName,
-  organizationCode,
-  honorCode,
-  plan = "FREE",
+  subdomain,
   activationLink,
+  activationCode,
   activationDate,
   expiryDate,
-  planDuration = 31,
+  sandboxDuration = 31,
+  allocatedDashboards = [],
 }) => {
-  const isPro = plan === "PRO";
+  const dashboardLink = subdomain ? `https://${subdomain}.classgrid.in/admin/login` : `https://classgrid.in/admin/login`;
 
-  const proSection = isPro ? `
---- SUBSCRIPTION DETAILS ---
-Plan Name: ${plan}
-Activation Date: ${formatDate(activationDate)}
-Expiry Date: ${formatDate(expiryDate)}
-Plan Duration: ${planDuration} Days
+  const dashboardLabels = {
+    dashboard_admission: "Admissions",
+    dashboard_fees: "Fees Management",
+    dashboard_exam: "Exams & Grading",
+    dashboard_attendance: "Attendance",
+    dashboard_library: "Library",
+    dashboard_hr: "HR & Payroll",
+    dashboard_hostel: "Hostel Management",
+    dashboard_faculty: "Faculty Workspace",
+    dashboard_student: "Student Portal"
+  };
 
-Your PRO plan remains active for ${planDuration} days from the activation date. Please renew before expiry to maintain uninterrupted access.
-` : `
---- PLAN ---
-Plan: FREE
-`;
+  const dashboardsList = allocatedDashboards
+    .map(d => dashboardLabels[d])
+    .filter(Boolean)
+    .map(label => `- ${label}`)
+    .join('\n');
 
-  return `${isPro ? "Activate Your Classgrid Admin Account – PRO Plan Active" : "Activate Your Classgrid Admin Account – FREE Plan"}
-
-?? ${orgName} is now live on Classgrid
+  return `Activate Your Classgrid Sandbox Account
 
 Hi ${adminName || "Admin"},
 
-Congratulations — your organization has been successfully reviewed and approved. You can now begin onboarding your faculty and students to your official Classgrid workspace.
-${isPro ? `\nWe're pleased to inform you that your payment has been successfully received and your Classgrid ${plan} Plan has been activated. You now have access to enhanced classroom capacity, smart attendance tools, and advanced analytics.` : ''}
-${proSection}
---- YOUR ORGANIZATION CODES ---
+Congratulations! Your Classgrid Sandbox for ${orgName} is ready. You now have full access to explore the platform for the next ${sandboxDuration} days.
 
-Faculty Organization Code: ${organizationCode}
-Share this only with faculty members.
-This code is required when a faculty member joins your organization.
-Do not share this with students.
+--- SANDBOX DETAILS ---
+Organization: ${orgName}
+Duration: ${sandboxDuration} Days
+Expires On: ${formatDate(expiryDate)}
 
-Student Honor Code: ${honorCode}
-Share this with students.
-This allows students to connect directly to your organization without a classroom code.
-This is not a classroom code.
-
---- GETTING STARTED — NEXT STEPS ---
-
-1?? For Faculty
-Send faculty invitations from your Admin Dashboard.
-Each faculty member will:
-• Receive an invitation email
-• Verify their account
-• Set their password
-• Enter the Faculty Organization Code
-After completion ? redirected to Faculty Dashboard.
-
-2?? For Students
-Students can join your organization in two ways:
-• Enter the Student Honor Code
-  ? Directly connect to your organization
-• Enter a Classroom Code (created by faculty)
-  ? Join a specific classroom
-  ? Automatically linked to your organization
-
-3?? After Joining
-• Faculty ? Redirected to Faculty Dashboard
-• Students ? Redirected to Student Dashboard
-
-If you need assistance during setup, our support team is always available at:
-support@classgrid.in
+--- INCLUDED DASHBOARDS ---
+${dashboardsList || '- All core modules'}
 
 --- SET UP YOUR ACCOUNT ---
 
-?? This link is single-use and expires in 5 minutes. Do not share it.
+Click the link below to securely set up your admin profile, password, and organization portal address.
+This link is single-use and expires in 7 hours. Do not share it.
 
 Activate Admin Account: ${activationLink}
 
->>> YOUR ORG ADMIN DASHBOARD <<<
-${getFrontendUrl()}/admin/login
-(Bookmark this link for quick access after activation)
+Backup Activation Code: If you cannot click the link, go to https://onboard.classgrid.in and use code: ${activationCode || 'N/A'}
 
-After activation, you can sign in anytime at /admin/login.
+--- QUICK ACCESS LINK ---
 
-If you did not apply for a Classgrid organization, please raise a ticket at https://classgrid.in/support.
+Once your account is activated, your permanent login portal will be:
+${dashboardLink}
 
-
+If you did not apply for a Classgrid organization or need assistance, please contact us at https://classgrid.in/support.
 
 © ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };

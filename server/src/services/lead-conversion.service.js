@@ -25,7 +25,7 @@ export const generateActivationCredentials = () => {
     .update(activationCode)
     .digest("hex");
 
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + 7 * 60 * 60 * 1000); // 7 hours
 
   return {
     rawActivationToken,
@@ -210,26 +210,24 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
         html: getConsolidatedApprovalEmailHtml({
           adminName: lead.adminName,
           orgName: organization.name,
-          organizationCode: organization.organizationCode,
-          honorCode: organization.honorCode,
-          plan,
+          subdomain: organization.subdomain,
           activationLink,
           activationCode: credentials.activationCode,
           activationDate,
           expiryDate,
-          planDuration: 31,
+          sandboxDuration: 31,
+          allocatedDashboards,
         }),
         text: getConsolidatedApprovalEmailPlainText({
           adminName: lead.adminName,
           orgName: organization.name,
-          organizationCode: organization.organizationCode,
-          honorCode: organization.honorCode,
-          plan,
+          subdomain: organization.subdomain,
           activationLink,
           activationCode: credentials.activationCode,
           activationDate,
           expiryDate,
-          planDuration: 31,
+          sandboxDuration: 31,
+          allocatedDashboards,
         }),
         type: "demo_provisioning_onboarding",
         channel: "notification",

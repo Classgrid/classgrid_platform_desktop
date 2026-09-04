@@ -532,12 +532,21 @@ export const validateActivationToken = async (req, res) => {
             return res.status(400).json({ message: "This account has already been activated. Please sign in." });
         }
 
+        let orgData = null;
+        if (user.organization_id) {
+            const Organization = (await import("../models/Organization.js")).default;
+            orgData = await Organization.findById(user.organization_id).select("org_type structure_type subdomain").lean();
+        }
+
         return res.status(200).json({ 
             valid: true, 
             mode: token ? "link" : "code",
             email: user.email,
             name: user.name,
-            role: user.role
+            role: user.role,
+            orgType: orgData?.org_type || "school",
+            structureType: orgData?.structure_type || "school",
+            subdomain: orgData?.subdomain || null,
         });
     } catch (err) {
         console.error("Validate Activation Token Error:", err);
@@ -550,7 +559,7 @@ export const validateActivationToken = async (req, res) => {
 export const activateAdmin = async (req, res) => {
     try {
         await connectDB();
-        const { token, password, email, activationCode } = req.body;
+        const { token, password, email, activationCode, subdomain } = req.body;
 
         if ((!token && !(email && activationCode)) || !password) {
             return res.status(400).json({ message: "Provide password plus either token or email + activationCode." });
@@ -598,6 +607,26 @@ export const activateAdmin = async (req, res) => {
             return res.status(400).json({ message: "This account has already been activated. Please sign in." });
         }
 
+        // --- 3.5 Check and update subdomain if requested ---
+        let finalSubdomain = null;
+        if (user.organization_id && subdomain) {
+            const cleanSubdomain = String(subdomain).toLowerCase().trim().replace(/[^a-z0-9-]/g, "");
+            if (cleanSubdomain && cleanSubdomain.length >= 3) {
+                const Organization = (await import("../models/Organization.js")).default;
+                const existing = await Organization.findOne({ subdomain: cleanSubdomain, _id: { $ne: user.organization_id } });
+                if (!existing) {
+                    await Organization.findByIdAndUpdate(user.organization_id, { $set: { subdomain: cleanSubdomain } });
+                    finalSubdomain = cleanSubdomain;
+                }
+            }
+        }
+
+        if (user.organization_id && !finalSubdomain) {
+            const Organization = (await import("../models/Organization.js")).default;
+            const org = await Organization.findById(user.organization_id).select("subdomain").lean();
+            finalSubdomain = org?.subdomain;
+        }
+
         // --- 4. Set password, mark single-use consumed, clear token ---
         user.password = await bcrypt.hash(password, 10);
         user.mustResetPassword = false;
@@ -629,7 +658,7 @@ export const activateAdmin = async (req, res) => {
                 eventType: "org_admin_activated",
                 stage: "activated",
                 actorRole: user.role,
-                metadata: { mode: token ? "link" : "code" },
+                metadata: { mode: token ? "link" : "code", subdomain: finalSubdomain },
             });
         }
 
@@ -637,14 +666,19 @@ export const activateAdmin = async (req, res) => {
         try {
             const { getOrgAdminActivatedHtml, getOrgAdminActivatedPlainText } = await import("../services/email-templates.service.js");
             const frontendUrl = getFrontendUrl();
+            const Organization = (await import("../models/Organization.js")).default;
             const org = user.organization_id
-                ? await Organization.findById(user.organization_id).select("name").lean()
+                ? await Organization.findById(user.organization_id).select("name subdomain").lean()
                 : null;
-            const orgNameFormatted = org?.name
-                ? encodeURIComponent(org.name.replace(/\s+/g, "-").toLowerCase())
-                : "dashboard";
-            const dashboardLink = `${frontendUrl}/org/${orgNameFormatted}/admin`;
-            const adminLoginLink = `${frontendUrl}/admin/login`;
+            
+            // Generate tenant-specific dashboard link using the subdomain
+            const isLocal = frontendUrl.includes("localhost");
+            const domainBase = isLocal ? "localhost:3000" : "classgrid.in";
+            const protocol = isLocal ? "http://" : "https://";
+            const tenantDomain = org?.subdomain ? `${org.subdomain}.${domainBase}` : domainBase;
+            const dashboardLink = `${protocol}${tenantDomain}/admin/dashboard`;
+            const adminLoginLink = `${protocol}${tenantDomain}/admin/login`;
+
             await sendEmail({
                 to: user.email,
                 subject: "Your Classgrid Admin Account is Active",
@@ -660,7 +694,15 @@ export const activateAdmin = async (req, res) => {
         setTokenCookie(res, jwtToken, req);
 
         // --- 7. Determine redirect based on role ---
-        const dashboardTarget = getFrontendDashboardTarget(user);
+        let dashboardTarget = getFrontendDashboardTarget(user);
+        
+        if (user.role === "org_admin" && finalSubdomain) {
+            const frontendUrl = getFrontendUrl();
+            const isLocal = frontendUrl.includes("localhost");
+            const domainBase = isLocal ? "localhost:3000" : "classgrid.in";
+            const protocol = isLocal ? "http://" : "https://";
+            dashboardTarget = `${protocol}${finalSubdomain}.${domainBase}/admin/dashboard`;
+        }
 
         res.status(200).json({
             message: "Account activated successfully",
