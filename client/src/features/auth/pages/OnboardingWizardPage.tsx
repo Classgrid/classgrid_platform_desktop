@@ -66,6 +66,21 @@ export function OnboardingWizardPage() {
   const [isOrgEmailVerified, setIsOrgEmailVerified] = useState(false);
   const [orgEmailOtpSent, setOrgEmailOtpSent] = useState(false);
   const [isVerifyingOrgEmail, setIsVerifyingOrgEmail] = useState(false);
+
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full bg-card rounded-2xl shadow-xl border border-border p-8 text-center">
+          <div className="size-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <ShieldCheck className="size-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-4">Invalid Activation Link</h2>
+          <p className="text-muted-foreground mb-8">This onboarding link is invalid or has expired. Please use the secure activation link sent to your email.</p>
+          <Button className="w-full h-12 text-base font-semibold" onClick={() => window.location.href = 'https://classgrid.in'}>Return to Homepage</Button>
+        </div>
+      </div>
+    );
+  }
   const [alertState, setAlertState] = useState({ open: false, title: "", message: "" });
   const showAlert = (message: string, title: string = "Notice") => { setAlertState({ open: true, title, message }); };
 

@@ -1,3 +1,27 @@
+import crypto from "crypto";
+import mongoose from "mongoose";
+
+import DemoRequest from "../models/DemoRequest.js";
+import User from "../models/User.js";
+import { provisionDemoOrg } from "./provisioning.service.js";
+import { enqueueEmail } from "./email-queue.service.js";
+import { sendEmail } from "./aws-ses.service.js";
+import { getPlanLimits } from "./module-toggle.service.js";
+import { trackOnboardingEvent } from "./onboarding-event.service.js";
+import {
+  getConsolidatedApprovalEmailHtml,
+  getConsolidatedApprovalEmailPlainText,
+} from "./email-templates.service.js";
+
+export const generateActivationCredentials = () => {
+  const rawActivationToken = crypto.randomBytes(32).toString("hex");
+  const hashedActivationToken = crypto
+    .createHash("sha256")
+    .update(rawActivationToken)
+    .digest("hex");
+
+  const activationCode = String(Math.floor(100000 + Math.random() * 900000));
+  const activationCodeHash = crypto
     .createHash("sha256")
     .update(activationCode)
     .digest("hex");
