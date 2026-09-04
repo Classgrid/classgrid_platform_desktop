@@ -34,6 +34,15 @@ const getTerminologyLabels = (orgType: string) => {
   return { orgLabel: "Organization", topLevel: "Level 1", course: "Course", year: "Year", period: "Period", division: "Division", subBatch: "Group", studentId: "ID", teacher: "Teacher", assignment: "Assignment", exam: "Exam" };
 };
 
+const getDepartmentOptions = (orgType: string) => {
+  if (orgType === "School") return ["Administration", "Primary Section", "Secondary Section", "High School", "Science Dept", "Arts & Humanities", "Sports & Physical Ed", "Other"];
+  if (orgType === "Junior College") return ["Administration", "Science Faculty", "Commerce Faculty", "Arts Faculty", "Other"];
+  if (orgType === "Engineering College" || orgType === "College") return ["Administration", "Computer Science", "Mechanical", "Electrical", "Civil", "Electronics", "IT", "Other"];
+  if (orgType === "Diploma College") return ["Administration", "Computer Engineering", "Mechanical", "Electrical", "Civil", "Other"];
+  if (orgType === "Coaching Institute" || orgType === "Coaching") return ["Administration", "JEE Division", "NEET Division", "Foundation", "Other"];
+  return ["Administration", "Academic", "Other"];
+};
+
 export function OnboardingWizardPage() {
   const { theme, setTheme } = useTheme();
   const [searchParams] = useSearchParams();
@@ -1197,12 +1206,16 @@ export function OnboardingWizardPage() {
                             </div>
                             <div>
                               <label className="text-sm font-semibold text-foreground mb-1.5 block">Department</label>
-                              <Input
-                                placeholder="e.g. Administration, Computer Science"
-                                className="h-10"
+                              <ResponsiveSelect
+                                className="w-full h-10 rounded-lg border-input bg-background"
                                 value={formData["personal_details"]?.["department"] || ""}
                                 onChange={(e) => handleFieldChange("personal_details", "department", e.target.value)}
-                              />
+                              >
+                                <option value="" disabled>Select Department...</option>
+                                {getDepartmentOptions(formData["org_details"]?.["type"] || fetchedOrgType || "School").map(opt => (
+                                  <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                              </ResponsiveSelect>
                             </div>
                           </div>
 
