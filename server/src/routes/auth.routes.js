@@ -42,6 +42,10 @@ router.post("/login", loginLimiter, authController.login);
 router.post("/request-login-otp", loginLimiter, authController.requestLoginOtp);
 router.post("/resend-device-otp", otpSendLimiter, authController.resendDeviceOtp);
 router.post("/verify-device", authController.verifyDeviceOtp);
+
+router.post("/onboarding-send-otp", otpSendLimiter, authController.sendOnboardingOtp);
+router.post("/onboarding-verify-otp", authController.verifyOnboardingOtp);
+
 router.post("/setup-org-admin", authController.setupOrgAdmin); // kept for backward compat
 router.post("/logout", authController.logout);
 

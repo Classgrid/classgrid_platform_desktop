@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
-import { validateActivationToken, activateAdmin } from "../api";
+import { validateActivationToken, activateAdmin, sendOnboardingOtp, verifyOnboardingOtp } from "../api";
 import {
   CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, Mail, Smartphone, Key, User,
   Upload, School, GraduationCap, Building2, Briefcase, PlaySquare, Eye, EyeOff, Moon, Sun, ChevronDown
@@ -34,6 +34,79 @@ export function OnboardingWizardPage() {
   const [fetchedOrgType, setFetchedOrgType] = useState("school");
   const [fetchedSubdomain, setFetchedSubdomain] = useState("");
   const [dashboardUrl, setDashboardUrl] = useState("/");
+  // Org data auto-fetched from Book a Demo lead
+  const [fetchedOrgName, setFetchedOrgName] = useState("");
+  const [fetchedAddress, setFetchedAddress] = useState("");
+  const [fetchedCity, setFetchedCity] = useState("");
+  const [fetchedState, setFetchedState] = useState("");
+  // Welcome step: editable name field
+  const [adminName, setAdminName] = useState("");
+
+  // OTP Verification States
+  const [emailOtp, setEmailOtp] = useState("");
+  const [phoneOtp, setPhoneOtp] = useState("");
+  const [phone, setPhone] = useState("");
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+  const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
+
+  const handleSendEmailOtp = async () => {
+    if (!fetchedEmail) return;
+    try {
+      await sendOnboardingOtp({ target: fetchedEmail, type: "email" });
+      setEmailOtpSent(true);
+      alert("OTP sent to your email!");
+    } catch (e: any) {
+      alert(e.message || "Failed to send OTP");
+    }
+  };
+
+  const handleVerifyEmailOtp = async (otpValue: string) => {
+    if (otpValue.length !== 6) return;
+    setIsVerifyingEmail(true);
+    try {
+      const res = await verifyOnboardingOtp({ target: fetchedEmail, otp: otpValue });
+      if (res.verified) {
+        setIsEmailVerified(true);
+      }
+    } catch (e: any) {
+      alert(e.message || "Invalid OTP");
+    } finally {
+      setIsVerifyingEmail(false);
+    }
+  };
+
+  const handleSendPhoneOtp = async () => {
+    if (!phone || phone.length < 10) {
+      alert("Please enter a valid phone number.");
+      return;
+    }
+    try {
+      await sendOnboardingOtp({ target: phone, type: "phone" });
+      setPhoneOtpSent(true);
+      alert("OTP sent to your phone!");
+    } catch (e: any) {
+      alert(e.message || "Failed to send OTP");
+    }
+  };
+
+  const handleVerifyPhoneOtp = async (otpValue: string) => {
+    if (otpValue.length !== 6) return;
+    setIsVerifyingPhone(true);
+    try {
+      const res = await verifyOnboardingOtp({ target: phone, otp: otpValue });
+      if (res.verified) {
+        setIsPhoneVerified(true);
+      }
+    } catch (e: any) {
+      alert(e.message || "Invalid OTP");
+    } finally {
+      setIsVerifyingPhone(false);
+    }
+  };
 
   React.useEffect(() => {
     if (token) {
@@ -41,10 +114,14 @@ export function OnboardingWizardPage() {
         .then((res) => {
           if (res.valid) {
             if (res.email) setFetchedEmail(res.email);
-            if (res.name) setFetchedName(res.name);
+            if (res.name) { setFetchedName(res.name); setAdminName(res.name); }
             if (res.role) setFetchedRole(res.role);
             if (res.orgType) setFetchedOrgType(res.orgType);
             if (res.subdomain) setFetchedSubdomain(res.subdomain);
+            if (res.orgName) setFetchedOrgName(res.orgName);
+            if (res.address) setFetchedAddress(res.address);
+            if (res.city) setFetchedCity(res.city);
+            if (res.state) setFetchedState(res.state);
           }
         })
         .catch((err) => {
@@ -137,11 +214,18 @@ export function OnboardingWizardPage() {
   const dynamicSections = strategy.sections || [];
   
   // Create one step per dynamic section
-  const steps = [
+  const steps: any[] = [
     {
-      id: "verification",
-      title: "Verification & Security",
-      subtitle: "Set up your login details.",
+      id: "welcome",
+      title: "Welcome",
+      subtitle: "Let's get started.",
+      icon: User,
+      type: "fixed_welcome"
+    },
+    {
+      id: "contact_verification",
+      title: "Contact Verification",
+      subtitle: "Verify your email and phone number.",
       icon: ShieldCheck,
       type: "fixed_verification"
     },
@@ -161,6 +245,13 @@ export function OnboardingWizardPage() {
       dynamicSections: [section]
     })),
     {
+      id: "password",
+      title: "Secure Your Account",
+      subtitle: "Create a strong password to protect your account.",
+      icon: Key,
+      type: "fixed_password"
+    },
+    {
       id: "review_submit",
       title: "Review & Submit",
       subtitle: "Please review all your details before final submission.",
@@ -170,12 +261,30 @@ export function OnboardingWizardPage() {
   ];
 
   const totalSteps = steps.length;
-  const currentStepData = steps[currentStep];
+  const currentStepData = steps[currentStep] || steps[0];
+
+  // Find the password step index dynamically
+  const passwordStepIndex = steps.findIndex(s => s.id === "password");
 
   const handleNext = async () => {
-    if (currentStep === 0) {
+    // Welcome step: require a name
+    if (currentStepData.id === "welcome") {
+      if (!adminName.trim()) {
+        alert("Please enter your name to continue.");
+        return;
+      }
+    }
+    // Password step: validate strong password
+    if (currentStepData.id === "password") {
       if (!password || !isStrongPassword || !isPasswordMatch) {
         alert("Please enter a valid, matching, strong password to continue.");
+        return;
+      }
+    }
+    // Contact Verification step: validate both are verified
+    if (currentStepData.id === "contact_verification") {
+      if (!isEmailVerified || !isPhoneVerified) {
+        alert("Please verify both your email and phone number to continue.");
         return;
       }
     }
@@ -219,22 +328,64 @@ export function OnboardingWizardPage() {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-background flex items-center justify-center p-4">
         {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} />}
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="max-w-md w-full bg-white dark:bg-card p-10 rounded-3xl shadow-2xl border border-border/50 text-center"
-        >
-          <div className="mx-auto w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
-            <CheckCircle2 className="size-12 text-green-500" />
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden" style={{ background: "radial-gradient(ellipse at 50% 30%, #1e3a5f 0%, #0a0e1a 50%, #05070d 100%)" }}>
+          {/* Starfield */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {Array.from({ length: 60 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full bg-white"
+                style={{
+                  width: `${Math.random() * 2 + 1}px`,
+                  height: `${Math.random() * 2 + 1}px`,
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                  opacity: Math.random() * 0.5 + 0.1,
+                }}
+              />
+            ))}
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-4">You're All Set!</h1>
-          <p className="text-muted-foreground mb-8 text-lg">
-            Welcome to your new digital campus. Your profile has been successfully configured.
-          </p>
-          <Button size="lg" className="w-full text-lg h-14 rounded-xl" onClick={() => window.location.href = dashboardUrl}>
-            Go to Dashboard <ChevronRight className="ml-2 size-5" />
-          </Button>
-        </motion.div>
+          {/* Aurora Glow */}
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full pointer-events-none" style={{ background: "radial-gradient(ellipse, rgba(56,142,255,0.3) 0%, rgba(56,142,255,0.1) 40%, transparent 70%)", filter: "blur(80px)" }} />
+
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="relative z-10 text-center px-6 max-w-xl"
+          >
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="text-emerald-400 text-lg font-semibold mb-4 tracking-wide"
+            >
+              All set
+            </motion.p>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
+              className="text-4xl md:text-5xl font-bold text-white mb-10 leading-tight"
+            >
+              Let's start building together
+            </motion.h1>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.0, duration: 0.6 }}
+            >
+              <Button
+                size="lg"
+                onClick={() => window.location.href = dashboardUrl}
+                className="h-14 px-10 text-base font-semibold rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all duration-300 shadow-lg shadow-blue-500/10"
+              >
+                Start using Classgrid <ChevronRight className="ml-2 size-5" />
+              </Button>
+            </motion.div>
+          </motion.div>
+          <style>{`@keyframes pulse { 0%, 100% { opacity: 0.1; } 50% { opacity: 0.7; } }`}</style>
+        </div>
       </div>
     );
   }
@@ -373,12 +524,87 @@ export function OnboardingWizardPage() {
                   exit={{ y: -20, opacity: 0 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
                 >
-                  {currentStepData.type !== "dynamic_group" && (
+                  {currentStepData.type !== "dynamic_group" && currentStepData.type !== "fixed_welcome" && (
                     <div className="mb-6">
                       <h1 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight mb-2">
                         {currentStepData.title}
                       </h1>
                       <p className="text-base text-muted-foreground">{currentStepData.subtitle}</p>
+                    </div>
+                  )}
+
+                  {/* ── WELCOME STEP: Cinematic Full-Screen Greeting ── */}
+                  {currentStepData.type === "fixed_welcome" && (
+                    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden" style={{ background: "radial-gradient(ellipse at 50% 120%, #1e3a5f 0%, #0a0e1a 50%, #05070d 100%)" }}>
+                      {/* Starfield */}
+                      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                        {Array.from({ length: 80 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="absolute rounded-full bg-white"
+                            style={{
+                              width: `${Math.random() * 2 + 1}px`,
+                              height: `${Math.random() * 2 + 1}px`,
+                              top: `${Math.random() * 100}%`,
+                              left: `${Math.random() * 100}%`,
+                              opacity: Math.random() * 0.6 + 0.1,
+                              animation: `pulse ${Math.random() * 3 + 2}s ease-in-out infinite`,
+                              animationDelay: `${Math.random() * 2}s`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                      {/* Aurora Glow */}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full pointer-events-none" style={{ background: "radial-gradient(ellipse, rgba(56,142,255,0.25) 0%, rgba(56,142,255,0.08) 40%, transparent 70%)", filter: "blur(60px)" }} />
+
+                      {/* Content */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        className="relative z-10 text-center px-6 max-w-2xl"
+                      >
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.3, duration: 0.6 }}
+                          className="text-white/60 text-lg mb-4 font-medium tracking-wide"
+                        >
+                          Welcome to Classgrid
+                        </motion.p>
+                        <motion.h1
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.6, duration: 0.8 }}
+                          className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight"
+                        >
+                          Hey, {adminName.split(' ')[0] || 'Admin'}
+                        </motion.h1>
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 1.0, duration: 0.8 }}
+                          className="text-white/50 text-lg md:text-xl leading-relaxed mb-10"
+                        >
+                          Let's set up your digital campus. Just a few quick basics before you jump in.
+                        </motion.p>
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 1.4, duration: 0.6 }}
+                        >
+                          <Button
+                            size="lg"
+                            onClick={() => { setCurrentStep(prev => prev + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                            className="h-14 px-10 text-base font-semibold rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all duration-300 shadow-lg shadow-blue-500/10"
+                          >
+                            Get Started <ChevronRight className="ml-2 size-5" />
+                          </Button>
+                        </motion.div>
+                      </motion.div>
+
+                      {/* Pulse animation keyframe */}
+                      <style>{`@keyframes pulse { 0%, 100% { opacity: 0.1; } 50% { opacity: 0.7; } }`}</style>
                     </div>
                   )}
 
@@ -396,11 +622,33 @@ export function OnboardingWizardPage() {
                         <div className="grid md:grid-cols-2 gap-6">
                           <div>
                             <label className="text-xs font-semibold text-foreground mb-1.5 block">Email Address (From Invite)</label>
-                            <Input value={fetchedEmail || "Loading..."} readOnly className="bg-secondary/50 h-10 text-sm font-medium" />
+                            <div className="flex gap-2">
+                              <Input value={fetchedEmail || "Loading..."} readOnly className="bg-secondary/50 h-10 flex-1 text-sm font-medium" />
+                              {!isEmailVerified && (
+                                <Button 
+                                  variant="outline" 
+                                  className="h-10 px-4 text-sm font-semibold"
+                                  onClick={handleSendEmailOtp}
+                                  disabled={emailOtpSent}
+                                >
+                                  {emailOtpSent ? "Sent" : "Send OTP"}
+                                </Button>
+                              )}
+                            </div>
+                            {isEmailVerified && (
+                              <p className="text-emerald-600 text-sm mt-2 font-medium flex items-center gap-1">
+                                <CheckCircle2 className="size-4" /> Verified
+                              </p>
+                            )}
                           </div>
                           <div className="flex-1">
                             <label className="text-xs font-semibold text-foreground mb-1.5 block">6-Digit Verification Code</label>
-                            <InputOTP maxLength={6}>
+                            <InputOTP 
+                              maxLength={6} 
+                              disabled={!emailOtpSent || isEmailVerified || isVerifyingEmail}
+                              value={emailOtp}
+                              onChange={(v) => { setEmailOtp(v); if(v.length===6) handleVerifyEmailOtp(v); }}
+                            >
                               <InputOTPGroup className="gap-2">
                                 {[0, 1, 2, 3, 4, 5].map((index) => (
                                   <InputOTPSlot key={index} index={index} className="w-12 h-12 text-lg font-bold rounded-xl border border-input bg-transparent" />
@@ -425,13 +673,37 @@ export function OnboardingWizardPage() {
                             <label className="text-xs font-semibold text-foreground mb-1.5 block">Mobile Number</label>
                             <div className="flex gap-2">
                               <Input defaultValue="+91" disabled className="w-16 bg-secondary/50 h-10 text-center text-sm font-medium" />
-                              <Input placeholder="10-digit number" className="h-10 flex-1 text-sm" />
-                              <Button className="h-10 px-4 text-sm font-semibold">Send OTP</Button>
+                              <Input 
+                                placeholder="10-digit number" 
+                                className="h-10 flex-1 text-sm" 
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                                disabled={isPhoneVerified}
+                              />
+                              {!isPhoneVerified && (
+                                <Button 
+                                  className="h-10 px-4 text-sm font-semibold"
+                                  onClick={handleSendPhoneOtp}
+                                  disabled={phoneOtpSent && phone.length === 10}
+                                >
+                                  {phoneOtpSent ? "Resend" : "Send OTP"}
+                                </Button>
+                              )}
                             </div>
+                            {isPhoneVerified && (
+                              <p className="text-emerald-600 text-sm mt-2 font-medium flex items-center gap-1">
+                                <CheckCircle2 className="size-4" /> Verified
+                              </p>
+                            )}
                           </div>
                           <div className="flex-1">
                             <label className="text-xs font-semibold text-foreground mb-1.5 block">SMS Verification Code</label>
-                            <InputOTP maxLength={6}>
+                            <InputOTP 
+                              maxLength={6}
+                              disabled={!phoneOtpSent || isPhoneVerified || isVerifyingPhone}
+                              value={phoneOtp}
+                              onChange={(v) => { setPhoneOtp(v); if(v.length===6) handleVerifyPhoneOtp(v); }}
+                            >
                               <InputOTPGroup className="gap-2">
                                 {[0, 1, 2, 3, 4, 5].map((index) => (
                                   <InputOTPSlot key={index} index={index} className="w-12 h-12 text-lg font-bold rounded-xl border border-input bg-transparent" />
@@ -442,13 +714,50 @@ export function OnboardingWizardPage() {
                         </div>
                       </div>
 
-                      {/* Block 3: Password Setup */}
-                      <div className="bg-white dark:bg-card p-6 rounded-2xl shadow-sm border border-border/60">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="size-10 bg-green-500/10 text-green-600 rounded-xl flex items-center justify-center">
-                            <Key className="size-5" />
+                    </div>
+                  )}
+
+
+
+                  {/* ── RENDER: PROFILE PHOTO (FIXED STEP) ── */}
+                  {currentStepData.type === "fixed_profile_photo" && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="bg-white dark:bg-card p-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-border/60 text-center flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                        
+                        {/* Decorative Background Pattern */}
+                        <div className="absolute inset-0 pointer-events-none opacity-20 dark:opacity-10" style={{ backgroundImage: "radial-gradient(circle at center, #10b981 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+
+                        <div className="relative z-10 flex flex-col items-center w-full max-w-md">
+                          <h2 className="text-2xl font-bold mb-3">Add Your Identity</h2>
+                          <p className="text-muted-foreground mb-10 text-sm leading-relaxed">
+                            Upload a high-quality, passport-sized photo for your official ID card. A clear front-facing picture ensures a perfect fit.
+                          </p>
+                          
+                          <div className="w-full flex justify-center mb-2">
+                            <ImageUploadField 
+                              label="Upload Photo" 
+                              value={formData["profile_photo"]?.["image"]}
+                              onChange={(base64) => handleFieldChange("profile_photo", "image", base64)}
+                              circular={true}
+                            />
                           </div>
-                          <h3 className="text-lg font-bold">3. Secure your Account</h3>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── RENDER: PASSWORD STEP ── */}
+                  {currentStepData.type === "fixed_password" && (
+                    <div className="space-y-6">
+                      <div className="bg-white dark:bg-card p-8 rounded-2xl shadow-sm border border-border/60">
+                        <div className="flex items-center gap-3 mb-6">
+                          <div className="size-12 bg-green-500/10 text-green-600 rounded-xl flex items-center justify-center">
+                            <Key className="size-6" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold">Create Your Password</h3>
+                            <p className="text-sm text-muted-foreground">This will be used to log in to your Classgrid dashboard.</p>
+                          </div>
                         </div>
                         <div className="grid md:grid-cols-2 gap-6">
                           <div className="relative">
@@ -462,7 +771,7 @@ export function OnboardingWizardPage() {
                                 onFocus={() => setIsPasswordFocused(true)}
                                 onBlur={() => setIsPasswordFocused(false)}
                                 placeholder="Enter new password"
-                                className={`h-10 w-full rounded-lg border bg-background px-3 pr-10 text-sm text-foreground outline-none transition-all duration-300 placeholder:text-muted-foreground ${current.border} ${current.glow}`}
+                                className={`h-12 w-full rounded-xl border bg-background px-4 pr-10 text-sm text-foreground outline-none transition-all duration-300 placeholder:text-muted-foreground ${current.border} ${current.glow}`}
                               />
                               <button
                                 type="button"
@@ -500,7 +809,7 @@ export function OnboardingWizardPage() {
                             )}
 
                             {password && (
-                              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-secondary">
                                 <div className={`h-full rounded-full transition-all duration-300 ${current.bar}`} />
                               </div>
                             )}
@@ -515,7 +824,7 @@ export function OnboardingWizardPage() {
                                 maxLength={64}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 placeholder="Re-enter password"
-                                className={`h-10 w-full rounded-lg border bg-background px-3 pr-10 text-sm text-foreground outline-none transition-all duration-300 placeholder:text-muted-foreground ${confirmBorder}`}
+                                className={`h-12 w-full rounded-xl border bg-background px-4 pr-10 text-sm text-foreground outline-none transition-all duration-300 placeholder:text-muted-foreground ${confirmBorder}`}
                               />
                               <button
                                 type="button"
@@ -533,71 +842,9 @@ export function OnboardingWizardPage() {
                           </div>
                         </div>
                       </div>
-
-                      {/* Block 4: Subdomain Setup (Only for Org Admin) */}
-                      {effectiveRole === "org_admin" && (
-                        <div className="bg-white dark:bg-card p-6 rounded-2xl shadow-sm border border-border/60">
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className="size-10 bg-orange-500/10 text-orange-600 rounded-xl flex items-center justify-center">
-                              <Building2 className="size-5" />
-                            </div>
-                            <h3 className="text-lg font-bold">4. Organization Portal Address</h3>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            This is the web address where your students and faculty will log in.
-                          </p>
-                          <div className="w-full">
-                            <label className="text-xs font-semibold text-foreground mb-1.5 block">Portal Subdomain</label>
-                            <div className="flex items-center rounded-lg border border-input bg-background overflow-hidden h-10 w-full max-w-md">
-                              <span className="bg-secondary/50 px-3 h-full flex items-center text-sm font-medium text-muted-foreground border-r border-input">
-                                https://
-                              </span>
-                              <input
-                                type="text"
-                                value={fetchedSubdomain}
-                                onChange={(e) => setFetchedSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                                placeholder="my-school"
-                                className="h-full flex-1 bg-transparent px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                              />
-                              <span className="bg-secondary/50 px-3 h-full flex items-center text-sm font-medium text-muted-foreground border-l border-input">
-                                .classgrid.in
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
                     </div>
                   )}
 
-
-
-                  {/* ── RENDER PHASE 2.5: PROFILE PHOTO (FIXED SECOND STEP) ── */}
-                  {currentStepData.type === "fixed_profile_photo" && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      <div className="bg-white dark:bg-card p-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-border/60 text-center flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
-                        
-                        {/* Decorative Background Pattern */}
-                        <div className="absolute inset-0 pointer-events-none opacity-20 dark:opacity-10" style={{ backgroundImage: "radial-gradient(circle at center, #10b981 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
-
-                        <div className="relative z-10 flex flex-col items-center w-full max-w-md">
-                          <h2 className="text-2xl font-bold mb-3">Add Your Identity</h2>
-                          <p className="text-muted-foreground mb-10 text-sm leading-relaxed">
-                            Upload a high-quality, passport-sized photo for your official ID card. A clear front-facing picture ensures a perfect fit.
-                          </p>
-                          
-                          <div className="w-full flex justify-center mb-2">
-                            <ImageUploadField 
-                              label="Upload Photo" 
-                              value={formData["profile_photo"]?.["image"]}
-                              onChange={(base64) => handleFieldChange("profile_photo", "image", base64)}
-                              circular={true}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   {/* ── RENDER PHASE 3: DYNAMIC GROUPS (ONE SECTION PER SCREEN) ── */}
                   {currentStepData.type === "dynamic_group" && (
@@ -922,7 +1169,7 @@ function DatePickerField({ value, onChange }: { value?: Date; onChange?: (date?:
       </Popover.Trigger>
       
       <Popover.Portal>
-        <Popover.Positioner alignment="start" sideOffset={4}>
+        <Popover.Positioner sideOffset={4}>
           <Popover.Popup 
             className="z-[1050] w-[320px] p-0 flex flex-col rounded-xl bg-popover text-popover-foreground text-foreground shadow-2xl border border-border outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
           >
@@ -1002,7 +1249,10 @@ function ImageUploadField({ label, value, onChange, circular = false }: { label:
         setImageSrc(reader.result?.toString() || "");
         setIsCropOpen(true);
       });
-      reader.readAsDataURL(e.target.files[0]);
+      const file = e.target.files[0];
+      if (file) {
+        reader.readAsDataURL(file);
+      }
     }
   };
 

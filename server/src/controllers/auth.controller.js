@@ -3,6 +3,7 @@ import DemoRequest from "../models/DemoRequest.js";
 import Verification from "../models/Verification.js";
 import DeviceVerification from "../models/DeviceVerification.js";
 import Organization from "../models/Organization.js";
+import OnboardingOTP from "../models/OnboardingOTP.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
@@ -28,6 +29,7 @@ import {
 } from "../services/email-templates.service.js";
 import { trackOnboardingEvent } from "../services/onboarding-event.service.js";
 import { syncDerivedOnboardingProgress } from "../services/onboarding-progress.service.js";
+import { sendSMS } from "../services/sms.service.js";
 import { RecaptchaVerificationError, verifyRecaptchaToken } from "../services/recaptcha.service.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
@@ -535,7 +537,7 @@ export const validateActivationToken = async (req, res) => {
         let orgData = null;
         if (user.organization_id) {
             const Organization = (await import("../models/Organization.js")).default;
-            orgData = await Organization.findById(user.organization_id).select("org_type structure_type subdomain").lean();
+            orgData = await Organization.findById(user.organization_id).select("org_type structure_type subdomain name address billing_settings").lean();
         }
 
         return res.status(200).json({ 
@@ -547,6 +549,10 @@ export const validateActivationToken = async (req, res) => {
             orgType: orgData?.org_type || "school",
             structureType: orgData?.structure_type || "school",
             subdomain: orgData?.subdomain || null,
+            orgName: orgData?.name || "",
+            address: orgData?.address || "",
+            city: orgData?.billing_settings?.city || "",
+            state: orgData?.billing_settings?.state || "",
         });
     } catch (err) {
         console.error("Validate Activation Token Error:", err);
@@ -2340,4 +2346,79 @@ export const deleteAccount = async (req, res) => {
         res.status(500).json({ message: "Server error." });
     }
 };
+
+// ─────────────────────────────────────────────────
+// ONBOARDING OTP: SEND
+// ─────────────────────────────────────────────────
+export const sendOnboardingOtp = async (req, res) => {
+    try {
+        const { target, type } = req.body; // target is email or phone, type is 'email' or 'phone'
+        if (!target || !type) return res.status(400).json({ message: "Target and type are required." });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+        // Delete any existing OTP for this target
+        await OnboardingOTP.deleteMany({ target: target.toLowerCase() });
+
+        await OnboardingOTP.create({
+            target: target.toLowerCase(),
+            type,
+            otp,
+            expires_at: expiresAt,
+        });
+
+        if (type === "email") {
+            const html = `<p>Your verification code for Classgrid Onboarding is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`;
+            await sendEmail({
+                to: target,
+                subject: "Classgrid Onboarding Verification Code",
+                html,
+                text: `Your verification code is: ${otp}`,
+            });
+        } else if (type === "phone") {
+            const message = `Your Classgrid verification code is ${otp}. It expires in 10 mins. Do not share this with anyone.`;
+            await sendSMS(target, message);
+        }
+
+        res.json({ message: "OTP sent successfully." });
+    } catch (err) {
+        console.error("Send Onboarding OTP Error:", err);
+        res.status(500).json({ message: "Failed to send OTP. Please try again." });
+    }
+};
+
+// ─────────────────────────────────────────────────
+// ONBOARDING OTP: VERIFY
+// ─────────────────────────────────────────────────
+export const verifyOnboardingOtp = async (req, res) => {
+    try {
+        const { target, otp } = req.body;
+        if (!target || !otp) return res.status(400).json({ message: "Target and OTP are required." });
+
+        const record = await OnboardingOTP.findOne({ target: target.toLowerCase() });
+        if (!record) {
+            return res.status(400).json({ message: "OTP expired or not found. Please request a new one." });
+        }
+
+        if (record.attempts >= 5) {
+            await OnboardingOTP.deleteOne({ _id: record._id });
+            return res.status(400).json({ message: "Too many failed attempts. Please request a new OTP." });
+        }
+
+        if (record.otp !== otp) {
+            record.attempts += 1;
+            await record.save();
+            return res.status(400).json({ message: "Invalid verification code." });
+        }
+
+        // Success - clean up
+        await OnboardingOTP.deleteOne({ _id: record._id });
+        res.json({ message: "Verified successfully.", verified: true });
+    } catch (err) {
+        console.error("Verify Onboarding OTP Error:", err);
+        res.status(500).json({ message: "Failed to verify OTP. Please try again." });
+    }
+};
+
 

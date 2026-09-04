@@ -18,6 +18,20 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // 🆔 Platform-wide unique @username — used for Chat @mentions and Discourse Forum
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 30,
+      match: [/^[a-z0-9_]+$/, "Username can only contain lowercase letters, numbers, and underscores"],
+      default: null,
+    },
+
+
     alternateEmail: {
       type: String,
       lowercase: true,
@@ -509,6 +523,7 @@ userSchema.index({ organization_id: 1 });
 userSchema.index({ resetPasswordToken: 1 }, { sparse: true }); // fast reset-token lookups
 userSchema.index({ activationToken: 1 }, { sparse: true }); // fast activation-token lookups
 userSchema.index({ activationCodeHash: 1 }, { sparse: true });
+userSchema.index({ username: 1 }, { sparse: true }); // fast @username lookups
 // PRN unique per organization (same PRN cannot exist twice in one org)
 // partialFilterExpression ensures null PRNs don't conflict
 userSchema.index(

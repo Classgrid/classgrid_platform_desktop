@@ -78,6 +78,26 @@ export const SEED_UNIVERSITIES = [
 ];
 
 export const MASTER_PROFILE_SECTION_POOL = {
+  organization_details: {
+    key: "organization_details",
+    label: "Organization Details",
+    icon: "Building2",
+    fields: [
+      { key: "organization.legal_name", label: "Organization Legal Name", type: "text", required: true },
+      { key: "organization.type", label: "Organization Type", type: "dropdown", options: ["School", "Coaching Institute", "Junior College", "Engineering College", "Diploma College"], required: true },
+      { key: "organization.short_name", label: "Organization Short Name / Slug", type: "text", required: true },
+      { key: "organization.affiliation_number", label: "Registration / Affiliation Number", type: "text" },
+      { key: "organization.board", label: "Board / Affiliation", type: "dropdown", options: ["CBSE", "ICSE", "State Board", "IB", "IGCSE", "University", "None"] },
+      { key: "organization.logo", label: "Organization Logo", type: "image" },
+      { key: "organization.address", label: "Organization Address", type: "text", required: true },
+      { key: "organization.state", label: "State", type: "dropdown", options: INDIA_STATES, required: true },
+      { key: "organization.district", label: "District / City", type: "dropdown", options: INDIA_DISTRICTS, required: true },
+      { key: "organization.pin_code", label: "PIN Code", type: "text", required: true },
+      { key: "organization.website", label: "Website", type: "text" },
+      { key: "organization.timezone", label: "Time Zone", type: "dropdown", options: ["Asia/Kolkata (IST)"], required: true },
+      { key: "organization.academic_session", label: "Current Academic Session", type: "text", required: true },
+    ],
+  },
 
   staff_common_details: {
     key: "staff_common_details",
@@ -718,8 +738,43 @@ export const MASTER_PROFILE_SECTION_POOL = {
       { key: "experience.contract_end_date", label: "Contract End Date", type: "date" },
     ]
   },
-
   
+  school_education: {
+    key: "school_education",
+    label: "Previous Education Details",
+    icon: "GraduationCap",
+    fields: [
+      { key: "education.previous_school", label: "Previous School Name", type: "text", sensitive: true },
+      { key: "education.previous_percentage", label: "Previous Percentage / Grade", type: "text", sensitive: true },
+      { key: "education.udise_number", label: "UDISE / PEN Number", type: "text", sensitive: true },
+      { key: "admission_details.admission_date", label: "Admission Date", type: "date", sensitive: true }
+    ]
+  },
+  coaching_education: {
+    key: "coaching_education",
+    label: "Academic & Target Details",
+    icon: "Target",
+    fields: [
+      { key: "education.target_exam", label: "Target Exam (e.g., JEE/NEET)", type: "text", sensitive: true },
+      { key: "education.current_school", label: "Current School / College", type: "text", sensitive: true },
+      { key: "education.previous_percentage", label: "Previous Exam Percentage", type: "text", sensitive: true },
+      { key: "admission_details.admission_date", label: "Admission Date", type: "date", sensitive: true }
+    ]
+  },
+  junior_college_education: {
+    key: "junior_college_education",
+    label: "Previous Education & Admission",
+    icon: "GraduationCap",
+    fields: [
+      { key: "education.tenth_board", label: "10th Board", type: "text", sensitive: true },
+      { key: "education.tenth_percentage", label: "10th Percentage", type: "number", sensitive: true },
+      { key: "education.previous_school", label: "Previous School Name", type: "text", sensitive: true },
+      { key: "education.chosen_stream", label: "Chosen Stream (Science/Commerce/Arts)", type: "text", sensitive: true },
+      { key: "admission_details.admission_main_category", label: "Admission Category", type: "dropdown", options: ERPSTUDENTADMISSIONMAINCATEGORYLIST, sensitive: true },
+      { key: "admission_details.admission_date", label: "Admission Date", type: "date", sensitive: true }
+    ]
+  },
+
   engineering_education: {
     key: "engineering_education",
     label: "Engineering Education & Admission",
@@ -843,15 +898,15 @@ export const ORG_TYPE_LABEL_MAP = {
 
 export const ROLE_PROFILE_CONFIGS = {
   student: {
-    sections: ["personal_details", "contact_details", "family_details", "engineering_education", "medical_and_disability", "bank_details", "passport_and_visa", "upload_documents", "skills_and_projects", "anti_ragging"],
-    academic_placement_fields: null, // Now generic and simplified
+    sections: ["personal_details", "contact_details", "family_details", "org_specific_education", "medical_and_disability", "upload_documents", "anti_ragging"],
+    academic_placement_fields: null, 
   },
   faculty: {
     sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "faculty_documents", "awards_participation", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
     academic_placement_fields: null,
   },
   org_admin: {
-    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "admin_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
+    sections: ["organization_details", "personal_details", "contact_details"],
     academic_placement_fields: null,
   },
   department_admin: {
@@ -887,11 +942,11 @@ export const ROLE_PROFILE_CONFIGS = {
     academic_placement_fields: null,
   },
   principal: {
-    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "admin_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
+    sections: ["organization_details", "personal_details", "contact_details"],
     academic_placement_fields: null,
   },
   vice_principal: {
-    sections: ["personal_details", "contact_details", "role_assignment", "qualification_and_experience", "employment_details", "bank_details", "admin_documents", "social_details", "id_card_photos", "medical_details", "platform_metadata"],
+    sections: ["organization_details", "personal_details", "contact_details"],
     academic_placement_fields: null,
   },
   super_admin: {
@@ -1081,7 +1136,16 @@ export function getResolvedProfileStrategy({
   const visibleSections = targetConfig.sections
     .filter(sectionKey => !hiddenByViewer.has(sectionKey))
     .map(sectionKey => {
-      const sectionDef = MASTER_PROFILE_SECTION_POOL[sectionKey as keyof typeof MASTER_PROFILE_SECTION_POOL];
+      let resolvedSectionKey = sectionKey;
+      if (sectionKey === "org_specific_education") {
+        if (baseOrgType === "engineering" || baseOrgType === "diploma") resolvedSectionKey = "engineering_education";
+        else if (baseOrgType === "school") resolvedSectionKey = "school_education";
+        else if (baseOrgType === "coaching") resolvedSectionKey = "coaching_education";
+        else if (baseOrgType === "junior_college") resolvedSectionKey = "junior_college_education";
+        else resolvedSectionKey = "education_details";
+      }
+
+      const sectionDef = MASTER_PROFILE_SECTION_POOL[resolvedSectionKey as keyof typeof MASTER_PROFILE_SECTION_POOL];
       if (!sectionDef) return null;
 
       let fields = sectionDef.fields;

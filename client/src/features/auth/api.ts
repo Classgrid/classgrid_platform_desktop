@@ -122,7 +122,7 @@ export function getGoogleAuthUrl({ audience, role }: GoogleAuthUrlPayload) {
 }
 
 export async function validateActivationToken(token: string) {
-  const response = await apiClient.post<{ valid: boolean; email?: string; name?: string; role?: string; mode?: string; orgType?: string; structureType?: string; subdomain?: string }>("/api/auth/validate-activation-token", {
+  const response = await apiClient.post<{ valid: boolean; email?: string; name?: string; role?: string; mode?: string; orgType?: string; structureType?: string; subdomain?: string; orgName?: string; address?: string; city?: string; state?: string }>("/api/auth/validate-activation-token", {
     token,
   });
   return response.data;
@@ -137,5 +137,15 @@ export async function activateAdmin({ token, password, subdomain }: { token: str
   if (response.data.token) {
     localStorage.setItem("token", response.data.token);
   }
+  return response.data;
+}
+
+export async function sendOnboardingOtp(payload: { target: string; type: "email" | "phone" }) {
+  const response = await apiClient.post<{ message: string }>("/api/auth/onboarding-send-otp", payload);
+  return response.data;
+}
+
+export async function verifyOnboardingOtp(payload: { target: string; otp: string }) {
+  const response = await apiClient.post<{ message: string; verified: boolean }>("/api/auth/onboarding-verify-otp", payload);
   return response.data;
 }
