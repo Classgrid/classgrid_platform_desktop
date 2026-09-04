@@ -12,6 +12,7 @@ import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
 import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Input } from "@/components/marketing_ui/input";
+import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 
@@ -30,7 +31,8 @@ const statusVariant = (status?: string) => {
 
 export function OrganizationsPage() {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [orgTypeFilter, setOrgTypeFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["superadmin-all-orgs"],
@@ -42,18 +44,35 @@ export function OrganizationsPage() {
   const allOrgs = data?.data || [];
   const filteredOrgs = useMemo(() => {
     let result = allOrgs;
-    if (statusFilter) {
-      result = result.filter(o => o.status === statusFilter);
-    }
-    const q = search.trim().toLowerCase();
-    if (!q) return result;
 
-    return result.filter((o) =>
-      [o.name, o.ownerEmail, o.ownerName, formatOrgType(o.orgType), o.status, o.plan]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(q))
-    );
-  }, [allOrgs, search, statusFilter]);
+    if (orgTypeFilter) {
+      result = result.filter((org) => org.orgType === orgTypeFilter || org.structureType === orgTypeFilter);
+    }
+
+    if (dateFrom) {
+      const startOfDay = new Date(dateFrom);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(dateFrom);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      result = result.filter((org) => {
+        const cDate = new Date(org.createdAt);
+        return cDate >= startOfDay && cDate <= endOfDay;
+      });
+    }
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (org) =>
+          org.name.toLowerCase().includes(q) ||
+          (org.ownerEmail || "").toLowerCase().includes(q) ||
+          (org.ownerName || "").toLowerCase().includes(q)
+      );
+    }
+
+    return result;
+  }, [allOrgs, search, orgTypeFilter, dateFrom]);
 
   const stats = useMemo(() => {
     const totalUsers = allOrgs.reduce((sum, org) => sum + (org.userCount ?? 0), 0);
@@ -164,14 +183,39 @@ export function OrganizationsPage() {
           <div className="w-[150px]">
             <ResponsiveSelect
               className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={orgTypeFilter}
+              onChange={(e) => setOrgTypeFilter(e.target.value)}
             >
-              <option value="">Status: All</option>
-              <option value="active">Active</option>
-              <option value="suspended">Suspended</option>
-              <option value="blocked">Blocked</option>
+              <option value="">Org Type: All</option>
+              <option value="school">School</option>
+              <option value="college">College</option>
+              <option value="coaching">Coaching</option>
+              <option value="university">University</option>
+              <option value="kindergarten">Kindergarten</option>
+              <option value="other">Other</option>
             </ResponsiveSelect>
+          </div>
+
+          <div className="w-[180px] max-w-[180px] overflow-hidden relative">
+            <NikhilTimeCalendar
+              value={dateFrom}
+              onChange={setDateFrom}
+              placeholder="Select Date"
+              popDirection="down"
+              showTime={false}
+              className="h-9 w-full pr-8"
+            />
+            {dateFrom && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent bg-background"
+                title="Clear date"
+              >
+                <span className="sr-only">Clear date</span>
+                ✕
+              </button>
+            )}
           </div>
         </SuperadminFilterBar>
 
