@@ -1331,40 +1331,24 @@ support@classgrid.in
   `.trim();
 };
 
+// ------------- ONBOARDING OTP -------------
 export const getOnboardingOtpEmailHtml = (otp) => {
   const content = `
-    <p>Hi there,</p>
-    <p>You requested a verification code during the Classgrid onboarding process.</p>
-    
-    <div class="box" style="margin-bottom: 24px; text-align: center;">
-      <p style="margin-bottom: 8px; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Your 6-Digit Code</p>
-      <p style="margin-bottom: 0; font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #111111;">${otp}</p>
+    <div style="background: #ffffff; color: #111111; margin-bottom: 24px; border: 1px solid #eaeaea; border-radius: 8px; padding: 20px; text-align: center;">
+      <div style="color: #6b7280; font-weight: 600; margin-bottom: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Your Verification Code</div>
+      <div style="color: #111111; font-size: 32px; font-weight: 700; background: #f9f9f9; padding: 16px; border-radius: 6px; border: 1px solid #eaeaea; font-family: monospace; letter-spacing: 8px;">${otp}</div>
     </div>
-
-    <p style="font-size: 14px; color: #374151;">This code is valid for the next <strong>10 minutes</strong>. Please do not share it with anyone.</p>
-    
-    <p style="font-size: 13px; color: #6b7280; margin-top: 24px; margin-bottom: 0;">If you did not request this code, you can safely ignore this email.</p>
+    <p style="margin-bottom: 8px; font-size: 14px; color: #374151;">This code is valid for <strong>10 minutes</strong>. Do not share this code with anyone.</p>
   `;
-
   return baseTemplate({
     content,
-    title: "Onboarding Verification Code",
-    ignoreText: "This code expires in 10 minutes.",
+    title: "Verification Code",
+    ignoreText: "If you did not request this code, you can safely ignore this email."
   });
 };
 
 export const getOnboardingOtpEmailPlainText = (otp) => {
-  return `Onboarding Verification Code
-
-Your 6-digit verification code is: ${otp}
-
-This code is valid for the next 10 minutes. Please do not share it with anyone.
-
-If you did not request this code, you can safely ignore this email.
-
-For contact, visit: https://classgrid.in/support
-
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+  return `Your Classgrid verification code is: ${otp}\n\nThis code is valid for 10 minutes. Do not share this code with anyone.\n\nIf you did not request this code, you can safely ignore this email.`;
 };
 
 // ------------- CLASSROOM ACTIVITY NOTIFICATION -------------
@@ -2515,4 +2499,24 @@ export const getErpRoleRejectedHtml = (recipientName, roleTitle, orgName, reject
   <p>You can continue using Classgrid with your current role and access level.</p>
   <p>If you did not submit this request, please contact support immediately.</p>`;
   return baseTemplate({ content, title: "Access Request Not Approved" });
+};
+
+// ------------- ONBOARDING OTP -------------
+export const getOnboardingOtpEmailHtml = (otp) => {
+  const content = `
+    <div style="background: #ffffff; color: #111111; margin-bottom: 24px; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px; text-align: center;">
+      <p style="margin-bottom: 12px; font-size: 14px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Your Verification Code</p>
+      <h1 style="margin: 0; font-size: 36px; font-weight: 800; letter-spacing: 0.1em; color: #111111;">${otp}</h1>
+    </div>
+    <p style="margin-bottom: 8px; font-size: 14px; color: #374151;">This code is valid for <strong>10 minutes</strong>. Do not share this code with anyone.</p>
+  `;
+  return baseTemplate({
+    content,
+    title: "Classgrid Verification Code",
+    ignoreText: "If you did not request this code, you can safely ignore this email."
+  });
+};
+
+export const getOnboardingOtpEmailPlainText = (otp) => {
+  return \`Your Classgrid verification code is: \${otp}\\n\\nThis code is valid for 10 minutes. Do not share this code with anyone.\\n\\nIf you did not request this code, you can safely ignore this email.\`;
 };
