@@ -57,7 +57,7 @@ import { RollbackPage } from "@/features/superadmin/pages/RollbackPage";
 import { ContentModerationPage } from "@/features/superadmin/pages/ContentModerationPage";
 import { NotificationEnginePage } from "@/features/superadmin/pages/NotificationEnginePage";
 import { OrganizationsPage } from "@/features/superadmin/pages/OrganizationsPage";
-import { OrgDetailPage } from "@/features/superadmin/pages/OrgDetailPage";
+
 import { OrgDetailsPage } from "@/features/superadmin/pages/OrgDetailsPage";
 import { PlatformAnnouncementsPage } from "@/features/superadmin/pages/PlatformAnnouncementsPage";
 import { SharedProfilePage } from "@/features/shared/pages/SharedProfilePage";
@@ -228,10 +228,10 @@ export function AppRouter() {
           <Route path="/superadmin/dashboard" element={<DashboardHomePage />} />
           <Route path="/superadmin/analytics" element={<AnalyticsPage />} />
           <Route path="/superadmin/audit-logs" element={<AuditLogsPage />} />
+
           <Route path="/superadmin/orgs" element={<OrganizationsPage />} />
-          <Route path="/superadmin/orgs/:id" element={<OrgDetailPage />} />
           <Route path="/superadmin/domains" element={<CustomDomainsPage />} />
-          <Route path="/superadmin/domains/:orgId" element={<OrgDetailsPage />} />
+          <Route path="/superadmin/detail/:orgName" element={<OrgDetailsPage />} />
           <Route path="/superadmin/leads" element={<LeadsPage />} />
           <Route path="/superadmin/leads/:id" element={<LeadDetailsPage />} />
           {/* NEW BILLING ROUTES */}

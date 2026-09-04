@@ -12,6 +12,8 @@ import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
 import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Input } from "@/components/marketing_ui/input";
+import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
+import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 
 
 import { formatDate } from "@/utils/dateUtils";
@@ -69,8 +71,12 @@ export function OrganizationsPage() {
       key: "name",
       render: (_val: any, row: any) => (
         <div className="flex items-center gap-3">
-          <span className="inline-flex size-9 items-center justify-center rounded-md border border-border bg-muted/40 text-muted-foreground">
-            <Building2 className="size-4" />
+          <span className="inline-flex size-9 items-center justify-center rounded-md border border-border bg-muted/40 text-muted-foreground overflow-hidden">
+            {row.logo_url || row.logoUrl ? (
+              <img src={row.logo_url || row.logoUrl} alt={row.name} className="w-full h-full object-cover" />
+            ) : (
+              <Building2 className="size-4" />
+            )}
           </span>
           <div>
             <div className="font-medium text-foreground">{row.name}</div>
@@ -119,7 +125,9 @@ export function OrganizationsPage() {
       key: "actions",
       render: (_val: any, row: any) => (
         <Button size="sm" variant="outline" asChild>
-          <Link to={`/superadmin/orgs/${row._id}`}>View Details</Link>
+          <Link to={`/superadmin/detail/${row.subdomain || row.name || "unknown"}`} state={{ orgId: row._id }}>
+            View Details
+          </Link>
         </Button>
       ),
     },
@@ -148,24 +156,24 @@ export function OrganizationsPage() {
         description="Search, inspect, and manage provisioned institutions."
         noPadding
       >
-        <div className="flex items-center gap-2 mb-4 p-4">
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name, owner, plan..."
-            className="flex h-9 w-full sm:w-[300px] items-center justify-between rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          />
-          <select 
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="suspended">Suspended</option>
-            <option value="blocked">Blocked</option>
-          </select>
-        </div>
+        <SuperadminFilterBar
+          searchQuery={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search name, owner, plan..."
+        >
+          <div className="w-[150px]">
+            <ResponsiveSelect
+              className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">Status: All</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+              <option value="blocked">Blocked</option>
+            </ResponsiveSelect>
+          </div>
+        </SuperadminFilterBar>
 
         {isError ? (
           <div className="p-4 m-4 rounded-md border bg-red-100 text-red-800 border-red-200">

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Activity, AlertCircle, CreditCard, Database, Settings2, ShieldCheck } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 
 import {
   Alert,
@@ -45,15 +45,20 @@ function OrgDetailsLoading() {
 }
 
 export function OrgDetailsPage() {
-  const { orgId } = useParams<{ orgId: string }>();
+  const { orgName } = useParams<{ orgName: string }>();
+  const location = useLocation();
+  const orgId = location.state?.orgId;
   const controlCenter = useOrganizationControlCenter(orgId);
   const organizationName =
-    controlCenter.profile?.name ?? controlCenter.detail?.name ?? "Organization details";
+    controlCenter.profile?.name ?? controlCenter.detail?.name ?? orgName ?? "Organization details";
   const breadcrumbItems = useMemo(
-    () => [
-      { label: "Custom domains", href: "/superadmin/domains" },
-      { label: organizationName },
-    ],
+    () => {
+      const isDomains = window.location.pathname.includes("/domains");
+      return [
+        { label: isDomains ? "Custom domains" : "Organizations", href: isDomains ? "/superadmin/domains" : "/superadmin/orgs" },
+        { label: organizationName },
+      ];
+    },
     [organizationName],
   );
 
@@ -63,7 +68,7 @@ export function OrgDetailsPage() {
         <Alert variant="destructive" className="px-4 py-3">
           <AlertCircle aria-hidden="true" />
           <AlertTitle>Organization ID is missing</AlertTitle>
-          <AlertDescription>This route cannot fetch organization data without an ID.</AlertDescription>
+          <AlertDescription>Please navigate here from the Organizations or Domains list. Direct links without the internal ID are not supported yet.</AlertDescription>
         </Alert>
       </main>
     );
