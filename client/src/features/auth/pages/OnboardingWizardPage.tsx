@@ -6,6 +6,7 @@ import {
   CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, Mail, Smartphone, Key, User,
   Upload, School, GraduationCap, Building2, Briefcase, PlaySquare, Eye, EyeOff, Moon, Sun, ChevronDown
 } from "lucide-react";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/marketing_ui/alert-dialog";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
@@ -65,18 +66,20 @@ export function OnboardingWizardPage() {
   const [isOrgEmailVerified, setIsOrgEmailVerified] = useState(false);
   const [orgEmailOtpSent, setOrgEmailOtpSent] = useState(false);
   const [isVerifyingOrgEmail, setIsVerifyingOrgEmail] = useState(false);
+  const [alertState, setAlertState] = useState({ open: false, title: "", message: "" });
+  const showAlert = (message: string, title: string = "Notice") => { setAlertState({ open: true, title, message }); };
 
   const handleSendOrgEmailOtp = async () => {
     if (!orgEmail || !orgEmail.includes("@")) {
-      alert("Please enter a valid organization email.");
+      showAlert("Please enter a valid organization email.");
       return;
     }
     try {
       await sendOnboardingOtp({ target: orgEmail, type: "email" });
       setOrgEmailOtpSent(true);
-      alert("OTP sent to organization email!");
+      showAlert("OTP sent to organization email!");
     } catch (e: any) {
-      alert(e.message || "Failed to send OTP");
+      showAlert(e.message || "Failed to send OTP");
     }
   };
 
@@ -89,7 +92,7 @@ export function OnboardingWizardPage() {
         setIsOrgEmailVerified(true);
       }
     } catch (e: any) {
-      alert(e.message || "Invalid OTP");
+      showAlert(e.message || "Invalid OTP");
     } finally {
       setIsVerifyingOrgEmail(false);
     }
@@ -100,9 +103,9 @@ export function OnboardingWizardPage() {
     try {
       await sendOnboardingOtp({ target: fetchedEmail, type: "email" });
       setEmailOtpSent(true);
-      alert("OTP sent to your email!");
+      showAlert("OTP sent to your email!");
     } catch (e: any) {
-      alert(e.message || "Failed to send OTP");
+      showAlert(e.message || "Failed to send OTP");
     }
   };
 
@@ -115,7 +118,7 @@ export function OnboardingWizardPage() {
         setIsEmailVerified(true);
       }
     } catch (e: any) {
-      alert(e.message || "Invalid OTP");
+      showAlert(e.message || "Invalid OTP");
     } finally {
       setIsVerifyingEmail(false);
     }
@@ -123,15 +126,15 @@ export function OnboardingWizardPage() {
 
   const handleSendPhoneOtp = async () => {
     if (!phone || phone.length < 10) {
-      alert("Please enter a valid phone number.");
+      showAlert("Please enter a valid phone number.");
       return;
     }
     try {
       await sendOnboardingOtp({ target: phone, type: "phone" });
       setPhoneOtpSent(true);
-      alert("OTP sent to your phone!");
+      showAlert("OTP sent to your phone!");
     } catch (e: any) {
-      alert(e.message || "Failed to send OTP");
+      showAlert(e.message || "Failed to send OTP");
     }
   };
 
@@ -144,7 +147,7 @@ export function OnboardingWizardPage() {
         setIsPhoneVerified(true);
       }
     } catch (e: any) {
-      alert(e.message || "Invalid OTP");
+      showAlert(e.message || "Invalid OTP");
     } finally {
       setIsVerifyingPhone(false);
     }
@@ -375,35 +378,35 @@ export function OnboardingWizardPage() {
     // Welcome step: require a name
     if (currentStepData.id === "welcome") {
       if (!adminName.trim()) {
-        alert("Please enter your name to continue.");
+        showAlert("Please enter your name to continue.");
         return;
       }
     }
     // Password step: validate strong password
     if (currentStepData.id === "password") {
       if (!password || !isStrongPassword || !isPasswordMatch) {
-        alert("Please enter a valid, matching, strong password to continue.");
+        showAlert("Please enter a valid, matching, strong password to continue.");
         return;
       }
     }
     // Contact Verification step: validate both are verified
     if (currentStepData.id === "contact_verification") {
       if (!isEmailVerified || !isPhoneVerified) {
-        alert("Please verify both your email and phone number to continue.");
+        showAlert("Please verify both your email and phone number to continue.");
         return;
       }
     }
     // Personal Details step: validate username
     if (currentStepData.id === "personal_details") {
       if (!usernameAvailable) {
-        alert("Please choose a valid and available @username.");
+        showAlert("Please choose a valid and available @username.");
         return;
       }
     }
     // Org Verification step
     if (currentStepData.id === "org_verification") {
       if (!isOrgEmailVerified) {
-        alert("Please verify the organization contact email.");
+        showAlert("Please verify the organization contact email.");
         return;
       }
     }
@@ -441,7 +444,7 @@ export function OnboardingWizardPage() {
         setShowConfetti(true);
       } catch (err) {
         console.error(err);
-        alert("Failed to save password or complete setup. Your link may have expired.");
+        showAlert("Failed to save password or complete setup. Your link may have expired.");
       } finally {
         setIsSubmitting(false);
       }
@@ -565,13 +568,14 @@ export function OnboardingWizardPage() {
         <div className="hidden lg:flex w-[260px] bg-white dark:bg-card border-r border-border/50 flex-col p-6 z-10 shadow-xl overflow-y-auto">
           <div className="flex items-center gap-3 mb-8 shrink-0">
             {/* Org Logo */}
-            <div className="size-10 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-md">
-              <GraduationCap className="size-5 text-white" />
+            <div className="size-10 bg-black rounded-xl flex items-center justify-center shrink-0 shadow-md p-1 border border-border">
+              <img src="/logo.png" className="w-full h-full object-contain" alt="Classgrid Logo" />
             </div>
             {/* Org Name */}
             <h2 className="font-extrabold text-lg leading-tight tracking-tight text-foreground">
               Classgrid<br />
-              <span className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">Platform</span>
+              {/* Platform is our repo name, ERP is our product name */}
+              <span className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">ERP</span>
             </h2>
           </div>
 
@@ -773,19 +777,27 @@ export function OnboardingWizardPage() {
                             )}
                           </div>
                           <div className="flex-1">
-                            <label className="text-xs font-semibold text-foreground mb-1.5 block">6-Digit Verification Code</label>
-                            <InputOTP 
-                              maxLength={6} 
-                              disabled={!emailOtpSent || isEmailVerified || isVerifyingEmail}
-                              value={emailOtp}
-                              onChange={(v) => { setEmailOtp(v); if(v.length===6) handleVerifyEmailOtp(v); }}
-                            >
-                              <InputOTPGroup className="gap-2">
-                                {[0, 1, 2, 3, 4, 5].map((index) => (
-                                  <InputOTPSlot key={index} index={index} className="w-12 h-12 text-lg font-bold rounded-xl border border-input bg-transparent" />
-                                ))}
-                              </InputOTPGroup>
-                            </InputOTP>
+                            {isEmailVerified ? (
+                              <div className="h-full flex flex-col justify-center">
+                                <p className="text-sm text-emerald-600 font-medium">Your email was securely verified via your activation link.</p>
+                              </div>
+                            ) : emailOtpSent ? (
+                              <>
+                                <label className="text-xs font-semibold text-foreground mb-1.5 block">6-Digit Verification Code</label>
+                                <InputOTP 
+                                  maxLength={6} 
+                                  disabled={isVerifyingEmail}
+                                  value={emailOtp}
+                                  onChange={(v) => { setEmailOtp(v); if(v.length===6) handleVerifyEmailOtp(v); }}
+                                >
+                                  <InputOTPGroup className="gap-2">
+                                    {[0, 1, 2, 3, 4, 5].map((index) => (
+                                      <InputOTPSlot key={index} index={index} className="w-12 h-12 text-lg font-bold rounded-xl border border-input bg-transparent" />
+                                    ))}
+                                  </InputOTPGroup>
+                                </InputOTP>
+                              </>
+                            ) : null}
                           </div>
                         </div>
                       </div>
@@ -828,19 +840,27 @@ export function OnboardingWizardPage() {
                             )}
                           </div>
                           <div className="flex-1">
-                            <label className="text-xs font-semibold text-foreground mb-1.5 block">SMS Verification Code</label>
-                            <InputOTP 
-                              maxLength={6}
-                              disabled={!phoneOtpSent || isPhoneVerified || isVerifyingPhone}
-                              value={phoneOtp}
-                              onChange={(v) => { setPhoneOtp(v); if(v.length===6) handleVerifyPhoneOtp(v); }}
-                            >
-                              <InputOTPGroup className="gap-2">
-                                {[0, 1, 2, 3, 4, 5].map((index) => (
-                                  <InputOTPSlot key={index} index={index} className="w-12 h-12 text-lg font-bold rounded-xl border border-input bg-transparent" />
-                                ))}
-                              </InputOTPGroup>
-                            </InputOTP>
+                            {isPhoneVerified ? (
+                              <div className="h-full flex flex-col justify-center">
+                                <p className="text-sm text-emerald-600 font-medium flex items-center gap-2"><CheckCircle2 className="size-4" /> Phone number verified.</p>
+                              </div>
+                            ) : phoneOtpSent ? (
+                              <>
+                                <label className="text-xs font-semibold text-foreground mb-1.5 block">SMS Verification Code</label>
+                                <InputOTP 
+                                  maxLength={6}
+                                  disabled={isVerifyingPhone}
+                                  value={phoneOtp}
+                                  onChange={(v) => { setPhoneOtp(v); if(v.length===6) handleVerifyPhoneOtp(v); }}
+                                >
+                                  <InputOTPGroup className="gap-2">
+                                    {[0, 1, 2, 3, 4, 5].map((index) => (
+                                      <InputOTPSlot key={index} index={index} className="w-12 h-12 text-lg font-bold rounded-xl border border-input bg-transparent" />
+                                    ))}
+                                  </InputOTPGroup>
+                                </InputOTP>
+                              </>
+                            ) : null}
                           </div>
                         </div>
                       </div>
@@ -1372,7 +1392,7 @@ export function OnboardingWizardPage() {
                   size="sm"
                   onClick={handlePrev}
                   disabled={currentStep === 0}
-                  className="h-10 px-4 text-sm font-medium rounded-lg"
+                  className="h-10 px-4 text-sm font-medium rounded-lg cursor-pointer"
                 >
                   <ChevronLeft className="mr-1 size-4" /> Back
                 </Button>
@@ -1383,7 +1403,7 @@ export function OnboardingWizardPage() {
                 size="sm"
                 onClick={() => void handleNext()}
                 disabled={isSubmitting}
-                className="h-10 px-6 text-sm font-semibold rounded-lg shadow-md shadow-primary/30"
+                className="h-10 px-6 text-sm font-semibold rounded-lg shadow-md shadow-primary/30 cursor-pointer"
               >
                 {isSubmitting ? "Submitting..." : (currentStep === totalSteps - 1 ? "Submit Profile" : "Save & Continue")}
                 {currentStep !== totalSteps - 1 && !isSubmitting && <ChevronRight className="ml-1 size-4" />}

@@ -1331,6 +1331,42 @@ support@classgrid.in
   `.trim();
 };
 
+export const getOnboardingOtpEmailHtml = (otp) => {
+  const content = `
+    <p>Hi there,</p>
+    <p>You requested a verification code during the Classgrid onboarding process.</p>
+    
+    <div class="box" style="margin-bottom: 24px; text-align: center;">
+      <p style="margin-bottom: 8px; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Your 6-Digit Code</p>
+      <p style="margin-bottom: 0; font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #111111;">${otp}</p>
+    </div>
+
+    <p style="font-size: 14px; color: #374151;">This code is valid for the next <strong>10 minutes</strong>. Please do not share it with anyone.</p>
+    
+    <p style="font-size: 13px; color: #6b7280; margin-top: 24px; margin-bottom: 0;">If you did not request this code, you can safely ignore this email.</p>
+  `;
+
+  return baseTemplate({
+    content,
+    title: "Onboarding Verification Code",
+    ignoreText: "This code expires in 10 minutes.",
+  });
+};
+
+export const getOnboardingOtpEmailPlainText = (otp) => {
+  return `Onboarding Verification Code
+
+Your 6-digit verification code is: ${otp}
+
+This code is valid for the next 10 minutes. Please do not share it with anyone.
+
+If you did not request this code, you can safely ignore this email.
+
+For contact, visit: https://classgrid.in/support
+
+© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+};
+
 // ------------- CLASSROOM ACTIVITY NOTIFICATION -------------
 export const getClassroomActivityEmailHtml = ({ orgName, classroomName, facultyName, contentType, title, preview, classroomUrl }) => {
   const typeLabels = { announcements: "Announcement", materials: "Notes", quizzes: "Quiz" };
@@ -1732,45 +1768,53 @@ export const getConsolidatedApprovalEmailHtml = ({
   const content = `
     <p>Hi ${adminName || "Admin"},</p>
 
-    <p>Congratulations! Your Classgrid Sandbox for <strong>${orgName}</strong> is ready. You now have full access to explore the platform for the next ${sandboxDuration} days.</p>
+    <p>Congratulations! 🎉</p>
 
-    <div class="box" style="margin-bottom:24px;">
+    <p>Your Classgrid Sandbox for <strong>${orgName}</strong> is now ready.</p>
+
+    <p>You have 31 days of full access to explore Classgrid and experience how your institution can manage its operations from one platform.</p>
+
+    <div class="box" style="margin-bottom:24px; margin-top:24px;">
       <p style="margin-bottom:8px; font-weight:600; color:#111111;">📦 Sandbox Details</p>
       <p style="margin-bottom:4px;">Organization: <strong>${orgName}</strong></p>
-      <p style="margin-bottom:4px;">Duration: <strong>${sandboxDuration} Days</strong></p>
-      <p style="margin-bottom:0;">Expires On: <strong>${formatDate(expiryDate)}</strong></p>
+      <p style="margin-bottom:4px;">Access Period: <strong>31 Days</strong></p>
+      <p style="margin-bottom:0;">Sandbox Expires: <strong>${formatDate(expiryDate)}</strong></p>
     </div>
 
-    <h3 style="color:#111111; margin-top:32px;">🛠️ Included Dashboards</h3>
-    <p style="color:#6b7280; font-size:14px; margin-bottom:12px;">Your sandbox includes access to the following modules:</p>
+    <h3 style="color:#111111; margin-top:32px;">🛠️ Your Included Dashboards</h3>
+    <p style="color:#6b7280; font-size:14px; margin-bottom:12px;">Your sandbox has been configured with:</p>
     <ul style="margin-bottom:32px; color:#374151;">
       ${dashboardsList || '<li>All core modules</li>'}
     </ul>
 
-    <h3 style="color:#111111; margin-top:32px;">🔐 Set Up Your Account</h3>
+    <h3 style="color:#111111; margin-top:32px;">🔐 Activate Your Admin Account</h3>
+
+    <p>To get started, securely activate your administrator account and create your password.</p>
+    <p>Your activation link is single-use and expires in 12 hours.</p>
 
     <div class="box" style="margin-bottom: 24px;">
-      <p style="margin-bottom: 8px;">Click the button below to securely set up your admin profile and password. During setup, you'll also be able to configure your organization's login portal address.</p>
-      <p style="margin-bottom: 0; font-size: 13px; color: #6b7280;">⚠️ This secure link is <strong>single-use</strong> and expires in <strong>7 hours</strong>. Do not share it.</p>
+      <p style="margin-bottom: 8px;">During activation, you'll also be able to choose your custom Classgrid login portal, for example:</p>
+      <p style="margin-bottom: 0; font-weight: 600; font-style: italic;">yourname.classgrid.in</p>
     </div>
 
-    <a href="${activationLink}" class="btn">Activate Admin Account</a>
+    <a href="${activationLink}" class="btn">Activate Admin Account →</a>
 
-    <p style="margin-top: 24px; font-size: 14px; color: #374151;">
-      <strong>Backup Activation Code:</strong> If you are unable to click the link, go to <a href="https://onboard.classgrid.in" style="color:#3b82f6;">onboard.classgrid.in</a> and use the code: <strong style="font-size:18px; letter-spacing:2px; color:#111;">${activationCode || 'N/A'}</strong>
-    </p>
+    <p style="font-size: 13px; color: #6b7280; margin-top: 16px;"><strong>Security Notice:</strong> This activation link is unique to you. Please do not forward or share it with anyone.</p>
 
-    <h3 style="color:#111111; margin-top:32px;">🚀 Quick Access Link</h3>
-    <p style="font-size:14px; color:#374151;">Once your account is activated, your permanent login portal will be:</p>
-    <p style="margin-bottom: 32px;"><a href="${dashboardLink}" style="font-weight:700; color:#3b82f6;">${dashboardLink}</a></p>
+    <h3 style="color:#111111; margin-top:32px;">Need Help?</h3>
+    <p style="margin-bottom: 12px;">Our support team is available if you need assistance with your setup.</p>
+    <p><a href="https://classgrid.in/support" style="color:#3b82f6; font-weight: 600;">Contact Classgrid Support</a></p>
 
-    <p style="font-size: 14px; color: #6b7280; margin-bottom: 0;">If you need assistance during setup, our support team is always available at:<br><a href="https://classgrid.in/support" style="color:#111111;">https://classgrid.in/support</a></p>
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+      <p style="margin-bottom: 4px; font-weight: 600; color: #111111;">Classgrid</p>
+      <p style="margin-bottom: 12px; font-size: 14px; color: #6b7280;">Operating System for Modern Education</p>
+      <p style="font-size: 12px; color: #9ca3af;">© ${new Date().getFullYear()} Classgrid. All rights reserved.</p>
+    </div>
   `;
 
   return baseTemplate({
     content,
-    title: "Activate Your Classgrid Sandbox Account",
-    ignoreText: "This link expires in 7 hours and can only be used once.",
+    title: "Your Classgrid Sandbox is Ready"
   });
 };
 
@@ -1785,8 +1829,6 @@ export const getConsolidatedApprovalEmailPlainText = ({
   sandboxDuration = 31,
   allocatedDashboards = [],
 }) => {
-  const dashboardLink = subdomain ? `https://${subdomain}.classgrid.in/admin/login` : `https://classgrid.in/admin/login`;
-
   const dashboardLabels = {
     dashboard_admission: "Admissions",
     dashboard_fees: "Fees Management",
@@ -1805,35 +1847,50 @@ export const getConsolidatedApprovalEmailPlainText = ({
     .map(label => `- ${label}`)
     .join('\n');
 
-  return `Activate Your Classgrid Sandbox Account
+  return `Hi ${adminName || "Admin"},
 
-Hi ${adminName || "Admin"},
+Congratulations! 🎉
 
-Congratulations! Your Classgrid Sandbox for ${orgName} is ready. You now have full access to explore the platform for the next ${sandboxDuration} days.
+Your Classgrid Sandbox for ${orgName} is now ready.
 
---- SANDBOX DETAILS ---
-Organization: ${orgName}
-Duration: ${sandboxDuration} Days
-Expires On: ${formatDate(expiryDate)}
+You have 31 days of full access to explore Classgrid and experience how your institution can manage its operations from one platform.
 
---- INCLUDED DASHBOARDS ---
+📦 Sandbox Details
+
+Organization
+${orgName}
+
+Access Period
+31 Days
+
+Sandbox Expires
+${formatDate(expiryDate)}
+
+🛠️ Your Included Dashboards
+
+Your sandbox has been configured with:
 ${dashboardsList || '- All core modules'}
 
---- SET UP YOUR ACCOUNT ---
+🔐 Activate Your Admin Account
 
-Click the link below to securely set up your admin profile, password, and organization portal address.
-This link is single-use and expires in 7 hours. Do not share it.
+To get started, securely activate your administrator account and create your password.
 
-Activate Admin Account: ${activationLink}
+Your activation link is single-use and expires in 12 hours.
 
-Backup Activation Code: If you cannot click the link, go to https://onboard.classgrid.in and use code: ${activationCode || 'N/A'}
+During activation, you'll also be able to choose your custom Classgrid login portal, for example:
+yourname.classgrid.in
 
---- QUICK ACCESS LINK ---
+Activate Admin Account →
+${activationLink}
 
-Once your account is activated, your permanent login portal will be:
-${dashboardLink}
+Security Notice: This activation link is unique to you. Please do not forward or share it with anyone.
 
-If you did not apply for a Classgrid organization or need assistance, please contact us at https://classgrid.in/support.
+Need Help?
+Our support team is available if you need assistance with your setup.
+Contact Classgrid Support: https://classgrid.in/support
+
+Classgrid
+Operating System for Modern Education
 
 © ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };

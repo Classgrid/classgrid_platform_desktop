@@ -1,31 +1,8 @@
-import crypto from "crypto";
-import mongoose from "mongoose";
-
-import DemoRequest from "../models/DemoRequest.js";
-import User from "../models/User.js";
-import { provisionDemoOrg } from "./provisioning.service.js";
-import { enqueueEmail } from "./email-queue.service.js";
-import { getPlanLimits } from "./module-toggle.service.js";
-import { trackOnboardingEvent } from "./onboarding-event.service.js";
-import {
-  getConsolidatedApprovalEmailHtml,
-  getConsolidatedApprovalEmailPlainText,
-} from "./email-templates.service.js";
-
-export const generateActivationCredentials = () => {
-  const rawActivationToken = crypto.randomBytes(32).toString("hex");
-  const hashedActivationToken = crypto
-    .createHash("sha256")
-    .update(rawActivationToken)
-    .digest("hex");
-
-  const activationCode = String(Math.floor(100000 + Math.random() * 900000));
-  const activationCodeHash = crypto
     .createHash("sha256")
     .update(activationCode)
     .digest("hex");
 
-  const expiresAt = new Date(Date.now() + 7 * 60 * 60 * 1000); // 7 hours
+  const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12 hours
 
   return {
     rawActivationToken,
@@ -204,9 +181,11 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
     lead.lastConversionError = "";
 
     try {
-      await enqueueEmail({
+      await sendEmail({
         to: lead.adminEmail,
         subject,
+        fromName: "Nikhil Shinde | Classgrid CEO",
+        fromEmail: "nikhil.shinde@classgrid.in",
         html: getConsolidatedApprovalEmailHtml({
           adminName: lead.adminName,
           orgName: organization.name,
@@ -229,8 +208,6 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
           sandboxDuration: 31,
           allocatedDashboards,
         }),
-        type: "demo_provisioning_onboarding",
-        channel: "notification",
         userId: admin._id,
         organizationId: organization._id,
       });
