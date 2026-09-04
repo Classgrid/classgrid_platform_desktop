@@ -107,22 +107,9 @@ const resolveMongoTerminology = (rawOrgType: string, mongoMap: Record<string, an
     const levels: string[] = dbData.hierarchyLevels || [];
     const examples: string[] = dbData.hierarchyExamples || [];
 
-    const icons = [Building2, Briefcase, School, GraduationCap, Briefcase, School, Briefcase];
-    const colors = ["text-indigo-400", "text-blue-400", "text-emerald-400", "text-purple-400", "text-cyan-400", "text-teal-400", "text-fuchsia-400"];
-    const borderGlows = [
-      "border-indigo-500/30 hover:border-indigo-500/60 shadow-indigo-500/10",
-      "border-blue-500/30 hover:border-blue-500/60 shadow-blue-500/10",
-      "border-emerald-500/30 hover:border-emerald-500/60 shadow-emerald-500/10",
-      "border-purple-500/30 hover:border-purple-500/60 shadow-purple-500/10",
-      "border-cyan-500/30 hover:border-cyan-500/60 shadow-cyan-500/10",
-    ];
-
     const hierarchyTree = levels.map((lvl: string, idx: number) => ({
       name: lvl,
-      example: examples[idx] || null,
-      icon: icons[idx % icons.length],
-      color: colors[idx % colors.length],
-      borderGlow: borderGlows[idx % borderGlows.length]
+      example: examples[idx] || null
     }));
 
     return {
@@ -160,10 +147,10 @@ const resolveMongoTerminology = (rawOrgType: string, mongoMap: Record<string, an
       assignment: "Assignment",
       exam: "Examination",
       hierarchyTree: [
-        { name: "Stream", example: "Science / Commerce / Arts", icon: Briefcase, color: "text-blue-400", borderGlow: "border-blue-500/30 shadow-blue-500/10" },
-        { name: "Standard", example: "11th / 12th", icon: School, color: "text-emerald-400", borderGlow: "border-emerald-500/30 shadow-emerald-500/10" },
-        { name: "Division", example: "A / B", icon: GraduationCap, color: "text-purple-400", borderGlow: "border-purple-500/30 shadow-purple-500/10" },
-        { name: "Batch", example: "Batch 1 / Batch 2", icon: Briefcase, color: "text-cyan-400", borderGlow: "border-cyan-500/30 shadow-cyan-500/10" },
+        { name: "Stream", example: "Science / Commerce / Arts" },
+        { name: "Standard", example: "11th / 12th" },
+        { name: "Division", example: "A / B" },
+        { name: "Batch", example: "Batch 1 / Batch 2" },
       ]
     };
   }
@@ -184,8 +171,8 @@ const resolveMongoTerminology = (rawOrgType: string, mongoMap: Record<string, an
       assignment: "Homework",
       exam: "Test",
       hierarchyTree: [
-        { name: "Standard", example: "Class 1 – 10", icon: School, color: "text-emerald-400", borderGlow: "border-emerald-500/30 shadow-emerald-500/10" },
-        { name: "Section", example: "A / B / C", icon: GraduationCap, color: "text-purple-400", borderGlow: "border-purple-500/30 shadow-purple-500/10" }
+        { name: "Standard", example: "Class 1 – 10" },
+        { name: "Section", example: "A / B / C" }
       ]
     };
   }
@@ -205,12 +192,12 @@ const resolveMongoTerminology = (rawOrgType: string, mongoMap: Record<string, an
     assignment: "Assignment",
     exam: "Examination",
     hierarchyTree: [
-      { name: "Degree", example: "B.Tech / M.Tech", icon: Briefcase, color: "text-blue-400", borderGlow: "border-blue-500/30 shadow-blue-500/10" },
-      { name: "Department", example: "Computer / IT / ENTC / Mech", icon: School, color: "text-emerald-400", borderGlow: "border-emerald-500/30 shadow-emerald-500/10" },
-      { name: "Year", example: "FY / SY / TY / Final Year", icon: GraduationCap, color: "text-teal-400", borderGlow: "border-teal-500/30 shadow-teal-500/10" },
-      { name: "Semester", example: "Sem 1 / Sem 2", icon: Briefcase, color: "text-cyan-400", borderGlow: "border-cyan-500/30 shadow-cyan-500/10" },
-      { name: "Division", example: "A / B / C", icon: School, color: "text-violet-400", borderGlow: "border-violet-500/30 shadow-violet-500/10" },
-      { name: "Sub Batch", example: "A1 / A2 / B1", icon: Briefcase, color: "text-fuchsia-400", borderGlow: "border-fuchsia-500/30 shadow-fuchsia-500/10" }
+      { name: "Degree", example: "B.Tech / M.Tech" },
+      { name: "Department", example: "Computer / IT / ENTC / Mech" },
+      { name: "Year", example: "FY / SY / TY / Final Year" },
+      { name: "Semester", example: "Sem 1 / Sem 2" },
+      { name: "Division", example: "A / B / C" },
+      { name: "Lab Batch", example: "L1 / L2 / L3" }
     ]
   };
 };
