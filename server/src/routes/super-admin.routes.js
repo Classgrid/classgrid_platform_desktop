@@ -514,7 +514,7 @@ router.get("/organizations", async (req, res) => {
         const User = (await import("../models/User.js")).default;
 
         const orgs = await Organization.find({})
-            .select("name org_type structure_type status plan city state createdAt owner_id ownerName ownerEmail studentLimit faculty_limit")
+            .select("name org_type structure_type status plan city state createdAt owner_id ownerName ownerEmail studentLimit faculty_limit logo_url")
             .sort({ createdAt: -1 })
             .limit(200)
             .lean();
