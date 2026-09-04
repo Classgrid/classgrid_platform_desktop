@@ -345,6 +345,8 @@ export function OnboardingWizardPage() {
     }
   };
 
+  const checkUsernameTimeout = React.useRef<NodeJS.Timeout | null>(null);
+
   const handleUsernameChange = async (val: string) => {
     const rawVal = val.toLowerCase().replace(/[^a-z0-9_]/g, '');
     setUsername(rawVal);
@@ -356,17 +358,24 @@ export function OnboardingWizardPage() {
       return;
     }
 
-    setIsCheckingUsername(true);
-    try {
-      const res = await checkUsername(rawVal);
-      setUsernameAvailable(res.available);
-      setUsernameMessage(res.message);
-    } catch (err: any) {
-      setUsernameAvailable(false);
-      setUsernameMessage("Error checking username");
-    } finally {
-      setIsCheckingUsername(false);
+    if (checkUsernameTimeout.current) {
+      clearTimeout(checkUsernameTimeout.current);
     }
+
+    setIsCheckingUsername(true);
+
+    checkUsernameTimeout.current = setTimeout(async () => {
+      try {
+        const res = await checkUsername(rawVal);
+        setUsernameAvailable(res.available);
+        setUsernameMessage(res.message);
+      } catch (err: any) {
+        setUsernameAvailable(false);
+        setUsernameMessage("Error checking username");
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    }, 500);
   };
 
   // Auto-suggest @username from admin name
