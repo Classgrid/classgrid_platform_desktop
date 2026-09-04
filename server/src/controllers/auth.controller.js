@@ -2421,4 +2421,30 @@ export const verifyOnboardingOtp = async (req, res) => {
     }
 };
 
+// ─────────────────────────────────────────────────
+// CHECK USERNAME
+// ─────────────────────────────────────────────────
+export const checkUsername = async (req, res) => {
+    try {
+        const { username } = req.body;
+        if (!username) return res.status(400).json({ message: "Username is required." });
+
+        // Basic validation (alphanumeric, underscores, 3-20 chars)
+        const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+        if (!usernameRegex.test(username)) {
+            return res.json({ available: false, message: "Username must be 3-20 characters long and can only contain letters, numbers, and underscores." });
+        }
+
+        const existing = await User.findOne({ username: username.toLowerCase() });
+        if (existing) {
+            return res.json({ available: false, message: "Username is already taken." });
+        }
+
+        res.json({ available: true, message: "Username is available." });
+    } catch (err) {
+        console.error("Check Username Error:", err);
+        res.status(500).json({ message: "Server error checking username." });
+    }
+};
+
 

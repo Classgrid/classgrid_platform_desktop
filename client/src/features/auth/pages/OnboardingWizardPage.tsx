@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
-import { validateActivationToken, activateAdmin, sendOnboardingOtp, verifyOnboardingOtp } from "../api";
+import { validateActivationToken, activateAdmin, sendOnboardingOtp, verifyOnboardingOtp, checkUsername } from "../api";
 import {
   CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, Mail, Smartphone, Key, User,
   Upload, School, GraduationCap, Building2, Briefcase, PlaySquare, Eye, EyeOff, Moon, Sun, ChevronDown
@@ -52,6 +52,48 @@ export function OnboardingWizardPage() {
   const [phoneOtpSent, setPhoneOtpSent] = useState(false);
   const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
   const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
+
+  // Username States
+  const [username, setUsername] = useState("");
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [usernameMessage, setUsernameMessage] = useState("");
+
+  // Org Verification States
+  const [orgEmail, setOrgEmail] = useState("");
+  const [orgEmailOtp, setOrgEmailOtp] = useState("");
+  const [isOrgEmailVerified, setIsOrgEmailVerified] = useState(false);
+  const [orgEmailOtpSent, setOrgEmailOtpSent] = useState(false);
+  const [isVerifyingOrgEmail, setIsVerifyingOrgEmail] = useState(false);
+
+  const handleSendOrgEmailOtp = async () => {
+    if (!orgEmail || !orgEmail.includes("@")) {
+      alert("Please enter a valid organization email.");
+      return;
+    }
+    try {
+      await sendOnboardingOtp({ target: orgEmail, type: "email" });
+      setOrgEmailOtpSent(true);
+      alert("OTP sent to organization email!");
+    } catch (e: any) {
+      alert(e.message || "Failed to send OTP");
+    }
+  };
+
+  const handleVerifyOrgEmailOtp = async (otpValue: string) => {
+    if (otpValue.length !== 6) return;
+    setIsVerifyingOrgEmail(true);
+    try {
+      const res = await verifyOnboardingOtp({ target: orgEmail, otp: otpValue });
+      if (res.verified) {
+        setIsOrgEmailVerified(true);
+      }
+    } catch (e: any) {
+      alert(e.message || "Invalid OTP");
+    } finally {
+      setIsVerifyingOrgEmail(false);
+    }
+  };
 
   const handleSendEmailOtp = async () => {
     if (!fetchedEmail) return;
@@ -105,6 +147,30 @@ export function OnboardingWizardPage() {
       alert(e.message || "Invalid OTP");
     } finally {
       setIsVerifyingPhone(false);
+    }
+  };
+
+  const handleUsernameChange = async (val: string) => {
+    const rawVal = val.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    setUsername(rawVal);
+    setUsernameAvailable(null);
+    setUsernameMessage("");
+    
+    if (rawVal.length < 3) {
+      setUsernameMessage("Must be at least 3 characters.");
+      return;
+    }
+    
+    setIsCheckingUsername(true);
+    try {
+      const res = await checkUsername(rawVal);
+      setUsernameAvailable(res.available);
+      setUsernameMessage(res.message);
+    } catch (err: any) {
+      setUsernameAvailable(false);
+      setUsernameMessage("Error checking username");
+    } finally {
+      setIsCheckingUsername(false);
     }
   };
 
@@ -211,8 +277,10 @@ export function OnboardingWizardPage() {
     isSelfView: true
   });
 
-  const dynamicSections = strategy.sections || [];
+  const dynamicSections = (strategy.sections || []).filter(sec => sec.key !== "organization_details");
   
+  const isOrgAdmin = effectiveRole === "admin" || effectiveRole === "superadmin";
+
   // Create one step per dynamic section
   const steps: any[] = [
     {
@@ -236,6 +304,13 @@ export function OnboardingWizardPage() {
       icon: User,
       type: "fixed_profile_photo"
     },
+    {
+      id: "personal_details",
+      title: "Personal Identity",
+      subtitle: "Set up your public profile and @username.",
+      icon: Briefcase,
+      type: "fixed_personal_details"
+    },
     ...dynamicSections.map((section: any) => ({
       id: section.key,
       title: section.label,
@@ -244,6 +319,36 @@ export function OnboardingWizardPage() {
       type: "dynamic_group",
       dynamicSections: [section]
     })),
+    ...(isOrgAdmin ? [
+      {
+        id: "terminology",
+        title: "Platform Terminology",
+        subtitle: "How we organize your digital campus.",
+        icon: Building2,
+        type: "fixed_terminology"
+      },
+      {
+        id: "org_identity",
+        title: "Organization Identity",
+        subtitle: "Your logo and portal URL.",
+        icon: Building2,
+        type: "fixed_org_identity"
+      },
+      {
+        id: "org_details",
+        title: "Organization Details",
+        subtitle: "Legal and address details.",
+        icon: Building2,
+        type: "fixed_org_details"
+      },
+      {
+        id: "org_verification",
+        title: "Organization Verification",
+        subtitle: "Verify official organization contact.",
+        icon: ShieldCheck,
+        type: "fixed_org_verification"
+      }
+    ] : []),
     {
       id: "password",
       title: "Secure Your Account",
@@ -285,6 +390,20 @@ export function OnboardingWizardPage() {
     if (currentStepData.id === "contact_verification") {
       if (!isEmailVerified || !isPhoneVerified) {
         alert("Please verify both your email and phone number to continue.");
+        return;
+      }
+    }
+    // Personal Details step: validate username
+    if (currentStepData.id === "personal_details") {
+      if (!usernameAvailable) {
+        alert("Please choose a valid and available @username.");
+        return;
+      }
+    }
+    // Org Verification step
+    if (currentStepData.id === "org_verification") {
+      if (!isOrgEmailVerified) {
+        alert("Please verify the organization contact email.");
         return;
       }
     }
@@ -740,6 +859,284 @@ export function OnboardingWizardPage() {
                               onChange={(base64) => handleFieldChange("profile_photo", "image", base64)}
                               circular={true}
                             />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── RENDER: PERSONAL DETAILS (FIXED STEP) ── */}
+                  {currentStepData.type === "fixed_personal_details" && (
+                    <div className="space-y-6">
+                      <div className="bg-white dark:bg-card p-6 rounded-2xl shadow-sm border border-border/60">
+                        <div className="flex items-center gap-3 mb-6">
+                          <div className="size-10 bg-indigo-500/10 text-indigo-600 rounded-xl flex items-center justify-center">
+                            <Briefcase className="size-5" />
+                          </div>
+                          <h3 className="text-xl font-bold">Personal Profile & @username</h3>
+                        </div>
+                        
+                        <div className="space-y-6">
+                          <div>
+                            <label className="text-sm font-semibold text-foreground mb-1.5 block">Unique @username <span className="text-danger">*</span></label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-2.5 text-muted-foreground font-medium">@</span>
+                              <Input 
+                                placeholder="e.g. john_doe" 
+                                className="pl-8 h-10" 
+                                value={username}
+                                onChange={(e) => handleUsernameChange(e.target.value)}
+                              />
+                            </div>
+                            <div className="h-6 mt-1 flex items-center">
+                              {isCheckingUsername && <span className="text-xs text-muted-foreground">Checking availability...</span>}
+                              {!isCheckingUsername && usernameMessage && (
+                                <span className={cn("text-xs font-medium", usernameAvailable ? "text-emerald-500" : "text-red-500")}>
+                                  {usernameMessage}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid md:grid-cols-2 gap-6">
+                            <div>
+                              <label className="text-sm font-semibold text-foreground mb-1.5 block">Job Title / Designation</label>
+                              <Input 
+                                placeholder="e.g. Principal, HOD, Director" 
+                                className="h-10"
+                                value={formData["personal_details"]?.["designation"] || ""}
+                                onChange={(e) => handleFieldChange("personal_details", "designation", e.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-semibold text-foreground mb-1.5 block">Department</label>
+                              <Input 
+                                placeholder="e.g. Administration, Computer Science" 
+                                className="h-10"
+                                value={formData["personal_details"]?.["department"] || ""}
+                                onChange={(e) => handleFieldChange("personal_details", "department", e.target.value)}
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-sm font-semibold text-foreground mb-1.5 block">LinkedIn Profile (Optional)</label>
+                            <Input 
+                              placeholder="https://linkedin.com/in/username" 
+                              className="h-10"
+                              value={formData["personal_details"]?.["linkedin"] || ""}
+                              onChange={(e) => handleFieldChange("personal_details", "linkedin", e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── RENDER: TERMINOLOGY VISUAL (FIXED STEP) ── */}
+                  {currentStepData.type === "fixed_terminology" && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="bg-slate-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-900 to-slate-900" />
+                        <div className="relative z-10 flex flex-col items-center">
+                          <h3 className="text-2xl font-bold mb-2">Platform Terminology</h3>
+                          <p className="text-slate-400 mb-8 text-center max-w-sm">This flowchart visualizes how your data will be hierarchically organized.</p>
+                          
+                          <div className="flex flex-col items-center gap-4">
+                            <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-64 text-center shadow-lg" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
+                              <Building2 className="size-6 mx-auto mb-2 text-indigo-400" />
+                              <div className="font-bold">Organization</div>
+                              <div className="text-xs text-slate-400">{formData["org_details"]?.type || fetchedOrgType || 'Institute'}</div>
+                            </motion.div>
+                            <div className="w-0.5 h-6 bg-indigo-500/50" />
+                            <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-64 text-center shadow-lg" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
+                              <Briefcase className="size-6 mx-auto mb-2 text-blue-400" />
+                              <div className="font-bold">Department / Program</div>
+                              <div className="text-xs text-slate-400">e.g., Computer Science, Admin</div>
+                            </motion.div>
+                            <div className="w-0.5 h-6 bg-blue-500/50" />
+                            <div className="flex gap-4">
+                              <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
+                                <School className="size-5 mx-auto mb-2 text-emerald-400" />
+                                <div className="font-bold text-sm">Course / Class</div>
+                              </motion.div>
+                              <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
+                                <GraduationCap className="size-5 mx-auto mb-2 text-purple-400" />
+                                <div className="font-bold text-sm">Batch / Section</div>
+                              </motion.div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── RENDER: ORG IDENTITY (FIXED STEP) ── */}
+                  {currentStepData.type === "fixed_org_identity" && (
+                    <div className="space-y-6">
+                      <div className="bg-white dark:bg-card p-8 rounded-3xl shadow-sm border border-border/60">
+                        <h3 className="text-xl font-bold mb-8">Brand & Portal Address</h3>
+                        <div className="grid md:grid-cols-2 gap-10">
+                          <div>
+                            <label className="text-sm font-semibold mb-2 block">Upload Institute Logo</label>
+                            <p className="text-xs text-muted-foreground mb-4">A square, transparent PNG works best.</p>
+                            <div className="flex justify-start">
+                              <ImageUploadField 
+                                label="Upload Logo" 
+                                value={formData["org_identity"]?.["logo"]}
+                                onChange={(base64) => handleFieldChange("org_identity", "logo", base64)}
+                                circular={false}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold mb-2 block">Your Custom Portal URL <span className="text-danger">*</span></label>
+                            <p className="text-xs text-muted-foreground mb-4">Choose a short, memorable slug for your login portal.</p>
+                            <div className="flex items-center rounded-xl border border-input bg-secondary/30 pl-4 overflow-hidden h-12 focus-within:ring-2 focus-within:ring-primary/20">
+                              <span className="text-muted-foreground font-medium text-sm">classgrid.com/</span>
+                              <input 
+                                type="text" 
+                                className="flex-1 bg-transparent border-none outline-none px-2 text-sm font-bold h-full"
+                                placeholder="my-school"
+                                value={formData["org_identity"]?.["slug"] || ""}
+                                onChange={(e) => handleFieldChange("org_identity", "slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                              />
+                            </div>
+                            {formData["org_identity"]?.["slug"] && (
+                              <p className="text-emerald-500 text-xs mt-3 font-medium flex items-center gap-1">
+                                <CheckCircle2 className="size-3" /> URL looks great
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── RENDER: ORG DETAILS (FIXED STEP) ── */}
+                  {currentStepData.type === "fixed_org_details" && (
+                    <div className="space-y-6">
+                      <div className="bg-white dark:bg-card p-8 rounded-3xl shadow-sm border border-border/60">
+                        <h3 className="text-xl font-bold mb-6">Organization Details</h3>
+                        <div className="grid md:grid-cols-2 gap-6">
+                          <div className="md:col-span-2">
+                            <label className="text-sm font-semibold block mb-1.5">Legal Organization Name <span className="text-danger">*</span></label>
+                            <Input 
+                              value={formData["org_details"]?.["name"] || fetchedOrgName || ""}
+                              onChange={(e) => handleFieldChange("org_details", "name", e.target.value)}
+                              placeholder="e.g. Cambridge International School"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold block mb-1.5">Type <span className="text-danger">*</span></label>
+                            <ResponsiveSelect 
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={formData["org_details"]?.["type"] || fetchedOrgType || "School"}
+                              onChange={(e) => handleFieldChange("org_details", "type", e.target.value)}
+                            >
+                              <option value="School">School</option>
+                              <option value="College">College / University</option>
+                              <option value="Coaching">Coaching Institute</option>
+                            </ResponsiveSelect>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold block mb-1.5">Board / Affiliation</label>
+                            <ResponsiveSelect 
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={formData["org_details"]?.["board"] || "CBSE"}
+                              onChange={(e) => handleFieldChange("org_details", "board", e.target.value)}
+                            >
+                              <option value="CBSE">CBSE</option>
+                              <option value="ICSE">ICSE</option>
+                              <option value="State">State Board</option>
+                              <option value="University">University</option>
+                              <option value="None">None</option>
+                            </ResponsiveSelect>
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="text-sm font-semibold block mb-1.5">Full Address <span className="text-danger">*</span></label>
+                            <Input 
+                              value={formData["org_details"]?.["address"] || fetchedAddress || ""}
+                              onChange={(e) => handleFieldChange("org_details", "address", e.target.value)}
+                              placeholder="Street address"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold block mb-1.5">City <span className="text-danger">*</span></label>
+                            <Input 
+                              value={formData["org_details"]?.["city"] || fetchedCity || ""}
+                              onChange={(e) => handleFieldChange("org_details", "city", e.target.value)}
+                              placeholder="City"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold block mb-1.5">PIN Code <span className="text-danger">*</span></label>
+                            <Input 
+                              value={formData["org_details"]?.["pincode"] || ""}
+                              onChange={(e) => handleFieldChange("org_details", "pincode", e.target.value)}
+                              placeholder="e.g. 110001"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── RENDER: ORG VERIFICATION (FIXED STEP) ── */}
+                  {currentStepData.type === "fixed_org_verification" && (
+                    <div className="space-y-6">
+                      <div className="bg-white dark:bg-card p-8 rounded-3xl shadow-sm border border-border/60">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="size-12 bg-emerald-500/10 text-emerald-600 rounded-xl flex items-center justify-center">
+                            <Mail className="size-6" />
+                          </div>
+                          <h3 className="text-xl font-bold">Verify Organization Contact <span className="text-danger">*</span></h3>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-8">
+                          Please provide the official contact email for the organization. This will be used for billing and critical alerts.
+                        </p>
+                        <div className="grid md:grid-cols-2 gap-8">
+                          <div>
+                            <label className="text-xs font-semibold text-foreground mb-1.5 block">Official Org Email</label>
+                            <div className="flex gap-2">
+                              <Input 
+                                value={orgEmail} 
+                                onChange={(e) => setOrgEmail(e.target.value)}
+                                disabled={isOrgEmailVerified || orgEmailOtpSent}
+                                placeholder="admin@school.com"
+                                className="h-12 flex-1 text-sm font-medium" 
+                              />
+                              {!isOrgEmailVerified && (
+                                <Button 
+                                  variant="outline" 
+                                  className="h-12 px-6 text-sm font-semibold"
+                                  onClick={handleSendOrgEmailOtp}
+                                  disabled={orgEmailOtpSent}
+                                >
+                                  {orgEmailOtpSent ? "Sent" : "Send OTP"}
+                                </Button>
+                              )}
+                            </div>
+                            {isOrgEmailVerified && (
+                              <p className="text-emerald-600 text-sm mt-3 font-medium flex items-center gap-1">
+                                <CheckCircle2 className="size-4" /> Verified
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <label className="text-xs font-semibold text-foreground mb-1.5 block">6-Digit Verification Code</label>
+                            <InputOTP 
+                              maxLength={6} 
+                              disabled={!orgEmailOtpSent || isOrgEmailVerified || isVerifyingOrgEmail}
+                              value={orgEmailOtp}
+                              onChange={(v) => { setOrgEmailOtp(v); if(v.length===6) handleVerifyOrgEmailOtp(v); }}
+                            >
+                              <InputOTPGroup className="gap-2">
+                                {[0, 1, 2, 3, 4, 5].map((index) => (
+                                  <InputOTPSlot key={index} index={index} className="w-12 h-12 text-lg font-bold rounded-xl border border-input bg-transparent" />
+                                ))}
+                              </InputOTPGroup>
+                            </InputOTP>
                           </div>
                         </div>
                       </div>
