@@ -2027,53 +2027,71 @@ export function OnboardingWizardPage() {
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">State <span className="text-danger">*</span></label>
-                            <Input
-                              list="state-options"
-                              value={formData["org_details"]?.["state"] ?? fetchedState ?? ""}
-                              onChange={(e) => handleFieldChange("org_details", "state", e.target.value)}
-                              placeholder="e.g. Delhi (NCT) or Assam"
-                            />
-                            <datalist id="state-options">
+                            <ResponsiveSelect
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={selectedState}
+                              onChange={(e) => {
+                                handleFieldChange("org_details", "state", e.target.value);
+                              }}
+                            >
+                              <option value="">Select State...</option>
+                              {selectedState && !stateOptions.includes(selectedState) && (
+                                <option value={selectedState}>{selectedState}</option>
+                              )}
                               {stateOptions.map(state => (
-                                <option key={state} value={state} />
+                                <option key={state} value={state}>{state}</option>
                               ))}
-                            </datalist>
+                            </ResponsiveSelect>
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">District</label>
-                            <Input
-                              list="district-options"
-                              value={formData["org_details"]?.["district"] ?? fetchedDistrict ?? ""}
-                              onChange={(e) => handleFieldChange("org_details", "district", e.target.value)}
-                              placeholder="e.g. South East Delhi or Biswanath"
-                            />
-                            <datalist id="district-options">
+                            <ResponsiveSelect
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={selectedDistrict}
+                              onChange={(e) => {
+                                handleFieldChange("org_details", "district", e.target.value);
+                              }}
+                            >
+                              <option value="">Select District...</option>
+                              {selectedDistrict && !districtOptions.includes(selectedDistrict) && (
+                                <option value={selectedDistrict}>{selectedDistrict}</option>
+                              )}
                               {districtOptions.map(dist => (
-                                <option key={dist} value={dist} />
+                                <option key={dist} value={dist}>{dist}</option>
                               ))}
-                            </datalist>
+                            </ResponsiveSelect>
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">Taluka</label>
-                            <Input
-                              list="taluka-options"
-                              value={formData["org_details"]?.["taluka"] ?? fetchedTaluka ?? ""}
+                            <ResponsiveSelect
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={selectedTaluka}
                               onChange={(e) => handleFieldChange("org_details", "taluka", e.target.value)}
-                              placeholder="e.g. Lajpat Nagar or Gohpur"
-                            />
-                            <datalist id="taluka-options">
+                            >
+                              <option value="">Select Taluka...</option>
+                              {selectedTaluka && !talukaOptions.includes(selectedTaluka) && (
+                                <option value={selectedTaluka}>{selectedTaluka}</option>
+                              )}
                               {talukaOptions.map(tal => (
-                                <option key={tal} value={tal} />
+                                <option key={tal} value={tal}>{tal}</option>
                               ))}
-                            </datalist>
+                            </ResponsiveSelect>
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">City or Village <span className="text-danger">*</span></label>
-                            <Input
-                              value={formData["org_details"]?.["city"] ?? fetchedCity ?? ""}
+                            <ResponsiveSelect
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={selectedCity}
                               onChange={(e) => handleFieldChange("org_details", "city", e.target.value)}
-                              placeholder="e.g. cb fn, Lajpat Nagar, or Gohpur"
-                            />
+                            >
+                              <option value="">Select City or Village...</option>
+                              {selectedCity && !cityOptions.includes(selectedCity) && (
+                                <option value={selectedCity}>{selectedCity}</option>
+                              )}
+                              {cityOptions.map((city: string) => (
+                                <option key={city} value={city}>{city}</option>
+                              ))}
+                            </ResponsiveSelect>
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">PIN Code <span className="text-danger">*</span></label>
