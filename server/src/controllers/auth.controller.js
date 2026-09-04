@@ -565,7 +565,7 @@ export const validateActivationToken = async (req, res) => {
 export const activateAdmin = async (req, res) => {
     try {
         await connectDB();
-        const { token, password, email, activationCode, subdomain, username, orgEmail, personalDetails, orgIdentity, orgDetails } = req.body;
+        const { token, password, email, activationCode, subdomain, username, orgEmail, personalDetails, orgIdentity, orgDetails, dynamicData } = req.body;
 
         if ((!token && !(email && activationCode)) || !password) {
             return res.status(400).json({ message: "Provide password plus either token or email + activationCode." });
@@ -647,6 +647,11 @@ export const activateAdmin = async (req, res) => {
         
         if (username) {
             user.username = username;
+        }
+
+        // Save profile photo if uploaded during onboarding
+        if (dynamicData?.profile_photo?.image) {
+            user.profilePicture = dynamicData.profile_photo.image;
         }
 
         if (!user.linkedProviders) user.linkedProviders = [];

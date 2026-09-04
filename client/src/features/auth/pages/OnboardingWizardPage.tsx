@@ -68,7 +68,7 @@ export function OnboardingWizardPage() {
   const [orgEmailOtpSent, setOrgEmailOtpSent] = useState(false);
   const [isVerifyingOrgEmail, setIsVerifyingOrgEmail] = useState(false);
   
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   // Sending OTP guards (prevent double-click)
   const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
@@ -1130,20 +1130,20 @@ export function OnboardingWizardPage() {
                           </div>
                           <div>
                             <label className="text-sm font-semibold mb-2 block">Your Custom Portal URL <span className="text-danger">*</span></label>
-                            <p className="text-xs text-muted-foreground mb-4">Choose a short, memorable slug for your login portal.</p>
-                            <div className="flex items-center rounded-xl border border-input bg-secondary/30 pl-4 overflow-hidden h-12 focus-within:ring-2 focus-within:ring-primary/20">
-                              <span className="text-muted-foreground font-medium text-sm">classgrid.com/</span>
+                            <p className="text-xs text-muted-foreground mb-4">Choose a short, memorable subdomain for your login portal.</p>
+                            <div className="flex items-center rounded-xl border border-input bg-secondary/30 overflow-hidden h-12 focus-within:ring-2 focus-within:ring-primary/20">
                               <Input 
                                 type="text" 
-                                className="flex-1 bg-transparent border-none outline-none shadow-none px-2 text-sm font-bold h-full focus-visible:ring-0 focus-visible:ring-offset-0"
+                                className="flex-1 bg-transparent border-none outline-none shadow-none px-4 text-sm font-bold h-full focus-visible:ring-0 focus-visible:ring-offset-0 text-right"
                                 placeholder="my-school"
                                 value={formData["org_identity"]?.["slug"] || ""}
                                 onChange={(e) => handleFieldChange("org_identity", "slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                               />
+                              <span className="text-muted-foreground font-medium text-sm pr-4 shrink-0">.classgrid.in</span>
                             </div>
                             {formData["org_identity"]?.["slug"] && (
                               <p className="text-emerald-500 text-xs mt-3 font-medium flex items-center gap-1">
-                                <CheckCircle2 className="size-3" /> URL looks great
+                                <CheckCircle2 className="size-3" /> {formData["org_identity"]["slug"]}.classgrid.in — looks great!
                               </p>
                             )}
                           </div>
