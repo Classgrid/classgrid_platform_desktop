@@ -6,7 +6,7 @@ import { validateActivationToken, activateAdmin, sendOnboardingOtp, verifyOnboar
 import {
   CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, Mail, Smartphone, Key, User,
   Upload, School, GraduationCap, Building2, Briefcase, PlaySquare, Eye, EyeOff, Moon, Sun, ChevronDown,
-  ArrowRight, GitBranch, BookOpen, ChevronUp
+  ArrowRight, GitBranch, BookOpen, ChevronUp, Globe, Sparkles
 } from "lucide-react";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/marketing_ui/alert-dialog";
 import { useTheme } from "next-themes";
@@ -403,6 +403,64 @@ export function OnboardingWizardPage() {
       .filter(Boolean)
       .sort();
   }, []);
+
+  const activeOrgName = formData["org_details"]?.["name"] || formData["organization_details"]?.["name"] || fetchedOrgName || "";
+  const activeShortName = formData["org_details"]?.["short_name"] || formData["organization_details"]?.["short_name"] || "";
+
+  const portalUrlSuggestions = useMemo(() => {
+    const list: string[] = [];
+
+    if (activeShortName.trim()) {
+      const cleanShort = activeShortName.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 20);
+      if (cleanShort && !list.includes(cleanShort)) list.push(cleanShort);
+    }
+
+    if (activeOrgName.trim()) {
+      // 1. Full clean slug
+      const cleanFull = activeOrgName
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .slice(0, 30);
+      if (cleanFull && !list.includes(cleanFull)) list.push(cleanFull);
+
+      // 2. First word / main brand word (if multiple words)
+      const words = activeOrgName.trim().split(/\s+/).map(w => w.toLowerCase().replace(/[^a-z0-9]/g, "")).filter(Boolean);
+      if (words.length > 1) {
+        const firstWord = words[0];
+        if (firstWord.length >= 3 && !list.includes(firstWord)) list.push(firstWord);
+
+        // 3. Initials
+        const initials = words.map(w => w[0]).join('');
+        if (initials.length >= 2 && !list.includes(initials)) list.push(initials);
+      }
+    }
+
+    // Fallbacks if list is empty
+    if (list.length === 0) {
+      list.push("my-school", "campus", "portal");
+    }
+
+    return list.slice(0, 4);
+  }, [activeOrgName, activeShortName]);
+
+  // Auto-fill custom portal URL slug with top suggestion if user hasn't explicitly set one
+  React.useEffect(() => {
+    if (!formData["org_identity"]?.["slug"] && portalUrlSuggestions.length > 0) {
+      const topSug = portalUrlSuggestions[0];
+      if (topSug && topSug !== "my-school") {
+        setFormData((prev) => ({
+          ...prev,
+          org_identity: {
+            ...(prev["org_identity"] || {}),
+            slug: topSug,
+          }
+        }));
+      }
+    }
+  }, [portalUrlSuggestions]);
 
   // Timer Effect
   React.useEffect(() => {
@@ -1652,53 +1710,120 @@ export function OnboardingWizardPage() {
                   })()}
 
                   {/* ── RENDER: ORG IDENTITY (FIXED STEP) ── */}
-                  {currentStepData.type === "fixed_org_identity" && (
-                    <div className="space-y-6">
-                      <div className="bg-white dark:bg-card p-8 rounded-3xl shadow-sm border border-border/60">
-                        <h3 className="text-xl font-bold mb-8">Brand & Portal Address</h3>
-                        <div className="grid md:grid-cols-2 gap-10">
-                          <div>
-                            <label className="text-sm font-semibold mb-2 block">Upload Institute Logo</label>
-                            <p className="text-xs text-muted-foreground mb-4">A square, transparent PNG works best.</p>
-                            <div className="flex justify-start">
-                              <ImageUploadField
-                                label="Upload Logo"
-                                value={formData["org_identity"]?.["logo"]}
-                                onChange={(base64) => handleFieldChange("org_identity", "logo", base64)}
-                                circular={false}
-                              />
+                  {currentStepData.type === "fixed_org_identity" && (() => {
+                    const currentSlug = formData["org_identity"]?.["slug"] || "";
+                    const previewUrl = currentSlug ? `${currentSlug}.classgrid.in` : "";
+
+                    return (
+                      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="bg-white dark:bg-card p-8 rounded-3xl shadow-sm border border-border/60">
+                          <div className="flex items-center gap-3 mb-8 pb-6 border-b border-border/60">
+                            <div className="size-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center font-bold">
+                              <Globe className="size-6 text-primary" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold text-foreground">Brand & Custom Portal Address</h3>
+                              <p className="text-xs text-muted-foreground mt-0.5">Customize your institution logo and dedicated URL for portal access.</p>
                             </div>
                           </div>
-                          <div>
-                            <label htmlFor="slug-input" className="text-sm font-semibold mb-2 block cursor-pointer">Your Custom Portal URL <span className="text-danger">*</span></label>
-                            <p className="text-xs text-muted-foreground mb-4">Choose a short, memorable subdomain for your login portal.</p>
-                            {!formData["org_identity"]?.["slug"] && fetchedOrgName && (
-                              <button type="button" className="text-xs text-primary font-medium mb-2 hover:underline" onClick={() => {
-                                const suggested = fetchedOrgName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 30);
-                                handleFieldChange("org_identity", "slug", suggested);
-                              }}>💡 Suggest: {fetchedOrgName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 30)}.classgrid.in</button>
-                            )}
-                            <div className="flex items-center rounded-xl border border-input bg-secondary/30 overflow-hidden h-12 focus-within:ring-2 focus-within:ring-primary/20">
-                              <Input
-                                id="slug-input"
-                                type="text"
-                                className="flex-1 bg-transparent border-none outline-none shadow-none px-4 text-sm font-bold h-full focus-visible:ring-0 focus-visible:ring-offset-0 text-right"
-                                placeholder="my-school"
-                                value={formData["org_identity"]?.["slug"] || ""}
-                                onChange={(e) => handleFieldChange("org_identity", "slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                              />
-                              <span className="text-muted-foreground font-medium text-sm pr-4 shrink-0">.classgrid.in</span>
-                            </div>
-                            {formData["org_identity"]?.["slug"] && (
-                              <p className="text-emerald-500 text-xs mt-3 font-medium flex items-center gap-1">
-                                <CheckCircle2 className="size-3" /> {formData["org_identity"]["slug"]}.classgrid.in — looks great!
+
+                          <div className="grid md:grid-cols-2 gap-10">
+                            <div>
+                              <label className="text-sm font-semibold mb-2 block text-foreground">Upload Institute Logo</label>
+                              <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                                Upload a high-resolution logo for your login screen and official reports. A square transparent PNG works best.
                               </p>
-                            )}
+                              <div className="flex justify-start">
+                                <ImageUploadField
+                                  label="Upload Logo"
+                                  value={formData["org_identity"]?.["logo"]}
+                                  onChange={(base64) => handleFieldChange("org_identity", "logo", base64)}
+                                  circular={false}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-4">
+                              <div>
+                                <label htmlFor="slug-input" className="text-sm font-semibold mb-1 block cursor-pointer text-foreground">
+                                  Your Custom Portal Subdomain <span className="text-danger">*</span>
+                                </label>
+                                <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                                  Choose a short, memorable subdomain for your portal login URL.
+                                </p>
+
+                                {/* Input Group with Left Prefix & Right Suffix Badge */}
+                                <div className="flex items-center rounded-2xl border-2 border-border/80 bg-background overflow-hidden focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all duration-200 shadow-sm h-12 hover:border-border">
+                                  <div className="flex items-center gap-1.5 px-3.5 h-full bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-mono text-xs font-semibold border-r border-border shrink-0 select-none">
+                                    <Globe className="size-3.5 text-primary" />
+                                    <span>https://</span>
+                                  </div>
+                                  <input
+                                    id="slug-input"
+                                    type="text"
+                                    className="flex-1 bg-transparent border-none outline-none px-3.5 text-sm font-bold tracking-tight text-foreground h-full focus:ring-0 placeholder:text-muted-foreground/30 placeholder:font-normal"
+                                    placeholder="e.g. cambridge-school"
+                                    value={currentSlug}
+                                    onChange={(e) => handleFieldChange("org_identity", "slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                                  />
+                                  <div className="flex items-center gap-1 px-3 py-1.5 mr-2 rounded-lg bg-primary/10 text-primary font-bold text-xs border border-primary/20 shrink-0 select-none">
+                                    .classgrid.in
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Smart Dynamic Suggestions */}
+                              <div className="space-y-2 pt-1">
+                                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                                  <Sparkles className="size-3.5 text-amber-500 animate-pulse" />
+                                  <span>Suggested for your campus (click to apply):</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {portalUrlSuggestions.map((sug) => (
+                                    <button
+                                      type="button"
+                                      key={sug}
+                                      onClick={() => handleFieldChange("org_identity", "slug", sug)}
+                                      className={cn(
+                                        "px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border flex items-center gap-1.5 cursor-pointer",
+                                        currentSlug === sug
+                                          ? "bg-primary text-primary-foreground border-primary shadow-sm scale-105"
+                                          : "bg-secondary/60 hover:bg-secondary text-secondary-foreground border-border/80 hover:border-primary/40"
+                                      )}
+                                    >
+                                      <span>{sug}.classgrid.in</span>
+                                      {currentSlug === sug && <CheckCircle2 className="size-3 text-primary-foreground" />}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Live Active Preview Banner */}
+                              {currentSlug ? (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 5 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center justify-between shadow-sm"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
+                                    <span>Portal URL: <strong className="font-bold underline tracking-wide">https://{previewUrl}</strong></span>
+                                  </div>
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                                    Ready
+                                  </span>
+                                </motion.div>
+                              ) : (
+                                <p className="text-xs text-muted-foreground/70 font-medium">
+                                  Enter lowercase letters, numbers, or hyphens.
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* ── RENDER: ORG DETAILS (FIXED STEP) ── */}
                   {currentStepData.type === "fixed_org_details" && (
