@@ -27,8 +27,10 @@ import erpData from "@/data/full_erp_data.json";
 
 const getTerminologyLabels = (orgType: string) => {
   if (orgType === "School") return { orgLabel: "School", level1: "Standard", level2: "Division", level3: "Student" };
-  if (orgType === "College") return { orgLabel: "College", level1: "Department", level2: "Year", level3: "Student" };
-  if (orgType === "Coaching") return { orgLabel: "Institute", level1: "Course", level2: "Batch", level3: "Student" };
+  if (orgType === "Junior College") return { orgLabel: "Junior College", level1: "Class (11th/12th)", level2: "Stream & Div", level3: "Student" };
+  if (orgType === "Engineering College") return { orgLabel: "College", level1: "Department", level2: "Year", level3: "Student" };
+  if (orgType === "Diploma College") return { orgLabel: "Polytechnic", level1: "Department", level2: "Year", level3: "Student" };
+  if (orgType === "Coaching Institute" || orgType === "Coaching") return { orgLabel: "Institute", level1: "Course", level2: "Batch", level3: "Student" };
   return { orgLabel: "Organization", level1: "Level 1", level2: "Level 2", level3: "Member" };
 };
 
@@ -1203,9 +1205,11 @@ export function OnboardingWizardPage() {
                     const currentOrgType = formData["org_details"]?.type || fetchedOrgType || "Engineering";
                     const terms = getTerminologyLabels(currentOrgType);
                     const termDefinitions: Record<string, Record<string, string>> = {
-                      School: { [terms.orgLabel]: "Your school or institution", [terms.level1]: "Grade level like 1st, 2nd, 3rd Standard", [terms.level2]: "Divisions within a standard (e.g. A, B, C)", [terms.level3]: "Learners enrolled in a section" },
-                      College: { [terms.orgLabel]: "Your college or university", [terms.level1]: "Academic department (e.g. Computer Science)", [terms.level2]: "Specific program or course year", [terms.level3]: "Sub-groups within a program" },
-                      Coaching: { [terms.orgLabel]: "Your coaching centre", [terms.level1]: "Target exam or course stream", [terms.level2]: "Batches scheduled at different times", [terms.level3]: "Students enrolled in a batch" },
+                      "School": { [terms.orgLabel]: "Your school or institution", [terms.level1]: "Grade level like 1st, 2nd, 3rd Standard", [terms.level2]: "Divisions within a standard (e.g. A, B, C)", [terms.level3]: "Learners enrolled in a section" },
+                      "Junior College": { [terms.orgLabel]: "Your junior college", [terms.level1]: "Class (11th or 12th Standard)", [terms.level2]: "Stream (Science, Commerce, etc.) and Division", [terms.level3]: "Students enrolled in the class" },
+                      "Engineering College": { [terms.orgLabel]: "Your engineering college", [terms.level1]: "Academic department (e.g. Computer Science)", [terms.level2]: "Specific degree program and batch year", [terms.level3]: "Students enrolled in the program" },
+                      "Diploma College": { [terms.orgLabel]: "Your diploma college or polytechnic", [terms.level1]: "Academic department (e.g. Mechanical)", [terms.level2]: "Specific diploma program and year", [terms.level3]: "Students enrolled in the program" },
+                      "Coaching Institute": { [terms.orgLabel]: "Your coaching centre", [terms.level1]: "Target exam or course stream", [terms.level2]: "Batches scheduled at different times", [terms.level3]: "Students enrolled in a batch" },
                     };
                     const defs = termDefinitions[currentOrgType] || termDefinitions["School"] || {};
                     return (
