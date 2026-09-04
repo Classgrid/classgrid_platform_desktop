@@ -1288,7 +1288,7 @@ export function OnboardingWizardPage() {
                             </div>
                           </div>
                           <div>
-                            <label className="text-sm font-semibold mb-2 block">Your Custom Portal URL <span className="text-danger">*</span></label>
+                            <label htmlFor="slug-input" className="text-sm font-semibold mb-2 block cursor-pointer">Your Custom Portal URL <span className="text-danger">*</span></label>
                             <p className="text-xs text-muted-foreground mb-4">Choose a short, memorable subdomain for your login portal.</p>
                             {!formData["org_identity"]?.["slug"] && fetchedOrgName && (
                               <button type="button" className="text-xs text-primary font-medium mb-2 hover:underline" onClick={() => {
@@ -1297,7 +1297,8 @@ export function OnboardingWizardPage() {
                               }}>💡 Suggest: {fetchedOrgName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 30)}.classgrid.in</button>
                             )}
                             <div className="flex items-center rounded-xl border border-input bg-secondary/30 overflow-hidden h-12 focus-within:ring-2 focus-within:ring-primary/20">
-                              <Input
+                              <input
+                                id="slug-input"
                                 type="text"
                                 className="flex-1 bg-transparent border-none outline-none shadow-none px-4 text-sm font-bold h-full focus-visible:ring-0 focus-visible:ring-offset-0 text-right"
                                 placeholder="my-school"
