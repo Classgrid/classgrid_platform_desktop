@@ -1415,92 +1415,68 @@ export function OnboardingWizardPage() {
 
                     return (
                       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="grid md:grid-cols-3 gap-6">
-                          {/* Main visual flowchart */}
-                          <div className="md:col-span-2 bg-slate-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
-                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-900 to-slate-900" />
-                            <div className="relative z-10 flex flex-col items-center">
-                              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold mb-3">
-                                <span>{terms.planName}</span>
-                              </div>
-                              <h3 className="text-2xl font-bold mb-1">Classgrid Academic Hierarchy</h3>
-                              <p className="text-slate-400 mb-8 text-center max-w-md">
-                                Selected Institution Type: <span className="font-semibold text-indigo-300">{terms.displayName}</span>
-                              </p>
+                        {/* Main visual flowchart */}
+                        <div className="w-full max-w-2xl mx-auto bg-slate-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
+                          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-900 to-slate-900" />
+                          <div className="relative z-10 flex flex-col items-center">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold mb-3">
+                              <span>{terms.planName}</span>
+                            </div>
+                            <h3 className="text-2xl font-bold mb-1">Classgrid Academic Hierarchy</h3>
+                            <p className="text-slate-400 mb-8 text-center max-w-md">
+                              Selected Institution Type: <span className="font-semibold text-indigo-300">{terms.displayName}</span>
+                            </p>
 
-                              <div className="flex flex-col items-center gap-2 w-full max-w-sm">
-                                {terms.hierarchyTree.map((node, i) => (
-                                  <React.Fragment key={i}>
-                                    <motion.div
-                                      className="bg-white/10 backdrop-blur-md p-3.5 rounded-xl border border-white/20 w-full shadow-lg flex items-center justify-between px-5"
-                                      initial={{ y: -20, opacity: 0 }}
-                                      animate={{ y: 0, opacity: 1 }}
-                                      transition={{ delay: 0.1 * (i + 1) }}
-                                    >
-                                      <div className="flex items-center gap-3">
-                                        <node.icon className={`size-5 ${node.color}`} />
-                                        <div className="text-left">
-                                          <div className="font-bold text-sm text-white">{node.title}</div>
-                                          <div className="text-[11px] text-slate-400">{node.subTitle}</div>
-                                        </div>
+                            <div className="flex flex-col items-center gap-2 w-full max-w-sm">
+                              {terms.hierarchyTree.map((node, i) => (
+                                <React.Fragment key={i}>
+                                  <motion.div
+                                    className="bg-white/10 backdrop-blur-md p-3.5 rounded-xl border border-white/20 w-full shadow-lg flex items-center justify-between px-5"
+                                    initial={{ y: -20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.1 * (i + 1) }}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <node.icon className={`size-5 ${node.color}`} />
+                                      <div className="text-left">
+                                        <div className="font-bold text-sm text-white">{node.title}</div>
+                                        <div className="text-[11px] text-slate-400">{node.subTitle}</div>
                                       </div>
-                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 text-slate-300">
-                                        Level {i + 1}
-                                      </span>
-                                    </motion.div>
-                                    {i < terms.hierarchyTree.length - 1 && (
-                                      <div className="w-0.5 h-4 bg-indigo-500/50 my-0.5" />
-                                    )}
-                                  </React.Fragment>
-                                ))}
-
-                                <div className="w-0.5 h-4 bg-indigo-500/50 my-0.5" />
-
-                                <div className="flex gap-4 mt-2 w-full justify-center">
-                                  <motion.div
-                                    className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-36 text-center shadow-lg"
-                                    initial={{ x: -20, opacity: 0 }}
-                                    animate={{ x: 0, opacity: 1 }}
-                                    transition={{ delay: 0.1 * (terms.hierarchyTree.length + 1) }}
-                                  >
-                                    <GraduationCap className="size-5 mx-auto mb-2 text-purple-400" />
-                                    <div className="font-bold text-sm">Student</div>
-                                    <div className="text-xs text-slate-400">ID: {terms.studentId}</div>
+                                    </div>
+                                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 text-slate-300">
+                                      Level {i + 1}
+                                    </span>
                                   </motion.div>
-                                  <motion.div
-                                    className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-36 text-center shadow-lg"
-                                    initial={{ x: 20, opacity: 0 }}
-                                    animate={{ x: 0, opacity: 1 }}
-                                    transition={{ delay: 0.1 * (terms.hierarchyTree.length + 1) }}
-                                  >
-                                    <User className="size-5 mx-auto mb-2 text-rose-400" />
-                                    <div className="font-bold text-sm">{terms.teacher}</div>
-                                    <div className="text-xs text-slate-400">Instructor</div>
-                                  </motion.div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                                  {i < terms.hierarchyTree.length - 1 && (
+                                    <div className="w-0.5 h-4 bg-indigo-500/50 my-0.5" />
+                                  )}
+                                </React.Fragment>
+                              ))}
 
-                          {/* Side panel: What these mean? */}
-                          <div className="bg-white dark:bg-card p-6 rounded-3xl shadow-sm border border-border/60 flex flex-col justify-between">
-                            <div>
-                              <h4 className="text-lg font-bold mb-4 flex items-center gap-2">✨ Other Components</h4>
-                              <div className="space-y-4">
-                                <div className="border-l-2 border-indigo-400 pl-3">
-                                  <p className="font-semibold text-sm text-foreground">{terms.assignment}</p>
-                                  <p className="text-xs text-muted-foreground">Term used for assignments</p>
-                                </div>
-                                <div className="border-l-2 border-emerald-400 pl-3">
-                                  <p className="font-semibold text-sm text-foreground">{terms.exam}</p>
-                                  <p className="text-xs text-muted-foreground">Term used for examinations</p>
-                                </div>
+                              <div className="w-0.5 h-4 bg-indigo-500/50 my-0.5" />
+
+                              <div className="flex gap-4 mt-2 w-full justify-center">
+                                <motion.div
+                                  className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-36 text-center shadow-lg"
+                                  initial={{ x: -20, opacity: 0 }}
+                                  animate={{ x: 0, opacity: 1 }}
+                                  transition={{ delay: 0.1 * (terms.hierarchyTree.length + 1) }}
+                                >
+                                  <GraduationCap className="size-5 mx-auto mb-2 text-purple-400" />
+                                  <div className="font-bold text-sm">Student</div>
+                                  <div className="text-xs text-slate-400">ID: {terms.studentId}</div>
+                                </motion.div>
+                                <motion.div
+                                  className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-36 text-center shadow-lg"
+                                  initial={{ x: 20, opacity: 0 }}
+                                  animate={{ x: 0, opacity: 1 }}
+                                  transition={{ delay: 0.1 * (terms.hierarchyTree.length + 1) }}
+                                >
+                                  <User className="size-5 mx-auto mb-2 text-rose-400" />
+                                  <div className="font-bold text-sm">{terms.teacher}</div>
+                                  <div className="text-xs text-slate-400">Instructor</div>
+                                </motion.div>
                               </div>
-                            </div>
-                            <div className="mt-6 p-3 bg-primary/5 rounded-xl border border-primary/10">
-                              <p className="text-xs text-muted-foreground">
-                                These labels will automatically customize your dashboards, gradebooks, attendance sheets, and certificates for <span className="font-semibold text-foreground">{terms.displayName}</span>.
-                              </p>
                             </div>
                           </div>
                         </div>
