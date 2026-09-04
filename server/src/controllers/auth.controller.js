@@ -537,7 +537,7 @@ export const validateActivationToken = async (req, res) => {
         let orgData = null;
         if (user.organization_id) {
             const Organization = (await import("../models/Organization.js")).default;
-            orgData = await Organization.findById(user.organization_id).select("org_type structure_type subdomain name address city state billing_settings").lean();
+            orgData = await Organization.findById(user.organization_id).select("org_type structure_type subdomain name address city state website social_links billing_settings").lean();
         }
 
         return res.status(200).json({ 
@@ -553,6 +553,7 @@ export const validateActivationToken = async (req, res) => {
             address: orgData?.address || "",
             city: orgData?.city || orgData?.billing_settings?.city || "",
             state: orgData?.state || orgData?.billing_settings?.state || "",
+            website: orgData?.website || orgData?.social_links?.website_url || "",
         });
     } catch (err) {
         console.error("Validate Activation Token Error:", err);

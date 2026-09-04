@@ -308,6 +308,7 @@ export function OnboardingWizardPage() {
   const [fetchedAddress, setFetchedAddress] = useState("");
   const [fetchedCity, setFetchedCity] = useState("");
   const [fetchedState, setFetchedState] = useState("");
+  const [fetchedWebsite, setFetchedWebsite] = useState("");
 
 
 
@@ -648,6 +649,7 @@ export function OnboardingWizardPage() {
             if (res.address) setFetchedAddress(res.address);
             if (res.city) setFetchedCity(res.city);
             if (res.state) setFetchedState(res.state);
+            if (res.website) setFetchedWebsite(res.website);
 
             // Pre-fill formData from MongoDB demo lead
             setFormData(prev => ({
@@ -658,6 +660,7 @@ export function OnboardingWizardPage() {
                 address: prev["org_details"]?.address || res.address || "",
                 state: prev["org_details"]?.state || res.state || "",
                 city: prev["org_details"]?.city || res.city || "",
+                website: prev["org_details"]?.website || res.website || "",
                 board: prev["org_details"]?.board || "CBSE",
                 ...(prev["org_details"] || {})
               }
@@ -2006,7 +2009,7 @@ export function OnboardingWizardPage() {
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">Website URL</label>
                             <Input
-                              value={formData["org_details"]?.["website"] || ""}
+                              value={formData["org_details"]?.["website"] || fetchedWebsite || ""}
                               onChange={(e) => handleFieldChange("org_details", "website", e.target.value)}
                               placeholder="https://www.yourschool.com"
                             />

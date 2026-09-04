@@ -122,7 +122,7 @@ export function getGoogleAuthUrl({ audience, role }: GoogleAuthUrlPayload) {
 }
 
 export async function validateActivationToken(token: string) {
-  const response = await apiClient.post<{ valid: boolean; email?: string; name?: string; role?: string; mode?: string; orgType?: string; structureType?: string; subdomain?: string; orgName?: string; address?: string; city?: string; state?: string }>("/api/auth/validate-activation-token", {
+  const response = await apiClient.post<{ valid: boolean; email?: string; name?: string; role?: string; mode?: string; orgType?: string; structureType?: string; subdomain?: string; orgName?: string; address?: string; city?: string; state?: string; website?: string }>("/api/auth/validate-activation-token", {
     token,
   });
   return response.data;
