@@ -89,8 +89,55 @@ export function OnboardingWizardPage() {
 
   if (isInitializing) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="h-screen bg-slate-50 dark:bg-background flex overflow-hidden">
+        {/* Skeleton Sidebar */}
+        <div className="hidden lg:flex w-[260px] bg-white dark:bg-card border-r border-border/50 flex-col p-6 z-10 shadow-xl">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="size-10 bg-muted/60 animate-pulse rounded-xl" />
+            <div className="h-6 w-24 bg-muted/60 animate-pulse rounded" />
+          </div>
+          <div className="space-y-8 flex-1 pt-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="flex gap-4 items-start">
+                <div className="size-10 bg-muted/60 animate-pulse rounded-full shrink-0" />
+                <div className="space-y-2 flex-1 pt-1">
+                  <div className="h-4 bg-muted/60 animate-pulse rounded w-3/4" />
+                  <div className="h-3 bg-muted/60 animate-pulse rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Skeleton Main Content */}
+        <div className="flex-1 flex flex-col bg-slate-50/50 dark:bg-background overflow-hidden relative">
+          <div className="flex-1 overflow-y-auto">
+            <div className="w-full max-w-4xl mx-auto px-4 sm:px-8 xl:px-12 py-8 sm:py-12 mt-12 sm:mt-16 xl:mt-20">
+              <div className="h-8 w-24 bg-muted/60 animate-pulse rounded-full mb-6" />
+              <div className="h-10 w-2/3 bg-muted/60 animate-pulse rounded mb-4" />
+              <div className="h-5 w-1/2 bg-muted/60 animate-pulse rounded mb-12" />
+              
+              <div className="bg-white dark:bg-card p-6 rounded-2xl border border-border/60 shadow-sm mb-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="size-10 bg-muted/60 animate-pulse rounded-xl" />
+                  <div className="h-6 w-48 bg-muted/60 animate-pulse rounded" />
+                </div>
+                <div className="space-y-4">
+                  <div className="h-12 bg-muted/60 animate-pulse rounded-lg" />
+                  <div className="h-12 bg-muted/60 animate-pulse rounded-lg" />
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-card p-6 rounded-2xl border border-border/60 shadow-sm">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="size-10 bg-muted/60 animate-pulse rounded-xl" />
+                  <div className="h-6 w-48 bg-muted/60 animate-pulse rounded" />
+                </div>
+                <div className="h-24 bg-muted/60 animate-pulse rounded-lg" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
