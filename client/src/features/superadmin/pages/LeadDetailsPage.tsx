@@ -468,7 +468,7 @@ export function LeadDetailsPage() {
                     </div>
                   )}
 
-                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white mb-2" onClick={() => window.open(`/superadmin/detail/${provisionedData?.orgName || 'unknown'}`, '_self')}>
+                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white mb-2" onClick={() => window.open(`/superadmin/detail/${provisionedData?.orgId || provisionedData?.orgName || 'unknown'}`, '_self')}>
                     View Organization Details &rarr;
                   </Button>
                   
@@ -562,7 +562,7 @@ export function LeadDetailsPage() {
             const orgId = result?.organization?._id;
             
             // Auto redirect to the org details page immediately
-            navigate(`/superadmin/detail/${orgName}`);
+            navigate(`/superadmin/detail/${orgId}`);
           }}
         />
       )}

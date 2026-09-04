@@ -45,12 +45,10 @@ function OrgDetailsLoading() {
 }
 
 export function OrgDetailsPage() {
-  const { orgName } = useParams<{ orgName: string }>();
-  const location = useLocation();
-  const orgId = location.state?.orgId;
+  const { orgId } = useParams<{ orgId: string }>();
   const controlCenter = useOrganizationControlCenter(orgId);
   const organizationName =
-    controlCenter.profile?.name ?? controlCenter.detail?.name ?? orgName ?? "Organization details";
+    controlCenter.profile?.name ?? controlCenter.detail?.name ?? "Organization details";
   const breadcrumbItems = useMemo(
     () => {
       const isDomains = window.location.pathname.includes("/domains");

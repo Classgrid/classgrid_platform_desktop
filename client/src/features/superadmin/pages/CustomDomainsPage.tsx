@@ -126,7 +126,7 @@ export function CustomDomainsPage() {
         const realName = row.owner_id?.name || row.ownerName || "Unknown Admin";
         return (
           <span 
-            onClick={() => navigate(`/superadmin/detail/${row.name || "unknown"}`, { state: { orgId: row._id } })}
+            onClick={() => navigate(`/superadmin/detail/${row._id}`)}
             className="text-sm font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1.5"
           >
             {realName} <Info size={14} />
