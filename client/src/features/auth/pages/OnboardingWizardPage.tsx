@@ -66,6 +66,34 @@ export function OnboardingWizardPage() {
   const [isOrgEmailVerified, setIsOrgEmailVerified] = useState(false);
   const [orgEmailOtpSent, setOrgEmailOtpSent] = useState(false);
   const [isVerifyingOrgEmail, setIsVerifyingOrgEmail] = useState(false);
+  
+  const [isInitializing, setIsInitializing] = useState(true);
+  
+  // OTP Timers
+  const [emailOtpTimer, setEmailOtpTimer] = useState(0);
+  const [phoneOtpTimer, setPhoneOtpTimer] = useState(0);
+  const [orgEmailOtpTimer, setOrgEmailOtpTimer] = useState(0);
+
+  // Timer Effect
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (emailOtpTimer > 0 || phoneOtpTimer > 0 || orgEmailOtpTimer > 0) {
+      interval = setInterval(() => {
+        setEmailOtpTimer(prev => (prev > 0 ? prev - 1 : 0));
+        setPhoneOtpTimer(prev => (prev > 0 ? prev - 1 : 0));
+        setOrgEmailOtpTimer(prev => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [emailOtpTimer, phoneOtpTimer, orgEmailOtpTimer]);
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   if (!token) {
     return (
@@ -94,9 +122,10 @@ export function OnboardingWizardPage() {
     try {
       await sendOnboardingOtp({ target: orgEmail, type: "email" });
       setOrgEmailOtpSent(true);
-      showAlert("OTP sent to organization email!");
+      setOrgEmailOtpTimer(30);
+      toast.success("OTP sent to organization email!");
     } catch (e: any) {
-      showAlert(e.message || "Failed to send OTP");
+      toast.error(e.message || "Failed to send OTP");
     }
   };
 
@@ -109,7 +138,7 @@ export function OnboardingWizardPage() {
         setIsOrgEmailVerified(true);
       }
     } catch (e: any) {
-      showAlert(e.message || "Invalid OTP");
+      toast.error(e.message || "Invalid OTP");
     } finally {
       setIsVerifyingOrgEmail(false);
     }
@@ -120,9 +149,10 @@ export function OnboardingWizardPage() {
     try {
       await sendOnboardingOtp({ target: fetchedEmail, type: "email" });
       setEmailOtpSent(true);
-      showAlert("OTP sent to your email!");
+      setEmailOtpTimer(30);
+      toast.success("OTP sent to your email!");
     } catch (e: any) {
-      showAlert(e.message || "Failed to send OTP");
+      toast.error(e.message || "Failed to send OTP");
     }
   };
 
@@ -135,7 +165,7 @@ export function OnboardingWizardPage() {
         setIsEmailVerified(true);
       }
     } catch (e: any) {
-      showAlert(e.message || "Invalid OTP");
+      toast.error(e.message || "Invalid OTP");
     } finally {
       setIsVerifyingEmail(false);
     }
@@ -149,9 +179,10 @@ export function OnboardingWizardPage() {
     try {
       await sendOnboardingOtp({ target: phone, type: "phone" });
       setPhoneOtpSent(true);
-      showAlert("OTP sent to your phone!");
+      setPhoneOtpTimer(30);
+      toast.success("OTP sent to your phone!");
     } catch (e: any) {
-      showAlert(e.message || "Failed to send OTP");
+      toast.error(e.message || "Failed to send OTP");
     }
   };
 
@@ -164,7 +195,7 @@ export function OnboardingWizardPage() {
         setIsPhoneVerified(true);
       }
     } catch (e: any) {
-      showAlert(e.message || "Invalid OTP");
+      toast.error(e.message || "Invalid OTP");
     } finally {
       setIsVerifyingPhone(false);
     }
@@ -212,7 +243,12 @@ export function OnboardingWizardPage() {
         })
         .catch((err) => {
           console.error("Token validation failed:", err);
+        })
+        .finally(() => {
+          setIsInitializing(false);
         });
+    } else {
+      setIsInitializing(false);
     }
   }, [token]);
   // Central form state: sectionKey -> { fieldKey: value }
@@ -590,7 +626,7 @@ export function OnboardingWizardPage() {
             </div>
             {/* Org Name */}
             <h2 className="font-extrabold text-lg leading-tight tracking-tight text-foreground">
-              Classgrid<br />
+              <span>Classgrid</span><br />
               {/* Platform is our repo name, ERP is our product name */}
               <span className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">ERP</span>
             </h2>
@@ -772,50 +808,48 @@ export function OnboardingWizardPage() {
                           <h3 className="text-lg font-bold">1. Verify your Email</h3>
                         </div>
                         <div className="grid md:grid-cols-2 gap-6">
-                          <div>
+                          <div className={isEmailVerified ? "md:col-span-2" : ""}>
                             <label className="text-xs font-semibold text-foreground mb-1.5 block">Email Address (From Invite)</label>
                             <div className="flex gap-2">
                               <Input value={fetchedEmail || "Loading..."} readOnly className="bg-secondary/50 h-10 flex-1 text-sm font-medium" />
                               {!isEmailVerified && (
                                 <Button 
                                   variant="outline" 
-                                  className="h-10 px-4 text-sm font-semibold"
+                                  className="h-10 px-4 text-sm font-semibold min-w-[110px]"
                                   onClick={handleSendEmailOtp}
-                                  disabled={emailOtpSent}
+                                  disabled={emailOtpSent && emailOtpTimer > 0}
                                 >
-                                  {emailOtpSent ? "Sent" : "Send OTP"}
+                                  {emailOtpTimer > 0 ? `Resend (${emailOtpTimer}s)` : emailOtpSent ? "Resend" : "Send OTP"}
                                 </Button>
                               )}
                             </div>
                             {isEmailVerified && (
                               <p className="text-emerald-600 text-sm mt-2 font-medium flex items-center gap-1">
-                                <CheckCircle2 className="size-4" /> Verified
+                                <CheckCircle2 className="size-4" /> Your email was securely verified via your activation link.
                               </p>
                             )}
                           </div>
-                          <div className="flex-1">
-                            {isEmailVerified ? (
-                              <div className="h-full flex flex-col justify-center">
-                                <p className="text-sm text-emerald-600 font-medium">Your email was securely verified via your activation link.</p>
-                              </div>
-                            ) : emailOtpSent ? (
-                              <>
-                                <label className="text-xs font-semibold text-foreground mb-1.5 block">6-Digit Verification Code</label>
-                                <InputOTP 
-                                  maxLength={6} 
-                                  disabled={isVerifyingEmail}
-                                  value={emailOtp}
-                                  onChange={(v) => { setEmailOtp(v); if(v.length===6) handleVerifyEmailOtp(v); }}
-                                >
-                                  <InputOTPGroup className="gap-2">
-                                    {[0, 1, 2, 3, 4, 5].map((index) => (
-                                      <InputOTPSlot key={index} index={index} className="w-12 h-12 text-lg font-bold rounded-xl border border-input bg-transparent" />
-                                    ))}
-                                  </InputOTPGroup>
-                                </InputOTP>
-                              </>
-                            ) : null}
-                          </div>
+                          {!isEmailVerified && (
+                            <div className="flex-1">
+                              {emailOtpSent ? (
+                                <>
+                                  <label className="text-xs font-semibold text-foreground mb-1.5 block">6-Digit Verification Code</label>
+                                  <InputOTP 
+                                    maxLength={6} 
+                                    disabled={isVerifyingEmail}
+                                    value={emailOtp}
+                                    onChange={(v) => { setEmailOtp(v); if(v.length===6) handleVerifyEmailOtp(v); }}
+                                  >
+                                    <InputOTPGroup className="gap-2">
+                                      {[0, 1, 2, 3, 4, 5].map((index) => (
+                                        <InputOTPSlot key={index} index={index} className="w-12 h-12 text-lg font-bold rounded-xl border border-input bg-transparent" />
+                                      ))}
+                                    </InputOTPGroup>
+                                  </InputOTP>
+                                </>
+                              ) : null}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -829,7 +863,7 @@ export function OnboardingWizardPage() {
                         </div>
                         <p className="text-sm text-muted-foreground mb-4">A verified phone number is strictly required to access the platform.</p>
                         <div className="grid md:grid-cols-2 gap-6">
-                          <div>
+                          <div className={isPhoneVerified ? "md:col-span-2" : ""}>
                             <label className="text-xs font-semibold text-foreground mb-1.5 block">Mobile Number</label>
                             <div className="flex gap-2">
                               <Input defaultValue="+91" disabled className="w-16 bg-secondary/50 h-10 text-center text-sm font-medium" />
@@ -842,43 +876,41 @@ export function OnboardingWizardPage() {
                               />
                               {!isPhoneVerified && (
                                 <Button 
-                                  className="h-10 px-4 text-sm font-semibold"
+                                  className="h-10 px-4 text-sm font-semibold min-w-[110px]"
                                   onClick={handleSendPhoneOtp}
-                                  disabled={phoneOtpSent && phone.length === 10}
+                                  disabled={(phoneOtpSent && phone.length === 10 && phoneOtpTimer > 0) || phone.length < 10}
                                 >
-                                  {phoneOtpSent ? "Resend" : "Send OTP"}
+                                  {phoneOtpTimer > 0 ? `Resend (${phoneOtpTimer}s)` : phoneOtpSent ? "Resend" : "Send OTP"}
                                 </Button>
                               )}
                             </div>
                             {isPhoneVerified && (
                               <p className="text-emerald-600 text-sm mt-2 font-medium flex items-center gap-1">
-                                <CheckCircle2 className="size-4" /> Verified
+                                <CheckCircle2 className="size-4" /> Phone number verified.
                               </p>
                             )}
                           </div>
-                          <div className="flex-1">
-                            {isPhoneVerified ? (
-                              <div className="h-full flex flex-col justify-center">
-                                <p className="text-sm text-emerald-600 font-medium flex items-center gap-2"><CheckCircle2 className="size-4" /> Phone number verified.</p>
-                              </div>
-                            ) : phoneOtpSent ? (
-                              <>
-                                <label className="text-xs font-semibold text-foreground mb-1.5 block">SMS Verification Code</label>
-                                <InputOTP 
-                                  maxLength={6}
-                                  disabled={isVerifyingPhone}
-                                  value={phoneOtp}
-                                  onChange={(v) => { setPhoneOtp(v); if(v.length===6) handleVerifyPhoneOtp(v); }}
-                                >
-                                  <InputOTPGroup className="gap-2">
-                                    {[0, 1, 2, 3, 4, 5].map((index) => (
-                                      <InputOTPSlot key={index} index={index} className="w-12 h-12 text-lg font-bold rounded-xl border border-input bg-transparent" />
-                                    ))}
-                                  </InputOTPGroup>
-                                </InputOTP>
-                              </>
-                            ) : null}
-                          </div>
+                          {!isPhoneVerified && (
+                            <div className="flex-1">
+                              {phoneOtpSent ? (
+                                <>
+                                  <label className="text-xs font-semibold text-foreground mb-1.5 block">SMS Verification Code</label>
+                                  <InputOTP 
+                                    maxLength={6}
+                                    disabled={isVerifyingPhone}
+                                    value={phoneOtp}
+                                    onChange={(v) => { setPhoneOtp(v); if(v.length===6) handleVerifyPhoneOtp(v); }}
+                                  >
+                                    <InputOTPGroup className="gap-2">
+                                      {[0, 1, 2, 3, 4, 5].map((index) => (
+                                        <InputOTPSlot key={index} index={index} className="w-12 h-12 text-lg font-bold rounded-xl border border-input bg-transparent" />
+                                      ))}
+                                    </InputOTPGroup>
+                                  </InputOTP>
+                                </>
+                              ) : null}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1408,8 +1440,8 @@ export function OnboardingWizardPage() {
                   variant="outline"
                   size="sm"
                   onClick={handlePrev}
-                  disabled={currentStep === 0}
-                  className="h-10 px-4 text-sm font-medium rounded-lg cursor-pointer"
+                  disabled={currentStep <= 1}
+                  className={cn("h-10 px-4 text-sm font-medium rounded-lg cursor-pointer transition-opacity", currentStep <= 1 ? "opacity-0 pointer-events-none" : "opacity-100")}
                 >
                   <ChevronLeft className="mr-1 size-4" /> Back
                 </Button>
