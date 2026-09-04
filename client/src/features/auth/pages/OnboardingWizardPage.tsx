@@ -31,6 +31,8 @@ export function OnboardingWizardPage() {
   const [fetchedEmail, setFetchedEmail] = useState("");
   const [fetchedName, setFetchedName] = useState("");
   const [fetchedRole, setFetchedRole] = useState("");
+  const [fetchedOrgType, setFetchedOrgType] = useState("school");
+  const [fetchedSubdomain, setFetchedSubdomain] = useState("");
   const [dashboardUrl, setDashboardUrl] = useState("/");
 
   React.useEffect(() => {
@@ -41,6 +43,8 @@ export function OnboardingWizardPage() {
             if (res.email) setFetchedEmail(res.email);
             if (res.name) setFetchedName(res.name);
             if (res.role) setFetchedRole(res.role);
+            if (res.orgType) setFetchedOrgType(res.orgType);
+            if (res.subdomain) setFetchedSubdomain(res.subdomain);
           }
         })
         .catch((err) => {
@@ -118,12 +122,15 @@ export function OnboardingWizardPage() {
   const [debugRole, setDebugRole] = useState("student");
   const [debugOrgType, setDebugOrgType] = useState("engineering");
 
+  const effectiveRole = fetchedRole || debugRole;
+  const effectiveOrgType = fetchedRole ? fetchedOrgType : debugOrgType;
+
   // Fetch dynamic sections
   const strategy = getResolvedProfileStrategy({
-    targetRole: debugRole,
-    viewerRole: debugRole,
-    orgType: debugOrgType,
-    structureType: debugOrgType,
+    targetRole: effectiveRole,
+    viewerRole: effectiveRole,
+    orgType: effectiveOrgType,
+    structureType: effectiveOrgType,
     isSelfView: true
   });
 
@@ -181,7 +188,11 @@ export function OnboardingWizardPage() {
       setIsSubmitting(true);
       try {
         if (token && password) {
-          const res = await activateAdmin({ token, password });
+          const payload: any = { token, password };
+          if (effectiveRole === "org_admin" && fetchedSubdomain) {
+            payload.subdomain = fetchedSubdomain;
+          }
+          const res = await activateAdmin(payload);
           if (res.redirectTo) {
             setDashboardUrl(res.redirectTo);
           }
@@ -230,38 +241,40 @@ export function OnboardingWizardPage() {
 
   return (
     <div className="h-screen bg-slate-50 dark:bg-background flex flex-col font-sans overflow-hidden">
-      {/* Debug Panel */}
-      <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-3 flex flex-wrap items-center justify-center gap-6 text-sm z-50 shrink-0">
-        <span className="font-semibold text-yellow-600 dark:text-yellow-500 flex items-center gap-2">
-          <PlaySquare className="size-4" /> LOCAL DEBUG MODE
-        </span>
-        <div className="flex items-center gap-2">
-          <label className="text-muted-foreground font-medium">Test Role:</label>
-          <select
-            value={debugRole}
-            onChange={e => { setDebugRole(e.target.value); setCurrentStep(0); }}
-            className="bg-background border rounded px-3 py-1.5 font-medium"
-          >
-            <option value="student">Student</option>
-            <option value="faculty">Faculty</option>
-            <option value="org_admin">Org Admin</option>
-            <option value="hr_dept">HR Admin</option>
-            <option value="admission_head">Admission Admin</option>
-          </select>
+      {/* Debug Panel - Only show if not using a real token */}
+      {!token && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-3 flex flex-wrap items-center justify-center gap-6 text-sm z-50 shrink-0">
+          <span className="font-semibold text-yellow-600 dark:text-yellow-500 flex items-center gap-2">
+            <PlaySquare className="size-4" /> LOCAL DEBUG MODE
+          </span>
+          <div className="flex items-center gap-2">
+            <label className="text-muted-foreground font-medium">Test Role:</label>
+            <select
+              value={debugRole}
+              onChange={e => { setDebugRole(e.target.value); setCurrentStep(0); }}
+              className="bg-background border rounded px-3 py-1.5 font-medium"
+            >
+              <option value="student">Student</option>
+              <option value="faculty">Faculty</option>
+              <option value="org_admin">Org Admin</option>
+              <option value="hr_dept">HR Admin</option>
+              <option value="admission_head">Admission Admin</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-muted-foreground font-medium">Org Type:</label>
+            <select
+              value={debugOrgType}
+              onChange={e => { setDebugOrgType(e.target.value); setCurrentStep(0); }}
+              className="bg-background border rounded px-3 py-1.5 font-medium"
+            >
+              <option value="engineering">Engineering College</option>
+              <option value="school">K-12 School</option>
+              <option value="coaching">Coaching Center</option>
+            </select>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-muted-foreground font-medium">Org Type:</label>
-          <select
-            value={debugOrgType}
-            onChange={e => { setDebugOrgType(e.target.value); setCurrentStep(0); }}
-            className="bg-background border rounded px-3 py-1.5 font-medium"
-          >
-            <option value="engineering">Engineering College</option>
-            <option value="school">K-12 School</option>
-            <option value="coaching">Coaching Center</option>
-          </select>
-        </div>
-      </div>
+      )}
 
       {/* Main Layout */}
       <div className="flex-1 flex overflow-hidden">
@@ -520,6 +533,40 @@ export function OnboardingWizardPage() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Block 4: Subdomain Setup (Only for Org Admin) */}
+                      {effectiveRole === "org_admin" && (
+                        <div className="bg-white dark:bg-card p-6 rounded-2xl shadow-sm border border-border/60">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="size-10 bg-orange-500/10 text-orange-600 rounded-xl flex items-center justify-center">
+                              <Building2 className="size-5" />
+                            </div>
+                            <h3 className="text-lg font-bold">4. Organization Portal Address</h3>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            This is the web address where your students and faculty will log in.
+                          </p>
+                          <div className="w-full">
+                            <label className="text-xs font-semibold text-foreground mb-1.5 block">Portal Subdomain</label>
+                            <div className="flex items-center rounded-lg border border-input bg-background overflow-hidden h-10 w-full max-w-md">
+                              <span className="bg-secondary/50 px-3 h-full flex items-center text-sm font-medium text-muted-foreground border-r border-input">
+                                https://
+                              </span>
+                              <input
+                                type="text"
+                                value={fetchedSubdomain}
+                                onChange={(e) => setFetchedSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                                placeholder="my-school"
+                                className="h-full flex-1 bg-transparent px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                              />
+                              <span className="bg-secondary/50 px-3 h-full flex items-center text-sm font-medium text-muted-foreground border-l border-input">
+                                .classgrid.in
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                     </div>
                   )}
 

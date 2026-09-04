@@ -468,8 +468,8 @@ export function LeadDetailsPage() {
                     </div>
                   )}
 
-                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white mb-2" onClick={() => window.open('/superadmin/orgs', '_blank')}>
-                    View in Organizations List &rarr;
+                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white mb-2" onClick={() => window.open(`/superadmin/detail/${provisionedData?.orgName || 'unknown'}`, '_self')}>
+                    View Organization Details &rarr;
                   </Button>
                   
                   {!provisionedData && (
@@ -558,12 +558,11 @@ export function LeadDetailsPage() {
           onClose={() => setShowProvisioningWizard(false)}
           onSuccess={(result) => {
             setShowProvisioningWizard(false);
-            setProvisionedData({
-              activationLink: result?.activation?.activationLink ?? "",
-              activationCode: result?.activation?.activationCode ?? "",
-              orgName: result?.organization?.name ?? "",
-              adminEmail: result?.admin?.email ?? "",
-            });
+            const orgName = result?.organization?.name || "unknown";
+            const orgId = result?.organization?._id;
+            
+            // Auto redirect to the org details page immediately
+            navigate(`/superadmin/detail/${orgName}`);
           }}
         />
       )}

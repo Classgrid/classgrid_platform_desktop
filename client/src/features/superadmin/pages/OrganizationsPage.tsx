@@ -130,9 +130,9 @@ export function OrganizationsPage() {
       key: "name",
       render: (_val: any, row: any) => (
         <div className="flex items-center gap-3">
-          <span className="inline-flex size-9 items-center justify-center rounded-md border border-border bg-muted/40 text-muted-foreground overflow-hidden">
+          <span className="inline-flex w-10 h-10 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40 text-muted-foreground overflow-hidden">
             {row.logo_url || row.logoUrl ? (
-              <img src={row.logo_url || row.logoUrl} alt={row.name} className="w-full h-full object-cover" />
+              <img src={row.logo_url || row.logoUrl} alt={row.name} className="w-full h-full object-contain" />
             ) : (
               <Building2 className="size-4" />
             )}
