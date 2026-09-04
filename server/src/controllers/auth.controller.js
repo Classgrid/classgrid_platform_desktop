@@ -565,7 +565,7 @@ export const validateActivationToken = async (req, res) => {
 export const activateAdmin = async (req, res) => {
     try {
         await connectDB();
-        const { token, password, email, activationCode, subdomain, username, orgEmail, personalDetails, orgIdentity, orgDetails, dynamicData } = req.body;
+        const { token, password, email, activationCode, subdomain, username, orgEmail, orgPhone, personalDetails, orgIdentity, orgDetails, dynamicData } = req.body;
 
         if ((!token && !(email && activationCode)) || !password) {
             return res.status(400).json({ message: "Provide password plus either token or email + activationCode." });
@@ -672,6 +672,10 @@ export const activateAdmin = async (req, res) => {
             if (orgEmail) {
                 billingSettings.invoice_email = orgEmail;
                 billingSettings.email_verified = true; // since it was verified in the wizard
+            }
+            if (orgPhone) {
+                billingSettings.invoice_phone = orgPhone;
+                billingSettings.phone_verified = true;
             }
             if (orgDetails?.city) billingSettings.city = orgDetails.city;
             if (orgDetails?.pincode) billingSettings.pincode = orgDetails.pincode;
@@ -2425,8 +2429,10 @@ export const sendOnboardingOtp = async (req, res) => {
                 text: `Your Classgrid verification code is: ${otp}. This code expires in 10 minutes.`,
             });
         } else if (type === "phone") {
-            const message = `Your Classgrid verification code is ${otp}. It expires in 10 mins. Do not share this with anyone.`;
-            await sendSMS(target, message);
+            // Temporarily mock SMS sending until DLT/production keys are available
+            console.log(`[MOCK SMS] To: ${target} | OTP: ${otp}`);
+            // const message = `Your Classgrid verification code is ${otp}. It expires in 10 mins. Do not share this with anyone.`;
+            // await sendSMS(target, message);
         }
 
         res.json({ message: "OTP sent successfully." });

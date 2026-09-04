@@ -22,11 +22,23 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import locationsData from "@/data/india-locations.json";
+import erpData from "@/data/full_erp_data.json";
+
 export function OnboardingWizardPage() {
   const { theme, setTheme } = useTheme();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
-  const [currentStep, setCurrentStep] = useState(0);
+  
+  // Persisted state initialization
+  const [currentStep, setCurrentStep] = useState(() => {
+    try {
+      const saved = localStorage.getItem("onboarding_step");
+      return saved ? parseInt(saved, 10) : 0;
+    } catch {
+      return 0;
+    }
+  });
   const [isCompleted, setIsCompleted] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,10 +53,55 @@ export function OnboardingWizardPage() {
   const [fetchedAddress, setFetchedAddress] = useState("");
   const [fetchedCity, setFetchedCity] = useState("");
   const [fetchedState, setFetchedState] = useState("");
+  
   // Welcome step: editable name field
-  const [adminName, setAdminName] = useState("");
+  const [adminName, setAdminName] = useState(() => {
+    try {
+      const saved = localStorage.getItem("onboarding_adminName");
+      return saved || "";
+    } catch {
+      return "";
+    }
+  });
 
-  // OTP Verification States
+  // Phone Verification Handlers
+  const handleSendOrgPhoneOtp = async () => {
+    if (!orgPhone || orgPhone.length < 10) {
+      showAlert("Please enter a valid official org phone number.");
+      return;
+    }
+    
+    if (isSendingPhoneOtp) return; // Prevent double click
+    
+    setIsSendingPhoneOtp(true);
+    try {
+      await sendOnboardingOtp(orgPhone, "phone");
+      setOrgPhoneOtpSent(true);
+      showAlert("OTP sent successfully to " + orgPhone);
+    } catch (err: any) {
+      showAlert(err.message || "Failed to send OTP. Please try again.");
+    } finally {
+      setIsSendingPhoneOtp(false);
+    }
+  };
+
+  const handleVerifyOrgPhoneOtp = async (code: string) => {
+    if (!code || code.length !== 6 || isVerifyingOrgPhone) return;
+    
+    setIsVerifyingOrgPhone(true);
+    try {
+      const result = await verifyOnboardingOtp(orgPhone, code, "phone");
+      if (result.success) {
+        setIsOrgPhoneVerified(true);
+      } else {
+        showAlert("Invalid OTP. Please try again.");
+      }
+    } catch (err: any) {
+      showAlert(err.message || "Invalid OTP. Please try again.");
+    } finally {
+      setIsVerifyingOrgPhone(false);
+    }
+  };
   const [emailOtp, setEmailOtp] = useState("");
   const [phoneOtp, setPhoneOtp] = useState("");
   const [phone, setPhone] = useState("");
@@ -68,7 +125,15 @@ export function OnboardingWizardPage() {
   const [orgEmailOtpSent, setOrgEmailOtpSent] = useState(false);
   const [isVerifyingOrgEmail, setIsVerifyingOrgEmail] = useState(false);
   
-  const [isInitializing, setIsInitializing] = useState(false);
+  const [orgPhone, setOrgPhone] = useState("");
+  const [orgPhoneOtp, setOrgPhoneOtp] = useState("");
+  const [isOrgPhoneVerified, setIsOrgPhoneVerified] = useState(false);
+  const [orgPhoneOtpSent, setOrgPhoneOtpSent] = useState(false);
+  const [isVerifyingOrgPhone, setIsVerifyingOrgPhone] = useState(false);
+  
+  const [isVerifyingOrgPhone, setIsVerifyingOrgPhone] = useState(false);
+  
+  const [isInitializing, setIsInitializing] = useState(true); // Start true to prevent flash
 
   // Sending OTP guards (prevent double-click)
   const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
@@ -78,6 +143,32 @@ export function OnboardingWizardPage() {
   const [emailOtpTimer, setEmailOtpTimer] = useState(0);
   const [phoneOtpTimer, setPhoneOtpTimer] = useState(0);
   const [orgEmailOtpTimer, setOrgEmailOtpTimer] = useState(0);
+
+  // Derived Dropdown Data
+  const stateOptions = useMemo(() => {
+    return Object.keys(locationsData.states).sort();
+  }, []);
+
+  const getCitiesForState = (stateName: string) => {
+    if (!stateName || !locationsData.states[stateName as keyof typeof locationsData.states]) return [];
+    const districts = locationsData.states[stateName as keyof typeof locationsData.states];
+    const cities = new Set<string>();
+    Object.values(districts).forEach((districtCities: any) => {
+      districtCities.forEach((city: string) => cities.add(city));
+    });
+    return Array.from(cities).sort();
+  };
+
+  const selectedState = formData["org_details"]?.["state"] || "";
+  const cityOptions = useMemo(() => getCitiesForState(selectedState), [selectedState]);
+
+  const languageOptions = useMemo(() => {
+    if (!erpData.mothertoungelist) return [];
+    return erpData.mothertoungelist
+      .map((item: any) => (typeof item === 'object' ? (item.name || item.mothertounge) : item))
+      .filter(Boolean)
+      .sort();
+  }, []);
 
   // Timer Effect
   React.useEffect(() => {
@@ -213,13 +304,28 @@ export function OnboardingWizardPage() {
     }
   };
 
+  // Auto-suggest @username from admin name
+  React.useEffect(() => {
+    if (adminName && !username) {
+      const suggested = adminName.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '').slice(0, 20);
+      if (suggested.length >= 3) {
+        setUsername(suggested);
+        handleUsernameChange(suggested);
+      }
+    }
+  }, [adminName]);
+
   React.useEffect(() => {
     if (token) {
       validateActivationToken(token)
         .then((res) => {
           if (res.valid) {
             if (res.email) setFetchedEmail(res.email);
-            if (res.name) { setFetchedName(res.name); setAdminName(res.name); }
+            // Only set adminName from fetch if it's currently empty (don't overwrite user's typing from localStorage)
+            if (res.name) {
+              setFetchedName(res.name); 
+              setAdminName(prev => prev || res.name); 
+            }
             if (res.role) setFetchedRole(res.role);
             if (res.orgType) setFetchedOrgType(res.orgType);
             if (res.subdomain) setFetchedSubdomain(res.subdomain);
@@ -240,7 +346,36 @@ export function OnboardingWizardPage() {
     }
   }, [token]);
   // Central form state: sectionKey -> { fieldKey: value }
-  const [formData, setFormData] = useState<Record<string, Record<string, any>>>({});
+  const [formData, setFormData] = useState<Record<string, Record<string, any>>>(() => {
+    try {
+      const saved = localStorage.getItem("onboarding_formData");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Persist form data and current step
+  React.useEffect(() => {
+    localStorage.setItem("onboarding_step", currentStep.toString());
+  }, [currentStep]);
+
+  React.useEffect(() => {
+    localStorage.setItem("onboarding_formData", JSON.stringify(formData));
+  }, [formData]);
+
+  React.useEffect(() => {
+    localStorage.setItem("onboarding_adminName", adminName);
+  }, [adminName]);
+
+  // Clean up on unmount or complete
+  React.useEffect(() => {
+    if (isCompleted) {
+      localStorage.removeItem("onboarding_step");
+      localStorage.removeItem("onboarding_formData");
+      localStorage.removeItem("onboarding_adminName");
+    }
+  }, [isCompleted]);
 
   // Password UI State (Ported from ResetPasswordPage)
   const [password, setPassword] = useState("");
@@ -446,8 +581,8 @@ export function OnboardingWizardPage() {
     }
     // Org Verification step
     if (currentStepData.id === "org_verification") {
-      if (!isOrgEmailVerified) {
-        showAlert("Please verify the organization contact email.");
+      if (!isOrgEmailVerified || !isOrgPhoneVerified) {
+        showAlert("Please verify both the organization contact email and phone number.");
         return;
       }
     }
@@ -465,6 +600,7 @@ export function OnboardingWizardPage() {
             password,
             username,
             orgEmail,
+            orgPhone,
             personalDetails: formData["personal_details"],
             orgIdentity: formData["org_identity"],
             orgDetails: formData["org_details"],
@@ -501,12 +637,6 @@ export function OnboardingWizardPage() {
 
   if (isInitializing) {
     return (
-      <div className="h-screen bg-slate-50 dark:bg-background flex overflow-hidden">
-        {/* Skeleton Sidebar */}
-        <div className="hidden lg:flex w-[260px] bg-white dark:bg-card border-r border-border/50 flex-col p-6 z-10 shadow-xl">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="size-10 bg-muted/60 animate-pulse rounded-xl" />
-            <div className="h-6 w-24 bg-muted/60 animate-pulse rounded" />
           </div>
           <div className="space-y-8 flex-1 pt-4">
             {[1, 2, 3, 4].map(i => (
@@ -879,7 +1009,7 @@ export function OnboardingWizardPage() {
                             </div>
                             {isEmailVerified && (
                               <p className="text-emerald-600 text-sm mt-2 font-medium flex items-center gap-1">
-                                <CheckCircle2 className="size-4" /> Your email was securely verified via your activation link.
+                                <CheckCircle2 className="size-4" /> Email verified.
                               </p>
                             )}
                           </div>
@@ -1055,6 +1185,33 @@ export function OnboardingWizardPage() {
                           </div>
 
                           <div>
+                            <label className="text-sm font-semibold text-foreground mb-1.5 block">Preferred Language</label>
+                            <ResponsiveSelect 
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={formData["personal_details"]?.["preferred_language"] || "English"}
+                              onChange={(e) => handleFieldChange("personal_details", "preferred_language", e.target.value)}
+                            >
+                              <option value="English">English</option>
+                              {languageOptions.map((lang: string) => (
+                                <option key={lang} value={lang}>{lang}</option>
+                              ))}
+                            </ResponsiveSelect>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold text-foreground mb-1.5 block">Timezone</label>
+                            <ResponsiveSelect 
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={formData["personal_details"]?.["timezone"] || "Asia/Kolkata"}
+                              onChange={(e) => handleFieldChange("personal_details", "timezone", e.target.value)}
+                            >
+                              <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                              <option value="America/New_York">America/New_York (EST)</option>
+                              <option value="Europe/London">Europe/London (GMT)</option>
+                              <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                            </ResponsiveSelect>
+                          </div>
+
+                          <div className="md:col-span-2">
                             <label className="text-sm font-semibold text-foreground mb-1.5 block">LinkedIn Profile (Optional)</label>
                             <Input 
                               placeholder="https://linkedin.com/in/username" 
@@ -1072,37 +1229,62 @@ export function OnboardingWizardPage() {
                   {currentStepData.type === "fixed_terminology" && (() => {
                     const currentOrgType = formData["org_details"]?.type || fetchedOrgType || "Engineering";
                     const terms = getTerminologyLabels(currentOrgType);
+                    const termDefinitions: Record<string, Record<string, string>> = {
+                      School: { [terms.orgLabel]: "Your school or institution", [terms.level1]: "Grade level like 1st, 2nd, 3rd Standard", [terms.level2]: "Divisions within a standard (e.g. A, B, C)", [terms.level3]: "Learners enrolled in a section" },
+                      College: { [terms.orgLabel]: "Your college or university", [terms.level1]: "Academic department (e.g. Computer Science)", [terms.level2]: "Specific program or course year", [terms.level3]: "Sub-groups within a program" },
+                      Coaching: { [terms.orgLabel]: "Your coaching centre", [terms.level1]: "Target exam or course stream", [terms.level2]: "Batches scheduled at different times", [terms.level3]: "Students enrolled in a batch" },
+                    };
+                    const defs = termDefinitions[currentOrgType] || termDefinitions["School"] || {};
                     return (
                       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="bg-slate-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
-                          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-900 to-slate-900" />
-                          <div className="relative z-10 flex flex-col items-center">
-                            <h3 className="text-2xl font-bold mb-2">Platform Terminology</h3>
-                            <p className="text-slate-400 mb-8 text-center max-w-sm">This flowchart visualizes how your data will be hierarchically organized based on your institution type ({currentOrgType}).</p>
-                            
-                            <div className="flex flex-col items-center gap-4">
-                              <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-64 text-center shadow-lg" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-                                <Building2 className="size-6 mx-auto mb-2 text-indigo-400" />
-                                <div className="font-bold">Organization ({terms.orgLabel})</div>
-                                <div className="text-xs text-slate-400">{formData["org_details"]?.name || "Your Institution"}</div>
-                              </motion.div>
-                              <div className="w-0.5 h-6 bg-indigo-500/50" />
-                              <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-64 text-center shadow-lg" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-                                <Briefcase className="size-6 mx-auto mb-2 text-blue-400" />
-                                <div className="font-bold">{terms.level1}</div>
-                                <div className="text-xs text-slate-400">Top Level Structural Unit</div>
-                              </motion.div>
-                              <div className="w-0.5 h-6 bg-blue-500/50" />
-                              <div className="flex gap-4">
-                                <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
-                                  <School className="size-5 mx-auto mb-2 text-emerald-400" />
-                                  <div className="font-bold text-sm">{terms.level2}</div>
+                        <div className="grid md:grid-cols-3 gap-6">
+                          {/* Main visual flowchart */}
+                          <div className="md:col-span-2 bg-slate-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
+                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-900 to-slate-900" />
+                            <div className="relative z-10 flex flex-col items-center">
+                              <h3 className="text-2xl font-bold mb-2">Platform Terminology</h3>
+                              <p className="text-slate-400 mb-8 text-center max-w-sm">This flowchart visualizes how your data will be hierarchically organized based on your institution type ({currentOrgType}).</p>
+                              
+                              <div className="flex flex-col items-center gap-4">
+                                <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-64 text-center shadow-lg" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
+                                  <Building2 className="size-6 mx-auto mb-2 text-indigo-400" />
+                                  <div className="font-bold">Organization ({terms.orgLabel})</div>
+                                  <div className="text-xs text-slate-400">{formData["org_details"]?.name || "Your Institution"}</div>
                                 </motion.div>
-                                <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
-                                  <GraduationCap className="size-5 mx-auto mb-2 text-purple-400" />
-                                  <div className="font-bold text-sm">{terms.level3}</div>
+                                <div className="w-0.5 h-6 bg-indigo-500/50" />
+                                <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-64 text-center shadow-lg" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
+                                  <Briefcase className="size-6 mx-auto mb-2 text-blue-400" />
+                                  <div className="font-bold">{terms.level1}</div>
+                                  <div className="text-xs text-slate-400">Top Level Structural Unit</div>
                                 </motion.div>
+                                <div className="w-0.5 h-6 bg-blue-500/50" />
+                                <div className="flex gap-4">
+                                  <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
+                                    <School className="size-5 mx-auto mb-2 text-emerald-400" />
+                                    <div className="font-bold text-sm">{terms.level2}</div>
+                                  </motion.div>
+                                  <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
+                                    <GraduationCap className="size-5 mx-auto mb-2 text-purple-400" />
+                                    <div className="font-bold text-sm">{terms.level3}</div>
+                                  </motion.div>
+                                </div>
                               </div>
+                            </div>
+                          </div>
+
+                          {/* Side panel: What these mean? */}
+                          <div className="bg-white dark:bg-card p-6 rounded-3xl shadow-sm border border-border/60">
+                            <h4 className="text-lg font-bold mb-4 flex items-center gap-2">📖 What these mean?</h4>
+                            <div className="space-y-4">
+                              {Object.entries(defs).map(([term, desc]) => (
+                                <div key={term} className="border-l-2 border-primary/40 pl-3">
+                                  <p className="font-semibold text-sm text-foreground">{term}</p>
+                                  <p className="text-xs text-muted-foreground">{desc}</p>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="mt-6 p-3 bg-primary/5 rounded-xl border border-primary/10">
+                              <p className="text-xs text-muted-foreground">💡 You can customize these terms later from <strong>Settings → Platform Terminology</strong>.</p>
                             </div>
                           </div>
                         </div>
@@ -1131,6 +1313,12 @@ export function OnboardingWizardPage() {
                           <div>
                             <label className="text-sm font-semibold mb-2 block">Your Custom Portal URL <span className="text-danger">*</span></label>
                             <p className="text-xs text-muted-foreground mb-4">Choose a short, memorable subdomain for your login portal.</p>
+                            {!formData["org_identity"]?.["slug"] && fetchedOrgName && (
+                              <button type="button" className="text-xs text-primary font-medium mb-2 hover:underline" onClick={() => {
+                                const suggested = fetchedOrgName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 30);
+                                handleFieldChange("org_identity", "slug", suggested);
+                              }}>💡 Suggest: {fetchedOrgName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 30)}.classgrid.in</button>
+                            )}
                             <div className="flex items-center rounded-xl border border-input bg-secondary/30 overflow-hidden h-12 focus-within:ring-2 focus-within:ring-primary/20">
                               <Input 
                                 type="text" 
@@ -1192,6 +1380,30 @@ export function OnboardingWizardPage() {
                               <option value="None">None</option>
                             </ResponsiveSelect>
                           </div>
+                          <div>
+                            <label className="text-sm font-semibold block mb-1.5">Affiliation / Registration Number</label>
+                            <Input 
+                              value={formData["org_details"]?.["affiliation_number"] || ""}
+                              onChange={(e) => handleFieldChange("org_details", "affiliation_number", e.target.value)}
+                              placeholder="e.g. CBSE/AFF/2300123"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold block mb-1.5">Organization Short Name / Code</label>
+                            <Input 
+                              value={formData["org_details"]?.["short_name"] || ""}
+                              onChange={(e) => handleFieldChange("org_details", "short_name", e.target.value)}
+                              placeholder="e.g. CIS, ABPS"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold block mb-1.5">Academic Year / Session <span className="text-danger">*</span></label>
+                            <Input 
+                              value={formData["org_details"]?.["academic_session"] || ""}
+                              onChange={(e) => handleFieldChange("org_details", "academic_session", e.target.value)}
+                              placeholder="e.g. 2026-2027"
+                            />
+                          </div>
                           <div className="md:col-span-2">
                             <label className="text-sm font-semibold block mb-1.5">Full Address <span className="text-danger">*</span></label>
                             <Input 
@@ -1201,12 +1413,34 @@ export function OnboardingWizardPage() {
                             />
                           </div>
                           <div>
+                            <label className="text-sm font-semibold block mb-1.5">State <span className="text-danger">*</span></label>
+                            <ResponsiveSelect 
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={formData["org_details"]?.["state"] || ""}
+                              onChange={(e) => {
+                                handleFieldChange("org_details", "state", e.target.value);
+                                handleFieldChange("org_details", "city", ""); // reset city on state change
+                              }}
+                            >
+                              <option value="">Select State</option>
+                              {stateOptions.map(state => (
+                                <option key={state} value={state}>{state}</option>
+                              ))}
+                            </ResponsiveSelect>
+                          </div>
+                          <div>
                             <label className="text-sm font-semibold block mb-1.5">City <span className="text-danger">*</span></label>
-                            <Input 
+                            <ResponsiveSelect 
+                              className="w-full h-10 rounded-lg border-input bg-background"
                               value={formData["org_details"]?.["city"] || fetchedCity || ""}
                               onChange={(e) => handleFieldChange("org_details", "city", e.target.value)}
-                              placeholder="City"
-                            />
+                              disabled={!selectedState}
+                            >
+                              <option value="">Select City</option>
+                              {cityOptions.map((city: string) => (
+                                <option key={city} value={city}>{city}</option>
+                              ))}
+                            </ResponsiveSelect>
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">PIN Code <span className="text-danger">*</span></label>
@@ -1214,6 +1448,52 @@ export function OnboardingWizardPage() {
                               value={formData["org_details"]?.["pincode"] || ""}
                               onChange={(e) => handleFieldChange("org_details", "pincode", e.target.value)}
                               placeholder="e.g. 110001"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold block mb-1.5">Default Currency</label>
+                            <ResponsiveSelect 
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={formData["org_details"]?.["currency"] || "INR"}
+                              onChange={(e) => handleFieldChange("org_details", "currency", e.target.value)}
+                            >
+                              <option value="INR">INR (₹)</option>
+                              <option value="USD">USD ($)</option>
+                              <option value="EUR">EUR (€)</option>
+                              <option value="GBP">GBP (£)</option>
+                            </ResponsiveSelect>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold block mb-1.5">Timezone</label>
+                            <ResponsiveSelect 
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={formData["org_details"]?.["timezone"] || "Asia/Kolkata"}
+                              onChange={(e) => handleFieldChange("org_details", "timezone", e.target.value)}
+                            >
+                              <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                              <option value="America/New_York">America/New_York (EST)</option>
+                              <option value="Europe/London">Europe/London (GMT)</option>
+                              <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                            </ResponsiveSelect>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold block mb-1.5">Working Days</label>
+                            <ResponsiveSelect 
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={formData["org_details"]?.["working_days"] || "mon-sat"}
+                              onChange={(e) => handleFieldChange("org_details", "working_days", e.target.value)}
+                            >
+                              <option value="mon-sat">Monday – Saturday</option>
+                              <option value="mon-fri">Monday – Friday</option>
+                              <option value="custom">Custom</option>
+                            </ResponsiveSelect>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold block mb-1.5">Website URL</label>
+                            <Input 
+                              value={formData["org_details"]?.["website"] || ""}
+                              onChange={(e) => handleFieldChange("org_details", "website", e.target.value)}
+                              placeholder="https://www.yourschool.com"
                             />
                           </div>
                         </div>
@@ -1269,6 +1549,50 @@ export function OnboardingWizardPage() {
                               disabled={!orgEmailOtpSent || isOrgEmailVerified || isVerifyingOrgEmail}
                               value={orgEmailOtp}
                               onChange={(v) => { setOrgEmailOtp(v); if(v.length===6) handleVerifyOrgEmailOtp(v); }}
+                            >
+                              <InputOTPGroup className="gap-2">
+                                {[0, 1, 2, 3, 4, 5].map((index) => (
+                                  <InputOTPSlot key={index} index={index} className="w-12 h-12 text-lg font-bold rounded-xl border border-input bg-transparent" />
+                                ))}
+                              </InputOTPGroup>
+                            </InputOTP>
+                          </div>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-8 mt-6">
+                          <div>
+                            <label className="text-xs font-semibold text-foreground mb-1.5 block">Official Org Phone Number</label>
+                            <div className="flex gap-2">
+                              <Input 
+                                value={orgPhone} 
+                                onChange={(e) => setOrgPhone(e.target.value)}
+                                disabled={isOrgPhoneVerified || orgPhoneOtpSent}
+                                placeholder="9876543210"
+                                className="h-12 flex-1 text-sm font-medium" 
+                              />
+                              {!isOrgPhoneVerified && (
+                                <Button 
+                                  variant="outline" 
+                                  className="h-12 px-6 text-sm font-semibold"
+                                  onClick={handleSendOrgPhoneOtp}
+                                  disabled={orgPhoneOtpSent || isSendingPhoneOtp}
+                                >
+                                  {isSendingPhoneOtp ? "Sending..." : orgPhoneOtpSent ? "Sent" : "Send OTP"}
+                                </Button>
+                              )}
+                            </div>
+                            {isOrgPhoneVerified && (
+                              <p className="text-emerald-600 text-sm mt-3 font-medium flex items-center gap-1">
+                                <CheckCircle2 className="size-4" /> Verified
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <label className="text-xs font-semibold text-foreground mb-1.5 block">6-Digit Verification Code</label>
+                            <InputOTP 
+                              maxLength={6} 
+                              disabled={!orgPhoneOtpSent || isOrgPhoneVerified || isVerifyingOrgPhone}
+                              value={orgPhoneOtp}
+                              onChange={(v) => { setOrgPhoneOtp(v); if(v.length===6) handleVerifyOrgPhoneOtp(v); }}
                             >
                               <InputOTPGroup className="gap-2">
                                 {[0, 1, 2, 3, 4, 5].map((index) => (
