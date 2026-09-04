@@ -25,6 +25,13 @@ import { cn } from "@/lib/utils";
 import locationsData from "@/data/india-locations.json";
 import erpData from "@/data/full_erp_data.json";
 
+const getTerminologyLabels = (orgType: string) => {
+  if (orgType === "School") return { orgLabel: "School", level1: "Standard", level2: "Division", level3: "Student" };
+  if (orgType === "College") return { orgLabel: "College", level1: "Department", level2: "Year", level3: "Student" };
+  if (orgType === "Coaching") return { orgLabel: "Institute", level1: "Course", level2: "Batch", level3: "Student" };
+  return { orgLabel: "Organization", level1: "Level 1", level2: "Level 2", level3: "Member" };
+};
+
 export function OnboardingWizardPage() {
   const { theme, setTheme } = useTheme();
   const [searchParams] = useSearchParams();
