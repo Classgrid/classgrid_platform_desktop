@@ -50,6 +50,17 @@ export function OnboardingWizardPage() {
     }
   });
 
+
+  // Welcome step: editable name field
+  const [adminName, setAdminName] = useState(() => {
+    try {
+      const saved = localStorage.getItem("onboarding_adminName");
+      return saved || "";
+    } catch {
+      return "";
+    }
+  });
+
   // Persist form data and current step
   React.useEffect(() => {
     localStorage.setItem("onboarding_step", currentStep.toString());
@@ -86,15 +97,7 @@ export function OnboardingWizardPage() {
   const [fetchedCity, setFetchedCity] = useState("");
   const [fetchedState, setFetchedState] = useState("");
 
-  // Welcome step: editable name field
-  const [adminName, setAdminName] = useState(() => {
-    try {
-      const saved = localStorage.getItem("onboarding_adminName");
-      return saved || "";
-    } catch {
-      return "";
-    }
-  });
+
 
   // Phone Verification Handlers
   const handleSendOrgPhoneOtp = async () => {
