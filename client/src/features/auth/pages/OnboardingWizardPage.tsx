@@ -74,6 +74,8 @@ export function OnboardingWizardPage() {
     localStorage.setItem("onboarding_adminName", adminName);
   }, [adminName]);
 
+  const [isCompleted, setIsCompleted] = useState(false);
+
   // Clean up on unmount or complete
   React.useEffect(() => {
     if (isCompleted) {
@@ -82,7 +84,6 @@ export function OnboardingWizardPage() {
       localStorage.removeItem("onboarding_adminName");
     }
   }, [isCompleted]);
-  const [isCompleted, setIsCompleted] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchedEmail, setFetchedEmail] = useState("");
