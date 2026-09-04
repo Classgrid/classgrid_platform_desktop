@@ -1987,7 +1987,7 @@ export function OnboardingWizardPage() {
                             </div>
                           </div>
                           <div>
-                            <label className="text-sm font-semibold block mb-1.5">Board / Affiliation</label>
+                            <label className="text-sm font-semibold block mb-1.5">Board & Affiliation</label>
                             <ResponsiveSelect
                               className="w-full h-10 rounded-lg border-input bg-background"
                               value={formData["org_details"]?.["board"] || "CBSE"}
@@ -1999,15 +1999,15 @@ export function OnboardingWizardPage() {
                             </ResponsiveSelect>
                           </div>
                           <div>
-                            <label className="text-sm font-semibold block mb-1.5">Affiliation / Registration Number</label>
+                            <label className="text-sm font-semibold block mb-1.5">Affiliation Registration Number</label>
                             <Input
                               value={formData["org_details"]?.["affiliation_number"] || ""}
                               onChange={(e) => handleFieldChange("org_details", "affiliation_number", e.target.value)}
-                              placeholder="e.g. CBSE/AFF/2300123"
+                              placeholder="e.g. CBSE-AFF-2300123"
                             />
                           </div>
                           <div>
-                            <label className="text-sm font-semibold block mb-1.5">Organization Short Name / Code</label>
+                            <label className="text-sm font-semibold block mb-1.5">Organization Short Name Code</label>
                             <Input
                               value={formData["org_details"]?.["short_name"] || ""}
                               onChange={(e) => handleFieldChange("org_details", "short_name", e.target.value)}
@@ -2020,7 +2020,7 @@ export function OnboardingWizardPage() {
                             <Input
                               value={formData["org_details"]?.["address"] ?? fetchedAddress ?? ""}
                               onChange={(e) => handleFieldChange("org_details", "address", e.target.value)}
-                              placeholder="Street address"
+                              placeholder="Street address, building, landmark"
                             />
                           </div>
                           <div>
@@ -2062,7 +2062,7 @@ export function OnboardingWizardPage() {
                             </ResponsiveSelect>
                           </div>
                           <div>
-                            <label className="text-sm font-semibold block mb-1.5">Taluka / Tehsil</label>
+                            <label className="text-sm font-semibold block mb-1.5">Taluka</label>
                             <ResponsiveSelect
                               className="w-full h-10 rounded-lg border-input bg-background"
                               value={selectedTaluka}
@@ -2079,14 +2079,14 @@ export function OnboardingWizardPage() {
                             </ResponsiveSelect>
                           </div>
                           <div>
-                            <label className="text-sm font-semibold block mb-1.5">City / Village <span className="text-danger">*</span></label>
+                            <label className="text-sm font-semibold block mb-1.5">City or Village <span className="text-danger">*</span></label>
                             <ResponsiveSelect
                               className="w-full h-10 rounded-lg border-input bg-background"
                               value={selectedCity}
                               onChange={(e) => handleFieldChange("org_details", "city", e.target.value)}
                               disabled={!selectedState}
                             >
-                              <option value="">Select City / Village...</option>
+                              <option value="">Select City or Village...</option>
                               {selectedCity && !cityOptions.includes(selectedCity) && (
                                 <option value={selectedCity}>{selectedCity}</option>
                               )}
@@ -2207,7 +2207,7 @@ export function OnboardingWizardPage() {
                             <div className="bg-secondary/30 p-6 rounded-2xl border border-border/80 space-y-4">
                               <label className="text-sm font-bold text-foreground flex items-center gap-2">
                                 <Smartphone className="size-4 text-primary" />
-                                <span>Official Organization Phone / Landline <span className="text-danger">*</span></span>
+                                <span>Official Organization Phone or Landline <span className="text-danger">*</span></span>
                               </label>
 
                               <div className="grid md:grid-cols-2 gap-6 items-start">
