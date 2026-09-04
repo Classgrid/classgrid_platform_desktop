@@ -322,7 +322,7 @@ export function OnboardingWizardPage() {
     }
 
     if (phone && orgPhone.trim() === phone.trim()) {
-      showAlert("Organization contact phone CANNOT be the same as your personal Admin phone number. Please enter an official institution phone number.");
+      showAlert("Already registered.");
       return;
     }
 
@@ -578,7 +578,7 @@ export function OnboardingWizardPage() {
       return;
     }
     if (fetchedEmail && orgEmail.trim().toLowerCase() === fetchedEmail.trim().toLowerCase()) {
-      showAlert("Organization contact email CANNOT be the same as your personal Admin email. Please enter an official institution contact email.");
+      showAlert("Already registered.");
       return;
     }
     try {
@@ -992,11 +992,11 @@ export function OnboardingWizardPage() {
     // Org Verification step
     if (currentStepData.id === "org_verification") {
       if (fetchedEmail && orgEmail.trim().toLowerCase() === fetchedEmail.trim().toLowerCase()) {
-        showAlert("Organization official email CANNOT be the same as your personal Admin email provided at registration/Book a Demo. Please enter your official institution contact email.");
+        showAlert("Already registered.");
         return;
       }
       if (phone && orgPhone.trim() === phone.trim()) {
-        showAlert("Organization official phone number CANNOT be the same as your personal Admin phone number. Please enter your official institution phone/helpline.");
+        showAlert("Already registered.");
         return;
       }
       if (!isOrgEmailVerified || !isOrgPhoneVerified) {
@@ -2171,8 +2171,8 @@ export function OnboardingWizardPage() {
                                     )}
                                   </div>
                                   {isSameEmail && (
-                                    <p className="text-red-500 text-xs mt-2.5 font-semibold flex items-center gap-1.5 bg-red-500/10 px-3 py-1.5 rounded-xl border border-red-500/20">
-                                      <span>⚠️ Organization email cannot be the same as your personal Admin email ({fetchedEmail}). Please provide official institution email.</span>
+                                    <p className="text-red-500 text-xs mt-2.5 font-semibold flex items-center gap-1.5 bg-red-500/10 px-3 py-1.5 rounded-xl border border-red-500/20 w-fit">
+                                      <span>Already registered</span>
                                     </p>
                                   )}
                                   {isOrgEmailVerified && !isSameEmail && (
@@ -2236,8 +2236,8 @@ export function OnboardingWizardPage() {
                                     )}
                                   </div>
                                   {isSamePhone && (
-                                    <p className="text-red-500 text-xs mt-2.5 font-semibold flex items-center gap-1.5 bg-red-500/10 px-3 py-1.5 rounded-xl border border-red-500/20">
-                                      <span>⚠️ Organization phone cannot be the same as your personal Admin phone ({phone}). Please provide official institution phone/helpline.</span>
+                                    <p className="text-red-500 text-xs mt-2.5 font-semibold flex items-center gap-1.5 bg-red-500/10 px-3 py-1.5 rounded-xl border border-red-500/20 w-fit">
+                                      <span>Already registered</span>
                                     </p>
                                   )}
                                   {isOrgPhoneVerified && !isSamePhone && (
