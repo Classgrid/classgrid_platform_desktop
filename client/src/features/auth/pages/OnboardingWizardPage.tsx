@@ -13,10 +13,10 @@ import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { getResolvedProfileStrategy } from "@/features/shared/lib/profile-strategy-selector";
-import Confetti from "react-confetti";
+const Confetti = React.lazy(() => import("react-confetti"));
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/marketing_ui/input-otp";
 import { Calendar } from "@/components/marketing_ui/nikhil_calendar";
-import { ImageCropperModal } from "@/components/marketing_ui/ImageCropperModal";
+const ImageCropperModal = React.lazy(() => import("@/components/marketing_ui/ImageCropperModal").then(module => ({ default: module.ImageCropperModal })));
 import { Popover } from "@base-ui/react/popover";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -664,7 +664,7 @@ export function OnboardingWizardPage() {
   if (isCompleted) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-background flex items-center justify-center p-4">
-        {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} />}
+        {showConfetti && <React.Suspense fallback={null}><Confetti width={window.innerWidth} height={window.innerHeight} />}
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden" style={{ background: "radial-gradient(ellipse at 50% 30%, #1e3a5f 0%, #0a0e1a 50%, #05070d 100%)" }}>
           {/* Starfield */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -2124,7 +2124,7 @@ function ImageUploadField({ label, value, onChange, circular = false }: { label:
         </div>
       )}
 
-      <ImageCropperModal
+      <React.Suspense fallback={null}><ImageCropperModal
         isOpen={isCropOpen}
         onClose={() => {
           setIsCropOpen(false);
