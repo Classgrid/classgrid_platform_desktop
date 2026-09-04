@@ -667,6 +667,22 @@ export const activateAdmin = async (req, res) => {
             if (orgDetails?.name) updateFields.name = orgDetails.name;
             if (orgDetails?.address) updateFields.address = orgDetails.address;
             
+            // Map the frontend Organization Type to the exact internal DB enums
+            if (orgDetails?.type) {
+                const typeMap = {
+                    "School": { org_type: "school", structure_type: "school_with_div" },
+                    "Junior College": { org_type: "junior_college", structure_type: "junior_college" },
+                    "Engineering College": { org_type: "engineering", structure_type: "engineering" },
+                    "Diploma College": { org_type: "diploma", structure_type: "diploma" },
+                    "Coaching Institute": { org_type: "coaching", structure_type: "coaching" }
+                };
+                const mappedType = typeMap[orgDetails.type];
+                if (mappedType) {
+                    updateFields.org_type = mappedType.org_type;
+                    updateFields.structure_type = mappedType.structure_type;
+                }
+            }
+            
             // Map billing settings
             const billingSettings = {};
             if (orgEmail) {
