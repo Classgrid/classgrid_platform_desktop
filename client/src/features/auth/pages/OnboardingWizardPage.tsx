@@ -346,7 +346,8 @@ export function OnboardingWizardPage() {
       return;
     }
 
-    if (phone && orgPhone.trim() === phone.trim()) {
+    const adminPhoneVal = phone || formData["personal_details"]?.phone || "";
+    if (adminPhoneVal && isPhoneMatch(orgPhone, adminPhoneVal)) {
       showAlert("Already registered.");
       return;
     }
@@ -604,7 +605,8 @@ export function OnboardingWizardPage() {
       showAlert("Please enter a valid organization email.");
       return;
     }
-    if (fetchedEmail && orgEmail.trim().toLowerCase() === fetchedEmail.trim().toLowerCase()) {
+    const adminEmailVal = fetchedEmail || formData["personal_details"]?.email || "";
+    if (adminEmailVal && isEmailMatch(orgEmail, adminEmailVal)) {
       showAlert("Already registered.");
       return;
     }
@@ -1019,11 +1021,14 @@ export function OnboardingWizardPage() {
     }
     // Org Verification step
     if (currentStepData.id === "org_verification") {
-      if (fetchedEmail && orgEmail.trim().toLowerCase() === fetchedEmail.trim().toLowerCase()) {
+      const adminEmailVal = fetchedEmail || formData["personal_details"]?.email || "";
+      const adminPhoneVal = phone || formData["personal_details"]?.phone || "";
+
+      if (adminEmailVal && isEmailMatch(orgEmail, adminEmailVal)) {
         showAlert("Already registered.");
         return;
       }
-      if (phone && orgPhone.trim() === phone.trim()) {
+      if (adminPhoneVal && isPhoneMatch(orgPhone, adminPhoneVal)) {
         showAlert("Already registered.");
         return;
       }
@@ -2068,8 +2073,10 @@ export function OnboardingWizardPage() {
 
                   {/* ── RENDER: ORG VERIFICATION (FIXED STEP) ── */}
                   {currentStepData.type === "fixed_org_verification" && (() => {
-                    const isSameEmail = Boolean(orgEmail && fetchedEmail && orgEmail.trim().toLowerCase() === fetchedEmail.trim().toLowerCase());
-                    const isSamePhone = Boolean(orgPhone && phone && orgPhone.trim() === phone.trim());
+                    const adminEmailVal = fetchedEmail || formData["personal_details"]?.email || "";
+                    const adminPhoneVal = phone || formData["personal_details"]?.phone || "";
+                    const isSameEmail = isEmailMatch(orgEmail, adminEmailVal);
+                    const isSamePhone = isPhoneMatch(orgPhone, adminPhoneVal);
 
                     return (
                       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
