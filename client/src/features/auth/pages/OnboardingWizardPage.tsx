@@ -702,29 +702,23 @@ export function OnboardingWizardPage() {
               />
 
               {steps.map((step, idx) => {
-                const stepWindowSize = 4;
-                const currentWindow = Math.floor(currentStep / stepWindowSize);
-                const stepWindow = Math.floor(idx / stepWindowSize);
-                
-                if (currentWindow !== stepWindow) return null;
-
                 const isActive = idx === currentStep;
                 const isPast = idx < currentStep;
                 return (
                   <div 
                     key={step.id} 
-                    className={`flex items-center gap-4 py-3 ${isPast ? "cursor-pointer hover:opacity-80 transition-opacity" : isActive ? "cursor-default" : "cursor-default opacity-60"}`} 
+                    className={`flex items-center gap-4 py-3 ${isPast ? "cursor-pointer hover:opacity-80 transition-opacity" : isActive ? "cursor-default" : "cursor-default"}`} 
                     onClick={() => isPast && setCurrentStep(idx)}
                   >
                     <div className={`size-10 rounded-full flex items-center justify-center shrink-0 border-2 transition-all duration-300 ${isActive ? "bg-primary border-primary text-primary-foreground shadow-md shadow-primary/30 scale-105" :
                         isPast ? "bg-primary border-primary text-primary-foreground" :
-                          "bg-background border-muted text-muted-foreground"
+                          "bg-muted/50 border-border text-muted-foreground"
                       }`}>
                       {isPast ? <CheckCircle2 className="size-5" /> : <span className="text-sm font-bold">{idx + 1}</span>}
                     </div>
                     <div>
                       <span className={`block text-sm transition-colors ${isActive ? "text-foreground font-bold" :
-                          isPast ? "text-foreground font-medium" : "text-muted-foreground/60 font-medium"
+                          isPast ? "text-foreground font-medium" : "text-muted-foreground font-medium"
                         }`}>
                         {step.title}
                       </span>
