@@ -664,7 +664,7 @@ export function OnboardingWizardPage() {
   if (isCompleted) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-background flex items-center justify-center p-4">
-        {showConfetti && <React.Suspense fallback={null}><Confetti width={window.innerWidth} height={window.innerHeight} />}
+        {showConfetti && <React.Suspense fallback={null}><Confetti width={window.innerWidth} height={window.innerHeight} /></React.Suspense>}
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden" style={{ background: "radial-gradient(ellipse at 50% 30%, #1e3a5f 0%, #0a0e1a 50%, #05070d 100%)" }}>
           {/* Starfield */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -2136,6 +2136,7 @@ function ImageUploadField({ label, value, onChange, circular = false }: { label:
         aspectRatio={1}
         title={`Crop ${label}`}
       />
+      </React.Suspense>
     </div>
   );
 }
