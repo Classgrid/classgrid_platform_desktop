@@ -2015,31 +2015,15 @@ export function OnboardingWizardPage() {
                             />
                           </div>
 
-                          <div className="md:col-span-2 space-y-4">
-                            <div>
-                              <label className="text-sm font-semibold block mb-1.5">Building & Street Address (Line 1)</label>
-                              <Input
-                                value={formData["org_details"]?.["address_line1"] || ""}
-                                onChange={(e) => handleFieldChange("org_details", "address_line1", e.target.value)}
-                                placeholder="e.g. Plot No. 42, Street No. 3"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-semibold block mb-1.5">Landmark & Area (Line 2)</label>
-                              <Input
-                                value={formData["org_details"]?.["address_line2"] || ""}
-                                onChange={(e) => handleFieldChange("org_details", "address_line2", e.target.value)}
-                                placeholder="e.g. Near Bus Stand, Civil Lines"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-semibold block mb-1.5">Full Address <span className="text-danger">*</span></label>
-                              <Input
-                                value={formData["org_details"]?.["address"] ?? fetchedAddress ?? ""}
-                                onChange={(e) => handleFieldChange("org_details", "address", e.target.value)}
-                                placeholder="Complete registered address"
-                              />
-                            </div>
+                          <div className="md:col-span-2">
+                            <label className="text-sm font-semibold block mb-1.5">
+                              {normalizeOrgType(formData["org_details"]?.["type"] || fetchedOrgType || "Junior College")} Address <span className="text-danger">*</span>
+                            </label>
+                            <Input
+                              value={formData["org_details"]?.["address"] ?? fetchedAddress ?? ""}
+                              onChange={(e) => handleFieldChange("org_details", "address", e.target.value)}
+                              placeholder={`Complete registered address of the ${normalizeOrgType(formData["org_details"]?.["type"] || fetchedOrgType || "Junior College").toLowerCase()}`}
+                            />
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">State <span className="text-danger">*</span></label>
