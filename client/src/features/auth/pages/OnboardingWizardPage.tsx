@@ -2078,44 +2078,7 @@ export function OnboardingWizardPage() {
                               placeholder="e.g. 110001"
                             />
                           </div>
-                          <div>
-                            <label className="text-sm font-semibold block mb-1.5">Default Currency</label>
-                            <ResponsiveSelect
-                              className="w-full h-10 rounded-lg border-input bg-background"
-                              value={formData["org_details"]?.["currency"] || "INR"}
-                              onChange={(e) => handleFieldChange("org_details", "currency", e.target.value)}
-                            >
-                              <option value="INR">INR (₹)</option>
-                              <option value="USD">USD ($)</option>
-                              <option value="EUR">EUR (€)</option>
-                              <option value="GBP">GBP (£)</option>
-                            </ResponsiveSelect>
-                          </div>
-                          <div>
-                            <label className="text-sm font-semibold block mb-1.5">Timezone</label>
-                            <ResponsiveSelect
-                              className="w-full h-10 rounded-lg border-input bg-background"
-                              value={formData["org_details"]?.["timezone"] || "Asia/Kolkata"}
-                              onChange={(e) => handleFieldChange("org_details", "timezone", e.target.value)}
-                            >
-                              <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-                              <option value="America/New_York">America/New_York (EST)</option>
-                              <option value="Europe/London">Europe/London (GMT)</option>
-                              <option value="Asia/Dubai">Asia/Dubai (GST)</option>
-                            </ResponsiveSelect>
-                          </div>
-                          <div>
-                            <label className="text-sm font-semibold block mb-1.5">Working Days</label>
-                            <ResponsiveSelect
-                              className="w-full h-10 rounded-lg border-input bg-background"
-                              value={formData["org_details"]?.["working_days"] || "mon-sat"}
-                              onChange={(e) => handleFieldChange("org_details", "working_days", e.target.value)}
-                            >
-                              <option value="mon-sat">Monday – Saturday</option>
-                              <option value="mon-fri">Monday – Friday</option>
-                              <option value="custom">Custom</option>
-                            </ResponsiveSelect>
-                          </div>
+
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">Website URL</label>
                             <Input
