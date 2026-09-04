@@ -26,12 +26,12 @@ import locationsData from "@/data/india-locations.json";
 import erpData from "@/data/full_erp_data.json";
 
 const getTerminologyLabels = (orgType: string) => {
-  if (orgType === "School") return { orgLabel: "School", level1: "Standard", level2: "Class", level3: "Student", period: "Term", division: "Section", subBatch: "—", studentId: "Roll No", teacher: "Teacher", assignment: "Homework", exam: "Test" };
-  if (orgType === "Junior College") return { orgLabel: "Junior College", level1: "Stream", level2: "Standard", level3: "Student", period: "Term", division: "Division", subBatch: "Batch", studentId: "Roll No", teacher: "Lecturer", assignment: "Assignment", exam: "Examination" };
-  if (orgType === "Engineering College" || orgType === "College") return { orgLabel: "College", level1: "Degree", level2: "Branch", level3: "Student", period: "Semester", division: "Division", subBatch: "Lab Batch", studentId: "PRN", teacher: "Faculty", assignment: "Assignment", exam: "Examination" };
-  if (orgType === "Diploma College") return { orgLabel: "Polytechnic", level1: "Department", level2: "Branch", level3: "Student", period: "Semester", division: "Division", subBatch: "Lab Batch", studentId: "Enrollment No", teacher: "Faculty", assignment: "Assignment", exam: "Examination" };
-  if (orgType === "Coaching Institute" || orgType === "Coaching") return { orgLabel: "Institute", level1: "Course", level2: "Course", level3: "Student", period: "Phase", division: "Batch", subBatch: "—", studentId: "Enrollment No", teacher: "Mentor", assignment: "Practice Set", exam: "Mock Test" };
-  return { orgLabel: "Organization", level1: "Level 1", level2: "Level 2", level3: "Member", period: "Period", division: "Division", subBatch: "Group", studentId: "ID", teacher: "Teacher", assignment: "Assignment", exam: "Exam" };
+  if (orgType === "School") return { orgLabel: "School", topLevel: "Standard", course: "Class", year: "Class", period: "Term", division: "Section", subBatch: "—", studentId: "Roll No", teacher: "Teacher", assignment: "Homework", exam: "Test" };
+  if (orgType === "Junior College") return { orgLabel: "Junior College", topLevel: "Stream", course: "Stream", year: "Standard", period: "Term", division: "Division", subBatch: "Batch", studentId: "Roll No", teacher: "Lecturer", assignment: "Assignment", exam: "Examination" };
+  if (orgType === "Engineering College" || orgType === "College") return { orgLabel: "College", topLevel: "Degree", course: "Branch", year: "Year", period: "Semester", division: "Division", subBatch: "Lab Batch", studentId: "PRN", teacher: "Faculty", assignment: "Assignment", exam: "Examination" };
+  if (orgType === "Diploma College") return { orgLabel: "Polytechnic", topLevel: "Department", course: "Branch", year: "Year", period: "Semester", division: "Division", subBatch: "Lab Batch", studentId: "Enrollment No", teacher: "Faculty", assignment: "Assignment", exam: "Examination" };
+  if (orgType === "Coaching Institute" || orgType === "Coaching") return { orgLabel: "Institute", topLevel: "Course", course: "Course", year: "Year", period: "Phase", division: "Batch", subBatch: "—", studentId: "Enrollment No", teacher: "Mentor", assignment: "Practice Set", exam: "Mock Test" };
+  return { orgLabel: "Organization", topLevel: "Level 1", course: "Course", year: "Year", period: "Period", division: "Division", subBatch: "Group", studentId: "ID", teacher: "Teacher", assignment: "Assignment", exam: "Exam" };
 };
 
 export function OnboardingWizardPage() {
@@ -42,6 +42,23 @@ export function OnboardingWizardPage() {
   // Persisted state initialization
   const [currentStep, setCurrentStep] = useState(() => {
     try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlToken = urlParams.get("token");
+      const savedToken = localStorage.getItem("onboarding_token");
+      
+      // If there's a new token that differs from the one in storage, start fresh!
+      if (urlToken && savedToken && urlToken !== savedToken) {
+        localStorage.removeItem("onboarding_step");
+        localStorage.removeItem("onboarding_adminName");
+        localStorage.removeItem("onboarding_formData");
+        localStorage.setItem("onboarding_token", urlToken);
+        return 0;
+      }
+      
+      if (urlToken && !savedToken) {
+        localStorage.setItem("onboarding_token", urlToken);
+      }
+
       const saved = localStorage.getItem("onboarding_step");
       return saved ? parseInt(saved, 10) : 0;
     } catch {
@@ -1240,14 +1257,22 @@ export function OnboardingWizardPage() {
                   {currentStepData.type === "fixed_terminology" && (() => {
                     const currentOrgType = formData["org_details"]?.type || fetchedOrgType || "Engineering";
                     const terms = getTerminologyLabels(currentOrgType);
-                    const termDefinitions: Record<string, Record<string, string>> = {
-                      "School": { [terms.orgLabel]: "Your school or institution", [terms.level1]: "Grade level like 1st, 2nd, 3rd Standard", [terms.level2]: "Divisions within a standard (e.g. A, B, C)", [terms.level3]: "Learners enrolled in a section" },
-                      "Junior College": { [terms.orgLabel]: "Your junior college", [terms.level1]: "Class (11th or 12th Standard)", [terms.level2]: "Stream (Science, Commerce, etc.) and Division", [terms.level3]: "Students enrolled in the class" },
-                      "Engineering College": { [terms.orgLabel]: "Your engineering college", [terms.level1]: "Academic department (e.g. Computer Science)", [terms.level2]: "Specific degree program and batch year", [terms.level3]: "Students enrolled in the program" },
-                      "Diploma College": { [terms.orgLabel]: "Your diploma college or polytechnic", [terms.level1]: "Academic department (e.g. Mechanical)", [terms.level2]: "Specific diploma program and year", [terms.level3]: "Students enrolled in the program" },
-                      "Coaching Institute": { [terms.orgLabel]: "Your coaching centre", [terms.level1]: "Target exam or course stream", [terms.level2]: "Batches scheduled at different times", [terms.level3]: "Students enrolled in a batch" },
-                    };
-                    const defs = termDefinitions[currentOrgType] || termDefinitions["School"] || {};
+                    
+                    // Filter out duplicate or empty nodes to build a clean visual hierarchy
+                    const hierarchyNodes = [
+                      { title: terms.orgLabel, icon: Building2, color: "text-indigo-400" },
+                      { title: terms.topLevel, icon: Briefcase, color: "text-blue-400" },
+                      { title: terms.course, icon: School, color: "text-emerald-400" },
+                      { title: terms.year, icon: GraduationCap, color: "text-teal-400" },
+                      { title: terms.period, icon: Briefcase, color: "text-cyan-400" },
+                      { title: terms.division, icon: School, color: "text-violet-400" },
+                      { title: terms.subBatch, icon: Briefcase, color: "text-fuchsia-400" }
+                    ].filter((node, index, self) => 
+                      node.title !== "—" && 
+                      // Avoid showing consecutive duplicates (like Course -> Course in Coaching)
+                      (index === 0 || node.title !== self[index - 1].title)
+                    );
+
                     return (
                       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="grid md:grid-cols-3 gap-6">
@@ -1258,27 +1283,31 @@ export function OnboardingWizardPage() {
                               <h3 className="text-2xl font-bold mb-2">Platform Terminology</h3>
                               <p className="text-slate-400 mb-8 text-center max-w-sm">This flowchart visualizes how your data will be hierarchically organized based on your institution type ({currentOrgType}).</p>
 
-                              <div className="flex flex-col items-center gap-4">
-                                <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-64 text-center shadow-lg" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-                                  <Building2 className="size-6 mx-auto mb-2 text-indigo-400" />
-                                  <div className="font-bold">Organization ({terms.orgLabel})</div>
-                                  <div className="text-xs text-slate-400">{formData["org_details"]?.name || "Your Institution"}</div>
-                                </motion.div>
-                                <div className="w-0.5 h-6 bg-indigo-500/50" />
-                                <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-64 text-center shadow-lg" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-                                  <Briefcase className="size-6 mx-auto mb-2 text-blue-400" />
-                                  <div className="font-bold">{terms.level1}</div>
-                                  <div className="text-xs text-slate-400">Top Level Structural Unit</div>
-                                </motion.div>
-                                <div className="w-0.5 h-6 bg-blue-500/50" />
-                                <div className="flex gap-4">
-                                  <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
-                                    <School className="size-5 mx-auto mb-2 text-emerald-400" />
-                                    <div className="font-bold text-sm">{terms.level2}</div>
-                                  </motion.div>
-                                  <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
+                              <div className="flex flex-col items-center gap-2">
+                                {hierarchyNodes.map((node, i) => (
+                                  <React.Fragment key={i}>
+                                    <motion.div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20 w-56 text-center shadow-lg flex items-center justify-center gap-3" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 * (i + 1) }}>
+                                      <node.icon className={`size-5 ${node.color}`} />
+                                      <div className="font-bold text-sm">{node.title}</div>
+                                    </motion.div>
+                                    {i < hierarchyNodes.length - 1 && (
+                                      <div className="w-0.5 h-4 bg-indigo-500/50" />
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                                
+                                <div className="w-0.5 h-4 bg-indigo-500/50" />
+                                
+                                <div className="flex gap-4 mt-2">
+                                  <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 * (hierarchyNodes.length + 1) }}>
                                     <GraduationCap className="size-5 mx-auto mb-2 text-purple-400" />
-                                    <div className="font-bold text-sm">{terms.level3}</div>
+                                    <div className="font-bold text-sm">Student</div>
+                                    <div className="text-xs text-slate-400">({terms.studentId})</div>
+                                  </motion.div>
+                                  <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 * (hierarchyNodes.length + 1) }}>
+                                    <User className="size-5 mx-auto mb-2 text-rose-400" />
+                                    <div className="font-bold text-sm">{terms.teacher}</div>
+                                    <div className="text-xs text-slate-400">Instructor</div>
                                   </motion.div>
                                 </div>
                               </div>
@@ -1286,15 +1315,19 @@ export function OnboardingWizardPage() {
                           </div>
 
                           {/* Side panel: What these mean? */}
-                          <div className="bg-white dark:bg-card p-6 rounded-3xl shadow-sm border border-border/60">
-                            <h4 className="text-lg font-bold mb-4 flex items-center gap-2">📖 What these mean?</h4>
-                            <div className="space-y-4">
-                              {Object.entries(defs).map(([term, desc]) => (
-                                <div key={term} className="border-l-2 border-primary/40 pl-3">
-                                  <p className="font-semibold text-sm text-foreground">{term}</p>
-                                  <p className="text-xs text-muted-foreground">{desc}</p>
+                          <div className="bg-white dark:bg-card p-6 rounded-3xl shadow-sm border border-border/60 flex flex-col justify-between">
+                            <div>
+                              <h4 className="text-lg font-bold mb-4 flex items-center gap-2">✨ Other Components</h4>
+                              <div className="space-y-4">
+                                <div className="border-l-2 border-indigo-400 pl-3">
+                                  <p className="font-semibold text-sm text-foreground">{terms.assignment}</p>
+                                  <p className="text-xs text-muted-foreground">Term used for assignments</p>
                                 </div>
-                              ))}
+                                <div className="border-l-2 border-emerald-400 pl-3">
+                                  <p className="font-semibold text-sm text-foreground">{terms.exam}</p>
+                                  <p className="text-xs text-muted-foreground">Term used for examinations</p>
+                                </div>
+                              </div>
                             </div>
                             <div className="mt-6 p-3 bg-primary/5 rounded-xl border border-primary/10">
                               <p className="text-xs text-muted-foreground">💡 You can customize these terms later from <strong>Settings → Platform Terminology</strong>.</p>
@@ -1302,6 +1335,7 @@ export function OnboardingWizardPage() {
                           </div>
                         </div>
                       </div>
+                    );              </div>
                     );
                   })()}
 
@@ -1832,8 +1866,8 @@ export function OnboardingWizardPage() {
                   variant="outline"
                   size="sm"
                   onClick={handlePrev}
-                  disabled={currentStep <= 1}
-                  className={cn("h-10 px-4 text-sm font-medium rounded-lg cursor-pointer transition-opacity", currentStep <= 1 ? "opacity-0 pointer-events-none" : "opacity-100")}
+                  disabled={currentStep === 0}
+                  className={cn("h-10 px-4 text-sm font-medium rounded-lg cursor-pointer transition-opacity", currentStep === 0 ? "opacity-0 pointer-events-none" : "opacity-100")}
                 >
                   <ChevronLeft className="mr-1 size-4" /> Back
                 </Button>
