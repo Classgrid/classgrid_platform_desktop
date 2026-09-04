@@ -1972,18 +1972,14 @@ export function OnboardingWizardPage() {
                             />
                           </div>
                           <div>
-                            <label className="text-sm font-semibold block mb-1.5 flex items-center justify-between">
-                              <span>Organization Type <span className="text-danger">*</span></span>
-                              <span className="text-[11px] text-muted-foreground font-normal">
-                                Set at registration
-                              </span>
+                            <label className="text-sm font-semibold block mb-1.5">
+                              Organization Type <span className="text-danger">*</span>
                             </label>
-                            <div className="flex items-center gap-2.5 h-10 px-3.5 rounded-xl bg-secondary/40 border border-border text-foreground font-bold text-sm select-none">
-                              <span>{normalizeOrgType(formData["org_details"]?.["type"] || fetchedOrgType || "Junior College")}</span>
-                              <span className="ml-auto text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                Locked
-                              </span>
-                            </div>
+                            <Input
+                              value={normalizeOrgType(formData["org_details"]?.["type"] || fetchedOrgType || "Junior College")}
+                              disabled
+                              className="bg-secondary/40 cursor-not-allowed font-medium text-foreground opacity-80"
+                            />
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">Board & Affiliation</label>
