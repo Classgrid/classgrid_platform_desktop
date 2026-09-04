@@ -2492,6 +2492,201 @@ export const getErpRoleInstantlyGrantedHtml = (recipientName, roleTitle, orgName
 export const getErpRoleRejectedHtml = (recipientName, roleTitle, orgName, rejectionReason, contactLink) => {
   const content = `<h2>Access Request Not Approved</h2>
   <p>Dear ${recipientName},</p>
+export const getAccountDeletedNotificationPlainText = (userName, userEmail, role) => {
+    return `
+User Account Deleted
+
+This is an automated notification regarding a user departure.
+
+Name: ${userName}
+Email: ${userEmail}
+Role: ${role.replace('_', ' ')}
+
+This user has permanently deleted their account from the platform.
+
+(c) ${new Date().getFullYear()} Classgrid. This is an internal administrative notification.
+    `.trim();
+};
+
+// =========================================================
+// ERP INTERNAL EMAILS (DARK MODE SUPPORT & NO CLASSGRID BRANDING)
+// =========================================================
+
+const erpBaseTemplate = ({ content, title = "Notification", orgName = "Institution" }) => {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title} - ${orgName}</title>
+  <style>
+    :root {
+      --bg: #f9fafb;
+      --card-bg: #ffffff;
+      --text: #111827;
+      --text-muted: #4b5563;
+      --border: #e5e7eb;
+      --btn-bg: #111827;
+      --btn-text: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111827;
+        --card-bg: #1f2937;
+        --text: #f9fafb;
+        --text-muted: #9ca3af;
+        --border: #374151;
+        --btn-bg: #ffffff;
+        --btn-text: #111827;
+      }
+    }
+    body, html {
+      margin: 0; padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper {
+      padding: 40px 20px;
+      width: 100%;
+      background-color: var(--bg);
+      box-sizing: border-box;
+    }
+    .card {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .content {
+      padding: 32px;
+      line-height: 1.6;
+      font-size: 15px;
+      color: var(--text);
+    }
+    .footer {
+      padding: 24px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    h2 {
+      margin-top: 0;
+      color: var(--text);
+    }
+    p {
+      margin: 0 0 16px;
+    }
+    ul {
+      margin: 0 0 16px 20px;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    .btn {
+      display: inline-block;
+      background-color: var(--btn-bg);
+      color: var(--btn-text) !important;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: 600;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    .text-muted {
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <div class="content">
+        ${content}
+      </div>
+      <div class="footer">
+        <p>Regards,<br><strong>${orgName}</strong><br>ERP Administration Team</p>
+        <p>This is an automated email. Please do not reply.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+};
+
+export const getErpRoleInvitationHtml = (recipientName, roleTitle, orgName, setupLink, expiryDate) => {
+  const content = `<h2>Official Notice: Role Assignment</h2>
+  <p>Dear ${recipientName},</p>
+  <p>You have been officially assigned the role of <strong>${roleTitle}</strong> at <strong>${orgName}</strong>.</p>
+  <p>To activate your account and access the institution’s ERP portal, please click the button below and complete your portal setup.</p>
+  <a href="${setupLink}" class="btn">Set Up Portal Access</a>
+  <p class="text-muted">This invitation link will expire on ${expiryDate}.</p>
+  <p>For security reasons, please do not share this email or activation link with anyone.</p>
+  <p>If the button does not work, copy and paste the following link into your browser:</p>
+  <p><a href="${setupLink}">${setupLink}</a></p>
+  <p>For assistance, please contact IT Administrator/Support.</p>`;
+  return baseTemplate({ content, title: "Role Assignment" });
+};
+
+export const getErpRoleRequestAdminHtml = (adminName, requesterName, requesterEmail, requestedRole, orgName, requestDate, reviewLink) => {
+  const content = `<h2>Access Request Pending Approval</h2>
+  <p>Dear ${adminName},</p>
+  <p>A new role-access request has been submitted for <strong>${orgName}</strong>.</p>
+  <ul>
+    <li><strong>Requester Name:</strong> ${requesterName}</li>
+    <li><strong>Requester Email:</strong> ${requesterEmail}</li>
+    <li><strong>Requested Role:</strong> ${requestedRole}</li>
+    <li><strong>Request Date:</strong> ${requestDate}</li>
+  </ul>
+  <p>Please review the request and approve or deny it through the ERP portal.</p>
+  <a href="${reviewLink}" class="btn">Review Request in ERP</a>
+  <p>For security and accountability, please verify the requester’s identity and role requirements before approving access.</p>
+  <p>If the button does not work, copy and paste the following link into your browser:</p>
+  <p><a href="${reviewLink}">${reviewLink}</a></p>`;
+  return baseTemplate({ content, title: "Access Request Pending Approval" });
+};
+
+export const getErpRoleApprovedHtml = (recipientName, roleTitle, orgName, dashboardLink) => {
+  const content = `<h2>Access Request Approved</h2>
+  <p>Dear ${recipientName},</p>
+  <p>Your request for the <strong>${roleTitle}</strong> role at <strong>${orgName}</strong> has been officially approved by the administration.</p>
+  <p>Your assigned role is now active, and your dashboard is ready for access.</p>
+  <a href="${dashboardLink}" class="btn">Access Your Dashboard</a>
+  <p>Please use your registered email address to sign in. Do not share your account credentials or portal access with anyone.</p>
+  <p>If the button does not work, copy and paste the following link into your browser:</p>
+  <p><a href="${dashboardLink}">${dashboardLink}</a></p>
+  <p>For assistance, please contact IT Administrator/Support.</p>`;
+  return baseTemplate({ content, title: "Access Request Approved" });
+};
+
+export const getErpRoleInstantlyGrantedHtml = (recipientName, roleTitle, orgName, updatedBy, updateDate, dashboardLink) => {
+  const content = `<h2>Security Notice: Administrative Privileges Updated</h2>
+  <p>Dear ${recipientName},</p>
+  <p>This is an automated security notice confirming that <strong>${roleTitle}</strong> administrative privileges have been successfully added to your profile for <strong>${orgName}</strong>.</p>
+  <ul>
+    <li><strong>Updated Role:</strong> ${roleTitle}</li>
+    <li><strong>Updated By:</strong> ${updatedBy}</li>
+    <li><strong>Updated On:</strong> ${updateDate}</li>
+  </ul>
+  <p>You can review your updated administrative access through the ERP portal.</p>
+  <a href="${dashboardLink}" class="btn">Review Your Administrative Access</a>
+  <p>Administrative privileges may provide access to sensitive institutional information. Please use them only for authorized institutional activities and never share your account credentials.</p>
+  <p>If you did not request or expect this change, contact IT Administration immediately.</p>
+  <p>If the button does not work, copy and paste the following link into your browser:</p>
+  <p><a href="${dashboardLink}">${dashboardLink}</a></p>`;
+  return baseTemplate({ content, title: "Administrative Privileges Updated" });
+};
+
+// ------------- ERP: ROLE REQUEST DECLINED (sent to requester when admin rejects) -------------
+export const getErpRoleRejectedHtml = (recipientName, roleTitle, orgName, rejectionReason, contactLink) => {
+  const content = `<h2>Access Request Not Approved</h2>
+  <p>Dear ${recipientName},</p>
   <p>Your request for <strong>${roleTitle}</strong> access at <strong>${orgName}</strong> has been reviewed and was <strong>not approved</strong> at this time.</p>
   ${rejectionReason ? `<div class="box" style="border-left: 3px solid #dc2626;"><p style="margin-bottom: 8px; font-weight: 600; color: #111111;">Reason from Administrator</p><p style="margin-bottom: 0;">${rejectionReason}</p></div>` : ''}
   <p>If you believe this decision was made in error, or if you have questions, please contact your Organization Administrator directly.</p>
@@ -2499,24 +2694,4 @@ export const getErpRoleRejectedHtml = (recipientName, roleTitle, orgName, reject
   <p>You can continue using Classgrid with your current role and access level.</p>
   <p>If you did not submit this request, please contact support immediately.</p>`;
   return baseTemplate({ content, title: "Access Request Not Approved" });
-};
-
-// ------------- ONBOARDING OTP -------------
-export const getOnboardingOtpEmailHtml = (otp) => {
-  const content = `
-    <div style="background: #ffffff; color: #111111; margin-bottom: 24px; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px; text-align: center;">
-      <p style="margin-bottom: 12px; font-size: 14px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Your Verification Code</p>
-      <h1 style="margin: 0; font-size: 36px; font-weight: 800; letter-spacing: 0.1em; color: #111111;">${otp}</h1>
-    </div>
-    <p style="margin-bottom: 8px; font-size: 14px; color: #374151;">This code is valid for <strong>10 minutes</strong>. Do not share this code with anyone.</p>
-  `;
-  return baseTemplate({
-    content,
-    title: "Classgrid Verification Code",
-    ignoreText: "If you did not request this code, you can safely ignore this email."
-  });
-};
-
-export const getOnboardingOtpEmailPlainText = (otp) => {
-  return \`Your Classgrid verification code is: \${otp}\\n\\nThis code is valid for 10 minutes. Do not share this code with anyone.\\n\\nIf you did not request this code, you can safely ignore this email.\`;
 };
