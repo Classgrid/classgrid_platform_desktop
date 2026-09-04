@@ -279,7 +279,7 @@ export function OnboardingWizardPage() {
 
   const dynamicSections = (strategy.sections || []).filter(sec => sec.key !== "organization_details");
   
-  const isOrgAdmin = effectiveRole === "admin" || effectiveRole === "superadmin";
+  const isOrgAdmin = effectiveRole === "org_admin" || effectiveRole === "super_admin";
 
   // Create one step per dynamic section
   const steps: any[] = [
@@ -416,9 +416,21 @@ export function OnboardingWizardPage() {
       setIsSubmitting(true);
       try {
         if (token && password) {
-          const payload: any = { token, password };
+          const payload: any = { 
+            token, 
+            password,
+            username,
+            orgEmail,
+            personalDetails: formData["personal_details"],
+            orgIdentity: formData["org_identity"],
+            orgDetails: formData["org_details"],
+            dynamicData: formData
+          };
           if (effectiveRole === "org_admin" && fetchedSubdomain) {
             payload.subdomain = fetchedSubdomain;
+          }
+          if (formData["org_identity"]?.["slug"]) {
+            payload.subdomain = formData["org_identity"]["slug"];
           }
           const res = await activateAdmin(payload);
           if (res.redirectTo) {
@@ -994,9 +1006,9 @@ export function OnboardingWizardPage() {
                             <p className="text-xs text-muted-foreground mb-4">Choose a short, memorable slug for your login portal.</p>
                             <div className="flex items-center rounded-xl border border-input bg-secondary/30 pl-4 overflow-hidden h-12 focus-within:ring-2 focus-within:ring-primary/20">
                               <span className="text-muted-foreground font-medium text-sm">classgrid.com/</span>
-                              <input 
+                              <Input 
                                 type="text" 
-                                className="flex-1 bg-transparent border-none outline-none px-2 text-sm font-bold h-full"
+                                className="flex-1 bg-transparent border-none outline-none shadow-none px-2 text-sm font-bold h-full focus-visible:ring-0 focus-visible:ring-offset-0"
                                 placeholder="my-school"
                                 value={formData["org_identity"]?.["slug"] || ""}
                                 onChange={(e) => handleFieldChange("org_identity", "slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
@@ -1160,7 +1172,7 @@ export function OnboardingWizardPage() {
                           <div className="relative">
                             <label className="text-xs font-semibold text-foreground mb-1.5 block">New Password</label>
                             <div className="relative">
-                              <input
+                              <Input
                                 type={showPassword ? "text" : "password"}
                                 value={password}
                                 maxLength={64}
@@ -1215,7 +1227,7 @@ export function OnboardingWizardPage() {
                           <div>
                             <label className="text-xs font-semibold text-foreground mb-1.5 block">Confirm Password</label>
                             <div className="relative">
-                              <input
+                              <Input
                                 type={showConfirmPassword ? "text" : "password"}
                                 value={confirmPassword}
                                 maxLength={64}

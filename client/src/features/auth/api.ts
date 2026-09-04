@@ -269,12 +269,8 @@ export async function validateActivationToken(token: string) {
   return response.data;
 }
 
-export async function activateAdmin({ token, password, subdomain }: { token: string; password: string; subdomain?: string }) {
-  const response = await apiClient.post<{ message: string; redirectTo?: string; token?: string }>("/api/auth/activate-admin", {
-    token,
-    password,
-    subdomain,
-  });
+export async function activateAdmin(payload: any) {
+  const response = await apiClient.post<{ message: string; redirectTo?: string; token?: string }>("/api/auth/activate-admin", payload);
   if (response.data.token) {
     localStorage.setItem("token", response.data.token);
   }

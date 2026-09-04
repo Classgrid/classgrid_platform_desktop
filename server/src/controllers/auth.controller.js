@@ -565,7 +565,7 @@ export const validateActivationToken = async (req, res) => {
 export const activateAdmin = async (req, res) => {
     try {
         await connectDB();
-        const { token, password, email, activationCode, subdomain } = req.body;
+        const { token, password, email, activationCode, subdomain, username, orgEmail, personalDetails, orgIdentity, orgDetails } = req.body;
 
         if ((!token && !(email && activationCode)) || !password) {
             return res.status(400).json({ message: "Provide password plus either token or email + activationCode." });
@@ -633,7 +633,7 @@ export const activateAdmin = async (req, res) => {
             finalSubdomain = org?.subdomain;
         }
 
-        // --- 4. Set password, mark single-use consumed, clear token ---
+        // --- 4. Set password, mark single-use consumed, clear token, set additional details ---
         user.password = await bcrypt.hash(password, 10);
         user.mustResetPassword = false;
         user.isEmailVerified = true;
@@ -644,6 +644,11 @@ export const activateAdmin = async (req, res) => {
         user.activationUsedAt = new Date(); // 🔒 Single-use: prevent re-use
         user.activationAttempts = 0;        // Reset rate limit on success
         user.activationAttemptsExpiresAt = null;
+        
+        if (username) {
+            user.username = username;
+        }
+
         if (!user.linkedProviders) user.linkedProviders = [];
         if (!user.linkedProviders.includes("manual")) user.linkedProviders.push("manual");
         user.authProvider = "manual";
@@ -652,6 +657,35 @@ export const activateAdmin = async (req, res) => {
         await user.save();
 
         if (user.organization_id) {
+            const Organization = (await import("../models/Organization.js")).default;
+            const updateFields = {};
+            if (orgDetails?.name) updateFields.name = orgDetails.name;
+            if (orgDetails?.address) updateFields.address = orgDetails.address;
+            
+            // Map billing settings
+            const billingSettings = {};
+            if (orgEmail) {
+                billingSettings.invoice_email = orgEmail;
+                billingSettings.email_verified = true; // since it was verified in the wizard
+            }
+            if (orgDetails?.city) billingSettings.city = orgDetails.city;
+            if (orgDetails?.pincode) billingSettings.pincode = orgDetails.pincode;
+            
+            if (Object.keys(billingSettings).length > 0) {
+                updateFields.billing_settings = billingSettings;
+            }
+            
+            if (orgIdentity?.logo) {
+                updateFields.logo_url = orgIdentity.logo; // assuming base64 or URL is handled
+            }
+            if (personalDetails?.designation) {
+                updateFields.designation = personalDetails.designation;
+            }
+
+            if (Object.keys(updateFields).length > 0) {
+                await Organization.findByIdAndUpdate(user.organization_id, { $set: updateFields });
+            }
+
             await syncDerivedOnboardingProgress(user.organization_id);
             await DemoRequest.findOneAndUpdate(
                 { provisionedAdminId: user._id, provisionedOrganizationId: user.organization_id },
