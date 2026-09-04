@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
-import { resetPasswordWithToken } from "../api";
+import { validateActivationToken, activateAdmin } from "../api";
 import {
   CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, Mail, Smartphone, Key, User,
   Upload, School, GraduationCap, Building2, Briefcase, PlaySquare, Eye, EyeOff, Moon, Sun, ChevronDown
@@ -28,7 +28,26 @@ export function OnboardingWizardPage() {
   const [isCompleted, setIsCompleted] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fetchedEmail, setFetchedEmail] = useState("");
+  const [fetchedName, setFetchedName] = useState("");
+  const [fetchedRole, setFetchedRole] = useState("");
+  const [dashboardUrl, setDashboardUrl] = useState("/");
 
+  React.useEffect(() => {
+    if (token) {
+      validateActivationToken(token)
+        .then((res) => {
+          if (res.valid) {
+            if (res.email) setFetchedEmail(res.email);
+            if (res.name) setFetchedName(res.name);
+            if (res.role) setFetchedRole(res.role);
+          }
+        })
+        .catch((err) => {
+          console.error("Token validation failed:", err);
+        });
+    }
+  }, [token]);
   // Central form state: sectionKey -> { fieldKey: value }
   const [formData, setFormData] = useState<Record<string, Record<string, any>>>({});
 
@@ -162,7 +181,10 @@ export function OnboardingWizardPage() {
       setIsSubmitting(true);
       try {
         if (token && password) {
-          await resetPasswordWithToken({ token, password });
+          const res = await activateAdmin({ token, password });
+          if (res.redirectTo) {
+            setDashboardUrl(res.redirectTo);
+          }
         }
         setIsCompleted(true);
         setShowConfetti(true);
@@ -198,7 +220,7 @@ export function OnboardingWizardPage() {
           <p className="text-muted-foreground mb-8 text-lg">
             Welcome to your new digital campus. Your profile has been successfully configured.
           </p>
-          <Button size="lg" className="w-full text-lg h-14 rounded-xl" onClick={() => window.location.href = "/"}>
+          <Button size="lg" className="w-full text-lg h-14 rounded-xl" onClick={() => window.location.href = dashboardUrl}>
             Go to Dashboard <ChevronRight className="ml-2 size-5" />
           </Button>
         </motion.div>
@@ -361,7 +383,7 @@ export function OnboardingWizardPage() {
                         <div className="grid md:grid-cols-2 gap-6">
                           <div>
                             <label className="text-xs font-semibold text-foreground mb-1.5 block">Email Address (From Invite)</label>
-                            <Input defaultValue="student@classgrid.in" disabled className="bg-secondary/50 h-10 text-sm" />
+                            <Input value={fetchedEmail || "Loading..."} readOnly className="bg-secondary/50 h-10 text-sm font-medium" />
                           </div>
                           <div className="flex-1">
                             <label className="text-xs font-semibold text-foreground mb-1.5 block">6-Digit Verification Code</label>

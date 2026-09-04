@@ -165,6 +165,11 @@ export const leadsApi = {
       .post<{ success: boolean; message: string; organization?: any; admin?: any; activation?: any }>(`/api/super-admin/leads/${id}/approve`, payload)
       .then((r) => r.data),
 
+  regenerateActivation: (id: string) =>
+    apiClient
+      .post<{ success: boolean; activation: { activationLink: string; activationCode: string; expiresAt: string } }>(`/api/super-admin/leads/${id}/regenerate-activation`)
+      .then((r) => r.data),
+
   updateAdminDetails: (id: string, payload: { adminName: string; adminEmail: string; adminPhone?: string; role?: string; designation?: string }) =>
     apiClient
       .patch<{ success: boolean; lead: Lead }>(`/api/super-admin/leads/${id}/admin-details`, payload)

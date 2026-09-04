@@ -22,7 +22,8 @@ import {
     approveLeadAndProvision,
     getDemoLeads,
     scheduleLeadMeeting, createDemoLead,
-    deleteDemoLead
+    deleteDemoLead,
+    regenerateLeadActivation
 } from "../controllers/super-admin.controller.js";
 import {
     getSuperAdminSupportConversation,
@@ -1071,6 +1072,7 @@ router.post("/organizations/:id/convert-to-active", async (req, res) => {
 });
 
 router.post("/leads/:id/schedule-meeting", scheduleLeadMeeting);
+router.post("/leads/:id/regenerate-activation", regenerateLeadActivation);
 router.patch("/leads/:id/assign", async (req, res, next) => {
     try {
         const { assignLead } = await import("../controllers/super-admin.controller.js");

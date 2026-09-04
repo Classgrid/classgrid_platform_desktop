@@ -62,3 +62,11 @@ export function useDeleteLead() {
     }
   });
 }
+
+export function useRegenerateActivation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => leadsApi.regenerateActivation(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: LEADS_KEY }),
+  });
+}

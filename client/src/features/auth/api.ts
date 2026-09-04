@@ -120,3 +120,21 @@ export function getGoogleAuthUrl({ audience, role }: GoogleAuthUrlPayload) {
   }
   return new URL(path, API_BASE_URL).toString();
 }
+
+export async function validateActivationToken(token: string) {
+  const response = await apiClient.post<{ valid: boolean; email?: string; name?: string; role?: string; mode?: string }>("/api/auth/validate-activation-token", {
+    token,
+  });
+  return response.data;
+}
+
+export async function activateAdmin({ token, password }: { token: string; password: string }) {
+  const response = await apiClient.post<{ message: string; redirectTo?: string; token?: string }>("/api/auth/activate-admin", {
+    token,
+    password,
+  });
+  if (response.data.token) {
+    localStorage.setItem("token", response.data.token);
+  }
+  return response.data;
+}

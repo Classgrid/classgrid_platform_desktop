@@ -10,7 +10,7 @@ import { Badge } from "@/components/marketing_ui/badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/marketing_ui/tooltip";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
-import { useLeads, useApproveLead, useScheduleMeeting, useDeleteLead } from "../queries/useLeads";
+import { useLeads, useApproveLead, useScheduleMeeting, useDeleteLead, useRegenerateActivation } from "../queries/useLeads";
 import { formatDate } from "@/utils/dateUtils";
 import { formatOrgType } from "@/utils/orgHelpers";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
@@ -22,6 +22,7 @@ export function LeadDetailsPage() {
   const { data, isLoading } = useLeads();
   const scheduleMutation = useScheduleMeeting();
   const deleteMutation = useDeleteLead();
+  const regenerateMutation = useRegenerateActivation();
   const navigate = useNavigate();
 
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -467,9 +468,33 @@ export function LeadDetailsPage() {
                     </div>
                   )}
 
-                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => window.open('/superadmin/orgs', '_blank')}>
-                    Open Organization Dashboard &rarr;
+                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white mb-2" onClick={() => window.open('/superadmin/orgs', '_blank')}>
+                    View in Organizations List &rarr;
                   </Button>
+                  
+                  {!provisionedData && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full text-emerald-700 border-emerald-200 hover:bg-emerald-100" 
+                      disabled={regenerateMutation.isPending}
+                      onClick={() => {
+                        regenerateMutation.mutate(id!, {
+                          onSuccess: (res: any) => {
+                            if (res?.activation) {
+                              setProvisionedData({
+                                activationLink: res.activation.activationLink,
+                                activationCode: res.activation.activationCode
+                              });
+                              toast.success("New activation link generated!");
+                            }
+                          },
+                          onError: (err: any) => toast.error(err?.message || "Failed to generate link")
+                        });
+                      }}
+                    >
+                      {regenerateMutation.isPending ? "Generating..." : "Generate New Activation Link"}
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="p-5">

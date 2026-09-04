@@ -12,7 +12,7 @@ import {
   getConsolidatedApprovalEmailPlainText,
 } from "./email-templates.service.js";
 
-const generateActivationCredentials = () => {
+export const generateActivationCredentials = () => {
   const rawActivationToken = crypto.randomBytes(32).toString("hex");
   const hashedActivationToken = crypto
     .createHash("sha256")
@@ -184,7 +184,8 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
     admin.status = "active";
     await admin.save();
 
-    const activationLink = `${FRONTEND_URL}/admin/activate?token=${credentials.rawActivationToken}`;
+    const ONBOARDING_URL = process.env.NODE_ENV === "production" ? "https://onboard.classgrid.in" : "http://onboard.localhost:5173";
+    const activationLink = `${ONBOARDING_URL}/?token=${credentials.rawActivationToken}`;
     const activationDate = new Date();
     const expiryDate = provisioned?.subscription?.expiresAt || new Date(Date.now() + 31 * 24 * 60 * 60 * 1000);
     const plan = String(options?.plan || provisioned?.subscription?.plan || "demo").trim().toLowerCase();

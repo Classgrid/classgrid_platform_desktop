@@ -11,6 +11,7 @@ import { formatOrgType } from "@/utils/orgHelpers";
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
 import { StatCard } from "@/components/marketing_ui/StatCard";
+import { Input } from "@/components/marketing_ui/input";
 
 
 import { formatDate } from "@/utils/dateUtils";
@@ -62,19 +63,19 @@ export function OrganizationsPage() {
     };
   }, [allOrgs]);
 
-  const columns: ColumnDef<SuperAdminOrganization>[] = [
+  const columns = [
     {
       header: "Organization Name",
-      accessorKey: "name",
-      cell: ({ row }) => (
+      key: "name",
+      render: (_val: any, row: any) => (
         <div className="flex items-center gap-3">
           <span className="inline-flex size-9 items-center justify-center rounded-md border border-border bg-muted/40 text-muted-foreground">
             <Building2 className="size-4" />
           </span>
           <div>
-            <div className="font-medium text-foreground">{row.original.name}</div>
+            <div className="font-medium text-foreground">{row.name}</div>
             <div className="text-xs capitalize text-muted-foreground">
-              {formatOrgType(row.original.orgType)}
+              {formatOrgType(row.orgType)}
             </div>
           </div>
         </div>
@@ -82,43 +83,43 @@ export function OrganizationsPage() {
     },
     {
       header: "Owner",
-      accessorKey: "ownerEmail",
-      cell: ({ row }) => (
+      key: "ownerEmail",
+      render: (_val: any, row: any) => (
         <div>
-          <div className="font-medium text-foreground">{row.original.ownerName || "Owner not set"}</div>
-          <div className="text-xs text-muted-foreground">{row.original.ownerEmail || "No owner email"}</div>
+          <div className="font-medium text-foreground">{row.ownerName || "Owner not set"}</div>
+          <div className="text-xs text-muted-foreground">{row.ownerEmail || "No owner email"}</div>
         </div>
       ),
     },
     {
       header: "Status",
-      accessorKey: "status",
-      cell: ({ row }) => (
-        <Badge variant={statusVariant(row.original.status)} dot>
-          {row.original.status}
+      key: "status",
+      render: (_val: any, row: any) => (
+        <Badge variant={statusVariant(row.status)} dot>
+          {row.status}
         </Badge>
       ),
     },
     {
       header: "Users",
-      accessorKey: "userCount",
-      cell: ({ row }) => <span className="font-medium tabular-nums">{row.original.userCount ?? 0}</span>,
+      key: "userCount",
+      render: (_val: any, row: any) => <span className="font-medium tabular-nums">{row.userCount ?? 0}</span>,
     },
     {
       header: "Joined",
-      accessorKey: "createdAt",
-      cell: ({ row }) => (
+      key: "createdAt",
+      render: (_val: any, row: any) => (
         <span className="text-sm">
-          {formatDate(row.original.createdAt)}
+          {formatDate(row.createdAt)}
         </span>
       ),
     },
     {
       header: "Actions",
-      id: "actions",
-      cell: ({ row }) => (
+      key: "actions",
+      render: (_val: any, row: any) => (
         <Button size="sm" variant="outline" asChild>
-          <Link to={`/superadmin/orgs/${row.original._id}`}>View Details</Link>
+          <Link to={`/superadmin/orgs/${row._id}`}>View Details</Link>
         </Button>
       ),
     },
@@ -142,56 +143,37 @@ export function OrganizationsPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard title="Total Organizations" value={isLoading ? "..." : stats.total} icon={<Building2 size={16} />} />
-        <StatCard title="Active Organizations" value={isLoading ? "..." : stats.active} icon={<ShieldCheck size={16} />} />
-        <StatCard title="Users In Orgs" value={isLoading ? "..." : stats.totalUsers} icon={<Users size={16} />} />
-      </div>
-
       <SectionPanel
         title="Organizations"
         description="Search, inspect, and manage provisioned institutions."
-        actions={
-          stats.suspended > 0 ? (
-            <Badge variant="danger">{stats.suspended} needs attention</Badge>
-          ) : (
-            <Badge variant="success">Backend connected</Badge>
-          )
-        }
         noPadding
       >
-        <div >
-          <div
-            searchValue={search}
-            onSearchChange={setSearch}
-            searchPlaceholder="Search name, owner, plan..."
-            filters={
-              <div >
-                <div
-                  value={statusFilter}
-                  onValueChange={setStatusFilter}
-                  placeholder="Filter by Status"
-                  options={[
-                    { label: "Active", value: "active" },
-                    { label: "Suspended", value: "suspended" },
-                    { label: "Blocked", value: "blocked" },
-                  ]}
-                  allowClear
-                />
-              </div>
-            }
+        <div className="flex items-center gap-2 mb-4 p-4">
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name, owner, plan..."
+            className="flex h-9 w-full sm:w-[300px] items-center justify-between rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+            <option value="blocked">Blocked</option>
+          </select>
         </div>
 
         {isError ? (
-          <div className="p-4 rounded-md border bg-red-100 text-red-800 p-4 rounded-md border border-red-200" >
-            <div className="p-4 rounded-md border__body">
-              <span className="p-4 rounded-md border__title">Backend request failed</span>
-              <p className="p-4 rounded-md border__message">
-                {(error as Error)?.message || "The organizations endpoint did not return data."}
-              </p>
-            </div>
-            <Button variant="outline" onClick={() => refetch()}>
+          <div className="p-4 m-4 rounded-md border bg-red-100 text-red-800 border-red-200">
+            <span className="font-semibold block mb-1">Backend request failed</span>
+            <p className="text-sm mb-3">
+              {(error as Error)?.message || "The organizations endpoint did not return data."}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
               Retry
             </Button>
           </div>
@@ -199,33 +181,9 @@ export function OrganizationsPage() {
 
         <DataTable
           columns={columns}
-          data={filteredOrgs}
+          rows={filteredOrgs}
           isLoading={isLoading}
-          isError={isError}
-          onRetry={() => refetch()}
-          loadingLabel="Fetching organizations from the backend"
-          emptyIcon={<Building2 size={32} />}
-          emptyTitle={allOrgs.length ? "No organizations match your search" : "No organizations have been created yet"}
-          emptyDescription={
-            allOrgs.length
-              ? "Try a different name, owner email, status, or plan."
-              : "Create the first organization to start seeing real backend data in this directory."
-          }
-          emptyAction={
-            allOrgs.length ? (
-              <Button variant="outline" onClick={() => setSearch("")}>
-                Clear Search
-              </Button>
-            ) : (
-              <Button asChild>
-                <Link to="/superadmin/onboard">
-                  <Plus className="size-4" />
-                  Create Organization
-                </Link>
-              </Button>
-            )
-          }
-          emptyMessage="No organizations found."
+          emptyMessage={allOrgs.length ? "No organizations match your search." : "No organizations found."}
         />
       </SectionPanel>
     </div>

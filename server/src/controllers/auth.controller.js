@@ -532,7 +532,13 @@ export const validateActivationToken = async (req, res) => {
             return res.status(400).json({ message: "This account has already been activated. Please sign in." });
         }
 
-        return res.status(200).json({ valid: true, mode: token ? "link" : "code" });
+        return res.status(200).json({ 
+            valid: true, 
+            mode: token ? "link" : "code",
+            email: user.email,
+            name: user.name,
+            role: user.role
+        });
     } catch (err) {
         console.error("Validate Activation Token Error:", err);
         res.status(500).json({ message: "Server error during validation." });
@@ -710,7 +716,8 @@ export const resendActivation = async (req, res) => {
         await user.save();
 
         const frontendUrl = getFrontendUrl();
-        const activationLink = `${frontendUrl}/admin/activate?token=${credentials.rawToken}`;
+        const ONBOARDING_URL = process.env.NODE_ENV === "production" ? "https://onboard.classgrid.in" : "http://onboard.localhost:5173";
+        const activationLink = `${ONBOARDING_URL}/?token=${credentials.rawToken}`;
 
         const org = user.organization_id
             ? await Organization.findById(user.organization_id).select("name").lean()
@@ -766,7 +773,8 @@ export const resolveManualActivationLink = async (req, res) => {
         user.activationCodeExpires = credentials.expiresAt;
         await user.save();
 
-        const activationLink = `${getFrontendUrl()}/admin/activate?token=${credentials.rawToken}`;
+        const ONBOARDING_URL = process.env.NODE_ENV === "production" ? "https://onboard.classgrid.in" : "http://onboard.localhost:5173";
+        const activationLink = `${ONBOARDING_URL}/?token=${credentials.rawToken}`;
         return res.json({
             success: true,
             activationLink,

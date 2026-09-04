@@ -24,6 +24,7 @@ export function LeadsPage() {
   const assignMutation = useAssignLead();
 
   const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("active");
   const [assigningId, setAssigningId] = useState<string | null>(null);
 
   const leads = data?.leads ?? [];
@@ -37,15 +38,22 @@ export function LeadsPage() {
   }, [leads]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return leads;
+    let list = leads;
+    if (filterStatus === "active") {
+      list = leads.filter(l => l.status !== "converted" && l.status !== "closed");
+    } else if (filterStatus === "converted") {
+      list = leads.filter(l => l.status === "converted");
+    }
+
+    if (!search.trim()) return list;
     const q = search.toLowerCase();
-    return leads.filter(l =>
+    return list.filter(l =>
       l.institutionName?.toLowerCase().includes(q) ||
       l.adminEmail?.toLowerCase().includes(q) ||
       l.adminName?.toLowerCase().includes(q) ||
       l.city?.toLowerCase().includes(q)
     );
-  }, [leads, search]);
+  }, [leads, search, filterStatus]);
 
   const handleAssign = (id: string) => {
     setAssigningId(id);
@@ -90,6 +98,15 @@ export function LeadsPage() {
           placeholder="Search institution, contact, city…"
           className="flex h-9 w-full sm:w-[300px] items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
+        <select 
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none focus:ring-1 focus:ring-ring"
+        >
+          <option value="active">Active Requests</option>
+          <option value="converted">Provisioned</option>
+          <option value="all">All Leads</option>
+        </select>
       </div>
 
       {/* Leads List */}

@@ -136,7 +136,8 @@ export const approveOrganization = async (req, res) => {
         });
 
         // Single consolidated email: approval + org codes + activation link
-        const activationLink = `${frontendUrl}/admin/activate?token=${rawActivationToken}`;
+        const ONBOARDING_URL = process.env.NODE_ENV === "production" ? "https://onboard.classgrid.in" : "http://onboard.localhost:5173";
+        const activationLink = `${ONBOARDING_URL}/?token=${rawActivationToken}`;
         const consolSubject = "Activate Your Classgrid Admin Account";
 
         await sendEmail({

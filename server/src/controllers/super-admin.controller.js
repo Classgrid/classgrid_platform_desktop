@@ -1220,3 +1220,45 @@ export const cleanLogs = async (req, res) => {
         });
     }
 };
+
+// ══════════════════════════════════════════════════════════════
+//  15. REGENERATE LEAD ACTIVATION
+// ══════════════════════════════════════════════════════════════
+export const regenerateLeadActivation = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const lead = await DemoRequest.findById(id);
+        if (!lead || !lead.provisionedAdminId) {
+            return res.status(404).json({ success: false, message: "Lead not found or not yet provisioned" });
+        }
+
+        const admin = await User.findById(lead.provisionedAdminId);
+        if (!admin) {
+            return res.status(404).json({ success: false, message: "Provisioned admin not found" });
+        }
+
+        const { generateActivationCredentials } = await import("../services/lead-conversion.service.js");
+        const credentials = generateActivationCredentials();
+
+        admin.activationToken = credentials.hashedActivationToken;
+        admin.activationTokenExpires = credentials.expiresAt;
+        admin.activationCodeHash = credentials.activationCodeHash;
+        admin.activationCodeExpires = credentials.expiresAt;
+        await admin.save();
+
+        const ONBOARDING_URL = process.env.NODE_ENV === "production" ? "https://onboard.classgrid.in" : "http://onboard.localhost:5173";
+        const activationLink = `${ONBOARDING_URL}/?token=${credentials.rawActivationToken}`;
+
+        res.json({
+            success: true,
+            activation: {
+                activationLink,
+                activationCode: credentials.activationCode,
+                expiresAt: credentials.expiresAt
+            }
+        });
+    } catch (err) {
+        console.error("[SuperAdmin] regenerateLeadActivation error:", err.message);
+        res.status(500).json({ success: false, message: "Failed to regenerate activation" });
+    }
+};
