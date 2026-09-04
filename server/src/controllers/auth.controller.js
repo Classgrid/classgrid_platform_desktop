@@ -2403,12 +2403,21 @@ export const sendOnboardingOtp = async (req, res) => {
         });
 
         if (type === "email") {
-            const html = `<p>Your verification code for Classgrid Onboarding is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`;
+            const { baseTemplate } = await import("../services/email-templates.service.js");
+            const content = `
+              <p>Hi there,</p>
+              <p>Here is your one-time verification code for Classgrid onboarding:</p>
+              <div style="text-align: center; margin: 32px 0;">
+                <span style="display: inline-block; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #111111; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 32px;">${otp}</span>
+              </div>
+              <p style="color: #6b7280; font-size: 14px;">This code expires in <strong>10 minutes</strong>. If you didn't request this, you can safely ignore this email.</p>
+            `;
+            const html = baseTemplate({ content, title: "Classgrid Verification Code" });
             await sendEmail({
                 to: target,
                 subject: "Classgrid Onboarding Verification Code",
                 html,
-                text: `Your verification code is: ${otp}`,
+                text: `Your Classgrid verification code is: ${otp}. This code expires in 10 minutes.`,
             });
         } else if (type === "phone") {
             const message = `Your Classgrid verification code is ${otp}. It expires in 10 mins. Do not share this with anyone.`;

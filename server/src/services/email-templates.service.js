@@ -1887,7 +1887,6 @@ Contact Classgrid Support: https://classgrid.in/support
 
 Nikhil Shinde | CEO
 Classgrid
-Operating System for Modern Education
 
 © ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import { validateActivationToken, activateAdmin, sendOnboardingOtp, verifyOnboardingOtp, checkUsername } from "../api";
@@ -68,6 +69,10 @@ export function OnboardingWizardPage() {
   const [isVerifyingOrgEmail, setIsVerifyingOrgEmail] = useState(false);
   
   const [isInitializing, setIsInitializing] = useState(true);
+
+  // Sending OTP guards (prevent double-click)
+  const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
+  const [isSendingPhoneOtp, setIsSendingPhoneOtp] = useState(false);
   
   // OTP Timers
   const [emailOtpTimer, setEmailOtpTimer] = useState(0);
@@ -121,7 +126,8 @@ export function OnboardingWizardPage() {
   };
 
   const handleSendEmailOtp = async () => {
-    if (!fetchedEmail) return;
+    if (!fetchedEmail || isSendingEmailOtp) return;
+    setIsSendingEmailOtp(true);
     try {
       await sendOnboardingOtp({ target: fetchedEmail, type: "email" });
       setEmailOtpSent(true);
@@ -129,6 +135,8 @@ export function OnboardingWizardPage() {
       toast.success("OTP sent to your email!");
     } catch (e: any) {
       toast.error(e.message || "Failed to send OTP");
+    } finally {
+      setIsSendingEmailOtp(false);
     }
   };
 
@@ -152,6 +160,8 @@ export function OnboardingWizardPage() {
       showAlert("Please enter a valid phone number.");
       return;
     }
+    if (isSendingPhoneOtp) return;
+    setIsSendingPhoneOtp(true);
     try {
       await sendOnboardingOtp({ target: phone, type: "phone" });
       setPhoneOtpSent(true);
@@ -159,6 +169,8 @@ export function OnboardingWizardPage() {
       toast.success("OTP sent to your phone!");
     } catch (e: any) {
       toast.error(e.message || "Failed to send OTP");
+    } finally {
+      setIsSendingPhoneOtp(false);
     }
   };
 
@@ -865,9 +877,9 @@ export function OnboardingWizardPage() {
                                   variant="outline" 
                                   className="h-10 px-4 text-sm font-semibold min-w-[110px]"
                                   onClick={handleSendEmailOtp}
-                                  disabled={emailOtpSent && emailOtpTimer > 0}
+                                  disabled={isSendingEmailOtp || (emailOtpSent && emailOtpTimer > 0)}
                                 >
-                                  {emailOtpTimer > 0 ? `Resend (${emailOtpTimer}s)` : emailOtpSent ? "Resend" : "Send OTP"}
+                                  {isSendingEmailOtp ? "Sending..." : emailOtpTimer > 0 ? `Resend (${emailOtpTimer}s)` : emailOtpSent ? "Resend" : "Send OTP"}
                                 </Button>
                               )}
                             </div>
