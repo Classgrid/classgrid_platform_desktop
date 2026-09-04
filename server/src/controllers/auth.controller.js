@@ -2399,7 +2399,7 @@ export const sendOnboardingOtp = async (req, res) => {
         if (!target || !type) return res.status(400).json({ message: "Target and type are required." });
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+        const expiresAt = new Date(Date.now() + 30 * 1000); // 30 seconds
 
         // Delete any existing OTP for this target
         await OnboardingOTP.deleteMany({ target: target.toLowerCase() });
@@ -2412,21 +2412,13 @@ export const sendOnboardingOtp = async (req, res) => {
         });
 
         if (type === "email") {
-            const { baseTemplate } = await import("../services/email-templates.service.js");
-            const content = `
-              <p>Hi there,</p>
-              <p>Here is your one-time verification code for Classgrid onboarding:</p>
-              <div style="text-align: center; margin: 32px 0;">
-                <span style="display: inline-block; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #111111; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 32px;">${otp}</span>
-              </div>
-              <p style="color: #6b7280; font-size: 14px;">This code expires in <strong>10 minutes</strong>. If you didn't request this, you can safely ignore this email.</p>
-            `;
-            const html = baseTemplate({ content, title: "Classgrid Verification Code" });
+            const { getNewDeviceOtpHtml, getNewDeviceOtpPlainText } = await import("../services/email-templates.service.js");
+            
             await sendEmail({
                 to: target,
-                subject: "Classgrid Onboarding Verification Code",
-                html,
-                text: `Your Classgrid verification code is: ${otp}. This code expires in 10 minutes.`,
+                subject: "Classgrid Verification Code",
+                html: getNewDeviceOtpHtml ? getNewDeviceOtpHtml("there", otp) : `<p>Your Classgrid verification code is: <strong>${otp}</strong></p>`,
+                text: getNewDeviceOtpPlainText ? getNewDeviceOtpPlainText("there", otp) : `Your Classgrid verification code is: ${otp}`,
             });
         } else if (type === "phone") {
             // Temporarily mock SMS sending until DLT/production keys are available
