@@ -1681,140 +1681,89 @@ export function OnboardingWizardPage() {
 
                     return (
                       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="w-full max-w-4xl mx-auto bg-slate-900 text-white p-6 md:p-8 rounded-3xl shadow-2xl relative overflow-hidden border border-slate-800">
-                          {/* Ambient radial glow */}
-                          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-900 to-slate-950 pointer-events-none" />
+                        <div className="bg-card p-6 md:p-8 rounded-3xl border border-border shadow-sm">
+                          <p className="text-sm text-muted-foreground mb-6">
+                            This is how your campus is structured in Classgrid. Each level branches into the next.
+                          </p>
 
-                          <div className="relative z-10 space-y-8">
-                            {/* Top Header */}
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-                              <div>
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-2">
-                                  <GitBranch className="size-3.5" />
-                                  ACADEMIC HIERARCHY ENGINE
-                                </div>
-                                <h3 className="text-2xl font-black text-white tracking-tight">
-                                  {terms.displayName} Hierarchy
-                                </h3>
-                                <p className="text-slate-400 text-xs font-medium mt-0.5">
-                                  Visualizing how academic data flows through your campus in Classgrid
-                                </p>
-                              </div>
-                              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-300 text-xs font-medium self-start md:self-auto shadow-sm">
-                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                <span>MongoDB Dynamic Hierarchy</span>
+                          {/* ── Vertical Top-Down Tree ── */}
+                          <div className="flex flex-col items-center gap-0">
+
+                            {/* Root Node: Org Name */}
+                            <motion.div
+                              className="w-full max-w-xs bg-primary text-primary-foreground px-6 py-4 rounded-2xl text-center shadow-md"
+                              initial={{ scale: 0.9, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                            >
+                              <Building2 className="size-6 mx-auto mb-1.5" />
+                              <div className="font-bold text-lg tracking-tight">{terms.displayName}</div>
+                              <div className="text-xs opacity-80 mt-0.5">Your Institution</div>
+                            </motion.div>
+
+                            {/* Connector from root */}
+                            <div className="w-0.5 h-6 bg-primary/40" />
+
+                            {/* Hierarchy Levels */}
+                            {terms.hierarchyTree.map((node, i) => (
+                              <React.Fragment key={i}>
+                                <motion.div
+                                  className="w-full max-w-sm bg-background border border-border rounded-2xl p-4 text-center shadow-sm hover:border-primary/40 transition-colors"
+                                  initial={{ opacity: 0, y: 8 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.1 * (i + 1) }}
+                                >
+                                  <div className="font-bold text-foreground text-base">{node.name}</div>
+                                  {node.example && (
+                                    <div className="text-sm text-muted-foreground mt-1">{node.example}</div>
+                                  )}
+                                </motion.div>
+
+                                {/* Connector line between levels */}
+                                {i < terms.hierarchyTree.length - 1 && (
+                                  <div className="flex flex-col items-center">
+                                    <div className="w-0.5 h-4 bg-border" />
+                                    <ChevronDown className="size-4 text-muted-foreground -my-1" />
+                                    <div className="w-0.5 h-4 bg-border" />
+                                  </div>
+                                )}
+                              </React.Fragment>
+                            ))}
+
+                            {/* Fork connector to roles */}
+                            <div className="flex flex-col items-center mt-1">
+                              <div className="w-0.5 h-5 bg-border" />
+                              <div className="flex items-center gap-0">
+                                <div className="w-16 sm:w-24 h-0.5 bg-border" />
+                                <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                                <div className="w-16 sm:w-24 h-0.5 bg-border" />
                               </div>
                             </div>
 
-                            {/* Flowchart Node Cards Container */}
-                            <div className="bg-slate-950/80 p-6 md:p-8 rounded-2xl border border-slate-800/80 shadow-2xl space-y-8">
-                              <div className="flex items-center justify-between">
-                                <div className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
-                                  <GitBranch className="size-4 text-emerald-400" />
-                                  <span>Interactive Academic Hierarchy Flowchart</span>
-                                </div>
-                                <div className="text-[11px] text-slate-400 font-medium hidden sm:block">
-                                  {terms.hierarchyTree.length} Structured Levels
-                                </div>
-                              </div>
+                            {/* Role Cards: Student & Educator */}
+                            <div className="grid grid-cols-2 gap-4 w-full max-w-sm mt-1">
+                              <motion.div
+                                className="bg-background border border-border rounded-2xl p-4 text-center shadow-sm"
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 * (terms.hierarchyTree.length + 1) }}
+                              >
+                                <GraduationCap className="size-5 text-primary mx-auto mb-1.5" />
+                                <div className="font-bold text-foreground text-sm">Student</div>
+                                <div className="text-xs text-muted-foreground mt-1">ID: {terms.studentId}</div>
+                              </motion.div>
 
-                              {/* Multi-Tier Flowchart Node Layout */}
-                              <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 py-2">
-                                {terms.hierarchyTree.map((node, i) => (
-                                  <React.Fragment key={i}>
-                                    <motion.div
-                                      className={cn(
-                                        "bg-slate-900/95 backdrop-blur-2xl p-5 rounded-2xl border transition-all duration-300 min-w-[160px] max-w-[240px] shadow-xl flex flex-col items-center text-center group hover:scale-105 hover:border-indigo-400/60 relative overflow-hidden",
-                                        node.borderGlow
-                                      )}
-                                      initial={{ scale: 0.9, opacity: 0, y: 10 }}
-                                      animate={{ scale: 1, opacity: 1, y: 0 }}
-                                      transition={{ delay: 0.08 * (i + 1) }}
-                                    >
-                                      {/* Level Indicator Badge */}
-                                      <div className="absolute top-2 right-2 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-white/10 text-slate-400">
-                                        L{i + 1}
-                                      </div>
-
-                                      <div className="p-3 rounded-xl bg-white/5 border border-white/10 mb-2.5 group-hover:bg-indigo-500/20 group-hover:border-indigo-500/30 transition-colors">
-                                        <node.icon className={`size-6 ${node.color}`} />
-                                      </div>
-                                      
-                                      <div className="font-extrabold text-base text-white mb-1.5 tracking-tight">{node.name}</div>
-                                      
-                                      {node.example ? (
-                                        <span className="text-xs font-semibold px-3 py-1 rounded-lg bg-indigo-500/15 text-indigo-200 border border-indigo-500/20 w-full text-center leading-relaxed">
-                                          {node.example}
-                                        </span>
-                                      ) : (
-                                        <span className="text-xs font-medium text-slate-500">—</span>
-                                      )}
-                                    </motion.div>
-
-                                    {/* Flowchart Connector Arrow */}
-                                    {i < terms.hierarchyTree.length - 1 && (
-                                      <div className="flex items-center justify-center shrink-0">
-                                        <div className="hidden lg:flex items-center text-indigo-400 gap-1">
-                                          <div className="w-4 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500" />
-                                          <div className="p-1.5 rounded-full bg-slate-900 border border-indigo-500/50 shadow-lg shadow-indigo-500/20">
-                                            <ArrowRight className="size-4 text-indigo-400 animate-pulse" />
-                                          </div>
-                                          <div className="w-4 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500" />
-                                        </div>
-                                        <div className="lg:hidden flex flex-col items-center text-indigo-400 gap-1">
-                                          <div className="w-0.5 h-4 bg-gradient-to-b from-indigo-500 to-purple-500" />
-                                          <div className="p-1 rounded-full bg-slate-900 border border-indigo-500/50 shadow-lg">
-                                            <ChevronDown className="size-4 text-indigo-400 animate-pulse" />
-                                          </div>
-                                          <div className="w-0.5 h-4 bg-gradient-to-b from-purple-500 to-indigo-500" />
-                                        </div>
-                                      </div>
-                                    )}
-                                  </React.Fragment>
-                                ))}
-                              </div>
-
-                              {/* Vertical Connector Branch to Roles */}
-                              <div className="flex flex-col items-center pt-2 pb-1">
-                                <div className="w-0.5 h-8 bg-gradient-to-b from-indigo-500 via-purple-500 to-rose-500" />
-                                <div className="-mt-3 p-1.5 rounded-full bg-slate-900 border border-purple-500/50 text-purple-400 shadow-xl shadow-purple-500/30">
-                                  <ChevronDown className="size-5" />
-                                </div>
-                              </div>
-
-                              {/* End Nodes: Student & Educator Roles */}
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
-                                <motion.div
-                                  className="bg-slate-900/95 backdrop-blur-2xl p-5 rounded-2xl border border-purple-500/30 text-center shadow-xl shadow-purple-500/10 flex flex-col items-center hover:border-purple-500/60 transition-all"
-                                  initial={{ y: 15, opacity: 0 }}
-                                  animate={{ y: 0, opacity: 1 }}
-                                  transition={{ delay: 0.1 * (terms.hierarchyTree.length + 1) }}
-                                >
-                                  <div className="p-3 rounded-xl bg-purple-500/15 border border-purple-500/30 mb-2">
-                                    <GraduationCap className="size-6 text-purple-400" />
-                                  </div>
-                                  <div className="font-extrabold text-base text-white">Student</div>
-                                  <div className="text-xs font-bold text-purple-300 mt-1.5 bg-purple-500/15 px-3 py-1 rounded-lg border border-purple-500/30">
-                                    ID: {terms.studentId}
-                                  </div>
-                                </motion.div>
-
-                                <motion.div
-                                  className="bg-slate-900/95 backdrop-blur-2xl p-5 rounded-2xl border border-rose-500/30 text-center shadow-xl shadow-rose-500/10 flex flex-col items-center hover:border-rose-500/60 transition-all"
-                                  initial={{ y: 15, opacity: 0 }}
-                                  animate={{ y: 0, opacity: 1 }}
-                                  transition={{ delay: 0.1 * (terms.hierarchyTree.length + 2) }}
-                                >
-                                  <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 mb-2">
-                                    <User className="size-6 text-rose-400" />
-                                  </div>
-                                  <div className="font-extrabold text-base text-white">{terms.teacher}</div>
-                                  <div className="text-xs font-bold text-rose-300 mt-1.5 bg-rose-500/15 px-3 py-1 rounded-lg border border-rose-500/30">
-                                    Educator / Faculty
-                                  </div>
-                                </motion.div>
-                              </div>
+                              <motion.div
+                                className="bg-background border border-border rounded-2xl p-4 text-center shadow-sm"
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 * (terms.hierarchyTree.length + 2) }}
+                              >
+                                <User className="size-5 text-primary mx-auto mb-1.5" />
+                                <div className="font-bold text-foreground text-sm">{terms.teacher}</div>
+                                <div className="text-xs text-muted-foreground mt-1">Educator</div>
+                              </motion.div>
                             </div>
+
                           </div>
                         </div>
                       </div>
