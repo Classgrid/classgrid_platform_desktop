@@ -426,23 +426,50 @@ export function OnboardingWizardPage() {
   const [phoneOtpTimer, setPhoneOtpTimer] = useState(0);
   const [orgEmailOtpTimer, setOrgEmailOtpTimer] = useState(0);
 
-  // Derived Dropdown Data
+  // Derived Dropdown Data (from india-locations.json)
   const stateOptions = useMemo(() => {
     return Object.keys(locationsData.states).sort();
   }, []);
 
-  const getCitiesForState = (stateName: string) => {
+  const getDistrictsForState = (stateName: string): string[] => {
     if (!stateName || !locationsData.states[stateName as keyof typeof locationsData.states]) return [];
-    const districts = locationsData.states[stateName as keyof typeof locationsData.states];
+    const districtsObj = locationsData.states[stateName as keyof typeof locationsData.states];
+    return Object.keys(districtsObj).sort();
+  };
+
+  const getTalukasForDistrict = (stateName: string, districtName: string): string[] => {
+    if (!stateName || !districtName) return [];
+    const districtsObj = locationsData.states[stateName as keyof typeof locationsData.states];
+    if (!districtsObj) return [];
+    const talukas = districtsObj[districtName as keyof typeof districtsObj];
+    return Array.isArray(talukas) ? [...talukas].sort() : [];
+  };
+
+  const getCitiesForState = (stateName: string, districtName?: string) => {
+    if (!stateName || !locationsData.states[stateName as keyof typeof locationsData.states]) return [];
+    const districtsObj = locationsData.states[stateName as keyof typeof locationsData.states];
+    
+    if (districtName && districtsObj[districtName as keyof typeof districtsObj]) {
+      const talukas = districtsObj[districtName as keyof typeof districtsObj];
+      return Array.isArray(talukas) ? [...talukas].sort() : [];
+    }
+    
     const cities = new Set<string>();
-    Object.values(districts).forEach((districtCities: any) => {
-      districtCities.forEach((city: string) => cities.add(city));
+    Object.values(districtsObj).forEach((districtCities: any) => {
+      if (Array.isArray(districtCities)) {
+        districtCities.forEach((city: string) => cities.add(city));
+      }
     });
     return Array.from(cities).sort();
   };
 
-  const selectedState = formData["org_details"]?.["state"] || fetchedState || "";
-  const cityOptions = useMemo(() => getCitiesForState(selectedState), [selectedState]);
+  const selectedState = formData["org_details"]?.["state"] ?? fetchedState ?? "";
+  const selectedDistrict = formData["org_details"]?.["district"] ?? fetchedDistrict ?? "";
+  const selectedTaluka = formData["org_details"]?.["taluka"] ?? fetchedTaluka ?? "";
+
+  const districtOptions = useMemo(() => getDistrictsForState(selectedState), [selectedState]);
+  const talukaOptions = useMemo(() => getTalukasForDistrict(selectedState, selectedDistrict), [selectedState, selectedDistrict]);
+  const cityOptions = useMemo(() => getCitiesForState(selectedState, selectedDistrict), [selectedState, selectedDistrict]);
 
   const languageOptions = useMemo(() => {
     if (!erpData.mothertoungelist) return [];
@@ -1975,13 +2002,15 @@ export function OnboardingWizardPage() {
                             <label className="text-sm font-semibold block mb-1.5">State <span className="text-danger">*</span></label>
                             <ResponsiveSelect
                               className="w-full h-10 rounded-lg border-input bg-background"
-                              value={formData["org_details"]?.["state"] ?? fetchedState ?? ""}
+                              value={selectedState}
                               onChange={(e) => {
                                 handleFieldChange("org_details", "state", e.target.value);
+                                handleFieldChange("org_details", "district", ""); // reset district on state change
+                                handleFieldChange("org_details", "taluka", ""); // reset taluka on state change
                                 handleFieldChange("org_details", "city", ""); // reset city on state change
                               }}
                             >
-                              <option value="">Select State</option>
+                              <option value="">Select State...</option>
                               {stateOptions.map(state => (
                                 <option key={state} value={state}>{state}</option>
                               ))}
@@ -1989,29 +2018,53 @@ export function OnboardingWizardPage() {
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">District</label>
-                            <Input
-                              value={formData["org_details"]?.["district"] ?? fetchedDistrict ?? ""}
-                              onChange={(e) => handleFieldChange("org_details", "district", e.target.value)}
-                              placeholder="e.g. South East Delhi / Biswanath"
-                            />
+                            <ResponsiveSelect
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={selectedDistrict}
+                              onChange={(e) => {
+                                handleFieldChange("org_details", "district", e.target.value);
+                                handleFieldChange("org_details", "taluka", ""); // reset taluka on district change
+                              }}
+                              disabled={!selectedState}
+                            >
+                              <option value="">Select District...</option>
+                              {selectedDistrict && !districtOptions.includes(selectedDistrict) && (
+                                <option value={selectedDistrict}>{selectedDistrict}</option>
+                              )}
+                              {districtOptions.map(dist => (
+                                <option key={dist} value={dist}>{dist}</option>
+                              ))}
+                            </ResponsiveSelect>
                           </div>
                           <div>
-                            <label className="text-sm font-semibold block mb-1.5">Taluka</label>
-                            <Input
-                              value={formData["org_details"]?.["taluka"] ?? fetchedTaluka ?? ""}
+                            <label className="text-sm font-semibold block mb-1.5">Taluka / Tehsil</label>
+                            <ResponsiveSelect
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={selectedTaluka}
                               onChange={(e) => handleFieldChange("org_details", "taluka", e.target.value)}
-                              placeholder="e.g. Lajpat Nagar / Gohpur"
-                            />
+                              disabled={!selectedDistrict}
+                            >
+                              <option value="">Select Taluka...</option>
+                              {selectedTaluka && !talukaOptions.includes(selectedTaluka) && (
+                                <option value={selectedTaluka}>{selectedTaluka}</option>
+                              )}
+                              {talukaOptions.map(tal => (
+                                <option key={tal} value={tal}>{tal}</option>
+                              ))}
+                            </ResponsiveSelect>
                           </div>
                           <div>
-                            <label className="text-sm font-semibold block mb-1.5">City <span className="text-danger">*</span></label>
+                            <label className="text-sm font-semibold block mb-1.5">City / Village <span className="text-danger">*</span></label>
                             <ResponsiveSelect
                               className="w-full h-10 rounded-lg border-input bg-background"
                               value={formData["org_details"]?.["city"] ?? fetchedCity ?? ""}
                               onChange={(e) => handleFieldChange("org_details", "city", e.target.value)}
                               disabled={!selectedState}
                             >
-                              <option value="">Select City</option>
+                              <option value="">Select City / Village...</option>
+                              {fetchedCity && !cityOptions.includes(fetchedCity) && (
+                                <option value={fetchedCity}>{fetchedCity}</option>
+                              )}
                               {cityOptions.map((city: string) => (
                                 <option key={city} value={city}>{city}</option>
                               ))}
