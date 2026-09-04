@@ -2079,19 +2079,11 @@ export function OnboardingWizardPage() {
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">City or Village <span className="text-danger">*</span></label>
-                            <ResponsiveSelect
-                              className="w-full h-10 rounded-lg border-input bg-background"
-                              value={selectedCity}
+                            <Input
+                              value={formData["org_details"]?.["city"] ?? fetchedCity ?? ""}
                               onChange={(e) => handleFieldChange("org_details", "city", e.target.value)}
-                            >
-                              <option value="">Select City or Village...</option>
-                              {selectedCity && !cityOptions.includes(selectedCity) && (
-                                <option value={selectedCity}>{selectedCity}</option>
-                              )}
-                              {cityOptions.map((city: string) => (
-                                <option key={city} value={city}>{city}</option>
-                              ))}
-                            </ResponsiveSelect>
+                              placeholder="e.g. Bhinga or Gohpur"
+                            />
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">PIN Code <span className="text-danger">*</span></label>
