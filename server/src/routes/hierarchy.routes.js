@@ -16,7 +16,10 @@ import {
 
 const router = express.Router();
 
-// All routes require authentication
+// GET /api/hierarchy/terminology/all — Public endpoint for org type terminology & plan metadata
+router.get("/terminology/all", getAllTerminology);
+
+// All other routes require authentication
 router.use(isAuthenticated);
 router.use(attachInstitutionProfile());
 
@@ -29,9 +32,6 @@ router.get("/tree", getTree);
 
 // GET /api/hierarchy/terminology — Get org-specific labels
 router.get("/terminology", getOrgTerminology);
-
-// GET /api/hierarchy/terminology/all — Get ALL org types' terminology (for settings comparison table)
-router.get("/terminology/all", getAllTerminology);
 
 // GET /api/hierarchy/roles — Get allowed roles based on org type
 router.get("/roles", getOrgRoles);

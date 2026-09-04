@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
-import { validateActivationToken, activateAdmin, sendOnboardingOtp, verifyOnboardingOtp, checkUsername } from "../api";
+import { validateActivationToken, activateAdmin, sendOnboardingOtp, verifyOnboardingOtp, checkUsername, fetchAllTerminology } from "../api";
 import {
   CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, Mail, Smartphone, Key, User,
   Upload, School, GraduationCap, Building2, Briefcase, PlaySquare, Eye, EyeOff, Moon, Sun, ChevronDown
@@ -25,22 +25,134 @@ import { cn } from "@/lib/utils";
 import locationsData from "@/data/india-locations.json";
 import erpData from "@/data/full_erp_data.json";
 
-const getTerminologyLabels = (orgType: string) => {
-  if (orgType === "School") return { orgLabel: "School", topLevel: "Standard", course: "Class", year: "Class", period: "Term", division: "Section", subBatch: "—", studentId: "Roll No", teacher: "Teacher", assignment: "Homework", exam: "Test" };
-  if (orgType === "Junior College") return { orgLabel: "Junior College", topLevel: "Stream", course: "Stream", year: "Standard", period: "Term", division: "Division", subBatch: "Batch", studentId: "Roll No", teacher: "Lecturer", assignment: "Assignment", exam: "Examination" };
-  if (orgType === "Engineering College" || orgType === "College") return { orgLabel: "College", topLevel: "Degree", course: "Branch", year: "Year", period: "Semester", division: "Division", subBatch: "Lab Batch", studentId: "PRN", teacher: "Faculty", assignment: "Assignment", exam: "Examination" };
-  if (orgType === "Diploma College") return { orgLabel: "Polytechnic", topLevel: "Department", course: "Branch", year: "Year", period: "Semester", division: "Division", subBatch: "Lab Batch", studentId: "Enrollment No", teacher: "Faculty", assignment: "Assignment", exam: "Examination" };
-  if (orgType === "Coaching Institute" || orgType === "Coaching") return { orgLabel: "Institute", topLevel: "Course", course: "Course", year: "Year", period: "Phase", division: "Batch", subBatch: "—", studentId: "Enrollment No", teacher: "Mentor", assignment: "Practice Set", exam: "Mock Test" };
-  return { orgLabel: "Organization", topLevel: "Level 1", course: "Course", year: "Year", period: "Period", division: "Division", subBatch: "Group", studentId: "ID", teacher: "Teacher", assignment: "Assignment", exam: "Exam" };
+const resolveMongoTerminology = (rawOrgType: string, mongoMap: Record<string, any>) => {
+  const norm = (rawOrgType || "").toLowerCase().trim();
+
+  let matchedKey = "engineering";
+  if (norm.includes("junior")) matchedKey = "junior_college";
+  else if (norm.includes("school")) matchedKey = "school";
+  else if (norm.includes("diploma") || norm.includes("polytechnic")) matchedKey = "diploma";
+  else if (norm.includes("coaching") || norm.includes("institute")) matchedKey = "coaching";
+  else if (norm.includes("other") || norm.includes("custom")) matchedKey = "other";
+
+  const dbData = mongoMap?.[matchedKey] || mongoMap?.["engineering"];
+
+  if (dbData) {
+    const terms = dbData.terminology || {};
+    const levels: string[] = dbData.hierarchyLevels || [];
+    const examples: string[] = dbData.hierarchyExamples || [];
+
+    const icons = [Building2, Briefcase, School, GraduationCap, Briefcase, School, Briefcase];
+    const colors = ["text-indigo-400", "text-blue-400", "text-emerald-400", "text-teal-400", "text-purple-400", "text-cyan-400", "text-fuchsia-400"];
+
+    const hierarchyTree = levels.map((lvl: string, idx: number) => ({
+      label: idx === 0 ? "Organization Level" : `Level ${idx + 1}`,
+      title: examples[idx] ? `${lvl} (${examples[idx]})` : lvl,
+      subTitle: idx === 0 ? "Institute Level" : `Hierarchy Level ${idx + 1}`,
+      icon: icons[idx % icons.length],
+      color: colors[idx % colors.length]
+    }));
+
+    return {
+      displayName: terms.org_label || dbData.planName,
+      planName: `Plan ${dbData.planNumber}: ${dbData.planName}`,
+      orgLabel: terms.org_label || "Organization",
+      topLevel: terms.top_level || "Top Level",
+      course: terms.course || "Course",
+      year: terms.year || "Year",
+      period: terms.period || "Period",
+      division: terms.division || "Division",
+      subBatch: terms.sub_batch || "Batch",
+      studentId: terms.student_id || "Roll No",
+      teacher: terms.teacher || "Teacher",
+      assignment: terms.assignment_label || "Assignment",
+      exam: terms.exam_label || "Exam",
+      hierarchyTree
+    };
+  }
+
+  // Dynamic fallback
+  if (norm.includes("junior")) {
+    return {
+      displayName: "Junior College",
+      planName: "Plan 5: Junior College",
+      orgLabel: "Junior College",
+      topLevel: "Stream",
+      course: "Stream",
+      year: "Standard",
+      period: "Term",
+      division: "Division",
+      subBatch: "Batch",
+      studentId: "Roll No",
+      teacher: "Lecturer",
+      assignment: "Assignment",
+      exam: "Examination",
+      hierarchyTree: [
+        { label: "Organization", title: "Junior College", subTitle: "Institute Level", icon: Building2, color: "text-indigo-400" },
+        { label: "Top Level", title: "Stream (Science, Commerce, Arts)", subTitle: "Academic Stream", icon: Briefcase, color: "text-blue-400" },
+        { label: "Course / Year", title: "Standard (11th, 12th)", subTitle: "Class / Grade", icon: School, color: "text-emerald-400" },
+        { label: "Group", title: "Division (A, B)", subTitle: "Class Section", icon: GraduationCap, color: "text-purple-400" },
+        { label: "Sub-Group", title: "Batch", subTitle: "Practical / Lab Batch", icon: Briefcase, color: "text-cyan-400" },
+      ]
+    };
+  }
+  if (norm.includes("school")) {
+    return {
+      displayName: "School",
+      planName: "Plan 2: School with Divisions",
+      orgLabel: "School",
+      topLevel: "Standard",
+      course: "Class",
+      year: "Class",
+      period: "Term",
+      division: "Section",
+      subBatch: "—",
+      studentId: "Roll No",
+      teacher: "Teacher",
+      assignment: "Homework",
+      exam: "Test",
+      hierarchyTree: [
+        { label: "Organization", title: "School", subTitle: "Campus Level", icon: Building2, color: "text-indigo-400" },
+        { label: "Top Level", title: "Standard (Class 1–10)", subTitle: "Grade Level", icon: School, color: "text-emerald-400" },
+        { label: "Group", title: "Section (A, B)", subTitle: "Class Section", icon: GraduationCap, color: "text-purple-400" }
+      ]
+    };
+  }
+  return {
+    displayName: "Engineering College",
+    planName: "Plan 1: Engineering",
+    orgLabel: "College",
+    topLevel: "Degree",
+    course: "Branch",
+    year: "Year",
+    period: "Semester",
+    division: "Division",
+    subBatch: "Lab Batch",
+    studentId: "PRN",
+    teacher: "Faculty",
+    assignment: "Assignment",
+    exam: "Examination",
+    hierarchyTree: [
+      { label: "Organization", title: "College", subTitle: "Campus Level", icon: Building2, color: "text-indigo-400" },
+      { label: "Top Level", title: "Degree (B.Tech)", subTitle: "Degree Program", icon: Briefcase, color: "text-blue-400" },
+      { label: "Department", title: "Department (Computer, IT, ENTC)", subTitle: "Academic Dept", icon: School, color: "text-emerald-400" },
+      { label: "Year", title: "Year (FY, SY, TY)", subTitle: "Academic Year", icon: GraduationCap, color: "text-teal-400" },
+      { label: "Period", title: "Semester (Sem 1, Sem 2)", subTitle: "Semester Term", icon: Briefcase, color: "text-cyan-400" },
+      { label: "Group", title: "Division (A, B, C)", subTitle: "Class Division", icon: School, color: "text-violet-400" },
+      { label: "Sub-Group", title: "Sub Batch (A1, A2)", subTitle: "Lab Batch", icon: Briefcase, color: "text-fuchsia-400" }
+    ]
+  };
 };
 
-const getDepartmentOptions = (orgType: string) => {
-  if (orgType === "School") return ["Administration", "Primary Section", "Secondary Section", "High School", "Science Dept", "Arts & Humanities", "Sports & Physical Ed", "Other"];
-  if (orgType === "Junior College") return ["Administration", "Science Faculty", "Commerce Faculty", "Arts Faculty", "Other"];
-  if (orgType === "Engineering College" || orgType === "College") return ["Administration", "Computer Science", "Mechanical", "Electrical", "Civil", "Electronics", "IT", "Other"];
-  if (orgType === "Diploma College") return ["Administration", "Computer Engineering", "Mechanical", "Electrical", "Civil", "Other"];
-  if (orgType === "Coaching Institute" || orgType === "Coaching") return ["Administration", "JEE Division", "NEET Division", "Foundation", "Other"];
-  return ["Administration", "Academic", "Other"];
+const getTerminologyLabels = (rawOrgType: string) => resolveMongoTerminology(rawOrgType, {});
+
+const getDepartmentOptions = (rawOrgType: string) => {
+  const norm = (rawOrgType || "").toLowerCase().trim();
+  if (norm.includes("junior")) return ["Administration", "Science Faculty", "Commerce Faculty", "Arts Faculty", "Other"];
+  if (norm.includes("school")) return ["Administration", "Primary Section", "Secondary Section", "High School", "Science Dept", "Arts & Humanities", "Sports & Physical Ed", "Other"];
+  if (norm.includes("diploma") || norm.includes("polytechnic")) return ["Administration", "Computer Engineering", "Mechanical", "Electrical", "Civil", "Other"];
+  if (norm.includes("coaching") || norm.includes("institute")) return ["Administration", "JEE Division", "NEET Division", "Foundation", "Other"];
+  return ["Administration", "Computer Science", "Mechanical", "Electrical", "Civil", "Electronics", "IT", "Other"];
 };
 
 export function OnboardingWizardPage() {
@@ -121,8 +233,22 @@ export function OnboardingWizardPage() {
   const [fetchedName, setFetchedName] = useState("");
   const [fetchedRole, setFetchedRole] = useState("");
   const [fetchedOrgType, setFetchedOrgType] = useState("school");
-  const [fetchedSubdomain, setFetchedSubdomain] = useState("");
+  const [fetchedSubdomain, setFetchedSubdomain] = useState("/");
   const [dashboardUrl, setDashboardUrl] = useState("/");
+  const [mongoTerminologyMap, setMongoTerminologyMap] = useState<Record<string, any>>({});
+
+  // Fetch MongoDB terminology dictionary dynamically from backend API
+  React.useEffect(() => {
+    fetchAllTerminology()
+      .then((res) => {
+        if (res && res.allTerminology) {
+          setMongoTerminologyMap(res.allTerminology);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load MongoDB terminology from backend:", err);
+      });
+  }, []);
   // Org data auto-fetched from Book a Demo lead
   const [fetchedOrgName, setFetchedOrgName] = useState("");
   const [fetchedAddress, setFetchedAddress] = useState("");
@@ -871,7 +997,10 @@ export function OnboardingWizardPage() {
                       <span className={`block text-sm transition-colors ${isActive ? "text-foreground font-bold" :
                         isPast ? "text-foreground font-medium" : "text-muted-foreground font-medium"
                         }`}>
-                        {step.title}
+                        {step.type === "fixed_terminology"
+                          ? `${resolveMongoTerminology(formData["org_details"]?.type || formData["organization_details"]?.type || fetchedOrgType || "Engineering", mongoTerminologyMap).displayName} Terminology`
+                          : step.title
+                        }
                       </span>
                       {isActive && <span className="text-[10px] uppercase tracking-wider text-primary font-bold mt-0.5 block">Current Step</span>}
                     </div>
@@ -920,9 +1049,17 @@ export function OnboardingWizardPage() {
                   {currentStepData.type !== "dynamic_group" && currentStepData.type !== "fixed_welcome" && (
                     <div className="mb-6">
                       <h1 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight mb-2">
-                        {currentStepData.title}
+                        {currentStepData.type === "fixed_terminology"
+                          ? `${resolveMongoTerminology(formData["org_details"]?.type || formData["organization_details"]?.type || fetchedOrgType || "Engineering", mongoTerminologyMap).displayName} Hierarchy`
+                          : currentStepData.title
+                        }
                       </h1>
-                      <p className="text-base text-muted-foreground">{currentStepData.subtitle}</p>
+                      <p className="text-base text-muted-foreground">
+                        {currentStepData.type === "fixed_terminology"
+                          ? `Academic structure and terminology tailored specifically for your ${resolveMongoTerminology(formData["org_details"]?.type || formData["organization_details"]?.type || fetchedOrgType || "Engineering", mongoTerminologyMap).displayName} campus.`
+                          : currentStepData.subtitle
+                        }
+                      </p>
                     </div>
                   )}
 
@@ -1273,23 +1410,8 @@ export function OnboardingWizardPage() {
 
                   {/* ── RENDER: TERMINOLOGY VISUAL (FIXED STEP) ── */}
                   {currentStepData.type === "fixed_terminology" && (() => {
-                    const currentOrgType = formData["org_details"]?.type || fetchedOrgType || "Engineering";
-                    const terms = getTerminologyLabels(currentOrgType);
-                    
-                    // Filter out duplicate or empty nodes to build a clean visual hierarchy
-                    const hierarchyNodes = [
-                      { title: terms.orgLabel, icon: Building2, color: "text-indigo-400" },
-                      { title: terms.topLevel, icon: Briefcase, color: "text-blue-400" },
-                      { title: terms.course, icon: School, color: "text-emerald-400" },
-                      { title: terms.year, icon: GraduationCap, color: "text-teal-400" },
-                      { title: terms.period, icon: Briefcase, color: "text-cyan-400" },
-                      { title: terms.division, icon: School, color: "text-violet-400" },
-                      { title: terms.subBatch, icon: Briefcase, color: "text-fuchsia-400" }
-                    ].filter((node, index, self) => 
-                      node.title !== "—" && 
-                      // Avoid showing consecutive duplicates (like Course -> Course in Coaching)
-                      (index === 0 || node.title !== self[index - 1].title)
-                    );
+                    const currentOrgType = formData["org_details"]?.type || formData["organization_details"]?.type || fetchedOrgType || "Engineering";
+                    const terms = resolveMongoTerminology(currentOrgType, mongoTerminologyMap);
 
                     return (
                       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -1298,31 +1420,59 @@ export function OnboardingWizardPage() {
                           <div className="md:col-span-2 bg-slate-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
                             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-900 to-slate-900" />
                             <div className="relative z-10 flex flex-col items-center">
-                              <h3 className="text-2xl font-bold mb-2">Platform Terminology</h3>
-                              <p className="text-slate-400 mb-8 text-center max-w-sm">This flowchart visualizes how your data will be hierarchically organized based on your institution type ({currentOrgType}).</p>
+                              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold mb-3">
+                                <span>{terms.planName}</span>
+                              </div>
+                              <h3 className="text-2xl font-bold mb-1">Classgrid Academic Hierarchy</h3>
+                              <p className="text-slate-400 mb-8 text-center max-w-md">
+                                Selected Institution Type: <span className="font-semibold text-indigo-300">{terms.displayName}</span>
+                              </p>
 
-                              <div className="flex flex-col items-center gap-2">
-                                {hierarchyNodes.map((node, i) => (
+                              <div className="flex flex-col items-center gap-2 w-full max-w-sm">
+                                {terms.hierarchyTree.map((node, i) => (
                                   <React.Fragment key={i}>
-                                    <motion.div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20 w-56 text-center shadow-lg flex items-center justify-center gap-3" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 * (i + 1) }}>
-                                      <node.icon className={`size-5 ${node.color}`} />
-                                      <div className="font-bold text-sm">{node.title}</div>
+                                    <motion.div
+                                      className="bg-white/10 backdrop-blur-md p-3.5 rounded-xl border border-white/20 w-full shadow-lg flex items-center justify-between px-5"
+                                      initial={{ y: -20, opacity: 0 }}
+                                      animate={{ y: 0, opacity: 1 }}
+                                      transition={{ delay: 0.1 * (i + 1) }}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <node.icon className={`size-5 ${node.color}`} />
+                                        <div className="text-left">
+                                          <div className="font-bold text-sm text-white">{node.title}</div>
+                                          <div className="text-[11px] text-slate-400">{node.subTitle}</div>
+                                        </div>
+                                      </div>
+                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 text-slate-300">
+                                        Level {i + 1}
+                                      </span>
                                     </motion.div>
-                                    {i < hierarchyNodes.length - 1 && (
-                                      <div className="w-0.5 h-4 bg-indigo-500/50" />
+                                    {i < terms.hierarchyTree.length - 1 && (
+                                      <div className="w-0.5 h-4 bg-indigo-500/50 my-0.5" />
                                     )}
                                   </React.Fragment>
                                 ))}
-                                
-                                <div className="w-0.5 h-4 bg-indigo-500/50" />
-                                
-                                <div className="flex gap-4 mt-2">
-                                  <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 * (hierarchyNodes.length + 1) }}>
+
+                                <div className="w-0.5 h-4 bg-indigo-500/50 my-0.5" />
+
+                                <div className="flex gap-4 mt-2 w-full justify-center">
+                                  <motion.div
+                                    className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-36 text-center shadow-lg"
+                                    initial={{ x: -20, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: 0.1 * (terms.hierarchyTree.length + 1) }}
+                                  >
                                     <GraduationCap className="size-5 mx-auto mb-2 text-purple-400" />
                                     <div className="font-bold text-sm">Student</div>
-                                    <div className="text-xs text-slate-400">({terms.studentId})</div>
+                                    <div className="text-xs text-slate-400">ID: {terms.studentId}</div>
                                   </motion.div>
-                                  <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 * (hierarchyNodes.length + 1) }}>
+                                  <motion.div
+                                    className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-36 text-center shadow-lg"
+                                    initial={{ x: 20, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: 0.1 * (terms.hierarchyTree.length + 1) }}
+                                  >
                                     <User className="size-5 mx-auto mb-2 text-rose-400" />
                                     <div className="font-bold text-sm">{terms.teacher}</div>
                                     <div className="text-xs text-slate-400">Instructor</div>
@@ -1348,7 +1498,9 @@ export function OnboardingWizardPage() {
                               </div>
                             </div>
                             <div className="mt-6 p-3 bg-primary/5 rounded-xl border border-primary/10">
-                              <p className="text-xs text-muted-foreground">💡 You can customize these terms later from <strong>Settings → Platform Terminology</strong>.</p>
+                              <p className="text-xs text-muted-foreground">
+                                These labels will automatically customize your dashboards, gradebooks, attendance sheets, and certificates for <span className="font-semibold text-foreground">{terms.displayName}</span>.
+                              </p>
                             </div>
                           </div>
                         </div>

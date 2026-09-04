@@ -150,3 +150,8 @@ export async function checkUsername(username: string) {
   const response = await apiClient.post<{ available: boolean; message: string }>("/api/auth/check-username", { username });
   return response.data;
 }
+
+export async function fetchAllTerminology() {
+  const response = await apiClient.get<{ comparisonCols: string[]; comparisonConcepts: string[]; allTerminology: Record<string, any> }>("/api/hierarchy/terminology/all");
+  return response.data;
+}
