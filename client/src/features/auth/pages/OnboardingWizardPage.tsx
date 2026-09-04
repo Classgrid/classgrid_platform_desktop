@@ -271,13 +271,7 @@ export function OnboardingWizardPage() {
     localStorage.setItem("onboarding_formData", JSON.stringify(formData));
   }, [formData]);
 
-  React.useEffect(() => {
-    if (fetchedEmail) localStorage.setItem("onboarding_fetchedEmail", fetchedEmail);
-  }, [fetchedEmail]);
 
-  React.useEffect(() => {
-    if (phone) localStorage.setItem("onboarding_phone", phone);
-  }, [phone]);
 
   const [isCompleted, setIsCompleted] = useState(false);
 
@@ -296,6 +290,11 @@ export function OnboardingWizardPage() {
   const [fetchedEmail, setFetchedEmail] = useState(() => {
     try { return localStorage.getItem("onboarding_fetchedEmail") || ""; } catch { return ""; }
   });
+
+  React.useEffect(() => {
+    if (fetchedEmail) localStorage.setItem("onboarding_fetchedEmail", fetchedEmail);
+  }, [fetchedEmail]);
+
   const [fetchedName, setFetchedName] = useState("");
   const [fetchedRole, setFetchedRole] = useState("");
   const [fetchedOrgType, setFetchedOrgType] = useState("school");
@@ -375,6 +374,11 @@ export function OnboardingWizardPage() {
   const [phone, setPhone] = useState(() => {
     try { return localStorage.getItem("onboarding_phone") || ""; } catch { return ""; }
   });
+
+  React.useEffect(() => {
+    if (phone) localStorage.setItem("onboarding_phone", phone);
+  }, [phone]);
+
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [emailOtpSent, setEmailOtpSent] = useState(false);
