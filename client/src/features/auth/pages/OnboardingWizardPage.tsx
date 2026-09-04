@@ -1403,8 +1403,10 @@ export function OnboardingWizardPage() {
                               onChange={(e) => handleFieldChange("org_details", "type", e.target.value)}
                             >
                               <option value="School">School</option>
-                              <option value="College">College / University</option>
-                              <option value="Coaching">Coaching Institute</option>
+                              <option value="Junior College">Junior College</option>
+                              <option value="Engineering College">Engineering College</option>
+                              <option value="Diploma College">Diploma College</option>
+                              <option value="Coaching Institute">Coaching Institute</option>
                             </ResponsiveSelect>
                           </div>
                           <div>
