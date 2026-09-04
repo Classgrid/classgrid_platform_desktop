@@ -615,14 +615,12 @@ export function OnboardingWizardPage() {
         const pLastName = pd.last_name || (fetchedName && fetchedName.split(" ").length > 1 ? fetchedName.split(" ").slice(1).join(" ") : "");
         if (!pFirstName.trim() || !pLastName.trim()) {
           showAlert("First Name and Last Name are required.");
-          return false;
+          return;
         }
         if (!username || !usernameAvailable) {
           showAlert("A valid and available username is required.");
-          return false;
+          return;
         }
-        return true;    return;
-      }
     }
     // Org Verification step
     if (currentStepData.id === "org_verification") {
@@ -1335,7 +1333,6 @@ export function OnboardingWizardPage() {
                           </div>
                         </div>
                       </div>
-                    );              </div>
                     );
                   })()}
 
