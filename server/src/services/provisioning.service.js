@@ -124,9 +124,8 @@ export const provisionDemoOrg = async (adminData, orgData, options = {}) => {
             });
             await rootAdmin.save({ session });
         } else {
-            if (rootAdmin.organization_id) {
-                throw new Error("Admin email already belongs to an organization.");
-            }
+            // If the user already belongs to an organization, we will transfer them to this new sandbox
+            // by overwriting their organization_id later in the process.
             rootAdmin.name = adminData.name || rootAdmin.name;
             rootAdmin.role = "org_admin";
             rootAdmin.status = "active";
