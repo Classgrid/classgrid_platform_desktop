@@ -26,6 +26,17 @@ import { cn } from "@/lib/utils";
 import locationsData from "@/data/india-locations.json";
 import erpData from "@/data/full_erp_data.json";
 
+export const normalizeOrgType = (raw: string): string => {
+  if (!raw) return "Junior College";
+  const norm = raw.toLowerCase().replace(/_/g, " ").trim();
+  if (norm.includes("junior")) return "Junior College";
+  if (norm.includes("engineering")) return "Engineering College";
+  if (norm.includes("diploma") || norm.includes("polytechnic")) return "Diploma College";
+  if (norm.includes("coaching") || norm.includes("institute")) return "Coaching Institute";
+  if (norm.includes("school")) return "School";
+  return "Junior College";
+};
+
 const CONCEPT_LABELS: Record<string, string> = {
   org_label:        "Org Label",
   top_level:        "Top Level",
@@ -393,7 +404,7 @@ export function OnboardingWizardPage() {
     return Array.from(cities).sort();
   };
 
-  const selectedState = formData["org_details"]?.["state"] || "";
+  const selectedState = formData["org_details"]?.["state"] || fetchedState || "";
   const cityOptions = useMemo(() => getCitiesForState(selectedState), [selectedState]);
 
   const languageOptions = useMemo(() => {
@@ -628,12 +639,29 @@ export function OnboardingWizardPage() {
               setAdminName(prev => prev || res.name);
             }
             if (res.role) setFetchedRole(res.role);
-            if (res.orgType) setFetchedOrgType(res.orgType);
+            
+            const normType = res.orgType ? normalizeOrgType(res.orgType) : "Junior College";
+            setFetchedOrgType(normType);
+
             if (res.subdomain) setFetchedSubdomain(res.subdomain);
             if (res.orgName) setFetchedOrgName(res.orgName);
             if (res.address) setFetchedAddress(res.address);
             if (res.city) setFetchedCity(res.city);
             if (res.state) setFetchedState(res.state);
+
+            // Pre-fill formData from MongoDB demo lead
+            setFormData(prev => ({
+              ...prev,
+              org_details: {
+                name: prev["org_details"]?.name || res.orgName || "",
+                type: prev["org_details"]?.type || normType,
+                address: prev["org_details"]?.address || res.address || "",
+                state: prev["org_details"]?.state || res.state || "",
+                city: prev["org_details"]?.city || res.city || "",
+                board: prev["org_details"]?.board || "CBSE",
+                ...(prev["org_details"] || {})
+              }
+            }));
           }
         })
         .catch((err) => {
@@ -1843,7 +1871,7 @@ export function OnboardingWizardPage() {
                             <label className="text-sm font-semibold block mb-1.5">Type <span className="text-danger">*</span></label>
                             <ResponsiveSelect
                               className="w-full h-10 rounded-lg border-input bg-background"
-                              value={formData["org_details"]?.["type"] || fetchedOrgType || "School"}
+                              value={normalizeOrgType(formData["org_details"]?.["type"] || fetchedOrgType || "Junior College")}
                               onChange={(e) => handleFieldChange("org_details", "type", e.target.value)}
                             >
                               <option value="School">School</option>
@@ -1903,7 +1931,7 @@ export function OnboardingWizardPage() {
                             <label className="text-sm font-semibold block mb-1.5">State <span className="text-danger">*</span></label>
                             <ResponsiveSelect
                               className="w-full h-10 rounded-lg border-input bg-background"
-                              value={formData["org_details"]?.["state"] || ""}
+                              value={formData["org_details"]?.["state"] || fetchedState || ""}
                               onChange={(e) => {
                                 handleFieldChange("org_details", "state", e.target.value);
                                 handleFieldChange("org_details", "city", ""); // reset city on state change
