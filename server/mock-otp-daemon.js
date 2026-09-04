@@ -1,0 +1,42 @@
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
+
+const MONGODB_URI = process.env.MONGO_URI || "mongodb://localhost:27017/classgrid";
+
+async function runMockOtpDaemon() {
+    try {
+        await mongoose.connect(MONGODB_URI);
+        console.log("✅ Connected to MongoDB.");
+        console.log("🚀 Mock OTP Daemon is running...");
+        console.log("Listening for any phone OTP requests and automatically changing them to '123456'...");
+
+        // Define a loose schema just to access the collection
+        const onboardingOTPSchema = new mongoose.Schema({}, { strict: false });
+        const OnboardingOTP = mongoose.models.OnboardingOTP || mongoose.model('OnboardingOTP', onboardingOTPSchema, 'onboardingotps');
+
+        // Continuously poll and override any phone OTPs to '123456'
+        setInterval(async () => {
+            try {
+                const result = await OnboardingOTP.updateMany(
+                    { type: 'phone', otp: { $ne: '123456' } },
+                    { $set: { otp: '123456' } }
+                );
+
+                if (result.modifiedCount > 0) {
+                    console.log(`[Mocked] Successfully overrode ${result.modifiedCount} phone OTP(s) to '123456'.`);
+                }
+            } catch (updateErr) {
+                console.error("Error updating OTP:", updateErr);
+            }
+        }, 1000); // Poll every 1 second
+
+    } catch (err) {
+        console.error("❌ Failed to connect to MongoDB:", err);
+        process.exit(1);
+    }
+}
+
+runMockOtpDaemon();

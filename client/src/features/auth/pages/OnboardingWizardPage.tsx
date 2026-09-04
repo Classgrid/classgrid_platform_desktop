@@ -75,7 +75,7 @@ export function OnboardingWizardPage() {
 
     setIsSendingPhoneOtp(true);
     try {
-      await sendOnboardingOtp(orgPhone, "phone");
+      await sendOnboardingOtp({ target: orgPhone, type: "phone" });
       setOrgPhoneOtpSent(true);
       showAlert("OTP sent successfully to " + orgPhone);
     } catch (err: any) {
@@ -90,8 +90,8 @@ export function OnboardingWizardPage() {
 
     setIsVerifyingOrgPhone(true);
     try {
-      const result = await verifyOnboardingOtp(orgPhone, code, "phone");
-      if (result.success) {
+      const result = await verifyOnboardingOtp({ target: orgPhone, otp: code });
+      if (result.verified) {
         setIsOrgPhoneVerified(true);
       } else {
         showAlert("Invalid OTP. Please try again.");
