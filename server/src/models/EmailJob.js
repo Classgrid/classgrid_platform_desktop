@@ -35,6 +35,7 @@ const emailJobSchema = new mongoose.Schema(
                 "domain_change",
                 "demo_meeting_scheduled",
                 "demo_meeting_scheduled_internal",
+                "demo_provisioning_onboarding",
                 "other",
             ],
             default: "other",
