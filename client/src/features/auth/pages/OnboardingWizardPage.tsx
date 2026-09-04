@@ -5,7 +5,8 @@ import { useSearchParams } from "react-router-dom";
 import { validateActivationToken, activateAdmin, sendOnboardingOtp, verifyOnboardingOtp, checkUsername, fetchAllTerminology } from "../api";
 import {
   CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, Mail, Smartphone, Key, User,
-  Upload, School, GraduationCap, Building2, Briefcase, PlaySquare, Eye, EyeOff, Moon, Sun, ChevronDown
+  Upload, School, GraduationCap, Building2, Briefcase, PlaySquare, Eye, EyeOff, Moon, Sun, ChevronDown,
+  ArrowRight, GitBranch, BookOpen, ChevronUp
 } from "lucide-react";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/marketing_ui/alert-dialog";
 import { useTheme } from "next-themes";
@@ -25,6 +26,42 @@ import { cn } from "@/lib/utils";
 import locationsData from "@/data/india-locations.json";
 import erpData from "@/data/full_erp_data.json";
 
+const CONCEPT_LABELS: Record<string, string> = {
+  org_label:        "Org Label",
+  top_level:        "Top Level",
+  course:           "Course",
+  year:             "Year",
+  period:           "Period",
+  division:         "Division",
+  sub_batch:        "Sub Batch",
+  student_id:       "Student ID",
+  teacher:          "Teacher",
+  assignment_label: "Assignment",
+  exam_label:       "Exam",
+};
+
+const COL_LABELS: Record<string, string> = {
+  engineering:    "Engineering",
+  school:         "School",
+  coaching:       "Coaching",
+  junior_college: "Jr. College",
+  diploma:        "Diploma",
+};
+
+const DEFAULT_COMPARISON_CONCEPTS = [
+  "org_label",
+  "top_level",
+  "course",
+  "year",
+  "period",
+  "division",
+  "sub_batch",
+  "student_id",
+  "teacher",
+  "assignment_label",
+  "exam_label",
+];
+
 const resolveMongoTerminology = (rawOrgType: string, mongoMap: Record<string, any>) => {
   const norm = (rawOrgType || "").toLowerCase().trim();
 
@@ -43,19 +80,26 @@ const resolveMongoTerminology = (rawOrgType: string, mongoMap: Record<string, an
     const examples: string[] = dbData.hierarchyExamples || [];
 
     const icons = [Building2, Briefcase, School, GraduationCap, Briefcase, School, Briefcase];
-    const colors = ["text-indigo-400", "text-blue-400", "text-emerald-400", "text-teal-400", "text-purple-400", "text-cyan-400", "text-fuchsia-400"];
+    const colors = ["text-indigo-400", "text-blue-400", "text-emerald-400", "text-purple-400", "text-cyan-400", "text-teal-400", "text-fuchsia-400"];
+    const borderGlows = [
+      "border-indigo-500/30 hover:border-indigo-500/60 shadow-indigo-500/10",
+      "border-blue-500/30 hover:border-blue-500/60 shadow-blue-500/10",
+      "border-emerald-500/30 hover:border-emerald-500/60 shadow-emerald-500/10",
+      "border-purple-500/30 hover:border-purple-500/60 shadow-purple-500/10",
+      "border-cyan-500/30 hover:border-cyan-500/60 shadow-cyan-500/10",
+    ];
 
     const hierarchyTree = levels.map((lvl: string, idx: number) => ({
-      label: idx === 0 ? "Organization Level" : `Level ${idx + 1}`,
-      title: examples[idx] ? `${lvl} (${examples[idx]})` : lvl,
-      subTitle: idx === 0 ? "Institute Level" : `Hierarchy Level ${idx + 1}`,
+      name: lvl,
+      example: examples[idx] || null,
       icon: icons[idx % icons.length],
-      color: colors[idx % colors.length]
+      color: colors[idx % colors.length],
+      borderGlow: borderGlows[idx % borderGlows.length]
     }));
 
     return {
-      displayName: terms.org_label || dbData.planName,
-      planName: `Plan ${dbData.planNumber}: ${dbData.planName}`,
+      matchedKey,
+      displayName: terms.org_label || "Junior College",
       orgLabel: terms.org_label || "Organization",
       topLevel: terms.top_level || "Top Level",
       course: terms.course || "Course",
@@ -64,18 +108,18 @@ const resolveMongoTerminology = (rawOrgType: string, mongoMap: Record<string, an
       division: terms.division || "Division",
       subBatch: terms.sub_batch || "Batch",
       studentId: terms.student_id || "Roll No",
-      teacher: terms.teacher || "Teacher",
+      teacher: terms.teacher || "Lecturer",
       assignment: terms.assignment_label || "Assignment",
-      exam: terms.exam_label || "Exam",
+      exam: terms.exam_label || "Examination",
       hierarchyTree
     };
   }
 
-  // Dynamic fallback
+  // Pure dynamic fallback matching MongoDB structure
   if (norm.includes("junior")) {
     return {
+      matchedKey: "junior_college",
       displayName: "Junior College",
-      planName: "Plan 5: Junior College",
       orgLabel: "Junior College",
       topLevel: "Stream",
       course: "Stream",
@@ -88,18 +132,18 @@ const resolveMongoTerminology = (rawOrgType: string, mongoMap: Record<string, an
       assignment: "Assignment",
       exam: "Examination",
       hierarchyTree: [
-        { label: "Organization", title: "Junior College", subTitle: "Institute Level", icon: Building2, color: "text-indigo-400" },
-        { label: "Top Level", title: "Stream (Science, Commerce, Arts)", subTitle: "Academic Stream", icon: Briefcase, color: "text-blue-400" },
-        { label: "Course / Year", title: "Standard (11th, 12th)", subTitle: "Class / Grade", icon: School, color: "text-emerald-400" },
-        { label: "Group", title: "Division (A, B)", subTitle: "Class Section", icon: GraduationCap, color: "text-purple-400" },
-        { label: "Sub-Group", title: "Batch", subTitle: "Practical / Lab Batch", icon: Briefcase, color: "text-cyan-400" },
+        { name: "Stream", example: "Science / Commerce / Arts", icon: Briefcase, color: "text-blue-400", borderGlow: "border-blue-500/30 shadow-blue-500/10" },
+        { name: "Standard", example: "11th / 12th", icon: School, color: "text-emerald-400", borderGlow: "border-emerald-500/30 shadow-emerald-500/10" },
+        { name: "Division", example: "A / B", icon: GraduationCap, color: "text-purple-400", borderGlow: "border-purple-500/30 shadow-purple-500/10" },
+        { name: "Batch", example: "Batch 1 / Batch 2", icon: Briefcase, color: "text-cyan-400", borderGlow: "border-cyan-500/30 shadow-cyan-500/10" },
       ]
     };
   }
+
   if (norm.includes("school")) {
     return {
+      matchedKey: "school",
       displayName: "School",
-      planName: "Plan 2: School with Divisions",
       orgLabel: "School",
       topLevel: "Standard",
       course: "Class",
@@ -112,15 +156,15 @@ const resolveMongoTerminology = (rawOrgType: string, mongoMap: Record<string, an
       assignment: "Homework",
       exam: "Test",
       hierarchyTree: [
-        { label: "Organization", title: "School", subTitle: "Campus Level", icon: Building2, color: "text-indigo-400" },
-        { label: "Top Level", title: "Standard (Class 1–10)", subTitle: "Grade Level", icon: School, color: "text-emerald-400" },
-        { label: "Group", title: "Section (A, B)", subTitle: "Class Section", icon: GraduationCap, color: "text-purple-400" }
+        { name: "Standard", example: "Class 1 – 10", icon: School, color: "text-emerald-400", borderGlow: "border-emerald-500/30 shadow-emerald-500/10" },
+        { name: "Section", example: "A / B / C", icon: GraduationCap, color: "text-purple-400", borderGlow: "border-purple-500/30 shadow-purple-500/10" }
       ]
     };
   }
+
   return {
+    matchedKey: "engineering",
     displayName: "Engineering College",
-    planName: "Plan 1: Engineering",
     orgLabel: "College",
     topLevel: "Degree",
     course: "Branch",
@@ -133,13 +177,12 @@ const resolveMongoTerminology = (rawOrgType: string, mongoMap: Record<string, an
     assignment: "Assignment",
     exam: "Examination",
     hierarchyTree: [
-      { label: "Organization", title: "College", subTitle: "Campus Level", icon: Building2, color: "text-indigo-400" },
-      { label: "Top Level", title: "Degree (B.Tech)", subTitle: "Degree Program", icon: Briefcase, color: "text-blue-400" },
-      { label: "Department", title: "Department (Computer, IT, ENTC)", subTitle: "Academic Dept", icon: School, color: "text-emerald-400" },
-      { label: "Year", title: "Year (FY, SY, TY)", subTitle: "Academic Year", icon: GraduationCap, color: "text-teal-400" },
-      { label: "Period", title: "Semester (Sem 1, Sem 2)", subTitle: "Semester Term", icon: Briefcase, color: "text-cyan-400" },
-      { label: "Group", title: "Division (A, B, C)", subTitle: "Class Division", icon: School, color: "text-violet-400" },
-      { label: "Sub-Group", title: "Sub Batch (A1, A2)", subTitle: "Lab Batch", icon: Briefcase, color: "text-fuchsia-400" }
+      { name: "Degree", example: "B.Tech / M.Tech", icon: Briefcase, color: "text-blue-400", borderGlow: "border-blue-500/30 shadow-blue-500/10" },
+      { name: "Department", example: "Computer / IT / ENTC / Mech", icon: School, color: "text-emerald-400", borderGlow: "border-emerald-500/30 shadow-emerald-500/10" },
+      { name: "Year", example: "FY / SY / TY / Final Year", icon: GraduationCap, color: "text-teal-400", borderGlow: "border-teal-500/30 shadow-teal-500/10" },
+      { name: "Semester", example: "Sem 1 / Sem 2", icon: Briefcase, color: "text-cyan-400", borderGlow: "border-cyan-500/30 shadow-cyan-500/10" },
+      { name: "Division", example: "A / B / C", icon: School, color: "text-violet-400", borderGlow: "border-violet-500/30 shadow-violet-500/10" },
+      { name: "Sub Batch", example: "A1 / A2 / B1", icon: Briefcase, color: "text-fuchsia-400", borderGlow: "border-fuchsia-500/30 shadow-fuchsia-500/10" }
     ]
   };
 };
@@ -1415,67 +1458,191 @@ export function OnboardingWizardPage() {
 
                     return (
                       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        {/* Main visual flowchart */}
-                        <div className="w-full max-w-2xl mx-auto bg-slate-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
-                          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-900 to-slate-900" />
-                          <div className="relative z-10 flex flex-col items-center">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold mb-3">
-                              <span>{terms.planName}</span>
+                        <div className="w-full max-w-4xl mx-auto bg-slate-900 text-white p-6 md:p-8 rounded-3xl shadow-2xl relative overflow-hidden border border-slate-800">
+                          {/* Ambient radial glow */}
+                          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-900 to-slate-950 pointer-events-none" />
+
+                          <div className="relative z-10 space-y-8">
+                            {/* Top Header */}
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+                              <div>
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-2">
+                                  <GitBranch className="size-3.5" />
+                                  ACADEMIC HIERARCHY ENGINE
+                                </div>
+                                <h3 className="text-2xl font-black text-white tracking-tight">
+                                  {terms.displayName} Hierarchy
+                                </h3>
+                                <p className="text-slate-400 text-xs font-medium mt-0.5">
+                                  Visualizing how academic data flows through your campus in Classgrid
+                                </p>
+                              </div>
+                              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-300 text-xs font-medium self-start md:self-auto shadow-sm">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                <span>MongoDB Dynamic Hierarchy</span>
+                              </div>
                             </div>
-                            <h3 className="text-2xl font-bold mb-1">Classgrid Academic Hierarchy</h3>
-                            <p className="text-slate-400 mb-8 text-center max-w-md">
-                              Selected Institution Type: <span className="font-semibold text-indigo-300">{terms.displayName}</span>
-                            </p>
 
-                            <div className="flex flex-col items-center gap-2 w-full max-w-sm">
-                              {terms.hierarchyTree.map((node, i) => (
-                                <React.Fragment key={i}>
-                                  <motion.div
-                                    className="bg-white/10 backdrop-blur-md p-3.5 rounded-xl border border-white/20 w-full shadow-lg flex items-center justify-between px-5"
-                                    initial={{ y: -20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.1 * (i + 1) }}
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <node.icon className={`size-5 ${node.color}`} />
-                                      <div className="text-left">
-                                        <div className="font-bold text-sm text-white">{node.title}</div>
-                                        <div className="text-[11px] text-slate-400">{node.subTitle}</div>
+                            {/* Flowchart Node Cards */}
+                            <div className="bg-slate-950/60 p-6 rounded-2xl border border-slate-800/80 shadow-inner">
+                              <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+                                <GitBranch className="size-4 text-indigo-400" />
+                                <span>Hierarchy Structure Diagram</span>
+                              </div>
+
+                              <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-3 flex-wrap md:flex-nowrap overflow-x-auto pb-2">
+                                {terms.hierarchyTree.map((node, i) => (
+                                  <React.Fragment key={i}>
+                                    <motion.div
+                                      className={cn(
+                                        "bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border transition-all duration-300 w-full md:w-auto min-w-[140px] shadow-lg flex flex-col items-center text-center group hover:border-indigo-500/50",
+                                        node.borderGlow
+                                      )}
+                                      initial={{ scale: 0.9, opacity: 0 }}
+                                      animate={{ scale: 1, opacity: 1 }}
+                                      transition={{ delay: 0.08 * (i + 1) }}
+                                    >
+                                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 mb-2 group-hover:bg-indigo-500/20 group-hover:border-indigo-500/30 transition-colors">
+                                        <node.icon className={`size-5 ${node.color}`} />
                                       </div>
-                                    </div>
-                                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 text-slate-300">
-                                      Level {i + 1}
-                                    </span>
-                                  </motion.div>
-                                  {i < terms.hierarchyTree.length - 1 && (
-                                    <div className="w-0.5 h-4 bg-indigo-500/50 my-0.5" />
-                                  )}
-                                </React.Fragment>
-                              ))}
+                                      <div className="font-bold text-sm text-white mb-1">{node.name}</div>
+                                      {node.example ? (
+                                        <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/10 max-w-[130px] truncate">
+                                          {node.example}
+                                        </span>
+                                      ) : (
+                                        <span className="text-[11px] font-medium text-slate-500">—</span>
+                                      )}
+                                    </motion.div>
 
-                              <div className="w-0.5 h-4 bg-indigo-500/50 my-0.5" />
+                                    {i < terms.hierarchyTree.length - 1 && (
+                                      <div className="flex items-center justify-center shrink-0 my-1 md:my-0">
+                                        {/* Desktop horizontal connector */}
+                                        <div className="hidden md:flex items-center text-indigo-400">
+                                          <div className="w-3 h-0.5 bg-indigo-500/40" />
+                                          <div className="p-1 rounded-full bg-slate-900 border border-indigo-500/50 shadow-md">
+                                            <ArrowRight className="size-3.5 text-indigo-400" />
+                                          </div>
+                                          <div className="w-3 h-0.5 bg-indigo-500/40" />
+                                        </div>
+                                        {/* Mobile vertical connector */}
+                                        <div className="md:hidden flex flex-col items-center text-indigo-400">
+                                          <div className="w-0.5 h-3 bg-indigo-500/40" />
+                                          <div className="p-1 rounded-full bg-slate-900 border border-indigo-500/50 shadow-md">
+                                            <ChevronDown className="size-3.5 text-indigo-400" />
+                                          </div>
+                                          <div className="w-0.5 h-3 bg-indigo-500/40" />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                              </div>
 
-                              <div className="flex gap-4 mt-2 w-full justify-center">
+                              {/* Vertical branch down to roles */}
+                              <div className="flex flex-col items-center my-4">
+                                <div className="w-0.5 h-6 bg-gradient-to-b from-indigo-500 via-purple-500 to-rose-500" />
+                                <div className="-mt-2 p-1.5 rounded-full bg-slate-900 border border-purple-500/50 text-purple-400 shadow-lg shadow-purple-500/20">
+                                  <ChevronDown className="size-4" />
+                                </div>
+                              </div>
+
+                              {/* Student & Educator Role Cards */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
                                 <motion.div
-                                  className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-36 text-center shadow-lg"
-                                  initial={{ x: -20, opacity: 0 }}
-                                  animate={{ x: 0, opacity: 1 }}
+                                  className="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-purple-500/30 text-center shadow-lg shadow-purple-500/10 flex flex-col items-center"
+                                  initial={{ y: 15, opacity: 0 }}
+                                  animate={{ y: 0, opacity: 1 }}
                                   transition={{ delay: 0.1 * (terms.hierarchyTree.length + 1) }}
                                 >
-                                  <GraduationCap className="size-5 mx-auto mb-2 text-purple-400" />
-                                  <div className="font-bold text-sm">Student</div>
-                                  <div className="text-xs text-slate-400">ID: {terms.studentId}</div>
+                                  <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 mb-2">
+                                    <GraduationCap className="size-5 text-purple-400" />
+                                  </div>
+                                  <div className="font-bold text-sm text-white">Student</div>
+                                  <div className="text-xs font-semibold text-purple-300 mt-1 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20">
+                                    ID: {terms.studentId}
+                                  </div>
                                 </motion.div>
+
                                 <motion.div
-                                  className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-36 text-center shadow-lg"
-                                  initial={{ x: 20, opacity: 0 }}
-                                  animate={{ x: 0, opacity: 1 }}
-                                  transition={{ delay: 0.1 * (terms.hierarchyTree.length + 1) }}
+                                  className="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-rose-500/30 text-center shadow-lg shadow-rose-500/10 flex flex-col items-center"
+                                  initial={{ y: 15, opacity: 0 }}
+                                  animate={{ y: 0, opacity: 1 }}
+                                  transition={{ delay: 0.1 * (terms.hierarchyTree.length + 2) }}
                                 >
-                                  <User className="size-5 mx-auto mb-2 text-rose-400" />
-                                  <div className="font-bold text-sm">{terms.teacher}</div>
-                                  <div className="text-xs text-slate-400">Instructor</div>
+                                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 mb-2">
+                                    <User className="size-5 text-rose-400" />
+                                  </div>
+                                  <div className="font-bold text-sm text-white">{terms.teacher}</div>
+                                  <div className="text-xs font-semibold text-rose-300 mt-1 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
+                                    Educator
+                                  </div>
                                 </motion.div>
+                              </div>
+                            </div>
+
+                            {/* Platform Terminology Reference Table */}
+                            <div className="bg-slate-950/60 rounded-2xl border border-slate-800/80 p-5 space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                                  <BookOpen className="size-4 text-emerald-400" />
+                                  <span>Platform Terminology Matrix — How labels adapt across campus types</span>
+                                </div>
+                              </div>
+
+                              <div className="rounded-xl border border-slate-800 overflow-x-auto bg-slate-900/60">
+                                <table className="w-full text-xs text-left">
+                                  <thead>
+                                    <tr className="border-b border-slate-800 bg-slate-950/80">
+                                      <th className="px-3.5 py-3 font-semibold text-slate-400 border-r border-slate-800 whitespace-nowrap">
+                                        Concept
+                                      </th>
+                                      {["engineering", "school", "coaching", "junior_college", "diploma"].map((col) => (
+                                        <th
+                                          key={col}
+                                          className={cn(
+                                            "px-3.5 py-3 font-semibold whitespace-nowrap transition-colors",
+                                            col === terms.matchedKey
+                                              ? "text-emerald-400 bg-emerald-500/10 border-b-2 border-emerald-400"
+                                              : "text-slate-400"
+                                          )}
+                                        >
+                                          {COL_LABELS[col] || col}
+                                          {col === terms.matchedKey && (
+                                            <span className="ml-1 text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">
+                                              (yours)
+                                            </span>
+                                          )}
+                                        </th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-800/60">
+                                    {DEFAULT_COMPARISON_CONCEPTS.map((concept, idx) => (
+                                      <tr key={concept} className={idx % 2 === 0 ? "bg-slate-900/40" : "bg-slate-950/40"}>
+                                        <td className="px-3.5 py-2.5 font-medium text-slate-200 border-r border-slate-800 whitespace-nowrap">
+                                          {CONCEPT_LABELS[concept] || concept}
+                                        </td>
+                                        {["engineering", "school", "coaching", "junior_college", "diploma"].map((col) => {
+                                          const val = mongoTerminologyMap?.[col]?.terminology?.[concept];
+                                          return (
+                                            <td
+                                              key={col}
+                                              className={cn(
+                                                "px-3.5 py-2.5 whitespace-nowrap",
+                                                col === terms.matchedKey
+                                                  ? "text-emerald-300 font-semibold bg-emerald-500/5"
+                                                  : "text-slate-400"
+                                              )}
+                                            >
+                                              {val == null || val === "" ? "—" : String(val)}
+                                            </td>
+                                          );
+                                        })}
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
                               </div>
                             </div>
                           </div>
