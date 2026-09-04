@@ -1746,6 +1746,7 @@ export const getConsolidatedApprovalEmailHtml = ({
   allocatedDashboards = [],
 }) => {
   const dashboardLink = subdomain ? `https://${subdomain}.classgrid.in/admin/login` : `https://classgrid.in/admin/login`;
+  const exampleDomain = subdomain ? `${subdomain}.classgrid.in` : `yourname.classgrid.in`;
   
   const dashboardLabels = {
     dashboard_admission: "Admissions",
@@ -1767,49 +1768,47 @@ export const getConsolidatedApprovalEmailHtml = ({
 
   const content = `
     <p>Hi ${adminName || "Admin"},</p>
+    
+    <p>
+      Congratulations! 🎉 Your Classgrid Sandbox for <strong>${orgName}</strong> is now ready. 
+      You have 31 days of full access to explore and experience how your institution can manage its operations from one unified platform.
+    </p>
 
-    <p>Congratulations! 🎉</p>
-
-    <p>Your Classgrid Sandbox for <strong>${orgName}</strong> is now ready.</p>
-
-    <p>You have 31 days of full access to explore Classgrid and experience how your institution can manage its operations from one platform.</p>
-
-    <div class="box" style="margin-bottom:24px; margin-top:24px;">
-      <p style="margin-bottom:8px; font-weight:600; color:#111111;">📦 Sandbox Details</p>
-      <p style="margin-bottom:4px;">Organization: <strong>${orgName}</strong></p>
-      <p style="margin-bottom:4px;">Access Period: <strong>31 Days</strong></p>
-      <p style="margin-bottom:0;">Sandbox Expires: <strong>${formatDate(expiryDate)}</strong></p>
+    <div class="box" style="margin-bottom:24px; margin-top:24px; border-left: 3px solid #3b82f6;">
+      <p style="margin-bottom:12px; font-weight:600; color:#111111;">📦 Sandbox Details</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 14px; color: #374151;">
+        <tr>
+          <td style="padding-bottom:8px; width: 40%; color: #6b7280;">Organization</td>
+          <td style="padding-bottom:8px; font-weight: 500; color: #111111;">${orgName}</td>
+        </tr>
+        <tr>
+          <td style="padding-bottom:8px; color: #6b7280;">Access Period</td>
+          <td style="padding-bottom:8px; font-weight: 500; color: #111111;">31 Days</td>
+        </tr>
+        <tr>
+          <td style="color: #6b7280;">Sandbox Expires</td>
+          <td style="font-weight: 500; color: #111111;">${formatDate(expiryDate)}</td>
+        </tr>
+      </table>
     </div>
 
-    <h3 style="color:#111111; margin-top:32px;">🛠️ Your Included Dashboards</h3>
-    <p style="color:#6b7280; font-size:14px; margin-bottom:12px;">Your sandbox has been configured with:</p>
+    <h3 style="color:#111111; margin-top:32px; font-size: 16px;">🛠️ Included Dashboards</h3>
     <ul style="margin-bottom:32px; color:#374151;">
       ${dashboardsList || '<li>All core modules</li>'}
     </ul>
 
-    <h3 style="color:#111111; margin-top:32px;">🔐 Activate Your Admin Account</h3>
+    <h3 style="color:#111111; margin-top:32px; font-size: 16px;">🔐 Welcome to Classgrid!</h3>
+    <p style="margin-bottom:12px;">
+      Click the button below to get started and set up your admin profile.
+    </p>
+    
+    <a href="${activationLink}" class="btn" style="margin-bottom:12px;">Begin Setup →</a>
 
-    <p>To get started, securely activate your administrator account and create your password.</p>
-    <p>Your activation link is single-use and expires in 12 hours.</p>
-
-    <div class="box" style="margin-bottom: 24px;">
-      <p style="margin-bottom: 8px;">During activation, you'll also be able to choose your custom Classgrid login portal, for example:</p>
-      <p style="margin-bottom: 0; font-weight: 600; font-style: italic;">yourname.classgrid.in</p>
-    </div>
-
-    <a href="${activationLink}" class="btn">Activate Admin Account →</a>
-
-    <p style="font-size: 13px; color: #6b7280; margin-top: 16px;"><strong>Security Notice:</strong> This activation link is unique to you. Please do not forward or share it with anyone.</p>
-
-    <h3 style="color:#111111; margin-top:32px;">Need Help?</h3>
-    <p style="margin-bottom: 12px;">Our support team is available if you need assistance with your setup.</p>
-    <p><a href="https://classgrid.in/support" style="color:#3b82f6; font-weight: 600;">Contact Classgrid Support</a></p>
-
-    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-      <p style="margin-bottom: 4px; font-weight: 600; color: #111111;">Classgrid</p>
-      <p style="margin-bottom: 12px; font-size: 14px; color: #6b7280;">Operating System for Modern Education</p>
-      <p style="font-size: 12px; color: #9ca3af;">© ${new Date().getFullYear()} Classgrid. All rights reserved.</p>
-    </div>
+    <p style="margin-top: 32px; margin-bottom: 0;">
+      Welcome aboard,<br>
+      <strong>Nikhil Shinde</strong><br>
+      <span style="font-size: 13px; color: #6b7280;">CEO, Classgrid</span>
+    </p>
   `;
 
   return baseTemplate({
@@ -1847,6 +1846,10 @@ export const getConsolidatedApprovalEmailPlainText = ({
     .map(label => `- ${label}`)
     .join('\n');
 
+  const dashboardLink = subdomain 
+    ? `https://${subdomain}.classgrid.in/admin/dashboard`
+    : "https://classgrid.in/admin/dashboard";
+
   return `Hi ${adminName || "Admin"},
 
 Congratulations! 🎉
@@ -1871,24 +1874,18 @@ ${formatDate(expiryDate)}
 Your sandbox has been configured with:
 ${dashboardsList || '- All core modules'}
 
-🔐 Activate Your Admin Account
+🔐 Welcome to Classgrid!
 
-To get started, securely activate your administrator account and create your password.
+Click the link below to get started and set up your admin profile.
 
-Your activation link is single-use and expires in 12 hours.
-
-During activation, you'll also be able to choose your custom Classgrid login portal, for example:
-yourname.classgrid.in
-
-Activate Admin Account →
+Begin Setup →
 ${activationLink}
-
-Security Notice: This activation link is unique to you. Please do not forward or share it with anyone.
 
 Need Help?
 Our support team is available if you need assistance with your setup.
 Contact Classgrid Support: https://classgrid.in/support
 
+Nikhil Shinde | CEO
 Classgrid
 Operating System for Modern Education
 
