@@ -946,42 +946,46 @@ export function OnboardingWizardPage() {
                   )}
 
                   {/* ── RENDER: TERMINOLOGY VISUAL (FIXED STEP) ── */}
-                  {currentStepData.type === "fixed_terminology" && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      <div className="bg-slate-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
-                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-900 to-slate-900" />
-                        <div className="relative z-10 flex flex-col items-center">
-                          <h3 className="text-2xl font-bold mb-2">Platform Terminology</h3>
-                          <p className="text-slate-400 mb-8 text-center max-w-sm">This flowchart visualizes how your data will be hierarchically organized.</p>
-                          
-                          <div className="flex flex-col items-center gap-4">
-                            <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-64 text-center shadow-lg" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-                              <Building2 className="size-6 mx-auto mb-2 text-indigo-400" />
-                              <div className="font-bold">Organization</div>
-                              <div className="text-xs text-slate-400">{formData["org_details"]?.type || fetchedOrgType || 'Institute'}</div>
-                            </motion.div>
-                            <div className="w-0.5 h-6 bg-indigo-500/50" />
-                            <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-64 text-center shadow-lg" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-                              <Briefcase className="size-6 mx-auto mb-2 text-blue-400" />
-                              <div className="font-bold">Department / Program</div>
-                              <div className="text-xs text-slate-400">e.g., Computer Science, Admin</div>
-                            </motion.div>
-                            <div className="w-0.5 h-6 bg-blue-500/50" />
-                            <div className="flex gap-4">
-                              <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
-                                <School className="size-5 mx-auto mb-2 text-emerald-400" />
-                                <div className="font-bold text-sm">Course / Class</div>
+                  {currentStepData.type === "fixed_terminology" && (() => {
+                    const currentOrgType = formData["org_details"]?.type || fetchedOrgType || "Engineering";
+                    const terms = getTerminologyLabels(currentOrgType);
+                    return (
+                      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="bg-slate-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
+                          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-900 to-slate-900" />
+                          <div className="relative z-10 flex flex-col items-center">
+                            <h3 className="text-2xl font-bold mb-2">Platform Terminology</h3>
+                            <p className="text-slate-400 mb-8 text-center max-w-sm">This flowchart visualizes how your data will be hierarchically organized based on your institution type ({currentOrgType}).</p>
+                            
+                            <div className="flex flex-col items-center gap-4">
+                              <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-64 text-center shadow-lg" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
+                                <Building2 className="size-6 mx-auto mb-2 text-indigo-400" />
+                                <div className="font-bold">Organization ({terms.orgLabel})</div>
+                                <div className="text-xs text-slate-400">{formData["org_details"]?.name || "Your Institution"}</div>
                               </motion.div>
-                              <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
-                                <GraduationCap className="size-5 mx-auto mb-2 text-purple-400" />
-                                <div className="font-bold text-sm">Batch / Section</div>
+                              <div className="w-0.5 h-6 bg-indigo-500/50" />
+                              <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-64 text-center shadow-lg" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
+                                <Briefcase className="size-6 mx-auto mb-2 text-blue-400" />
+                                <div className="font-bold">{terms.level1}</div>
+                                <div className="text-xs text-slate-400">Top Level Structural Unit</div>
                               </motion.div>
+                              <div className="w-0.5 h-6 bg-blue-500/50" />
+                              <div className="flex gap-4">
+                                <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
+                                  <School className="size-5 mx-auto mb-2 text-emerald-400" />
+                                  <div className="font-bold text-sm">{terms.level2}</div>
+                                </motion.div>
+                                <motion.div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-32 text-center shadow-lg" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
+                                  <GraduationCap className="size-5 mx-auto mb-2 text-purple-400" />
+                                  <div className="font-bold text-sm">{terms.level3}</div>
+                                </motion.div>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* ── RENDER: ORG IDENTITY (FIXED STEP) ── */}
                   {currentStepData.type === "fixed_org_identity" && (

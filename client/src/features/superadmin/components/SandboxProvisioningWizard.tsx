@@ -6,6 +6,65 @@ import { leadsApi } from "../services/superAdminApi";
 import { toast } from "sonner";
 import { Building2, User, LayoutDashboard, ToggleRight, CheckCircle2 } from "lucide-react";
 
+const MODULE_CATEGORIES = [
+  {
+    category: "Academic",
+    items: [
+      { id: "attendance_module", label: "Attendance Module" },
+      { id: "classroom_module", label: "Classroom Module" },
+      { id: "timetable_module", label: "Timetable Module" },
+      { id: "academic_planner_module", label: "Academic Planner Module" },
+      { id: "assignment_module", label: "Assignment Module" },
+      { id: "teacher_planner_module", label: "Teacher Planner Module" },
+      { id: "subject_management_module", label: "Subject Management Module" },
+      { id: "course_management_module", label: "Course Management Module" },
+    ]
+  },
+  {
+    category: "Assessment",
+    items: [
+      { id: "exam_module", label: "Exam Module" },
+      { id: "exam_management_module", label: "Exam Management Module" },
+      { id: "quiz_module", label: "Quiz Module" },
+      { id: "grade_entry_module", label: "Grade Entry Module" },
+      { id: "internal_assessment_module", label: "Internal Assessment Module" },
+      { id: "cet_exam_module", label: "CET Exam Module" },
+      { id: "mock_tests_module", label: "Mock Tests Module" },
+      { id: "ai_viva_module", label: "AI Viva Module" },
+      { id: "test_series_module", label: "Test Series Module" },
+      { id: "exam_proctoring", label: "Exam Proctoring" },
+    ]
+  },
+  {
+    category: "Management",
+    items: [
+      { id: "erp_core", label: "ERP Core" },
+      { id: "admission_module", label: "Admission Module" },
+      { id: "fee_module", label: "Fee Module" },
+      { id: "hr_module", label: "HR Module" },
+      { id: "canteen_module", label: "Canteen Module" },
+      { id: "library_module", label: "Library Module" },
+      { id: "alumni_module", label: "Alumni Module" },
+    ]
+  },
+  {
+    category: "Advanced",
+    items: [
+      { id: "ai_assistant", label: "AI Assistant" },
+      { id: "analytics_module", label: "Analytics Module" },
+      { id: "events_module", label: "Events Module" },
+      { id: "feedback_module", label: "Feedback Module" },
+      { id: "holiday_module", label: "Holiday Module" },
+      { id: "id_cards_module", label: "ID Cards Module" },
+      { id: "certificates_module", label: "Certificates Module" },
+      { id: "website_module", label: "Website Module" },
+      { id: "custom_domain_module", label: "Custom Domain Module" },
+      { id: "naac_module", label: "NAAC Module" },
+      { id: "marketplace_module", label: "Marketplace Module" },
+    ]
+  }
+];
+
 export function SandboxProvisioningWizard({ 
   lead, 
   onClose, 
@@ -49,15 +108,31 @@ export function SandboxProvisioningWizard({
   ];
 
   // Step 4: Modules / Features
-  const [features, setFeatures] = useState<Record<string, boolean>>({
-    ai_assistant: false,
-    canteen_module: false,
-    transport_tracking: false,
-    custom_domain: false,
+  const [activeCategoryTab, setActiveCategoryTab] = useState("Academic");
+  const [features, setFeatures] = useState<Record<string, boolean>>(() => {
+    const defaultFeatures: Record<string, boolean> = {};
+    MODULE_CATEGORIES.forEach(cat => {
+      cat.items.forEach(item => {
+        defaultFeatures[item.id] = !!lead.feature_flags?.[item.id];
+      });
+    });
+    return defaultFeatures;
   });
 
   const toggleFeature = (key: string) => {
     setFeatures(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleAllInCategory = (category: string, value: boolean) => {
+    const cat = MODULE_CATEGORIES.find(c => c.category === category);
+    if (!cat) return;
+    setFeatures(prev => {
+      const next = { ...prev };
+      cat.items.forEach(item => {
+        next[item.id] = value;
+      });
+      return next;
+    });
   };
 
   const toggleDashboard = (id: string) => {
@@ -223,26 +298,67 @@ export function SandboxProvisioningWizard({
           )}
 
           {step === 4 && (
-            <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
-              <h3 className="font-semibold text-lg border-b pb-2">Step 4: Toggle Premium Modules</h3>
-              <p className="text-sm text-muted-foreground mb-4">Enable or disable specific features for this sandbox evaluation.</p>
+            <div className="space-y-4 animate-in slide-in-from-right-4 duration-300 flex flex-col h-full">
+              <div>
+                <h3 className="font-semibold text-lg border-b pb-2">Step 4: Configure Modules</h3>
+                <p className="text-sm text-muted-foreground mb-4">Enable or disable specific features for this sandbox evaluation.</p>
+              </div>
               
-              <div className="space-y-3 max-w-lg">
-                {Object.entries(features).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between border rounded-lg p-4 bg-card">
-                    <div>
-                      <h4 className="font-semibold capitalize">{key.replace('_', ' ')}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">Allow access to {key.replace('_', ' ')} functionality.</p>
-                    </div>
-                    <Button 
-                      variant={value ? "default" : "outline"} 
-                      onClick={() => toggleFeature(key)}
-                      className={value ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-                    >
-                      {value ? "Enabled" : "Disabled"}
-                    </Button>
-                  </div>
+              <div className="flex border-b">
+                {MODULE_CATEGORIES.map(cat => (
+                  <button
+                    key={cat.category}
+                    onClick={() => setActiveCategoryTab(cat.category)}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                      activeCategoryTab === cat.category
+                        ? "border-primary text-primary"
+                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                    }`}
+                  >
+                    {cat.category}
+                  </button>
                 ))}
+              </div>
+
+              <div className="flex-1 overflow-y-auto pr-2 pb-4">
+                {MODULE_CATEGORIES.map(cat => {
+                  if (activeCategoryTab !== cat.category) return null;
+                  const allEnabled = cat.items.every(item => features[item.id]);
+                  return (
+                    <div key={cat.category} className="space-y-4 animate-in fade-in duration-200">
+                      <div className="flex justify-end">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => toggleAllInCategory(cat.category, !allEnabled)}
+                          className="text-xs h-7"
+                        >
+                          {allEnabled ? "Deselect All" : "Select All"}
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {cat.items.map(item => {
+                          const value = features[item.id];
+                          return (
+                            <div key={item.id} className="flex items-center justify-between border rounded-lg p-3 bg-card hover:bg-muted/30 transition-colors">
+                              <div>
+                                <h4 className="font-medium text-sm">{item.label}</h4>
+                              </div>
+                              <Button 
+                                variant={value ? "default" : "outline"} 
+                                size="sm"
+                                onClick={() => toggleFeature(item.id)}
+                                className={value ? "bg-emerald-600 hover:bg-emerald-700 h-7 text-xs" : "h-7 text-xs"}
+                              >
+                                {value ? "Enabled" : "Disabled"}
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -264,7 +380,7 @@ export function SandboxProvisioningWizard({
                 <div>
                   <h4 className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider mb-1">Configuration</h4>
                   <p className="text-sm opacity-80">{allocatedDashboards.length} Dashboards Selected</p>
-                  <p className="text-sm opacity-80">{Object.values(features).filter(Boolean).length} Premium Modules Enabled</p>
+                  <p className="text-sm opacity-80">{Object.values(features).filter(Boolean).length} Modules Enabled</p>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg flex items-start gap-2">
