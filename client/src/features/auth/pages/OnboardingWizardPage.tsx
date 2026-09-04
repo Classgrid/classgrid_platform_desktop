@@ -2015,13 +2015,31 @@ export function OnboardingWizardPage() {
                             />
                           </div>
 
-                          <div className="md:col-span-2">
-                            <label className="text-sm font-semibold block mb-1.5">Full Address <span className="text-danger">*</span></label>
-                            <Input
-                              value={formData["org_details"]?.["address"] ?? fetchedAddress ?? ""}
-                              onChange={(e) => handleFieldChange("org_details", "address", e.target.value)}
-                              placeholder="Street address, building, landmark"
-                            />
+                          <div className="md:col-span-2 space-y-4">
+                            <div>
+                              <label className="text-sm font-semibold block mb-1.5">Building & Street Address (Line 1)</label>
+                              <Input
+                                value={formData["org_details"]?.["address_line1"] || ""}
+                                onChange={(e) => handleFieldChange("org_details", "address_line1", e.target.value)}
+                                placeholder="e.g. Plot No. 42, Street No. 3"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-semibold block mb-1.5">Landmark & Area (Line 2)</label>
+                              <Input
+                                value={formData["org_details"]?.["address_line2"] || ""}
+                                onChange={(e) => handleFieldChange("org_details", "address_line2", e.target.value)}
+                                placeholder="e.g. Near Bus Stand, Civil Lines"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-semibold block mb-1.5">Full Address <span className="text-danger">*</span></label>
+                              <Input
+                                value={formData["org_details"]?.["address"] ?? fetchedAddress ?? ""}
+                                onChange={(e) => handleFieldChange("org_details", "address", e.target.value)}
+                                placeholder="Complete registered address"
+                              />
+                            </div>
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">State <span className="text-danger">*</span></label>
@@ -2068,16 +2086,10 @@ export function OnboardingWizardPage() {
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">City or Village <span className="text-danger">*</span></label>
                             <Input
-                              list="city-options"
                               value={formData["org_details"]?.["city"] ?? fetchedCity ?? ""}
                               onChange={(e) => handleFieldChange("org_details", "city", e.target.value)}
-                              placeholder="e.g. cb fn or Gohpur"
+                              placeholder="e.g. cb fn, Lajpat Nagar, or Gohpur"
                             />
-                            <datalist id="city-options">
-                              {cityOptions.map((city: string) => (
-                                <option key={city} value={city} />
-                              ))}
-                            </datalist>
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">PIN Code <span className="text-danger">*</span></label>
