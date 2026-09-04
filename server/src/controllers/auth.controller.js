@@ -546,6 +546,7 @@ export const validateActivationToken = async (req, res) => {
             email: user.email,
             name: user.name,
             role: user.role,
+            phone: user.phoneNumber || user.phone || "",
             orgType: orgData?.org_type || "school",
             structureType: orgData?.structure_type || "school",
             subdomain: orgData?.subdomain || null,

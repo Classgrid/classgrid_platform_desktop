@@ -66,7 +66,7 @@ export async function checkEmailForLogin(email: string) {
 }
 
 export async function requestPasswordReset(email: string) {
-  const response = await apiClient.post<{ message: string }>("/api/auth/forgot-password", { 
+  const response = await apiClient.post<{ message: string }>("/api/auth/forgot-password", {
     email,
     origin: window.location.origin
   });
@@ -114,7 +114,7 @@ type GoogleAuthUrlPayload = {
 export function getGoogleAuthUrl({ audience, role }: GoogleAuthUrlPayload) {
   const loginTab = getAuthIntent(audience, role);
   const path = `/api/auth/google?loginTab=${encodeURIComponent(loginTab)}&host=${encodeURIComponent(window.location.hostname)}`;
-  
+
   if (!API_BASE_URL || API_BASE_URL.startsWith('/')) {
     return path;
   }

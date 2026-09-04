@@ -37,6 +37,23 @@ export const normalizeOrgType = (raw: string): string => {
   return "Junior College";
 };
 
+export const normalizePhoneDigits = (num: string): string => {
+  if (!num) return "";
+  const digits = num.replace(/\D/g, "");
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+};
+
+export const isPhoneMatch = (p1: string, p2: string): boolean => {
+  const n1 = normalizePhoneDigits(p1);
+  const n2 = normalizePhoneDigits(p2);
+  return Boolean(n1 && n2 && n1.length === 10 && n2.length === 10 && n1 === n2);
+};
+
+export const isEmailMatch = (e1: string, e2: string): boolean => {
+  if (!e1 || !e2) return false;
+  return e1.trim().toLowerCase() === e2.trim().toLowerCase();
+};
+
 const CONCEPT_LABELS: Record<string, string> = {
   org_label:        "Org Label",
   top_level:        "Top Level",
@@ -268,8 +285,12 @@ export function OnboardingWizardPage() {
   }, [formData]);
 
   React.useEffect(() => {
-    localStorage.setItem("onboarding_adminName", adminName);
-  }, [adminName]);
+    if (fetchedEmail) localStorage.setItem("onboarding_fetchedEmail", fetchedEmail);
+  }, [fetchedEmail]);
+
+  React.useEffect(() => {
+    if (phone) localStorage.setItem("onboarding_phone", phone);
+  }, [phone]);
 
   const [isCompleted, setIsCompleted] = useState(false);
 
@@ -279,11 +300,15 @@ export function OnboardingWizardPage() {
       localStorage.removeItem("onboarding_step");
       localStorage.removeItem("onboarding_formData");
       localStorage.removeItem("onboarding_adminName");
+      localStorage.removeItem("onboarding_fetchedEmail");
+      localStorage.removeItem("onboarding_phone");
     }
   }, [isCompleted]);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [fetchedEmail, setFetchedEmail] = useState("");
+  const [fetchedEmail, setFetchedEmail] = useState(() => {
+    try { return localStorage.getItem("onboarding_fetchedEmail") || ""; } catch { return ""; }
+  });
   const [fetchedName, setFetchedName] = useState("");
   const [fetchedRole, setFetchedRole] = useState("");
   const [fetchedOrgType, setFetchedOrgType] = useState("school");
@@ -359,7 +384,9 @@ export function OnboardingWizardPage() {
   };
   const [emailOtp, setEmailOtp] = useState("");
   const [phoneOtp, setPhoneOtp] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(() => {
+    try { return localStorage.getItem("onboarding_phone") || ""; } catch { return ""; }
+  });
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [emailOtpSent, setEmailOtpSent] = useState(false);
@@ -720,6 +747,7 @@ export function OnboardingWizardPage() {
         .then((res) => {
           if (res.valid) {
             if (res.email) setFetchedEmail(res.email);
+            if (res.phone) setPhone(prev => prev || res.phone || "");
             // Only set adminName from fetch if it's currently empty (don't overwrite user's typing from localStorage)
             if (res.name) {
               setFetchedName(res.name);
@@ -1768,71 +1796,6 @@ export function OnboardingWizardPage() {
                                     Educator
                                   </div>
                                 </motion.div>
-                              </div>
-                            </div>
-
-                            {/* Platform Terminology Reference Table */}
-                            <div className="bg-slate-950/60 rounded-2xl border border-slate-800/80 p-5 space-y-4">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                                  <BookOpen className="size-4 text-emerald-400" />
-                                  <span>Platform Terminology Matrix — How labels adapt across campus types</span>
-                                </div>
-                              </div>
-
-                              <div className="rounded-xl border border-slate-800 overflow-x-auto bg-slate-900/60">
-                                <table className="w-full text-xs text-left">
-                                  <thead>
-                                    <tr className="border-b border-slate-800 bg-slate-950/80">
-                                      <th className="px-3.5 py-3 font-semibold text-slate-400 border-r border-slate-800 whitespace-nowrap">
-                                        Concept
-                                      </th>
-                                      {["engineering", "school", "coaching", "junior_college", "diploma"].map((col) => (
-                                        <th
-                                          key={col}
-                                          className={cn(
-                                            "px-3.5 py-3 font-semibold whitespace-nowrap transition-colors",
-                                            col === terms.matchedKey
-                                              ? "text-emerald-400 bg-emerald-500/10 border-b-2 border-emerald-400"
-                                              : "text-slate-400"
-                                          )}
-                                        >
-                                          {COL_LABELS[col] || col}
-                                          {col === terms.matchedKey && (
-                                            <span className="ml-1 text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">
-                                              (yours)
-                                            </span>
-                                          )}
-                                        </th>
-                                      ))}
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-slate-800/60">
-                                    {DEFAULT_COMPARISON_CONCEPTS.map((concept, idx) => (
-                                      <tr key={concept} className={idx % 2 === 0 ? "bg-slate-900/40" : "bg-slate-950/40"}>
-                                        <td className="px-3.5 py-2.5 font-medium text-slate-200 border-r border-slate-800 whitespace-nowrap">
-                                          {CONCEPT_LABELS[concept] || concept}
-                                        </td>
-                                        {["engineering", "school", "coaching", "junior_college", "diploma"].map((col) => {
-                                          const val = mongoTerminologyMap?.[col]?.terminology?.[concept];
-                                          return (
-                                            <td
-                                              key={col}
-                                              className={cn(
-                                                "px-3.5 py-2.5 whitespace-nowrap",
-                                                col === terms.matchedKey
-                                                  ? "text-emerald-300 font-semibold bg-emerald-500/5"
-                                                  : "text-slate-400"
-                                              )}
-                                            >
-                                              {val == null || val === "" ? "—" : String(val)}
-                                            </td>
-                                          );
-                                        })}
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
                               </div>
                             </div>
                           </div>
