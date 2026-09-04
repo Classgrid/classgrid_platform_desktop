@@ -279,7 +279,7 @@ export function OnboardingWizardPage() {
 
   const dynamicSections = (strategy.sections || []).filter(sec => sec.key !== "organization_details");
   
-  const isOrgAdmin = effectiveRole === "org_admin" || effectiveRole === "super_admin";
+  const isOrgAdmin = effectiveRole === "org_admin";
 
   // Create one step per dynamic section
   const steps: any[] = [
