@@ -40,6 +40,8 @@ jobs:
             cd server
             echo "$PRODUCTION_ENV" > .env
             npm install --omit=dev
+            # FORCE RESTART REDIS TO FIX THE OUTAGE
+            sudo systemctl restart redis-server || sudo service redis restart || true
             pm2 restart all --update-env
 
 
