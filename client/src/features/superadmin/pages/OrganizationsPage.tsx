@@ -144,7 +144,7 @@ export function OrganizationsPage() {
       key: "actions",
       render: (_val: any, row: any) => (
         <Button size="sm" variant="outline" asChild>
-          <Link to={`/superadmin/detail/${row.subdomain || row.name || "unknown"}`} state={{ orgId: row._id }}>
+          <Link to={`/superadmin/detail/${row.name || "unknown"}`} state={{ orgId: row._id }}>
             View Details
           </Link>
         </Button>
