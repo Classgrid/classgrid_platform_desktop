@@ -321,6 +321,11 @@ export function OnboardingWizardPage() {
       return;
     }
 
+    if (phone && orgPhone.trim() === phone.trim()) {
+      showAlert("Organization contact phone CANNOT be the same as your personal Admin phone number. Please enter an official institution phone number.");
+      return;
+    }
+
     if (isSendingPhoneOtp) return; // Prevent double click
 
     setIsSendingPhoneOtp(true);
@@ -570,6 +575,10 @@ export function OnboardingWizardPage() {
   const handleSendOrgEmailOtp = async () => {
     if (!orgEmail || !orgEmail.includes("@")) {
       showAlert("Please enter a valid organization email.");
+      return;
+    }
+    if (fetchedEmail && orgEmail.trim().toLowerCase() === fetchedEmail.trim().toLowerCase()) {
+      showAlert("Organization contact email CANNOT be the same as your personal Admin email. Please enter an official institution contact email.");
       return;
     }
     try {
@@ -982,8 +991,16 @@ export function OnboardingWizardPage() {
     }
     // Org Verification step
     if (currentStepData.id === "org_verification") {
+      if (fetchedEmail && orgEmail.trim().toLowerCase() === fetchedEmail.trim().toLowerCase()) {
+        showAlert("Organization official email CANNOT be the same as your personal Admin email provided at registration/Book a Demo. Please enter your official institution contact email.");
+        return;
+      }
+      if (phone && orgPhone.trim() === phone.trim()) {
+        showAlert("Organization official phone number CANNOT be the same as your personal Admin phone number. Please enter your official institution phone/helpline.");
+        return;
+      }
       if (!isOrgEmailVerified || !isOrgPhoneVerified) {
-        showAlert("Please verify both the organization contact email and phone number.");
+        showAlert("Please verify both the official organization contact email and phone number.");
         return;
       }
     }
@@ -2101,145 +2118,160 @@ export function OnboardingWizardPage() {
                   )}
 
                   {/* ── RENDER: ORG VERIFICATION (FIXED STEP) ── */}
-                  {currentStepData.type === "fixed_org_verification" && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      <div className="bg-white dark:bg-card p-8 rounded-3xl shadow-sm border border-border/60">
-                        <div className="flex items-center gap-3 mb-6 pb-6 border-b border-border/60">
-                          <div className="size-12 bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center font-bold">
-                            <ShieldCheck className="size-6 text-emerald-600 dark:text-emerald-400" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-foreground">Verify Organization Contact</h3>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              Please provide the official contact details for your organization. Used for billing, official notices, and administrative alerts.
-                            </p>
-                          </div>
-                        </div>
+                  {currentStepData.type === "fixed_org_verification" && (() => {
+                    const isSameEmail = Boolean(orgEmail && fetchedEmail && orgEmail.trim().toLowerCase() === fetchedEmail.trim().toLowerCase());
+                    const isSamePhone = Boolean(orgPhone && phone && orgPhone.trim() === phone.trim());
 
-                        <div className="space-y-8">
-                          {/* ── ORG EMAIL SECTION ── */}
-                          <div className="bg-secondary/30 p-6 rounded-2xl border border-border/80 space-y-4">
-                            <label className="text-sm font-bold text-foreground flex items-center gap-2">
-                              <Mail className="size-4 text-primary" />
-                              <span>Official Organization Email <span className="text-danger">*</span></span>
-                            </label>
-
-                            <div className="grid md:grid-cols-2 gap-6 items-start">
-                              <div>
-                                <div className="flex gap-2">
-                                  <Input
-                                    value={orgEmail}
-                                    onChange={(e) => {
-                                      setOrgEmail(e.target.value);
-                                      setIsOrgEmailVerified(false);
-                                      setOrgEmailOtpSent(false);
-                                    }}
-                                    disabled={isOrgEmailVerified}
-                                    placeholder="e.g. admin@school.com"
-                                    className="h-12 flex-1 text-sm font-medium rounded-xl"
-                                  />
-                                  {!isOrgEmailVerified && (
-                                    <Button
-                                      variant="outline"
-                                      className="h-12 px-6 text-sm font-semibold rounded-xl shrink-0"
-                                      onClick={handleSendOrgEmailOtp}
-                                      disabled={orgEmailOtpSent || isSendingEmailOtp}
-                                    >
-                                      {isSendingEmailOtp ? "Sending..." : orgEmailOtpSent ? "Sent" : "Send OTP"}
-                                    </Button>
-                                  )}
-                                </div>
-                                {isOrgEmailVerified && (
-                                  <p className="text-emerald-600 dark:text-emerald-400 text-xs mt-2.5 font-semibold flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 w-fit">
-                                    <CheckCircle2 className="size-4" />
-                                    <span>Verified</span>
-                                  </p>
-                                )}
-                              </div>
-
-                              {!isOrgEmailVerified && (
-                                <div className="flex-1">
-                                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Enter 6-Digit Verification Code</label>
-                                  <InputOTP
-                                    maxLength={6}
-                                    disabled={!orgEmailOtpSent || isOrgEmailVerified || isVerifyingOrgEmail}
-                                    value={orgEmailOtp}
-                                    onChange={(v) => { setOrgEmailOtp(v); if (v.length === 6) handleVerifyOrgEmailOtp(v); }}
-                                  >
-                                    <InputOTPGroup className="gap-2">
-                                      {[0, 1, 2, 3, 4, 5].map((index) => (
-                                        <InputOTPSlot key={index} index={index} className="w-11 h-11 text-lg font-bold rounded-xl border border-input bg-background" />
-                                      ))}
-                                    </InputOTPGroup>
-                                  </InputOTP>
-                                </div>
-                              )}
+                    return (
+                      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="bg-white dark:bg-card p-8 rounded-3xl shadow-sm border border-border/60">
+                          <div className="flex items-center gap-3 mb-6 pb-6 border-b border-border/60">
+                            <div className="size-12 bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center font-bold">
+                              <ShieldCheck className="size-6 text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold text-foreground">Verify Official Organization Contact</h3>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Organization contact details must be official institution records and cannot be identical to your personal admin profile.
+                              </p>
                             </div>
                           </div>
 
-                          {/* ── ORG PHONE SECTION ── */}
-                          <div className="bg-secondary/30 p-6 rounded-2xl border border-border/80 space-y-4">
-                            <label className="text-sm font-bold text-foreground flex items-center gap-2">
-                              <Smartphone className="size-4 text-primary" />
-                              <span>Official Organization Phone <span className="text-danger">*</span></span>
-                            </label>
+                          <div className="space-y-8">
+                            {/* ── ORG EMAIL SECTION ── */}
+                            <div className="bg-secondary/30 p-6 rounded-2xl border border-border/80 space-y-4">
+                              <label className="text-sm font-bold text-foreground flex items-center gap-2">
+                                <Mail className="size-4 text-primary" />
+                                <span>Official Organization Email <span className="text-danger">*</span></span>
+                              </label>
 
-                            <div className="grid md:grid-cols-2 gap-6 items-start">
-                              <div>
-                                <div className="flex gap-2">
-                                  <Input
-                                    value={orgPhone}
-                                    onChange={(e) => {
-                                      setOrgPhone(e.target.value);
-                                      setIsOrgPhoneVerified(false);
-                                      setOrgPhoneOtpSent(false);
-                                    }}
-                                    disabled={isOrgPhoneVerified}
-                                    placeholder="e.g. 9876543210"
-                                    className="h-12 flex-1 text-sm font-medium rounded-xl"
-                                  />
-                                  {!isOrgPhoneVerified && (
-                                    <Button
-                                      variant="outline"
-                                      className="h-12 px-6 text-sm font-semibold rounded-xl shrink-0"
-                                      onClick={handleSendOrgPhoneOtp}
-                                      disabled={orgPhoneOtpSent || isSendingPhoneOtp}
-                                    >
-                                      {isSendingPhoneOtp ? "Sending..." : orgPhoneOtpSent ? "Sent" : "Send OTP"}
-                                    </Button>
+                              <div className="grid md:grid-cols-2 gap-6 items-start">
+                                <div>
+                                  <div className="flex gap-2">
+                                    <Input
+                                      value={orgEmail}
+                                      onChange={(e) => {
+                                        setOrgEmail(e.target.value);
+                                        setIsOrgEmailVerified(false);
+                                        setOrgEmailOtpSent(false);
+                                      }}
+                                      disabled={isOrgEmailVerified}
+                                      placeholder="e.g. contact@school.edu.in"
+                                      className={cn("h-12 flex-1 text-sm font-medium rounded-xl", isSameEmail ? "border-red-500 ring-2 ring-red-500/20" : "")}
+                                    />
+                                    {!isOrgEmailVerified && (
+                                      <Button
+                                        variant="outline"
+                                        className="h-12 px-6 text-sm font-semibold rounded-xl shrink-0"
+                                        onClick={handleSendOrgEmailOtp}
+                                        disabled={orgEmailOtpSent || isSendingEmailOtp || isSameEmail}
+                                      >
+                                        {isSendingEmailOtp ? "Sending..." : orgEmailOtpSent ? "Sent" : "Send OTP"}
+                                      </Button>
+                                    )}
+                                  </div>
+                                  {isSameEmail && (
+                                    <p className="text-red-500 text-xs mt-2.5 font-semibold flex items-center gap-1.5 bg-red-500/10 px-3 py-1.5 rounded-xl border border-red-500/20">
+                                      <span>⚠️ Organization email cannot be the same as your personal Admin email ({fetchedEmail}). Please provide official institution email.</span>
+                                    </p>
+                                  )}
+                                  {isOrgEmailVerified && !isSameEmail && (
+                                    <p className="text-emerald-600 dark:text-emerald-400 text-xs mt-2.5 font-semibold flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 w-fit">
+                                      <CheckCircle2 className="size-4" />
+                                      <span>Verified Official Email</span>
+                                    </p>
                                   )}
                                 </div>
-                                {isOrgPhoneVerified && (
-                                  <p className="text-emerald-600 dark:text-emerald-400 text-xs mt-2.5 font-semibold flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 w-fit">
-                                    <CheckCircle2 className="size-4" />
-                                    <span>Verified</span>
-                                  </p>
+
+                                {!isOrgEmailVerified && (
+                                  <div className="flex-1">
+                                    <label className="text-xs font-semibold text-foreground mb-1.5 block">Enter 6-Digit Verification Code</label>
+                                    <InputOTP
+                                      maxLength={6}
+                                      disabled={!orgEmailOtpSent || isOrgEmailVerified || isVerifyingOrgEmail || isSameEmail}
+                                      value={orgEmailOtp}
+                                      onChange={(v) => { setOrgEmailOtp(v); if (v.length === 6) handleVerifyOrgEmailOtp(v); }}
+                                    >
+                                      <InputOTPGroup className="gap-2">
+                                        {[0, 1, 2, 3, 4, 5].map((index) => (
+                                          <InputOTPSlot key={index} index={index} className="w-11 h-11 text-lg font-bold rounded-xl border border-input bg-background" />
+                                        ))}
+                                      </InputOTPGroup>
+                                    </InputOTP>
+                                  </div>
                                 )}
                               </div>
+                            </div>
 
-                              {!isOrgPhoneVerified && (
-                                <div className="flex-1">
-                                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Enter 6-Digit Verification Code</label>
-                                  <InputOTP
-                                    maxLength={6}
-                                    disabled={!orgPhoneOtpSent || isOrgPhoneVerified || isVerifyingOrgPhone}
-                                    value={orgPhoneOtp}
-                                    onChange={(v) => { setOrgPhoneOtp(v); if (v.length === 6) handleVerifyOrgPhoneOtp(v); }}
-                                  >
-                                    <InputOTPGroup className="gap-2">
-                                      {[0, 1, 2, 3, 4, 5].map((index) => (
-                                        <InputOTPSlot key={index} index={index} className="w-11 h-11 text-lg font-bold rounded-xl border border-input bg-background" />
-                                      ))}
-                                    </InputOTPGroup>
-                                  </InputOTP>
+                            {/* ── ORG PHONE SECTION ── */}
+                            <div className="bg-secondary/30 p-6 rounded-2xl border border-border/80 space-y-4">
+                              <label className="text-sm font-bold text-foreground flex items-center gap-2">
+                                <Smartphone className="size-4 text-primary" />
+                                <span>Official Organization Phone / Landline <span className="text-danger">*</span></span>
+                              </label>
+
+                              <div className="grid md:grid-cols-2 gap-6 items-start">
+                                <div>
+                                  <div className="flex gap-2">
+                                    <Input
+                                      value={orgPhone}
+                                      onChange={(e) => {
+                                        setOrgPhone(e.target.value);
+                                        setIsOrgPhoneVerified(false);
+                                        setOrgPhoneOtpSent(false);
+                                      }}
+                                      disabled={isOrgPhoneVerified}
+                                      placeholder="e.g. 02228901234 or 9870000000"
+                                      className={cn("h-12 flex-1 text-sm font-medium rounded-xl", isSamePhone ? "border-red-500 ring-2 ring-red-500/20" : "")}
+                                    />
+                                    {!isOrgPhoneVerified && (
+                                      <Button
+                                        variant="outline"
+                                        className="h-12 px-6 text-sm font-semibold rounded-xl shrink-0"
+                                        onClick={handleSendOrgPhoneOtp}
+                                        disabled={orgPhoneOtpSent || isSendingPhoneOtp || isSamePhone}
+                                      >
+                                        {isSendingPhoneOtp ? "Sending..." : orgPhoneOtpSent ? "Sent" : "Send OTP"}
+                                      </Button>
+                                    )}
+                                  </div>
+                                  {isSamePhone && (
+                                    <p className="text-red-500 text-xs mt-2.5 font-semibold flex items-center gap-1.5 bg-red-500/10 px-3 py-1.5 rounded-xl border border-red-500/20">
+                                      <span>⚠️ Organization phone cannot be the same as your personal Admin phone ({phone}). Please provide official institution phone/helpline.</span>
+                                    </p>
+                                  )}
+                                  {isOrgPhoneVerified && !isSamePhone && (
+                                    <p className="text-emerald-600 dark:text-emerald-400 text-xs mt-2.5 font-semibold flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 w-fit">
+                                      <CheckCircle2 className="size-4" />
+                                      <span>Verified Official Phone</span>
+                                    </p>
+                                  )}
                                 </div>
-                              )}
+
+                                {!isOrgPhoneVerified && (
+                                  <div className="flex-1">
+                                    <label className="text-xs font-semibold text-foreground mb-1.5 block">Enter 6-Digit Verification Code</label>
+                                    <InputOTP
+                                      maxLength={6}
+                                      disabled={!orgPhoneOtpSent || isOrgPhoneVerified || isVerifyingOrgPhone || isSamePhone}
+                                      value={orgPhoneOtp}
+                                      onChange={(v) => { setOrgPhoneOtp(v); if (v.length === 6) handleVerifyOrgPhoneOtp(v); }}
+                                    >
+                                      <InputOTPGroup className="gap-2">
+                                        {[0, 1, 2, 3, 4, 5].map((index) => (
+                                          <InputOTPSlot key={index} index={index} className="w-11 h-11 text-lg font-bold rounded-xl border border-input bg-background" />
+                                        ))}
+                                      </InputOTPGroup>
+                                    </InputOTP>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* ── RENDER: PASSWORD STEP ── */}
                   {currentStepData.type === "fixed_password" && (
