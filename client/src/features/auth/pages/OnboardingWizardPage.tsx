@@ -47,16 +47,12 @@ export function OnboardingWizardPage() {
       const savedToken = localStorage.getItem("onboarding_token");
       
       // If there's a new token that differs from the one in storage, start fresh!
-      if (urlToken && savedToken && urlToken !== savedToken) {
+      if (urlToken && urlToken !== savedToken) {
         localStorage.removeItem("onboarding_step");
         localStorage.removeItem("onboarding_adminName");
         localStorage.removeItem("onboarding_formData");
         localStorage.setItem("onboarding_token", urlToken);
         return 0;
-      }
-      
-      if (urlToken && !savedToken) {
-        localStorage.setItem("onboarding_token", urlToken);
       }
 
       const saved = localStorage.getItem("onboarding_step");
