@@ -381,39 +381,6 @@ export function OnboardingWizardPage() {
   const [orgPhoneOtpSent, setOrgPhoneOtpSent] = useState(false);
   const [isVerifyingOrgPhone, setIsVerifyingOrgPhone] = useState(false);
 
-  // Auto-sync & auto-verify Org Email/Phone with Admin Email/Phone when enabled
-  const [useAdminEmailForOrg, setUseAdminEmailForOrg] = useState(true);
-  const [useAdminPhoneForOrg, setUseAdminPhoneForOrg] = useState(true);
-
-  React.useEffect(() => {
-    if (useAdminEmailForOrg && fetchedEmail) {
-      setOrgEmail(fetchedEmail);
-      if (isEmailVerified) {
-        setIsOrgEmailVerified(true);
-      }
-    }
-  }, [useAdminEmailForOrg, fetchedEmail, isEmailVerified]);
-
-  React.useEffect(() => {
-    if (useAdminPhoneForOrg && phone) {
-      setOrgPhone(phone);
-      if (isPhoneVerified) {
-        setIsOrgPhoneVerified(true);
-      }
-    }
-  }, [useAdminPhoneForOrg, phone, isPhoneVerified]);
-
-  React.useEffect(() => {
-    if (orgEmail && fetchedEmail && orgEmail.trim().toLowerCase() === fetchedEmail.trim().toLowerCase() && isEmailVerified) {
-      setIsOrgEmailVerified(true);
-    }
-  }, [orgEmail, fetchedEmail, isEmailVerified]);
-
-  React.useEffect(() => {
-    if (orgPhone && phone && orgPhone.trim() === phone.trim() && isPhoneVerified) {
-      setIsOrgPhoneVerified(true);
-    }
-  }, [orgPhone, phone, isPhoneVerified]);
 
   const [isInitializing, setIsInitializing] = useState(true); // Start true to prevent flash
 
@@ -426,34 +393,72 @@ export function OnboardingWizardPage() {
   const [phoneOtpTimer, setPhoneOtpTimer] = useState(0);
   const [orgEmailOtpTimer, setOrgEmailOtpTimer] = useState(0);
 
-  // Derived Dropdown Data (from india-locations.json)
+  // Derived Dropdown Data (from india-locations.json & full_erp_data.json)
   const stateOptions = useMemo(() => {
-    return Object.keys(locationsData.states).sort();
+    const fromLoc = Object.keys(locationsData.states);
+    const fromErp = (erpData as any).birthstatelist || [];
+    return Array.from(new Set([...fromLoc, ...fromErp])).filter(Boolean).sort();
   }, []);
 
   const getDistrictsForState = (stateName: string): string[] => {
-    if (!stateName || !locationsData.states[stateName as keyof typeof locationsData.states]) return [];
-    const districtsObj = locationsData.states[stateName as keyof typeof locationsData.states];
-    return Object.keys(districtsObj).sort();
+    let districts: string[] = [];
+    if (stateName) {
+      const cleanState = stateName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      for (const [sKey, dObj] of Object.entries(locationsData.states)) {
+        const cleanKey = sKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (cleanKey.includes(cleanState) || cleanState.includes(cleanKey)) {
+          districts = Object.keys(dObj);
+          break;
+        }
+      }
+    }
+    const fromErp = (erpData as any).birthdistrictlist || [];
+    if (!districts.length) {
+      districts = fromErp;
+    }
+    return Array.from(new Set(districts)).filter(Boolean).sort();
   };
 
   const getTalukasForDistrict = (stateName: string, districtName: string): string[] => {
-    if (!stateName || !districtName) return [];
-    const districtsObj = locationsData.states[stateName as keyof typeof locationsData.states];
-    if (!districtsObj) return [];
-    const talukas = districtsObj[districtName as keyof typeof districtsObj];
-    return Array.isArray(talukas) ? [...talukas].sort() : [];
+    if (!districtName) return [];
+    if (stateName) {
+      const cleanState = stateName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      for (const [sKey, dObj] of Object.entries(locationsData.states)) {
+        const cleanKey = sKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (cleanKey.includes(cleanState) || cleanState.includes(cleanKey)) {
+          if ((dObj as any)[districtName]) return (dObj as any)[districtName] as string[];
+          const cleanDist = districtName.toLowerCase().replace(/[^a-z0-9]/g, '');
+          for (const [dKey, tList] of Object.entries(dObj)) {
+            if (dKey.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanDist) return tList as string[];
+          }
+        }
+      }
+    }
+    const cleanDist = districtName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    for (const dObj of Object.values(locationsData.states)) {
+      for (const [dKey, tList] of Object.entries(dObj)) {
+        if (dKey.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanDist) return tList as string[];
+      }
+    }
+    return [];
   };
 
   const getCitiesForState = (stateName: string, districtName?: string) => {
-    if (!stateName || !locationsData.states[stateName as keyof typeof locationsData.states]) return [];
-    const districtsObj = locationsData.states[stateName as keyof typeof locationsData.states];
-    
-    if (districtName && districtsObj[districtName as keyof typeof districtsObj]) {
-      const talukas = districtsObj[districtName as keyof typeof districtsObj];
-      return Array.isArray(talukas) ? [...talukas].sort() : [];
+    if (districtName) {
+      const talukas = getTalukasForDistrict(stateName, districtName);
+      if (talukas.length > 0) return talukas;
     }
-    
+    if (!stateName) return [];
+    const cleanState = stateName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    let districtsObj: any = null;
+    for (const [sKey, dObj] of Object.entries(locationsData.states)) {
+      const cleanKey = sKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (cleanKey.includes(cleanState) || cleanState.includes(cleanKey)) {
+        districtsObj = dObj;
+        break;
+      }
+    }
+    if (!districtsObj) return [];
     const cities = new Set<string>();
     Object.values(districtsObj).forEach((districtCities: any) => {
       if (Array.isArray(districtCities)) {
@@ -463,13 +468,22 @@ export function OnboardingWizardPage() {
     return Array.from(cities).sort();
   };
 
-  const selectedState = formData["org_details"]?.["state"] ?? fetchedState ?? "";
-  const selectedDistrict = formData["org_details"]?.["district"] ?? fetchedDistrict ?? "";
-  const selectedTaluka = formData["org_details"]?.["taluka"] ?? fetchedTaluka ?? "";
+  const selectedState = (formData["org_details"]?.["state"] && formData["org_details"]?.["state"] !== "") ? formData["org_details"]["state"] : (fetchedState || "");
+  const selectedDistrict = (formData["org_details"]?.["district"] && formData["org_details"]?.["district"] !== "") ? formData["org_details"]["district"] : (fetchedDistrict || "");
+  const selectedTaluka = (formData["org_details"]?.["taluka"] && formData["org_details"]?.["taluka"] !== "") ? formData["org_details"]["taluka"] : (fetchedTaluka || "");
+  const selectedCity = (formData["org_details"]?.["city"] && formData["org_details"]?.["city"] !== "") ? formData["org_details"]["city"] : (fetchedCity || "");
 
   const districtOptions = useMemo(() => getDistrictsForState(selectedState), [selectedState]);
   const talukaOptions = useMemo(() => getTalukasForDistrict(selectedState, selectedDistrict), [selectedState, selectedDistrict]);
   const cityOptions = useMemo(() => getCitiesForState(selectedState, selectedDistrict), [selectedState, selectedDistrict]);
+
+  const boardOptions = useMemo(() => {
+    const defaultBoards = ['CBSE', 'ICSE', 'State Board', 'IB (International Baccalaureate)', 'IGCSE / Cambridge', 'None'];
+    const erpList = ((erpData as any).erpuniversitylist || [])
+      .map((item: any) => (typeof item === 'object' ? (item.name || item.university) : item))
+      .filter(Boolean);
+    return Array.from(new Set([...defaultBoards, ...erpList])).sort();
+  }, []);
 
   const languageOptions = useMemo(() => {
     if (!erpData.mothertoungelist) return [];
@@ -717,21 +731,24 @@ export function OnboardingWizardPage() {
             if (res.website) setFetchedWebsite(res.website);
 
             // Pre-fill formData from MongoDB demo lead
-            setFormData(prev => ({
-              ...prev,
-              org_details: {
-                name: prev["org_details"]?.name || res.orgName || "",
-                type: prev["org_details"]?.type || normType,
-                address: prev["org_details"]?.address || res.address || "",
-                state: prev["org_details"]?.state || res.state || "",
-                city: prev["org_details"]?.city || res.city || "",
-                district: prev["org_details"]?.district || res.district || "",
-                taluka: prev["org_details"]?.taluka || res.taluka || "",
-                website: prev["org_details"]?.website || res.website || "",
-                board: prev["org_details"]?.board || "CBSE",
-                ...(prev["org_details"] || {})
-              }
-            }));
+            setFormData(prev => {
+              const currentOrg = prev["org_details"] || {};
+              return {
+                ...prev,
+                org_details: {
+                  ...currentOrg,
+                  name: (currentOrg.name && currentOrg.name !== "") ? currentOrg.name : (res.orgName || ""),
+                  type: (currentOrg.type && currentOrg.type !== "") ? currentOrg.type : normType,
+                  address: (currentOrg.address && currentOrg.address !== "") ? currentOrg.address : (res.address || ""),
+                  state: (currentOrg.state && currentOrg.state !== "") ? currentOrg.state : (res.state || ""),
+                  city: (currentOrg.city && currentOrg.city !== "") ? currentOrg.city : (res.city || ""),
+                  district: (currentOrg.district && currentOrg.district !== "") ? currentOrg.district : (res.district || ""),
+                  taluka: (currentOrg.taluka && currentOrg.taluka !== "") ? currentOrg.taluka : (res.taluka || ""),
+                  website: (currentOrg.website && currentOrg.website !== "") ? currentOrg.website : (res.website || ""),
+                  board: currentOrg.board || "CBSE",
+                }
+              };
+            });
           }
         })
         .catch((err) => {
@@ -1959,11 +1976,9 @@ export function OnboardingWizardPage() {
                               value={formData["org_details"]?.["board"] || "CBSE"}
                               onChange={(e) => handleFieldChange("org_details", "board", e.target.value)}
                             >
-                              <option value="CBSE">CBSE</option>
-                              <option value="ICSE">ICSE</option>
-                              <option value="State">State Board</option>
-                              <option value="University">University</option>
-                              <option value="None">None</option>
+                              {boardOptions.map((boardName: string) => (
+                                <option key={boardName} value={boardName}>{boardName}</option>
+                              ))}
                             </ResponsiveSelect>
                           </div>
                           <div>
@@ -1982,14 +1997,7 @@ export function OnboardingWizardPage() {
                               placeholder="e.g. CIS, ABPS"
                             />
                           </div>
-                          <div>
-                            <label className="text-sm font-semibold block mb-1.5">Academic Year / Session <span className="text-danger">*</span></label>
-                            <Input
-                              value={formData["org_details"]?.["academic_session"] || ""}
-                              onChange={(e) => handleFieldChange("org_details", "academic_session", e.target.value)}
-                              placeholder="e.g. 2026-2027"
-                            />
-                          </div>
+
                           <div className="md:col-span-2">
                             <label className="text-sm font-semibold block mb-1.5">Full Address <span className="text-danger">*</span></label>
                             <Input
@@ -2057,13 +2065,13 @@ export function OnboardingWizardPage() {
                             <label className="text-sm font-semibold block mb-1.5">City / Village <span className="text-danger">*</span></label>
                             <ResponsiveSelect
                               className="w-full h-10 rounded-lg border-input bg-background"
-                              value={formData["org_details"]?.["city"] ?? fetchedCity ?? ""}
+                              value={selectedCity}
                               onChange={(e) => handleFieldChange("org_details", "city", e.target.value)}
                               disabled={!selectedState}
                             >
                               <option value="">Select City / Village...</option>
-                              {fetchedCity && !cityOptions.includes(fetchedCity) && (
-                                <option value={fetchedCity}>{fetchedCity}</option>
+                              {selectedCity && !cityOptions.includes(selectedCity) && (
+                                <option value={selectedCity}>{selectedCity}</option>
                               )}
                               {cityOptions.map((city: string) => (
                                 <option key={city} value={city}>{city}</option>
@@ -2103,7 +2111,7 @@ export function OnboardingWizardPage() {
                           <div>
                             <h3 className="text-xl font-bold text-foreground">Verify Organization Contact</h3>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              Specify official organization contact details for billing and critical system notifications.
+                              Please provide the official contact details for your organization. Used for billing, official notices, and administrative alerts.
                             </p>
                           </div>
                         </div>
@@ -2111,33 +2119,10 @@ export function OnboardingWizardPage() {
                         <div className="space-y-8">
                           {/* ── ORG EMAIL SECTION ── */}
                           <div className="bg-secondary/30 p-6 rounded-2xl border border-border/80 space-y-4">
-                            <div className="flex items-center justify-between flex-wrap gap-2">
-                              <label className="text-sm font-bold text-foreground flex items-center gap-2">
-                                <Mail className="size-4 text-primary" />
-                                <span>Official Organization Email <span className="text-danger">*</span></span>
-                              </label>
-                              {fetchedEmail && (
-                                <label className="inline-flex items-center gap-2 text-xs font-semibold text-primary cursor-pointer hover:underline">
-                                  <input
-                                    type="checkbox"
-                                    checked={useAdminEmailForOrg}
-                                    onChange={(e) => {
-                                      const checked = e.target.checked;
-                                      setUseAdminEmailForOrg(checked);
-                                      if (checked) {
-                                        setOrgEmail(fetchedEmail);
-                                        if (isEmailVerified) setIsOrgEmailVerified(true);
-                                      } else {
-                                        setIsOrgEmailVerified(false);
-                                        setOrgEmailOtpSent(false);
-                                      }
-                                    }}
-                                    className="rounded border-input text-primary focus:ring-primary size-4"
-                                  />
-                                  <span>Use my Admin Email ({fetchedEmail})</span>
-                                </label>
-                              )}
-                            </div>
+                            <label className="text-sm font-bold text-foreground flex items-center gap-2">
+                              <Mail className="size-4 text-primary" />
+                              <span>Official Organization Email <span className="text-danger">*</span></span>
+                            </label>
 
                             <div className="grid md:grid-cols-2 gap-6 items-start">
                               <div>
@@ -2146,13 +2131,11 @@ export function OnboardingWizardPage() {
                                     value={orgEmail}
                                     onChange={(e) => {
                                       setOrgEmail(e.target.value);
-                                      if (e.target.value !== fetchedEmail) {
-                                        setUseAdminEmailForOrg(false);
-                                        setIsOrgEmailVerified(false);
-                                      }
+                                      setIsOrgEmailVerified(false);
+                                      setOrgEmailOtpSent(false);
                                     }}
-                                    disabled={isOrgEmailVerified && useAdminEmailForOrg}
-                                    placeholder="admin@school.com"
+                                    disabled={isOrgEmailVerified}
+                                    placeholder="e.g. admin@school.com"
                                     className="h-12 flex-1 text-sm font-medium rounded-xl"
                                   />
                                   {!isOrgEmailVerified && (
@@ -2169,9 +2152,7 @@ export function OnboardingWizardPage() {
                                 {isOrgEmailVerified && (
                                   <p className="text-emerald-600 dark:text-emerald-400 text-xs mt-2.5 font-semibold flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 w-fit">
                                     <CheckCircle2 className="size-4" />
-                                    <span>
-                                      Verified {orgEmail === fetchedEmail ? "(Same as Admin Email)" : ""}
-                                    </span>
+                                    <span>Verified</span>
                                   </p>
                                 )}
                               </div>
@@ -2198,33 +2179,10 @@ export function OnboardingWizardPage() {
 
                           {/* ── ORG PHONE SECTION ── */}
                           <div className="bg-secondary/30 p-6 rounded-2xl border border-border/80 space-y-4">
-                            <div className="flex items-center justify-between flex-wrap gap-2">
-                              <label className="text-sm font-bold text-foreground flex items-center gap-2">
-                                <Smartphone className="size-4 text-primary" />
-                                <span>Official Organization Phone <span className="text-danger">*</span></span>
-                              </label>
-                              {phone && (
-                                <label className="inline-flex items-center gap-2 text-xs font-semibold text-primary cursor-pointer hover:underline">
-                                  <input
-                                    type="checkbox"
-                                    checked={useAdminPhoneForOrg}
-                                    onChange={(e) => {
-                                      const checked = e.target.checked;
-                                      setUseAdminPhoneForOrg(checked);
-                                      if (checked) {
-                                        setOrgPhone(phone);
-                                        if (isPhoneVerified) setIsOrgPhoneVerified(true);
-                                      } else {
-                                        setIsOrgPhoneVerified(false);
-                                        setOrgPhoneOtpSent(false);
-                                      }
-                                    }}
-                                    className="rounded border-input text-primary focus:ring-primary size-4"
-                                  />
-                                  <span>Use my Admin Phone ({phone})</span>
-                                </label>
-                              )}
-                            </div>
+                            <label className="text-sm font-bold text-foreground flex items-center gap-2">
+                              <Smartphone className="size-4 text-primary" />
+                              <span>Official Organization Phone <span className="text-danger">*</span></span>
+                            </label>
 
                             <div className="grid md:grid-cols-2 gap-6 items-start">
                               <div>
@@ -2233,13 +2191,11 @@ export function OnboardingWizardPage() {
                                     value={orgPhone}
                                     onChange={(e) => {
                                       setOrgPhone(e.target.value);
-                                      if (e.target.value !== phone) {
-                                        setUseAdminPhoneForOrg(false);
-                                        setIsOrgPhoneVerified(false);
-                                      }
+                                      setIsOrgPhoneVerified(false);
+                                      setOrgPhoneOtpSent(false);
                                     }}
-                                    disabled={isOrgPhoneVerified && useAdminPhoneForOrg}
-                                    placeholder="9876543210"
+                                    disabled={isOrgPhoneVerified}
+                                    placeholder="e.g. 9876543210"
                                     className="h-12 flex-1 text-sm font-medium rounded-xl"
                                   />
                                   {!isOrgPhoneVerified && (
@@ -2256,9 +2212,7 @@ export function OnboardingWizardPage() {
                                 {isOrgPhoneVerified && (
                                   <p className="text-emerald-600 dark:text-emerald-400 text-xs mt-2.5 font-semibold flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 w-fit">
                                     <CheckCircle2 className="size-4" />
-                                    <span>
-                                      Verified {orgPhone === phone ? "(Same as Admin Phone)" : ""}
-                                    </span>
+                                    <span>Verified</span>
                                   </p>
                                 )}
                               </div>
