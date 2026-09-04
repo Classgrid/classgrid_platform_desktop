@@ -18,7 +18,6 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // 🆔 Platform-wide unique @username — used for Chat @mentions and Discourse Forum
     username: {
       type: String,
       unique: true,
@@ -28,7 +27,6 @@ const userSchema = new mongoose.Schema(
       minlength: 3,
       maxlength: 30,
       match: [/^[a-z0-9_]+$/, "Username can only contain lowercase letters, numbers, and underscores"],
-      default: null,
     },
 
 
