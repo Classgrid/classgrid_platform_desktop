@@ -70,13 +70,15 @@ export function OnboardingWizardPage() {
   if (!token) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full bg-card rounded-2xl shadow-xl border border-border p-8 text-center">
-          <div className="size-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShieldCheck className="size-8" />
-          </div>
-          <h2 className="text-2xl font-bold text-foreground mb-4">Invalid Activation Link</h2>
-          <p className="text-muted-foreground mb-8">This onboarding link is invalid or has expired. Please use the secure activation link sent to your email.</p>
-          <Button className="w-full h-12 text-base font-semibold" onClick={() => window.location.href = 'https://classgrid.in'}>Return to Homepage</Button>
+        <div className="max-w-md w-full text-center relative z-10">
+          <h1 className="text-9xl font-extrabold text-muted-foreground/20 tracking-widest relative">
+            404
+            <div className="bg-background/80 px-2 text-sm rounded absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-12 font-bold text-foreground">
+              Page Not Found
+            </div>
+          </h1>
+          <p className="text-muted-foreground mt-8 mb-6">The page you are looking for doesn't exist or has been moved.</p>
+          <Button variant="outline" className="h-10 px-8" onClick={() => window.location.href = 'https://classgrid.in'}>Return to Homepage</Button>
         </div>
       </div>
     );
