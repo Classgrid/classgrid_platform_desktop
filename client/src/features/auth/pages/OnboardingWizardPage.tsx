@@ -504,9 +504,11 @@ export function OnboardingWizardPage() {
 
   const dynamicSections = (strategy.sections || []).filter(sec => {
     if (sec.key === "organization_details") return false;
-    // For org admins, skip the bloated basic profile and contact details 
-    // because they are collected in fixed steps (Welcome, Verification, Personal details)
-    if (isOrgAdmin && (sec.key === "basic_profile" || sec.key === "contact_details")) return false;
+    // Skip the bloated basic profile and contact details for ALL users during onboarding
+    // to prevent asking for Name, Email, and Phone multiple times.
+    // They are already collected in fixed steps (Verification, Personal details).
+    // Optional demographic data can be filled in later in profile settings.
+    if (sec.key === "basic_profile" || sec.key === "contact_details") return false;
     return true;
   });
 
