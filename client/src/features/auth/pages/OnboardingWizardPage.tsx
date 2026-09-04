@@ -308,6 +308,8 @@ export function OnboardingWizardPage() {
   const [fetchedAddress, setFetchedAddress] = useState("");
   const [fetchedCity, setFetchedCity] = useState("");
   const [fetchedState, setFetchedState] = useState("");
+  const [fetchedDistrict, setFetchedDistrict] = useState("");
+  const [fetchedTaluka, setFetchedTaluka] = useState("");
   const [fetchedWebsite, setFetchedWebsite] = useState("");
 
 
@@ -649,6 +651,8 @@ export function OnboardingWizardPage() {
             if (res.address) setFetchedAddress(res.address);
             if (res.city) setFetchedCity(res.city);
             if (res.state) setFetchedState(res.state);
+            if (res.district) setFetchedDistrict(res.district);
+            if (res.taluka) setFetchedTaluka(res.taluka);
             if (res.website) setFetchedWebsite(res.website);
 
             // Pre-fill formData from MongoDB demo lead
@@ -660,6 +664,8 @@ export function OnboardingWizardPage() {
                 address: prev["org_details"]?.address || res.address || "",
                 state: prev["org_details"]?.state || res.state || "",
                 city: prev["org_details"]?.city || res.city || "",
+                district: prev["org_details"]?.district || res.district || "",
+                taluka: prev["org_details"]?.taluka || res.taluka || "",
                 website: prev["org_details"]?.website || res.website || "",
                 board: prev["org_details"]?.board || "CBSE",
                 ...(prev["org_details"] || {})
@@ -1865,24 +1871,25 @@ export function OnboardingWizardPage() {
                           <div className="md:col-span-2">
                             <label className="text-sm font-semibold block mb-1.5">Legal Organization Name <span className="text-danger">*</span></label>
                             <Input
-                              value={formData["org_details"]?.["name"] || fetchedOrgName || ""}
+                              value={formData["org_details"]?.["name"] ?? fetchedOrgName ?? ""}
                               onChange={(e) => handleFieldChange("org_details", "name", e.target.value)}
                               placeholder="e.g. Cambridge International School"
                             />
                           </div>
                           <div>
-                            <label className="text-sm font-semibold block mb-1.5">Type <span className="text-danger">*</span></label>
-                            <ResponsiveSelect
-                              className="w-full h-10 rounded-lg border-input bg-background"
-                              value={normalizeOrgType(formData["org_details"]?.["type"] || fetchedOrgType || "Junior College")}
-                              onChange={(e) => handleFieldChange("org_details", "type", e.target.value)}
-                            >
-                              <option value="School">School</option>
-                              <option value="Junior College">Junior College</option>
-                              <option value="Engineering College">Engineering College</option>
-                              <option value="Diploma College">Diploma College</option>
-                              <option value="Coaching Institute">Coaching Institute</option>
-                            </ResponsiveSelect>
+                            <label className="text-sm font-semibold block mb-1.5 flex items-center justify-between">
+                              <span>Organization Type <span className="text-danger">*</span></span>
+                              <span className="text-[11px] text-muted-foreground font-normal flex items-center gap-1">
+                                <ShieldCheck className="size-3 text-emerald-500" /> Set at registration
+                              </span>
+                            </label>
+                            <div className="flex items-center gap-2.5 h-10 px-3.5 rounded-xl bg-secondary/40 border border-border text-foreground font-bold text-sm select-none">
+                              <Building2 className="size-4 text-primary" />
+                              <span>{normalizeOrgType(formData["org_details"]?.["type"] || fetchedOrgType || "Junior College")}</span>
+                              <span className="ml-auto text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                Locked
+                              </span>
+                            </div>
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">Board / Affiliation</label>
@@ -1925,7 +1932,7 @@ export function OnboardingWizardPage() {
                           <div className="md:col-span-2">
                             <label className="text-sm font-semibold block mb-1.5">Full Address <span className="text-danger">*</span></label>
                             <Input
-                              value={formData["org_details"]?.["address"] || fetchedAddress || ""}
+                              value={formData["org_details"]?.["address"] ?? fetchedAddress ?? ""}
                               onChange={(e) => handleFieldChange("org_details", "address", e.target.value)}
                               placeholder="Street address"
                             />
@@ -1934,7 +1941,7 @@ export function OnboardingWizardPage() {
                             <label className="text-sm font-semibold block mb-1.5">State <span className="text-danger">*</span></label>
                             <ResponsiveSelect
                               className="w-full h-10 rounded-lg border-input bg-background"
-                              value={formData["org_details"]?.["state"] || fetchedState || ""}
+                              value={formData["org_details"]?.["state"] ?? fetchedState ?? ""}
                               onChange={(e) => {
                                 handleFieldChange("org_details", "state", e.target.value);
                                 handleFieldChange("org_details", "city", ""); // reset city on state change
@@ -1947,10 +1954,26 @@ export function OnboardingWizardPage() {
                             </ResponsiveSelect>
                           </div>
                           <div>
+                            <label className="text-sm font-semibold block mb-1.5">District</label>
+                            <Input
+                              value={formData["org_details"]?.["district"] ?? fetchedDistrict ?? ""}
+                              onChange={(e) => handleFieldChange("org_details", "district", e.target.value)}
+                              placeholder="e.g. South East Delhi / Biswanath"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold block mb-1.5">Taluka</label>
+                            <Input
+                              value={formData["org_details"]?.["taluka"] ?? fetchedTaluka ?? ""}
+                              onChange={(e) => handleFieldChange("org_details", "taluka", e.target.value)}
+                              placeholder="e.g. Lajpat Nagar / Gohpur"
+                            />
+                          </div>
+                          <div>
                             <label className="text-sm font-semibold block mb-1.5">City <span className="text-danger">*</span></label>
                             <ResponsiveSelect
                               className="w-full h-10 rounded-lg border-input bg-background"
-                              value={formData["org_details"]?.["city"] || fetchedCity || ""}
+                              value={formData["org_details"]?.["city"] ?? fetchedCity ?? ""}
                               onChange={(e) => handleFieldChange("org_details", "city", e.target.value)}
                               disabled={!selectedState}
                             >

@@ -149,6 +149,8 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
     structure_type: structureType,
     city: lead.cityVillage || lead.city,
     state: lead.state,
+    district: lead.district || "",
+    taluka: lead.taluka || "",
     address: [lead.cityVillage || lead.city, lead.taluka, lead.district, lead.state]
       .filter(Boolean)
       .join(", "),

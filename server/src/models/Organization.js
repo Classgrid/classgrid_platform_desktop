@@ -107,6 +107,10 @@ const organizationSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        city: { type: String, trim: true, default: "" },
+        state: { type: String, trim: true, default: "" },
+        district: { type: String, trim: true, default: "" },
+        taluka: { type: String, trim: true, default: "" },
         billing_settings: {
             invoice_email: { type: String, trim: true, lowercase: true, default: "" },
             email_verified: { type: Boolean, default: false },
