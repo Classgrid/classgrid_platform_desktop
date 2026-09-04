@@ -26,12 +26,12 @@ import locationsData from "@/data/india-locations.json";
 import erpData from "@/data/full_erp_data.json";
 
 const getTerminologyLabels = (orgType: string) => {
-  if (orgType === "School") return { orgLabel: "School", level1: "Standard", level2: "Division", level3: "Student" };
-  if (orgType === "Junior College") return { orgLabel: "Junior College", level1: "Class (11th/12th)", level2: "Stream & Div", level3: "Student" };
-  if (orgType === "Engineering College") return { orgLabel: "College", level1: "Department", level2: "Year", level3: "Student" };
-  if (orgType === "Diploma College") return { orgLabel: "Polytechnic", level1: "Department", level2: "Year", level3: "Student" };
-  if (orgType === "Coaching Institute" || orgType === "Coaching") return { orgLabel: "Institute", level1: "Course", level2: "Batch", level3: "Student" };
-  return { orgLabel: "Organization", level1: "Level 1", level2: "Level 2", level3: "Member" };
+  if (orgType === "School") return { orgLabel: "School", level1: "Standard", level2: "Class", level3: "Student", period: "Term", division: "Section", subBatch: "—", studentId: "Roll No", teacher: "Teacher", assignment: "Homework", exam: "Test" };
+  if (orgType === "Junior College") return { orgLabel: "Junior College", level1: "Stream", level2: "Standard", level3: "Student", period: "Term", division: "Division", subBatch: "Batch", studentId: "Roll No", teacher: "Lecturer", assignment: "Assignment", exam: "Examination" };
+  if (orgType === "Engineering College" || orgType === "College") return { orgLabel: "College", level1: "Degree", level2: "Branch", level3: "Student", period: "Semester", division: "Division", subBatch: "Lab Batch", studentId: "PRN", teacher: "Faculty", assignment: "Assignment", exam: "Examination" };
+  if (orgType === "Diploma College") return { orgLabel: "Polytechnic", level1: "Department", level2: "Branch", level3: "Student", period: "Semester", division: "Division", subBatch: "Lab Batch", studentId: "Enrollment No", teacher: "Faculty", assignment: "Assignment", exam: "Examination" };
+  if (orgType === "Coaching Institute" || orgType === "Coaching") return { orgLabel: "Institute", level1: "Course", level2: "Course", level3: "Student", period: "Phase", division: "Batch", subBatch: "—", studentId: "Enrollment No", teacher: "Mentor", assignment: "Practice Set", exam: "Mock Test" };
+  return { orgLabel: "Organization", level1: "Level 1", level2: "Level 2", level3: "Member", period: "Period", division: "Division", subBatch: "Group", studentId: "ID", teacher: "Teacher", assignment: "Assignment", exam: "Exam" };
 };
 
 export function OnboardingWizardPage() {
@@ -469,9 +469,15 @@ export function OnboardingWizardPage() {
     isSelfView: true
   });
 
-  const dynamicSections = (strategy.sections || []).filter(sec => sec.key !== "organization_details");
-
   const isOrgAdmin = effectiveRole === "org_admin";
+
+  const dynamicSections = (strategy.sections || []).filter(sec => {
+    if (sec.key === "organization_details") return false;
+    // For org admins, skip the bloated basic profile and contact details 
+    // because they are collected in fixed steps (Welcome, Verification, Personal details)
+    if (isOrgAdmin && (sec.key === "basic_profile" || sec.key === "contact_details")) return false;
+    return true;
+  });
 
   // Create one step per dynamic section
   const steps: any[] = [
@@ -587,9 +593,18 @@ export function OnboardingWizardPage() {
     }
     // Personal Details step: validate username
     if (currentStepData.id === "personal_details") {
-      if (!usernameAvailable) {
-        showAlert("Please choose a valid and available @username.");
-        return;
+        const pd = formData["personal_details"] || {};
+        const pFirstName = pd.first_name || (fetchedName ? fetchedName.split(" ")[0] : "");
+        const pLastName = pd.last_name || (fetchedName && fetchedName.split(" ").length > 1 ? fetchedName.split(" ").slice(1).join(" ") : "");
+        if (!pFirstName.trim() || !pLastName.trim()) {
+          showAlert("First Name and Last Name are required.");
+          return false;
+        }
+        if (!username || !usernameAvailable) {
+          showAlert("A valid and available username is required.");
+          return false;
+        }
+        return true;    return;
       }
     }
     // Org Verification step
@@ -1117,6 +1132,27 @@ export function OnboardingWizardPage() {
                         </div>
 
                         <div className="space-y-6">
+                          <div className="grid md:grid-cols-2 gap-6">
+                            <div>
+                              <label className="text-sm font-semibold text-foreground mb-1.5 block">First Name <span className="text-danger">*</span></label>
+                              <Input
+                                placeholder="e.g. John"
+                                className="h-10"
+                                value={formData["personal_details"]?.["first_name"] || (fetchedName ? fetchedName.split(" ")[0] : "")}
+                                onChange={(e) => handleFieldChange("personal_details", "first_name", e.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-semibold text-foreground mb-1.5 block">Last Name <span className="text-danger">*</span></label>
+                              <Input
+                                placeholder="e.g. Doe"
+                                className="h-10"
+                                value={formData["personal_details"]?.["last_name"] || (fetchedName && fetchedName.split(" ").length > 1 ? fetchedName.split(" ").slice(1).join(" ") : "")}
+                                onChange={(e) => handleFieldChange("personal_details", "last_name", e.target.value)}
+                              />
+                            </div>
+                          </div>
+
                           <div>
                             <label className="text-sm font-semibold text-foreground mb-1.5 block">Unique @username <span className="text-danger">*</span></label>
                             <div className="relative">
