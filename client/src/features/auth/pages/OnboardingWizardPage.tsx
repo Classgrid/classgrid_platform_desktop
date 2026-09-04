@@ -2020,11 +2020,12 @@ export function OnboardingWizardPage() {
                               {normalizeOrgType(formData["org_details"]?.["type"] || fetchedOrgType || "Junior College")} Address <span className="text-danger">*</span>
                             </label>
                             <Input
-                              value={formData["org_details"]?.["address"] ?? fetchedAddress ?? ""}
+                              value={(formData["org_details"]?.["address"] !== undefined && formData["org_details"]?.["address"] !== "") ? formData["org_details"].address : (fetchedAddress || "")}
                               onChange={(e) => handleFieldChange("org_details", "address", e.target.value)}
                               placeholder={`Complete registered address of the ${normalizeOrgType(formData["org_details"]?.["type"] || fetchedOrgType || "Junior College").toLowerCase()}`}
                             />
                           </div>
+
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">State <span className="text-danger">*</span></label>
                             <ResponsiveSelect
