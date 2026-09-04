@@ -2025,75 +2025,59 @@ export function OnboardingWizardPage() {
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">State <span className="text-danger">*</span></label>
-                            <ResponsiveSelect
-                              className="w-full h-10 rounded-lg border-input bg-background"
-                              value={selectedState}
-                              onChange={(e) => {
-                                handleFieldChange("org_details", "state", e.target.value);
-                                handleFieldChange("org_details", "district", ""); // reset district on state change
-                                handleFieldChange("org_details", "taluka", ""); // reset taluka on state change
-                                handleFieldChange("org_details", "city", ""); // reset city on state change
-                              }}
-                            >
-                              <option value="">Select State...</option>
+                            <Input
+                              list="state-options"
+                              value={formData["org_details"]?.["state"] ?? fetchedState ?? ""}
+                              onChange={(e) => handleFieldChange("org_details", "state", e.target.value)}
+                              placeholder="e.g. Delhi (NCT) or Assam"
+                            />
+                            <datalist id="state-options">
                               {stateOptions.map(state => (
-                                <option key={state} value={state}>{state}</option>
+                                <option key={state} value={state} />
                               ))}
-                            </ResponsiveSelect>
+                            </datalist>
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">District</label>
-                            <ResponsiveSelect
-                              className="w-full h-10 rounded-lg border-input bg-background"
-                              value={selectedDistrict}
-                              onChange={(e) => {
-                                handleFieldChange("org_details", "district", e.target.value);
-                                handleFieldChange("org_details", "taluka", ""); // reset taluka on district change
-                              }}
-                              disabled={!selectedState}
-                            >
-                              <option value="">Select District...</option>
-                              {selectedDistrict && !districtOptions.includes(selectedDistrict) && (
-                                <option value={selectedDistrict}>{selectedDistrict}</option>
-                              )}
+                            <Input
+                              list="district-options"
+                              value={formData["org_details"]?.["district"] ?? fetchedDistrict ?? ""}
+                              onChange={(e) => handleFieldChange("org_details", "district", e.target.value)}
+                              placeholder="e.g. South East Delhi or Biswanath"
+                            />
+                            <datalist id="district-options">
                               {districtOptions.map(dist => (
-                                <option key={dist} value={dist}>{dist}</option>
+                                <option key={dist} value={dist} />
                               ))}
-                            </ResponsiveSelect>
+                            </datalist>
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">Taluka</label>
-                            <ResponsiveSelect
-                              className="w-full h-10 rounded-lg border-input bg-background"
-                              value={selectedTaluka}
+                            <Input
+                              list="taluka-options"
+                              value={formData["org_details"]?.["taluka"] ?? fetchedTaluka ?? ""}
                               onChange={(e) => handleFieldChange("org_details", "taluka", e.target.value)}
-                              disabled={!selectedDistrict}
-                            >
-                              <option value="">Select Taluka...</option>
-                              {selectedTaluka && !talukaOptions.includes(selectedTaluka) && (
-                                <option value={selectedTaluka}>{selectedTaluka}</option>
-                              )}
+                              placeholder="e.g. Lajpat Nagar or Gohpur"
+                            />
+                            <datalist id="taluka-options">
                               {talukaOptions.map(tal => (
-                                <option key={tal} value={tal}>{tal}</option>
+                                <option key={tal} value={tal} />
                               ))}
-                            </ResponsiveSelect>
+                            </datalist>
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">City or Village <span className="text-danger">*</span></label>
-                            <ResponsiveSelect
-                              className="w-full h-10 rounded-lg border-input bg-background"
-                              value={selectedCity}
+                            <Input
+                              list="city-options"
+                              value={formData["org_details"]?.["city"] ?? fetchedCity ?? ""}
                               onChange={(e) => handleFieldChange("org_details", "city", e.target.value)}
-                              disabled={!selectedState}
-                            >
-                              <option value="">Select City or Village...</option>
-                              {selectedCity && !cityOptions.includes(selectedCity) && (
-                                <option value={selectedCity}>{selectedCity}</option>
-                              )}
+                              placeholder="e.g. cb fn or Gohpur"
+                            />
+                            <datalist id="city-options">
                               {cityOptions.map((city: string) => (
-                                <option key={city} value={city}>{city}</option>
+                                <option key={city} value={city} />
                               ))}
-                            </ResponsiveSelect>
+                            </datalist>
                           </div>
                           <div>
                             <label className="text-sm font-semibold block mb-1.5">PIN Code <span className="text-danger">*</span></label>
