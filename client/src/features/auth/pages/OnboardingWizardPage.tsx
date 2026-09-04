@@ -39,6 +39,38 @@ export function OnboardingWizardPage() {
       return 0;
     }
   });
+
+  // Central form state: sectionKey -> { fieldKey: value }
+  const [formData, setFormData] = useState<Record<string, Record<string, any>>>(() => {
+    try {
+      const saved = localStorage.getItem("onboarding_formData");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Persist form data and current step
+  React.useEffect(() => {
+    localStorage.setItem("onboarding_step", currentStep.toString());
+  }, [currentStep]);
+
+  React.useEffect(() => {
+    localStorage.setItem("onboarding_formData", JSON.stringify(formData));
+  }, [formData]);
+
+  React.useEffect(() => {
+    localStorage.setItem("onboarding_adminName", adminName);
+  }, [adminName]);
+
+  // Clean up on unmount or complete
+  React.useEffect(() => {
+    if (isCompleted) {
+      localStorage.removeItem("onboarding_step");
+      localStorage.removeItem("onboarding_formData");
+      localStorage.removeItem("onboarding_adminName");
+    }
+  }, [isCompleted]);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -343,37 +375,7 @@ export function OnboardingWizardPage() {
       setIsInitializing(false);
     }
   }, [token]);
-  // Central form state: sectionKey -> { fieldKey: value }
-  const [formData, setFormData] = useState<Record<string, Record<string, any>>>(() => {
-    try {
-      const saved = localStorage.getItem("onboarding_formData");
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
 
-  // Persist form data and current step
-  React.useEffect(() => {
-    localStorage.setItem("onboarding_step", currentStep.toString());
-  }, [currentStep]);
-
-  React.useEffect(() => {
-    localStorage.setItem("onboarding_formData", JSON.stringify(formData));
-  }, [formData]);
-
-  React.useEffect(() => {
-    localStorage.setItem("onboarding_adminName", adminName);
-  }, [adminName]);
-
-  // Clean up on unmount or complete
-  React.useEffect(() => {
-    if (isCompleted) {
-      localStorage.removeItem("onboarding_step");
-      localStorage.removeItem("onboarding_formData");
-      localStorage.removeItem("onboarding_adminName");
-    }
-  }, [isCompleted]);
 
   // Password UI State (Ported from ResetPasswordPage)
   const [password, setPassword] = useState("");
