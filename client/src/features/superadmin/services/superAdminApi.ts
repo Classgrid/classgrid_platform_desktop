@@ -160,9 +160,29 @@ export const leadsApi = {
       .get<LeadsResponse>("/api/super-admin/leads")
       .then((r) => r.data),
 
-  approve: (id: string) =>
+  approve: (id: string, payload?: any) =>
     apiClient
-      .post<{ success: boolean; message: string }>(`/api/super-admin/leads/${id}/approve`)
+      .post<{ success: boolean; message: string; organization?: any; admin?: any; activation?: any }>(`/api/super-admin/leads/${id}/approve`, payload)
+      .then((r) => r.data),
+
+  updateAdminDetails: (id: string, payload: { adminName: string; adminEmail: string; adminPhone?: string; role?: string; designation?: string }) =>
+    apiClient
+      .patch<{ success: boolean; lead: Lead }>(`/api/super-admin/leads/${id}/admin-details`, payload)
+      .then((r) => r.data),
+
+  updateInstitutionDetails: (id: string, payload: any) =>
+    apiClient
+      .patch<{ success: boolean; lead: Lead }>(`/api/super-admin/leads/${id}/institution-details`, payload)
+      .then((r) => r.data),
+
+  allocateDashboards: (id: string, payload: { allocatedDashboards: string[] }) =>
+    apiClient
+      .patch<{ success: boolean; lead: Lead; allocatedCount?: number }>(`/api/super-admin/leads/${id}/allocate-dashboards`, payload)
+      .then((r) => r.data),
+
+  allocateModules: (id: string, payload: { allocatedModules: Record<string, boolean> }) =>
+    apiClient
+      .patch<{ success: boolean; lead: Lead }>(`/api/super-admin/leads/${id}/allocate-modules`, payload)
       .then((r) => r.data),
 
   scheduleMeeting: (id: string, payload: { scheduledAt: string; notes?: string }) =>
@@ -175,15 +195,15 @@ export const leadsApi = {
       .patch<{ success: boolean }>(`/api/super-admin/leads/${id}/assign`)
       .then((r) => r.data),
 
-    create: (payload: { institutionName: string; adminName: string; adminEmail: string; adminPhone?: string; city?: string; orgType?: string }) =>
-      apiClient
-        .post<{ success: boolean; message: string; lead: Lead }>("/api/super-admin/leads", payload)
-        .then((r) => r.data),
+  create: (payload: { institutionName: string; adminName: string; adminEmail: string; adminPhone?: string; city?: string; orgType?: string }) =>
+    apiClient
+      .post<{ success: boolean; message: string; lead: Lead }>("/api/super-admin/leads", payload)
+      .then((r) => r.data),
 
-    delete: (id: string) =>
-      apiClient
-        .delete<{ success: boolean; message: string }>(`/api/super-admin/leads/${id}`)
-        .then((r) => r.data),
+  delete: (id: string) =>
+    apiClient
+      .delete<{ success: boolean; message: string }>(`/api/super-admin/leads/${id}`)
+      .then((r) => r.data),
 };
 
 export const subscribersApi = {
