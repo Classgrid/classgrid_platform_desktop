@@ -190,7 +190,7 @@ app.use((req, res, next) => {
   ) {
     return next();
   }
-  express.json({ limit: '2mb' })(req, res, next);
+  express.json({ limit: '50mb' })(req, res, next);
 });
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET)); // Use cookie parser
