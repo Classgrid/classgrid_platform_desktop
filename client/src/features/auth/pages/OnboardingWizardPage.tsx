@@ -508,7 +508,7 @@ export function OnboardingWizardPage() {
     // to prevent asking for Name, Email, and Phone multiple times.
     // They are already collected in fixed steps (Verification, Personal details).
     // Optional demographic data can be filled in later in profile settings.
-    if (sec.key === "basic_profile" || sec.key === "contact_details") return false;
+    if (sec.key === "personal_details" || sec.key === "contact_details") return false;
     return true;
   });
 
