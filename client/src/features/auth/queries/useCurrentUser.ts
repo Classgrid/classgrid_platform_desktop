@@ -50,13 +50,16 @@ export function useCurrentUser() {
     queryKey: ["current-user"],
     queryFn: async () => {
       try {
-        // Fallback for OAuth: Extract token from URL if it exists
+        // Fallback for OAuth and SSO: Extract token from URL if it exists
         const params = new URLSearchParams(window.location.search);
-        const urlToken = params.get("token");
+        const urlToken = params.get("token") || params.get("sso_token");
         if (urlToken) {
           localStorage.setItem("token", urlToken);
           // Remove token from URL for security/cleanliness
-          window.history.replaceState({}, document.title, window.location.pathname);
+          params.delete("token");
+          params.delete("sso_token");
+          const newSearch = params.toString() ? `?${params.toString()}` : "";
+          window.history.replaceState({}, document.title, window.location.pathname + newSearch);
         }
 
         const res = await apiClient.get<CurrentUser | { user: CurrentUser; token?: string }>("/api/auth/me");
