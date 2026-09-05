@@ -426,6 +426,7 @@ export function ConfigPage() {
               icon={Database}
               status={healthData?.services?.mongodb?.status || 'UNKNOWN'}
               ping={healthData?.services?.mongodb?.ping}
+              error={healthData?.services?.mongodb?.error}
               lastCheckedSec={secondsSinceCheck}
             />
             <ServiceStatus
@@ -433,6 +434,7 @@ export function ConfigPage() {
               icon={Database}
               status={healthData?.services?.supabase?.status || 'UNKNOWN'}
               ping={healthData?.services?.supabase?.ping}
+              error={healthData?.services?.supabase?.error}
               lastCheckedSec={secondsSinceCheck}
             />
             <ServiceStatus
@@ -448,6 +450,7 @@ export function ConfigPage() {
               icon={Activity}
               status={healthData?.services?.redis?.status || 'UNKNOWN'}
               ping={healthData?.services?.redis?.ping}
+              error={healthData?.services?.redis?.error}
               lastCheckedSec={secondsSinceCheck}
             />
 
