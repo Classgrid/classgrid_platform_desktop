@@ -155,7 +155,7 @@ function useTimeSince(timestamp: string | undefined) {
   return seconds;
 }
 
-function ServiceStatus({ name, icon: Icon, status, ping, lastCheckedSec }: any) {
+function ServiceStatus({ name, icon: Icon, status, ping, lastCheckedSec, error }: any) {
   const isUp = status === "UP" || status === "CONFIGURED";
   return (
     <div className="flex flex-col p-3 rounded-lg border border-border bg-card shadow-sm">
@@ -167,6 +167,11 @@ function ServiceStatus({ name, icon: Icon, status, ping, lastCheckedSec }: any) 
           <div>
             <h4 className="text-sm font-medium text-foreground">{name}</h4>
             <p className="text-xs text-muted-foreground font-mono">{ping || status}</p>
+            {!isUp && error && (
+              <p className="text-[10px] text-destructive mt-1 leading-tight line-clamp-2" title={error}>
+                {error}
+              </p>
+            )}
           </div>
         </div>
         <div className="flex items-center">
@@ -434,7 +439,8 @@ export function ConfigPage() {
             name="Cloudflare R2" 
             icon={HardDrive} 
             status={healthData?.services?.r2?.status || 'UNKNOWN'} 
-            ping={healthData?.services?.r2?.ping} 
+            ping={healthData?.services?.r2?.ping}
+            error={healthData?.services?.r2?.error}
             lastCheckedSec={secondsSinceCheck}
           />
           <ServiceStatus 
