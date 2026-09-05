@@ -66,6 +66,7 @@ export function LeadDetailsPage() {
   const deleteMutation = useDeleteLead();
   const regenerateMutation = useRegenerateActivation();
   const updateNotesMutation = useUpdateLeadNotes();
+  const requestVettingMutation = useRequestVettingApproval();
   const navigate = useNavigate();
 
   const [date, setDate] = useState<Date | undefined>(undefined);
