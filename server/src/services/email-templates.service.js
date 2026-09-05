@@ -2567,7 +2567,7 @@ export const getDemoLeadAssignedHtml = ({ assigneeName, institutionName, adminNa
         <ul style="margin-top: 0; margin-bottom: 0;">
           <li><strong>Date:</strong> ${formatDate(meetingScheduledAt)}</li>
           <li><strong>Provider:</strong> ${meetingProvider || 'Other'}</li>
-          ${meetingUrl ? \`<li><strong>Link:</strong> <a href="${meetingUrl}">${meetingUrl}</a></li>\` : ''}
+          ${meetingUrl ? `<li><strong>Link:</strong> <a href="${meetingUrl}">${meetingUrl}</a></li>` : ''}
         </ul>
       </div>
       `;
@@ -2583,7 +2583,7 @@ export const getDemoLeadAssignedHtml = ({ assigneeName, institutionName, adminNa
         <li><strong>Institution:</strong> ${institutionName}</li>
         <li><strong>Contact Person:</strong> ${adminName}</li>
         <li><strong>Email:</strong> ${adminEmail}</li>
-        ${city ? \`<li><strong>Location:</strong> ${city}</li>\` : ''}
+        ${city ? `<li><strong>Location:</strong> ${city}</li>` : ''}
       </ul>
     </div>
 
@@ -2613,7 +2613,7 @@ export const getDemoLeadAssignedPlainText = ({ assigneeName, institutionName, ad
 Meeting Details:
 - Date: ${formatDate(meetingScheduledAt)}
 - Provider: ${meetingProvider || 'Other'}
-${meetingUrl ? \`- Link: ${meetingUrl}\` : ''}
+${meetingUrl ? `- Link: ${meetingUrl}` : ''}
 `;
   }
 
@@ -2625,7 +2625,7 @@ Lead Details:
 - Institution: ${institutionName}
 - Contact Person: ${adminName}
 - Email: ${adminEmail}
-${city ? \`- Location: ${city}\` : ''}
+${city ? `- Location: ${city}` : ''}
 ${meetingText}
 View Lead Details:
 ${dashboardUrl}/superadmin/detail/${leadId}
