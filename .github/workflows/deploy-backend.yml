@@ -48,7 +48,12 @@ jobs:
             sudo swapon /swapfile || true
             sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches' || true
 
-            # FORCE RESTART REDIS TO FIX THE OUTAGE
+            # INSTALL AND FORCE RESTART REDIS TO FIX THE OUTAGE
+            if ! command -v redis-server &> /dev/null; then
+              sudo apt-get update || true
+              sudo DEBIAN_FRONTEND=noninteractive apt-get install -y redis-server || true
+            fi
+            sudo systemctl enable redis-server || true
             sudo systemctl restart redis-server || sudo service redis restart || true
             pm2 restart all --update-env
 

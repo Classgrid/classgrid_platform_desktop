@@ -39,7 +39,6 @@ import {
   Building2, User, MapPin, Globe, MessageSquare,
   Copy, ExternalLink, AlertTriangle, CheckCircle2, Users
 } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { Badge } from "@/components/marketing_ui/badge";
