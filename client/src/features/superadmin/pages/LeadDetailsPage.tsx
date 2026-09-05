@@ -45,7 +45,11 @@ import { Badge } from "@/components/marketing_ui/badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/marketing_ui/tooltip";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/marketing_ui/select";
+import { Textarea } from "@/components/marketing_ui/textarea";
+import { Checkbox } from "@/components/marketing_ui/checkbox";
 import { useLeads, useApproveLead, useScheduleMeeting, useDeleteLead, useRegenerateActivation, useUpdateLeadNotes } from "../queries/useLeads";
+import { useAllUsers } from "../queries/useUsers";
 import { formatDate } from "@/utils/dateUtils";
 import { formatOrgType } from "@/utils/orgHelpers";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
@@ -55,6 +59,7 @@ import { SandboxProvisioningWizard } from "../components/SandboxProvisioningWiza
 export function LeadDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading } = useLeads();
+  const { data: usersData } = useAllUsers();
   const scheduleMutation = useScheduleMeeting();
   const deleteMutation = useDeleteLead();
   const regenerateMutation = useRegenerateActivation();
@@ -71,6 +76,7 @@ export function LeadDetailsPage() {
   const [copied, setCopied] = useState(false);
 
   const lead = data?.leads.find(l => l._id === id);
+  const superAdmins = usersData?.users?.filter(u => u.role === 'superadmin' || u.role === 'admin' || u.role === 'support') || [];
 
   const setBreadcrumbs = useBreadcrumbStore((state) => state.setBreadcrumbs);
 
@@ -613,15 +619,22 @@ export function LeadDetailsPage() {
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-foreground">Assignment Handoff</h3>
               <div className="flex gap-3">
-                <select 
-                  className="flex-1 h-10 px-3 py-2 text-sm rounded-lg border bg-background"
+                <Select 
                   value={lead.assignedTo?._id || ''}
-                  onChange={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { assignedTo: e.target.value || null } })}
+                  onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { assignedTo: val || null } })}
                 >
-                  <option value="">Unassigned</option>
-                  <option value="60d0fe4f5311236168a109ca">Nikhil Shinde</option>
-                  <option value="60d0fe4f5311236168a109cb">Gemini AI</option>
-                </select>
+                  <SelectTrigger className="flex-1 bg-background h-10">
+                    <SelectValue placeholder="Unassigned" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Unassigned</SelectItem>
+                    {superAdmins.map((admin) => (
+                      <SelectItem key={admin._id} value={admin._id}>
+                        {admin.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -637,34 +650,42 @@ export function LeadDetailsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Meeting Status</label>
-                  <select 
-                    className="w-full h-10 px-3 py-2 text-sm rounded-lg border bg-background"
+                  <Select 
                     value={lead.meetingStatus || 'pending'}
-                    onChange={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingStatus: e.target.value } })}
+                    onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingStatus: val } })}
                   >
-                    <option value="pending">Pending</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="rescheduled">Rescheduled</option>
-                    <option value="missed">Missed</option>
-                  </select>
+                    <SelectTrigger className="w-full h-10 bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="rescheduled">Rescheduled</SelectItem>
+                      <SelectItem value="missed">Missed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Lifecycle Stage</label>
-                  <select 
-                    className="w-full h-10 px-3 py-2 text-sm rounded-lg border bg-background"
+                  <Select 
                     value={lead.lifecycleStage || 'lead_created'}
-                    onChange={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { lifecycleStage: e.target.value } })}
+                    onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { lifecycleStage: val } })}
                   >
-                    <option value="lead_created">Lead Created</option>
-                    <option value="meeting_scheduled">Meeting Scheduled</option>
-                    <option value="approved">Approved</option>
-                    <option value="provisioned">Provisioned</option>
-                    <option value="activated">Activated</option>
-                    <option value="setup">Setup</option>
-                    <option value="live">Live</option>
-                  </select>
+                    <SelectTrigger className="w-full h-10 bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lead_created">Lead Created</SelectItem>
+                      <SelectItem value="meeting_scheduled">Meeting Scheduled</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="provisioned">Provisioned</SelectItem>
+                      <SelectItem value="activated">Activated</SelectItem>
+                      <SelectItem value="setup">Setup</SelectItem>
+                      <SelectItem value="live">Live</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
@@ -702,17 +723,21 @@ export function LeadDetailsPage() {
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Current System</label>
-                  <select 
-                    className="w-full h-10 px-3 py-2 text-sm rounded-lg border bg-background"
+                  <Select 
                     value={lead.currentSystem || ''}
-                    onChange={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { currentSystem: e.target.value || null } })}
+                    onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { currentSystem: val || null } })}
                   >
-                    <option value="">Select System</option>
-                    <option value="excel">Excel / Spreadsheets</option>
-                    <option value="manual_registers">Manual Registers</option>
-                    <option value="other_erp">Other ERP</option>
-                    <option value="no_system">No System</option>
-                  </select>
+                    <SelectTrigger className="w-full h-10 bg-background">
+                      <SelectValue placeholder="Select System" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Select System</SelectItem>
+                      <SelectItem value="excel">Excel / Spreadsheets</SelectItem>
+                      <SelectItem value="manual_registers">Manual Registers</SelectItem>
+                      <SelectItem value="other_erp">Other ERP</SelectItem>
+                      <SelectItem value="no_system">No System</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
@@ -724,8 +749,8 @@ export function LeadDetailsPage() {
             
             <div className="flex-1 flex flex-col">
               <label className="text-sm font-semibold text-foreground mb-2 block">Meeting Notes & Comments</label>
-              <textarea 
-                className="flex-1 min-h-[120px] w-full rounded-lg border bg-background px-3 py-2 text-sm resize-y"
+              <Textarea 
+                className="flex-1 min-h-[120px] w-full bg-background resize-y"
                 placeholder="Enter detailed meeting feedback here..."
                 defaultValue={lead.meetingNotes || ''}
                 onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingNotes: e.target.value } })}
@@ -734,8 +759,8 @@ export function LeadDetailsPage() {
 
             <div className="flex-1 flex flex-col">
               <label className="text-sm font-semibold text-foreground mb-2 block">Final Demo Review</label>
-              <textarea 
-                className="flex-1 min-h-[120px] w-full rounded-lg border bg-background px-3 py-2 text-sm resize-y"
+              <Textarea 
+                className="flex-1 min-h-[120px] w-full bg-background resize-y"
                 placeholder="Enter school's final review/feedback..."
                 defaultValue={lead.demoReview || ''}
                 onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { demoReview: e.target.value } })}
@@ -744,11 +769,10 @@ export function LeadDetailsPage() {
 
             <div className="pt-4 border-t">
               <label className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="h-5 w-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                <Checkbox 
+                  className="h-5 w-5"
                   checked={lead.isOrganizationVetted || false}
-                  onChange={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { isOrganizationVetted: e.target.checked } })}
+                  onCheckedChange={(checked) => updateNotesMutation.mutate({ id: lead._id, payload: { isOrganizationVetted: !!checked } })}
                 />
                 <div>
                   <p className="text-sm font-semibold text-foreground">Organization Vetted & Approved</p>

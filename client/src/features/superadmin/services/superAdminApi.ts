@@ -228,7 +228,7 @@ export const leadsApi = {
 
   
   updateMeetingNotes: (id: string, payload: any) =>
-    api.patch<{ success: boolean; lead: any }>(`/api/super-admin/leads/${id}/notes`, payload).then(res => res.data),
+    apiClient.patch<{ success: boolean; lead: any }>(`/api/super-admin/leads/${id}/notes`, payload).then(res => res.data),
   scheduleMeeting: (id: string, payload: { scheduledAt: string; notes?: string }) =>
     apiClient
       .post<{ success: boolean }>(`/api/super-admin/leads/${id}/schedule-meeting`, payload)
