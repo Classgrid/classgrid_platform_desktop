@@ -137,4 +137,4 @@ export function useUpdateLeadNotes() {
   });
 }
 
-export function useRequestVettingApproval() { const queryClient = useQueryClient(); return useMutation({ mutationFn: (id: string) => leadsApi.requestVettingApproval(id), onSuccess: (_, id) => { queryClient.invalidateQueries({ queryKey: LEADS_KEY }); toast.success(Approval request sent to Nikhil); }, onError: (err: any) => { toast.error(err.response?.data?.message || Failed to request approval); } }); }
+export function useRequestVettingApproval() { const queryClient = useQueryClient(); return useMutation({ mutationFn: (id: string) => leadsApi.requestVettingApproval(id), onSuccess: (_, id) => { queryClient.invalidateQueries({ queryKey: LEADS_KEY }); toast.success("Approval request sent to Nikhil"); }, onError: (err: any) => { toast.error(err.response?.data?.message || "Failed to request approval"); } }); }
