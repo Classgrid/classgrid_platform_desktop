@@ -1360,9 +1360,7 @@ export function OnboardingWizardPage() {
               transition={{ delay: 0.6, duration: 0.8 }}
               className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight"
             >
-              {/* TEMPORARY: Commented out Admin fallback for testing */}
-              {/* Hey, {adminName ? adminName.split(' ')[0] : 'Admin'} */}
-              Hey{adminName ? ', ' + adminName.split(' ')[0] : ''}
+              Hey, {adminName ? adminName.split(' ')[0] : 'Admin'}
             </motion.h1>
             <motion.p
               initial={{ opacity: 0 }}

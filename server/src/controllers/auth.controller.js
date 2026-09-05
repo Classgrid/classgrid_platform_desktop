@@ -798,12 +798,10 @@ export const activateAdmin = async (req, res) => {
             }
 
             await syncDerivedOnboardingProgress(user.organization_id);
-            // PROPER FIX: As requested, fully delete the Demo Request once onboarding is completed
-            // so the user can book another demo in the future with the same email if needed.
-            await DemoRequest.findOneAndDelete({ 
-                provisionedAdminId: user._id, 
-                provisionedOrganizationId: user.organization_id 
-            });
+            await DemoRequest.findOneAndUpdate(
+                { provisionedAdminId: user._id, provisionedOrganizationId: user.organization_id },
+                { $set: { lifecycleStage: "activated" } }
+            );
             await trackOnboardingEvent({
                 organizationId: user.organization_id,
                 demoRequestId: null,
@@ -2512,12 +2510,7 @@ export const sendOnboardingOtp = async (req, res) => {
             const cleanEmail = target.toLowerCase().trim();
             const orgExists = await Organization.findOne({ invoice_email: cleanEmail });
             const userExists = await User.findOne({ email: cleanEmail });
-            
-            // PROPER FIX: If the user exists but is an unactivated demo lead (mustResetPassword = true), DO NOT block them!
-            if (userExists && !userExists.mustResetPassword) {
-                conflict = true;
-                conflictMessage = "This email is already registered with an existing organization or user.";
-            } else if (orgExists && (!userExists || !userExists.mustResetPassword)) {
+            if (orgExists || userExists) {
                 conflict = true;
                 conflictMessage = "This email is already registered with an existing organization or user.";
             }
@@ -2527,11 +2520,7 @@ export const sendOnboardingOtp = async (req, res) => {
                 $or: [{ invoice_phone: cleanPhone }, { contactNumber: cleanPhone }] 
             });
             const userExists = await User.findOne({ phoneNumber: cleanPhone });
-            
-            if (userExists && !userExists.mustResetPassword) {
-                conflict = true;
-                conflictMessage = "This phone number is already registered with an existing organization or user.";
-            } else if (orgExists && (!userExists || !userExists.mustResetPassword)) {
+            if (orgExists || userExists) {
                 conflict = true;
                 conflictMessage = "This phone number is already registered with an existing organization or user.";
             }

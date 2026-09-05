@@ -81,7 +81,6 @@ export type Lead = {
   assignedAt?: string;
   conversionStatus: "not_started" | "in_progress" | "provisioned" | "failed";
   provisionedOrganizationId: string | null;
-  isOrganizationVetted?: boolean;
   createdAt: string;
   updatedAt: string;
 };

@@ -139,10 +139,9 @@ const demoRequestSchema = new mongoose.Schema(
     assignedAt: { type: Date, default: null },
     
     // Legacy / Internal fields
-    isOrganizationVetted: { type: Boolean, default: false },
     meetingStatus: {
       type: String,
-      enum: ["pending", "scheduled", "completed", "cancelled", "rescheduled", "missed"],
+      enum: ["pending", "scheduled", "completed", "cancelled"],
       default: "pending",
     },
     meetingProvider: { type: String, default: "", trim: true },
