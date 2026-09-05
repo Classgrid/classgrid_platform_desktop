@@ -778,7 +778,7 @@ export async function sendDemoLeadAssignedNotification({ demoRequest, assignee, 
         const { sendEmail } = await import('./aws-ses.service.js');
         
         const superAdminEmail = process.env.SUPER_ADMIN_EMAIL?.trim() || 'support@classgrid.in';
-        const dashboardUrl = process.env.FRONTEND_URL?.trim() || 'https://classgrid.in';
+        const dashboardUrl = 'https://superadmin.classgrid.in';
 
         // The "From" is the person who assigned it, or fallback to default
         const fromEmail = assigner?.email || superAdminEmail;

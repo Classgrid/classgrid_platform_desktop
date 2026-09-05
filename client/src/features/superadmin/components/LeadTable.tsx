@@ -133,21 +133,23 @@ export function LeadTable({ leads, isLoading, isError, onManage, onAssign, assig
       key: "assigned",
       header: "Assigned",
       width: "w-[140px]",
-      render: (_val: unknown, row: Lead) => (
+      render: (_val: unknown, row: Lead) => {
+        const assigned = row.assignedTo && typeof row.assignedTo === 'object' && row.assignedTo.name ? row.assignedTo : null;
+        return (
         <div className="flex items-center">
-          {row.assignedTo ? (
+          {assigned ? (
             <TooltipProvider>
               <Tooltip delay={0}>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-2 px-2 py-1 rounded-full border border-border bg-card text-xs font-medium text-foreground w-fit cursor-default hover:border-foreground/20 transition-colors">
                     <div className="w-5 h-5 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-border bg-emerald-500">
-                      {(row.assignedTo as any).avatarUrl || (row.assignedTo as any).profilePicture || (row.assignedTo as any).picture ? (
-                        <img src={(row.assignedTo as any).avatarUrl || (row.assignedTo as any).profilePicture || (row.assignedTo as any).picture} alt={row.assignedTo.name} className="w-full h-full object-cover" />
+                      {(assigned as any).avatarUrl || (assigned as any).profilePicture || (assigned as any).picture ? (
+                        <img src={(assigned as any).avatarUrl || (assigned as any).profilePicture || (assigned as any).picture} alt={assigned.name} className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-white font-bold text-[9px]">{row.assignedTo.name?.charAt(0).toUpperCase() || 'U'}</span>
+                        <span className="text-white font-bold text-[9px]">{assigned.name?.charAt(0).toUpperCase() || 'U'}</span>
                       )}
                     </div>
-                    <span className="truncate max-w-[80px]">{row.assignedTo.name}</span>
+                    <span className="truncate max-w-[80px]">{assigned.name}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -166,7 +168,8 @@ export function LeadTable({ leads, isLoading, isError, onManage, onAssign, assig
             </Button>
           )}
         </div>
-      ),
+        );
+      },
     },
     {
       key: "action",

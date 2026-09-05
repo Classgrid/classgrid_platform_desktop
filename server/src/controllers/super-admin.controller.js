@@ -1153,13 +1153,17 @@ export const scheduleLeadMeeting = async (req, res) => {
             return res.status(404).json({ success: false, message: "Lead not found" });
         }
 
-        // Determine if this is a reschedule
-        const isReschedule = !!lead.meetingScheduledAt;
+        // Determine if this is a real reschedule (date actually changed, not just re-saving)
+        const existingDate = lead.meetingScheduledAt ? new Date(lead.meetingScheduledAt).getTime() : null;
+        const newDate = new Date(scheduledAt).getTime();
+        const isReschedule = existingDate && existingDate !== newDate;
 
-        lead.meetingStatus = isReschedule ? "rescheduled" : "scheduled";
         if (isReschedule) {
-            lead.assignedTo = null; // Unassign on reschedule to allow manual handoff
+            lead.meetingStatus = "rescheduled";
+        } else if (!existingDate) {
+            lead.meetingStatus = "scheduled";
         }
+        // If they just clicked 'save' on the same date, don't change meetingStatus and definitely do NOT unassign them!
         
         lead.meetingProvider = provider;
         lead.meetingScheduledAt = scheduledAt;

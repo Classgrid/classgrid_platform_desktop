@@ -2497,7 +2497,14 @@ router.patch("/leads/:id/notes", async (req, res) => {
             oldLead = await mongoose.model('DemoRequest').findById(id);
         }
 
-        const lead = await mongoose.model('DemoRequest').findByIdAndUpdate(id, { $set: updateData }, { new: true });
+        let lead = await mongoose.model('DemoRequest').findByIdAndUpdate(id, { $set: updateData }, { new: true });
+        
+        // Populate assignedTo so frontend gets name/avatar, not raw ID
+        if (lead && lead.assignedTo) {
+            lead = await mongoose.model('DemoRequest').findById(lead._id)
+                .populate("assignedTo", "name email profilePicture avatarUrl picture photoUrl")
+                .lean();
+        }
         
         if (assignedTo !== undefined && assignedTo && lead.assignedTo && (!oldLead || !oldLead.assignedTo || oldLead.assignedTo.toString() !== assignedTo.toString())) {
             try {
