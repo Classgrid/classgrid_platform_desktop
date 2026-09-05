@@ -101,8 +101,13 @@ export function LeadTable({ leads, isLoading, isError, onManage, onAssign, assig
           // If not converted or closed, rely strictly on Meeting Status
           const ms = row.meetingStatus || "pending";
           if (ms === "pending") {
-            text = "Pending";
-            color = "bg-yellow-500"; textColor = "text-yellow-500";
+            if (row.assignedTo) {
+              text = "Contacted";
+              color = "bg-orange-500"; textColor = "text-orange-500";
+            } else {
+              text = "Pending";
+              color = "bg-yellow-500"; textColor = "text-yellow-500";
+            }
           } else if (ms === "scheduled") {
             text = "Scheduled";
             color = "bg-blue-500"; textColor = "text-blue-500";

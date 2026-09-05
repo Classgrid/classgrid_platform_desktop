@@ -98,7 +98,8 @@ export function LeadDetailsPage() {
       }
     }
   }
-  const assignedAdmin = superAdmins.find((a: any) => a._id === currentAssignedId);
+  const assignedAdminObj = typeof lead?.assignedTo === 'object' ? lead.assignedTo : null;
+  const assignedAdmin = superAdmins.find((a: any) => a._id === currentAssignedId) || assignedAdminObj;
   const setBreadcrumbs = useBreadcrumbStore((state) => state.setBreadcrumbs);
 
   useEffect(() => {
@@ -236,7 +237,7 @@ export function LeadDetailsPage() {
               ) : (
                 <Tooltip delay={200}>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2 cursor-default hover:opacity-80 transition-opacity">
+                    <div className="flex w-fit items-center gap-2 cursor-default hover:opacity-80 transition-opacity">
                       <div className="relative flex items-center justify-center h-8 w-8 rounded-full border border-border/50">
                         {/* Green Dot Indicator */}
                         <div className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-background z-10" />

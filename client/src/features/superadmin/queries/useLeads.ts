@@ -111,6 +111,7 @@ export function useUpdateLeadNotes() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: any }) => leadsApi.updateMeetingNotes(id, payload),
     onMutate: async ({ id, payload }) => {
+      toast.loading("Saving changes...", { id: "save-lead-update" });
       await qc.cancelQueries({ queryKey: LEADS_KEY });
       const previous = qc.getQueryData<any>(LEADS_KEY);
       
