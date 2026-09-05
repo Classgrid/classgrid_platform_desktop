@@ -1,3 +1,12 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
 import { FIELD_KEYS } from './constants.js';
 
 // 1. MASTER FIELD POOL — The universal superset (all ~111 fields)

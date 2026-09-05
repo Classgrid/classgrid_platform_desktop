@@ -1,3 +1,12 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
 import AttendanceRecord from "../models/AttendanceRecord.js";
 import AttendanceSession from "../models/AttendanceSession.js";
 import Assignment from "../models/Assignment.js";

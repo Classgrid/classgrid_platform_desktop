@@ -1,3 +1,12 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
 import { OAuth2Client } from "google-auth-library";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);

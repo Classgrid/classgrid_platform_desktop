@@ -1,5 +1,15 @@
 "use client";
 
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
+
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 // import Image from "next/image"; (removed for Vite)
 import { AnimatePresence, motion, useMotionValue, useTransform, useAnimationFrame } from "framer-motion";

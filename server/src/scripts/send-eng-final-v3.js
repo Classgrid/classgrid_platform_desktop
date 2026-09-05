@@ -1,3 +1,12 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
 /**
  * Classgrid — Online vs Physical Mode Email Proof
  * Sends 2 emails: one ONLINE mode, one PHYSICAL mode

@@ -1,3 +1,12 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
 import { MASTER_FIELD_POOL, DEFAULT_REQUIRED_FIELD_KEYS } from './master-fields.js';
 
 // 3. ORG-TYPE DEFAULTS — Which fields are pre-toggled ON

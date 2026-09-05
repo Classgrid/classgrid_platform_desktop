@@ -1,3 +1,12 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
 const DEPARTMENT_ADMIN_USER_ROLES = ["hod"];
 const DEPARTMENT_ADMIN_APP_ROLES = ["hod", "department_admin", "dept_admin"];
 const FACULTY_ROLES = ["faculty", "teacher"];

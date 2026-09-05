@@ -1,5 +1,15 @@
 "use client";
 
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
+
 
 import { Calendar, Clock, Info, ShieldCheck, Target } from "lucide-react";
 import { Card, CardContent } from "@/components/marketing_ui/card";

@@ -1,3 +1,12 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
 import { useState, useEffect } from "react";
 import { Clock, Calendar, Edit2, Trash2, X, AlertCircle, ArrowLeft } from "lucide-react";
 import { fetchScheduledMessages, cancelScheduledMessage, editScheduledMessage, ScheduledMessage } from "../services/chatApi";

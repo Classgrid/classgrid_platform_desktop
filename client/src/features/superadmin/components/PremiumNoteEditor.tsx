@@ -1,3 +1,12 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
 import React, { useRef, useEffect } from "react";
 import { Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, CheckSquare, Code, Image as ImageIcon, Link2, Quote, Table } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";

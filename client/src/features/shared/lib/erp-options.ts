@@ -1,3 +1,12 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
 export const ERP_OPTIONS = {
   bloodGroups: ["O-ve", "O+ve", "A-ve", "A+ve", "B-ve", "B+ve", "AB-ve", "AB+ve", "AB RH -v", "O RH +ve", "O RH -ve", "B RH +ve", "A RH - ve", "A RH +ve", "NA", "AB RH +ve"],
   domiciles: ["Maharastra", "Outside Maharastra", "Foreign"],

@@ -1,3 +1,12 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
 import React, { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Camera, Globe, Trash2, Eye, Upload, Plus, X, Palette, Image as ImageIcon, Link as LinkIcon, Building2, Layout, LayoutTemplate, Home, Users, User, ArrowLeft, ArrowRight, RotateCw, Lock, Pencil, ChevronsUpDown, Search, LayoutGrid, Megaphone, Briefcase } from "lucide-react";

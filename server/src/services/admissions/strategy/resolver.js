@@ -1,3 +1,12 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
 import { MASTER_FIELD_POOL, MASTER_FIELD_DEFINITION_MAP, MASTER_DOCUMENT_POOL, ORG_TYPE_DEFAULTS, ADMISSION_STRATEGIES } from './index.js';
 
 // 5. EXPORTED FUNCTIONS

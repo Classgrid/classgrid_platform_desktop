@@ -1,3 +1,12 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
 /**
  * CRITICAL RULE: DO NOT ADD <h1> OR ANY LARGE HEADINGS TO EMAIL TEMPLATES.
  * The Classgrid design system requires all emails to rely solely on the Classgrid Logo at the top.

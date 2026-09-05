@@ -1,3 +1,12 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
 import { useEffect, useState, type FormEvent } from "react";
 import { applyBootstrappedBranding } from "@/lib/tenant-bootstrap";
 import { Mail, MapPin, HelpCircle, Lock, Eye, EyeOff, Globe, Github, ArrowLeft } from "lucide-react";
