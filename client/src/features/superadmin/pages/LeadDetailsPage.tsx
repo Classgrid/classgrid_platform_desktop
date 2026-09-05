@@ -720,7 +720,14 @@ export function LeadDetailsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-yellow-500" /><span className="font-medium text-yellow-500">Pending</span></div></SelectItem>
+                      <SelectItem value="pending">
+                        <div className="flex items-center gap-2">
+                          <span className={`h-2 w-2 rounded-full ${lead.assignedTo ? 'bg-orange-500' : 'bg-yellow-500'}`} />
+                          <span className={`font-medium ${lead.assignedTo ? 'text-orange-500' : 'text-yellow-500'}`}>
+                            {lead.assignedTo ? 'Contacted' : 'Pending'}
+                          </span>
+                        </div>
+                      </SelectItem>
                       <SelectItem value="scheduled"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-blue-500" /><span className="font-medium text-blue-500">Scheduled</span></div></SelectItem>
                       <SelectItem value="completed"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-500" /><span className="font-medium text-emerald-500">Completed</span></div></SelectItem>
                       <SelectItem value="cancelled"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-red-500" /><span className="font-medium text-red-500">Cancelled</span></div></SelectItem>
