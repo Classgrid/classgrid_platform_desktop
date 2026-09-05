@@ -98,6 +98,7 @@ export function LeadDetailsPage() {
       }
     }
   }
+  const assignedAdmin = superAdmins.find((a: any) => a._id === currentAssignedId);
   const setBreadcrumbs = useBreadcrumbStore((state) => state.setBreadcrumbs);
 
   useEffect(() => {
@@ -660,31 +661,45 @@ export function LeadDetailsPage() {
                 <Users size={16} className="text-muted-foreground" /> Assignment Handoff
               </h3>
               <div className="flex gap-2 w-full">
+                {!!currentAssignedId && lead.meetingStatus !== 'rescheduled' ? (
+                  <div className="flex items-center gap-3 px-3 py-2 border rounded-md bg-muted/30 w-full text-sm">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-border bg-emerald-500">
+                      {assignedAdmin?.avatarUrl || assignedAdmin?.profilePicture ? (
+                        <img src={assignedAdmin.avatarUrl || assignedAdmin.profilePicture} alt={assignedAdmin.name || 'Admin'} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-white font-bold text-[10px]">{(assignedAdmin?.name || 'Admin').charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <span className="font-medium text-foreground">{assignedAdmin?.name || currentAssignedId}</span>
+                    <Badge variant="outline" className="ml-auto text-muted-foreground bg-muted">Locked</Badge>
+                  </div>
+                ) : (
                   <Select
-                  value={typeof lead.assignedTo === 'string' ? lead.assignedTo : (lead.assignedTo?._id || '')}
-                  onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { assignedTo: val || null } })}
-                >
-                  <SelectTrigger className="flex-1 bg-background h-10 w-full">
-                    <SelectValue placeholder="Unassigned" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
-                    {superAdmins.map((admin: any) => (
-                      <SelectItem key={admin._id} value={admin._id}>
-                        <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-border bg-emerald-500">
-                            {admin.avatarUrl || admin.profilePicture ? (
-                              <img src={admin.avatarUrl || admin.profilePicture} alt={admin.name || 'Admin'} className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-white font-bold text-[9px]">{(admin.name || 'Admin').charAt(0).toUpperCase()}</span>
-                            )}
+                    value={typeof lead.assignedTo === 'string' ? lead.assignedTo : (lead.assignedTo?._id || '')}
+                    onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { assignedTo: val || null } })}
+                  >
+                    <SelectTrigger className="flex-1 bg-background h-10 w-full">
+                      <SelectValue placeholder="Unassigned" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Unassigned</SelectItem>
+                      {superAdmins.map((admin: any) => (
+                        <SelectItem key={admin._id} value={admin._id}>
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-border bg-emerald-500">
+                              {admin.avatarUrl || admin.profilePicture ? (
+                                <img src={admin.avatarUrl || admin.profilePicture} alt={admin.name || 'Admin'} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-white font-bold text-[9px]">{(admin.name || 'Admin').charAt(0).toUpperCase()}</span>
+                              )}
+                            </div>
+                            <span>{admin.name || "Unknown Admin"}</span>
                           </div>
-                          <span>{admin.name || "Unknown Admin"}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
 
