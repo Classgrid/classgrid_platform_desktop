@@ -31,12 +31,7 @@ export function LogoutPage() {
       // 1. Wait exactly 3 seconds to show the UI
       const waitPromise = new Promise(resolve => setTimeout(resolve, 3000));
       
-      // 2. Call backend logout API & silently log out marketing site
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = "https://classgrid.in/logout";
-      document.body.appendChild(iframe);
-
+      // 2. Call backend logout API
       const logoutPromise = apiClient.post("/api/auth/logout").catch(console.error);
       
       await Promise.all([waitPromise, logoutPromise]);
