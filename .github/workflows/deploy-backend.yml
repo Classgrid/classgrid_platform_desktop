@@ -48,30 +48,15 @@ jobs:
             sudo swapon /swapfile || true
             sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches' || true
 
-            # --- EMERGENCY FIX: CLEAN DISK SPACE AND CORRUPTED DB ---
-            pm2 flush || true
-            sudo rm -rf /root/.pm2/logs/* || true
-            sudo rm -rf /home/ubuntu/.pm2/logs/* || true
-            sudo rm -f /var/lib/redis/dump.rdb || true
-            sudo chown -R redis:redis /var/lib/redis || true
-            # --------------------------------------------------------
-
-            # INSTALL AND FORCE RESTART REDIS TO FIX THE OUTAGE
-            sudo apt-get update || true
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y redis-server || true
+            # INSTALL REDIS IF MISSING
+            if ! command -v redis-server &> /dev/null; then
+              sudo apt-get update || true
+              sudo DEBIAN_FRONTEND=noninteractive apt-get install -y redis-server || true
+            fi
             
-            # KILL ANY ZOMBIE REDIS PROCESSES AND CLEAR CORRUPTED PID FILES
-            sudo pkill -9 redis-server || true
-            sudo rm -f /var/run/redis/redis-server.pid || true
-            
-            # FIX IPV6 BIND ERROR ON EC2 WHICH CAUSES REDIS TO CRASH ON STARTUP
-            sudo sed -i 's/bind 127.0.0.1 ::1/bind 127.0.0.1/' /etc/redis/redis.conf || true
-            
-            # FORCE START REDIS USING MULTIPLE FALLBACK METHODS
+            # RESTART REDIS GRACEFULLY
             sudo systemctl daemon-reload || true
             sudo systemctl enable redis-server || true
-            sudo systemctl start redis-server || sudo service redis start || sudo redis-server /etc/redis/redis.conf || true
+            sudo systemctl restart redis-server || sudo service redis restart || true
             
             pm2 restart all --update-env
-
-
