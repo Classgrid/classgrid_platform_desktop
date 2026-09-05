@@ -32,7 +32,7 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client, BUCKET_NAME, CDN_BASE_URL } from "../config/s3Client.js";
 import { checkAndRegisterDevice, getDeviceFingerprint } from "../services/device-fingerprint.service.js";
 
-async function uploadBase64ToS3(base64String, folder, filenamePrefix) {
+export async function uploadBase64ToS3(base64String, folder, filenamePrefix) {
     if (!base64String || typeof base64String !== 'string' || !base64String.startsWith('data:image')) return base64String;
     try {
         const matches = base64String.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
