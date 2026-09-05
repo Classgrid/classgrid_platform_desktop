@@ -84,10 +84,10 @@ export function DeleteOrgCard() {
             label: "To confirm, type the organization name",
             value: orgName,
           },
-          {
+          ...(orgSubdomain ? [{
             label: "Type the subdomain to finalize",
             value: orgSubdomain,
-          },
+          }] : []),
           {
             label: "To confirm, type",
             value: "delete",
