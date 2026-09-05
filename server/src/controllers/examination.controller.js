@@ -7,6 +7,15 @@
  * =========================================================================================
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+ * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+ * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+ * ─────────────────────────────────────────────────────────
+ */
+
 import * as examCoreService from "../services/examination/exam-core.service.js";
 import * as gradingEngineService from "../services/examination/grading-engine.service.js";
 import * as reportCardService from "../services/examination/report-card.service.js";

@@ -7,6 +7,15 @@
  * =========================================================================================
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+ * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+ * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { ClipboardCheck, GraduationCap, UsersRound, WalletCards } from "lucide-react";
 import { StatCard } from "@/components/marketing_ui/StatCard";
 import { useInstitutionProfile } from "../queries/useInstitutionProfile";

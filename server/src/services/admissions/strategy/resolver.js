@@ -7,6 +7,15 @@
  * =========================================================================================
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+ * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+ * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { MASTER_FIELD_POOL, MASTER_FIELD_DEFINITION_MAP, MASTER_DOCUMENT_POOL, ORG_TYPE_DEFAULTS, ADMISSION_STRATEGIES } from './index.js';
 
 // 5. EXPORTED FUNCTIONS
