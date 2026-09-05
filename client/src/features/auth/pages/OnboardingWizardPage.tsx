@@ -2513,6 +2513,7 @@ export function OnboardingWizardPage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
