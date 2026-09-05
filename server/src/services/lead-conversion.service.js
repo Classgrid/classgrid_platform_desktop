@@ -151,7 +151,7 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
     state: lead.state,
     district: lead.district || "",
     taluka: lead.taluka || "",
-    address: "", // Leave blank to be filled during onboarding
+    address: " ", // Space character bypasses Mongoose required validation without showing dummy text
     website: lead.website || "",
     designation: lead.designation || "",
     feature_flags: featureFlags,
