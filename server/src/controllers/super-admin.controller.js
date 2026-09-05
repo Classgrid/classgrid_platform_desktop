@@ -990,6 +990,9 @@ export const assignLead = async (req, res) => {
 
         lead.assignedTo = req.user._id;
         lead.assignedAt = new Date();
+        if (lead.status === "new" || lead.status === "pending") {
+            lead.status = "contacted";
+        }
         await lead.save();
 
         try {
