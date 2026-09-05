@@ -122,7 +122,10 @@ export function useUpdateLeadNotes() {
       }
       return { previous };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: LEADS_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: LEADS_KEY });
+      toast.success("Saved successfully", { id: "save-lead-update" });
+    },
     onError: (err: any, variables, context: any) => {
       if (context?.previous) {
         qc.setQueryData(LEADS_KEY, context.previous);
