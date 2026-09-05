@@ -49,6 +49,7 @@ if (!isDev) {
     connection.on('error', (err) => console.warn('[EmailWorker] Redis error:', err.message));
 
     emailProvisioningQueue = new Queue('EmailProvisioningQueue', { connection });
+    emailProvisioningQueue.on('error', (err) => console.warn('[EmailWorker] Queue error:', err.message));
 
     emailProvisioningWorker = new Worker(
       'EmailProvisioningQueue',
@@ -106,6 +107,10 @@ if (!isDev) {
 
     emailProvisioningWorker.on('failed', (job, err) => {
       console.log(`Job ${job.id} has failed with error ${err.message}`);
+    });
+
+    emailProvisioningWorker.on('error', (err) => {
+      console.warn(`[EmailWorker] Worker error: ${err.message}`);
     });
 } else {
     console.log('👷 Email Provisioning Worker skipped (no Redis in dev)');

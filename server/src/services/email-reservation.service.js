@@ -44,6 +44,7 @@ connection.on('error', (err) => console.warn('[EmailService] Redis error:', err.
 
 // Reuse the same queue name as the worker
 const provisioningQueue = new Queue('EmailProvisioningQueue', { connection });
+provisioningQueue.on('error', (err) => console.warn('[EmailService] Queue error:', err.message));
 
 /**
  * Reserve an institutional email address and enqueue a provisioning job.

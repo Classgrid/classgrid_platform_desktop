@@ -43,8 +43,12 @@ const isDev = process.env.NODE_ENV !== "production";
 
 // In dev without Redis, export a dummy queue that does nothing
 export const attendanceQueue = isDev
-    ? { add: async () => console.log("[Dev] Attendance queue skipped (no Redis)") }
+    ? { add: async () => console.log("[Dev] Attendance queue skipped (no Redis)"), on: () => {} }
     : new Queue("AttendanceBatching", { connection: redisClient });
+
+if (attendanceQueue.on) {
+    attendanceQueue.on('error', (err) => console.warn('[AttendanceWorker] Queue error:', err.message));
+}
 
 if (!isDev) {
     // A worker to ingest bulk attendance submissions and process them
@@ -111,6 +115,10 @@ if (!isDev) {
 
     worker.on("failed", (job, err) => {
         console.error(`Job ${job?.id} failed:`, err.message);
+    });
+
+    worker.on("error", (err) => {
+        console.warn(`[AttendanceWorker] Worker error: ${err.message}`);
     });
 } else {
     console.log("👷 Attendance Worker skipped (no Redis in dev)");
