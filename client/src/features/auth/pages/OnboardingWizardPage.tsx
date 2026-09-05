@@ -1363,22 +1363,7 @@ export function OnboardingWizardPage() {
                   exit={{ y: -20, opacity: 0 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
                 >
-                  {currentStepData.type !== "dynamic_group" && currentStepData.type !== "fixed_welcome" && (
-                    <div className="mb-6">
-                      <h1 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight mb-2">
-                        {currentStepData.type === "fixed_terminology"
-                          ? `${resolveMongoTerminology(formData["org_details"]?.type || formData["organization_details"]?.type || fetchedOrgType || "Engineering", mongoTerminologyMap).displayName} Hierarchy`
-                          : currentStepData.title
-                        }
-                      </h1>
-                      <p className="text-base text-muted-foreground">
-                        {currentStepData.type === "fixed_terminology"
-                          ? `Academic structure and terminology tailored specifically for your ${resolveMongoTerminology(formData["org_details"]?.type || formData["organization_details"]?.type || fetchedOrgType || "Engineering", mongoTerminologyMap).displayName} campus.`
-                          : currentStepData.subtitle
-                        }
-                      </p>
-                    </div>
-                  )}
+
 
                   {/* ── WELCOME STEP: Cinematic Full-Screen Greeting ── */}
                   {currentStepData.type === "fixed_welcome" && (
