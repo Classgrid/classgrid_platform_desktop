@@ -574,7 +574,7 @@ export function LeadDetailsPage() {
                   <h2 className="font-semibold text-card-foreground mb-2">APPROVAL CHECKLIST</h2>
                   <div className="space-y-2 mb-6">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 size={14} className="text-emerald-500" />
+                      {!!lead.assignedTo ? <CheckCircle2 size={14} className="text-emerald-500" /> : <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />}
                       Contact reviewed
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
