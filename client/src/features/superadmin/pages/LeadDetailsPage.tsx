@@ -697,26 +697,6 @@ export function LeadDetailsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Lifecycle Stage</label>
-                  <Select
-                    value={lead.lifecycleStage || 'lead_created'}
-                    onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { lifecycleStage: val } })}
-                  >
-                    <SelectTrigger className="w-full h-10 bg-background">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="lead_created"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-slate-500" /><span className="font-medium text-slate-500">Lead Created</span></div></SelectItem>
-                      <SelectItem value="meeting_scheduled"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-blue-500" /><span className="font-medium text-blue-500">Meeting Scheduled</span></div></SelectItem>
-                      <SelectItem value="approved"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-purple-500" /><span className="font-medium text-purple-500">Approved</span></div></SelectItem>
-                      <SelectItem value="provisioned"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-500" /><span className="font-medium text-emerald-500">Provisioned</span></div></SelectItem>
-                      <SelectItem value="activated"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-600" /><span className="font-medium text-emerald-600">Activated</span></div></SelectItem>
-                      <SelectItem value="setup"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-indigo-500" /><span className="font-medium text-indigo-500">Setup</span></div></SelectItem>
-                      <SelectItem value="live"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-green-500" /><span className="font-medium text-green-500">Live</span></div></SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
             </div>
 

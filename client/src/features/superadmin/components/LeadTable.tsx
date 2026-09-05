@@ -88,24 +88,38 @@ export function LeadTable({ leads, isLoading, isError, onManage, onAssign, assig
       width: "w-[110px]",
       render: (_val: unknown, row: Lead) => {
         let text = "Pending";
-        let color = "bg-red-500";
-        let textColor = "text-red-500";
+        let color = "bg-yellow-500";
+        let textColor = "text-yellow-500";
         
         if (row.status === "converted") {
           text = "Provisioned";
-          color = "bg-emerald-500";
-          textColor = "text-emerald-500";
-        } else if (row.status === "contacted" || row.meetingStatus === "scheduled") {
-          text = "Contacted";
-          color = "bg-blue-500";
-          textColor = "text-blue-500";
+          color = "bg-emerald-500"; textColor = "text-emerald-500";
         } else if (row.status === "closed") {
           text = "Closed";
-          color = "bg-gray-500";
-          textColor = "text-gray-500";
-        }
-
-        return (
+          color = "bg-gray-500"; textColor = "text-gray-500";
+        } else {
+          // If not converted or closed, rely strictly on Meeting Status
+          const ms = row.meetingStatus || "pending";
+          if (ms === "pending") {
+            text = "Pending";
+            color = "bg-yellow-500"; textColor = "text-yellow-500";
+          } else if (ms === "scheduled") {
+            text = "Scheduled";
+            color = "bg-blue-500"; textColor = "text-blue-500";
+          } else if (ms === "rescheduled") {
+            text = "Rescheduled";
+            color = "bg-purple-500"; textColor = "text-purple-500";
+          } else if (ms === "missed") {
+            text = "Missed";
+            color = "bg-orange-500"; textColor = "text-orange-500";
+          } else if (ms === "completed") {
+            text = "Completed";
+            color = "bg-emerald-500"; textColor = "text-emerald-500";
+          } else if (ms === "cancelled") {
+            text = "Cancelled";
+            color = "bg-red-500"; textColor = "text-red-500";
+          }
+        }        return (
           <div className="flex items-center gap-2">
             <span className={`h-2 w-2 rounded-full ${color}`} />
             <span className={`text-xs font-medium ${textColor}`}>
