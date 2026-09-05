@@ -556,7 +556,6 @@ userSchema.index({ organization_id: 1 });
 userSchema.index({ resetPasswordToken: 1 }, { sparse: true }); // fast reset-token lookups
 userSchema.index({ activationToken: 1 }, { sparse: true }); // fast activation-token lookups
 userSchema.index({ activationCodeHash: 1 }, { sparse: true });
-userSchema.index({ username: 1 }, { sparse: true }); // fast @username lookups
 // PRN unique per organization (same PRN cannot exist twice in one org)
 // partialFilterExpression ensures null PRNs don't conflict
 userSchema.index(
