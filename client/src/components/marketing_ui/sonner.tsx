@@ -71,18 +71,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
           "--border-radius": "var(--radius)",
-          "--error-bg": "hsl(0 84% 60% / 0.12)",
-          "--error-text": "hsl(0 84% 60%)",
-          "--error-border": "hsl(0 84% 60% / 0.3)",
         } as React.CSSProperties
       }
       toastOptions={{
         classNames: {
           toast: "cn-toast",
-          // DO NOT TOUCH COLORS AGAIN. 
-          // We need to focus on fixing core features, not endless UI color tweaks. 
-          // Only `toast.error` gets the red styling below.
-          error: "!bg-red-50 dark:!bg-[#2e0e0e] !border-red-200 dark:!border-red-900 !text-red-600 dark:!text-red-400 [&_[data-description]]:!text-red-500/80 dark:[&_[data-description]]:!text-red-400/80",
         },
       }}
       {...props}
