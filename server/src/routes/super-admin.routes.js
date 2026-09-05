@@ -766,7 +766,7 @@ router.delete("/custom-domains/:orgId", async (req, res) => {
 });
 
 // -- 8d. ORGANIZATION DETAIL VIEW (for Dashboard / Drilldown)
-import { getOrganizationDetail } from "../controllers/super-admin.controller.js";
+import { getOrganizationDetail, updateOrganizationStatus } from "../controllers/super-admin.controller.js";
 router.get("/organizations/:id", getOrganizationDetail);
 
 // -- 8c. PLATFORM FEEDBACK (private reviews submitted from modules)
@@ -2474,5 +2474,11 @@ router.get("/backup/integrity", async (req, res) => {
 // Delete endpoints
 router.delete("/leads/:id", deleteDemoLead);
 router.delete("/support-tickets/:threadId", deleteSuperAdminSupportConversation);
+
+
+// =================================================
+// UPDATE ORGANIZATION STATUS
+// =================================================
+router.put("/orgs/:id/status", isAuthenticated, requireRole("super_admin"), updateOrganizationStatus);
 
 export default router;

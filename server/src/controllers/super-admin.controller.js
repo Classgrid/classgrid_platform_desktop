@@ -1297,3 +1297,35 @@ export const regenerateLeadActivation = async (req, res) => {
         res.status(500).json({ success: false, message: "Failed to regenerate activation" });
     }
 };
+
+// =================================================
+// UPDATE ORGANIZATION STATUS
+// =================================================
+export const updateOrganizationStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!status || !['active', 'suspended', 'blocked', 'sandbox', 'setup_in_progress'].includes(status)) {
+            return res.status(400).json({ success: false, message: 'Invalid status provided.' });
+        }
+
+        // We do not need to import Organization if it's already at the top, but just in case:
+        const Organization = (await import("../models/Organization.js")).default;
+        
+        const org = await Organization.findByIdAndUpdate(
+            id,
+            { status },
+            { new: true }
+        );
+
+        if (!org) {
+            return res.status(404).json({ success: false, message: 'Organization not found' });
+        }
+
+        res.json({ success: true, message: 'Organization status updated successfully', organization: org });
+    } catch (err) {
+        console.error('[SuperAdmin] updateOrganizationStatus error:', err.message);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
