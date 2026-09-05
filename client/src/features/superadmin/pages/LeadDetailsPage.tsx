@@ -503,14 +503,14 @@ export function LeadDetailsPage() {
                     </div>
                   )}
 
-                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white mb-2" onClick={() => window.open(`/superadmin/detail/${provisionedData?.orgId || provisionedData?.orgName || 'unknown'}`, '_self')}>
+                  <Button className="w-full mb-2" variant="primary" onClick={() => window.open(`/superadmin/detail/${provisionedData?.orgId || provisionedData?.orgName || 'unknown'}`, '_self')}>
                     View Organization Details &rarr;
                   </Button>
                   
                   {!provisionedData && (
                     <Button 
                       variant="outline" 
-                      className="w-full text-emerald-700 border-emerald-200 hover:bg-emerald-100" 
+                      className="w-full" 
                       disabled={regenerateMutation.isPending}
                       onClick={() => {
                         regenerateMutation.mutate(id!, {
@@ -527,7 +527,7 @@ export function LeadDetailsPage() {
                         });
                       }}
                     >
-                      {regenerateMutation.isPending ? "Generating..." : "Generate New Activation Link"}
+                      {regenerateMutation.isPending ? "Sending..." : "Resend Activation Link"}
                     </Button>
                   )}
                 </div>
