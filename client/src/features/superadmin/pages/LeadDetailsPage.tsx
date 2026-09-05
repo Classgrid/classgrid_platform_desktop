@@ -179,6 +179,9 @@ export function LeadDetailsPage() {
     if (!id) return;
     if (!date) return toast.error("Please select a date");
     if (!meetingUrl) return toast.error("Please enter a meeting link");
+    
+    toast.loading("Rescheduling meeting...", { id: "schedule-meet" });
+    
     scheduleMutation.mutate({
       id,
       scheduledAt: date.toISOString(),
@@ -186,10 +189,10 @@ export function LeadDetailsPage() {
       provider: "google_meet"
     }, {
       onSuccess: () => {
-        toast.success("Meeting updated successfully!");
+        toast.success("Meeting rescheduled successfully!", { id: "schedule-meet" });
         setIsEditingMeeting(false);
       },
-      onError: (err: any) => toast.error(err?.message || "Failed to update meeting")
+      onError: (err: any) => toast.error(err?.message || "Failed to update meeting", { id: "schedule-meet" })
     });
   };
 
@@ -499,7 +502,7 @@ export function LeadDetailsPage() {
                         </Button>
                       )}
                       <Button onClick={handleSchedule} disabled={scheduleMutation.isPending} variant="secondary" className="w-full h-9 flex-1">
-                        {scheduleMutation.isPending ? "Saving..." : "Save Changes"}
+                        {scheduleMutation.isPending ? "Rescheduling..." : "Reschedule Meeting"}
                       </Button>
                     </div>
                   </div>
