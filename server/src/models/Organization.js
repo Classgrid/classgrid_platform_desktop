@@ -577,9 +577,14 @@ const organizationSchema = new mongoose.Schema(
         },
         // 🏫 Affiliation — e.g. "Savitribai Phule Pune University", "Mumbai University"
         affiliation: {
-            type: String,
-            default: "",
-        },
+    type: String,
+    default: "",
+  },
+  registration_number: {
+    type: String,
+    trim: true,
+    default: "",
+  },
         // 💰 Per-Org Razorpay Keys — for STUDENT FEE PAYMENTS (money goes to college)
         // Separate from platform subscription keys (razorpayCustomerId etc)
         fees_razorpay_key_id: {

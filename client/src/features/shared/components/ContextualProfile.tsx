@@ -271,6 +271,18 @@ export function ContextualProfile({
         // Map verified credentials to contact fields if empty
         "contact.personal_email": profileData.metadata?.["contact.personal_email"] || profileData.email || prev["contact.personal_email"] || "",
         "contact.mobile_number": profileData.metadata?.["contact.mobile_number"] || profileData.phoneNumber || prev["contact.mobile_number"] || "",
+        // Map Organization Details (if present)
+        "organization.legal_name": profileData.metadata?.["organization.legal_name"] || profileData.organization_id?.name || prev["organization.legal_name"] || "",
+        "organization.type": profileData.metadata?.["organization.type"] || profileData.organization_id?.org_type || prev["organization.type"] || "",
+        "organization.short_name": profileData.metadata?.["organization.short_name"] || profileData.organization_id?.subdomain || prev["organization.short_name"] || "",
+        "organization.affiliation_number": profileData.metadata?.["organization.affiliation_number"] || profileData.organization_id?.registration_number || prev["organization.affiliation_number"] || "",
+        "organization.board": profileData.metadata?.["organization.board"] || profileData.organization_id?.affiliation || prev["organization.board"] || "",
+        "organization.logo": profileData.metadata?.["organization.logo"] || profileData.organization_id?.logo_url || prev["organization.logo"] || "",
+        "organization.address": profileData.metadata?.["organization.address"] || profileData.organization_id?.address || prev["organization.address"] || "",
+        "organization.state": profileData.metadata?.["organization.state"] || profileData.organization_id?.state || prev["organization.state"] || "",
+        "organization.district": profileData.metadata?.["organization.district"] || profileData.organization_id?.district || prev["organization.district"] || "",
+        "organization.city": profileData.metadata?.["organization.city"] || profileData.organization_id?.city || prev["organization.city"] || "",
+        "organization.pin_code": profileData.metadata?.["organization.pin_code"] || profileData.organization_id?.billing_settings?.pincode || prev["organization.pin_code"] || "",
       }));
     }
   }, [profileData]);

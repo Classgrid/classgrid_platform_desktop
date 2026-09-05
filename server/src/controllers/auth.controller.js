@@ -686,6 +686,27 @@ export const activateAdmin = async (req, res) => {
             user.profilePicture = await uploadBase64ToS3(dynamicData.profile_photo.image, "profile_pictures", user._id.toString());
         }
 
+        // Map personal details and metadata to User document
+        if (dynamicData) {
+            const firstName = dynamicData["identity.first_name"] || personalDetails?.first_name || "";
+            const lastName = dynamicData["identity.last_name"] || personalDetails?.last_name || "";
+            if (firstName || lastName) {
+                user.name = `${firstName} ${lastName}`.trim();
+            }
+            if (dynamicData["identity.dob"]) user.dob = new Date(dynamicData["identity.dob"]);
+            if (dynamicData["identity.gender"]) user.gender = dynamicData["identity.gender"];
+            
+            // Filter out base64 images to avoid bloat and save the rest into metadata
+            const metadataToSave = user.metadata || {};
+            for (const [k, v] of Object.entries(dynamicData)) {
+                if (k !== "profile_photo" && k !== "org_logo" && typeof v !== "object") {
+                    metadataToSave[k] = v;
+                }
+            }
+            user.metadata = metadataToSave;
+            user.markModified("metadata");
+        }
+
         if (!user.linkedProviders) user.linkedProviders = [];
         if (!user.linkedProviders.includes("manual")) user.linkedProviders.push("manual");
         user.authProvider = "manual";
