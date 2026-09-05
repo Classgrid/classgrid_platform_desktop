@@ -221,7 +221,7 @@ export const provisionDemoOrg = async (adminData, orgData, options = {}) => {
                 last_synced_at: new Date(),
             },
             is_active: true,
-            status: "active",
+            status: mode === "sandbox" ? "sandbox" : "active",
             org_mode: mode === "sandbox" ? "sandbox" : "production",
             feature_flags: orgData.feature_flags || {},
             demoExpiresAt: new Date(Date.now() + 31 * 24 * 60 * 60 * 1000),
