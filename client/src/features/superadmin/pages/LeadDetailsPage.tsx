@@ -616,13 +616,7 @@ export function LeadDetailsPage() {
                   </p>
 
                   <button
-                    onClick={() => {
-                      if (lead?.organizationType === 'school' || lead?.organizationType === 'university') {
-                        setShowPremiumWarning(true);
-                      } else {
-                        setShowProvisioningWizard(true);
-                      }
-                    }}
+                    onClick={() => setShowProvisioningWizard(true)}
                     disabled={!lead.isOrganizationVetted}
                     className={`
                       min-h-14 w-full rounded-xl
@@ -982,25 +976,6 @@ export function LeadDetailsPage() {
     variant="danger"
   />
 
-      <DangerConfirmDialog
-        open={showPremiumWarning}
-        onOpenChange={setShowPremiumWarning}
-        title="Premium Organization Confirmation"
-        description="This is a premium organization. 35+ AWS microservices will be spun up. This process takes 8 minutes and costs the company $15 on AWS. Are you sure you want to provision this school?"
-        steps={[
-          {
-            label: "To confirm, type",
-            value: "provision",
-          },
-        ]}
-        actionLabel="Provision Sandbox"
-        cancelLabel="Cancel"
-        onConfirm={() => {
-          setShowPremiumWarning(false);
-          setShowProvisioningWizard(true);
-        }}
-        variant="danger"
-      />
     </div >
   );
 }
