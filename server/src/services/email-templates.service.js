@@ -2632,3 +2632,6 @@ ${dashboardUrl}/superadmin/detail/${leadId}
 
 The Classgrid Team`.trim();
 };
+
+export const getVettingApprovalRequestHtml = ({ requesterName, institutionName, adminName, adminEmail, city, dashboardUrl, leadId }) => { return <div>Vetting Request from </div>; };
+export const getVettingApprovedHtml = ({ assigneeName, institutionName, dashboardUrl, leadId }) => { return <div>Vetting Approved for </div>; };

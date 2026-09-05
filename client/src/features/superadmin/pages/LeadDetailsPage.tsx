@@ -49,7 +49,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Textarea } from "@/components/marketing_ui/textarea";
 import { Checkbox } from "@/components/marketing_ui/checkbox";
 import { Spinner } from "@/components/marketing_ui/spinner";
-import { useLeads, useApproveLead, useScheduleMeeting, useDeleteLead, useRegenerateActivation, useUpdateLeadNotes } from "../queries/useLeads";
+import { useLeads, useApproveLead, useScheduleMeeting, useDeleteLead, useRegenerateActivation, useUpdateLeadNotes, useRequestVettingApproval } from "../queries/useLeads";
 import { useAllUsers } from "../queries/useUsers";
 import { formatDate } from "@/utils/dateUtils";
 import { formatOrgType } from "@/utils/orgHelpers";
@@ -759,20 +759,44 @@ export function LeadDetailsPage() {
 
             {/* Vetted Checkbox Card */}
             <div 
-              className={`bg-card border rounded-2xl p-4 transition-colors flex items-start gap-4 shadow-sm relative overflow-hidden ${updateNotesMutation.isPending ? 'border-muted opacity-70 cursor-not-allowed' : 'border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer'}`}
+              className={`bg-card border rounded-2xl p-4 transition-colors flex items-start gap-4 shadow-sm relative overflow-hidden ${
+                updateNotesMutation.isPending || requestVettingMutation.isPending || lead.meetingStatus !== 'completed'
+                  ? 'border-muted opacity-70 cursor-not-allowed' 
+                  : 'border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer'
+              }`}
               onClick={() => {
-                if (updateNotesMutation.isPending) return;
-                const newVetted = !lead.isOrganizationVetted;
-                updateNotesMutation.mutate({ id: lead._id, payload: { isOrganizationVetted: newVetted } });
+                if (updateNotesMutation.isPending || requestVettingMutation.isPending || lead.meetingStatus !== 'completed') {
+                  if (lead.meetingStatus !== 'completed') {
+                    toast.error("Meeting must be 'Completed' first.");
+                  }
+                  return;
+                }
                 
-                if (newVetted) {
-                  toast.success("Organization vetted & approved");
+                // Only Nikhil can actually check/uncheck it
+                if (user?.email?.toLowerCase() === 'nikhil.shinde@classgrid.in') {
+                  const newVetted = !lead.isOrganizationVetted;
+                  updateNotesMutation.mutate({ id: lead._id, payload: { isOrganizationVetted: newVetted } });
+                  
+                  if (newVetted) {
+                    toast.success("Organization vetted & approved");
+                  } else {
+                    toast.success("Organization vetting reset");
+                  }
                 } else {
-                  toast.success("Organization vetting reset");
+                  // Anyone else requesting approval
+                  if (lead.isOrganizationVetted) {
+                    toast.error("Already vetted by Nikhil.");
+                  } else {
+                    requestVettingMutation.mutate(lead._id);
+                  }
                 }
               }}
             >
-              <Checkbox checked={lead.isOrganizationVetted || false} className="mt-1 shrink-0" />
+              <Checkbox 
+                checked={lead.isOrganizationVetted || false} 
+                className="mt-1 shrink-0" 
+                disabled={lead.meetingStatus !== 'completed'}
+              />
               <div>
                 <p className="text-sm font-bold text-foreground">Organization Vetted & Approved</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Required to unlock sandbox provisioning wizard.</p>

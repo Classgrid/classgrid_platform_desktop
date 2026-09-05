@@ -2497,8 +2497,8 @@ router.patch("/leads/:id/notes", async (req, res) => {
         const mongoose = mongooseModule.default || mongooseModule;
         
         let oldLead = null;
-        if (assignedTo !== undefined) {
-            oldLead = await mongoose.model('DemoRequest').findById(id);
+        if (assignedTo !== undefined || isOrganizationVetted !== undefined) {
+            oldLead = await mongoose.model('DemoRequest').findById(id).populate("assignedTo", "name email");
         }
 
         let lead = await mongoose.model('DemoRequest').findByIdAndUpdate(
@@ -2507,7 +2507,7 @@ router.patch("/leads/:id/notes", async (req, res) => {
             { new: true }
         ).populate("assignedTo", "name email profilePicture avatarUrl picture photoUrl").lean();
         
-        if (assignedTo !== undefined && assignedTo && lead.assignedTo && (!oldLead || !oldLead.assignedTo || oldLead.assignedTo.toString() !== assignedTo.toString())) {
+        if (assignedTo !== undefined && assignedTo && lead.assignedTo && (!oldLead || !oldLead.assignedTo || oldLead.assignedTo._id?.toString() !== assignedTo.toString())) {
             try {
                 const assignee = await mongoose.model('User').findById(assignedTo).select('name email');
                 if (assignee) {
@@ -2524,6 +2524,21 @@ router.patch("/leads/:id/notes", async (req, res) => {
             }
         }
 
+        // Check if isOrganizationVetted was just set to true by Nikhil
+        if (isOrganizationVetted === true && oldLead && !oldLead.isOrganizationVetted) {
+            try {
+                if (lead.assignedTo && req.user?.email === "nikhil.shinde@classgrid.in") {
+                    const { sendVettingApprovedNotification } = await import("../services/notification-email.service.js");
+                    await sendVettingApprovedNotification({
+                        demoRequest: lead,
+                        assignee: lead.assignedTo
+                    });
+                }
+            } catch (e) {
+                console.error("Failed to send vetting approved notification:", e.message);
+            }
+        }
+
         return res.json({ success: true, lead });
     } catch (err) {
         console.error(err);
@@ -2531,6 +2546,15 @@ router.patch("/leads/:id/notes", async (req, res) => {
     }
 });
 
+router.post("/leads/:id/request-vetting-approval", async (req, res) => {
+    try {
+        const { requestVettingApproval } = await import("../controllers/super-admin.controller.js");
+        return await requestVettingApproval(req, res);
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false });
+    }
+});
 router.delete("/leads/:id", deleteDemoLead);
 router.delete("/support-tickets/:threadId", deleteSuperAdminSupportConversation);
 

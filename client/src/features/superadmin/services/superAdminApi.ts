@@ -207,6 +207,11 @@ export const leadsApi = {
       .post<{ success: boolean; activation: { activationLink: string; activationCode: string; expiresAt: string } }>(`/api/super-admin/leads/${id}/regenerate-activation`)
       .then((r) => r.data),
 
+  requestVettingApproval: (id: string) =>
+    apiClient
+      .post<{ success: boolean; message: string }>(`/api/super-admin/leads/${id}/request-vetting-approval`)
+      .then((r) => r.data),
+
   updateAdminDetails: (id: string, payload: { adminName: string; adminEmail: string; adminPhone?: string; role?: string; designation?: string }) =>
     apiClient
       .patch<{ success: boolean; lead: Lead }>(`/api/super-admin/leads/${id}/admin-details`, payload)
