@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/marketing_ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/marketing_ui/dialog";
 import { Checkbox } from "@/components/marketing_ui/checkbox";
-import { orgDetailApi } from "../../../services/superAdminApi";
+import { orgDetailApi } from "../../services/superAdminApi";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 

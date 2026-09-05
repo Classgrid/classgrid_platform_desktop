@@ -126,7 +126,7 @@ export function OrgConfigurationTab({ profile }: OrgConfigurationTabProps) {
                 ? (() => {
                     const diff = new Date(profile.demoExpiresAt).getTime() - Date.now();
                     const days = Math.ceil(diff / (1000 * 3600 * 24));
-                    return days > 0 ? \`\${days} days left\` : "Expired";
+                    return days > 0 ? `${days} days left` : "Expired";
                   })()
                 : "Unlimited"} 
             />
