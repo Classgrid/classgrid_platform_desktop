@@ -733,15 +733,15 @@ export function LeadDetailsPage() {
                         ) : lead.meetingStatus === "missed" ? (
                           <><span className="h-2 w-2 rounded-full bg-orange-500" /><span className="font-medium text-orange-500">Missed</span></>
                         ) : (
-                          <><span className={`h-2 w-2 rounded-full ${lead.assignedTo ? 'bg-orange-500' : 'bg-yellow-500'}`} /><span className={`font-medium ${lead.assignedTo ? 'text-orange-500' : 'text-yellow-500'}`}>{lead.assignedTo ? 'Contacted' : 'Pending'}</span></>
+                          <><span className={`h-2 w-2 rounded-full ${lead.assignedTo ? 'bg-blue-500' : 'bg-yellow-500'}`} /><span className={`font-medium ${lead.assignedTo ? 'text-blue-500' : 'text-yellow-500'}`}>{lead.assignedTo ? 'Contacted' : 'Pending'}</span></>
                         )}
                       </div>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pending">
                         <div className="flex items-center gap-2">
-                          <span className={`h-2 w-2 rounded-full ${lead.assignedTo ? 'bg-orange-500' : 'bg-yellow-500'}`} />
-                          <span className={`font-medium ${lead.assignedTo ? 'text-orange-500' : 'text-yellow-500'}`}>
+                          <span className={`h-2 w-2 rounded-full ${lead.assignedTo ? 'bg-blue-500' : 'bg-yellow-500'}`} />
+                          <span className={`font-medium ${lead.assignedTo ? 'text-blue-500' : 'text-yellow-500'}`}>
                             {lead.assignedTo ? 'Contacted' : 'Pending'}
                           </span>
                         </div>
