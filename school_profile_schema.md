@@ -1,3 +1,12 @@
+<!--
+─────────────────────────────────────────────────────────
+🚨 CRITICAL AI AND SYSTEM RULES 🚨
+1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+─────────────────────────────────────────────────────────
+-->
+
 # School Profile Schemas
 
 This document tracks the UI profile schemas for various roles within the `school` organization type.

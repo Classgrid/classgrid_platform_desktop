@@ -1,3 +1,11 @@
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+ * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+ * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+ * ─────────────────────────────────────────────────────────
+ */
 // ─────────────────────────────────────────────────────────
 // 🎤 STEP 0: Override console BEFORE any imports
 //    so that EVERY SINGLE log is captured into the database

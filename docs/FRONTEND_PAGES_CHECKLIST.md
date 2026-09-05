@@ -1,3 +1,12 @@
+<!--
+─────────────────────────────────────────────────────────
+🚨 CRITICAL AI AND SYSTEM RULES 🚨
+1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+─────────────────────────────────────────────────────────
+-->
+
 # 📋 Classgrid Master Frontend Checklist
 
 This is the source of truth for the 280+ pages required for the Classgrid Platform. 

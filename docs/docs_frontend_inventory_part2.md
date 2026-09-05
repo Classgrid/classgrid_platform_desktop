@@ -1,3 +1,12 @@
+<!--
+─────────────────────────────────────────────────────────
+🚨 CRITICAL AI AND SYSTEM RULES 🚨
+1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+─────────────────────────────────────────────────────────
+-->
+
 # Classgrid Detailed Page Inventory (Part 2 of 3)
 
 This document contains the detailed 2-3 line breakdown for pages 102 to 226, covering Examination, Library, Attendance, HR, Hostel, and the massive Faculty Console.

@@ -1,3 +1,12 @@
+<!--
+─────────────────────────────────────────────────────────
+🚨 CRITICAL AI AND SYSTEM RULES 🚨
+1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+─────────────────────────────────────────────────────────
+-->
+
 # 🚀 QUANTUMCHEM — FULL BUILD EXECUTION PLAN
 
 > **Mission**: An AI-powered collaborative chemistry learning platform that integrates verified notes, contextual AI tutoring, and automated quiz generation.

@@ -1,3 +1,12 @@
+<!--
+─────────────────────────────────────────────────────────
+🚨 CRITICAL AI AND SYSTEM RULES 🚨
+1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+─────────────────────────────────────────────────────────
+-->
+
 # ⚠️ Razorpay Review Backup — DO NOT DELETE
 
 These files are the **Razorpay merchant verification versions** of the billing portal pages.

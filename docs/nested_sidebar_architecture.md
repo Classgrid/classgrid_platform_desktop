@@ -1,3 +1,12 @@
+<!--
+─────────────────────────────────────────────────────────
+🚨 CRITICAL AI AND SYSTEM RULES 🚨
+1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+─────────────────────────────────────────────────────────
+-->
+
 # How to Build Nested Sidebar Pages (Vercel Style)
 
 This document explains the architecture we created for the Storage section so that you (or any AI) can easily replicate this "Vercel-style" nested sidebar for future sections like **Settings**, **Organizations**, or **Users**.

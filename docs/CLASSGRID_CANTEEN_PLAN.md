@@ -1,3 +1,12 @@
+<!--
+─────────────────────────────────────────────────────────
+🚨 CRITICAL AI AND SYSTEM RULES 🚨
+1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+─────────────────────────────────────────────────────────
+-->
+
 # Canteen Management System Blueprint (Module 22)
 
 The Classgrid Canteen Module is a premium offering designed to eliminate cash-handling chaos, pre-order confusion, and queue bottlenecks during peak college lunch hours. It acts as an internal Swiggy/Zomato specifically tailored for educational institutions.

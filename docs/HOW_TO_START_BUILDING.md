@@ -1,3 +1,12 @@
+<!--
+─────────────────────────────────────────────────────────
+🚨 CRITICAL AI AND SYSTEM RULES 🚨
+1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+─────────────────────────────────────────────────────────
+-->
+
 # How to Start Building: Classgrid Frontend Rebuild
 
 > **Objective:** Transition from planning/wireframing into actual React code execution. We have 225 pages mapped across 11 roles. Here is the exact, step-by-step developer roadmap to build this systematically without getting overwhelmed.

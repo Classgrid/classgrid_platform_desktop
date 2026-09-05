@@ -49,11 +49,15 @@ export function LogoutPage() {
         document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
       });
       
-      // 4. Redirect to the correct login page
-      const redirectTo = searchParams.get("redirectTo") || "/platform-login";
+      // 4. Redirect to the Marketing Site to clear NextAuth cookies, then bounce back here
+      const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+      const marketingUrl = isLocal ? "http://localhost:3000" : "https://classgrid.in";
       
-      // Hard redirect to clear React Query cache and memory state completely
-      window.location.href = redirectTo + "?logout=success";
+      const redirectTo = searchParams.get("redirectTo") || "/platform-login";
+      const finalDest = window.location.origin + (redirectTo.startsWith("/") ? redirectTo : `/${redirectTo}`) + "?logout=success";
+      
+      // Hard redirect to Marketing site to clear React Query cache and sync logout
+      window.location.href = `${marketingUrl}/logout?callbackUrl=${encodeURIComponent(finalDest)}`;
     };
     
     performLogout();

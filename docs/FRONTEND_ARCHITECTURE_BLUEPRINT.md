@@ -1,3 +1,12 @@
+<!--
+─────────────────────────────────────────────────────────
+🚨 CRITICAL AI AND SYSTEM RULES 🚨
+1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+─────────────────────────────────────────────────────────
+-->
+
 # 🏗️ ClassGrid Ultimate Frontend Architecture Blueprint
 
 > **Purpose:** This document is the persistent source of truth for the ClassGrid Frontend development. It maps the 41 completed backend modules to exact Frontend Routes, React Components, and API Hooks. 

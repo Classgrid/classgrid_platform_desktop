@@ -1,3 +1,12 @@
+<!--
+─────────────────────────────────────────────────────────
+🚨 CRITICAL AI AND SYSTEM RULES 🚨
+1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+─────────────────────────────────────────────────────────
+-->
+
 # 🏗️ MHT CET Engineering Admission — Backend System Design
 
 > **Context:** This documents the REAL-WORLD flow used by Maharashtra Engineering colleges. Classgrid's Admission Module (Module 21, Plan 1: Engineering) MUST follow this exact pipeline.

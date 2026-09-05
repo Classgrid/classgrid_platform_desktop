@@ -1,3 +1,12 @@
+<!--
+─────────────────────────────────────────────────────────
+🚨 CRITICAL AI AND SYSTEM RULES 🚨
+1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+─────────────────────────────────────────────────────────
+-->
+
 # Organization Roles & Dashboard Mapping
 
 **CRITICAL RULE:** We do NOT have 100 different dashboards. The platform has exactly **10 Core Dashboards**. Every single granular role (like Principal, HOD, Admission Clerk) simply loads one of these 10 dashboards.

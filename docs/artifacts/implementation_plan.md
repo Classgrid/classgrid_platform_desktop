@@ -1,3 +1,12 @@
+<!--
+─────────────────────────────────────────────────────────
+🚨 CRITICAL AI AND SYSTEM RULES 🚨
+1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+─────────────────────────────────────────────────────────
+-->
+
 # Implement Day 22: Enterprise HR Module (Biometric + Payroll)
 
 This plan outlines the architecture and backend implementation for the Enterprise HR Module as defined in the master plan for Day 22. This module integrates physical turnstile biometric scanners with Classgrid and calculates automated faculty payroll.

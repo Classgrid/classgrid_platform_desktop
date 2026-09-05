@@ -1,3 +1,11 @@
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+ * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+ * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+ * ─────────────────────────────────────────────────────────
+ */
 import mongoose from 'mongoose';
 import SupportTicket from './server/src/models/SupportTicket.js';
 import User from './server/src/models/User.js';

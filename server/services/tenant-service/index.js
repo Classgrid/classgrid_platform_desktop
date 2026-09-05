@@ -1,3 +1,11 @@
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+ * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+ * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+ * ─────────────────────────────────────────────────────────
+ */
 const DEFAULT_PLATFORM_API_BASE_URL = "https://api.classgrid.in";
 const TENANT_INFO_PATH = "/api/tenant/info";
 const DEFAULT_TIMEOUT_MS = 5000;
