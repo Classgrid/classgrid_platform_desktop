@@ -37,7 +37,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { 
   Building2, User, MapPin, Globe, MessageSquare, 
-  Copy, ExternalLink, AlertTriangle, CheckCircle2 
+  Copy, ExternalLink, AlertTriangle, CheckCircle2, Loader2 
 } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
@@ -185,7 +185,7 @@ export function LeadDetailsPage() {
   const isPastMeeting = date && date < new Date() && !isConverted;
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 pb-12 animate-in fade-in duration-200">
+    <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 pb-12">
       
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-border pb-6 mb-8">
@@ -627,12 +627,12 @@ export function LeadDetailsPage() {
       </div>
 
       {/* ── NEW COMPACT MANAGEMENT SECTION ── */}
-      <div className="mt-10 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="mt-10 w-full">
         <h2 className="font-bold text-foreground text-xl mb-6 px-1 flex items-center gap-2">
           Lead Management & Status
         </h2>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           
           {/* LEFT: Assignment & Status */}
           <div className="lg:col-span-1 space-y-6">
@@ -721,9 +721,22 @@ export function LeadDetailsPage() {
             
             {/* Vetted Checkbox Card */}
             <div 
-              className="bg-card border border-emerald-500/20 hover:border-emerald-500/50 rounded-2xl p-4 transition-colors cursor-pointer flex items-start gap-4 shadow-sm"
-              onClick={() => updateNotesMutation.mutate({ id: lead._id, payload: { isOrganizationVetted: !lead.isOrganizationVetted } })}
+              className={`bg-card border rounded-2xl p-4 transition-colors flex items-start gap-4 shadow-sm relative overflow-hidden ${updateNotesMutation.isPending ? 'border-muted opacity-70 cursor-not-allowed' : 'border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer'}`}
+              onClick={() => {
+                if (updateNotesMutation.isPending) return;
+                const promise = updateNotesMutation.mutateAsync({ id: lead._id, payload: { isOrganizationVetted: !lead.isOrganizationVetted } });
+                toast.promise(promise, {
+                  loading: 'Updating organization vetting status...',
+                  success: !lead.isOrganizationVetted ? 'Organization vetted & approved' : 'Organization vetting reset',
+                  error: 'Failed to update vetting status'
+                });
+              }}
             >
+              {updateNotesMutation.isPending && (
+                <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center z-10">
+                  <Loader2 className="h-6 w-6 text-emerald-500 animate-spin" />
+                </div>
+              )}
               <Checkbox checked={lead.isOrganizationVetted || false} className="mt-1 shrink-0" />
               <div>
                 <p className="text-sm font-bold text-foreground">Organization Vetted & Approved</p>
@@ -791,69 +804,70 @@ export function LeadDetailsPage() {
             </div>
           </div>
           
-          {/* RIGHT: Notes & Comments */}
-          <div className="lg:col-span-1 space-y-6">
+          </div>
+        </div>
+
+        {/* BOTTOM ROWS: Notes & Reviews (Full Width) */}
+        <div className="flex flex-col gap-6">
+          
+          {/* Meeting Notes */}
+          <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col h-fit w-full">
+            <div className="flex items-center justify-between border-b pb-3 mb-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                 <Copy size={16} className="text-muted-foreground" /> Meeting Notes
+              </h3>
+              <Button variant="outline" size="sm" className="h-7 px-3 text-xs rounded-full font-semibold" onClick={() => setIsEditingMeetingNotes(!isEditingMeetingNotes)}>
+                 {isEditingMeetingNotes ? "Save Notes" : "Edit"}
+              </Button>
+            </div>
             
-            {/* Meeting Notes */}
-            <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col h-fit">
-              <div className="flex items-center justify-between border-b pb-3 mb-4">
-                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                   <Copy size={16} className="text-muted-foreground" /> Meeting Notes
-                </h3>
-                <Button variant="outline" size="sm" className="h-7 px-3 text-xs rounded-full font-semibold" onClick={() => setIsEditingMeetingNotes(!isEditingMeetingNotes)}>
-                   {isEditingMeetingNotes ? "Save Notes" : "Edit"}
-                </Button>
-              </div>
-              
-              {isEditingMeetingNotes ? (
-                <div className="animate-in fade-in zoom-in-95 duration-200">
-                  <RichReplyEditor 
-                    initialHtml={lead.meetingNotes || ''}
-                    onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingNotes: html } })}
-                    placeholder="Enter detailed meeting notes..."
-                    hideAttachments={true}
-                    minHeight={150}
-                  />
-                </div>
-              ) : (
-                <div 
-                  className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none cursor-text hover:bg-muted/10 p-3 -mx-3 rounded-xl transition-colors min-h-[100px] border border-transparent hover:border-border/50"
-                  onClick={() => setIsEditingMeetingNotes(true)}
-                  dangerouslySetInnerHTML={{ __html: lead.meetingNotes || '<span class="text-muted-foreground italic">No meeting notes added. Click to edit.</span>' }} 
+            {isEditingMeetingNotes ? (
+              <div className="animate-in fade-in zoom-in-95 duration-200">
+                <RichReplyEditor 
+                  initialHtml={lead.meetingNotes || ''}
+                  onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingNotes: html } })}
+                  placeholder="Enter detailed meeting notes..."
+                  hideAttachments={true}
+                  minHeight={150}
                 />
-              )}
-            </div>
-
-            {/* Final Demo Review */}
-            <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col h-fit">
-              <div className="flex items-center justify-between border-b pb-3 mb-4">
-                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                   <Copy size={16} className="text-muted-foreground" /> Final Demo Review
-                </h3>
-                <Button variant="outline" size="sm" className="h-7 px-3 text-xs rounded-full font-semibold" onClick={() => setIsEditingDemoReview(!isEditingDemoReview)}>
-                   {isEditingDemoReview ? "Save Review" : "Edit"}
-                </Button>
               </div>
-              
-              {isEditingDemoReview ? (
-                <div className="animate-in fade-in zoom-in-95 duration-200">
-                  <RichReplyEditor 
-                    initialHtml={lead.demoReview || ''}
-                    onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { demoReview: html } })}
-                    placeholder="Enter final review..."
-                    hideAttachments={true}
-                    minHeight={150}
-                  />
-                </div>
-              ) : (
-                <div 
-                  className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none cursor-text hover:bg-muted/10 p-3 -mx-3 rounded-xl transition-colors min-h-[100px] border border-transparent hover:border-border/50"
-                  onClick={() => setIsEditingDemoReview(true)}
-                  dangerouslySetInnerHTML={{ __html: lead.demoReview || '<span class="text-muted-foreground italic">No review added. Click to edit.</span>' }} 
-                />
-              )}
-            </div>
+            ) : (
+              <div 
+                className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none cursor-text hover:bg-muted/10 p-3 -mx-3 rounded-xl transition-colors min-h-[100px] border border-transparent hover:border-border/50"
+                onClick={() => setIsEditingMeetingNotes(true)}
+                dangerouslySetInnerHTML={{ __html: lead.meetingNotes || '<span class="text-muted-foreground italic">No meeting notes added. Click to edit.</span>' }} 
+              />
+            )}
+          </div>
 
+          {/* Final Demo Review */}
+          <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col h-fit w-full">
+            <div className="flex items-center justify-between border-b pb-3 mb-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                 <Copy size={16} className="text-muted-foreground" /> Final Demo Review
+              </h3>
+              <Button variant="outline" size="sm" className="h-7 px-3 text-xs rounded-full font-semibold" onClick={() => setIsEditingDemoReview(!isEditingDemoReview)}>
+                 {isEditingDemoReview ? "Save Review" : "Edit"}
+              </Button>
+            </div>
+            
+            {isEditingDemoReview ? (
+              <div className="animate-in fade-in zoom-in-95 duration-200">
+                <RichReplyEditor 
+                  initialHtml={lead.demoReview || ''}
+                  onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { demoReview: html } })}
+                  placeholder="Enter final review..."
+                  hideAttachments={true}
+                  minHeight={150}
+                />
+              </div>
+            ) : (
+              <div 
+                className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none cursor-text hover:bg-muted/10 p-3 -mx-3 rounded-xl transition-colors min-h-[100px] border border-transparent hover:border-border/50"
+                onClick={() => setIsEditingDemoReview(true)}
+                dangerouslySetInnerHTML={{ __html: lead.demoReview || '<span class="text-muted-foreground italic">No review added. Click to edit.</span>' }} 
+              />
+            )}
           </div>
 
         </div>

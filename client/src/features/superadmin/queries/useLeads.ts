@@ -110,9 +110,25 @@ export function useUpdateLeadNotes() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: any }) => leadsApi.updateMeetingNotes(id, payload),
+    onMutate: async ({ id, payload }) => {
+      await qc.cancelQueries({ queryKey: LEADS_KEY });
+      const previous = qc.getQueryData<any>(LEADS_KEY);
+      
+      if (previous && previous.leads) {
+        qc.setQueryData<any>(LEADS_KEY, {
+          ...previous,
+          leads: previous.leads.map((l: any) => l._id === id ? { ...l, ...payload } : l)
+        });
+      }
+      return { previous };
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: LEADS_KEY }),
-    onError: (err: any) => {
+    onError: (err: any, variables, context: any) => {
+      if (context?.previous) {
+        qc.setQueryData(LEADS_KEY, context.previous);
+      }
       toast.error(err.response?.data?.message || "Failed to update lead notes");
-    }
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: LEADS_KEY }),
   });
 }
