@@ -10,7 +10,35 @@ import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import { sendEmail } from "../services/aws-ses.service.js";
 import connectDB from "../../config/db.js";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { s3Client, BUCKET_NAME, CDN_BASE_URL } from "../config/s3Client.js";
 import { checkAndRegisterDevice, getDeviceFingerprint } from "../services/device-fingerprint.service.js";
+
+async function uploadBase64ToS3(base64String, folder, filenamePrefix) {
+    if (!base64String || typeof base64String !== 'string' || !base64String.startsWith('data:image')) return base64String;
+    try {
+        const matches = base64String.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (!matches || matches.length !== 3) return base64String;
+
+        const contentType = matches[1];
+        const buffer = Buffer.from(matches[2], 'base64');
+        const extension = contentType.split('/')[1] || 'png';
+        const key = `${folder}/${filenamePrefix}-${Date.now()}.${extension}`;
+
+        const command = new PutObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: key,
+            Body: buffer,
+            ContentType: contentType,
+        });
+
+        await s3Client.send(command);
+        return `${CDN_BASE_URL}/${key}`;
+    } catch (err) {
+        console.error("Failed to upload base64 to S3:", err);
+        return base64String; // fallback to base64 if upload fails
+    }
+}
 import {
     getFacultyWelcomeEmailHtml,
     getFacultyWelcomePlainText,
@@ -655,7 +683,7 @@ export const activateAdmin = async (req, res) => {
 
         // Save profile photo if uploaded during onboarding
         if (dynamicData?.profile_photo?.image) {
-            user.profilePicture = dynamicData.profile_photo.image;
+            user.profilePicture = await uploadBase64ToS3(dynamicData.profile_photo.image, "profile_pictures", user._id.toString());
         }
 
         if (!user.linkedProviders) user.linkedProviders = [];
@@ -690,10 +718,25 @@ export const activateAdmin = async (req, res) => {
             // Map billing settings
             const billingSettings = {};
             if (orgEmail) {
+                const cleanEmail = orgEmail.toLowerCase().trim();
+                const orgExists = await Organization.findOne({ invoice_email: cleanEmail, _id: { $ne: user.organization_id } });
+                const userExists = await User.findOne({ email: cleanEmail });
+                if (orgExists || userExists) {
+                    return res.status(409).json({ message: "The organization email provided is already registered with another account." });
+                }
                 billingSettings.invoice_email = orgEmail;
                 billingSettings.email_verified = true; // since it was verified in the wizard
             }
             if (orgPhone) {
+                const cleanPhone = orgPhone.trim();
+                const orgExists = await Organization.findOne({ 
+                    $or: [{ invoice_phone: cleanPhone }, { contactNumber: cleanPhone }],
+                    _id: { $ne: user.organization_id }
+                });
+                const userExists = await User.findOne({ phoneNumber: cleanPhone });
+                if (orgExists || userExists) {
+                    return res.status(409).json({ message: "The organization phone number provided is already registered with another account." });
+                }
                 billingSettings.invoice_phone = orgPhone;
                 billingSettings.phone_verified = true;
             }
@@ -705,7 +748,7 @@ export const activateAdmin = async (req, res) => {
             }
             
             if (orgIdentity?.logo) {
-                updateFields.logo_url = orgIdentity.logo; // assuming base64 or URL is handled
+                updateFields.logo_url = await uploadBase64ToS3(orgIdentity.logo, "organization_logos", user.organization_id.toString());
             }
             if (personalDetails?.designation) {
                 updateFields.designation = personalDetails.designation;
@@ -2417,6 +2460,36 @@ export const sendOnboardingOtp = async (req, res) => {
     try {
         const { target, type } = req.body; // target is email or phone, type is 'email' or 'phone'
         if (!target || !type) return res.status(400).json({ message: "Target and type are required." });
+
+        const Organization = (await import("../models/Organization.js")).default;
+        const User = (await import("../models/User.js")).default;
+
+        let conflict = false;
+        let conflictMessage = "";
+
+        if (type === "email") {
+            const cleanEmail = target.toLowerCase().trim();
+            const orgExists = await Organization.findOne({ invoice_email: cleanEmail });
+            const userExists = await User.findOne({ email: cleanEmail });
+            if (orgExists || userExists) {
+                conflict = true;
+                conflictMessage = "This email is already registered with an existing organization or user.";
+            }
+        } else if (type === "phone") {
+            const cleanPhone = target.trim();
+            const orgExists = await Organization.findOne({ 
+                $or: [{ invoice_phone: cleanPhone }, { contactNumber: cleanPhone }] 
+            });
+            const userExists = await User.findOne({ phoneNumber: cleanPhone });
+            if (orgExists || userExists) {
+                conflict = true;
+                conflictMessage = "This phone number is already registered with an existing organization or user.";
+            }
+        }
+
+        if (conflict) {
+            return res.status(409).json({ message: conflictMessage });
+        }
 
         let otp = Math.floor(100000 + Math.random() * 900000).toString();
         
