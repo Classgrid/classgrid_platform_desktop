@@ -84,11 +84,11 @@ export const MASTER_PROFILE_SECTION_POOL = {
     icon: "Building2",
     fields: [
       { key: "organization.legal_name", label: "Organization Legal Name", type: "text", required: true },
-      { key: "organization.type", label: "Organization Type", type: "dropdown", options: ["School", "Coaching Institute", "Junior College", "Engineering College", "Diploma College"], required: true },
+      { key: "organization.type", label: "Organization Type", type: "text", readonly: true, required: true },
       { key: "organization.short_name", label: "Organization Short Name / Slug", type: "text", required: true },
       { key: "organization.affiliation_number", label: "Registration / Affiliation Number", type: "text" },
       { key: "organization.board", label: "Board / Affiliation", type: "dropdown", options: ["CBSE", "ICSE", "State Board", "IB", "IGCSE", "University", "None"] },
-      { key: "organization.address", label: "Organization Address", type: "text", required: true },
+      { key: "organization.address", label: "Organization Address", type: "textarea", required: true },
       { key: "organization.state", label: "State", type: "dropdown", options: INDIA_STATES, required: true },
       { key: "organization.district", label: "District / City", type: "dropdown", options: INDIA_DISTRICTS, required: true },
       { key: "organization.taluka", label: "Taluka", type: "dropdown", options: INDIA_TALUKAS },

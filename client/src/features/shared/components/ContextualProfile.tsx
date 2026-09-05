@@ -820,19 +820,36 @@ export function ContextualProfile({
                 );
               }
                 
+              if (field.type === "textarea") {
+                return (
+                  <textarea 
+                    placeholder={isEditing && !field.readonly ? `Enter ${field.label}...` : ""}
+                    className={cn(
+                      "w-full p-2.5 rounded-md text-sm outline-none transition-all min-h-[100px] resize-y",
+                      (isEditing && !field.readonly)
+                        ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" 
+                        : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70"
+                    )}
+                    value={formData[field.key] || ""}
+                    onChange={(e) => isEditing && !field.readonly && handleInputChange(field.key, e.target.value)}
+                    readOnly={!isEditing || field.readonly}
+                  />
+                );
+              }
+
               return (
                 <input 
                   type={field.type === "number" ? "number" : "text"}
-                  placeholder={isEditing && !field.key.includes('same_as_permanent') ? `Enter ${field.label}...` : ""}
+                  placeholder={isEditing && !field.key.includes('same_as_permanent') && !field.readonly ? `Enter ${field.label}...` : ""}
                   className={cn(
                     "w-full p-2.5 rounded-md text-sm outline-none transition-all",
-                    (isEditing && !(field.key === "contact.whatsapp_number" && formData["contact.whatsapp_same_as_mobile"] === "true") && field.key !== "contact.personal_email")
+                    (isEditing && !(field.key === "contact.whatsapp_number" && formData["contact.whatsapp_same_as_mobile"] === "true") && field.key !== "contact.personal_email" && !field.readonly)
                       ? "border border-input bg-background focus:ring-2 focus:ring-primary/50" 
                       : "border border-input bg-muted/30 text-foreground cursor-not-allowed opacity-70"
                   )}
                   value={formData[field.key] || ""}
-                  onChange={(e) => isEditing && handleInputChange(field.key, e.target.value)}
-                  readOnly={!isEditing || (field.key === "contact.whatsapp_number" && formData["contact.whatsapp_same_as_mobile"] === "true") || field.key === "contact.personal_email"}
+                  onChange={(e) => isEditing && !field.readonly && handleInputChange(field.key, e.target.value)}
+                  readOnly={!isEditing || (field.key === "contact.whatsapp_number" && formData["contact.whatsapp_same_as_mobile"] === "true") || field.key === "contact.personal_email" || field.readonly}
                 />
               );
             };
