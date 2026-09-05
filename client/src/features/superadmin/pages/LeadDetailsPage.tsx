@@ -80,7 +80,7 @@ export function LeadDetailsPage() {
   const [isEditingDemoReview, setIsEditingDemoReview] = useState(false);
 
   const lead = data?.leads.find(l => l._id === id);
-  const superAdmins = (Array.isArray(usersData) ? usersData : usersData?.users || [])?.filter((u: any) => u.role === 'superadmin' || u.role === 'admin' || u.role === 'support') || [];
+  const superAdmins = (Array.isArray(usersData) ? usersData : usersData?.users || [])?.filter((u: any) => u.role === 'super_admin' || u.role === 'co_super_admin' || u.role === 'org_admin') || [];
 
   const setBreadcrumbs = useBreadcrumbStore((state) => state.setBreadcrumbs);
 
