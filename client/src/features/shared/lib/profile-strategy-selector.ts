@@ -88,7 +88,6 @@ export const MASTER_PROFILE_SECTION_POOL = {
       { key: "organization.short_name", label: "Organization Short Name / Slug", type: "text", required: true },
       { key: "organization.affiliation_number", label: "Registration / Affiliation Number", type: "text" },
       { key: "organization.board", label: "Board / Affiliation", type: "dropdown", options: ["CBSE", "ICSE", "State Board", "IB", "IGCSE", "University", "None"] },
-      { key: "organization.logo", label: "Organization Logo", type: "image" },
       { key: "organization.address", label: "Organization Address", type: "text", required: true },
       { key: "organization.state", label: "State", type: "dropdown", options: INDIA_STATES, required: true },
       { key: "organization.district", label: "District / City", type: "dropdown", options: INDIA_DISTRICTS, required: true },
