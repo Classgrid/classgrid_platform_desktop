@@ -48,6 +48,14 @@ jobs:
             sudo swapon /swapfile || true
             sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches' || true
 
+            # --- EMERGENCY FIX: CLEAN DISK SPACE AND CORRUPTED DB ---
+            pm2 flush || true
+            sudo rm -rf /root/.pm2/logs/* || true
+            sudo rm -rf /home/ubuntu/.pm2/logs/* || true
+            sudo rm -f /var/lib/redis/dump.rdb || true
+            sudo chown -R redis:redis /var/lib/redis || true
+            # --------------------------------------------------------
+
             # INSTALL AND FORCE RESTART REDIS TO FIX THE OUTAGE
             sudo apt-get update || true
             sudo DEBIAN_FRONTEND=noninteractive apt-get install -y redis-server || true
