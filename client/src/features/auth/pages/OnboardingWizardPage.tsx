@@ -434,6 +434,7 @@ export function OnboardingWizardPage() {
 
 
   const [isInitializing, setIsInitializing] = useState(true); // Start true to prevent flash
+  const [isBuildingWorkspace, setIsBuildingWorkspace] = useState(false);
 
   // Sending OTP guards (prevent double-click)
   const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
@@ -1118,7 +1119,7 @@ export function OnboardingWizardPage() {
     }
   };
 
-  if (isInitializing) {
+  if (isBuildingWorkspace || (isInitializing && currentStep !== 0)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#0a0a0a]">
         <div className="flex flex-col items-center justify-center space-y-4">
@@ -1269,9 +1270,87 @@ export function OnboardingWizardPage() {
       )}
 
       {/* Main Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      {currentStepData.type === "fixed_welcome" ? (
+        <div className="flex-1 flex flex-col items-center justify-center overflow-hidden relative" style={{ background: "radial-gradient(ellipse at 50% 120%, #1e3a5f 0%, #0a0e1a 50%, #05070d 100%)" }}>
+          {/* Starfield */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {Array.from({ length: 80 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full bg-white"
+                style={{
+                  width: `${Math.random() * 2 + 1}px`,
+                  height: `${Math.random() * 2 + 1}px`,
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                  opacity: Math.random() * 0.6 + 0.1,
+                  animation: `pulse ${Math.random() * 3 + 2}s ease-in-out infinite`,
+                  animationDelay: `${Math.random() * 2}s`,
+                }}
+              />
+            ))}
+          </div>
+          {/* Aurora Glow */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full pointer-events-none" style={{ background: "radial-gradient(ellipse, rgba(56,142,255,0.25) 0%, rgba(56,142,255,0.08) 40%, transparent 70%)", filter: "blur(60px)" }} />
 
-        {/* Sidebar */}
+          {/* Content */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="relative z-10 text-center px-6 max-w-2xl"
+          >
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="text-white/60 text-lg mb-4 font-medium tracking-wide"
+            >
+              Welcome to Classgrid
+            </motion.p>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
+              className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight"
+            >
+              Hey, {adminName ? adminName.split(' ')[0] : 'Admin'}
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.0, duration: 0.8 }}
+              className="text-white/50 text-lg md:text-xl leading-relaxed mb-10"
+            >
+              Let's set up your digital campus. Just a few quick basics before you jump in.
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.4, duration: 0.6 }}
+            >
+              <Button
+                size="lg"
+                onClick={() => {
+                  setIsBuildingWorkspace(true);
+                  setTimeout(() => {
+                    setIsBuildingWorkspace(false);
+                    setCurrentStep(prev => prev + 1);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }, 1500);
+                }}
+                className="h-14 px-10 text-base font-semibold rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all duration-300 shadow-lg shadow-blue-500/10"
+              >
+                Get Started <ChevronRight className="ml-2 size-5" />
+              </Button>
+            </motion.div>
+          </motion.div>
+          <style>{`@keyframes pulse { 0%, 100% { opacity: 0.1; } 50% { opacity: 0.7; } }`}</style>
+        </div>
+      ) : (
+        <div className="flex-1 flex overflow-hidden">
+
+          {/* Sidebar */}
         <div className="hidden lg:flex w-[260px] bg-white dark:bg-card border-r border-border/50 flex-col p-6 z-10 shadow-xl overflow-y-auto">
           <div className="flex items-center gap-3 mb-8 shrink-0">
             {/* Org Logo */}
@@ -1365,80 +1444,7 @@ export function OnboardingWizardPage() {
                 >
 
 
-                  {/* ── WELCOME STEP: Cinematic Full-Screen Greeting ── */}
-                  {currentStepData.type === "fixed_welcome" && (
-                    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden" style={{ background: "radial-gradient(ellipse at 50% 120%, #1e3a5f 0%, #0a0e1a 50%, #05070d 100%)" }}>
-                      {/* Starfield */}
-                      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                        {Array.from({ length: 80 }).map((_, i) => (
-                          <div
-                            key={i}
-                            className="absolute rounded-full bg-white"
-                            style={{
-                              width: `${Math.random() * 2 + 1}px`,
-                              height: `${Math.random() * 2 + 1}px`,
-                              top: `${Math.random() * 100}%`,
-                              left: `${Math.random() * 100}%`,
-                              opacity: Math.random() * 0.6 + 0.1,
-                              animation: `pulse ${Math.random() * 3 + 2}s ease-in-out infinite`,
-                              animationDelay: `${Math.random() * 2}s`,
-                            }}
-                          />
-                        ))}
-                      </div>
-                      {/* Aurora Glow */}
-                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full pointer-events-none" style={{ background: "radial-gradient(ellipse, rgba(56,142,255,0.25) 0%, rgba(56,142,255,0.08) 40%, transparent 70%)", filter: "blur(60px)" }} />
 
-                      {/* Content */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="relative z-10 text-center px-6 max-w-2xl"
-                      >
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.3, duration: 0.6 }}
-                          className="text-white/60 text-lg mb-4 font-medium tracking-wide"
-                        >
-                          Welcome to Classgrid
-                        </motion.p>
-                        <motion.h1
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.6, duration: 0.8 }}
-                          className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight"
-                        >
-                          Hey, {adminName.split(' ')[0] || 'Admin'}
-                        </motion.h1>
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 1.0, duration: 0.8 }}
-                          className="text-white/50 text-lg md:text-xl leading-relaxed mb-10"
-                        >
-                          Let's set up your digital campus. Just a few quick basics before you jump in.
-                        </motion.p>
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 1.4, duration: 0.6 }}
-                        >
-                          <Button
-                            size="lg"
-                            onClick={() => { setCurrentStep(prev => prev + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                            className="h-14 px-10 text-base font-semibold rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all duration-300 shadow-lg shadow-blue-500/10"
-                          >
-                            Get Started <ChevronRight className="ml-2 size-5" />
-                          </Button>
-                        </motion.div>
-                      </motion.div>
-
-                      {/* Pulse animation keyframe */}
-                      <style>{`@keyframes pulse { 0%, 100% { opacity: 0.1; } 50% { opacity: 0.7; } }`}</style>
-                    </div>
-                  )}
 
                   {/* Verification Step */}
                   {currentStepData.type === "fixed_verification" && (
