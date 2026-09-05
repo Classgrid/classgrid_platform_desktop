@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
+import { Spinner } from "@/components/marketing_ui/spinner";
 import { validateActivationToken, activateAdmin, sendOnboardingOtp, verifyOnboardingOtp, checkUsername, fetchAllTerminology } from "../api";
 import {
   CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, Mail, Smartphone, Key, User,
@@ -813,6 +814,7 @@ export function OnboardingWizardPage() {
                   taluka: (currentOrg.taluka && currentOrg.taluka !== "") ? currentOrg.taluka : (res.taluka || ""),
                   website: (currentOrg.website && currentOrg.website !== "") ? currentOrg.website : (res.website || ""),
                   board: currentOrg.board || "CBSE",
+                  university: currentOrg.university || "Not Applicable",
                 }
               };
             });
@@ -1123,7 +1125,7 @@ export function OnboardingWizardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#0a0a0a]">
         <div className="flex flex-col items-center justify-center space-y-4">
-          <div className="size-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+          <Spinner className="size-10 text-primary" />
           <p className="text-muted-foreground animate-pulse font-medium">Preparing your workspace...</p>
         </div>
       </div>
@@ -2167,11 +2169,11 @@ export function OnboardingWizardPage() {
                                     {!isOrgEmailVerified && (
                                       <Button
                                         variant="outline"
-                                        className="h-12 px-6 text-sm font-semibold rounded-xl shrink-0"
+                                        className="h-12 px-6 text-sm font-semibold rounded-xl shrink-0 min-w-[120px]"
                                         onClick={handleSendOrgEmailOtp}
-                                        disabled={orgEmailOtpSent || isSendingEmailOtp || isSameEmail}
+                                        disabled={(orgEmailOtpSent && orgEmailOtpTimer > 0) || isSendingEmailOtp || isSameEmail}
                                       >
-                                        {isSendingEmailOtp ? "Sending..." : orgEmailOtpSent ? "Sent" : "Send OTP"}
+                                        {isSendingEmailOtp ? "Sending..." : orgEmailOtpTimer > 0 ? `Resend (${orgEmailOtpTimer}s)` : orgEmailOtpSent ? "Resend" : "Send OTP"}
                                       </Button>
                                     )}
                                   </div>
