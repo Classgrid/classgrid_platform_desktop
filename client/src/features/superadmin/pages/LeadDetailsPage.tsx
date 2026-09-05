@@ -37,7 +37,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { 
   Building2, User, MapPin, Globe, MessageSquare, 
-  Copy, ExternalLink, AlertTriangle, CheckCircle2, Loader2, Users
+  Copy, ExternalLink, AlertTriangle, CheckCircle2, Users
 } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
@@ -48,6 +48,7 @@ import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calend
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/marketing_ui/select";
 import { Textarea } from "@/components/marketing_ui/textarea";
 import { Checkbox } from "@/components/marketing_ui/checkbox";
+import { Spinner } from "@/components/marketing_ui/spinner";
 import { useLeads, useApproveLead, useScheduleMeeting, useDeleteLead, useRegenerateActivation, useUpdateLeadNotes } from "../queries/useLeads";
 import { useAllUsers } from "../queries/useUsers";
 import { formatDate } from "@/utils/dateUtils";
@@ -724,12 +725,7 @@ export function LeadDetailsPage() {
               className={`bg-card border rounded-2xl p-4 transition-colors flex items-start gap-4 shadow-sm relative overflow-hidden ${updateNotesMutation.isPending ? 'border-muted opacity-70 cursor-not-allowed' : 'border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer'}`}
               onClick={() => {
                 if (updateNotesMutation.isPending) return;
-                const promise = updateNotesMutation.mutateAsync({ id: lead._id, payload: { isOrganizationVetted: !lead.isOrganizationVetted } });
-                toast.promise(promise, {
-                  loading: 'Updating organization vetting status...',
-                  success: !lead.isOrganizationVetted ? 'Organization vetted & approved' : 'Organization vetting reset',
-                  error: 'Failed to update vetting status'
-                });
+                updateNotesMutation.mutate({ id: lead._id, payload: { isOrganizationVetted: !lead.isOrganizationVetted } });
               }}
             >
               {updateNotesMutation.isPending && (
