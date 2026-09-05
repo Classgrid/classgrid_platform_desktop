@@ -502,7 +502,7 @@ export function LeadDetailsPage() {
                         </Button>
                       )}
                       <Button onClick={handleSchedule} disabled={scheduleMutation.isPending} variant="secondary" className="w-full h-9 flex-1">
-                        {scheduleMutation.isPending ? "Rescheduling..." : "Reschedule Meeting"}
+                        {scheduleMutation.isPending ? "Rescheduling..." : "Reschedule"}
                       </Button>
                     </div>
                   </div>
