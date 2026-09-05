@@ -51,6 +51,7 @@ import { Checkbox } from "@/components/marketing_ui/checkbox";
 import { Spinner } from "@/components/marketing_ui/spinner";
 import { useLeads, useApproveLead, useScheduleMeeting, useDeleteLead, useRegenerateActivation, useUpdateLeadNotes, useRequestVettingApproval } from "../queries/useLeads";
 import { useAllUsers } from "../queries/useUsers";
+import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 import { formatDate } from "@/utils/dateUtils";
 import { formatOrgType } from "@/utils/orgHelpers";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
@@ -62,6 +63,7 @@ export function LeadDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading } = useLeads();
   const { data: usersData } = useAllUsers();
+  const { data: user } = useCurrentUser();
   const scheduleMutation = useScheduleMeeting();
   const deleteMutation = useDeleteLead();
   const regenerateMutation = useRegenerateActivation();
