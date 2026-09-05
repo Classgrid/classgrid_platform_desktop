@@ -1,17 +1,31 @@
 import * as React from "react"
-
+import { Sparkles, Lock, ChevronDownIcon } from "lucide-react"
+import { FieldState } from "./input"
 import { cn } from "@/lib/utils"
-import { ChevronDownIcon } from "lucide-react"
 
 type NativeSelectProps = Omit<React.ComponentProps<"select">, "size"> & {
   size?: "sm" | "default"
+  fieldState?: FieldState
 }
 
 function NativeSelect({
   className,
   size = "default",
+  fieldState = "normal",
   ...props
 }: NativeSelectProps) {
+  let stateClasses = "bg-transparent border-input text-foreground"
+
+  if (fieldState === "locked") {
+    stateClasses = "bg-secondary/40 border-transparent text-foreground opacity-90 cursor-not-allowed focus-visible:ring-0 focus-visible:border-transparent"
+  } else if (fieldState === "prefilled") {
+    stateClasses = "bg-primary/5 border-primary/20 text-foreground font-medium"
+  } else if (fieldState === "default") {
+    stateClasses = "bg-transparent border-input text-foreground/80"
+  } else if (fieldState === "error") {
+    stateClasses = "border-destructive focus-visible:ring-destructive/30"
+  }
+
   return (
     <div
       className={cn(
@@ -24,10 +38,21 @@ function NativeSelect({
       <select
         data-slot="native-select"
         data-size={size}
-        className="h-8 w-full min-w-0 appearance-none rounded-lg border border-input bg-transparent py-1 pr-8 pl-2.5 text-sm transition-colors outline-none select-none selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=sm]:h-7 data-[size=sm]:rounded-[min(var(--radius-md),10px)] data-[size=sm]:py-0.5 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
+        className={cn("h-10 w-full min-w-0 appearance-none rounded-lg border py-2 pr-10 pl-3 text-base transition-colors outline-none select-none selection:bg-primary selection:text-primary-foreground focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:pointer-events-none disabled:cursor-not-allowed aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=sm]:h-7 data-[size=sm]:rounded-[min(var(--radius-md),10px)] data-[size=sm]:py-0.5 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 md:text-sm", stateClasses)}
+        disabled={fieldState === "locked" ? true : props.disabled}
         {...props}
       />
-      <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-muted-foreground select-none" aria-hidden="true" data-slot="native-select-icon" />
+      
+      {fieldState === "locked" ? (
+        <Lock className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground/70 select-none" aria-hidden="true" />
+      ) : fieldState === "prefilled" ? (
+        <div className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 flex items-center gap-1.5 select-none">
+          <Sparkles className="size-4 text-primary/70" />
+          <ChevronDownIcon className="size-4 opacity-50" />
+        </div>
+      ) : (
+        <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground select-none" aria-hidden="true" data-slot="native-select-icon" />
+      )}
     </div>
   )
 }

@@ -151,9 +151,7 @@ export async function approveLeadAndProvision(demoRequestId, options = {}, actor
     state: lead.state,
     district: lead.district || "",
     taluka: lead.taluka || "",
-    address: [lead.cityVillage || lead.city, lead.taluka, lead.district, lead.state]
-      .filter(Boolean)
-      .join(", "),
+    address: "", // Leave blank to be filled during onboarding
     website: lead.website || "",
     designation: lead.designation || "",
     feature_flags: featureFlags,

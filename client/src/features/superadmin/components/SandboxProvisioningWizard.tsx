@@ -113,7 +113,7 @@ export function SandboxProvisioningWizard({
     const defaultFeatures: Record<string, boolean> = {};
     MODULE_CATEGORIES.forEach(cat => {
       cat.items.forEach(item => {
-        defaultFeatures[item.id] = !!lead.feature_flags?.[item.id];
+        defaultFeatures[item.id] = !!lead.allocatedModules?.[item.id];
       });
     });
     return defaultFeatures;
@@ -155,16 +155,22 @@ export function SandboxProvisioningWizard({
   });
 
   const updateDashboardsMutation = useMutation({
-    mutationFn: () => leadsApi.allocateDashboards(lead._id, { allocatedDashboards }),
+    mutationFn: (dashboards: string[]) => leadsApi.allocateDashboards(lead._id, { allocatedDashboards: dashboards }),
     onSuccess: () => setStep(4),
     onError: (err: any) => toast.error(err.message || "Failed to update dashboards")
   });
 
+  const updateModulesMutation = useMutation({
+    mutationFn: (mods: Record<string, boolean>) => leadsApi.allocateModules(lead._id, { allocatedModules: mods }),
+    onSuccess: () => setStep(5),
+    onError: (err: any) => toast.error(err.message || "Failed to update modules")
+  });
+
   const provisionMutation = useMutation({
-    mutationFn: () => leadsApi.approve(lead._id, { 
+    mutationFn: (mods: Record<string, boolean>) => leadsApi.approve(lead._id, { 
       plan: "sandbox", 
       mode: "sandbox", 
-      feature_flags: features 
+      feature_flags: mods 
     }),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["super-admin", "leads"] });
@@ -176,9 +182,9 @@ export function SandboxProvisioningWizard({
   const handleNext = () => {
     if (step === 1) updateAdminMutation.mutate();
     else if (step === 2) updateInstMutation.mutate();
-    else if (step === 3) updateDashboardsMutation.mutate();
-    else if (step === 4) setStep(5);
-    else if (step === 5) provisionMutation.mutate();
+    else if (step === 3) updateDashboardsMutation.mutate(allocatedDashboards);
+    else if (step === 4) updateModulesMutation.mutate(features);
+    else if (step === 5) provisionMutation.mutate(features);
   };
 
   const renderStepIcon = (num: number, icon: any, label: string) => (
@@ -405,11 +411,11 @@ export function SandboxProvisioningWizard({
             )}
             <Button 
               onClick={handleNext}
-              disabled={updateAdminMutation.isPending || updateInstMutation.isPending || updateDashboardsMutation.isPending || provisionMutation.isPending}
+              disabled={updateAdminMutation.isPending || updateInstMutation.isPending || updateDashboardsMutation.isPending || updateModulesMutation.isPending || provisionMutation.isPending}
               className={step === 5 ? "bg-emerald-600 hover:bg-emerald-700 text-white font-bold" : ""}
             >
               {provisionMutation.isPending ? "Provisioning..." : 
-               updateAdminMutation.isPending || updateInstMutation.isPending || updateDashboardsMutation.isPending ? "Saving..." :
+               updateAdminMutation.isPending || updateInstMutation.isPending || updateDashboardsMutation.isPending || updateModulesMutation.isPending ? "Saving..." :
                step === 5 ? "Create Sandbox" : "Next Step"}
             </Button>
           </div>

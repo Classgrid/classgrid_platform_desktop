@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, A
 import { useTheme } from "next-themes";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
+import { Textarea } from "@/components/marketing_ui/textarea";
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { getResolvedProfileStrategy } from "@/features/shared/lib/profile-strategy-selector";
 const Confetti = React.lazy(() => import("react-confetti"));
@@ -529,10 +530,18 @@ export function OnboardingWizardPage() {
 
   const boardOptions = useMemo(() => {
     const defaultBoards = ['CBSE', 'ICSE', 'State Board', 'IB (International Baccalaureate)', 'IGCSE / Cambridge', 'None'];
+    const erpList = ((erpData as any).erpboardlist || [])
+      .map((item: any) => (typeof item === 'object' ? (item.name || item.board) : item))
+      .filter(Boolean);
+    return Array.from(new Set([...defaultBoards, ...erpList])).sort();
+  }, []);
+
+  const universityOptions = useMemo(() => {
+    const defaultUnis = ['Not Applicable'];
     const erpList = ((erpData as any).erpuniversitylist || [])
       .map((item: any) => (typeof item === 'object' ? (item.name || item.university) : item))
       .filter(Boolean);
-    return Array.from(new Set([...defaultBoards, ...erpList])).sort();
+    return Array.from(new Set([...defaultUnis, ...erpList])).sort();
   }, []);
 
   const languageOptions = useMemo(() => {
@@ -1966,6 +1975,7 @@ export function OnboardingWizardPage() {
                               value={formData["org_details"]?.["name"] ?? fetchedOrgName ?? ""}
                               onChange={(e) => handleFieldChange("org_details", "name", e.target.value)}
                               placeholder="e.g. Cambridge International School"
+                              fieldState={formData["org_details"]?.["name"] ? "normal" : (fetchedOrgName ? "prefilled" : "normal")}
                             />
                           </div>
                           <div>
@@ -1975,7 +1985,7 @@ export function OnboardingWizardPage() {
                             <Input
                               value={normalizeOrgType(formData["org_details"]?.["type"] || fetchedOrgType || "Junior College")}
                               disabled
-                              className="bg-secondary/40 cursor-not-allowed font-medium text-foreground opacity-80"
+                              fieldState="locked"
                             />
                           </div>
                           <div>
@@ -1984,9 +1994,23 @@ export function OnboardingWizardPage() {
                               className="w-full h-10 rounded-lg border-input bg-background"
                               value={formData["org_details"]?.["board"] || "CBSE"}
                               onChange={(e) => handleFieldChange("org_details", "board", e.target.value)}
+                              fieldState={formData["org_details"]?.["board"] && formData["org_details"]?.["board"] !== "CBSE" ? "normal" : "default"}
                             >
                               {boardOptions.map((boardName: string) => (
                                 <option key={boardName} value={boardName}>{boardName}</option>
+                              ))}
+                            </ResponsiveSelect>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold block mb-1.5">Affiliated University</label>
+                            <ResponsiveSelect
+                              className="w-full h-10 rounded-lg border-input bg-background"
+                              value={formData["org_details"]?.["university"] || "Not Applicable"}
+                              onChange={(e) => handleFieldChange("org_details", "university", e.target.value)}
+                              fieldState={formData["org_details"]?.["university"] && formData["org_details"]?.["university"] !== "Not Applicable" ? "normal" : "default"}
+                            >
+                              {universityOptions.map((uniName: string) => (
+                                <option key={uniName} value={uniName}>{uniName}</option>
                               ))}
                             </ResponsiveSelect>
                           </div>
@@ -2011,10 +2035,11 @@ export function OnboardingWizardPage() {
                             <label className="text-sm font-semibold block mb-1.5">
                               {normalizeOrgType(formData["org_details"]?.["type"] || fetchedOrgType || "Junior College")} Address <span className="text-danger">*</span>
                             </label>
-                            <Input
+                            <Textarea
                               value={(formData["org_details"]?.["address"] !== undefined && formData["org_details"]?.["address"] !== "") ? formData["org_details"].address : (fetchedAddress || "")}
                               onChange={(e) => handleFieldChange("org_details", "address", e.target.value)}
                               placeholder={`Complete registered address of the ${normalizeOrgType(formData["org_details"]?.["type"] || fetchedOrgType || "Junior College").toLowerCase()}`}
+                              fieldState={formData["org_details"]?.["address"] ? "normal" : (fetchedAddress ? "prefilled" : "normal")}
                             />
                           </div>
 
@@ -2026,6 +2051,7 @@ export function OnboardingWizardPage() {
                               onChange={(e) => {
                                 handleFieldChange("org_details", "state", e.target.value);
                               }}
+                              fieldState={formData["org_details"]?.["state"] ? "normal" : (fetchedState ? "prefilled" : "normal")}
                             >
                               <option value="">Select State...</option>
                               {selectedState && !stateOptions.includes(selectedState) && (
@@ -2044,6 +2070,7 @@ export function OnboardingWizardPage() {
                               onChange={(e) => {
                                 handleFieldChange("org_details", "district", e.target.value);
                               }}
+                              fieldState={formData["org_details"]?.["district"] ? "normal" : (fetchedDistrict ? "prefilled" : "normal")}
                             >
                               <option value="">Select District...</option>
                               {selectedDistrict && !districtOptions.includes(selectedDistrict) && (
@@ -2060,6 +2087,7 @@ export function OnboardingWizardPage() {
                               className="w-full h-10 rounded-lg border-input bg-background"
                               value={selectedTaluka}
                               onChange={(e) => handleFieldChange("org_details", "taluka", e.target.value)}
+                              fieldState={formData["org_details"]?.["taluka"] ? "normal" : (fetchedTaluka ? "prefilled" : "normal")}
                             >
                               <option value="">Select Taluka...</option>
                               {selectedTaluka && !talukaOptions.includes(selectedTaluka) && (
@@ -2076,6 +2104,7 @@ export function OnboardingWizardPage() {
                               value={formData["org_details"]?.["city"] ?? fetchedCity ?? ""}
                               onChange={(e) => handleFieldChange("org_details", "city", e.target.value)}
                               placeholder="e.g. Bhinga or Gohpur"
+                              fieldState={formData["org_details"]?.["city"] ? "normal" : (fetchedCity ? "prefilled" : "normal")}
                             />
                           </div>
                           <div>
