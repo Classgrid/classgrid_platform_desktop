@@ -31,6 +31,7 @@ export type ProfileData = {
   organization_id?: {
     id: string;
     name: string;
+    subdomain?: string;
     logo_url?: string;
     address?: string;
     website?: string;

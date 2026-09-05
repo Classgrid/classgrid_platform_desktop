@@ -41,7 +41,7 @@ const normalizePushNotifications = (pushNotifications) => {
 // =======================
 router.get("/profile", isAuthenticated, async (req, res) => {
   try {
-    const cacheKey = `user:profile:${req.user._id}`;
+    const cacheKey = `user:profile:v2:${req.user._id}`;
     let cached = null;
     try {
       cached = await redis.get(cacheKey);
@@ -109,6 +109,7 @@ router.get("/profile", isAuthenticated, async (req, res) => {
         organization_id: user.organization_id ? {
           id: user.organization_id._id,
           name: user.organization_id.name,
+          subdomain: user.organization_id.subdomain || "",
           logo_url: user.organization_id.logo_url,
           rollNumberLabel: user.organization_id.academic_config?.identifierLabel || user.organization_id.rollNumberLabel || "PRN",
           address: user.organization_id.address || "",
