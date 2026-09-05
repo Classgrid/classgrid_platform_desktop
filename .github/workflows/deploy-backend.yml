@@ -51,10 +51,19 @@ jobs:
             # INSTALL AND FORCE RESTART REDIS TO FIX THE OUTAGE
             sudo apt-get update || true
             sudo DEBIAN_FRONTEND=noninteractive apt-get install -y redis-server || true
+            
+            # KILL ANY ZOMBIE REDIS PROCESSES AND CLEAR CORRUPTED PID FILES
+            sudo pkill -9 redis-server || true
+            sudo rm -f /var/run/redis/redis-server.pid || true
+            
             # FIX IPV6 BIND ERROR ON EC2 WHICH CAUSES REDIS TO CRASH ON STARTUP
             sudo sed -i 's/bind 127.0.0.1 ::1/bind 127.0.0.1/' /etc/redis/redis.conf || true
+            
+            # FORCE START REDIS USING MULTIPLE FALLBACK METHODS
+            sudo systemctl daemon-reload || true
             sudo systemctl enable redis-server || true
-            sudo systemctl restart redis-server || sudo service redis restart || true
+            sudo systemctl start redis-server || sudo service redis start || sudo redis-server /etc/redis/redis.conf || true
+            
             pm2 restart all --update-env
 
 
