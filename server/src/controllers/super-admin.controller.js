@@ -987,11 +987,11 @@ export const assignLead = async (req, res) => {
         const lead = await DemoRequest.findById(id);
         if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
 
-        lead.assignedTo = req.user._id;
+        lead.assignedTo = req.body.userId || req.user._id;
         lead.assignedAt = new Date();
         await lead.save();
 
-        res.json({ success: true, message: "Lead assigned to you" });
+        res.json({ success: true, message: req.body.userId ? "Lead assigned to user" : "Lead assigned to you" });
     } catch (err) {
         console.error("[SuperAdmin] assignLead error:", err.message);
         res.status(500).json({ success: false, message: "Server error" });
@@ -1295,5 +1295,246 @@ export const regenerateLeadActivation = async (req, res) => {
     } catch (err) {
         console.error("[SuperAdmin] regenerateLeadActivation error:", err.message);
         res.status(500).json({ success: false, message: "Failed to regenerate activation" });
+    }
+};
+
+// ══════════════════════════════════════════════════════════════
+//  16. UPDATE LEAD STATUS & NOTES
+// ══════════════════════════════════════════════════════════════
+export const updateLeadStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        
+        if (!["new", "contacted", "demo_scheduled", "pending", "closed", "converted"].includes(status)) {
+            return res.status(400).json({ success: false, message: "Invalid status" });
+        }
+
+        const DemoRequest = (await import("../models/DemoRequest.js")).default;
+        const lead = await DemoRequest.findById(id);
+        if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+        lead.status = status;
+        await lead.save();
+
+        res.json({ success: true, message: "Lead status updated", lead });
+    } catch (err) {
+        console.error("[SuperAdmin] updateLeadStatus error:", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+        const meetingUrl = String(req.body?.meetingUrl || "").trim();
+        if (!meetingUrl) {
+            return res.status(400).json({ success: false, message: "meetingUrl is required" });
+        }
+
+        const timezone = String(req.body?.timezone || "Asia/Kolkata").trim() || "Asia/Kolkata";
+        const provider = normalizeMeetingProvider(req.body?.provider);
+        const meetingId = String(req.body?.meetingId || "").trim();
+        const notes = String(req.body?.notes || "").trim();
+
+        const lead = await DemoRequest.findById(id).populate("assignedTo", "name email profilePicture");
+        if (!lead) {
+            return res.status(404).json({ success: false, message: "Lead not found" });
+        }
+
+        // Determine if this is a reschedule
+        const isReschedule = !!lead.meetingScheduledAt;
+
+        lead.meetingStatus = "scheduled";
+        lead.meetingProvider = provider;
+        lead.meetingScheduledAt = scheduledAt;
+        lead.meetingTimezone = timezone;
+        lead.meetingUrl = meetingUrl;
+        lead.meetingId = meetingId;
+        lead.meetingNotes = notes;
+        lead.meetingScheduledByUserId = req.user?._id || null;
+        lead.meetingScheduledBySource = "super_admin";
+
+        if (lead.status === "new") {
+            lead.status = "contacted";
+        }
+        lead.lifecycleStage = "meeting_scheduled";
+
+        await lead.save();
+        await trackOnboardingEvent({
+            demoRequestId: lead._id,
+            userId: req.user?._id || null,
+            eventType: "meeting_scheduled",
+            stage: "meeting_scheduled",
+            actorRole: "super_admin",
+            metadata: {
+                provider,
+                timezone,
+            },
+        });
+
+        await sendDemoMeetingScheduledNotification({
+            demoRequest: lead,
+            meetingDetails: {
+                provider,
+                scheduledAt,
+                timezone,
+                meetingUrl,
+                notes,
+            },
+            scheduledBy: "super_admin",
+            isReschedule,
+            repName: lead.assignedTo?.name || "Classgrid Team",
+            repEmail: lead.assignedTo?.email || "",
+            repAvatar: lead.assignedTo?.profilePicture || "",
+        });
+
+        return res.json({
+            success: true,
+            message: "Meeting scheduled and emails queued",
+            lead,
+        });
+    } catch (err) {
+        console.error("[SuperAdmin] scheduleLeadMeeting error:", err.message);
+        return res.status(500).json({ success: false, message: "Failed to schedule meeting" });
+    }
+};
+
+export const deleteDemoLead = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const lead = await DemoRequest.findByIdAndDelete(id);
+        if (!lead) {
+            return res.status(404).json({ success: false, message: "Lead not found" });
+        }
+        return res.json({ success: true, message: "Demo lead deleted successfully" });
+    } catch (err) {
+        console.error("[SuperAdmin] deleteDemoLead error:", err.message);
+        return res.status(500).json({ success: false, message: "Failed to delete demo lead" });
+    }
+};
+
+// ══════════════════════════════════════════════════════════════
+//  14. SERVER MAINTENANCE — Clean Logs
+// ══════════════════════════════════════════════════════════════
+export const cleanLogs = async (req, res) => {
+    try {
+        const { exec } = await import("child_process");
+        const util = await import("util");
+        const execPromise = util.promisify(exec);
+
+        const command = "pm2 flush && sudo journalctl --vacuum-size=100M && npm cache clean --force && sudo apt-get clean";
+        
+        const { stdout, stderr } = await execPromise(command);
+        
+        // Log the action
+        const SystemLog = (await import("../models/SystemLog.js")).default;
+        await SystemLog.create({
+            level: "warn",
+            message: "Server logs cleaned by Super Admin",
+            context: "Maintenance",
+            metadata: {
+                timestamp: new Date(),
+                superAdminId: req.user._id,
+                output: stdout.substring(0, 500)
+            }
+        });
+
+        res.json({
+            success: true,
+            message: "Logs cleaned successfully",
+            output: stdout,
+            errors: stderr
+        });
+    } catch (err) {
+        console.error("[SuperAdmin] cleanLogs error:", err.message);
+        res.status(500).json({ 
+            success: false, 
+            message: "Failed to clean logs",
+            error: err.message
+        });
+    }
+};
+
+// ══════════════════════════════════════════════════════════════
+//  15. REGENERATE LEAD ACTIVATION
+// ══════════════════════════════════════════════════════════════
+export const regenerateLeadActivation = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const lead = await DemoRequest.findById(id);
+        if (!lead || !lead.provisionedAdminId) {
+            return res.status(404).json({ success: false, message: "Lead not found or not yet provisioned" });
+        }
+
+        const admin = await User.findById(lead.provisionedAdminId);
+        if (!admin) {
+            return res.status(404).json({ success: false, message: "Provisioned admin not found" });
+        }
+
+        const { generateActivationCredentials } = await import("../services/lead-conversion.service.js");
+        const credentials = generateActivationCredentials();
+
+        admin.activationToken = credentials.hashedActivationToken;
+        admin.activationTokenExpires = credentials.expiresAt;
+        admin.activationCodeHash = credentials.activationCodeHash;
+        admin.activationCodeExpires = credentials.expiresAt;
+        await admin.save();
+
+        const ONBOARDING_URL = process.env.NODE_ENV === "production" ? "https://onboard.classgrid.in" : "http://onboard.localhost:5173";
+        const activationLink = `${ONBOARDING_URL}/?token=${credentials.rawActivationToken}`;
+
+        res.json({
+            success: true,
+            activation: {
+                activationLink,
+                activationCode: credentials.activationCode,
+                expiresAt: credentials.expiresAt
+            }
+        });
+    } catch (err) {
+        console.error("[SuperAdmin] regenerateLeadActivation error:", err.message);
+        res.status(500).json({ success: false, message: "Failed to regenerate activation" });
+    }
+};
+
+// ══════════════════════════════════════════════════════════════
+//  16. UPDATE LEAD STATUS & NOTES
+// ══════════════════════════════════════════════════════════════
+export const updateLeadStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        
+        if (!["new", "contacted", "demo_scheduled", "pending", "closed", "converted"].includes(status)) {
+            return res.status(400).json({ success: false, message: "Invalid status" });
+        }
+
+        const DemoRequest = (await import("../models/DemoRequest.js")).default;
+        const lead = await DemoRequest.findById(id);
+        if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+        lead.status = status;
+        await lead.save();
+
+        res.json({ success: true, message: "Lead status updated", lead });
+    } catch (err) {
+        console.error("[SuperAdmin] updateLeadStatus error:", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+export const updateMeetingNotes = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { meetingNotes, meetingStatus, isOrganizationVetted } = req.body;
+
+        const DemoRequest = (await import("../models/DemoRequest.js")).default;
+        const lead = await DemoRequest.findById(id);
+        if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+        if (meetingNotes !== undefined) lead.meetingNotes = meetingNotes;
+        if (meetingStatus !== undefined) lead.meetingStatus = meetingStatus;
+        if (isOrganizationVetted !== undefined) lead.isOrganizationVetted = isOrganizationVetted;
+        await lead.save();
+
+        res.json({ success: true, message: "Meeting notes updated", lead });
+    } catch (err) {
+        console.error("[SuperAdmin] updateMeetingNotes error:", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
     }
 };

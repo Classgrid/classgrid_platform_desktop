@@ -44,8 +44,10 @@ import { Input } from "@/components/marketing_ui/input";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/marketing_ui/tooltip";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
-import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
-import { useLeads, useApproveLead, useScheduleMeeting, useDeleteLead, useRegenerateActivation } from "../queries/useLeads";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/marketing_ui/dropdown-menu";
+import { Textarea } from "@/components/marketing_ui/textarea";
+import { useLeads, useApproveLead, useScheduleMeeting, useDeleteLead, useRegenerateActivation, useAssignLead, useUpdateLeadStatus, useUpdateMeetingNotes } from "../queries/useLeads";
+import { useAllUsers } from "../queries/useUsers";
 import { formatDate } from "@/utils/dateUtils";
 import { formatOrgType } from "@/utils/orgHelpers";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
@@ -55,14 +57,20 @@ import { SandboxProvisioningWizard } from "../components/SandboxProvisioningWiza
 export function LeadDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading } = useLeads();
+  const { data: usersData } = useAllUsers();
   const scheduleMutation = useScheduleMeeting();
   const deleteMutation = useDeleteLead();
   const regenerateMutation = useRegenerateActivation();
+  const assignMutation = useAssignLead();
+  const statusMutation = useUpdateLeadStatus();
+  const notesMutation = useUpdateMeetingNotes();
   const navigate = useNavigate();
 
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [meetingUrl, setMeetingUrl] = useState("");
   const [isEditingMeeting, setIsEditingMeeting] = useState(false);
+  const [meetingNotes, setMeetingNotes] = useState("");
+  const [isOrganizationChecked, setIsOrganizationChecked] = useState(false);
   const [provisionedData, setProvisionedData] = useState<any>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showProvisioningWizard, setShowProvisioningWizard] = useState(false);
@@ -90,6 +98,12 @@ export function LeadDetailsPage() {
     }
     if (lead?.meetingUrl) {
       setMeetingUrl(lead.meetingUrl);
+    }
+    if (lead?.meetingNotes) {
+      setMeetingNotes(lead.meetingNotes);
+    }
+    if (lead?.isOrganizationVetted !== undefined) {
+      setIsOrganizationChecked(lead.isOrganizationVetted);
     }
   }, [lead]);
 
@@ -195,43 +209,64 @@ export function LeadDetailsPage() {
             Submitted on {formatDate(lead.createdAt, "dd MMM yyyy, hh:mm a")}
           </p>
           <div className="mt-4">
-              <TooltipProvider>
-                {!lead.assignedTo ? (
-                  <Tooltip delay={200}>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center justify-center h-8 w-8 bg-muted/40 border border-border/50 rounded-full cursor-default hover:bg-muted/80 transition-colors">
-                        <div className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>Unassigned (Needs Attention)</TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <Tooltip delay={200}>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center gap-2 cursor-default hover:opacity-80 transition-opacity">
-                        <div className="relative flex items-center justify-center h-8 w-8 rounded-full border border-border/50">
-                          {/* Green Dot Indicator */}
-                          <div className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-background z-10" />
-                          
-                          {/* Photo or Fallback Initial */}
-                          {(lead.assignedTo as any).avatarUrl || (lead.assignedTo as any).profilePicture || (lead.assignedTo as any).picture ? (
-                            <img src={(lead.assignedTo as any).avatarUrl || (lead.assignedTo as any).profilePicture || (lead.assignedTo as any).picture} alt={lead.assignedTo.name} className="h-full w-full rounded-full object-cover" />
-                          ) : (
-                            <div className="h-full w-full rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center text-xs font-bold">
-                              {lead.assignedTo.name?.charAt(0).toUpperCase() || 'U'}
-                            </div>
-                          )}
+              <div className="flex items-center gap-3">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1.5 pr-3 rounded-full border border-border/50 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      {!lead.assignedTo ? (
+                        <>
+                          <div className="flex items-center justify-center h-7 w-7 bg-muted/80 rounded-full">
+                            <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
+                          </div>
+                          <span className="text-sm font-medium text-muted-foreground mr-1">Unassigned</span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="relative flex items-center justify-center h-7 w-7 rounded-full border border-border/50">
+                            <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 border border-background z-10" />
+                            {(lead.assignedTo as any).avatarUrl || (lead.assignedTo as any).profilePicture || (lead.assignedTo as any).picture ? (
+                              <img src={(lead.assignedTo as any).avatarUrl || (lead.assignedTo as any).profilePicture || (lead.assignedTo as any).picture} alt={lead.assignedTo.name} className="h-full w-full rounded-full object-cover" />
+                            ) : (
+                              <div className="h-full w-full rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center text-xs font-bold">
+                                {lead.assignedTo.name?.charAt(0).toUpperCase() || 'U'}
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-sm font-medium text-foreground">{lead.assignedTo.name}</span>
+                        </>
+                      )}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56">
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Assign to
+                    </div>
+                    {usersData?.users?.map((user) => (
+                      <DropdownMenuItem 
+                        key={user._id} 
+                        onClick={() => assignMutation.mutate({ id: id!, userId: user._id }, {
+                          onSuccess: () => toast.success(`Assigned to ${user.name}`),
+                          onError: (err: any) => toast.error(err?.message || "Failed to assign lead")
+                        })}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                          {user.name?.charAt(0).toUpperCase()}
                         </div>
-                        <span className="text-sm font-medium text-foreground">{lead.assignedTo.name}</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium leading-none">{user.name}</span>
+                          <span className="text-xs text-muted-foreground mt-0.5">{user.email}</span>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                    {!usersData?.users?.length && (
+                      <div className="px-2 py-3 text-sm text-center text-muted-foreground">
+                        No admins found
                       </div>
-                    </TooltipTrigger>
-                    <TooltipContent className="flex flex-col items-start gap-0.5 py-2">
-                      <span className="font-semibold text-sm">Assigned to {lead.assignedTo.name}</span>
-                      {lead.assignedAt && <span className="text-xs opacity-70">on {formatDate(lead.assignedAt, "dd MMM yyyy, hh:mm a")}</span>}
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </TooltipProvider>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
         </div>
       </div>
@@ -410,6 +445,95 @@ export function LeadDetailsPage() {
                         <span>⚠ This meeting was scheduled for the past.</span>
                       </div>
                     )}
+                    
+                    <div className="pt-4 border-t border-border">
+                      <label className="text-xs font-medium text-muted-foreground block mb-2">Meeting Status</label>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="w-full justify-between h-10 text-left font-normal bg-background">
+                            <span className="capitalize">{lead.meetingStatus?.replace("_", " ") || "Pending"}</span>
+                            <div className="flex flex-col gap-0.5 opacity-50">
+                              <div className="w-2 h-px bg-current" />
+                              <div className="w-2 h-px bg-current" />
+                              <div className="w-2 h-px bg-current" />
+                            </div>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-64">
+                          {["pending", "scheduled", "completed", "rescheduled", "missed", "cancelled"].map((status) => (
+                            <DropdownMenuItem
+                              key={status}
+                              onClick={() => {
+                                notesMutation.mutate({ id: id!, meetingStatus: status }, {
+                                  onSuccess: () => toast.success(`Meeting status updated to ${status.replace("_", " ")}`),
+                                  onError: () => toast.error("Failed to update status")
+                                });
+                              }}
+                            >
+                              <span className="capitalize">{status.replace("_", " ")}</span>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    <div className="pt-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs font-medium text-muted-foreground">Meeting Notes</label>
+                        {!isEditingNotes && (
+                          <Button variant="ghost" size="sm" onClick={() => setIsEditingNotes(true)} className="h-6 text-[10px] px-2">Edit</Button>
+                        )}
+                      </div>
+                      
+                      {isEditingNotes ? (
+                        <div className="space-y-2 animate-in fade-in zoom-in-95 duration-200">
+                          <Textarea 
+                            value={meetingNotes} 
+                            onChange={(e) => setMeetingNotes(e.target.value)} 
+                            placeholder="Type notes from the demo here..."
+                            className="min-h-[120px] text-sm resize-y"
+                          />
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="flex-1 h-8"
+                              onClick={() => {
+                                setMeetingNotes(lead.meetingNotes || "");
+                                setIsEditingNotes(false);
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="secondary"
+                              className="flex-1 h-8"
+                              disabled={notesMutation.isPending}
+                              onClick={() => {
+                                notesMutation.mutate({ id: id!, notes: meetingNotes }, {
+                                  onSuccess: () => {
+                                    toast.success("Meeting notes saved");
+                                    setIsEditingNotes(false);
+                                  },
+                                  onError: () => toast.error("Failed to save notes")
+                                });
+                              }}
+                            >
+                              {notesMutation.isPending ? "Saving..." : "Save Notes"}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-muted/30 border border-border rounded-lg p-3 text-sm min-h-[80px] whitespace-pre-wrap text-muted-foreground">
+                          {lead.meetingNotes ? (
+                            <span className="text-foreground">{lead.meetingNotes}</span>
+                          ) : (
+                            "No notes have been added yet."
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   /* Edit Mode */
@@ -543,8 +667,24 @@ export function LeadDetailsPage() {
                       {date && meetingUrl ? <CheckCircle2 size={14} className="text-emerald-500" /> : <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />}
                       Meeting scheduled
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />
+                    <div 
+                      className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                      onClick={() => {
+                        const newValue = !isOrganizationChecked;
+                        setIsOrganizationChecked(newValue);
+                        notesMutation.mutate({ id: id!, isOrganizationVetted: newValue }, {
+                          onError: () => {
+                            toast.error("Failed to save organization check");
+                            setIsOrganizationChecked(!newValue);
+                          }
+                        });
+                      }}
+                    >
+                      {isOrganizationChecked ? (
+                        <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                      ) : (
+                        <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30 shrink-0" />
+                      )}
                       Organization checked
                     </div>
                   </div>
@@ -554,13 +694,14 @@ export function LeadDetailsPage() {
                   </p>
                   
                   <button 
+                    disabled={!lead?.assignedTo || !date || !meetingUrl || !isOrganizationChecked}
                     onClick={() => setShowProvisioningWizard(true)}
                     className="
                       min-h-14 w-full rounded-xl
                       bg-emerald-500 px-5
                       text-sm font-bold text-emerald-950
                       shadow-[0_10px_30px_rgba(16,185,129,0.22)]
-                      transition
+                      transition disabled:opacity-50 disabled:cursor-not-allowed
                       hover:bg-emerald-400
                       active:scale-[0.99]
                     "
