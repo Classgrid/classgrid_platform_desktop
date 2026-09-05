@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { MASTER_FIELD_POOL, DEFAULT_REQUIRED_FIELD_KEYS } from './master-fields.js';
 
 // 3. ORG-TYPE DEFAULTS — Which fields are pre-toggled ON

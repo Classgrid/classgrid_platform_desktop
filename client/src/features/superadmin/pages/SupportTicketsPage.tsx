@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";

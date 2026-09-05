@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 // ══════════════════════════════════════════════════════════════
 //  FIREBASE ADMIN SDK SERVICE
 //  Handles server-side push notification delivery via FCM

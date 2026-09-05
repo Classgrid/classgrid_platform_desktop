@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Bot, Send, Loader2, Sparkles, BookOpen, FileText, Mic, StopCircle } from 'lucide-react';
 import { useCurrentUser } from '@/features/auth/queries/useCurrentUser';

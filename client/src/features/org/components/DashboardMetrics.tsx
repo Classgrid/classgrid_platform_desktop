@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { ClipboardCheck, GraduationCap, UsersRound, WalletCards } from "lucide-react";
 import { StatCard } from "@/components/marketing_ui/StatCard";
 import { useInstitutionProfile } from "../queries/useInstitutionProfile";

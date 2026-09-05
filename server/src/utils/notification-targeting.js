@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 const DEPARTMENT_ADMIN_USER_ROLES = ["hod"];
 const DEPARTMENT_ADMIN_APP_ROLES = ["hod", "department_admin", "dept_admin"];
 const FACULTY_ROLES = ["faculty", "teacher"];

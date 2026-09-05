@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useClassroomChat, useSendClassroomMessage } from '../queries/useClassroomChat';
 import { useCurrentUser } from '@/features/auth/queries/useCurrentUser';

@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 // useTerminology.ts — Fetches & caches org terminology labels
 // This is the MOST IMPORTANT hook in the classroom feature.
 // Every UI label MUST come from here. NEVER hardcode "Semester", "Division", etc.

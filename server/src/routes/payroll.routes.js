@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import express from "express";
 import { calculatePayroll, getPayrollSummary, getMyPayslip } from "../controllers/payroll.controller.js";
 import { isAuthenticated, requireRole } from "../middleware/auth.middleware.js";

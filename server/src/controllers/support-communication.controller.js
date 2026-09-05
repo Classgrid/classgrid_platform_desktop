@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import SupportConversation from "../models/SupportConversation.js";
 import Organization from "../models/Organization.js";
 import { addSupportMessage, createSupportConversation, markSupportConversationRead, serializeConversation, sanitizeDepartment, sanitizePriority } from "../services/support-communication.service.js";

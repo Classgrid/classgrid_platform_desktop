@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { BarChart3, TrendingUp, Users, RefreshCw } from "lucide-react";
 import { StatCard } from "@/components/marketing_ui/StatCard";
 import { SectionPanel } from "@/components/marketing_ui/SectionPanel";

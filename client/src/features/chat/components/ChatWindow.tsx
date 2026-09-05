@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { useLayoutEffect, useRef, useMemo, useEffect, useState } from "react";
 import { useQueryClient, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Spinner } from "@/components/marketing_ui/spinner";

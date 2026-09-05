@@ -15,6 +15,14 @@
  * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
  * ─────────────────────────────────────────────────────────
  */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
 const DEFAULT_PLATFORM_API_BASE_URL = "https://api.classgrid.in";
 const TENANT_INFO_PATH = "/api/tenant/info";
 const DEFAULT_TIMEOUT_MS = 5000;

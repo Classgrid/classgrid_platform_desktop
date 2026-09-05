@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import React, { useState, useEffect } from "react";
 import { Globe, CheckCircle2, AlertCircle, AlertTriangle, Copy, Trash2, XCircle, ExternalLink, Monitor, LayoutDashboard, Pencil } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";

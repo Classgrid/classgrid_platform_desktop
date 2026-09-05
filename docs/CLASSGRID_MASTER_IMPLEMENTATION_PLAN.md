@@ -1,5 +1,13 @@
 <!--
 ─────────────────────────────────────────────────────────
+🚨 HOSTING & ARCHITECTURE RULE 🚨
+1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+2. FRONTEND IS HOSTED ON VERCEL
+─────────────────────────────────────────────────────────
+-->
+
+<!--
+─────────────────────────────────────────────────────────
 🚨 NAMING CONVENTION RULE 🚨
 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
 2. "CLASSGRID ERP" is the actual PRODUCT NAME.

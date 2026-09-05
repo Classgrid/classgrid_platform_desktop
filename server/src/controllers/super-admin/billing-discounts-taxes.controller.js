@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import Discount from "../../models/Discount.js";
 import OrganizationCreditAccount from "../../models/OrganizationCreditAccount.js";
 import OrganizationCreditEntry from "../../models/OrganizationCreditEntry.js";

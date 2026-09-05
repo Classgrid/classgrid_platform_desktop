@@ -25,6 +25,14 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { useEffect, useState, type FormEvent } from "react";
 import { applyBootstrappedBranding } from "@/lib/tenant-bootstrap";
 import { Mail, MapPin, HelpCircle, Lock, Eye, EyeOff, Globe, Github, ArrowLeft } from "lucide-react";
