@@ -102,7 +102,7 @@ function FileUploadField({ field, value, onChange, disabled }: { field: any, val
       const ext = file.name.split('.').pop() || "png";
       const fileName = `doc-${Date.now()}.${ext}`;
 
-      const res = await apiClient.post("/api/user/upload-url", {
+      const res = await apiClient.post("/api/user/upload-aws-url", {
         fileName,
         fileType: file.type
       });
