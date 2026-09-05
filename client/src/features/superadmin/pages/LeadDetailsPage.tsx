@@ -80,8 +80,15 @@ export function LeadDetailsPage() {
   const [isEditingDemoReview, setIsEditingDemoReview] = useState(false);
 
   const lead = data?.leads.find(l => l._id === id);
-  const superAdmins = (Array.isArray(usersData) ? usersData : usersData?.users || [])?.filter((u: any) => u.role === 'super_admin' || u.role === 'co_super_admin') || [];
-
+  let superAdmins = (Array.isArray(usersData) ? usersData : usersData?.users || [])?.filter((u: any) => u.role === 'super_admin' || u.role === 'co_super_admin') || [];
+  
+  // If the lead is already assigned to someone, ensure they are in the list so the dropdown renders their name properly
+  if (lead?.assignedTo && typeof lead.assignedTo === 'object') {
+    const isAlreadyInList = superAdmins.some((admin: any) => admin._id === lead.assignedTo._id);
+    if (!isAlreadyInList) {
+      superAdmins = [lead.assignedTo, ...superAdmins];
+    }
+  }
   const setBreadcrumbs = useBreadcrumbStore((state) => state.setBreadcrumbs);
 
   useEffect(() => {
