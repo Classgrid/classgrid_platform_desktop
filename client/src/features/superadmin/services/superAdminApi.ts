@@ -79,6 +79,7 @@ export type Lead = {
   meetingNotes: string;
   assignedTo?: { _id: string; name: string; email: string };
   assignedAt?: string;
+  demoReview?: string;
   conversionStatus: "not_started" | "in_progress" | "provisioned" | "failed";
   provisionedOrganizationId: string | null;
   isOrganizationVetted?: boolean;
