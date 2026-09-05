@@ -91,8 +91,10 @@ export function LeadDetailsPage() {
       const foundUser = allUsers.find((u: any) => u._id === currentAssignedId);
       if (foundUser) {
         superAdmins = [foundUser, ...superAdmins];
-      } else if (typeof lead?.assignedTo === 'object') {
+      } else if (typeof lead?.assignedTo === 'object' && lead.assignedTo !== null) {
         superAdmins = [lead.assignedTo, ...superAdmins];
+      } else {
+        superAdmins = [{ _id: currentAssignedId, name: "Unknown Admin" }, ...superAdmins];
       }
     }
   }

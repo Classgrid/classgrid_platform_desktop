@@ -153,7 +153,7 @@ export function LeadTable({ leads, isLoading, isError, onManage, onAssign, assig
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Assigned on {row.assignedAt ? formatDate(row.assignedAt, "dd MMM yyyy, hh:mm a") : "Unknown"}</p>
+                  <p>{row.assignedAt ? `Assigned on ${formatDate(row.assignedAt, "dd MMM yyyy, hh:mm a")}` : "Assigned"}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
