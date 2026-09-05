@@ -1233,6 +1233,28 @@ export const deleteDemoLead = async (req, res) => {
     }
 };
 
+export const requestVettingApproval = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const lead = await DemoRequest.findById(id).populate("assignedTo", "name email");
+        if (!lead) {
+            return res.status(404).json({ success: false, message: "Lead not found" });
+        }
+        
+        // Notify Nikhil
+        const { sendVettingApprovalRequestNotification } = await import("../services/notification-email.service.js");
+        await sendVettingApprovalRequestNotification({
+            demoRequest: lead,
+            requester: req.user
+        });
+        
+        return res.json({ success: true, message: "Approval request sent" });
+    } catch (err) {
+        console.error("[SuperAdmin] requestVettingApproval error:", err.message);
+        return res.status(500).json({ success: false, message: "Failed to send approval request" });
+    }
+};
+
 // ══════════════════════════════════════════════════════════════
 //  14. SERVER MAINTENANCE — Clean Logs
 // ══════════════════════════════════════════════════════════════
