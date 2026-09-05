@@ -721,7 +721,21 @@ export function LeadDetailsPage() {
                     onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingStatus: val } })}
                   >
                     <SelectTrigger className="w-full h-10 bg-background">
-                      <SelectValue />
+                      <div className="flex items-center gap-2">
+                        {lead.meetingStatus === "scheduled" ? (
+                          <><span className="h-2 w-2 rounded-full bg-blue-500" /><span className="font-medium text-blue-500">Scheduled</span></>
+                        ) : lead.meetingStatus === "completed" ? (
+                          <><span className="h-2 w-2 rounded-full bg-emerald-500" /><span className="font-medium text-emerald-500">Completed</span></>
+                        ) : lead.meetingStatus === "cancelled" ? (
+                          <><span className="h-2 w-2 rounded-full bg-red-500" /><span className="font-medium text-red-500">Cancelled</span></>
+                        ) : lead.meetingStatus === "rescheduled" ? (
+                          <><span className="h-2 w-2 rounded-full bg-purple-500" /><span className="font-medium text-purple-500">Rescheduled</span></>
+                        ) : lead.meetingStatus === "missed" ? (
+                          <><span className="h-2 w-2 rounded-full bg-orange-500" /><span className="font-medium text-orange-500">Missed</span></>
+                        ) : (
+                          <><span className={`h-2 w-2 rounded-full ${lead.assignedTo ? 'bg-orange-500' : 'bg-yellow-500'}`} /><span className={`font-medium ${lead.assignedTo ? 'text-orange-500' : 'text-yellow-500'}`}>{lead.assignedTo ? 'Contacted' : 'Pending'}</span></>
+                        )}
+                      </div>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pending">
