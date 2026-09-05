@@ -185,9 +185,9 @@ export function OrganizationsPage() {
       header: "Owner",
       key: "ownerEmail",
       render: (_val: any, row: any) => (
-        <div>
-          <div className="font-medium text-foreground">{row.ownerName || "Owner not set"}</div>
-          <div className="text-xs text-muted-foreground">{row.ownerEmail || "No owner email"}</div>
+        <div className="flex flex-col min-w-0 max-w-[150px]">
+          <div className="font-medium text-foreground truncate">{row.ownerName || "Owner not set"}</div>
+          <div className="text-xs text-muted-foreground truncate" title={row.ownerEmail}>{row.ownerEmail || "No owner email"}</div>
         </div>
       ),
     },

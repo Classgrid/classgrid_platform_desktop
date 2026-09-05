@@ -503,7 +503,7 @@ export function LeadDetailsPage() {
                     </div>
                   )}
 
-                  <Button className="w-full mb-2" variant="primary" onClick={() => window.open(`/superadmin/detail/${provisionedData?.orgId || provisionedData?.orgName || 'unknown'}`, '_self')}>
+                  <Button className="w-full mb-2" variant="primary" onClick={() => window.open(`/superadmin/detail/${lead?.provisionedOrganizationId || provisionedData?.orgId || provisionedData?.orgName || 'unknown'}`, '_self')}>
                     View Organization Details &rarr;
                   </Button>
                   
