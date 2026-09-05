@@ -218,6 +218,9 @@ export function OnboardingWizardPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
 
+  const [isTokenValid, setIsTokenValid] = useState<boolean | null>(null);
+  const [tokenError, setTokenError] = useState("");
+
   // Persisted state initialization
   const [currentStep, setCurrentStep] = useState(() => {
     try {
@@ -739,6 +742,7 @@ export function OnboardingWizardPage() {
       validateActivationToken(token)
         .then((res) => {
           if (res.valid) {
+            setIsTokenValid(true);
             if (res.email) setFetchedEmail(res.email);
             if (res.phone) setPhone(prev => prev || res.phone || "");
             // Only set adminName from fetch if it's currently empty (don't overwrite user's typing from localStorage)
@@ -779,10 +783,15 @@ export function OnboardingWizardPage() {
                 }
               };
             });
+          } else {
+            setIsTokenValid(false);
+            setTokenError("This activation link is invalid or has expired after 12 hours.");
           }
         })
         .catch((err) => {
           console.error("Token validation failed:", err);
+          setIsTokenValid(false);
+          setTokenError("Failed to validate link. It might be expired or invalid.");
         })
         .finally(() => {
           setIsInitializing(false);
@@ -1100,6 +1109,25 @@ export function OnboardingWizardPage() {
           </h1>
           <p className="text-muted-foreground mt-8 mb-6">The page you are looking for doesn't exist or has been moved.</p>
           <Button variant="outline" className="h-10 px-8" onClick={() => window.location.href = 'https://classgrid.in'}>Return to Homepage</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isTokenValid === false) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full text-center relative z-10">
+          <div className="size-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <ShieldCheck className="size-10" />
+          </div>
+          <h1 className="text-3xl font-extrabold text-foreground tracking-tight mb-2">
+            Link Expired
+          </h1>
+          <p className="text-muted-foreground mb-8">
+            {tokenError || "This activation link is invalid or has expired after 12 hours. Please request a new one from your administrator or contact support."}
+          </p>
+          <Button className="h-10 px-8" onClick={() => window.location.href = 'https://classgrid.in'}>Return to Homepage</Button>
         </div>
       </div>
     );
@@ -2393,8 +2421,8 @@ export function OnboardingWizardPage() {
                   variant="outline"
                   size="sm"
                   onClick={handlePrev}
-                  disabled={currentStep === 0}
-                  className={cn("h-10 px-4 text-sm font-medium rounded-lg cursor-pointer transition-opacity", currentStep === 0 ? "opacity-0 pointer-events-none" : "opacity-100")}
+                  disabled={currentStep <= 1}
+                  className={cn("h-10 px-4 text-sm font-medium rounded-lg cursor-pointer transition-opacity", currentStep <= 1 ? "opacity-0 pointer-events-none" : "opacity-100")}
                 >
                   <ChevronLeft className="mr-1 size-4" /> Back
                 </Button>

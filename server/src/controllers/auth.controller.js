@@ -2418,7 +2418,13 @@ export const sendOnboardingOtp = async (req, res) => {
         const { target, type } = req.body; // target is email or phone, type is 'email' or 'phone'
         if (!target || !type) return res.status(400).json({ message: "Target and type are required." });
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        let otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Temporarily hardcode phone OTP to 123456 while waiting for SMS DLT production access
+        if (type === "phone") {
+            otp = "123456";
+        }
+
         const expiresAt = new Date(Date.now() + 30 * 1000); // 30 seconds
 
         // Delete any existing OTP for this target
