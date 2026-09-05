@@ -206,6 +206,10 @@ router.put("/update", isAuthenticated, attachInstitutionProfile({ required: fals
     }
 
     if (req.body.metadata !== undefined) {
+      // SECURITY: Strictly prevent changing organization type via profile updates
+      if (req.body.metadata["organization.type"] !== undefined) {
+        delete req.body.metadata["organization.type"];
+      }
       updateData.metadata = req.body.metadata;
     }
 
