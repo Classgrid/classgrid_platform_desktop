@@ -37,7 +37,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { 
   Building2, User, MapPin, Globe, MessageSquare, 
-  Copy, ExternalLink, AlertTriangle, CheckCircle2, Loader2 
+  Copy, ExternalLink, AlertTriangle, CheckCircle2, Loader2, Users
 } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
