@@ -1155,7 +1155,8 @@ export const scheduleLeadMeeting = async (req, res) => {
         }
 
         // Determine if this is a real reschedule (date actually changed, not just re-saving)
-        const existingDate = lead.meetingScheduledAt ? new Date(lead.meetingScheduledAt).getTime() : null;
+        const existingDateVal = lead.meetingScheduledAt || lead.scheduledAt;
+        const existingDate = existingDateVal ? new Date(existingDateVal).getTime() : null;
         const newDate = new Date(scheduledAt).getTime();
         const isReschedule = existingDate && existingDate !== newDate;
 
