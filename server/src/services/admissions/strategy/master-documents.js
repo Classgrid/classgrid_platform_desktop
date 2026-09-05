@@ -16,6 +16,15 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 // 2. MASTER DOCUMENT POOL — All 39 document types
 // ═══════════════════════════════════════════════════════════════
 const MASTER_DOCUMENT_POOL = [

@@ -16,6 +16,15 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { useEffect, useState, type FormEvent } from "react";
 import { applyBootstrappedBranding } from "@/lib/tenant-bootstrap";
 import { Mail, MapPin, HelpCircle, Lock, Eye, EyeOff, GraduationCap, Users, Globe, Github, ArrowLeft } from "lucide-react";

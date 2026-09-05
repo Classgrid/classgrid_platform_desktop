@@ -6,6 +6,15 @@
  * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
  * ─────────────────────────────────────────────────────────
  */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
 const DEFAULT_PLATFORM_API_BASE_URL = "https://api.classgrid.in";
 const TENANT_INFO_PATH = "/api/tenant/info";
 const DEFAULT_TIMEOUT_MS = 5000;

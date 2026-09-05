@@ -16,6 +16,15 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-self-assign */
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";

@@ -16,6 +16,15 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 import * as coreService from "../services/attendance/attendance-core.service.js";
 import * as analyticsService from "../services/attendance/attendance-analytics.service.js";
 import * as leaveWorkflowService from "../services/attendance/leave-workflow.service.js";

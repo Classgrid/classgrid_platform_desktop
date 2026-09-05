@@ -16,6 +16,15 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 export const ERP_OPTIONS = {
   bloodGroups: ["O-ve", "O+ve", "A-ve", "A+ve", "B-ve", "B+ve", "AB-ve", "AB+ve", "AB RH -v", "O RH +ve", "O RH -ve", "B RH +ve", "A RH - ve", "A RH +ve", "NA", "AB RH +ve"],
   domiciles: ["Maharastra", "Outside Maharastra", "Foreign"],

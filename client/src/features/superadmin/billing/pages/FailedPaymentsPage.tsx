@@ -16,6 +16,15 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 import React, { useState } from 'react';
 import { FailedPaymentsTable, FailedPaymentDetailDrawer, FailedPaymentsOverview } from '../components/finance/FailureComponents';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../../components/marketing_ui/card';

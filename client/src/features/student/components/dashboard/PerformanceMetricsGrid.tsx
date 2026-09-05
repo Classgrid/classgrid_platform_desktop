@@ -16,6 +16,15 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
 import { CheckCircle, FileText, BookOpen, Mic } from "lucide-react";
 import { StudentAnalytics } from "../../queries/useStudentDashboard";

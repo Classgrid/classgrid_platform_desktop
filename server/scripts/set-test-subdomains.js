@@ -6,6 +6,15 @@
  * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
  * ─────────────────────────────────────────────────────────
  */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
 import dotenv from "dotenv";
 dotenv.config({ path: new URL("../.env", import.meta.url).pathname.slice(1) });
 import mongoose from "mongoose";

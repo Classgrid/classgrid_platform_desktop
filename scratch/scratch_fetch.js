@@ -6,6 +6,15 @@
  * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
  * ─────────────────────────────────────────────────────────
  */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
 const url = 'https://attendanceqrble.web.app/?t=8ca13c27c02250d6';
 fetch(url).then(res => res.text()).then(text => {
   const start = text.indexOf('<script type="module">');

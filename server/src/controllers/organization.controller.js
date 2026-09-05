@@ -15,10 +15,20 @@
  * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
  * ─────────────────────────────────────────────────────────
  */
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 
 import OrganizationPending from "../models/OrganizationPending.js";
 import User from "../models/User.js";
 import Organization from "../models/Organization.js";
+import { uploadBase64ToS3 } from "./auth.controller.js";
 import Classroom from "../models/Classroom.js";
 import ClassroomMembership from "../models/ClassroomMembership.js";
 import { studentNotesClient } from "../config/supabaseClient.js";
@@ -742,13 +752,16 @@ export const updateOrgLogo = async (req, res) => {
             return res.status(400).json({ message: "logo_base64 is required" });
         }
 
-        // Validate size (max ~500 KB base64 ≈ 680 KB raw string)
-        if (logo_base64.length > 680000) {
-            return res.status(400).json({ message: "Logo file exceeds 500 KB limit." });
+        // Validate size (max ~1 MB base64)
+        if (logo_base64.length > 1500000) {
+            return res.status(400).json({ message: "Logo file exceeds size limit." });
         }
 
-        // Save the base64 string directly to MongoDB (matching how user profile pictures work)
-        const org = await Organization.findByIdAndUpdate(organization_id, { logo_url: logo_base64 }).select('subdomain').lean();
+        // Upload the base64 string to S3
+        const s3Url = await uploadBase64ToS3(logo_base64, "organization_logos", organization_id.toString());
+
+        // Save the S3 URL directly to MongoDB (fixing the 500 Error NextAuth crash)
+        const org = await Organization.findByIdAndUpdate(organization_id, { logo_url: s3Url }).select('subdomain').lean();
 
         // 🟢 Invalidate branding cache
         if (org && org.subdomain) {
@@ -766,7 +779,7 @@ export const updateOrgLogo = async (req, res) => {
             metadata: { updatedField: "logo_url" },
         });
 
-        return res.json({ message: "Logo updated successfully", logo_url: logo_base64 });
+        return res.json({ message: "Logo updated successfully", logo_url: s3Url });
     } catch (err) {
         console.error("updateOrgLogo error:", err);
         res.status(500).json({ message: "Server error", error: err.message });

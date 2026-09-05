@@ -1,3 +1,12 @@
+<!--
+─────────────────────────────────────────────────────────
+🚨 NAMING CONVENTION RULE 🚨
+1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+─────────────────────────────────────────────────────────
+-->
+
 # Classgrid Onboarding Wizard: Step-by-Step Guide
 
 This document outlines the complete, step-by-step onboarding flow for a new Organization Admin joining the Classgrid platform. It includes every single screen and every specific field requested during the onboarding process.

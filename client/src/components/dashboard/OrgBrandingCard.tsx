@@ -16,6 +16,15 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 import React, { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Camera, Globe, Trash2, Eye, Upload, Plus, X, Palette, Image as ImageIcon, Link as LinkIcon, Building2, Layout, LayoutTemplate, Home, Users, User, ArrowLeft, ArrowRight, RotateCw, Lock, Pencil, ChevronsUpDown, Search, LayoutGrid, Megaphone, Briefcase } from "lucide-react";

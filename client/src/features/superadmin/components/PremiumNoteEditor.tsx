@@ -16,6 +16,15 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 import React, { useRef, useEffect } from "react";
 import { Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, CheckSquare, Code, Image as ImageIcon, Link2, Quote, Table } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";

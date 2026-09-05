@@ -16,6 +16,15 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 import React, { useState, useEffect } from "react";
 import { Globe, CheckCircle2, AlertCircle, AlertTriangle, Copy, Trash2, XCircle, ExternalLink, Monitor, LayoutDashboard, Pencil } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";

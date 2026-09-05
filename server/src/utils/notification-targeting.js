@@ -16,6 +16,15 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 const DEPARTMENT_ADMIN_USER_ROLES = ["hod"];
 const DEPARTMENT_ADMIN_APP_ROLES = ["hod", "department_admin", "dept_admin"];
 const FACULTY_ROLES = ["faculty", "teacher"];

@@ -16,6 +16,15 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 import User from "../models/User.js";
 import DemoRequest from "../models/DemoRequest.js";
 import Verification from "../models/Verification.js";
@@ -32,7 +41,7 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client, BUCKET_NAME, CDN_BASE_URL } from "../config/s3Client.js";
 import { checkAndRegisterDevice, getDeviceFingerprint } from "../services/device-fingerprint.service.js";
 
-async function uploadBase64ToS3(base64String, folder, filenamePrefix) {
+export async function uploadBase64ToS3(base64String, folder, filenamePrefix) {
     if (!base64String || typeof base64String !== 'string' || !base64String.startsWith('data:image')) return base64String;
     try {
         const matches = base64String.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
@@ -1917,6 +1926,24 @@ export const logout = (req, res) => {
         });
     }
 
+    // Clear NextAuth cg-session cookie (Marketing site)
+    res.clearCookie('cg-session', {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "None" : "Lax",
+        path: "/",
+    });
+
+    if (isProd) {
+        res.clearCookie('cg-session', {
+            httpOnly: true,
+            secure: true,
+            sameSite: "None",
+            path: "/",
+            domain: ".classgrid.in",
+        });
+    }
+
     // Subdomain-aware logout redirect hint
     const redirectPath = "/login";
     
@@ -2630,5 +2657,7 @@ export const checkUsername = async (req, res) => {
         res.status(500).json({ message: "Server error checking username." });
     }
 };
+
+
 
 

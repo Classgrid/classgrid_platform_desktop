@@ -16,6 +16,15 @@
  * ─────────────────────────────────────────────────────────
  */
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { useState, useEffect } from "react";
 import { Clock, Calendar, Edit2, Trash2, X, AlertCircle, ArrowLeft } from "lucide-react";
 import { fetchScheduledMessages, cancelScheduledMessage, editScheduledMessage, ScheduledMessage } from "../services/chatApi";
