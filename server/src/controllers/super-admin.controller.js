@@ -550,7 +550,7 @@ export const healthCheck = async (req, res) => {
     try {
         if (process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY) {
             const startR2 = performance.now();
-            const { S3Client, ListBucketsCommand } = await import("@aws-sdk/client-s3");
+            const { S3Client, ListObjectsV2Command } = await import("@aws-sdk/client-s3");
             const s3Client = new S3Client({
                 region: "auto",
                 endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -560,7 +560,8 @@ export const healthCheck = async (req, res) => {
                 },
                 maxAttempts: 2
             });
-            await s3Client.send(new ListBucketsCommand({}));
+            const bucketName = process.env.R2_BUCKET_NAME || 'classgrid-storage';
+            await s3Client.send(new ListObjectsV2Command({ Bucket: bucketName, MaxKeys: 1 }));
             const ms = Math.round(performance.now() - startR2);
             health.services.r2 = { status: "UP", ping: `${ms}ms` };
         } else {
