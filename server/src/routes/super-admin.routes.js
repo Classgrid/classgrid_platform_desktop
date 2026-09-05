@@ -2483,14 +2483,18 @@ router.patch("/leads/:id/notes", async (req, res) => {
         if (meetingStatus !== undefined) updateData.meetingStatus = meetingStatus;
         if (isOrganizationVetted !== undefined) updateData.isOrganizationVetted = isOrganizationVetted;
         if (lifecycleStage !== undefined) updateData.lifecycleStage = lifecycleStage;
-        if (assignedTo !== undefined) updateData.assignedTo = assignedTo || null;
+        if (assignedTo !== undefined) {
+            updateData.assignedTo = assignedTo || null;
+            updateData.assignedAt = assignedTo ? new Date() : null;
+        }
         if (studentCount !== undefined) updateData.studentCount = studentCount;
         if (staffCount !== undefined) updateData.staffCount = staffCount;
         if (campusCount !== undefined) updateData.campusCount = campusCount;
         if (currentSystem !== undefined) updateData.currentSystem = currentSystem;
         if (demoReview !== undefined) updateData.demoReview = demoReview;
 
-        const mongoose = (await import("mongoose")).default;
+        const mongooseModule = await import("mongoose");
+        const mongoose = mongooseModule.default || mongooseModule;
         
         let oldLead = null;
         if (assignedTo !== undefined) {
@@ -2499,7 +2503,6 @@ router.patch("/leads/:id/notes", async (req, res) => {
 
         let lead = await mongoose.model('DemoRequest').findByIdAndUpdate(id, { $set: updateData }, { new: true });
         
-        // Populate assignedTo so frontend gets name/avatar, not raw ID
         if (lead && lead.assignedTo) {
             lead = await mongoose.model('DemoRequest').findById(lead._id)
                 .populate("assignedTo", "name email profilePicture avatarUrl picture photoUrl")

@@ -802,6 +802,7 @@ export async function sendDemoLeadAssignedNotification({ demoRequest, assignee, 
             to: assignee.email,
             fromEmail: fromEmail,
             fromName: fromName,
+            replyTo: fromEmail, // Set reply-to to the assigner's email so replies go to them
             subject: `New Lead Assigned: ${templateData.institutionName} | Classgrid`,
             html: getDemoLeadAssignedHtml(templateData),
             text: getDemoLeadAssignedPlainText(templateData)

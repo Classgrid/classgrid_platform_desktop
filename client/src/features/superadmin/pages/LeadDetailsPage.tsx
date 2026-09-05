@@ -80,13 +80,20 @@ export function LeadDetailsPage() {
   const [isEditingDemoReview, setIsEditingDemoReview] = useState(false);
 
   const lead = data?.leads.find(l => l._id === id);
-  let superAdmins = (Array.isArray(usersData) ? usersData : usersData?.users || [])?.filter((u: any) => u.role === 'super_admin' || u.role === 'co_super_admin') || [];
+  const allUsers = (Array.isArray(usersData) ? usersData : usersData?.users || []) || [];
+  let superAdmins = allUsers.filter((u: any) => u.role === 'super_admin' || u.role === 'co_super_admin') || [];
   
   // If the lead is already assigned to someone, ensure they are in the list so the dropdown renders their name properly
-  if (lead?.assignedTo && typeof lead.assignedTo === 'object') {
-    const isAlreadyInList = superAdmins.some((admin: any) => admin._id === lead.assignedTo._id);
+  const currentAssignedId = typeof lead?.assignedTo === 'string' ? lead.assignedTo : lead?.assignedTo?._id;
+  if (currentAssignedId) {
+    const isAlreadyInList = superAdmins.some((admin: any) => admin._id === currentAssignedId);
     if (!isAlreadyInList) {
-      superAdmins = [lead.assignedTo, ...superAdmins];
+      const foundUser = allUsers.find((u: any) => u._id === currentAssignedId);
+      if (foundUser) {
+        superAdmins = [foundUser, ...superAdmins];
+      } else if (typeof lead?.assignedTo === 'object') {
+        superAdmins = [lead.assignedTo, ...superAdmins];
+      }
     }
   }
   const setBreadcrumbs = useBreadcrumbStore((state) => state.setBreadcrumbs);
@@ -651,8 +658,8 @@ export function LeadDetailsPage() {
                 <Users size={16} className="text-muted-foreground" /> Assignment Handoff
               </h3>
               <div className="flex gap-2 w-full">
-                <Select
-                  value={lead.assignedTo?._id || ''}
+                  <Select
+                  value={typeof lead.assignedTo === 'string' ? lead.assignedTo : (lead.assignedTo?._id || '')}
                   onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { assignedTo: val || null } })}
                 >
                   <SelectTrigger className="flex-1 bg-background h-10 w-full">
@@ -665,12 +672,12 @@ export function LeadDetailsPage() {
                         <div className="flex items-center gap-2">
                           <div className="w-5 h-5 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-border bg-emerald-500">
                             {admin.avatarUrl || admin.profilePicture ? (
-                              <img src={admin.avatarUrl || admin.profilePicture} alt={admin.name} className="w-full h-full object-cover" />
+                              <img src={admin.avatarUrl || admin.profilePicture} alt={admin.name || 'Admin'} className="w-full h-full object-cover" />
                             ) : (
-                              <span className="text-white font-bold text-[9px]">{admin.name?.charAt(0).toUpperCase() || 'U'}</span>
+                              <span className="text-white font-bold text-[9px]">{(admin.name || 'Admin').charAt(0).toUpperCase()}</span>
                             )}
                           </div>
-                          <span>{admin.name}</span>
+                          <span>{admin.name || "Unknown Admin"}</span>
                         </div>
                       </SelectItem>
                     ))}
