@@ -54,9 +54,10 @@ jobs:
               sudo DEBIAN_FRONTEND=noninteractive apt-get install -y redis-server || true
             fi
             
-            # RESTART REDIS GRACEFULLY
+            # ENSURE REDIS IS RUNNING WITHOUT RESTARTING IT
             sudo systemctl daemon-reload || true
             sudo systemctl enable redis-server || true
-            sudo systemctl restart redis-server || sudo service redis restart || true
+            sudo systemctl start redis-server || sudo service redis start || true
             
-            pm2 restart all --update-env
+            # ZERO-DOWNTIME RELOAD (Fallback to restart if reload fails)
+            pm2 reload all --update-env || pm2 restart all --update-env
