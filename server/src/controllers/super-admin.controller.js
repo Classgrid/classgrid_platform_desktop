@@ -1162,6 +1162,8 @@ export const scheduleLeadMeeting = async (req, res) => {
 
         if (isReschedule) {
             lead.meetingStatus = "rescheduled";
+            lead.assignedTo = null;
+            lead.assignedAt = null;
         } else if (!existingDate) {
             lead.meetingStatus = "scheduled";
         }
