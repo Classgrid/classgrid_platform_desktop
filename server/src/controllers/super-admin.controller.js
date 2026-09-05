@@ -1154,19 +1154,12 @@ export const scheduleLeadMeeting = async (req, res) => {
             return res.status(404).json({ success: false, message: "Lead not found" });
         }
 
-        // Determine if this is a real reschedule (date actually changed, not just re-saving)
-        const existingDateVal = lead.meetingScheduledAt || lead.scheduledAt;
-        const existingDate = existingDateVal ? new Date(existingDateVal).getTime() : null;
-        const newDate = new Date(scheduledAt).getTime();
-        const isReschedule = existingDate && existingDate !== newDate;
-
-        if (isReschedule) {
-            lead.meetingStatus = "rescheduled";
-            lead.assignedTo = null;
-            lead.assignedAt = null;
-        } else if (!existingDate) {
-            lead.meetingStatus = "scheduled";
-        }
+        const isReschedule = true;
+        // Super Admin updating a meeting is ALWAYS considered a reschedule
+        // because leads always originate from the marketing site with a requested meeting.
+        lead.meetingStatus = "rescheduled";
+        lead.assignedTo = null;
+        lead.assignedAt = null;
         // If they just clicked 'save' on the same date, don't change meetingStatus and definitely do NOT unassign them!
         
         lead.meetingProvider = provider;
