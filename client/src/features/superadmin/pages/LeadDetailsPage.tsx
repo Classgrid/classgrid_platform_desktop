@@ -758,6 +758,7 @@ export function LeadDetailsPage() {
                   placeholder="e.g. 500"
                   defaultValue={lead.studentCount || ''}
                   onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { studentCount: parseInt(e.target.value) || null } })}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); } }}
                   className="bg-background h-10"
                 />
               </div>
@@ -768,6 +769,7 @@ export function LeadDetailsPage() {
                   placeholder="e.g. 50"
                   defaultValue={lead.staffCount || ''}
                   onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { staffCount: parseInt(e.target.value) || null } })}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); } }}
                   className="bg-background h-10"
                 />
               </div>
@@ -778,6 +780,7 @@ export function LeadDetailsPage() {
                   placeholder="e.g. 1"
                   defaultValue={lead.campusCount || ''}
                   onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { campusCount: parseInt(e.target.value) || null } })}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); } }}
                   className="bg-background h-10"
                 />
               </div>
