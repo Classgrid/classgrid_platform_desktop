@@ -717,6 +717,7 @@ export function LeadDetailsPage() {
                   <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Meeting Status</label>
                   <Select
                     value={lead.meetingStatus || 'pending'}
+                    disabled={lead.meetingStatus === "completed" || lead.status === "converted"}
                     onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingStatus: val } })}
                   >
                     <SelectTrigger className="w-full h-10 bg-background">
