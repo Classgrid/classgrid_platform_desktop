@@ -2633,5 +2633,35 @@ ${dashboardUrl}/superadmin/detail/${leadId}
 The Classgrid Team`.trim();
 };
 
-export const getVettingApprovalRequestHtml = ({ requesterName, institutionName, adminName, adminEmail, city, dashboardUrl, leadId }) => { return `<div>Vetting Request from ${institutionName}</div>`; };
-export const getVettingApprovedHtml = ({ assigneeName, institutionName, dashboardUrl, leadId }) => { return `<div>Vetting Approved for ${institutionName}</div>`; };
+export const getVettingApprovalRequestHtml = ({ requesterName, institutionName, adminName, adminEmail, city, dashboardUrl, leadId }) => { 
+  return `
+    <div style="font-family: sans-serif; color: #111;">
+      <h2>Approval Request: Sandbox Provisioning</h2>
+      <p><strong>${requesterName}</strong> has requested your vetting approval to provision a sandbox for <strong>${institutionName}</strong>.</p>
+      
+      <h3>Lead Details:</h3>
+      <ul>
+        <li><strong>Institution:</strong> ${institutionName}</li>
+        <li><strong>Admin Name:</strong> ${adminName || 'N/A'}</li>
+        <li><strong>Admin Email:</strong> ${adminEmail || 'N/A'}</li>
+        <li><strong>City:</strong> ${city || 'N/A'}</li>
+      </ul>
+      
+      <p>Please log in to the dashboard to review their meeting notes and approve this request.</p>
+      <a href="${dashboardUrl}/superadmin/detail/${leadId}" style="display:inline-block; padding:10px 20px; background:#10b981; color:#fff; text-decoration:none; border-radius:6px; margin-top:15px; font-weight:bold;">Review & Approve</a>
+    </div>
+  `; 
+};
+
+export const getVettingApprovedHtml = ({ assigneeName, institutionName, dashboardUrl, leadId }) => { 
+  return `
+    <div style="font-family: sans-serif; color: #111;">
+      <h2>Vetting Approved \u2705</h2>
+      <p>Hi ${assigneeName},</p>
+      <p>Your request to provision a sandbox for <strong>${institutionName}</strong> has been <strong>approved</strong> by Nikhil.</p>
+      <p>The "Provision Sandbox Wizard" button is now unlocked for this lead. You may proceed with the automated provisioning.</p>
+      
+      <a href="${dashboardUrl}/superadmin/detail/${leadId}" style="display:inline-block; padding:10px 20px; background:#10b981; color:#fff; text-decoration:none; border-radius:6px; margin-top:15px; font-weight:bold;">Proceed to Provisioning</a>
+    </div>
+  `; 
+};
