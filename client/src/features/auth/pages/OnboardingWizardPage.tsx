@@ -444,6 +444,7 @@ export function OnboardingWizardPage() {
   const [isOrgEmailVerified, setIsOrgEmailVerified] = useState(false);
   const [orgEmailOtpSent, setOrgEmailOtpSent] = useState(false);
   const [isVerifyingOrgEmail, setIsVerifyingOrgEmail] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const [orgPhone, setOrgPhone] = useState("");
   const [orgPhoneOtp, setOrgPhoneOtp] = useState("");
@@ -1048,6 +1049,14 @@ export function OnboardingWizardPage() {
     if (currentStepData.id === "password") {
       if (!password || !isStrongPassword || !isPasswordMatch) {
         showAlert("Please enter a valid, matching, strong password to continue.");
+        return;
+      }
+    }
+    
+    // Review step: require terms acceptance
+    if (currentStepData.id === "review_submit") {
+      if (!acceptedTerms) {
+        showAlert("Please accept the Terms of Service and Privacy Policy to continue.");
         return;
       }
     }
@@ -2488,14 +2497,54 @@ export function OnboardingWizardPage() {
 
                   {/* ── RENDER PHASE 4: REVIEW PAGE ── */}
                   {currentStepData.type === "review" && (
-                    <div className="bg-white dark:bg-card p-8 rounded-2xl shadow-sm border border-border/60 text-center">
-                      <div className="mx-auto size-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
-                        <CheckCircle2 className="size-8" />
+                    <div className="bg-white dark:bg-card p-6 md:p-8 rounded-2xl shadow-sm border border-border/60">
+                      <div className="text-center mb-6">
+                        <div className="mx-auto size-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
+                          <CheckCircle2 className="size-8" />
+                        </div>
+                        <h3 className="text-xl font-bold mb-2">Ready to Submit?</h3>
+                        <p className="text-muted-foreground text-sm">
+                          Please review your organization and personal details below.
+                        </p>
                       </div>
-                      <h3 className="text-xl font-bold mb-2">Ready to Submit?</h3>
-                      <p className="text-muted-foreground mb-6">
-                        You have completed all sections. Please ensure your information is accurate before submitting.
-                      </p>
+
+                      <div className="space-y-4 mb-6 bg-secondary/30 p-4 rounded-xl text-sm border border-border/50">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <span className="text-muted-foreground block text-xs mb-1">Administrator Name</span>
+                            <span className="font-semibold">{adminName || fetchedName || "N/A"}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block text-xs mb-1">Admin Email</span>
+                            <span className="font-semibold">{fetchedEmail || "N/A"}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block text-xs mb-1">Organization Name</span>
+                            <span className="font-semibold">{formData["org_details"]?.["organization.legal_name"] || fetchedOrgName || "N/A"}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block text-xs mb-1">Organization Type</span>
+                            <span className="font-semibold uppercase text-xs tracking-wider text-primary">{formData["org_details"]?.["organization.type"] || fetchedOrgType}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block text-xs mb-1">Portal Subdomain</span>
+                            <span className="font-semibold font-mono text-xs">{formData["org_identity"]?.["subdomain"] || "N/A"}.classgrid.in</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3 mt-8 bg-primary/5 p-4 rounded-xl border border-primary/20">
+                        <input
+                          type="checkbox"
+                          id="terms-checkbox"
+                          checked={acceptedTerms}
+                          onChange={(e) => setAcceptedTerms(e.target.checked)}
+                          className="mt-1 h-5 w-5 rounded border-primary text-primary focus:ring-primary bg-background cursor-pointer"
+                        />
+                        <label htmlFor="terms-checkbox" className="text-sm text-foreground leading-relaxed cursor-pointer select-none">
+                          I confirm that all details provided are accurate and official. I agree to the <a href="/terms" target="_blank" className="text-primary hover:underline font-medium">Terms of Service</a> and <a href="/privacy" target="_blank" className="text-primary hover:underline font-medium">Privacy Policy</a>, and understand that the Organization Type is permanently locked upon submission.
+                        </label>
+                      </div>
                     </div>
                   )}
 
