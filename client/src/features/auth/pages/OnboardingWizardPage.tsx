@@ -1199,9 +1199,9 @@ export function OnboardingWizardPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="text-emerald-400 text-lg font-semibold mb-4 tracking-wide"
+              className="text-emerald-400 text-lg font-semibold mb-4 tracking-wide uppercase"
             >
-              All set
+              Setup Complete
             </motion.p>
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
@@ -1209,7 +1209,7 @@ export function OnboardingWizardPage() {
               transition={{ delay: 0.6, duration: 0.8 }}
               className="text-4xl md:text-5xl font-bold text-white mb-10 leading-tight"
             >
-              Let's start building together
+              Welcome to your new digital campus
             </motion.h1>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -1221,7 +1221,7 @@ export function OnboardingWizardPage() {
                 onClick={() => window.location.href = dashboardUrl}
                 className="h-14 px-10 text-base font-semibold rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all duration-300 shadow-lg shadow-blue-500/10"
               >
-                Start using Classgrid <ChevronRight className="ml-2 size-5" />
+                Enter Dashboard <ChevronRight className="ml-2 size-5" />
               </Button>
             </motion.div>
           </motion.div>
