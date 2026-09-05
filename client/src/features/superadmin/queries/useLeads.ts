@@ -105,3 +105,14 @@ export function useRegenerateActivation() {
     onSuccess: () => qc.invalidateQueries({ queryKey: LEADS_KEY }),
   });
 }
+
+export function useUpdateLeadNotes() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: any }) => leadsApi.updateMeetingNotes(id, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: LEADS_KEY }),
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to update lead notes");
+    }
+  });
+}

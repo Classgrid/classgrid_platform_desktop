@@ -45,7 +45,7 @@ import { Badge } from "@/components/marketing_ui/badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/marketing_ui/tooltip";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
-import { useLeads, useApproveLead, useScheduleMeeting, useDeleteLead, useRegenerateActivation } from "../queries/useLeads";
+import { useLeads, useApproveLead, useScheduleMeeting, useDeleteLead, useRegenerateActivation, useUpdateLeadNotes } from "../queries/useLeads";
 import { formatDate } from "@/utils/dateUtils";
 import { formatOrgType } from "@/utils/orgHelpers";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
@@ -58,6 +58,7 @@ export function LeadDetailsPage() {
   const scheduleMutation = useScheduleMeeting();
   const deleteMutation = useDeleteLead();
   const regenerateMutation = useRegenerateActivation();
+  const updateNotesMutation = useUpdateLeadNotes();
   const navigate = useNavigate();
 
   const [date, setDate] = useState<Date | undefined>(undefined);
