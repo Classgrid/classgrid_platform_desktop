@@ -75,9 +75,11 @@ export function LeadDetailsPage() {
   const [showProvisioningWizard, setShowProvisioningWizard] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isEditingMeetingNotes, setIsEditingMeetingNotes] = useState(false);
+  const [isEditingDemoReview, setIsEditingDemoReview] = useState(false);
 
   const lead = data?.leads.find(l => l._id === id);
-  const superAdmins = usersData?.data?.filter((u: any) => u.role === 'superadmin' || u.role === 'admin' || u.role === 'support') || [];
+  const superAdmins = (Array.isArray(usersData) ? usersData : usersData?.users || [])?.filter((u: any) => u.role === 'superadmin' || u.role === 'admin' || u.role === 'support') || [];
 
   const setBreadcrumbs = useBreadcrumbStore((state) => state.setBreadcrumbs);
 
@@ -624,27 +626,28 @@ export function LeadDetailsPage() {
         </div>
       </div>
 
-      {/* ── NEW FULL WIDTH MANAGEMENT SECTION ── */}
-      <div className="mt-8 w-full bg-card border rounded-xl shadow-sm overflow-hidden">
-        <div className="bg-muted/30 px-5 py-4 border-b">
-          <h2 className="font-semibold text-card-foreground text-lg">LEAD MANAGEMENT & STATUS</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Update lead details, assignment, and discovery info independently.</p>
-        </div>
+      {/* ── NEW COMPACT MANAGEMENT SECTION ── */}
+      <div className="mt-10 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <h2 className="font-bold text-foreground text-xl mb-6 px-1 flex items-center gap-2">
+          Lead Management & Status
+        </h2>
         
-        <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* LEFT SIDE: Management & Discovery */}
-          <div className="space-y-8">
+          {/* LEFT: Assignment & Status */}
+          <div className="lg:col-span-1 space-y-6">
             
-            {/* A. Assignment */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Assignment Handoff</h3>
-              <div className="flex gap-3">
+            {/* Assignment Handoff */}
+            <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b pb-3">
+                <Users size={16} className="text-muted-foreground" /> Assignment Handoff
+              </h3>
+              <div className="flex gap-2 w-full">
                 <Select 
                   value={lead.assignedTo?._id || ''}
                   onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { assignedTo: val || null } })}
                 >
-                  <SelectTrigger className="flex-1 bg-background h-10">
+                  <SelectTrigger className="flex-1 bg-background h-10 w-full">
                     <SelectValue placeholder="Unassigned" />
                   </SelectTrigger>
                   <SelectContent>
@@ -665,21 +668,17 @@ export function LeadDetailsPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => toast.success("Assignment updated")}
-                  disabled={updateNotesMutation.isPending}
-                >Save</Button>
               </div>
             </div>
 
-            {/* B. Status & Tracking */}
-            <div className="space-y-3 pt-4 border-t">
-              <h3 className="text-sm font-semibold text-foreground">Status & Tracking</h3>
-              <div className="grid grid-cols-2 gap-4">
+            {/* Status & Tracking */}
+            <div className="bg-card border rounded-2xl p-5 shadow-sm space-y-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b pb-3">
+                <AlertTriangle size={16} className="text-muted-foreground" /> Status & Tracking
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Meeting Status</label>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Meeting Status</label>
                   <Select 
                     value={lead.meetingStatus || 'pending'}
                     onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingStatus: val } })}
@@ -688,47 +687,17 @@ export function LeadDetailsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-yellow-500" />
-                          <span className="font-medium text-yellow-500">Pending</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="scheduled">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-blue-500" />
-                          <span className="font-medium text-blue-500">Scheduled</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="completed">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                          <span className="font-medium text-emerald-500">Completed</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="cancelled">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-red-500" />
-                          <span className="font-medium text-red-500">Cancelled</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="rescheduled">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-purple-500" />
-                          <span className="font-medium text-purple-500">Rescheduled</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="missed">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-orange-500" />
-                          <span className="font-medium text-orange-500">Missed</span>
-                        </div>
-                      </SelectItem>
+                      <SelectItem value="pending"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-yellow-500" /><span className="font-medium text-yellow-500">Pending</span></div></SelectItem>
+                      <SelectItem value="scheduled"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-blue-500" /><span className="font-medium text-blue-500">Scheduled</span></div></SelectItem>
+                      <SelectItem value="completed"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-500" /><span className="font-medium text-emerald-500">Completed</span></div></SelectItem>
+                      <SelectItem value="cancelled"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-red-500" /><span className="font-medium text-red-500">Cancelled</span></div></SelectItem>
+                      <SelectItem value="rescheduled"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-purple-500" /><span className="font-medium text-purple-500">Rescheduled</span></div></SelectItem>
+                      <SelectItem value="missed"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-orange-500" /><span className="font-medium text-orange-500">Missed</span></div></SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Lifecycle Stage</label>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Lifecycle Stage</label>
                   <Select 
                     value={lead.lifecycleStage || 'lead_created'}
                     onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { lifecycleStage: val } })}
@@ -737,151 +706,156 @@ export function LeadDetailsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="lead_created">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-slate-500" />
-                          <span className="font-medium text-slate-500">Lead Created</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="meeting_scheduled">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-blue-500" />
-                          <span className="font-medium text-blue-500">Meeting Scheduled</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="approved">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-purple-500" />
-                          <span className="font-medium text-purple-500">Approved</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="provisioned">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                          <span className="font-medium text-emerald-500">Provisioned</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="activated">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-emerald-600" />
-                          <span className="font-medium text-emerald-600">Activated</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="setup">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-indigo-500" />
-                          <span className="font-medium text-indigo-500">Setup</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="live">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-green-500" />
-                          <span className="font-medium text-green-500">Live</span>
-                        </div>
-                      </SelectItem>
+                      <SelectItem value="lead_created"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-slate-500" /><span className="font-medium text-slate-500">Lead Created</span></div></SelectItem>
+                      <SelectItem value="meeting_scheduled"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-blue-500" /><span className="font-medium text-blue-500">Meeting Scheduled</span></div></SelectItem>
+                      <SelectItem value="approved"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-purple-500" /><span className="font-medium text-purple-500">Approved</span></div></SelectItem>
+                      <SelectItem value="provisioned"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-500" /><span className="font-medium text-emerald-500">Provisioned</span></div></SelectItem>
+                      <SelectItem value="activated"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-600" /><span className="font-medium text-emerald-600">Activated</span></div></SelectItem>
+                      <SelectItem value="setup"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-indigo-500" /><span className="font-medium text-indigo-500">Setup</span></div></SelectItem>
+                      <SelectItem value="live"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-green-500" /><span className="font-medium text-green-500">Live</span></div></SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
             </div>
-
-            {/* C. Discovery Fields */}
-            <div className="space-y-3 pt-4 border-t">
-              <h3 className="text-sm font-semibold text-foreground">Discovery & Requirements</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Student Count</label>
-                  <Input 
-                    type="number"
-                    placeholder="e.g. 500"
-                    defaultValue={lead.studentCount || ''}
-                    onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { studentCount: parseInt(e.target.value) || null } })}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Staff/Teacher Count</label>
-                  <Input 
-                    type="number"
-                    placeholder="e.g. 50"
-                    defaultValue={lead.staffCount || ''}
-                    onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { staffCount: parseInt(e.target.value) || null } })}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Campus Count</label>
-                  <Input 
-                    type="number"
-                    placeholder="e.g. 1"
-                    defaultValue={lead.campusCount || ''}
-                    onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { campusCount: parseInt(e.target.value) || null } })}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Current System</label>
-                  <Select 
-                    value={lead.currentSystem || ''}
-                    onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { currentSystem: val || null } })}
-                  >
-                    <SelectTrigger className="w-full h-10 bg-background">
-                      <SelectValue placeholder="Select System" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Select System</SelectItem>
-                      <SelectItem value="excel">Excel / Spreadsheets</SelectItem>
-                      <SelectItem value="manual_registers">Manual Registers</SelectItem>
-                      <SelectItem value="other_erp">Other ERP</SelectItem>
-                      <SelectItem value="no_system">No System</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* RIGHT SIDE: Notes & Reviews */}
-          <div className="space-y-6 flex flex-col">
             
-            <div className="pt-4 border-t lg:border-t-0">
-              <label className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer">
-                <Checkbox 
-                  className="h-5 w-5"
-                  checked={lead.isOrganizationVetted || false}
-                  onCheckedChange={(checked) => updateNotesMutation.mutate({ id: lead._id, payload: { isOrganizationVetted: !!checked } })}
-                />
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Organization Vetted & Approved</p>
-                  <p className="text-xs text-muted-foreground">Required to unlock sandbox provisioning.</p>
-                </div>
-              </label>
+            {/* Vetted Checkbox Card */}
+            <div 
+              className="bg-card border border-emerald-500/20 hover:border-emerald-500/50 rounded-2xl p-4 transition-colors cursor-pointer flex items-start gap-4 shadow-sm"
+              onClick={() => updateNotesMutation.mutate({ id: lead._id, payload: { isOrganizationVetted: !lead.isOrganizationVetted } })}
+            >
+              <Checkbox checked={lead.isOrganizationVetted || false} className="mt-1 shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-foreground">Organization Vetted & Approved</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Required to unlock sandbox provisioning wizard.</p>
+              </div>
             </div>
 
           </div>
-        </div>
 
-        {/* ── BOTTOM FULL WIDTH ROW: NOTES & REVIEWS ── */}
-        <div className="mt-8 grid grid-cols-1 gap-8">
-          <div className="flex flex-col">
-            <label className="text-sm font-semibold text-foreground mb-3 block">Meeting Notes & Comments</label>
-            <RichReplyEditor 
-              initialHtml={lead.meetingNotes || ''}
-              onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingNotes: html } })}
-              placeholder="Enter detailed meeting feedback here..."
-              hideAttachments={true}
-              minHeight={250}
-            />
+          {/* MIDDLE: Discovery */}
+          <div className="lg:col-span-1 bg-card border rounded-2xl p-5 shadow-sm h-fit space-y-5">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b pb-3">
+               <CheckCircle2 size={16} className="text-muted-foreground" /> Discovery & Requirements
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Student Count</label>
+                <Input 
+                  type="number"
+                  placeholder="e.g. 500"
+                  defaultValue={lead.studentCount || ''}
+                  onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { studentCount: parseInt(e.target.value) || null } })}
+                  className="bg-background h-10"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Staff/Teacher Count</label>
+                <Input 
+                  type="number"
+                  placeholder="e.g. 50"
+                  defaultValue={lead.staffCount || ''}
+                  onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { staffCount: parseInt(e.target.value) || null } })}
+                  className="bg-background h-10"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Campus Count</label>
+                <Input 
+                  type="number"
+                  placeholder="e.g. 1"
+                  defaultValue={lead.campusCount || ''}
+                  onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { campusCount: parseInt(e.target.value) || null } })}
+                  className="bg-background h-10"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Current System</label>
+                <Select 
+                  value={lead.currentSystem || ''}
+                  onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { currentSystem: val || null } })}
+                >
+                  <SelectTrigger className="w-full h-10 bg-background">
+                    <SelectValue placeholder="Select System" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Select System</SelectItem>
+                    <SelectItem value="excel">Excel / Spreadsheets</SelectItem>
+                    <SelectItem value="manual_registers">Manual Registers</SelectItem>
+                    <SelectItem value="other_erp">Other ERP</SelectItem>
+                    <SelectItem value="no_system">No System</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          
+          {/* RIGHT: Notes & Comments */}
+          <div className="lg:col-span-1 space-y-6">
+            
+            {/* Meeting Notes */}
+            <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col h-fit">
+              <div className="flex items-center justify-between border-b pb-3 mb-4">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                   <Copy size={16} className="text-muted-foreground" /> Meeting Notes
+                </h3>
+                <Button variant="outline" size="sm" className="h-7 px-3 text-xs rounded-full font-semibold" onClick={() => setIsEditingMeetingNotes(!isEditingMeetingNotes)}>
+                   {isEditingMeetingNotes ? "Save Notes" : "Edit"}
+                </Button>
+              </div>
+              
+              {isEditingMeetingNotes ? (
+                <div className="animate-in fade-in zoom-in-95 duration-200">
+                  <RichReplyEditor 
+                    initialHtml={lead.meetingNotes || ''}
+                    onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingNotes: html } })}
+                    placeholder="Enter detailed meeting notes..."
+                    hideAttachments={true}
+                    minHeight={150}
+                  />
+                </div>
+              ) : (
+                <div 
+                  className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none cursor-text hover:bg-muted/10 p-3 -mx-3 rounded-xl transition-colors min-h-[100px] border border-transparent hover:border-border/50"
+                  onClick={() => setIsEditingMeetingNotes(true)}
+                  dangerouslySetInnerHTML={{ __html: lead.meetingNotes || '<span class="text-muted-foreground italic">No meeting notes added. Click to edit.</span>' }} 
+                />
+              )}
+            </div>
+
+            {/* Final Demo Review */}
+            <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col h-fit">
+              <div className="flex items-center justify-between border-b pb-3 mb-4">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                   <Copy size={16} className="text-muted-foreground" /> Final Demo Review
+                </h3>
+                <Button variant="outline" size="sm" className="h-7 px-3 text-xs rounded-full font-semibold" onClick={() => setIsEditingDemoReview(!isEditingDemoReview)}>
+                   {isEditingDemoReview ? "Save Review" : "Edit"}
+                </Button>
+              </div>
+              
+              {isEditingDemoReview ? (
+                <div className="animate-in fade-in zoom-in-95 duration-200">
+                  <RichReplyEditor 
+                    initialHtml={lead.demoReview || ''}
+                    onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { demoReview: html } })}
+                    placeholder="Enter final review..."
+                    hideAttachments={true}
+                    minHeight={150}
+                  />
+                </div>
+              ) : (
+                <div 
+                  className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none cursor-text hover:bg-muted/10 p-3 -mx-3 rounded-xl transition-colors min-h-[100px] border border-transparent hover:border-border/50"
+                  onClick={() => setIsEditingDemoReview(true)}
+                  dangerouslySetInnerHTML={{ __html: lead.demoReview || '<span class="text-muted-foreground italic">No review added. Click to edit.</span>' }} 
+                />
+              )}
+            </div>
+
           </div>
 
-          <div className="flex flex-col">
-            <label className="text-sm font-semibold text-foreground mb-3 block">Final Demo Review</label>
-            <RichReplyEditor 
-              initialHtml={lead.demoReview || ''}
-              onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { demoReview: html } })}
-              placeholder="Enter school's final review/feedback..."
-              hideAttachments={true}
-              minHeight={250}
-            />
-          </div>
         </div>
       </div>
 
