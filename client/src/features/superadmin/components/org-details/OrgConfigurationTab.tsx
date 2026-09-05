@@ -33,7 +33,11 @@
  * ─────────────────────────────────────────────────────────
  */
 
-import { CheckCircle2, Palette, Settings2, SlidersHorizontal } from "lucide-react";
+import React, { useState } from "react";
+import { CheckCircle2, Palette, Settings2, SlidersHorizontal, Edit2, Zap, Trash2, ShieldAlert } from "lucide-react";
+import { toast } from "sonner";
+import { organizationControlCenterApi } from "../../services/organizationControlCenterApi";
+import { Button } from "@/components/marketing_ui/button";
 
 import { Badge } from "@/components/marketing_ui/badge";
 
@@ -47,12 +51,14 @@ import {
 import { OrgDataRow } from "./OrgDataRow";
 import { OrgSectionCard } from "./OrgSectionCard";
 import { EditModulesModal } from "./EditModulesModal";
+import { EditOnboardingModal } from "./EditOnboardingModal";
 
 interface OrgConfigurationTabProps {
   profile?: OrganizationFullProfile;
 }
 
 export function OrgConfigurationTab({ profile }: OrgConfigurationTabProps) {
+  const [isEditOnboardingOpen, setIsEditOnboardingOpen] = useState(false);
   const onboarding = profile?.onboarding_progress;
   const onboardingSteps = onboarding
     ? Object.entries(onboarding).filter(
@@ -65,12 +71,99 @@ export function OrgConfigurationTab({ profile }: OrgConfigurationTabProps) {
   const admissionConfig = profile?.admission_config;
   const colors = profile?.branding?.theme_colors;
 
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleUpgrade = async () => {
+    if (!profile?._id) return;
+    if (!window.confirm("Are you sure you want to upgrade this Sandbox to Active Production mode?")) return;
+    
+    setIsUpgrading(true);
+    try {
+      await organizationControlCenterApi.convertToActive(profile._id);
+      toast.success("Organization upgraded to Active Production mode!");
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to upgrade organization.");
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!profile?._id) return;
+    if (!window.confirm("CRITICAL WARNING: Are you sure you want to completely delete this organization? This cannot be undone!")) return;
+    if (!window.confirm("Are you absolutely sure? Type 'yes' below to confirm.") === false) return; // Basic double check
+
+    setIsDeleting(true);
+    try {
+      await organizationControlCenterApi.deleteOrganization(profile._id);
+      toast.success("Organization successfully deleted.");
+      setTimeout(() => window.location.href = "/superadmin/leads", 1500);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to delete organization.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="grid gap-6 xl:grid-cols-2">
+      <OrgSectionCard
+        title="Business Lifecycle & Billing"
+        description="Manage the sandbox expiry, active production status, and deletion."
+        icon={<ShieldAlert className="h-5 w-5" aria-hidden="true" />}
+        className="xl:col-span-2 border-primary/20 bg-primary/5"
+      >
+        <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+          <dl className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+            <OrgDataRow label="Mode" value={humanizeKey(profile?.org_mode || "production")} />
+            <OrgDataRow label="Status" value={humanizeKey(profile?.status || "active")} />
+            <OrgDataRow label="Sandbox Expiry" value={formatDateTime(profile?.demoExpiresAt) || "N/A"} />
+            <OrgDataRow 
+              label="Days Remaining" 
+              value={profile?.demoExpiresAt 
+                ? (() => {
+                    const diff = new Date(profile.demoExpiresAt).getTime() - Date.now();
+                    const days = Math.ceil(diff / (1000 * 3600 * 24));
+                    return days > 0 ? \`\${days} days left\` : "Expired";
+                  })()
+                : "Unlimited"} 
+            />
+          </dl>
+          <div className="flex flex-col gap-3 min-w-[200px]">
+            {profile?.org_mode === "sandbox" && (
+              <Button 
+                onClick={handleUpgrade} 
+                disabled={isUpgrading}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Zap className="mr-2 h-4 w-4" /> 
+                {isUpgrading ? "Upgrading..." : "Upgrade to Active"}
+              </Button>
+            )}
+            <Button 
+              onClick={handleDelete} 
+              disabled={isDeleting}
+              variant="destructive"
+              className="w-full"
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> 
+              {isDeleting ? "Deleting..." : "Delete Organization"}
+            </Button>
+          </div>
+        </div>
+      </OrgSectionCard>
+
       <OrgSectionCard
         title="Onboarding progress"
         description="Live organization onboarding fields, including all boolean steps returned by the backend."
         icon={<CheckCircle2 className="h-5 w-5" aria-hidden="true" />}
+        action={
+          <Button variant="outline" size="sm" onClick={() => setIsEditOnboardingOpen(true)}>
+            <Edit2 className="mr-2 h-4 w-4" /> Edit Steps
+          </Button>
+        }
       >
         <dl>
           <OrgDataRow label="Current stage" value={humanizeKey(onboarding?.current_stage)} />
@@ -94,6 +187,13 @@ export function OrgConfigurationTab({ profile }: OrgConfigurationTabProps) {
           </div>
         ) : null}
       </OrgSectionCard>
+
+      <EditOnboardingModal
+        isOpen={isEditOnboardingOpen}
+        onClose={() => setIsEditOnboardingOpen(false)}
+        orgId={profile?._id as string}
+        currentOnboarding={onboarding || {}}
+      />
 
       <OrgSectionCard
         title="Feature flags"

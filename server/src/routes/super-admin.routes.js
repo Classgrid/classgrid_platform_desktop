@@ -766,7 +766,8 @@ router.delete("/custom-domains/:orgId", async (req, res) => {
 });
 
 // -- 8d. ORGANIZATION DETAIL VIEW (for Dashboard / Drilldown)
-import { getOrganizationDetail, updateOrganizationStatus } from "../controllers/super-admin.controller.js";
+import { getOrganizationDetail,     deleteOrganization,
+    updateOrganizationStatus, updateOrganizationOnboarding } from "../controllers/super-admin.controller.js";
 router.get("/organizations/:id", getOrganizationDetail);
 
 // -- 8c. PLATFORM FEEDBACK (private reviews submitted from modules)
@@ -2472,6 +2473,56 @@ router.get("/backup/integrity", async (req, res) => {
 });
 
 // Delete endpoints
+router.patch("/leads/:id/notes", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { meetingNotes, meetingStatus, isOrganizationVetted, lifecycleStage, assignedTo, studentCount, staffCount, campusCount, currentSystem, demoReview } = req.body;
+        
+        const updateData = {};
+        if (meetingNotes !== undefined) updateData.meetingNotes = meetingNotes;
+        if (meetingStatus !== undefined) updateData.meetingStatus = meetingStatus;
+        if (isOrganizationVetted !== undefined) updateData.isOrganizationVetted = isOrganizationVetted;
+        if (lifecycleStage !== undefined) updateData.lifecycleStage = lifecycleStage;
+        if (assignedTo !== undefined) updateData.assignedTo = assignedTo || null;
+        if (studentCount !== undefined) updateData.studentCount = studentCount;
+        if (staffCount !== undefined) updateData.staffCount = staffCount;
+        if (campusCount !== undefined) updateData.campusCount = campusCount;
+        if (currentSystem !== undefined) updateData.currentSystem = currentSystem;
+        if (demoReview !== undefined) updateData.demoReview = demoReview;
+
+        const mongoose = (await import("mongoose")).default;
+        
+        let oldLead = null;
+        if (assignedTo !== undefined) {
+            oldLead = await mongoose.model('DemoRequest').findById(id);
+        }
+
+        const lead = await mongoose.model('DemoRequest').findByIdAndUpdate(id, { $set: updateData }, { new: true });
+        
+        if (assignedTo !== undefined && assignedTo && lead.assignedTo && (!oldLead || !oldLead.assignedTo || oldLead.assignedTo.toString() !== assignedTo.toString())) {
+            try {
+                const assignee = await mongoose.model('User').findById(assignedTo).select('name email');
+                if (assignee) {
+                    const { sendDemoLeadAssignedNotification } = await import("../services/notification-email.service.js");
+                    await sendDemoLeadAssignedNotification({
+                        demoRequest: lead,
+                        assignee: assignee,
+                        assigner: req.user,
+                        notifySuperAdmin: true
+                    });
+                }
+            } catch (e) {
+                console.error("Failed to send manual assignment notification:", e.message);
+            }
+        }
+
+        return res.json({ success: true, lead });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false });
+    }
+});
+
 router.delete("/leads/:id", deleteDemoLead);
 router.delete("/support-tickets/:threadId", deleteSuperAdminSupportConversation);
 
@@ -2479,6 +2530,12 @@ router.delete("/support-tickets/:threadId", deleteSuperAdminSupportConversation)
 // =================================================
 // UPDATE ORGANIZATION STATUS
 // =================================================
+router.delete("/orgs/:id", isAuthenticated, requireRole("super_admin"), deleteOrganization);
 router.put("/orgs/:id/status", isAuthenticated, requireRole("super_admin"), updateOrganizationStatus);
+
+// =================================================
+// UPDATE ORGANIZATION ONBOARDING
+// =================================================
+router.put("/orgs/:id/onboarding", isAuthenticated, requireRole("super_admin"), updateOrganizationOnboarding);
 
 export default router;

@@ -226,7 +226,10 @@ export const leadsApi = {
       .patch<{ success: boolean; lead: Lead }>(`/api/super-admin/leads/${id}/allocate-modules`, payload)
       .then((r) => r.data),
 
-  scheduleMeeting: (id: string, payload: { scheduledAt: string; notes?: string }) =>
+  
+  updateMeetingNotes: (id: string, payload: any) =>
+    api.patch<{ success: boolean; lead: any }>(/super-admin/leads//notes, payload).then(res => res.data),
+\n  scheduleMeeting: (id: string, payload: { scheduledAt: string; notes?: string }) =>
     apiClient
       .post<{ success: boolean }>(`/api/super-admin/leads/${id}/schedule-meeting`, payload)
       .then((r) => r.data),
@@ -959,6 +962,15 @@ export const orgDetailApi = {
   getOrgDetail: (orgId: string) =>
     apiClient
       .get<{ success: boolean; data: OrgDetail }>(`/api/super-admin/organizations/${orgId}`)
+      .then((r) => r.data),
+
+  /** Update organization onboarding progress steps */
+  updateOrganizationOnboarding: (orgId: string, payload: Record<string, boolean>) =>
+    apiClient
+      .put<{ success: boolean; message: string; data: Record<string, any> }>(
+        `/api/super-admin/orgs/${orgId}/onboarding`,
+        payload
+      )
       .then((r) => r.data),
 
   /** Save billing rates for a specific org */

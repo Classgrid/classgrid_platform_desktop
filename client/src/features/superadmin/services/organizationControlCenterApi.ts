@@ -464,6 +464,17 @@ export const organizationControlCenterApi = {
       .post("/api/org-admin/dashboard/billing/razorpay-verify", payload)
       .then((response) => response.data),
 
+  
+  convertToActive: (orgId: string, data: any = {}) =>
+    apiClient
+      .post(`/api/super-admin/organizations/${orgId}/convert-to-active`, data)
+      .then((response) => response.data),
+
+  deleteOrganization: (orgId: string) =>
+    apiClient
+      .delete(`/api/super-admin/orgs/${orgId}`)
+      .then((response) => response.data),
+
   updateOrganizationConfig: (orgId: string, data: { featureFlags?: Record<string, boolean>; billing?: any; limits?: any }) =>
     apiClient
       .put(`/api/super-admin/org/${orgId}/config`, data)

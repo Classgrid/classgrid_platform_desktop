@@ -991,6 +991,17 @@ export const assignLead = async (req, res) => {
         lead.assignedAt = new Date();
         await lead.save();
 
+        try {
+            const { sendDemoLeadAssignedNotification } = await import("../services/notification-email.service.js");
+            await sendDemoLeadAssignedNotification({
+                demoRequest: lead,
+                assignee: req.user,
+                notifySuperAdmin: true
+            });
+        } catch (e) {
+            console.error("Failed to send assignment notification:", e.message);
+        }
+
         res.json({ success: true, message: "Lead assigned to you" });
     } catch (err) {
         console.error("[SuperAdmin] assignLead error:", err.message);
@@ -1145,7 +1156,11 @@ export const scheduleLeadMeeting = async (req, res) => {
         // Determine if this is a reschedule
         const isReschedule = !!lead.meetingScheduledAt;
 
-        lead.meetingStatus = "scheduled";
+        lead.meetingStatus = isReschedule ? "rescheduled" : "scheduled";
+        if (isReschedule) {
+            lead.assignedTo = null; // Unassign on reschedule to allow manual handoff
+        }
+        
         lead.meetingProvider = provider;
         lead.meetingScheduledAt = scheduledAt;
         lead.meetingTimezone = timezone;
@@ -1301,6 +1316,48 @@ export const regenerateLeadActivation = async (req, res) => {
 // =================================================
 // UPDATE ORGANIZATION STATUS
 // =================================================
+
+// =================================================
+// DELETE ORGANIZATION (HARD DELETE)
+// =================================================
+export const deleteOrganization = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const Organization = (await import("../models/Organization.js")).default;
+        const OrgSubscription = (await import("../models/OrgSubscription.js")).default;
+        const User = (await import("../models/User.js")).default;
+        const DemoRequest = (await import("../models/DemoRequest.js")).default;
+
+        const org = await Organization.findById(id);
+        if (!org) {
+            return res.status(404).json({ success: false, message: 'Organization not found' });
+        }
+
+        // 1. Delete all users belonging to this organization
+        // To be safe, we will just delete users whose organization_id matches. 
+        // In a real production system, we'd probably anonymize, but for sandbox deletion, hard delete is fine.
+        await User.deleteMany({ organization_id: id });
+
+        // 2. Delete the subscription
+        await OrgSubscription.deleteOne({ organization_id: id });
+
+        // 3. Clear the provisioned reference from any associated DemoRequest
+        await DemoRequest.updateMany(
+            { provisionedOrganizationId: id },
+            { $set: { provisionedOrganizationId: null, conversionStatus: 'deleted' } }
+        );
+
+        // 4. Delete the organization
+        await Organization.findByIdAndDelete(id);
+
+        res.json({ success: true, message: 'Organization deleted successfully' });
+    } catch (err) {
+        console.error('[SuperAdmin] deleteOrganization error:', err.message);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
 export const updateOrganizationStatus = async (req, res) => {
     try {
         const { id } = req.params;
@@ -1326,6 +1383,47 @@ export const updateOrganizationStatus = async (req, res) => {
         res.json({ success: true, message: 'Organization status updated successfully', organization: org });
     } catch (err) {
         console.error('[SuperAdmin] updateOrganizationStatus error:', err.message);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// =================================================
+// UPDATE ORGANIZATION ONBOARDING
+// =================================================
+export const updateOrganizationOnboarding = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const Organization = (await import('../models/Organization.js')).default;
+        const org = await Organization.findById(id);
+
+        if (!org) {
+            return res.status(404).json({ success: false, message: 'Organization not found' });
+        }
+
+        const validKeys = [
+            'tenant_created', 'branding_configured', 'academic_hierarchy_set',
+            'staff_imported', 'students_imported', 'fee_structure_configured',
+            'admission_form_configured', 'first_login_completed'
+        ];
+
+        let updated = false;
+        for (const key of validKeys) {
+            if (updates[key] !== undefined) {
+                org.onboarding_progress[key] = updates[key];
+                updated = true;
+            }
+        }
+
+        if (updated) {
+            org.onboarding_progress.last_synced_at = new Date();
+            await org.save();
+        }
+
+        res.json({ success: true, message: 'Onboarding progress updated', data: org.onboarding_progress });
+    } catch (err) {
+        console.error('[SuperAdmin] updateOrganizationOnboarding error:', err.message);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };

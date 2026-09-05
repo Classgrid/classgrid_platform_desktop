@@ -595,4 +595,52 @@ router.get("/delete-expired-messages", async (req, res) => {
     }
 });
 
+
+/**
+ * GET /api/cron/process-sandbox-expiries
+ *
+ * Runs daily to check for Sandbox organizations whose demoExpiresAt has passed.
+ * Changes their status to "blocked" to prevent further access.
+ * Secured by CRON_SECRET.
+ */
+router.get("/process-sandbox-expiries", async (req, res) => {
+    const cronStart = Date.now();
+    try {
+        const cronSecret = process.env.CRON_SECRET;
+        const querySecret = req.query.secret;
+        const authHeader = req.headers["authorization"];
+
+        if (cronSecret && querySecret !== cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const connectDB = (await import("../../config/db.js")).default;
+        await connectDB();
+
+        const Organization = (await import("../models/Organization.js")).default;
+
+        const now = new Date();
+        const result = await Organization.updateMany(
+            {
+                org_mode: "sandbox",
+                status: "sandbox",
+                demoExpiresAt: { $lt: now, $ne: null }
+            },
+            {
+                $set: { status: "blocked" }
+            }
+        );
+
+        res.json({
+            message: "Sandbox expiries processed",
+            blockedCount: result.modifiedCount,
+            cronDurationMs: Date.now() - cronStart
+        });
+    } catch (err) {
+        console.error("[Cron] Process sandbox expiries error:", err.message);
+        res.status(500).json({ message: "Server error", error: err.message });
+    }
+});
+
 export default router;
+

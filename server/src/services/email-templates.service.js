@@ -2547,3 +2547,88 @@ export const getErpRoleRejectedHtml = (recipientName, roleTitle, orgName, reject
   <p>If you did not submit this request, please contact support immediately.</p>`;
   return baseTemplate({ content, title: "Access Request Not Approved" });
 };
+
+// ------------- DEMO LEAD ASSIGNED -------------
+export const getDemoLeadAssignedHtml = ({ assigneeName, institutionName, adminName, adminEmail, city, dashboardUrl, leadId, meetingScheduledAt, meetingProvider, meetingUrl }) => {
+  const formatDate = (date) => {
+    const d = date ? new Date(date) : new Date();
+    return d.toLocaleString("en-IN", {
+      year: "numeric", month: "long", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
+      timeZone: "Asia/Kolkata", timeZoneName: "short",
+    });
+  };
+
+  let meetingHtml = '';
+  if (meetingScheduledAt) {
+      meetingHtml = `
+      <div class="box" style="margin-bottom: 24px; border-left: 3px solid #3b82f6;">
+        <p style="margin-bottom: 8px; font-weight: 600; color: #111111;">Meeting Details</p>
+        <ul style="margin-top: 0; margin-bottom: 0;">
+          <li><strong>Date:</strong> ${formatDate(meetingScheduledAt)}</li>
+          <li><strong>Provider:</strong> ${meetingProvider || 'Other'}</li>
+          ${meetingUrl ? \`<li><strong>Link:</strong> <a href="${meetingUrl}">${meetingUrl}</a></li>\` : ''}
+        </ul>
+      </div>
+      `;
+  }
+
+  const content = `
+    <p>Hi ${assigneeName},</p>
+    <p>You have been assigned a new Demo Lead on Classgrid.</p>
+    
+    <div class="box" style="margin-bottom: 16px; border-left: 3px solid #10b981;">
+      <p style="margin-bottom: 8px; font-weight: 600; color: #111111;">Lead Details</p>
+      <ul style="margin-top: 0; margin-bottom: 0;">
+        <li><strong>Institution:</strong> ${institutionName}</li>
+        <li><strong>Contact Person:</strong> ${adminName}</li>
+        <li><strong>Email:</strong> ${adminEmail}</li>
+        ${city ? \`<li><strong>Location:</strong> ${city}</li>\` : ''}
+      </ul>
+    </div>
+
+    ${meetingHtml}
+    
+    <a href="${dashboardUrl}/superadmin/detail/${leadId}" class="btn">View Lead Details</a>
+  `;
+  return baseTemplate({
+    content,
+    title: `New Lead Assigned: ${institutionName}`
+  });
+};
+
+export const getDemoLeadAssignedPlainText = ({ assigneeName, institutionName, adminName, adminEmail, city, dashboardUrl, leadId, meetingScheduledAt, meetingProvider, meetingUrl }) => {
+  const formatDate = (date) => {
+    const d = date ? new Date(date) : new Date();
+    return d.toLocaleString("en-IN", {
+      year: "numeric", month: "long", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
+      timeZone: "Asia/Kolkata", timeZoneName: "short",
+    });
+  };
+
+  let meetingText = '';
+  if (meetingScheduledAt) {
+      meetingText = `
+Meeting Details:
+- Date: ${formatDate(meetingScheduledAt)}
+- Provider: ${meetingProvider || 'Other'}
+${meetingUrl ? \`- Link: ${meetingUrl}\` : ''}
+`;
+  }
+
+  return `Hi ${assigneeName},
+
+You have been assigned a new Demo Lead on Classgrid.
+
+Lead Details:
+- Institution: ${institutionName}
+- Contact Person: ${adminName}
+- Email: ${adminEmail}
+${city ? \`- Location: ${city}\` : ''}
+${meetingText}
+View Lead Details:
+${dashboardUrl}/superadmin/detail/${leadId}
+
+The Classgrid Team`.trim();
+};

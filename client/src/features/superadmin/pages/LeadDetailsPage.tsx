@@ -372,9 +372,13 @@ export function LeadDetailsPage() {
               <div className="bg-muted/30 px-5 py-4 border-b flex items-center justify-between">
                 <h2 className="font-semibold text-card-foreground">MEETING MANAGEMENT</h2>
                 {(!isEditingMeeting && date) && (
-                  <Button variant="outline" size="sm" onClick={() => setIsEditingMeeting(true)} className="h-8 text-xs font-semibold px-4 rounded-full border-border hover:bg-accent/50 text-foreground transition-all duration-300">
-                    Change
-                  </Button>
+                  lead.meetingStatus === "completed" ? (
+                    <Badge variant="success" className="h-8 text-xs font-semibold px-4 rounded-full">Meeting Completed</Badge>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={() => setIsEditingMeeting(true)} className="h-8 text-xs font-semibold px-4 rounded-full border-border hover:bg-accent/50 text-foreground transition-all duration-300">
+                      Change
+                    </Button>
+                  )
                 )}
               </div>
               <div className="p-5 space-y-5">
@@ -507,7 +511,7 @@ export function LeadDetailsPage() {
                     View Organization Details &rarr;
                   </Button>
                   
-                  {!provisionedData && (
+                  {!provisionedData && !["activated", "setup", "live"].includes(lead.lifecycleStage || "") && (
                     <Button 
                       variant="outline" 
                       className="w-full" 
@@ -529,6 +533,12 @@ export function LeadDetailsPage() {
                     >
                       {regenerateMutation.isPending ? "Sending..." : "Resend Activation Link"}
                     </Button>
+                  )}
+
+                  {["activated", "setup", "live"].includes(lead.lifecycleStage || "") && (
+                    <div className="mt-2 text-center text-xs font-semibold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                      ✓ Sandbox Activated
+                    </div>
                   )}
                 </div>
               ) : (
@@ -580,6 +590,170 @@ export function LeadDetailsPage() {
               >
                 {deleteMutation.isPending ? "Deleting..." : "Delete Lead"}
               </Button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* ── NEW FULL WIDTH MANAGEMENT SECTION ── */}
+      <div className="mt-8 w-full bg-card border rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-muted/30 px-5 py-4 border-b">
+          <h2 className="font-semibold text-card-foreground text-lg">LEAD MANAGEMENT & STATUS</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Update lead details, assignment, and discovery info independently.</p>
+        </div>
+        
+        <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          {/* LEFT SIDE: Management & Discovery */}
+          <div className="space-y-8">
+            
+            {/* A. Assignment */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Assignment Handoff</h3>
+              <div className="flex gap-3">
+                <select 
+                  className="flex-1 h-10 px-3 py-2 text-sm rounded-lg border bg-background"
+                  value={lead.assignedTo?._id || ''}
+                  onChange={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { assignedTo: e.target.value || null } })}
+                >
+                  <option value="">Unassigned</option>
+                  <option value="60d0fe4f5311236168a109ca">Nikhil Shinde</option>
+                  <option value="60d0fe4f5311236168a109cb">Gemini AI</option>
+                </select>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => toast.success("Assignment updated")}
+                  disabled={updateNotesMutation.isPending}
+                >Save</Button>
+              </div>
+            </div>
+
+            {/* B. Status & Tracking */}
+            <div className="space-y-3 pt-4 border-t">
+              <h3 className="text-sm font-semibold text-foreground">Status & Tracking</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Meeting Status</label>
+                  <select 
+                    className="w-full h-10 px-3 py-2 text-sm rounded-lg border bg-background"
+                    value={lead.meetingStatus || 'pending'}
+                    onChange={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingStatus: e.target.value } })}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="rescheduled">Rescheduled</option>
+                    <option value="missed">Missed</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Lifecycle Stage</label>
+                  <select 
+                    className="w-full h-10 px-3 py-2 text-sm rounded-lg border bg-background"
+                    value={lead.lifecycleStage || 'lead_created'}
+                    onChange={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { lifecycleStage: e.target.value } })}
+                  >
+                    <option value="lead_created">Lead Created</option>
+                    <option value="meeting_scheduled">Meeting Scheduled</option>
+                    <option value="approved">Approved</option>
+                    <option value="provisioned">Provisioned</option>
+                    <option value="activated">Activated</option>
+                    <option value="setup">Setup</option>
+                    <option value="live">Live</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* C. Discovery Fields */}
+            <div className="space-y-3 pt-4 border-t">
+              <h3 className="text-sm font-semibold text-foreground">Discovery & Requirements</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Student Count</label>
+                  <Input 
+                    type="number"
+                    placeholder="e.g. 500"
+                    defaultValue={lead.studentCount || ''}
+                    onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { studentCount: parseInt(e.target.value) || null } })}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Staff/Teacher Count</label>
+                  <Input 
+                    type="number"
+                    placeholder="e.g. 50"
+                    defaultValue={lead.staffCount || ''}
+                    onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { staffCount: parseInt(e.target.value) || null } })}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Campus Count</label>
+                  <Input 
+                    type="number"
+                    placeholder="e.g. 1"
+                    defaultValue={lead.campusCount || ''}
+                    onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { campusCount: parseInt(e.target.value) || null } })}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Current System</label>
+                  <select 
+                    className="w-full h-10 px-3 py-2 text-sm rounded-lg border bg-background"
+                    value={lead.currentSystem || ''}
+                    onChange={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { currentSystem: e.target.value || null } })}
+                  >
+                    <option value="">Select System</option>
+                    <option value="excel">Excel / Spreadsheets</option>
+                    <option value="manual_registers">Manual Registers</option>
+                    <option value="other_erp">Other ERP</option>
+                    <option value="no_system">No System</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* RIGHT SIDE: Notes & Reviews */}
+          <div className="space-y-6 flex flex-col">
+            
+            <div className="flex-1 flex flex-col">
+              <label className="text-sm font-semibold text-foreground mb-2 block">Meeting Notes & Comments</label>
+              <textarea 
+                className="flex-1 min-h-[120px] w-full rounded-lg border bg-background px-3 py-2 text-sm resize-y"
+                placeholder="Enter detailed meeting feedback here..."
+                defaultValue={lead.meetingNotes || ''}
+                onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingNotes: e.target.value } })}
+              />
+            </div>
+
+            <div className="flex-1 flex flex-col">
+              <label className="text-sm font-semibold text-foreground mb-2 block">Final Demo Review</label>
+              <textarea 
+                className="flex-1 min-h-[120px] w-full rounded-lg border bg-background px-3 py-2 text-sm resize-y"
+                placeholder="Enter school's final review/feedback..."
+                defaultValue={lead.demoReview || ''}
+                onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { demoReview: e.target.value } })}
+              />
+            </div>
+
+            <div className="pt-4 border-t">
+              <label className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="h-5 w-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                  checked={lead.isOrganizationVetted || false}
+                  onChange={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { isOrganizationVetted: e.target.checked } })}
+                />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Organization Vetted & Approved</p>
+                  <p className="text-xs text-muted-foreground">Required to unlock sandbox provisioning.</p>
+                </div>
+              </label>
             </div>
 
           </div>

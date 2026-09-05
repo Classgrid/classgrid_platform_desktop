@@ -141,7 +141,7 @@ const demoRequestSchema = new mongoose.Schema(
     // Legacy / Internal fields
     meetingStatus: {
       type: String,
-      enum: ["pending", "scheduled", "completed", "cancelled"],
+      enum: ["pending", "scheduled", "completed", "cancelled", "rescheduled", "missed"],
       default: "pending",
     },
     meetingProvider: { type: String, default: "", trim: true },
@@ -149,6 +149,8 @@ const demoRequestSchema = new mongoose.Schema(
     meetingTimezone: { type: String, default: "Asia/Kolkata", trim: true },
     meetingId: { type: String, default: "", trim: true },
     meetingNotes: { type: String, default: "" },
+    demoReview: { type: String, default: "" },
+    isOrganizationVetted: { type: Boolean, default: false },
     meetingScheduledByUserId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

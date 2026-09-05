@@ -759,3 +759,72 @@ export async function sendDemoMeetingScheduledNotification({
 }
 
 
+
+
+// -------------------------------------------------
+// 10. DEMO LEAD ASSIGNED EMAILS
+//    Triggered when a lead is assigned to an admin
+// -------------------------------------------------
+export async function sendDemoLeadAssignedNotification({ demoRequest, assignee, assigner, notifySuperAdmin = true }) {
+    try {
+        if (!demoRequest || !assignee || !assignee.email) {
+            return { emailAttempted: false, jobsCreated: 0 };
+        }
+
+        const { getDemoLeadAssignedHtml, getDemoLeadAssignedPlainText } = await import('./email-templates.service.js');
+        
+        // We bypass the queue here because we specifically need to set the FROM address dynamically
+        // and the EmailJob schema currently does not support dynamic 'fromEmail'.
+        const { sendEmail } = await import('./aws-ses.service.js');
+        
+        const superAdminEmail = process.env.SUPER_ADMIN_EMAIL?.trim() || 'support@classgrid.in';
+        const dashboardUrl = process.env.FRONTEND_URL?.trim() || 'https://classgrid.in';
+
+        // The "From" is the person who assigned it, or fallback to default
+        const fromEmail = assigner?.email || superAdminEmail;
+        const fromName = assigner?.name ? `${assigner.name} (Classgrid)` : "Classgrid Platform";
+
+        const templateData = {
+            assigneeName: assignee.name || 'Admin',
+            institutionName: demoRequest.institutionName || 'Unknown School',
+            adminName: demoRequest.adminName || 'Admin',
+            adminEmail: demoRequest.adminEmail || '',
+            city: demoRequest.city || '',
+            meetingScheduledAt: demoRequest.meetingScheduledAt || null,
+            meetingProvider: demoRequest.meetingProvider || '',
+            meetingUrl: demoRequest.meetingUrl || '',
+            dashboardUrl,
+            leadId: demoRequest._id.toString()
+        };
+
+        // Send direct to Assignee via SES
+        await sendEmail({
+            to: assignee.email,
+            fromEmail: fromEmail,
+            fromName: fromName,
+            subject: `New Lead Assigned: ${templateData.institutionName} | Classgrid`,
+            html: getDemoLeadAssignedHtml(templateData),
+            text: getDemoLeadAssignedPlainText(templateData)
+        });
+
+        // If requested, CC the super admin (unless they are the ones assigned)
+        if (notifySuperAdmin && superAdminEmail.toLowerCase() !== assignee.email.toLowerCase()) {
+            await sendEmail({
+                to: superAdminEmail,
+                fromEmail: fromEmail,
+                fromName: fromName,
+                subject: `[CC] New Lead Assigned: ${templateData.institutionName} | Classgrid`,
+                html: getDemoLeadAssignedHtml({ ...templateData, assigneeName: 'Super Admin (' + assignee.name + ' was assigned)' }),
+                text: getDemoLeadAssignedPlainText({ ...templateData, assigneeName: 'Super Admin (' + assignee.name + ' was assigned)' })
+            });
+        }
+
+        return { emailAttempted: true, jobsCreated: 1 };
+    } catch (err) {
+        console.error('[EmailNotification] demo lead assigned notification failed:', {
+            requestId: demoRequest?._id?.toString(),
+            error: err.message,
+        });
+        return { emailAttempted: false, jobsCreated: 0 };
+    }
+}
