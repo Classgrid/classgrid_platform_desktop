@@ -41,9 +41,15 @@ import { PresenceProvider } from "@/features/chat/context/PresenceContext";
 
 export function RequireAuth() {
   const location = useLocation();
-  const { data: user, isLoading } = useCurrentUser();
+  const { data: user, isLoading, isFetching } = useCurrentUser();
 
-  if (isLoading) {
+  // If there's an SSO token in the URL, we must wait for the fetch to complete 
+  // even if React Query has a cached 'null' user from a previous session.
+  const hasSsoToken = typeof window !== 'undefined' && 
+                      (new URLSearchParams(window.location.search).has("sso_token") || 
+                       new URLSearchParams(window.location.search).has("token"));
+                      
+  if (isLoading || (hasSsoToken && isFetching)) {
     return null;
   }
 
