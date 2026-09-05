@@ -55,6 +55,7 @@ import { formatOrgType } from "@/utils/orgHelpers";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { toast } from "sonner";
 import { SandboxProvisioningWizard } from "../components/SandboxProvisioningWizard";
+import RichReplyEditor from "@/app/support/components/RichReplyEditor";
 
 export function LeadDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -76,7 +77,7 @@ export function LeadDetailsPage() {
   const [copied, setCopied] = useState(false);
 
   const lead = data?.leads.find(l => l._id === id);
-  const superAdmins = usersData?.users?.filter(u => u.role === 'superadmin' || u.role === 'admin' || u.role === 'support') || [];
+  const superAdmins = usersData?.data?.filter((u: any) => u.role === 'superadmin' || u.role === 'admin' || u.role === 'support') || [];
 
   const setBreadcrumbs = useBreadcrumbStore((state) => state.setBreadcrumbs);
 
@@ -560,10 +561,31 @@ export function LeadDetailsPage() {
                       {date && meetingUrl ? <CheckCircle2 size={14} className="text-emerald-500" /> : <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />}
                       Meeting scheduled
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />
-                      Organization checked
-                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!lead) return;
+                        const newVetted = !lead.isOrganizationVetted;
+                        setLead({ ...lead, isOrganizationVetted: newVetted });
+                        try {
+                          await leadsApi.updateMeetingNotes(lead._id, { isOrganizationVetted: newVetted });
+                          toast.success(newVetted ? "Organization vetted & approved" : "Organization vetting reset");
+                        } catch (err) {
+                          setLead({ ...lead, isOrganizationVetted: !newVetted });
+                          toast.error("Failed to update vetting status");
+                        }
+                      }}
+                      className="flex items-center gap-2 text-sm text-card-foreground hover:text-emerald-500 transition cursor-pointer text-left w-full select-none py-1 group"
+                    >
+                      {lead.isOrganizationVetted ? (
+                        <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/40 shrink-0 group-hover:border-emerald-500 transition" />
+                      )}
+                      <span className={lead.isOrganizationVetted ? "font-semibold text-emerald-600 dark:text-emerald-400" : "font-normal text-muted-foreground"}>
+                        Organization vetted & approved
+                      </span>
+                    </button>
                   </div>
 
                   <p className="text-[11px] leading-relaxed text-muted-foreground mb-4">
@@ -572,15 +594,14 @@ export function LeadDetailsPage() {
                   
                   <button 
                     onClick={() => setShowProvisioningWizard(true)}
-                    className="
+                    disabled={!lead.isOrganizationVetted}
+                    className={`
                       min-h-14 w-full rounded-xl
-                      bg-emerald-500 px-5
-                      text-sm font-bold text-emerald-950
-                      shadow-[0_10px_30px_rgba(16,185,129,0.22)]
-                      transition
-                      hover:bg-emerald-400
-                      active:scale-[0.99]
-                    "
+                      px-5 text-sm font-bold transition
+                      ${lead.isOrganizationVetted 
+                        ? 'bg-emerald-500 text-emerald-950 shadow-[0_10px_30px_rgba(16,185,129,0.22)] hover:bg-emerald-400 active:scale-[0.99] cursor-pointer' 
+                        : 'bg-muted text-muted-foreground cursor-not-allowed opacity-70'}
+                    `}
                   >
                     PROVISION SANDBOX WIZARD
                   </button>
@@ -628,9 +649,18 @@ export function LeadDetailsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Unassigned</SelectItem>
-                    {superAdmins.map((admin) => (
+                    {superAdmins.map((admin: any) => (
                       <SelectItem key={admin._id} value={admin._id}>
-                        {admin.name}
+                        <div className="flex items-center gap-2">
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-border bg-emerald-500">
+                            {admin.avatarUrl || admin.profilePicture ? (
+                              <img src={admin.avatarUrl || admin.profilePicture} alt={admin.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-white font-bold text-[9px]">{admin.name?.charAt(0).toUpperCase() || 'U'}</span>
+                            )}
+                          </div>
+                          <span>{admin.name}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -658,12 +688,42 @@ export function LeadDetailsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                      <SelectItem value="rescheduled">Rescheduled</SelectItem>
-                      <SelectItem value="missed">Missed</SelectItem>
+                      <SelectItem value="pending">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-yellow-500" />
+                          <span className="font-medium text-yellow-500">Pending</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="scheduled">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-blue-500" />
+                          <span className="font-medium text-blue-500">Scheduled</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="completed">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                          <span className="font-medium text-emerald-500">Completed</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="cancelled">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-red-500" />
+                          <span className="font-medium text-red-500">Cancelled</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="rescheduled">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-purple-500" />
+                          <span className="font-medium text-purple-500">Rescheduled</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="missed">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-orange-500" />
+                          <span className="font-medium text-orange-500">Missed</span>
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -677,13 +737,48 @@ export function LeadDetailsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="lead_created">Lead Created</SelectItem>
-                      <SelectItem value="meeting_scheduled">Meeting Scheduled</SelectItem>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="provisioned">Provisioned</SelectItem>
-                      <SelectItem value="activated">Activated</SelectItem>
-                      <SelectItem value="setup">Setup</SelectItem>
-                      <SelectItem value="live">Live</SelectItem>
+                      <SelectItem value="lead_created">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-slate-500" />
+                          <span className="font-medium text-slate-500">Lead Created</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="meeting_scheduled">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-blue-500" />
+                          <span className="font-medium text-blue-500">Meeting Scheduled</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="approved">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-purple-500" />
+                          <span className="font-medium text-purple-500">Approved</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="provisioned">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                          <span className="font-medium text-emerald-500">Provisioned</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="activated">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-emerald-600" />
+                          <span className="font-medium text-emerald-600">Activated</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="setup">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                          <span className="font-medium text-indigo-500">Setup</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="live">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-green-500" />
+                          <span className="font-medium text-green-500">Live</span>
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -747,27 +842,7 @@ export function LeadDetailsPage() {
           {/* RIGHT SIDE: Notes & Reviews */}
           <div className="space-y-6 flex flex-col">
             
-            <div className="flex-1 flex flex-col">
-              <label className="text-sm font-semibold text-foreground mb-2 block">Meeting Notes & Comments</label>
-              <Textarea 
-                className="flex-1 min-h-[120px] w-full bg-background resize-y"
-                placeholder="Enter detailed meeting feedback here..."
-                defaultValue={lead.meetingNotes || ''}
-                onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingNotes: e.target.value } })}
-              />
-            </div>
-
-            <div className="flex-1 flex flex-col">
-              <label className="text-sm font-semibold text-foreground mb-2 block">Final Demo Review</label>
-              <Textarea 
-                className="flex-1 min-h-[120px] w-full bg-background resize-y"
-                placeholder="Enter school's final review/feedback..."
-                defaultValue={lead.demoReview || ''}
-                onBlur={(e) => updateNotesMutation.mutate({ id: lead._id, payload: { demoReview: e.target.value } })}
-              />
-            </div>
-
-            <div className="pt-4 border-t">
+            <div className="pt-4 border-t lg:border-t-0">
               <label className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer">
                 <Checkbox 
                   className="h-5 w-5"
@@ -781,6 +856,31 @@ export function LeadDetailsPage() {
               </label>
             </div>
 
+          </div>
+        </div>
+
+        {/* ── BOTTOM FULL WIDTH ROW: NOTES & REVIEWS ── */}
+        <div className="mt-8 grid grid-cols-1 gap-8">
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-foreground mb-3 block">Meeting Notes & Comments</label>
+            <RichReplyEditor 
+              initialHtml={lead.meetingNotes || ''}
+              onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingNotes: html } })}
+              placeholder="Enter detailed meeting feedback here..."
+              hideAttachments={true}
+              minHeight={250}
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-foreground mb-3 block">Final Demo Review</label>
+            <RichReplyEditor 
+              initialHtml={lead.demoReview || ''}
+              onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { demoReview: html } })}
+              placeholder="Enter school's final review/feedback..."
+              hideAttachments={true}
+              minHeight={250}
+            />
           </div>
         </div>
       </div>
