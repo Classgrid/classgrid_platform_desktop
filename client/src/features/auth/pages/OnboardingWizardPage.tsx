@@ -213,6 +213,28 @@ const getDepartmentOptions = (rawOrgType: string) => {
   return ["Administration", "Computer Science", "Mechanical", "Electrical", "Civil", "Electronics", "IT", "Other"];
 };
 
+const JOB_TITLE_OPTIONS = [
+  "Academic Coordinator", "Academic Director", "Accountant", "Adjunct Faculty", "Admin Officer", 
+  "Admission Counselor", "Admission Officer", "Assistant Librarian", "Assistant Professor", "Associate Dean", 
+  "Associate Professor", "Attendant", "Batch Coordinator", "Branch Manager", "Cashier", 
+  "Center Head", "CEO", "Chairman", "Chancellor", "Class Teacher", 
+  "Clerk", "Coach", "Compliance Officer", "Controller of Examinations (COE)", "COO", 
+  "Corporate Trainer", "Counselor", "Course Coordinator", "Curriculum Head", "Data Entry Operator", 
+  "Dean", "Dean of Academics", "Dean of Student Affairs", "Director", "Educator", 
+  "Exam Coordinator", "Finance Manager", "Founder", "Co-Founder", "Guest Teacher", 
+  "Head Clerk", "Head of Department (HOD)", "Head of Institution", "Hostel Warden", "HR Manager", 
+  "Instructor", "IQAC Director", "IT Manager", "Junior Clerk", "Lab Assistant", 
+  "Lecturer", "Librarian", "Managing Director", "Medical Officer", "Mentor", 
+  "NAAC Coordinator", "NBA Coordinator", "Network Engineer", "Nurse", "Office Superintendent", 
+  "Peon", "Physical Training Instructor (PTI)", "Placement Officer (TPO)", "Post Graduate Teacher (PGT)", 
+  "Pre-Primary Teacher", "President", "Primary Teacher (PRT)", "Principal", "PRO (Public Relations Officer)", 
+  "Professor", "Program Director", "Provost", "Registrar", "Research Scholar", 
+  "Senior Clerk", "Senior Lecturer", "Senior Teacher", "Special Educator", "Sports Director", 
+  "Student Welfare Officer", "Subject Coordinator", "Subject Matter Expert (SME)", "System Administrator", "Teacher", 
+  "Teaching Assistant (TA)", "Trainer", "Training & Placement Head", "Trained Graduate Teacher (TGT)", "Tutor", 
+  "Vice Chancellor", "Vice Principal", "Visiting Faculty", "Other (Please specify)"
+];
+
 export function OnboardingWizardPage() {
   const { theme, setTheme } = useTheme();
   const [searchParams] = useSearchParams();
@@ -220,6 +242,7 @@ export function OnboardingWizardPage() {
 
   const [isTokenValid, setIsTokenValid] = useState<boolean | null>(null);
   const [tokenError, setTokenError] = useState("");
+  const [showCustomDesignation, setShowCustomDesignation] = useState(false);
 
   // Persisted state initialization
   const [currentStep, setCurrentStep] = useState(() => {
@@ -1630,12 +1653,38 @@ export function OnboardingWizardPage() {
                           <div className="grid md:grid-cols-2 gap-6">
                             <div>
                               <label className="text-sm font-semibold text-foreground mb-1.5 block">Job Title / Designation</label>
-                              <Input
-                                placeholder="e.g. Principal, HOD, Director"
-                                className="h-10"
-                                value={formData["personal_details"]?.["designation"] || ""}
-                                onChange={(e) => handleFieldChange("personal_details", "designation", e.target.value)}
-                              />
+                              <ResponsiveSelect
+                                className="w-full h-10 rounded-lg border-input bg-background"
+                                value={
+                                  showCustomDesignation || (formData["personal_details"]?.["designation"] !== "" && !JOB_TITLE_OPTIONS.includes(formData["personal_details"]?.["designation"] || ""))
+                                    ? "Other (Please specify)"
+                                    : (formData["personal_details"]?.["designation"] || "")
+                                }
+                                onChange={(e) => {
+                                  if (e.target.value === "Other (Please specify)") {
+                                    setShowCustomDesignation(true);
+                                    handleFieldChange("personal_details", "designation", "");
+                                  } else {
+                                    setShowCustomDesignation(false);
+                                    handleFieldChange("personal_details", "designation", e.target.value);
+                                  }
+                                }}
+                              >
+                                <option value="" disabled>Select Job Title...</option>
+                                {JOB_TITLE_OPTIONS.map(opt => (
+                                  <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                              </ResponsiveSelect>
+                              
+                              {(showCustomDesignation || (formData["personal_details"]?.["designation"] !== "" && !JOB_TITLE_OPTIONS.includes(formData["personal_details"]?.["designation"] || ""))) && (
+                                <Input
+                                  placeholder="Type your custom designation..."
+                                  className="h-10 mt-3 border-primary/40 focus-visible:ring-primary/20 transition-all shadow-sm"
+                                  autoFocus
+                                  value={formData["personal_details"]?.["designation"] || ""}
+                                  onChange={(e) => handleFieldChange("personal_details", "designation", e.target.value)}
+                                />
+                              )}
                             </div>
                             <div>
                               <label className="text-sm font-semibold text-foreground mb-1.5 block">Department</label>
@@ -1682,7 +1731,7 @@ export function OnboardingWizardPage() {
                           <div className="md:col-span-2">
                             <label className="text-sm font-semibold text-foreground mb-1.5 block">LinkedIn Profile (Optional)</label>
                             <Input
-                              placeholder="https://linkedin.com/in/username"
+                              placeholder="e.g., https://linkedin.com/in/yourprofile"
                               className="h-10"
                               value={formData["personal_details"]?.["linkedin"] || ""}
                               onChange={(e) => handleFieldChange("personal_details", "linkedin", e.target.value)}
