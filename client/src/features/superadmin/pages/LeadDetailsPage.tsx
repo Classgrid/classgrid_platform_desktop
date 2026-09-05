@@ -35,11 +35,10 @@
 
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import {
-  Building2, User, MapPin, Globe, MessageSquare,
+import { 
+  Building2, User, MapPin, Globe, MessageSquare, 
   Copy, ExternalLink, AlertTriangle, CheckCircle2, Users
 } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { Badge } from "@/components/marketing_ui/badge";
@@ -121,7 +120,7 @@ export function LeadDetailsPage() {
             <div className="h-9 w-24 bg-muted rounded-md" />
           </div>
         </div>
-
+        
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
           {/* Left Column Skeleton */}
           <div className="xl:col-span-8 space-y-6">
@@ -144,7 +143,7 @@ export function LeadDetailsPage() {
 
   let statusText = "● Pending";
   let statusClasses = "bg-muted border-border text-foreground";
-
+  
   if (lead.status === "converted") {
     statusText = "● Provisioned";
     statusClasses = "bg-emerald-100 text-emerald-800 border-emerald-200";
@@ -188,7 +187,7 @@ export function LeadDetailsPage() {
 
   return (
     <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 pb-12">
-
+      
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-border pb-6 mb-8">
         <div className="flex flex-col">
@@ -207,53 +206,53 @@ export function LeadDetailsPage() {
             Submitted on {formatDate(lead.createdAt, "dd MMM yyyy, hh:mm a")}
           </p>
           <div className="mt-4">
-            <TooltipProvider>
-              {!lead.assignedTo ? (
-                <Tooltip delay={200}>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center justify-center h-8 w-8 bg-muted/40 border border-border/50 rounded-full cursor-default hover:bg-muted/80 transition-colors">
-                      <div className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>Unassigned (Needs Attention)</TooltipContent>
-                </Tooltip>
-              ) : (
-                <Tooltip delay={200}>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2 cursor-default hover:opacity-80 transition-opacity">
-                      <div className="relative flex items-center justify-center h-8 w-8 rounded-full border border-border/50">
-                        {/* Green Dot Indicator */}
-                        <div className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-background z-10" />
-
-                        {/* Photo or Fallback Initial */}
-                        {(lead.assignedTo as any).avatarUrl || (lead.assignedTo as any).profilePicture || (lead.assignedTo as any).picture ? (
-                          <img src={(lead.assignedTo as any).avatarUrl || (lead.assignedTo as any).profilePicture || (lead.assignedTo as any).picture} alt={lead.assignedTo.name} className="h-full w-full rounded-full object-cover" />
-                        ) : (
-                          <div className="h-full w-full rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center text-xs font-bold">
-                            {lead.assignedTo.name?.charAt(0).toUpperCase() || 'U'}
-                          </div>
-                        )}
+              <TooltipProvider>
+                {!lead.assignedTo ? (
+                  <Tooltip delay={200}>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-center h-8 w-8 bg-muted/40 border border-border/50 rounded-full cursor-default hover:bg-muted/80 transition-colors">
+                        <div className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
                       </div>
-                      <span className="text-sm font-medium text-foreground">{lead.assignedTo.name}</span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent className="flex flex-col items-start gap-0.5 py-2">
-                    <span className="font-semibold text-sm">Assigned to {lead.assignedTo.name}</span>
-                    {lead.assignedAt && <span className="text-xs opacity-70">on {formatDate(lead.assignedAt, "dd MMM yyyy, hh:mm a")}</span>}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </TooltipProvider>
-          </div>
+                    </TooltipTrigger>
+                    <TooltipContent>Unassigned (Needs Attention)</TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Tooltip delay={200}>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-2 cursor-default hover:opacity-80 transition-opacity">
+                        <div className="relative flex items-center justify-center h-8 w-8 rounded-full border border-border/50">
+                          {/* Green Dot Indicator */}
+                          <div className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-background z-10" />
+                          
+                          {/* Photo or Fallback Initial */}
+                          {(lead.assignedTo as any).avatarUrl || (lead.assignedTo as any).profilePicture || (lead.assignedTo as any).picture ? (
+                            <img src={(lead.assignedTo as any).avatarUrl || (lead.assignedTo as any).profilePicture || (lead.assignedTo as any).picture} alt={lead.assignedTo.name} className="h-full w-full rounded-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center text-xs font-bold">
+                              {lead.assignedTo.name?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-sm font-medium text-foreground">{lead.assignedTo.name}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="flex flex-col items-start gap-0.5 py-2">
+                      <span className="font-semibold text-sm">Assigned to {lead.assignedTo.name}</span>
+                      {lead.assignedAt && <span className="text-xs opacity-70">on {formatDate(lead.assignedAt, "dd MMM yyyy, hh:mm a")}</span>}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </TooltipProvider>
+            </div>
         </div>
       </div>
 
       {/* ── 12-COLUMN GRID ── */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-
+        
         {/* LEFT CONTENT (col-span-8) */}
         <div className="xl:col-span-8 space-y-6">
-
+          
           {/* INSTITUTION DETAILS */}
           <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
             <div className="bg-muted/30 px-5 py-4 border-b">
@@ -378,7 +377,7 @@ export function LeadDetailsPage() {
         {/* RIGHT SIDEBAR (col-span-4) */}
         <div className="xl:col-span-4 space-y-6">
           <div className="sticky top-6 space-y-6">
-
+            
             {/* MEETING MANAGEMENT */}
             <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
               <div className="bg-muted/30 px-5 py-4 border-b flex items-center justify-between">
@@ -451,10 +450,10 @@ export function LeadDetailsPage() {
                     <div>
                       <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Google Meet Link</label>
                       <div className="relative">
-                        <Input
-                          value={meetingUrl}
-                          onChange={e => setMeetingUrl(e.target.value)}
-                          placeholder="https://meet.google.com/..."
+                        <Input 
+                          value={meetingUrl} 
+                          onChange={e => setMeetingUrl(e.target.value)} 
+                          placeholder="https://meet.google.com/..." 
                         />
                       </div>
                       <div className="flex items-center gap-2 mt-2">
@@ -501,7 +500,7 @@ export function LeadDetailsPage() {
                   <p className="text-sm text-emerald-800/80 dark:text-emerald-300/80 mb-4">
                     Provisioned on {formatDate(lead.updatedAt || new Date().toISOString(), "dd MMM yyyy")}
                   </p>
-
+                  
                   {provisionedData && (
                     <div className="mb-4 space-y-3 bg-white dark:bg-black/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/30">
                       <div>
@@ -522,11 +521,11 @@ export function LeadDetailsPage() {
                   <Button className="w-full mb-2" variant="primary" onClick={() => window.open(`/superadmin/detail/${lead?.provisionedOrganizationId || provisionedData?.orgId || provisionedData?.orgName || 'unknown'}`, '_self')}>
                     View Organization Details &rarr;
                   </Button>
-
+                  
                   {!provisionedData && !["activated", "setup", "live"].includes(lead.lifecycleStage || "") && (
-                    <Button
-                      variant="outline"
-                      className="w-full"
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
                       disabled={regenerateMutation.isPending}
                       onClick={() => {
                         regenerateMutation.mutate(id!, {
@@ -595,15 +594,15 @@ export function LeadDetailsPage() {
                   <p className="text-[11px] leading-relaxed text-muted-foreground mb-4">
                     Provisioning creates the organization and administrator account. This action requires confirmation.
                   </p>
-
-                  <button
+                  
+                  <button 
                     onClick={() => setShowProvisioningWizard(true)}
                     disabled={!lead.isOrganizationVetted}
                     className={`
                       min-h-14 w-full rounded-xl
                       px-5 text-sm font-bold transition
-                      ${lead.isOrganizationVetted
-                        ? 'bg-emerald-500 text-emerald-950 shadow-[0_10px_30px_rgba(16,185,129,0.22)] hover:bg-emerald-400 active:scale-[0.99] cursor-pointer'
+                      ${lead.isOrganizationVetted 
+                        ? 'bg-emerald-500 text-emerald-950 shadow-[0_10px_30px_rgba(16,185,129,0.22)] hover:bg-emerald-400 active:scale-[0.99] cursor-pointer' 
                         : 'bg-muted text-muted-foreground cursor-not-allowed opacity-70'}
                     `}
                   >
@@ -633,19 +632,19 @@ export function LeadDetailsPage() {
         <h2 className="font-bold text-foreground text-xl mb-6 px-1 flex items-center gap-2">
           Lead Management & Status
         </h2>
-
+        
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-
+          
           {/* LEFT: Assignment & Status */}
           <div className="lg:col-span-1 space-y-6">
-
+            
             {/* Assignment Handoff */}
             <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col gap-4">
               <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b pb-3">
                 <Users size={16} className="text-muted-foreground" /> Assignment Handoff
               </h3>
               <div className="flex gap-2 w-full">
-                <Select
+                <Select 
                   value={lead.assignedTo?._id || ''}
                   onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { assignedTo: val || null } })}
                 >
@@ -681,7 +680,7 @@ export function LeadDetailsPage() {
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Meeting Status</label>
-                  <Select
+                  <Select 
                     value={lead.meetingStatus || 'pending'}
                     onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingStatus: val } })}
                   >
@@ -700,7 +699,7 @@ export function LeadDetailsPage() {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Lifecycle Stage</label>
-                  <Select
+                  <Select 
                     value={lead.lifecycleStage || 'lead_created'}
                     onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { lifecycleStage: val } })}
                   >
@@ -720,22 +719,20 @@ export function LeadDetailsPage() {
                 </div>
               </div>
             </div>
-
+            
             {/* Vetted Checkbox Card */}
             <div 
               className={`bg-card border rounded-2xl p-4 transition-colors flex items-start gap-4 shadow-sm relative overflow-hidden ${updateNotesMutation.isPending ? 'border-muted opacity-70 cursor-not-allowed' : 'border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer'}`}
               onClick={() => {
                 if (updateNotesMutation.isPending) return;
-                const newVetted = !lead.isOrganizationVetted;
-                updateNotesMutation.mutate({ id: lead._id, payload: { isOrganizationVetted: newVetted } });
-                
-                if (newVetted) {
-                  toast.success("Organization vetted & approved");
-                } else {
-                  toast.success("Organization vetting reset");
-                }
+                updateNotesMutation.mutate({ id: lead._id, payload: { isOrganizationVetted: !lead.isOrganizationVetted } });
               }}
             >
+              {updateNotesMutation.isPending && (
+                <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center z-10">
+                  <Loader2 className="h-6 w-6 text-emerald-500 animate-spin" />
+                </div>
+              )}
               <Checkbox checked={lead.isOrganizationVetted || false} className="mt-1 shrink-0" />
               <div>
                 <p className="text-sm font-bold text-foreground">Organization Vetted & Approved</p>
@@ -748,13 +745,13 @@ export function LeadDetailsPage() {
           {/* MIDDLE: Discovery */}
           <div className="lg:col-span-1 bg-card border rounded-2xl p-5 shadow-sm h-fit space-y-5">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b pb-3">
-              <CheckCircle2 size={16} className="text-muted-foreground" /> Discovery & Requirements
+               <CheckCircle2 size={16} className="text-muted-foreground" /> Discovery & Requirements
             </h3>
-
+            
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Student Count</label>
-                <Input
+                <Input 
                   type="number"
                   placeholder="e.g. 500"
                   defaultValue={lead.studentCount || ''}
@@ -764,7 +761,7 @@ export function LeadDetailsPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Staff/Teacher Count</label>
-                <Input
+                <Input 
                   type="number"
                   placeholder="e.g. 50"
                   defaultValue={lead.staffCount || ''}
@@ -774,7 +771,7 @@ export function LeadDetailsPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Campus Count</label>
-                <Input
+                <Input 
                   type="number"
                   placeholder="e.g. 1"
                   defaultValue={lead.campusCount || ''}
@@ -784,7 +781,7 @@ export function LeadDetailsPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Current System</label>
-                <Select
+                <Select 
                   value={lead.currentSystem || ''}
                   onValueChange={(val) => updateNotesMutation.mutate({ id: lead._id, payload: { currentSystem: val || null } })}
                 >
@@ -802,119 +799,118 @@ export function LeadDetailsPage() {
               </div>
             </div>
           </div>
+          
+          </div>
+        </div>
+
+        {/* BOTTOM ROWS: Notes & Reviews (Full Width) */}
+        <div className="flex flex-col gap-6">
+          
+          {/* Meeting Notes */}
+          <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col h-fit w-full">
+            <div className="flex items-center justify-between border-b pb-3 mb-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                 <Copy size={16} className="text-muted-foreground" /> Meeting Notes
+              </h3>
+              <Button variant="outline" size="sm" className="h-7 px-3 text-xs rounded-full font-semibold" onClick={() => setIsEditingMeetingNotes(!isEditingMeetingNotes)}>
+                 {isEditingMeetingNotes ? "Save Notes" : "Edit"}
+              </Button>
+            </div>
+            
+            {isEditingMeetingNotes ? (
+              <div className="animate-in fade-in zoom-in-95 duration-200">
+                <RichReplyEditor 
+                  initialHtml={lead.meetingNotes || ''}
+                  onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingNotes: html } })}
+                  placeholder="Enter detailed meeting notes..."
+                  hideAttachments={true}
+                  minHeight={150}
+                />
+              </div>
+            ) : (
+              <div 
+                className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none cursor-text hover:bg-muted/10 p-3 -mx-3 rounded-xl transition-colors min-h-[100px] border border-transparent hover:border-border/50"
+                onClick={() => setIsEditingMeetingNotes(true)}
+                dangerouslySetInnerHTML={{ __html: lead.meetingNotes || '<span class="text-muted-foreground italic">No meeting notes added. Click to edit.</span>' }} 
+              />
+            )}
+          </div>
+
+          {/* Final Demo Review */}
+          <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col h-fit w-full">
+            <div className="flex items-center justify-between border-b pb-3 mb-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                 <Copy size={16} className="text-muted-foreground" /> Final Demo Review
+              </h3>
+              <Button variant="outline" size="sm" className="h-7 px-3 text-xs rounded-full font-semibold" onClick={() => setIsEditingDemoReview(!isEditingDemoReview)}>
+                 {isEditingDemoReview ? "Save Review" : "Edit"}
+              </Button>
+            </div>
+            
+            {isEditingDemoReview ? (
+              <div className="animate-in fade-in zoom-in-95 duration-200">
+                <RichReplyEditor 
+                  initialHtml={lead.demoReview || ''}
+                  onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { demoReview: html } })}
+                  placeholder="Enter final review..."
+                  hideAttachments={true}
+                  minHeight={150}
+                />
+              </div>
+            ) : (
+              <div 
+                className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none cursor-text hover:bg-muted/10 p-3 -mx-3 rounded-xl transition-colors min-h-[100px] border border-transparent hover:border-border/50"
+                onClick={() => setIsEditingDemoReview(true)}
+                dangerouslySetInnerHTML={{ __html: lead.demoReview || '<span class="text-muted-foreground italic">No review added. Click to edit.</span>' }} 
+              />
+            )}
+          </div>
 
         </div>
       </div>
 
-      {/* BOTTOM ROWS: Notes & Reviews (Full Width) */}
-      <div className="flex flex-col gap-6">
+      {/* ── PROVISIONING WIZARD ── */}
+      {showProvisioningWizard && (
+        <SandboxProvisioningWizard
+          lead={lead}
+          onClose={() => setShowProvisioningWizard(false)}
+          onSuccess={(result) => {
+            setShowProvisioningWizard(false);
+            const orgName = result?.organization?.name || "unknown";
+            const orgId = result?.organization?._id;
+            
+            // Auto redirect to the org details page immediately
+            navigate(`/superadmin/detail/${orgId}`);
+          }}
+        />
+      )}
 
-        {/* Meeting Notes */}
-        <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col h-fit w-full">
-          <div className="flex items-center justify-between border-b pb-3 mb-4">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Copy size={16} className="text-muted-foreground" /> Meeting Notes
-            </h3>
-            <Button variant="outline" size="sm" className="h-7 px-3 text-xs rounded-full font-semibold" onClick={() => setIsEditingMeetingNotes(!isEditingMeetingNotes)}>
-              {isEditingMeetingNotes ? "Save Notes" : "Edit"}
-            </Button>
-          </div>
-
-          {isEditingMeetingNotes ? (
-            <div className="animate-in fade-in zoom-in-95 duration-200">
-              <RichReplyEditor
-                initialHtml={lead.meetingNotes || ''}
-                onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { meetingNotes: html } })}
-                placeholder="Enter detailed meeting notes..."
-                hideAttachments={true}
-                minHeight={150}
-              />
-            </div>
-          ) : (
-            <div
-              className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none cursor-text hover:bg-muted/10 p-3 -mx-3 rounded-xl transition-colors min-h-[100px] border border-transparent hover:border-border/50"
-              onClick={() => setIsEditingMeetingNotes(true)}
-              dangerouslySetInnerHTML={{ __html: lead.meetingNotes || '<span class="text-muted-foreground italic">No meeting notes added. Click to edit.</span>' }}
-            />
-          )}
-        </div>
-
-        {/* Final Demo Review */}
-        <div className="bg-card border rounded-2xl p-5 shadow-sm flex flex-col h-fit w-full">
-          <div className="flex items-center justify-between border-b pb-3 mb-4">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Copy size={16} className="text-muted-foreground" /> Final Demo Review
-            </h3>
-            <Button variant="outline" size="sm" className="h-7 px-3 text-xs rounded-full font-semibold" onClick={() => setIsEditingDemoReview(!isEditingDemoReview)}>
-              {isEditingDemoReview ? "Save Review" : "Edit"}
-            </Button>
-          </div>
-
-          {isEditingDemoReview ? (
-            <div className="animate-in fade-in zoom-in-95 duration-200">
-              <RichReplyEditor
-                initialHtml={lead.demoReview || ''}
-                onChange={(html) => updateNotesMutation.mutate({ id: lead._id, payload: { demoReview: html } })}
-                placeholder="Enter final review..."
-                hideAttachments={true}
-                minHeight={150}
-              />
-            </div>
-          ) : (
-            <div
-              className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none cursor-text hover:bg-muted/10 p-3 -mx-3 rounded-xl transition-colors min-h-[100px] border border-transparent hover:border-border/50"
-              onClick={() => setIsEditingDemoReview(true)}
-              dangerouslySetInnerHTML={{ __html: lead.demoReview || '<span class="text-muted-foreground italic">No review added. Click to edit.</span>' }}
-            />
-          )}
-        </div>
-
-      </div>
-
-      {/* ── PROVISIONING WIZARD ── */ }
-  {
-    showProvisioningWizard && (
-      <SandboxProvisioningWizard
-        lead={lead}
-        onClose={() => setShowProvisioningWizard(false)}
-        onSuccess={(result) => {
-          setShowProvisioningWizard(false);
-          const orgName = result?.organization?.name || "unknown";
-          const orgId = result?.organization?._id;
-
-          // Auto redirect to the org details page immediately
-          navigate(`/superadmin/detail/${orgId}`);
+      <DangerConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete Demo Lead"
+        description={<>Permanently delete the demo lead for <strong>{lead.institutionName}</strong>.</>}
+        warningMessage="This action is irreversible. All details associated with this demo request will be permanently lost."
+        confirmationSteps={[
+          {
+            label: "To confirm, type",
+            value: "delete",
+          },
+        ]}
+        actionLabel="Delete Lead"
+        cancelLabel="Cancel"
+        isLoading={deleteMutation.isPending}
+        onConfirm={() => {
+          if (id) {
+            deleteMutation.mutate(id, {
+              onSuccess: () => navigate("/superadmin/leads"),
+              onError: () => setShowDeleteConfirm(false)
+            });
+          }
         }}
+        variant="danger"
       />
-    )
-  }
 
-  <DangerConfirmDialog
-    open={showDeleteConfirm}
-    onOpenChange={setShowDeleteConfirm}
-    title="Delete Demo Lead"
-    description={<>Permanently delete the demo lead for <strong>{lead.institutionName}</strong>.</>}
-    warningMessage="This action is irreversible. All details associated with this demo request will be permanently lost."
-    confirmationSteps={[
-      {
-        label: "To confirm, type",
-        value: "delete",
-      },
-    ]}
-    actionLabel="Delete Lead"
-    cancelLabel="Cancel"
-    isLoading={deleteMutation.isPending}
-    onConfirm={() => {
-      if (id) {
-        deleteMutation.mutate(id, {
-          onSuccess: () => navigate("/superadmin/leads"),
-          onError: () => setShowDeleteConfirm(false)
-        });
-      }
-    }}
-    variant="danger"
-  />
-
-    </div >
+    </div>
   );
 }
