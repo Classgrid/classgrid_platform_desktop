@@ -147,14 +147,8 @@ export function OrgDetailsPage() {
                   <Database aria-hidden="true" />
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="resources" className={tabTriggerClassName}>
-                  <Activity aria-hidden="true" />
-                  Usage
-                </TabsTrigger>
-                <TabsTrigger value="billing" className={tabTriggerClassName}>
-                  <CreditCard aria-hidden="true" />
-                  Billing
-                </TabsTrigger>
+                
+                
                 <TabsTrigger value="configuration" className={tabTriggerClassName}>
                   <Settings2 aria-hidden="true" />
                   Configuration
@@ -175,21 +169,9 @@ export function OrgDetailsPage() {
               />
             </TabsContent>
 
-            <TabsContent value="resources">
-              <OrgResourcesTab
-                legacyUsage={controlCenter.legacyUsage}
-                emailAnalytics={controlCenter.emailAnalytics}
-              />
-            </TabsContent>
+            
 
-            <TabsContent value="billing">
-              <OrgBillingTab
-                profile={controlCenter.profile}
-                detail={controlCenter.detail}
-                insight={controlCenter.insight}
-                legacyUsage={controlCenter.legacyUsage}
-              />
-            </TabsContent>
+            
 
             <TabsContent value="configuration">
               <OrgConfigurationTab profile={controlCenter.profile} />

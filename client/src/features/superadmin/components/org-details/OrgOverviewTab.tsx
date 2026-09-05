@@ -139,6 +139,13 @@ export function OrgOverviewTab({
             <OrgDataRow label="Structure type" value={humanizeKey(profile?.structure_type ?? detail?.structure_type)} />
             <OrgDataRow label="Division mode" value={humanizeKey(profile?.division_mode)} />
             <OrgDataRow label="Address" value={profile?.address ?? detail?.address ?? "Unavailable"} />
+            <OrgDataRow label="City" value={profile?.city ?? detail?.city ?? "Unavailable"} />
+            <OrgDataRow label="District" value={profile?.district ?? detail?.district ?? "Unavailable"} />
+            <OrgDataRow label="Taluka" value={profile?.taluka ?? detail?.taluka ?? "Unavailable"} />
+            <OrgDataRow label="State" value={profile?.state ?? detail?.state ?? "Unavailable"} />
+            <OrgDataRow label="Pincode" value={profile?.pincode ?? detail?.pincode ?? "Unavailable"} />
+            <OrgDataRow label="Website" value={profile?.website ?? detail?.website ?? "Unavailable"} />
+            <OrgDataRow label="Registration number" value={profile?.registration_number ?? detail?.registration_number ?? "Unavailable"} />
             <OrgDataRow label="Affiliation" value={profile?.affiliation ?? "Unavailable"} />
             <OrgDataRow label="Created" value={formatDate(profile?.createdAt ?? detail?.createdAt)} />
             <OrgDataRow label="Demo expires" value={formatDate(profile?.demoExpiresAt)} />
