@@ -5,8 +5,12 @@ import {
     saveMessage,
     getSessions,
     getSessionMessages,
-    updateSessionTitle
+    updateSessionTitle,
+    deleteSession,
+    updateSessionPinned,
+    getSessionById
 } from "../services/ai-chat.service.js";
+import sendEmail from "../utils/sendEmail.js";
 // The system prompt was originally in ./prompt, we will define it here or import it if needed.
 const SYSTEM_PROMPT = `You are the Classgrid AI Assistant. 
 
@@ -264,5 +268,65 @@ export const uploadChatImage = async (req, res) => {
     } catch (e) {
         console.error("Error generating presigned URL for AI chat:", e);
         res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+};
+
+export const updateChatSession = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, pinned } = req.body;
+        let updatedSession = null;
+        if (title !== undefined) {
+            updatedSession = await updateSessionTitle(id, title);
+        }
+        if (pinned !== undefined) {
+            updatedSession = await updateSessionPinned(id, pinned);
+        }
+        res.json({ success: true, session: updatedSession });
+    } catch (e) {
+        console.error("Error updating session:", e);
+        res.status(500).json({ error: "Failed to update session" });
+    }
+};
+
+export const deleteChatSession = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await deleteSession(id);
+        res.json({ success: true });
+    } catch (e) {
+        console.error("Error deleting session:", e);
+        res.status(500).json({ error: "Failed to delete session" });
+    }
+};
+
+export const shareChatSession = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const session = await getSessionById(id);
+        const messages = await getSessionMessages(id);
+        
+        if (!session || !messages) {
+            return res.status(404).json({ error: "Session not found" });
+        }
+
+        let transcript = `Chat Transcript: ${session.title}\n\n`;
+        messages.forEach((msg) => {
+            transcript += `${msg.role === 'user' ? 'You' : 'Classgrid AI'}:\n${msg.content}\n\n`;
+        });
+
+        // Ensure sendEmail uses your email config for agent@classgrid.in
+        // Assuming sendEmail(to, subject, text, html) signature
+        await sendEmail(
+            req.user.email, // Send to the logged-in user
+            `AI Chat Transcript: ${session.title}`,
+            transcript,
+            `<pre style="font-family: sans-serif; white-space: pre-wrap;">${transcript}</pre>`
+        );
+
+        res.json({ success: true });
+    } catch (e) {
+        console.error("Error sharing session:", e);
+        res.status(500).json({ error: "Failed to share session" });
     }
 };
