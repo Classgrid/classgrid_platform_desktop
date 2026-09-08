@@ -52,7 +52,7 @@ async function start() {
     try {
         const { getChatSb } = await import("./config/supabaseClient.js");
         const sb = getChatSb();
-        
+
         console.log("Connected to Supabase for Chat Bridge (No MongoDB needed).");
         console.log("Waiting for ANY new messages on the platform to auto-detect your chat...");
 
@@ -111,5 +111,3 @@ async function start() {
 }
 
 start();
-
-// Trigger deployment for Gemini key (Phase 2 Full Screen)

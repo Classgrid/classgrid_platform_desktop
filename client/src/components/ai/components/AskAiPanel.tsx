@@ -1203,6 +1203,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     if (sessionId) {
       localStorage.setItem("classgrid_ai_session_id", sessionId);
     }
+    window.dispatchEvent(new CustomEvent("agent:active-session-changed", { detail: { sessionId } }));
   }, [messages, sessionId]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");

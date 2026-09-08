@@ -13,6 +13,15 @@ interface ChatSession {
 export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) {
   const [sessions, setSessions] = React.useState<ChatSession[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [activeSessionId, setActiveSessionId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const handleActiveSessionChanged = (e: any) => {
+      setActiveSessionId(e.detail?.sessionId || null);
+    };
+    window.addEventListener("agent:active-session-changed", handleActiveSessionChanged);
+    return () => window.removeEventListener("agent:active-session-changed", handleActiveSessionChanged);
+  }, []);
 
   const fetchSessions = () => {
     setLoading(true);
@@ -81,13 +90,11 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
             <SidebarMenuItem key={session.id}>
               <SidebarMenuButton
                 tooltip={session.title}
+                isActive={session.id === activeSessionId}
                 onClick={() => handleLoadChat(session.id)}
                 className="h-auto py-1.5 cursor-pointer"
                 render={
-                  <div className="flex items-center gap-2 w-full">
-                    <MessageSquare size={16} className="text-muted-foreground shrink-0" />
-                    <span className="truncate">{session.title}</span>
-                  </div>
+                  <span className="truncate block w-full">{session.title}</span>
                 }
               />
             </SidebarMenuItem>
@@ -103,16 +110,11 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
             <SidebarMenuItem key={session.id}>
               <SidebarMenuButton
                 tooltip={session.title}
+                isActive={session.id === activeSessionId}
                 onClick={() => handleLoadChat(session.id)}
                 className="h-auto py-1.5 text-muted-foreground hover:text-foreground cursor-pointer"
                 render={
-                  <div className="flex items-center gap-2 w-full">
-                    <MessageSquare size={16} className="shrink-0 opacity-70" />
-                    <div className="flex flex-col min-w-0 overflow-hidden">
-                      <span className="truncate leading-tight">{session.title}</span>
-                      <span className="text-[10px] opacity-70">{new Date(session.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
+                  <span className="truncate block w-full">{session.title}</span>
                 }
               />
             </SidebarMenuItem>
