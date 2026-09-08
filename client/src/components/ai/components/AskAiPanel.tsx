@@ -1,5 +1,5 @@
 
-import { useEffect, useMemo, useRef, useState, useCallback, memo, useContext } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback, memo, useContext } from "react";
 import { SidebarContext } from "@/components/marketing_ui/sidebar";
 import hljs from "highlight.js";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
