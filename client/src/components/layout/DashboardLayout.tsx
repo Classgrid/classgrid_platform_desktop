@@ -256,7 +256,7 @@ export function DashboardLayout({ children, role, user }: DashboardLayoutProps) 
               </header>
             )}
             <main className={`flex-1 min-h-0 overflow-x-hidden bg-background relative ${isFullBleed ? "overflow-y-hidden p-0 m-0 border-none flex flex-col" : isNoPadding ? "p-0 m-0 border-none flex flex-col" : "overflow-y-auto p-4 lg:p-6"}`}>
-              {isFullBleed && (
+              {isFullBleed && !location.pathname.includes("/agent") && (
                 <div className="absolute top-4 left-4 z-50">
                   <SidebarTrigger />
                 </div>

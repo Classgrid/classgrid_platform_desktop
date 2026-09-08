@@ -1,7 +1,7 @@
 
 import React, { useEffect, useMemo, useRef, useState, useCallback, memo, useContext } from "react";
 import { useParams } from "react-router-dom";
-import { SidebarContext } from "@/components/marketing_ui/sidebar";
+import { SidebarContext, SidebarTrigger } from "@/components/marketing_ui/sidebar";
 import hljs from "highlight.js";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
@@ -2515,6 +2515,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       {variant === "full-page" ? (
         <div className="w-full h-full bg-background flex flex-row">
           <div className="flex-1 relative flex flex-col h-full">
+            {/* Sidebar toggle inside chat area */}
+            <div className="absolute top-4 left-4 z-50">
+              <SidebarTrigger />
+            </div>
             {isLoadingChat ? (
               <div className="flex-1 flex flex-col items-center justify-center h-full w-full">
                 <Spinner className="w-8 h-8 text-muted-foreground" />
