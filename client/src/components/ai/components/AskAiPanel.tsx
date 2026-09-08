@@ -1,4 +1,4 @@
-
+﻿
 import React, { useEffect, useMemo, useRef, useState, useCallback, memo, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { SidebarContext } from "@/components/marketing_ui/sidebar";
@@ -57,7 +57,7 @@ import FilePreviewModal, { type FilePreviewSource } from "./FilePreviewModal";
 import { DocsImageViewer } from "./DocsImageViewer";
 import { ScrollSpyTOC } from "./TOC";
 
-// ─── SDK-local type definitions & stubs ───
+// â”€â”€â”€ SDK-local type definitions & stubs â”€â”€â”€
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 
 type PageContext = {
@@ -179,7 +179,7 @@ function suggestedQuestionsForPage(pageContext?: PageContext) {
     return [
       "How do I raise a support ticket?",
       "What is Classgrid Talk vs support tickets?",
-      "I'm from an institution — how do I get help?",
+      "I'm from an institution â€” how do I get help?",
       "Can I track my ticket status?",
     ];
   }
@@ -355,7 +355,7 @@ function parseSectionBlock(block: string): StructuredBlock | null {
     const bodyLines = lines.slice(1);
     const bodyText = bodyLines.join("\n");
 
-    // Check if the body is a numbered/bullet list — preserve list structure
+    // Check if the body is a numbered/bullet list â€” preserve list structure
     const listItems = parseListBlock(bodyText);
     if (listItems) {
       return {
@@ -905,12 +905,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     }
   }, [autoFocus]);
 
-  // ── File attachment state ──
+  // â”€â”€ File attachment state â”€â”€
   const [attachedFiles, setAttachedFiles] = useState<UIFileAttachment[]>([]);
   const [previewFile, setPreviewFile] = useState<FilePreviewSource | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // ── Local Storage Draft Persistence ──
+  // â”€â”€ Local Storage Draft Persistence â”€â”€
   useEffect(() => {
     try {
       const savedInput = localStorage.getItem("askAiDraftInput");
@@ -988,7 +988,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
     for (const f of newFiles) {
       if (f.size > MAX_FILE_SIZE) {
-        toast.error(`"${f.name}" is too large (${formatFileSize(f.size)}).`, { description: "Limit: 6 files · 35MB each" });
+        toast.error(`"${f.name}" is too large (${formatFileSize(f.size)}).`, { description: "Limit: 6 files Â· 35MB each" });
         return;
       }
     }
@@ -1009,7 +1009,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       accepted = newFiles.slice(0, remaining);
     }
 
-    // Show files in UI immediately (optimistic) — no delay like Vercel/ChatGPT
+    // Show files in UI immediately (optimistic) â€” no delay like Vercel/ChatGPT
     setAttachedFiles(prev => [...prev, ...accepted]);
 
     // If we had dropped files, show the warning now
@@ -1116,8 +1116,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   useEffect(() => {
     const currentEmail = session?.user?.email || "";
     const storedEmail = localStorage.getItem("classgrid_ai_user_email") || "";
-    const savedSessionId = localStorage.getItem("classgrid_ai_session_id");
-    const savedHistory = localStorage.getItem("classgrid_ai_chat_history");
+    const savedSessionId = sessionStorage.getItem("classgrid_ai_session_id");
+    const savedHistory = sessionStorage.getItem("classgrid_ai_chat_history");
 
     // If the user changed (logout + login as different user) OR if we have a current user but no stored user (legacy chat), clear old chat
     const userChanged = (currentEmail && storedEmail && currentEmail !== storedEmail) || (currentEmail && !storedEmail);
@@ -1135,14 +1135,14 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       }
     }
 
-    // Fresh start — clear everything
+    // Fresh start â€” clear everything
     setMessages([]);
     setSessionId(null);
     setInput("");
     setAttachedFiles([]);
     setLastSentDocsPath(null);
-    localStorage.removeItem("classgrid_ai_chat_history");
-    localStorage.removeItem("classgrid_ai_session_id");
+    sessionStorage.removeItem("classgrid_ai_chat_history");
+    sessionStorage.removeItem("classgrid_ai_session_id");
     localStorage.removeItem("askAiDraftContext");
     if (currentEmail) {
       localStorage.setItem("classgrid_ai_user_email", currentEmail);
@@ -1157,8 +1157,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setInput("");
       setAttachedFiles([]);
       setLastSentDocsPath(null);
-      localStorage.removeItem("classgrid_ai_chat_history");
-      localStorage.removeItem("classgrid_ai_session_id");
+      sessionStorage.removeItem("classgrid_ai_chat_history");
+      sessionStorage.removeItem("classgrid_ai_session_id");
       localStorage.removeItem("askAiDraftContext");
 
       // Focus input
@@ -1185,8 +1185,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             createdAt: m.created_at ? new Date(m.created_at).getTime() : Date.now()
           }));
           setMessages(loadedMessages);
-          localStorage.setItem("classgrid_ai_chat_history", JSON.stringify(loadedMessages));
-          localStorage.setItem("classgrid_ai_session_id", id);
+          sessionStorage.setItem("classgrid_ai_chat_history", JSON.stringify(loadedMessages));
+          sessionStorage.setItem("classgrid_ai_session_id", id);
         }
       } catch (err) {
         console.error("Failed to load chat", err);
@@ -1218,8 +1218,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             createdAt: m.created_at ? new Date(m.created_at).getTime() : Date.now()
           }));
           setMessages(loadedMessages);
-          localStorage.setItem("classgrid_ai_chat_history", JSON.stringify(loadedMessages));
-          localStorage.setItem("classgrid_ai_session_id", routeSessionId);
+          sessionStorage.setItem("classgrid_ai_chat_history", JSON.stringify(loadedMessages));
+          sessionStorage.setItem("classgrid_ai_session_id", routeSessionId);
         }
       } catch (err) {
         console.error("Failed to load chat from route", err);
@@ -1231,10 +1231,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   // Save chat history and session ID to local storage whenever they update
   useEffect(() => {
     if (messages.length > 0) {
-      localStorage.setItem("classgrid_ai_chat_history", JSON.stringify(messages));
+      sessionStorage.setItem("classgrid_ai_chat_history", JSON.stringify(messages));
     }
     if (sessionId) {
-      localStorage.setItem("classgrid_ai_session_id", sessionId);
+      sessionStorage.setItem("classgrid_ai_session_id", sessionId);
     }
     window.dispatchEvent(new CustomEvent("agent:active-session-changed", { detail: { sessionId } }));
   }, [messages, sessionId]);
@@ -1308,7 +1308,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       const diff = bannedUntil.getTime() - now;
 
       if (diff <= 0) {
-        // Ban expired — unlock the chat!
+        // Ban expired â€” unlock the chat!
         setIsTerminated(false);
         setBannedUntil(null);
         setCountdown("");
@@ -1358,8 +1358,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     setSessionId(null);
     setAttachedFiles([]);
     setLastSentDocsPath(null);
-    localStorage.removeItem("classgrid_ai_chat_history");
-    localStorage.removeItem("classgrid_ai_session_id");
+    sessionStorage.removeItem("classgrid_ai_chat_history");
+    sessionStorage.removeItem("classgrid_ai_session_id");
     localStorage.removeItem("askAiDraftContext");
   }
 
@@ -1452,7 +1452,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const prevMessageCountRef = useRef(0);
   const isAutoScrollingRef = useRef(false);
 
-  // Track when user manually scrolls — use 'scroll' event which fires for ALL scroll types
+  // Track when user manually scrolls â€” use 'scroll' event which fires for ALL scroll types
   useEffect(() => {
     const element = chatScrollRef.current;
     if (!element) return;
@@ -1484,7 +1484,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     const isNewMessage = currentCount > prevMessageCountRef.current;
     prevMessageCountRef.current = currentCount;
 
-    // If user scrolled up, don't force them down — unless it's a brand new message they just sent
+    // If user scrolled up, don't force them down â€” unless it's a brand new message they just sent
     const lastMessage = messages[messages.length - 1];
     const isUserMessage = lastMessage?.role === "user";
 
@@ -1660,7 +1660,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         else if (/^screenshot/i.test(cleanName)) cleanName = "Screenshot";
         else if (/^img_/i.test(cleanName)) cleanName = "Uploaded Image";
 
-        return `[Attached file: ${cleanName} (${a.mimeType}) — URL: ${a.url}]`;
+        return `[Attached file: ${cleanName} (${a.mimeType}) â€” URL: ${a.url}]`;
       }).join("\n");
       apiQuestion = `${apiQuestion}\n\n${fileContextLines}`;
     }
@@ -1842,7 +1842,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 window.dispatchEvent(new Event("agent:refresh-sessions"));
               } else if (event.type === "session_info" && event.sessionId) {
                 setSessionId(event.sessionId);
-                localStorage.setItem("classgrid_ai_session_id", event.sessionId);
+                sessionStorage.setItem("classgrid_ai_session_id", event.sessionId);
               } else if (event.type === "answer") {
                 finalPayload = event;
               } else if (event.type === "token") {
@@ -1890,7 +1890,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         if (finalPayload) {
           if (finalPayload.sessionId) {
             setSessionId(finalPayload.sessionId);
-            localStorage.setItem("classgrid_ai_session_id", finalPayload.sessionId);
+            sessionStorage.setItem("classgrid_ai_session_id", finalPayload.sessionId);
           }
 
           const answer =
@@ -1926,7 +1926,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
         if (payload?.sessionId) {
           setSessionId(payload.sessionId);
-          localStorage.setItem("classgrid_ai_session_id", payload.sessionId);
+          sessionStorage.setItem("classgrid_ai_session_id", payload.sessionId);
         }
 
         const answer =
@@ -1971,7 +1971,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     void askQuestion(input);
   }
 
-  // ─── Panel content (shared between desktop sidebar and mobile bottom-sheet) ───
+  // â”€â”€â”€ Panel content (shared between desktop sidebar and mobile bottom-sheet) â”€â”€â”€
   const panelHeader = (
     <div className={cn("flex items-center justify-between px-4 py-4", variant !== "full-page" && "border-b border-border")}>
       <div className="flex items-center gap-2">
@@ -2019,7 +2019,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           <>
             {/* PostHog-style centered greeting with logo & suggestion chips */}
             <div className="flex flex-col items-center justify-center py-16 gap-5 select-none">
-              {/* Classgrid Logo — same size as PostHog */}
+              {/* Classgrid Logo â€” same size as PostHog */}
               <div className="flex items-center gap-2">
                 <img src="/logo.png" alt="Classgrid" className="h-12 w-12 object-contain" />
               </div>
@@ -2075,7 +2075,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 >
                   <div className={cn("flex flex-col gap-1.5 min-w-0", isUser ? "order-1 items-end max-w-[75%]" : "order-2 w-full")}>
 
-                    {/* ── Text Bubble ── */}
+                    {/* â”€â”€ Text Bubble â”€â”€ */}
                     {message.content && (
                       <div
                         id={isUser ? `msg-${message.id}` : undefined}
@@ -2141,7 +2141,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                       </div>
                     )}
 
-                    {/* ── Attachments (Outside Bubble) ── */}
+                    {/* â”€â”€ Attachments (Outside Bubble) â”€â”€ */}
                     {isUser && message.attachments && message.attachments.length > 0 && (
                       <div className="flex flex-col gap-2 items-end">
 
@@ -2479,14 +2479,14 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           animation: targetGlowPulse 2.5s ease-in-out forwards;
         }
       `}</style>
-      {/* ══════════════════════════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           FULL-PAGE: ChatGPT-style centered layout
-          ══════════════════════════════════════════════════════════ */}
+          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {variant === "full-page" ? (
         <div className="w-full h-full bg-background flex flex-row">
           <div className="flex-1 relative flex flex-col h-full">
             {emptyState ? (
-              /* ── PostHog-style: everything in one centered block ── */
+              /* â”€â”€ PostHog-style: everything in one centered block â”€â”€ */
               <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-8">
                 <div className="max-w-[52rem] w-full flex flex-col items-center gap-6">
 
@@ -2503,7 +2503,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     </p>
                   </div>
 
-                  {/* Inline input form — not using panelInput */}
+                  {/* Inline input form â€” not using panelInput */}
                   <div className="w-full max-w-[640px]">
                     {isTerminated ? (
                       <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm font-medium text-red-500">
@@ -2583,87 +2583,87 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
                         if (role === "super_admin" || role === "superadmin" || role === "platform_owner") {
                           chips = [
-                            { icon: "📊", label: "Analytics" },
-                            { icon: "🏫", label: "Organizations" },
-                            { icon: "💰", label: "Revenue" },
-                            { icon: "📋", label: "Leads" },
+                            { icon: "ðŸ“Š", label: "Analytics" },
+                            { icon: "ðŸ«", label: "Organizations" },
+                            { icon: "ðŸ’°", label: "Revenue" },
+                            { icon: "ðŸ“‹", label: "Leads" },
                           ];
                         } else if (role === "org_admin" || role === "admin" || role === "principal" || role === "director") {
                           chips = [
-                            { icon: "👥", label: "Students" },
-                            { icon: "👨‍🏫", label: "Faculty" },
-                            { icon: "💳", label: "Fees" },
-                            { icon: "📅", label: "Attendance" },
+                            { icon: "ðŸ‘¥", label: "Students" },
+                            { icon: "ðŸ‘¨â€ðŸ«", label: "Faculty" },
+                            { icon: "ðŸ’³", label: "Fees" },
+                            { icon: "ðŸ“…", label: "Attendance" },
                           ];
                         } else if (role.includes("admission")) {
                           chips = [
-                            { icon: "📋", label: "Applications" },
-                            { icon: "🏅", label: "Merit Lists" },
-                            { icon: "📂", label: "Documents" },
-                            { icon: "✅", label: "Enrollment" },
+                            { icon: "ðŸ“‹", label: "Applications" },
+                            { icon: "ðŸ…", label: "Merit Lists" },
+                            { icon: "ðŸ“‚", label: "Documents" },
+                            { icon: "âœ…", label: "Enrollment" },
                           ];
                         } else if (role.includes("fee") || role === "fee_manager") {
                           chips = [
-                            { icon: "💰", label: "Payments" },
-                            { icon: "⚠️", label: "Defaulters" },
-                            { icon: "📊", label: "Fee Structure" },
-                            { icon: "📋", label: "Reports" },
+                            { icon: "ðŸ’°", label: "Payments" },
+                            { icon: "âš ï¸", label: "Defaulters" },
+                            { icon: "ðŸ“Š", label: "Fee Structure" },
+                            { icon: "ðŸ“‹", label: "Reports" },
                           ];
                         } else if (role.includes("exam") || role === "exam_controller") {
                           chips = [
-                            { icon: "📝", label: "Exams" },
-                            { icon: "📊", label: "Results" },
-                            { icon: "🎯", label: "Grading" },
-                            { icon: "📅", label: "Schedule" },
+                            { icon: "ðŸ“", label: "Exams" },
+                            { icon: "ðŸ“Š", label: "Results" },
+                            { icon: "ðŸŽ¯", label: "Grading" },
+                            { icon: "ðŸ“…", label: "Schedule" },
                           ];
                         } else if (role.includes("library") || role === "librarian") {
                           chips = [
-                            { icon: "📚", label: "Books" },
-                            { icon: "📖", label: "Issued" },
-                            { icon: "⏰", label: "Overdue" },
-                            { icon: "🗂️", label: "Catalog" },
+                            { icon: "ðŸ“š", label: "Books" },
+                            { icon: "ðŸ“–", label: "Issued" },
+                            { icon: "â°", label: "Overdue" },
+                            { icon: "ðŸ—‚ï¸", label: "Catalog" },
                           ];
                         } else if (role.includes("attendance")) {
                           chips = [
-                            { icon: "📋", label: "Today's Attendance" },
-                            { icon: "📊", label: "Reports" },
-                            { icon: "🔔", label: "Alerts" },
-                            { icon: "📈", label: "Trends" },
+                            { icon: "ðŸ“‹", label: "Today's Attendance" },
+                            { icon: "ðŸ“Š", label: "Reports" },
+                            { icon: "ðŸ””", label: "Alerts" },
+                            { icon: "ðŸ“ˆ", label: "Trends" },
                           ];
                         } else if (role.includes("hr") || role === "hr_manager") {
                           chips = [
-                            { icon: "👥", label: "Staff" },
-                            { icon: "💰", label: "Payroll" },
-                            { icon: "📅", label: "Leave" },
-                            { icon: "📋", label: "Recruitment" },
+                            { icon: "ðŸ‘¥", label: "Staff" },
+                            { icon: "ðŸ’°", label: "Payroll" },
+                            { icon: "ðŸ“…", label: "Leave" },
+                            { icon: "ðŸ“‹", label: "Recruitment" },
                           ];
                         } else if (role.includes("hostel") || role.includes("transport")) {
                           chips = [
-                            { icon: "🏠", label: "Rooms" },
-                            { icon: "👥", label: "Residents" },
-                            { icon: "📝", label: "Complaints" },
-                            { icon: "🍽️", label: "Mess" },
+                            { icon: "ðŸ ", label: "Rooms" },
+                            { icon: "ðŸ‘¥", label: "Residents" },
+                            { icon: "ðŸ“", label: "Complaints" },
+                            { icon: "ðŸ½ï¸", label: "Mess" },
                           ];
                         } else if (role === "faculty" || role === "teacher" || role === "hod" || role === "vice_principal") {
                           chips = [
-                            { icon: "📚", label: "My Classes" },
-                            { icon: "📋", label: "Attendance" },
-                            { icon: "📊", label: "Results" },
-                            { icon: "📅", label: "Timetable" },
+                            { icon: "ðŸ“š", label: "My Classes" },
+                            { icon: "ðŸ“‹", label: "Attendance" },
+                            { icon: "ðŸ“Š", label: "Results" },
+                            { icon: "ðŸ“…", label: "Timetable" },
                           ];
                         } else if (role === "student") {
                           chips = [
-                            { icon: "💳", label: "My Fees" },
-                            { icon: "📋", label: "Attendance" },
-                            { icon: "📊", label: "Results" },
-                            { icon: "📅", label: "Timetable" },
+                            { icon: "ðŸ’³", label: "My Fees" },
+                            { icon: "ðŸ“‹", label: "Attendance" },
+                            { icon: "ðŸ“Š", label: "Results" },
+                            { icon: "ðŸ“…", label: "Timetable" },
                           ];
                         } else {
                           chips = [
-                            { icon: "📊", label: "Analytics" },
-                            { icon: "👥", label: "Users" },
-                            { icon: "💬", label: "Help" },
-                            { icon: "📋", label: "Reports" },
+                            { icon: "ðŸ“Š", label: "Analytics" },
+                            { icon: "ðŸ‘¥", label: "Users" },
+                            { icon: "ðŸ’¬", label: "Help" },
+                            { icon: "ðŸ“‹", label: "Reports" },
                           ];
                         }
 
@@ -2691,7 +2691,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 </div>
               </div>
             ) : (
-              /* ── Active conversation: messages scroll, input pinned at bottom ── */
+              /* â”€â”€ Active conversation: messages scroll, input pinned at bottom â”€â”€ */
               <>
                 <div
                   ref={chatScrollRef}
@@ -2710,9 +2710,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         </div>
       ) : null}
 
-      {/* ══════════════════════════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           DESKTOP: Side Panel Layout
-          ══════════════════════════════════════════════════════════ */}
+          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {variant === "in-flow" ? (
         <div
           className={cn(
@@ -2752,9 +2752,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         </AnimatePresence>
       ) : null}
 
-      {/* ══════════════════════════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           MOBILE: Fixed bottom-sheet (unchanged from production)
-          ══════════════════════════════════════════════════════════ */}
+          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <AnimatePresence>
         {open && isMobile ? (
           <motion.button
@@ -2817,4 +2817,5 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     </>
   );
 }
+
 
