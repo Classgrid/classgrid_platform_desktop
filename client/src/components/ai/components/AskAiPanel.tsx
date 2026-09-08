@@ -1,5 +1,6 @@
 
 import React, { useEffect, useMemo, useRef, useState, useCallback, memo, useContext } from "react";
+import { useParams } from "react-router-dom";
 import { SidebarContext } from "@/components/marketing_ui/sidebar";
 import hljs from "highlight.js";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -873,7 +874,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   }, [tocItems]);
 
   const [thinkingLabel, setThinkingLabel] = useState("Thinking");
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const { sessionId: routeSessionId } = useParams<{ sessionId?: string }>();
+  const [localSessionId, setLocalSessionId] = useState<string | null>(null);
+  
+  // Use route parameter if present (dashboard mode), otherwise fallback to local state (website floating mode)
+  const sessionId = routeSessionId || localSessionId;
+  const setSessionId = setLocalSessionId; // Keep existing setSessionId calls pointing to local state for backward compatibility
   const [isIncognito, setIsIncognito] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
   const [lastSentDocsPath, setLastSentDocsPath] = useState<string | null>(null);
@@ -1195,6 +1201,32 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       window.removeEventListener("agent:load-chat", handleLoadChat);
     };
   }, []);
+
+  // Sync chat when routeSessionId changes
+  useEffect(() => {
+    if (!routeSessionId) return;
+    
+    const loadRouteSession = async () => {
+      setMessages([]);
+      try {
+        const res = await fetch(`/api/ai/sessions/${routeSessionId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const loadedMessages = data.messages.map((m: any) => ({
+            role: m.role,
+            content: m.content,
+            createdAt: m.created_at ? new Date(m.created_at).getTime() : Date.now()
+          }));
+          setMessages(loadedMessages);
+          localStorage.setItem("classgrid_ai_chat_history", JSON.stringify(loadedMessages));
+          localStorage.setItem("classgrid_ai_session_id", routeSessionId);
+        }
+      } catch (err) {
+        console.error("Failed to load chat from route", err);
+      }
+    };
+    loadRouteSession();
+  }, [routeSessionId]);
 
   // Save chat history and session ID to local storage whenever they update
   useEffect(() => {
