@@ -1869,7 +1869,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 window.dispatchEvent(new Event("agent:refresh-sessions"));
               } else if (event.type === "session_info" && event.sessionId) {
                 setSessionId(event.sessionId);
-                
+                window.dispatchEvent(new Event("agent:refresh-sessions"));
               } else if (event.type === "answer") {
                 finalPayload = event;
               } else if (event.type === "token") {

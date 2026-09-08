@@ -182,7 +182,7 @@ export async function createSharedSnapshot(sessionId, userEmail, userName, title
         .from('shared_chat_snapshots')
         .insert([{
             share_id: shareId,
-            session_id: sessionId,
+            original_session_id: sessionId,
             user_email: userEmail,
             user_name: userName || userEmail.split('@')[0],
             title,
