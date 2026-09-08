@@ -49,7 +49,9 @@ jobs:
 
             cd server
             echo "$PRODUCTION_ENV" > .env
-            # Install production dependencies only to save memory and avoid OOM
+            # Wipe node_modules to clear the corrupted state, but keep package-lock.json
+            rm -rf node_modules
+            # Install production dependencies only
             npm install --production --no-audit --no-fund
 
             # INSTALL REDIS IF MISSING
