@@ -276,10 +276,18 @@ export const getChatSessions = async (req, res) => {
 export const getChatSessionMessages = async (req, res) => {
     try {
         const { id } = req.params;
+        console.info(`[Chat API] Attempting to load chat messages for session ID: ${id}`);
         const messages = await getSessionMessages(id);
+        
+        if (!messages || messages.length === 0) {
+            console.warn(`[Chat API] Session ${id} loaded successfully, but contains 0 messages. The UI will likely show the empty state.`);
+        } else {
+            console.info(`[Chat API] Successfully loaded ${messages.length} messages for session ${id}.`);
+        }
+        
         res.json({ messages });
     } catch (e) {
-        console.error("Error getting session messages:", e);
+        console.error(`[Chat API] CRITICAL ERROR loading messages for session ${req.params.id}:`, e);
         res.status(500).json({ error: "Failed to load messages" });
     }
 };
