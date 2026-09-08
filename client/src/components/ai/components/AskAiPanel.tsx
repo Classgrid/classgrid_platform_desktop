@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "./ui/button";
+import { Spinner } from "@/components/marketing_ui/spinner";
 import { Input } from "./ui/input";
 import {
   Table,
@@ -837,6 +838,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       });
   }, [messages]);
   const [activeSection, setActiveSection] = useState("");
+  const [isLoadingChat, setIsLoadingChat] = useState(false);
 
   useEffect(() => {
     if (tocItems.length === 0) return;
@@ -1174,6 +1176,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
       setMessages([]);
       setSessionId(id);
+      setIsLoadingChat(true);
 
       try {
         const res = await fetch(`/api/ai/sessions/${id}`);
@@ -1188,6 +1191,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         }
       } catch (err) {
         console.error("Failed to load chat", err);
+      } finally {
+        setIsLoadingChat(false);
       }
     };
 
@@ -1206,6 +1211,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     
     const loadRouteSession = async () => {
       setMessages([]);
+      setSessionId(routeSessionId);
+      setIsLoadingChat(true);
       try {
         const res = await fetch(`/api/ai/sessions/${routeSessionId}`);
         if (res.ok) {
@@ -1219,6 +1226,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         }
       } catch (err) {
         console.error("Failed to load chat from route", err);
+      } finally {
+        setIsLoadingChat(false);
       }
     };
     loadRouteSession();
@@ -2005,7 +2014,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const panelChat = (
     <div ref={variant !== "full-page" ? chatScrollRef : undefined} className={cn("overscroll-contain [scrollbar-width:thin] [scrollbar-gutter:stable]", variant === "full-page" ? "w-full" : "flex-1 min-h-0 overflow-y-auto")}>
       <div className={cn("flex flex-col gap-4 px-4 py-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]", variant === "full-page" && (isSidebarCollapsed ? "max-w-6xl" : "max-w-[52rem]"), variant === "full-page" && "mx-auto w-full pb-52")}>
-        {emptyState ? (
+        {isLoadingChat ? (
+          <div className="flex-1 flex items-center justify-center py-16 h-full">
+            <Spinner className="w-8 h-8 text-muted-foreground" />
+          </div>
+        ) : emptyState ? (
           <>
             {/* PostHog-style centered greeting with logo & suggestion chips */}
             <div className="flex flex-col items-center justify-center py-16 gap-5 select-none">
@@ -2475,7 +2488,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       {variant === "full-page" ? (
         <div className="w-full h-full bg-background flex flex-row">
           <div className="flex-1 relative flex flex-col h-full">
-            {emptyState ? (
+            {isLoadingChat ? (
+              <div className="flex-1 flex flex-col items-center justify-center h-full w-full">
+                <Spinner className="w-8 h-8 text-muted-foreground" />
+              </div>
+            ) : emptyState ? (
               /* â”€â”€ PostHog-style: everything in one centered block â”€â”€ */
               <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-8">
                 <div className="max-w-[52rem] w-full flex flex-col items-center gap-6">
