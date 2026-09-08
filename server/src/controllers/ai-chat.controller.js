@@ -80,7 +80,8 @@ export const streamAskAi = async (req, res) => {
         // 2a. If not incognito and no session exists, create one
         if (!isIncognito && !sessionId && body.question) {
             const title = body.question.length > 50 ? body.question.substring(0, 47) + "..." : body.question;
-            const session = await createSession(body.userEmail || 'unknown@classgrid.in', title, false);
+            const userEmail = req.user?.email || body.userEmail || 'unknown@classgrid.in';
+            const session = await createSession(userEmail, title, false);
             if (session) {
                 sessionId = session.id;
                 // Generate a real title in the background
