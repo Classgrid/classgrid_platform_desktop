@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/marketing_ui/sidebar";
 import { Input } from "@/components/marketing_ui/input";
 import { Button } from "@/components/marketing_ui/button";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/marketing_ui/accordion";
 
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/marketing_ui/dropdown-menu";
 
@@ -277,33 +278,45 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
       </div>
 
       <SidebarGroupContent>
-        {pinnedSessions.length > 0 && (
-          <>
-            <div className="px-2 mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Pinned
-            </div>
-            <SidebarMenu className="mb-4">
-              {pinnedSessions.map(renderSessionItem)}
-            </SidebarMenu>
-          </>
-        )}
+        <Accordion defaultValue={["pinned", "today", "previous"]} className="w-full">
+          {pinnedSessions.length > 0 && (
+            <AccordionItem value="pinned" className="border-none mb-2">
+              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pinned</span>
+              </AccordionTrigger>
+              <AccordionContent className="pb-0 pt-1 px-0">
+                <SidebarMenu>
+                  {pinnedSessions.map(renderSessionItem)}
+                </SidebarMenu>
+              </AccordionContent>
+            </AccordionItem>
+          )}
 
-        <div className="px-2 mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Today
-        </div>
-        <SidebarMenu className="mb-4">
-          {loading && <div className="px-2 text-xs text-muted-foreground py-2">Loading...</div>}
-          {!loading && todaySessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">No chats today</div>}
-          {todaySessions.map(renderSessionItem)}
-        </SidebarMenu>
+          <AccordionItem value="today" className="border-none mb-2">
+            <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Today</span>
+            </AccordionTrigger>
+            <AccordionContent className="pb-0 pt-1 px-0">
+              <SidebarMenu>
+                {loading && <div className="px-2 text-xs text-muted-foreground py-2">Loading...</div>}
+                {!loading && todaySessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">No chats today</div>}
+                {todaySessions.map(renderSessionItem)}
+              </SidebarMenu>
+            </AccordionContent>
+          </AccordionItem>
 
-        <div className="px-2 mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Previous
-        </div>
-        <SidebarMenu>
-          {!loading && previousSessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">No previous chats</div>}
-          {previousSessions.map(renderSessionItem)}
-        </SidebarMenu>
+          <AccordionItem value="previous" className="border-none">
+            <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Previous</span>
+            </AccordionTrigger>
+            <AccordionContent className="pb-0 pt-1 px-0">
+              <SidebarMenu>
+                {!loading && previousSessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">No previous chats</div>}
+                {previousSessions.map(renderSessionItem)}
+              </SidebarMenu>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </SidebarGroupContent>
     </SidebarGroup>
       
