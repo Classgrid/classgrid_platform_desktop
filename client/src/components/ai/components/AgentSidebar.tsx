@@ -30,6 +30,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   const [isSharingEmail, setIsSharingEmail] = React.useState(false);
   const [sharedEmailSuccess, setSharedEmailSuccess] = React.useState(false);
   const [copiedSuccess, setCopiedSuccess] = React.useState(false);
+  const [isCopying, setIsCopying] = React.useState(false);
 
   React.useEffect(() => {
     const handleActiveSessionChanged = (e: any) => {
@@ -146,6 +147,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
 
   const handleCopyChat = async (id: string) => {
     try {
+      setIsCopying(true);
       const res = await fetch(`${endpointPrefix}/api/ai/sessions/${id}/messages`, { credentials: "include" });
       const data = await res.json();
       if (data.messages) {
@@ -159,6 +161,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
       }
     } catch (e) {
       console.error("Failed to copy session", e);
+    } finally {
+      setIsCopying(false);
     }
   };
 
@@ -347,9 +351,10 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 variant="outline" 
                 className="justify-start w-full"
                 onClick={() => handleCopyChat(shareSessionId)}
+                disabled={isCopying || copiedSuccess}
               >
                 {copiedSuccess ? <Check className="w-4 h-4 mr-2 text-green-500" /> : <Copy className="w-4 h-4 mr-2" />}
-                {copiedSuccess ? "Copied to Clipboard!" : "Copy Markdown to Clipboard"}
+                {isCopying ? "Copying..." : copiedSuccess ? "Copied to Clipboard!" : "Copy Markdown to Clipboard"}
               </Button>
               <Button 
                 className="justify-start w-full"
