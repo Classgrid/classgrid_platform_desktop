@@ -33,6 +33,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           envs: PRODUCTION_ENV
           script: |
+            set -e
             cd /var/www/classgrid_platform
             
             # Pull the latest code from GitHub

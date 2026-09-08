@@ -299,3 +299,88 @@ export const uploadChatImage = async (req, res) => {
         res.status(500).json({ error: "Failed to generate upload URL" });
     }
 };
+
+import { deleteSession, updateSessionPinned, getSessionById } from "../services/ai-chat.service.js";
+import { Resend } from "resend";
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export const updateChatSession = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, pinned } = req.body;
+        
+        // Ensure user owns session
+        const session = await getSessionById(id);
+        if (!session || session.user_email !== req.user.email) {
+            return res.status(403).json({ error: "Forbidden" });
+        }
+
+        let updated;
+        if (title !== undefined) {
+            updated = await updateSessionTitle(id, title);
+        }
+        if (pinned !== undefined) {
+            try {
+                updated = await updateSessionPinned(id, pinned);
+            } catch(e) {
+                // If column doesn't exist yet, gracefully ignore
+                console.warn("Pinned column might be missing", e);
+            }
+        }
+        
+        res.json({ session: updated || session });
+    } catch (e) {
+        console.error("Error updating session:", e);
+        res.status(500).json({ error: "Failed to update session" });
+    }
+};
+
+export const deleteChatSession = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const session = await getSessionById(id);
+        if (!session || session.user_email !== req.user.email) {
+            return res.status(403).json({ error: "Forbidden" });
+        }
+
+        await deleteSession(id);
+        res.json({ success: true });
+    } catch (e) {
+        console.error("Error deleting session:", e);
+        res.status(500).json({ error: "Failed to delete session" });
+    }
+};
+
+export const shareChatSession = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const session = await getSessionById(id);
+        if (!session || session.user_email !== req.user.email) {
+            return res.status(403).json({ error: "Forbidden" });
+        }
+
+        const messages = await getSessionMessages(id);
+        
+        let markdownTranscript = `# Chat Transcript: ${session.title}\n\n`;
+        markdownTranscript += `*Exported on ${new Date().toLocaleString()}*\n\n---\n\n`;
+
+        messages.forEach(msg => {
+            const role = msg.role === 'user' ? 'You' : 'Classgrid AI';
+            markdownTranscript += `### **${role}**\n${msg.content}\n\n`;
+        });
+
+        // Send email via Resend
+        await resend.emails.send({
+            from: "Classgrid AI <agent@classgrid.in>",
+            to: req.user.email,
+            subject: `Classgrid AI Chat: ${session.title}`,
+            text: markdownTranscript,
+            html: markdownTranscript.replace(/\n/g, "<br>"), // Simple fallback HTML
+        });
+
+        res.json({ success: true, message: "Email sent successfully" });
+    } catch (e) {
+        console.error("Error sharing session:", e);
+        res.status(500).json({ error: "Failed to send transcript email" });
+    }
+};

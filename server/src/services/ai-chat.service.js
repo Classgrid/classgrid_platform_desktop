@@ -98,3 +98,61 @@ export async function getSessionMessages(sessionId) {
 
     return data;
 }
+
+/**
+ * Deletes a chat session and its messages.
+ */
+export async function deleteSession(sessionId) {
+    if (!sessionId) return null;
+
+    // Messages cascade delete if foreign key is set up, but let's delete messages first just in case
+    await primarySupabaseClient.from('ai_chat_messages').delete().eq('session_id', sessionId);
+    
+    const { error } = await primarySupabaseClient
+        .from('ai_chat_sessions')
+        .delete()
+        .eq('id', sessionId);
+
+    if (error) {
+        console.error("Error deleting AI chat session:", error);
+        throw error;
+    }
+    return true;
+}
+
+/**
+ * Updates the pinned status of a chat session.
+ */
+export async function updateSessionPinned(sessionId, pinned) {
+    if (!sessionId) return null;
+
+    const { data, error } = await primarySupabaseClient
+        .from('ai_chat_sessions')
+        .update({ pinned })
+        .eq('id', sessionId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error updating AI chat session pinned status:", error);
+        throw error;
+    }
+    return data;
+}
+
+/**
+ * Retrieves a single session by ID.
+ */
+export async function getSessionById(sessionId) {
+    const { data, error } = await primarySupabaseClient
+        .from('ai_chat_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+
+    if (error) {
+        console.error("Error fetching session:", error);
+        return null; // Might not exist
+    }
+    return data;
+}
