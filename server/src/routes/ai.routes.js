@@ -40,7 +40,7 @@ import {
     chatWithSyllabus, 
     getMyPersona 
 } from "../controllers/ai.controller.js";
-import { streamAskAi, getChatSessions, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession } from "../controllers/ai-chat.controller.js";
+import { streamAskAi, getChatSessions, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession, createPublicShare, getPublicShare } from "../controllers/ai-chat.controller.js";
 
 const router = express.Router();
 
@@ -68,6 +68,10 @@ router.get("/sessions/:id/messages", isAuthenticated, getChatSessionMessages);
 router.put("/sessions/:id", isAuthenticated, updateChatSession);
 router.delete("/sessions/:id", isAuthenticated, deleteChatSession);
 router.post("/sessions/:id/share", isAuthenticated, shareChatSession);
+router.post("/sessions/:id/public-share", isAuthenticated, createPublicShare);
+
+// Public shared chat viewer (NO auth required)
+router.get("/shared/:shareId", getPublicShare);
 
 // R2 Image Upload for Chat
 router.post("/upload", isAuthenticated, uploadChatImage);

@@ -156,3 +156,65 @@ export async function getSessionById(sessionId) {
     }
     return data;
 }
+
+// ─────────────────────────────────────────────────
+// PUBLIC CHAT SHARING
+// ─────────────────────────────────────────────────
+
+import crypto from 'crypto';
+
+/**
+ * Generates a short, URL-safe share ID (10 chars).
+ */
+function generateShareId() {
+    return crypto.randomBytes(8).toString('base64url').slice(0, 10);
+}
+
+/**
+ * Creates a public snapshot of a chat session for sharing.
+ * Stores a frozen copy of all messages so the shared link remains valid
+ * even if the original session is later edited or deleted.
+ */
+export async function createSharedSnapshot(sessionId, userEmail, userName, title, messages) {
+    const shareId = generateShareId();
+
+    const { data, error } = await primarySupabaseClient
+        .from('shared_chat_snapshots')
+        .insert([{
+            share_id: shareId,
+            session_id: sessionId,
+            user_email: userEmail,
+            user_name: userName || userEmail.split('@')[0],
+            title,
+            messages: JSON.stringify(messages),
+        }])
+        .select()
+        .single();
+
+    if (error) {
+        console.error("[Share] Error creating shared snapshot:", error);
+        throw error;
+    }
+
+    console.info(`[Share] ✅ Created public share ${shareId} for session ${sessionId} by ${userEmail}`);
+    return data;
+}
+
+/**
+ * Retrieves a shared chat snapshot by its public share ID.
+ * No authentication required — this is a public endpoint.
+ */
+export async function getSharedSnapshot(shareId) {
+    const { data, error } = await primarySupabaseClient
+        .from('shared_chat_snapshots')
+        .select('*')
+        .eq('share_id', shareId)
+        .single();
+
+    if (error) {
+        console.warn(`[Share] Snapshot not found for shareId: ${shareId}`);
+        return null;
+    }
+
+    return data;
+}

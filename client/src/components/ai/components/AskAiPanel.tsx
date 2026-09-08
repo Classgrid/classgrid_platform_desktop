@@ -104,6 +104,7 @@ type AskAiPanelProps = {
   variant?: "in-flow" | "overlay" | "full-page";
   initialMessages?: ChatMessage[];
   autoFocus?: boolean;
+  readOnly?: boolean;
 };
 
 type AiAttachment = {
@@ -810,7 +811,7 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
   );
 });
 
-export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow", initialMessages, autoFocus = true }: AskAiPanelProps) {
+export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow", initialMessages, autoFocus = true, readOnly = false }: AskAiPanelProps) {
   const { data: user } = useCurrentUser();
   const session = user ? { user } : null;
   const sidebarContext = useContext(SidebarContext);
@@ -2278,7 +2279,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     </div>
   );
 
-  const panelInput = (
+  const panelInput = readOnly ? null : (
     <div className={cn(
       "px-4 py-4 relative",
       variant === "full-page"

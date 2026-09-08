@@ -8,7 +8,9 @@ import {
     updateSessionTitle,
     deleteSession,
     updateSessionPinned,
-    getSessionById
+    getSessionById,
+    createSharedSnapshot,
+    getSharedSnapshot
 } from "../services/ai-chat.service.js";
 import { sendEmail } from "../services/aws-ses.service.js";
 // The system prompt was originally in ./prompt, we will define it here or import it if needed.
@@ -334,3 +336,74 @@ export const shareChatSession = async (req, res) => {
         res.status(500).json({ error: "Failed to share session" });
     }
 };
+
+// ─────────────────────────────────────────────────
+// PUBLIC CHAT SHARING
+// ─────────────────────────────────────────────────
+
+const SHARE_BASE_URL = process.env.SHARE_BASE_URL || "https://share.classgrid.in";
+
+/**
+ * Creates a public share link for a chat session.
+ * Authenticated — only the session owner can share.
+ */
+export const createPublicShare = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const session = await getSessionById(id);
+
+        if (!session || session.user_email !== req.user.email) {
+            return res.status(403).json({ error: "Forbidden" });
+        }
+
+        const messages = await getSessionMessages(id);
+
+        // Create a frozen snapshot
+        const snapshot = await createSharedSnapshot(
+            id,
+            req.user.email,
+            req.user.name || req.user.email.split('@')[0],
+            session.title,
+            messages.map(m => ({ role: m.role, content: m.content, created_at: m.created_at }))
+        );
+
+        const shareUrl = `${SHARE_BASE_URL}/${snapshot.share_id}`;
+        console.info(`[Chat API] ✅ Public share created: ${shareUrl} for session ${id}`);
+
+        res.json({ success: true, shareId: snapshot.share_id, shareUrl });
+    } catch (e) {
+        console.error(`[Chat API] ❌ Failed to create public share:`, e);
+        res.status(500).json({ error: "Failed to create public share link" });
+    }
+};
+
+/**
+ * Retrieves a shared chat snapshot by share ID.
+ * PUBLIC — no authentication required.
+ */
+export const getPublicShare = async (req, res) => {
+    try {
+        const { shareId } = req.params;
+        const snapshot = await getSharedSnapshot(shareId);
+
+        if (!snapshot) {
+            return res.status(404).json({ error: "Shared chat not found" });
+        }
+
+        // Parse messages if stored as a string
+        const messages = typeof snapshot.messages === 'string'
+            ? JSON.parse(snapshot.messages)
+            : snapshot.messages;
+
+        res.json({
+            title: snapshot.title,
+            sharedBy: snapshot.user_name,
+            messages,
+            createdAt: snapshot.created_at,
+        });
+    } catch (e) {
+        console.error(`[Chat API] ❌ Failed to retrieve public share:`, e);
+        res.status(500).json({ error: "Failed to load shared chat" });
+    }
+};
+

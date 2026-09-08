@@ -103,6 +103,7 @@ import { OrgStudentsPage } from "@/features/superadmin/pages/OrgStudentsPage";
 import { OrgFeesPage } from "@/features/superadmin/pages/OrgFeesPage";
 import { OrgAdmissionsPage } from "@/features/superadmin/pages/OrgAdmissionsPage";
 import { PlatformAnnouncementsPage } from "@/features/superadmin/pages/PlatformAnnouncementsPage";
+import { SharedChatPage } from "@/features/shared/pages/SharedChatPage";
 import { SharedProfilePage } from "@/features/shared/pages/SharedProfilePage";
 import SandboxProfilePage from "@/features/shared/pages/SandboxProfilePage";
 import DateTimePickerSandbox from "@/features/sandbox/pages/DateTimePickerSandbox";
@@ -495,6 +496,9 @@ export function AppRouter() {
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />
+
+      {/* Public shared chat viewer (no auth required) */}
+      <Route path="/shared/:shareId" element={<SharedChatPage />} />
     </Routes>
   );
 }
