@@ -86,6 +86,9 @@ export const streamAskAi = async (req, res) => {
                 sessionId = session.id;
                 // Generate a real title in the background
                 generateSessionTitle(sessionId, body.question).catch(console.error);
+                
+                // Send back the sessionId immediately so the frontend sidebar can update instantly
+                res.write(`data: ${JSON.stringify({ type: "session_info", sessionId })}\n\n`);
             }
         }
 
@@ -209,7 +212,7 @@ export const streamAskAi = async (req, res) => {
             }
         });
 
-        // 5. Send back the sessionId if it was created
+        // 5. Send back the sessionId if it was provided by the client, just in case
         if (sessionId) {
             res.write(`data: ${JSON.stringify({ type: "session_info", sessionId })}\n\n`);
         }
