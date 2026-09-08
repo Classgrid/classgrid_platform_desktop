@@ -189,7 +189,6 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
             </div>
           ) : (
             <SidebarMenuButton
-              tooltip={session.title}
               isActive={session.id === activeSessionId}
               onClick={() => handleLoadChat(session.id)}
               className="h-auto py-1.5 cursor-pointer flex-1"
