@@ -1179,7 +1179,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setIsLoadingChat(true);
 
       try {
-        const res = await fetch(`/api/ai/sessions/${id}`);
+        const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
+          ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
+          : "";
+        const res = await fetch(`${endpointPrefix}/api/ai/sessions/${id}`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
           const loadedMessages = data.messages.map((m: any) => ({
@@ -1214,7 +1217,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setSessionId(routeSessionId);
       setIsLoadingChat(true);
       try {
-        const res = await fetch(`/api/ai/sessions/${routeSessionId}`);
+        const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
+          ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
+          : "";
+        const res = await fetch(`${endpointPrefix}/api/ai/sessions/${routeSessionId}`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
           const loadedMessages = data.messages.map((m: any) => ({
@@ -1299,7 +1305,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in") + "/api/user/ai-context"
         : "/api/user/ai-context";
 
-      fetch(endpoint)
+      fetch(endpoint, { credentials: "include" })
         .then((res) => {
           if (!res.ok) throw new Error("Network response was not ok");
           return res.json();
