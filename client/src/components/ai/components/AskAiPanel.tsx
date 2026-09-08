@@ -2515,8 +2515,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       {variant === "full-page" ? (
         <div className="w-full h-full bg-background flex flex-row">
           <div className="flex-1 relative flex flex-col h-full">
-            {/* Sidebar toggle inside chat area */}
-            <div className="absolute top-4 left-4 z-50">
+            {/* Sidebar toggle — inside chat content, not at edge */}
+            <div className="shrink-0 flex items-center px-6 pt-3">
               <SidebarTrigger />
             </div>
             {isLoadingChat ? (
