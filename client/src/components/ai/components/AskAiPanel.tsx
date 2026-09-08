@@ -2599,15 +2599,15 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               variant="ghost"
                               size="icon"
                               disabled={!canSubmit}
-                              className="h-8 w-8 shrink-0 rounded-full bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 transition-all shadow-sm"
-                            >
-                              <ArrowUp className="h-4 w-4" />
-                              <span className="sr-only">Send question</span>
-                            </Button>
-                          </div>
+                            className="h-8 w-8 shrink-0 rounded-full bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 transition-all shadow-sm"
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                            <span className="sr-only">Send question</span>
+                          </Button>
                         </div>
-                      </form>
-                    )}
+                      </div>
+                    </form>
+                  )}
                   </div>
 
                   {/* Suggestion chips */}
@@ -2622,24 +2622,24 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
                         if (role === "super_admin" || role === "superadmin" || role === "platform_owner") {
                           chips = [
-                            { icon: "ðŸ“Š", label: "Analytics" },
-                            { icon: "ðŸ«", label: "Organizations" },
-                            { icon: "ðŸ’°", label: "Revenue" },
-                            { icon: "ðŸ“‹", label: "Leads" },
+                            { icon: "📊", label: "Analytics" },
+                            { icon: "🏢", label: "Organizations" },
+                            { icon: "💰", label: "Revenue" },
+                            { icon: "📋", label: "Leads" },
                           ];
                         } else if (role === "org_admin" || role === "admin" || role === "principal" || role === "director") {
                           chips = [
-                            { icon: "ðŸ‘¥", label: "Students" },
-                            { icon: "ðŸ‘¨â€ðŸ«", label: "Faculty" },
-                            { icon: "ðŸ’³", label: "Fees" },
-                            { icon: "ðŸ“…", label: "Attendance" },
+                            { icon: "👥", label: "Students" },
+                            { icon: "👨‍🏫", label: "Faculty" },
+                            { icon: "💳", label: "Fees" },
+                            { icon: "📅", label: "Attendance" },
                           ];
                         } else if (role.includes("admission")) {
                           chips = [
-                            { icon: "ðŸ“‹", label: "Applications" },
-                            { icon: "ðŸ…", label: "Merit Lists" },
-                            { icon: "ðŸ“‚", label: "Documents" },
-                            { icon: "âœ…", label: "Enrollment" },
+                            { icon: "📋", label: "Applications" },
+                            { icon: "🏅", label: "Merit Lists" },
+                            { icon: "📂", label: "Documents" },
+                            { icon: "✅", label: "Enrollment" },
                           ];
                         } else if (role.includes("fee") || role === "fee_manager") {
                           chips = [
