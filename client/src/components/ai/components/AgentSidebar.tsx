@@ -237,8 +237,9 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   };
 
   return (
-    <SidebarGroup className="pt-1">
-      <div className="px-2 pb-3 mb-3 border-b border-border/50">
+    <>
+      <SidebarGroup className="pt-1">
+        <div className="px-2 pb-3 mb-3 border-b border-border/50">
         <Button 
           onClick={handleNewChat}
           className="w-full justify-start gap-2 h-9 px-3 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 cursor-pointer"
