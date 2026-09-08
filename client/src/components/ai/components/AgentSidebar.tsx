@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { MessageSquare, Plus, Search, Pin, MoreHorizontal, Pencil, Trash2, Share, Copy, Mail, Check } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/marketing_ui/sidebar";
@@ -334,7 +335,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
     </SidebarGroup>
       
       {/* Share Modal */}
-      {shareModalOpen && shareSessionId && (
+      {shareModalOpen && shareSessionId && typeof document !== "undefined" && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50">
           <div className="bg-background border border-border p-6 rounded-lg w-[400px] shadow-lg">
             <h3 className="text-lg font-semibold mb-4">Share Chat</h3>
@@ -363,7 +364,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
               <Button variant="ghost" onClick={() => setShareModalOpen(false)}>Close</Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

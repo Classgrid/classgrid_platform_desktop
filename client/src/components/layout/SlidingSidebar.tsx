@@ -71,20 +71,20 @@ export function SlidingSidebar({
     <div className="overflow-hidden relative p-0 w-full h-full">
       {/* Sliding Carousel Container */}
       <div
-        className="absolute inset-0 flex transition-transform duration-300 ease-in-out"
-        style={{ transform: showNested ? "translateX(-100%)" : "translateX(0)" }}
+        className="absolute top-0 bottom-0 left-0 flex transition-transform duration-300 ease-in-out w-[200%]"
+        style={{ transform: showNested ? "translateX(-50%)" : "translateX(0)" }}
       >
         {/* ==========================================
             PANE 1: MAIN MENU
             ========================================== */}
-        <div className="w-full h-full shrink-0 overflow-y-auto pb-10 no-scrollbar">
+        <div className="w-1/2 h-full shrink-0 overflow-y-auto pb-10 no-scrollbar">
           {mainMenu}
         </div>
 
         {/* ==========================================
             PANE 2: NESTED MENU
             ========================================== */}
-        <div className="w-full h-full shrink-0 overflow-y-auto pb-10 pt-0 no-scrollbar">
+        <div className="w-1/2 h-full shrink-0 overflow-y-auto pb-10 pt-0 no-scrollbar">
           <div className="group-data-[collapsible=icon]:hidden px-1 pb-1 -mt-1 mx-1">
             <SidebarMenuButton
               asChild
