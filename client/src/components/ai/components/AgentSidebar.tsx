@@ -234,7 +234,13 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 
                 <DropdownMenuItem 
                   className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ececf1] rounded-md transition-colors"
-                  onClick={() => handleUpdateSession(session.id, { pinned: !session.pinned })}
+                  onClick={() => {
+                    if (!session.pinned && pinnedSessions.length >= 5) {
+                      window.alert("You can only pin up to 5 chats.");
+                      return;
+                    }
+                    handleUpdateSession(session.id, { pinned: !session.pinned });
+                  }}
                 >
                   <Pin className="w-4 h-4" strokeWidth={1.5} />
                   {session.pinned ? "Unpin chat" : "Pin chat"}
