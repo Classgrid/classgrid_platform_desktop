@@ -7,7 +7,6 @@ import {
     getSessionMessages,
     updateSessionTitle
 } from "../services/ai-chat.service.js";
-import { accessLogger } from "../config/logger.js";
 // The system prompt was originally in ./prompt, we will define it here or import it if needed.
 const SYSTEM_PROMPT = `You are the Classgrid AI Assistant. 
 
@@ -15,7 +14,7 @@ IMPORTANT FORMATTING RULES:
 When creating markdown tables, you MUST use html line breaks (<br>) inside table cells if the text is long. This prevents the table from becoming excessively wide and forcing the user to scroll horizontally. 
 CRITICAL: ONLY use <br> tags INSIDE table cells. Do NOT use <br> tags anywhere else in your response.`;
 
-async function generateSessionTitle(sessionId, question, res = null) {
+async function generateSessionTitle(sessionId, question) {
     try {
         const client = createLLMClient({
             providers: [
@@ -49,13 +48,6 @@ async function generateSessionTitle(sessionId, question, res = null) {
             const cleanTitle = answer.trim().replace(/^["']|["']$/g, '');
             if (cleanTitle.length > 0) {
                 await updateSessionTitle(sessionId, cleanTitle);
-                if (res) {
-                    try {
-                        res.write(`data: ${JSON.stringify({ type: "title_updated", title: cleanTitle, sessionId })}\n\n`);
-                    } catch (e) {
-                        // ignore write errors if stream is closed
-                    }
-                }
             }
         }
     } catch (err) {
@@ -64,9 +56,6 @@ async function generateSessionTitle(sessionId, question, res = null) {
 }
 
 export const streamAskAi = async (req, res) => {
-    const requestStartTime = Date.now();
-    let firstTokenTime = null;
-
     // 1. Setup Server-Sent Events (SSE) headers for Express
     res.writeHead(200, {
         "Content-Type": "text/event-stream",
@@ -88,16 +77,9 @@ export const streamAskAi = async (req, res) => {
             const session = await createSession(body.userEmail || 'unknown@classgrid.in', title, false);
             if (session) {
                 sessionId = session.id;
-                // Generate a real title in the background only if the message is substantial
-                if (body.question.length > 15) {
-                    generateSessionTitle(sessionId, body.question, res).catch(console.error);
-                }
+                // Generate a real title in the background
+                generateSessionTitle(sessionId, body.question).catch(console.error);
             }
-        } else if (!isIncognito && sessionId && body.question) {
-            // Trigger rename on EVERY user message as requested by the user, using recent context
-            const recentContext = messages.slice(-4).map(m => m.content).join(" | ");
-            const contextQuestion = `Context: ${recentContext} -> ${body.question}`;
-            generateSessionTitle(sessionId, contextQuestion, res).catch(console.error);
         }
 
         // 2b. If not incognito, save the user message to DB immediately
@@ -139,10 +121,10 @@ export const streamAskAi = async (req, res) => {
         const client = createLLMClient({
             providers: [
                 {
-                    name: "gemini",
-                    url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
-                    apiKey: process.env.GEMINI_API_KEY || "",
-                    model: "gemini-3.5-flash"
+                    name: "groq",
+                    url: "https://api.groq.com/openai/v1/chat/completions",
+                    apiKey: process.env.GROQ_API_KEY || "",
+                    model: "openai/gpt-oss-20b"
                 },
                 {
                     name: "mistral",
@@ -151,10 +133,10 @@ export const streamAskAi = async (req, res) => {
                     model: "open-mistral-nemo"
                 },
                 {
-                    name: "groq",
-                    url: "https://api.groq.com/openai/v1/chat/completions",
-                    apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b"
+                    name: "gemini",
+                    url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
+                    apiKey: process.env.GEMINI_API_KEY || "",
+                    model: "gemini-3.5-flash"
                 }
             ],
             verbose: true,
@@ -217,16 +199,6 @@ export const streamAskAi = async (req, res) => {
             },
             onThought: (thought) => {
                 res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`);
-            },
-            onToken: (token) => {
-                if (!firstTokenTime) {
-                    firstTokenTime = Date.now();
-                    accessLogger.info("[AI Metrics] Time to first token", { 
-                        firstTokenTimeMs: firstTokenTime - requestStartTime,
-                        model: "gemini-3.5-flash"
-                    });
-                }
-                res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`);
             }
         });
 
@@ -251,11 +223,6 @@ export const streamAskAi = async (req, res) => {
         console.error("API Route Error:", err);
         res.write(`data: ${JSON.stringify({ type: "answer", answer: "An error occurred while calling the AI." })}\n\n`);
     } finally {
-        const totalTime = Date.now() - requestStartTime;
-        accessLogger.info("[AI Metrics] Total execution time", { 
-            totalExecutionTimeMs: totalTime,
-            model: "gemini-3.5-flash"
-        });
         res.end();
     }
 };
@@ -276,18 +243,10 @@ export const getChatSessions = async (req, res) => {
 export const getChatSessionMessages = async (req, res) => {
     try {
         const { id } = req.params;
-        console.info(`[Chat API] Attempting to load chat messages for session ID: ${id}`);
         const messages = await getSessionMessages(id);
-        
-        if (!messages || messages.length === 0) {
-            console.warn(`[Chat API] Session ${id} loaded successfully, but contains 0 messages. The UI will likely show the empty state.`);
-        } else {
-            console.info(`[Chat API] Successfully loaded ${messages.length} messages for session ${id}.`);
-        }
-        
         res.json({ messages });
     } catch (e) {
-        console.error(`[Chat API] CRITICAL ERROR loading messages for session ${req.params.id}:`, e);
+        console.error("Error getting session messages:", e);
         res.status(500).json({ error: "Failed to load messages" });
     }
 };
@@ -305,93 +264,5 @@ export const uploadChatImage = async (req, res) => {
     } catch (e) {
         console.error("Error generating presigned URL for AI chat:", e);
         res.status(500).json({ error: "Failed to generate upload URL" });
-    }
-};
-
-import { deleteSession, updateSessionPinned, getSessionById } from "../services/ai-chat.service.js";
-import { Resend } from "resend";
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-export const updateChatSession = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { title, pinned } = req.body;
-        
-        // Ensure user owns session
-        const session = await getSessionById(id);
-        if (!session || session.user_email !== req.user.email) {
-            return res.status(403).json({ error: "Forbidden" });
-        }
-
-        let updated;
-        if (title !== undefined) {
-            updated = await updateSessionTitle(id, title);
-        }
-        if (pinned !== undefined) {
-            // Check limit if trying to pin
-            if (pinned === true) {
-                const userSessions = await getSessions(req.user.email);
-                const pinnedCount = userSessions.filter(s => s.pinned).length;
-                if (pinnedCount >= 5) {
-                    return res.status(400).json({ error: "Maximum limit of 5 pinned chats reached." });
-                }
-            }
-            updated = await updateSessionPinned(id, pinned);
-        }
-        
-        res.json({ session: updated || session });
-    } catch (e) {
-        console.error("Error updating session:", e);
-        res.status(500).json({ error: "Failed to update session" });
-    }
-};
-
-export const deleteChatSession = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const session = await getSessionById(id);
-        if (!session || session.user_email !== req.user.email) {
-            return res.status(403).json({ error: "Forbidden" });
-        }
-
-        await deleteSession(id);
-        res.json({ success: true });
-    } catch (e) {
-        console.error("Error deleting session:", e);
-        res.status(500).json({ error: "Failed to delete session" });
-    }
-};
-
-export const shareChatSession = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const session = await getSessionById(id);
-        if (!session || session.user_email !== req.user.email) {
-            return res.status(403).json({ error: "Forbidden" });
-        }
-
-        const messages = await getSessionMessages(id);
-        
-        let markdownTranscript = `# Chat Transcript: ${session.title}\n\n`;
-        markdownTranscript += `*Exported on ${new Date().toLocaleString()}*\n\n---\n\n`;
-
-        messages.forEach(msg => {
-            const role = msg.role === 'user' ? 'You' : 'Classgrid AI';
-            markdownTranscript += `### **${role}**\n${msg.content}\n\n`;
-        });
-
-        // Send email via Resend
-        await resend.emails.send({
-            from: "Classgrid AI <agent@classgrid.in>",
-            to: req.user.email,
-            subject: `Classgrid AI Chat: ${session.title}`,
-            text: markdownTranscript,
-            html: markdownTranscript.replace(/\n/g, "<br>"), // Simple fallback HTML
-        });
-
-        res.json({ success: true, message: "Email sent successfully" });
-    } catch (e) {
-        console.error("Error sharing session:", e);
-        res.status(500).json({ error: "Failed to send transcript email" });
     }
 };
