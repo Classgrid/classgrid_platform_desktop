@@ -1236,7 +1236,28 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   // Save chat history and session ID to local storage whenever they update
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("agent:active-session-changed", { detail: { sessionId } }));
-  }, [messages, sessionId]);
+    
+    // Sync URL so refreshing doesn't lose the active session
+    if (variant === "full-page" && typeof window !== "undefined") {
+      const currentPath = window.location.pathname;
+      const pathParts = currentPath.split('/');
+      const agentIndex = pathParts.indexOf('agent');
+      
+      if (agentIndex !== -1) {
+        const baseAgentPath = pathParts.slice(0, agentIndex + 1).join('/');
+        if (sessionId) {
+          const newPath = `${baseAgentPath}/${sessionId}`;
+          if (currentPath !== newPath) {
+            window.history.replaceState(null, "", newPath);
+          }
+        } else {
+          if (currentPath !== baseAgentPath) {
+            window.history.replaceState(null, "", baseAgentPath);
+          }
+        }
+      }
+    }
+  }, [messages, sessionId, variant]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [isTerminated, setIsTerminated] = useState(false);
