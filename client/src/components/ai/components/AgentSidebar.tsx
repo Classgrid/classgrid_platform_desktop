@@ -201,7 +201,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
           {!isEditing && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="absolute right-2 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 transition-opacity p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground">
+                <button className="absolute right-2 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 transition-opacity p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground cursor-pointer">
                   <MoreHorizontal className="w-4 h-4" />
                 </button>
               </DropdownMenuTrigger>
@@ -280,7 +280,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
         <Accordion defaultValue={["pinned", "today", "previous"]} multiple className="w-full">
           {pinnedSessions.length > 0 && (
             <AccordionItem value="pinned" className="border-none mb-2">
-              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0">
+              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pinned</span>
               </AccordionTrigger>
               <AccordionContent className="pb-0 pt-1 px-0">
@@ -292,7 +292,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
           )}
 
           <AccordionItem value="today" className="border-none mb-2">
-            <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0">
+            <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Today</span>
             </AccordionTrigger>
             <AccordionContent className="pb-0 pt-1 px-0">
@@ -305,7 +305,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
           </AccordionItem>
 
           <AccordionItem value="previous" className="border-none">
-            <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0">
+            <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Previous</span>
             </AccordionTrigger>
             <AccordionContent className="pb-0 pt-1 px-0">
