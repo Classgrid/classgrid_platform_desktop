@@ -111,3 +111,5 @@ async function start() {
 }
 
 start();
+
+// Trigger deployment for Gemini key (Phase 2 Full Screen)

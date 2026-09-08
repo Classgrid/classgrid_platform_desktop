@@ -1,5 +1,10 @@
 # Classgrid — All Overview Wireframe Layouts
 
+> **🚨 GLOBAL ARCHITECTURE UPDATE (PHASE 2):**
+> **ALL 11 dashboards across the platform NO LONGER land on an Overview page.** 
+> The default landing page for EVERY SINGLE ROLE (Super Admin down to Student) is now the **AI Agent Full-Screen (`<AskAiPanel variant="full-page" />`)**.
+> The "Overview Bento Grids" described below are no longer the default first view.
+
 > **Style:** Agora Console — clean, sharp, square corners, no heavy rounded
 > **Sidebar:** 240px, `#111827` bg | **Content:** `#000000` bg | **Accent:** `#34d399`
 
