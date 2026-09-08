@@ -2643,66 +2643,66 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                           ];
                         } else if (role.includes("fee") || role === "fee_manager") {
                           chips = [
-                            { icon: "ðŸ’°", label: "Payments" },
-                            { icon: "âš ï¸", label: "Defaulters" },
-                            { icon: "ðŸ“Š", label: "Fee Structure" },
-                            { icon: "ðŸ“‹", label: "Reports" },
+                            { icon: "💰", label: "Payments" },
+                            { icon: "⚠️", label: "Defaulters" },
+                            { icon: "📊", label: "Fee Structure" },
+                            { icon: "📋", label: "Reports" },
                           ];
                         } else if (role.includes("exam") || role === "exam_controller") {
                           chips = [
-                            { icon: "ðŸ“", label: "Exams" },
-                            { icon: "ðŸ“Š", label: "Results" },
-                            { icon: "ðŸŽ¯", label: "Grading" },
-                            { icon: "ðŸ“…", label: "Schedule" },
+                            { icon: "📝", label: "Exams" },
+                            { icon: "📊", label: "Results" },
+                            { icon: "🎯", label: "Grading" },
+                            { icon: "📅", label: "Schedule" },
                           ];
                         } else if (role.includes("library") || role === "librarian") {
                           chips = [
-                            { icon: "ðŸ“š", label: "Books" },
-                            { icon: "ðŸ“–", label: "Issued" },
-                            { icon: "â°", label: "Overdue" },
-                            { icon: "ðŸ—‚ï¸", label: "Catalog" },
+                            { icon: "📚", label: "Books" },
+                            { icon: "📖", label: "Issued" },
+                            { icon: "⏰", label: "Overdue" },
+                            { icon: "🗂️", label: "Catalog" },
                           ];
                         } else if (role.includes("attendance")) {
                           chips = [
-                            { icon: "ðŸ“‹", label: "Today's Attendance" },
-                            { icon: "ðŸ“Š", label: "Reports" },
-                            { icon: "ðŸ””", label: "Alerts" },
-                            { icon: "ðŸ“ˆ", label: "Trends" },
+                            { icon: "📋", label: "Today's Attendance" },
+                            { icon: "📊", label: "Reports" },
+                            { icon: "🔔", label: "Alerts" },
+                            { icon: "📈", label: "Trends" },
                           ];
                         } else if (role.includes("hr") || role === "hr_manager") {
                           chips = [
-                            { icon: "ðŸ‘¥", label: "Staff" },
-                            { icon: "ðŸ’°", label: "Payroll" },
-                            { icon: "ðŸ“…", label: "Leave" },
-                            { icon: "ðŸ“‹", label: "Recruitment" },
+                            { icon: "👥", label: "Staff" },
+                            { icon: "💰", label: "Payroll" },
+                            { icon: "📅", label: "Leave" },
+                            { icon: "📋", label: "Recruitment" },
                           ];
                         } else if (role.includes("hostel") || role.includes("transport")) {
                           chips = [
-                            { icon: "ðŸ ", label: "Rooms" },
-                            { icon: "ðŸ‘¥", label: "Residents" },
-                            { icon: "ðŸ“", label: "Complaints" },
-                            { icon: "ðŸ½ï¸", label: "Mess" },
+                            { icon: "🏠", label: "Rooms" },
+                            { icon: "👥", label: "Residents" },
+                            { icon: "📝", label: "Complaints" },
+                            { icon: "🍽️", label: "Mess" },
                           ];
                         } else if (role === "faculty" || role === "teacher" || role === "hod" || role === "vice_principal") {
                           chips = [
-                            { icon: "ðŸ“š", label: "My Classes" },
-                            { icon: "ðŸ“‹", label: "Attendance" },
-                            { icon: "ðŸ“Š", label: "Results" },
-                            { icon: "ðŸ“…", label: "Timetable" },
+                            { icon: "📚", label: "My Classes" },
+                            { icon: "📋", label: "Attendance" },
+                            { icon: "📊", label: "Results" },
+                            { icon: "📅", label: "Timetable" },
                           ];
                         } else if (role === "student") {
                           chips = [
-                            { icon: "ðŸ’³", label: "My Fees" },
-                            { icon: "ðŸ“‹", label: "Attendance" },
-                            { icon: "ðŸ“Š", label: "Results" },
-                            { icon: "ðŸ“…", label: "Timetable" },
+                            { icon: "💳", label: "My Fees" },
+                            { icon: "📋", label: "Attendance" },
+                            { icon: "📊", label: "Results" },
+                            { icon: "📅", label: "Timetable" },
                           ];
                         } else {
                           chips = [
-                            { icon: "ðŸ“Š", label: "Analytics" },
-                            { icon: "ðŸ‘¥", label: "Users" },
-                            { icon: "ðŸ’¬", label: "Help" },
-                            { icon: "ðŸ“‹", label: "Reports" },
+                            { icon: "📊", label: "Analytics" },
+                            { icon: "👥", label: "Users" },
+                            { icon: "💬", label: "Help" },
+                            { icon: "📋", label: "Reports" },
                           ];
                         }
 
