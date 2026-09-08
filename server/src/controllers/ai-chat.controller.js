@@ -88,8 +88,16 @@ export const streamAskAi = async (req, res) => {
             const session = await createSession(body.userEmail || 'unknown@classgrid.in', title, false);
             if (session) {
                 sessionId = session.id;
-                // Generate a real title in the background
-                generateSessionTitle(sessionId, body.question, res).catch(console.error);
+                // Generate a real title in the background only if the message is substantial
+                if (body.question.length > 15) {
+                    generateSessionTitle(sessionId, body.question, res).catch(console.error);
+                }
+            }
+        } else if (!isIncognito && sessionId && body.question) {
+            // Trigger rename on the 2nd user message to capture true context if first message was short
+            if (messages.length === 2) {
+                const contextQuestion = `Context: ${messages[0].content} -> ${body.question}`;
+                generateSessionTitle(sessionId, contextQuestion, res).catch(console.error);
             }
         }
 
