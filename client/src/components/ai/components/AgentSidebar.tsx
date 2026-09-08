@@ -278,7 +278,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
       </div>
 
       <SidebarGroupContent>
-        <Accordion defaultValue={["pinned", "today", "previous"]} className="w-full">
+        <Accordion defaultValue={["pinned", "today", "previous"]} multiple className="w-full">
           {pinnedSessions.length > 0 && (
             <AccordionItem value="pinned" className="border-none mb-2">
               <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0">
