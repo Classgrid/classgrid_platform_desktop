@@ -10,7 +10,7 @@ import {
     updateSessionPinned,
     getSessionById
 } from "../services/ai-chat.service.js";
-import sendEmail from "../utils/sendEmail.js";
+import { sendEmail } from "../services/aws-ses.service.js";
 // The system prompt was originally in ./prompt, we will define it here or import it if needed.
 const SYSTEM_PROMPT = `You are the Classgrid AI Assistant. 
 
