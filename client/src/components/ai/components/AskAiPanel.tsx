@@ -1,4 +1,4 @@
-﻿
+
 import React, { useEffect, useMemo, useRef, useState, useCallback, memo, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { SidebarContext } from "@/components/marketing_ui/sidebar";
@@ -1141,8 +1141,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     setInput("");
     setAttachedFiles([]);
     setLastSentDocsPath(null);
-    sessionStorage.removeItem("classgrid_ai_chat_history");
-    sessionStorage.removeItem("classgrid_ai_session_id");
+    
+    
     localStorage.removeItem("askAiDraftContext");
     if (currentEmail) {
       localStorage.setItem("classgrid_ai_user_email", currentEmail);
@@ -1157,8 +1157,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setInput("");
       setAttachedFiles([]);
       setLastSentDocsPath(null);
-      sessionStorage.removeItem("classgrid_ai_chat_history");
-      sessionStorage.removeItem("classgrid_ai_session_id");
+      
+      
       localStorage.removeItem("askAiDraftContext");
 
       // Focus input
@@ -1185,8 +1185,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             createdAt: m.created_at ? new Date(m.created_at).getTime() : Date.now()
           }));
           setMessages(loadedMessages);
-          sessionStorage.setItem("classgrid_ai_chat_history", JSON.stringify(loadedMessages));
-          sessionStorage.setItem("classgrid_ai_session_id", id);
         }
       } catch (err) {
         console.error("Failed to load chat", err);
@@ -1218,8 +1216,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             createdAt: m.created_at ? new Date(m.created_at).getTime() : Date.now()
           }));
           setMessages(loadedMessages);
-          sessionStorage.setItem("classgrid_ai_chat_history", JSON.stringify(loadedMessages));
-          sessionStorage.setItem("classgrid_ai_session_id", routeSessionId);
         }
       } catch (err) {
         console.error("Failed to load chat from route", err);
@@ -1230,12 +1226,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   // Save chat history and session ID to local storage whenever they update
   useEffect(() => {
-    if (messages.length > 0) {
-      sessionStorage.setItem("classgrid_ai_chat_history", JSON.stringify(messages));
-    }
-    if (sessionId) {
-      sessionStorage.setItem("classgrid_ai_session_id", sessionId);
-    }
     window.dispatchEvent(new CustomEvent("agent:active-session-changed", { detail: { sessionId } }));
   }, [messages, sessionId]);
   const [submitting, setSubmitting] = useState(false);
@@ -1358,8 +1348,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     setSessionId(null);
     setAttachedFiles([]);
     setLastSentDocsPath(null);
-    sessionStorage.removeItem("classgrid_ai_chat_history");
-    sessionStorage.removeItem("classgrid_ai_session_id");
+    
+    
     localStorage.removeItem("askAiDraftContext");
   }
 
@@ -1842,7 +1832,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 window.dispatchEvent(new Event("agent:refresh-sessions"));
               } else if (event.type === "session_info" && event.sessionId) {
                 setSessionId(event.sessionId);
-                sessionStorage.setItem("classgrid_ai_session_id", event.sessionId);
+                
               } else if (event.type === "answer") {
                 finalPayload = event;
               } else if (event.type === "token") {
@@ -1890,7 +1880,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         if (finalPayload) {
           if (finalPayload.sessionId) {
             setSessionId(finalPayload.sessionId);
-            sessionStorage.setItem("classgrid_ai_session_id", finalPayload.sessionId);
+            
           }
 
           const answer =
@@ -1926,7 +1916,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
         if (payload?.sessionId) {
           setSessionId(payload.sessionId);
-          sessionStorage.setItem("classgrid_ai_session_id", payload.sessionId);
+          
         }
 
         const answer =
@@ -2817,5 +2807,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     </>
   );
 }
+
 
 
