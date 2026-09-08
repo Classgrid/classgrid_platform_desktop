@@ -1175,7 +1175,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           const data = await res.json();
           const loadedMessages = data.messages.map((m: any) => ({
             role: m.role,
-            content: m.content
+            content: m.content,
+            createdAt: m.created_at ? new Date(m.created_at).getTime() : Date.now()
           }));
           setMessages(loadedMessages);
           localStorage.setItem("classgrid_ai_chat_history", JSON.stringify(loadedMessages));
@@ -1471,42 +1472,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setTimeout(() => { isAutoScrollingRef.current = false; }, 200);
     });
   }, [messages.length, thinking, open]);
-
-  // Event listeners for Sidebar actions
-  useEffect(() => {
-    const handleNewChat = () => {
-      handleClearChat();
-    };
-
-    const handleLoadChat = (e: any) => {
-      const sessionId = e.detail?.sessionId;
-      if (sessionId) {
-        // Here we can load the specific chat session
-        // For now, we simulate switching to it
-        setSessionId(sessionId);
-        const endpoint = typeof import.meta !== "undefined" && import.meta.env
-          ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in") + `/api/ai/sessions/${sessionId}/messages`
-          : `/api/ai/sessions/${sessionId}/messages`;
-
-        fetch(endpoint, { credentials: "include" })
-          .then(res => res.json())
-          .then(data => {
-            if (data.messages) {
-              setMessages(data.messages);
-            }
-          })
-          .catch(err => console.error("Failed to load messages", err));
-      }
-    };
-
-    window.addEventListener("agent:new-chat", handleNewChat);
-    window.addEventListener("agent:load-chat", handleLoadChat);
-
-    return () => {
-      window.removeEventListener("agent:new-chat", handleNewChat);
-      window.removeEventListener("agent:load-chat", handleLoadChat);
-    };
-  }, [handleClearChat]);
 
   // Follow along during typing animation via a gentle interval
   // instead of reacting to every message state change (which fights user scroll)
@@ -1841,6 +1806,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                           event.label === "analyzing" ? "Analyzing results" :
                             "Thinking"
                 );
+              } else if (event.type === "title_updated") {
+                window.dispatchEvent(new Event("agent:refresh-sessions"));
               } else if (event.type === "session_info" && event.sessionId) {
                 setSessionId(event.sessionId);
                 localStorage.setItem("classgrid_ai_session_id", event.sessionId);
@@ -2038,13 +2005,35 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           </>
         ) : (
           <>
-            {messages.map((message) => {
+            {messages.map((message, index) => {
               const isUser = message.role === "user";
 
+              let showDateHeader = false;
+              if (index === 0) {
+                showDateHeader = true;
+              } else {
+                const prevMsg = messages[index - 1];
+                if (message.createdAt && prevMsg.createdAt) {
+                  const diff = message.createdAt - prevMsg.createdAt;
+                  if (diff > 3600000) { // 1 hour
+                    showDateHeader = true;
+                  }
+                }
+              }
+
+              const formattedDate = message.createdAt 
+                ? new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' }).format(new Date(message.createdAt))
+                : "";
+
               return (
-                <motion.div
-                  key={message.id}
-                  initial={prefersReducedMotion ? false : { opacity: 0 }}
+                <React.Fragment key={message.id}>
+                  {showDateHeader && formattedDate && (
+                    <div className="flex justify-center w-full my-6">
+                      <span className="text-[11px] font-semibold text-muted-foreground">{formattedDate}</span>
+                    </div>
+                  )}
+                  <motion.div
+                    initial={prefersReducedMotion ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.16 }}
                   className={cn(
@@ -2188,6 +2177,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     )}
                   </div>
                 </motion.div>
+                </React.Fragment>
               );
             })}
 

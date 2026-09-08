@@ -15,7 +15,7 @@ IMPORTANT FORMATTING RULES:
 When creating markdown tables, you MUST use html line breaks (<br>) inside table cells if the text is long. This prevents the table from becoming excessively wide and forcing the user to scroll horizontally. 
 CRITICAL: ONLY use <br> tags INSIDE table cells. Do NOT use <br> tags anywhere else in your response.`;
 
-async function generateSessionTitle(sessionId, question) {
+async function generateSessionTitle(sessionId, question, res = null) {
     try {
         const client = createLLMClient({
             providers: [
@@ -49,6 +49,13 @@ async function generateSessionTitle(sessionId, question) {
             const cleanTitle = answer.trim().replace(/^["']|["']$/g, '');
             if (cleanTitle.length > 0) {
                 await updateSessionTitle(sessionId, cleanTitle);
+                if (res) {
+                    try {
+                        res.write(`data: ${JSON.stringify({ type: "title_updated", title: cleanTitle, sessionId })}\n\n`);
+                    } catch (e) {
+                        // ignore write errors if stream is closed
+                    }
+                }
             }
         }
     } catch (err) {
@@ -82,7 +89,7 @@ export const streamAskAi = async (req, res) => {
             if (session) {
                 sessionId = session.id;
                 // Generate a real title in the background
-                generateSessionTitle(sessionId, body.question).catch(console.error);
+                generateSessionTitle(sessionId, body.question, res).catch(console.error);
             }
         }
 
