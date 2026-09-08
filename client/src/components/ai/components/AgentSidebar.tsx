@@ -112,7 +112,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 tooltip={session.title}
                 isActive={session.id === activeSessionId}
                 onClick={() => handleLoadChat(session.id)}
-                className="h-auto py-1.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="h-auto py-1.5 cursor-pointer"
                 render={
                   <span className="truncate block w-full">{session.title}</span>
                 }
