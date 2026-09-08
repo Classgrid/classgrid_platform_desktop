@@ -838,5 +838,24 @@ router.get("/my-teaching-roles", isAuthenticated, async (req, res) => {
   }
 });
 
-export default router;
+// AI Context
+router.get("/ai-context", isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("name email role organization tenant_id");
+    if (!user) return res.status(404).json({ message: "User not found" });
 
+    res.json({
+      id: user._id,
+      name: user.name,
+      role: user.role,
+      email: user.email,
+      organization: user.organization || null,
+      tenant_id: user.tenant_id || null
+    });
+  } catch (error) {
+    console.error("AI Context error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+export default router;
