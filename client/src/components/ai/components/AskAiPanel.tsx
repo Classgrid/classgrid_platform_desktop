@@ -1113,8 +1113,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     const savedSessionId = localStorage.getItem("classgrid_ai_session_id");
     const savedHistory = localStorage.getItem("classgrid_ai_chat_history");
 
-    // If the user changed (logout + login as different user), clear old chat
-    const userChanged = currentEmail && storedEmail && currentEmail !== storedEmail;
+    // If the user changed (logout + login as different user) OR if we have a current user but no stored user (legacy chat), clear old chat
+    const userChanged = (currentEmail && storedEmail && currentEmail !== storedEmail) || (currentEmail && !storedEmail);
 
     if (!userChanged && savedSessionId && savedHistory) {
       try {
