@@ -304,29 +304,33 @@ export const shareChatSession = async (req, res) => {
     try {
         const { id } = req.params;
         const session = await getSessionById(id);
-        const messages = await getSessionMessages(id);
         
-        if (!session || !messages) {
-            return res.status(404).json({ error: "Session not found" });
+        if (!session || session.user_email !== req.user.email) {
+            return res.status(403).json({ error: "Forbidden" });
         }
 
+        const messages = await getSessionMessages(id);
+
         let transcript = `Chat Transcript: ${session.title}\n\n`;
+        transcript += `Exported on ${new Date().toLocaleString()}\n\n---\n\n`;
         messages.forEach((msg) => {
             transcript += `${msg.role === 'user' ? 'You' : 'Classgrid AI'}:\n${msg.content}\n\n`;
         });
 
-        // Ensure sendEmail uses your email config for agent@classgrid.in
-        // Assuming sendEmail(to, subject, text, html) signature
-        await sendEmail(
-            req.user.email, // Send to the logged-in user
-            `AI Chat Transcript: ${session.title}`,
-            transcript,
-            `<pre style="font-family: sans-serif; white-space: pre-wrap;">${transcript}</pre>`
-        );
+        // sendEmail from aws-ses.service.js takes a named object
+        await sendEmail({
+            fromName: "Classgrid AI",
+            fromEmail: "agent@classgrid.in",
+            to: req.user.email,
+            subject: `Classgrid AI Chat: ${session.title}`,
+            text: transcript,
+            html: `<pre style="font-family: sans-serif; white-space: pre-wrap;">${transcript}</pre>`,
+        });
 
-        res.json({ success: true });
+        console.info(`[Chat API] ✅ Chat transcript emailed to ${req.user.email} for session ${id}`);
+        res.json({ success: true, message: "Email sent successfully" });
     } catch (e) {
-        console.error("Error sharing session:", e);
+        console.error(`[Chat API] ❌ Failed to email chat transcript:`, e);
         res.status(500).json({ error: "Failed to share session" });
     }
 };
