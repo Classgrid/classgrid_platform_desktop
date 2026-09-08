@@ -1182,7 +1182,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
           ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
           : "";
-        const res = await fetch(`${endpointPrefix}/api/ai/sessions/${id}`, { credentials: "include" });
+        const res = await fetch(`${endpointPrefix}/api/ai/sessions/${id}/messages`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
           const loadedMessages = data.messages.map((m: any) => ({
@@ -1220,7 +1220,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
           ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
           : "";
-        const res = await fetch(`${endpointPrefix}/api/ai/sessions/${routeSessionId}`, { credentials: "include" });
+        const res = await fetch(`${endpointPrefix}/api/ai/sessions/${routeSessionId}/messages`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
           const loadedMessages = data.messages.map((m: any) => ({
