@@ -1,11 +1,11 @@
 import React from "react";
-import { MessageSquare, Plus, Search } from "lucide-react";
+import { MessageSquare, Plus, Search, Pin, MoreHorizontal, Pencil, Trash2, Share, Copy, Mail, Check } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/marketing_ui/sidebar";
 import { Input } from "@/components/marketing_ui/input";
 import { Button } from "@/components/marketing_ui/button";
 
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/marketing_ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2, Share, Pin, Copy, Mail, Check } from "lucide-react";
 
 interface ChatSession {
   id: string;
@@ -153,12 +153,20 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   const todaySessions = unpinnedSessions.filter(s => isToday(s.created_at));
   const previousSessions = unpinnedSessions.filter(s => !isToday(s.created_at));
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Extract base path, e.g., if we are on /superadmin/agent/123, base is /superadmin
+  const basePathMatch = location.pathname.match(/^(\/[^\/]+(?:\/[^\/]+)?)(?:\/agent|\/dashboard)?/);
+  const basePath = basePathMatch ? basePathMatch[1] : "";
+
   const handleNewChat = () => {
-    window.dispatchEvent(new Event("agent:new-chat"));
+    navigate(`${basePath}/agent`);
+    window.dispatchEvent(new Event("agent:new-chat")); // Keep event for legacy state reset if needed
   };
 
   const handleLoadChat = (sessionId: string) => {
-    window.dispatchEvent(new CustomEvent("agent:load-chat", { detail: { sessionId } }));
+    navigate(`${basePath}/agent/${sessionId}`);
   };
 
   const renderSessionItem = (session: ChatSession) => {
@@ -193,39 +201,52 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
           {!isEditing && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground">
+                <button className="absolute right-2 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 transition-opacity p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground">
                   <MoreHorizontal className="w-4 h-4" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 z-[100]">
-                <DropdownMenuItem onClick={() => {
-                  setEditingSessionId(session.id);
-                  setEditingTitle(session.title);
-                }}>
-                  <Pencil className="w-4 h-4 mr-2" />
+              <DropdownMenuContent 
+                align="end" 
+                sideOffset={4}
+                className="w-[180px] z-[100] bg-[#202123] dark:bg-[#202123] text-[#ececf1] border border-white/10 rounded-xl p-1.5 shadow-xl"
+              >
+                <DropdownMenuItem 
+                  className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ececf1] rounded-md transition-colors"
+                  onClick={() => {
+                    setShareSessionId(session.id);
+                    setShareModalOpen(true);
+                  }}
+                >
+                  <Share className="w-4 h-4" strokeWidth={1.5} />
+                  Share
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem 
+                  className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ececf1] rounded-md transition-colors"
+                  onClick={() => {
+                    setEditingSessionId(session.id);
+                    setEditingTitle(session.title);
+                  }}
+                >
+                  <Pencil className="w-4 h-4" strokeWidth={1.5} />
                   Rename
                 </DropdownMenuItem>
                 
-                <DropdownMenuItem onClick={() => {
-                  setShareSessionId(session.id);
-                  setShareModalOpen(true);
-                }}>
-                  <Share className="w-4 h-4 mr-2" />
-                  Share chat
-                </DropdownMenuItem>
-                
-                <DropdownMenuItem onClick={() => handleUpdateSession(session.id, { pinned: !session.pinned })}>
-                  <Pin className="w-4 h-4 mr-2" />
+                <DropdownMenuItem 
+                  className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ececf1] rounded-md transition-colors"
+                  onClick={() => handleUpdateSession(session.id, { pinned: !session.pinned })}
+                >
+                  <Pin className="w-4 h-4" strokeWidth={1.5} />
                   {session.pinned ? "Unpin chat" : "Pin chat"}
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-white/10 my-1" />
                 
                 <DropdownMenuItem 
-                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                  className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer text-[#ef4444] hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ef4444] rounded-md transition-colors"
                   onClick={() => handleDeleteSession(session.id)}
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
+                  <Trash2 className="w-4 h-4" strokeWidth={1.5} />
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
