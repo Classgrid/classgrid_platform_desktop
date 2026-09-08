@@ -51,8 +51,8 @@ jobs:
             echo "$PRODUCTION_ENV" > .env
             # Wipe node_modules to clear the corrupted state, but keep package-lock.json
             rm -rf node_modules
-            # Install production dependencies only
-            npm install --production --no-audit --no-fund
+            # Install production dependencies only to save memory and avoid OOM
+            npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
 
             # INSTALL REDIS IF MISSING
             if ! command -v redis-server &> /dev/null; then
