@@ -63,6 +63,28 @@ router.get("/profile-schema", isAuthenticated, async (req, res) => {
   }
 });
 
+// =======================
+// GET AI CONTEXT
+// =======================
+router.get("/ai-context", isAuthenticated, async (req, res) => {
+  try {
+    const org = await Organization.findById(req.user.organization_id).select("name type").lean();
+    res.json({
+      success: true,
+      userContext: {
+        name: req.user.name,
+        role: req.user.role,
+        email: req.user.email,
+        organizationName: org ? org.name : null,
+        organizationType: org ? org.type : null,
+      }
+    });
+  } catch (error) {
+    console.error("AI CONTEXT ERROR:", error.message);
+    res.status(500).json({ message: "Server error getting ai context" });
+  }
+});
+
 const normalizePushNotifications = (pushNotifications) => {
   const p = pushNotifications || {};
   return {
