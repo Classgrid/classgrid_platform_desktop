@@ -7,6 +7,7 @@ import { Button } from "@/components/marketing_ui/button";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/marketing_ui/accordion";
 
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/marketing_ui/dropdown-menu";
+import { toast } from "sonner";
 
 interface ChatSession {
   id: string;
@@ -81,9 +82,22 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
         body: JSON.stringify(updates),
         credentials: "include"
       });
-      if (res.ok) fetchSessions();
+      if (res.ok) {
+        if (updates.pinned !== undefined) {
+            toast.success(updates.pinned ? "Chat pinned successfully!" : "Chat unpinned.");
+        }
+        fetchSessions();
+      } else {
+        const errData = await res.json();
+        if (errData.error) {
+            toast.error(errData.error);
+        } else {
+            toast.error("Failed to update chat.");
+        }
+      }
     } catch (e) {
       console.error("Failed to update session", e);
+      toast.error("Failed to update chat.");
     }
   };
 
@@ -236,7 +250,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                   className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ececf1] rounded-md transition-colors"
                   onClick={() => {
                     if (!session.pinned && pinnedSessions.length >= 5) {
-                      window.alert("You can only pin up to 5 chats.");
+                      toast.error("You can only pin up to 5 chats.");
                       return;
                     }
                     handleUpdateSession(session.id, { pinned: !session.pinned });

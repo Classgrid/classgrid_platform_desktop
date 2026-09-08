@@ -320,12 +320,15 @@ export const updateChatSession = async (req, res) => {
             updated = await updateSessionTitle(id, title);
         }
         if (pinned !== undefined) {
-            try {
-                updated = await updateSessionPinned(id, pinned);
-            } catch(e) {
-                // If column doesn't exist yet, gracefully ignore
-                console.warn("Pinned column might be missing", e);
+            // Check limit if trying to pin
+            if (pinned === true) {
+                const userSessions = await getSessions(req.user.email);
+                const pinnedCount = userSessions.filter(s => s.pinned).length;
+                if (pinnedCount >= 5) {
+                    return res.status(400).json({ error: "Maximum limit of 5 pinned chats reached." });
+                }
             }
+            updated = await updateSessionPinned(id, pinned);
         }
         
         res.json({ session: updated || session });
