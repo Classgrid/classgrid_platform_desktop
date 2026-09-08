@@ -49,9 +49,8 @@ jobs:
 
             cd server
             echo "$PRODUCTION_ENV" > .env
-            npm cache clean --force
-            rm -rf node_modules package-lock.json
-            npm install --no-audit --no-fund
+            # Install production dependencies only to save memory and avoid OOM
+            npm install --production --no-audit --no-fund
 
             # INSTALL REDIS IF MISSING
             if ! command -v redis-server &> /dev/null; then
