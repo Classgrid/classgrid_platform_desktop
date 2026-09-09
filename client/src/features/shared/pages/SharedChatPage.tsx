@@ -139,9 +139,8 @@ export function SharedChatPage() {
       {/* ── Center Column Wrapper ── */}
       <div className="shared-center-wrapper">
         
-        {/* Author Block (Changelog style, but positioned outside like Vercel) */}
+        {/* Author Block (Vercel positioning, rich content) */}
         <div className="changelog-author-block">
-          <span className="shared-by-text-prefix">Shared by</span>
           {chat.sharedByAvatar ? (
             <img src={chat.sharedByAvatar} alt={chat.sharedBy} className="author-avatar" />
           ) : (
@@ -150,7 +149,10 @@ export function SharedChatPage() {
             </div>
           )}
           <div className="author-text-col">
-            <span className="author-name">{chat.sharedBy}</span>
+            <div className="author-name-row">
+              <span className="shared-by-text-prefix">Shared by</span>
+              <span className="author-name">{chat.sharedBy}</span>
+            </div>
             {chat.sharedByEmail && <span className="author-email">{chat.sharedByEmail}</span>}
           </div>
         </div>
@@ -230,20 +232,18 @@ export function SharedChatPage() {
         .shared-center-wrapper {
           margin: 0 auto;
           width: 100%;
-          max-width: 800px;
+          max-width: 960px; /* match Vercel's ~950px column */
           display: flex;
           flex-direction: column;
-          padding-top: 48px;
+          padding: 48px 24px; /* center it with equal gutters both sides */
         }
 
         /* ── Inner Content ── */
         .shared-content-inner {
           width: 100%;
-          background: #0a0a0a;
           min-height: calc(100vh - 120px);
-          padding: 48px 40px;
-          border-left: 1px solid rgba(255, 255, 255, 0.04);
-          border-right: 1px solid rgba(255, 255, 255, 0.04);
+          display: flex;
+          flex-direction: column;
         }
 
         /* ── Changelog-Style Author Block ── */
@@ -252,19 +252,12 @@ export function SharedChatPage() {
           align-items: center;
           justify-content: flex-start;
           gap: 12px;
-          margin-bottom: 24px;
-          padding-left: 40px; /* Aligns exactly with the inner content padding */
-        }
-
-        .shared-by-text-prefix {
-          color: #888;
-          font-size: 13px;
-          margin-right: 4px;
+          margin-bottom: 32px;
         }
 
         .author-avatar {
-          width: 32px;
-          height: 32px;
+          width: 36px;
+          height: 36px;
           border-radius: 50%;
           object-fit: cover;
         }
@@ -275,7 +268,7 @@ export function SharedChatPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 600;
         }
 
@@ -286,16 +279,28 @@ export function SharedChatPage() {
           gap: 4px;
         }
 
+        .author-name-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .shared-by-text-prefix {
+          color: #888;
+          font-size: 15px;
+          font-weight: 400;
+        }
+
         .author-name {
           color: #ededed;
-          font-size: 14px;
-          font-weight: 500;
+          font-size: 15px;
+          font-weight: 600;
           line-height: 1;
         }
 
         .author-email {
           color: #888;
-          font-size: 12px;
+          font-size: 13px;
           line-height: 1;
         }
 
