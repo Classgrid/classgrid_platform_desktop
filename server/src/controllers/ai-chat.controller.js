@@ -403,7 +403,7 @@ export const createPublicShare = async (req, res) => {
         
         // INSTANT RESPONSE: Pre-generate the share ID and URL
         const shareId = crypto.randomBytes(8).toString('base64url').slice(0, 10);
-        const shareUrl = `${SHARE_BASE_URL}/${shareId}`;
+        const shareUrl = `${SHARE_BASE_URL}/shared/${shareId}`;
 
         // Return immediately to frontend so it feels incredibly fast
         res.json({ success: true, shareId, shareUrl });
