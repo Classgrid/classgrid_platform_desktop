@@ -133,10 +133,10 @@ export const streamAskAi = async (req, res) => {
         const client = createLLMClient({
             providers: [
                 {
-                    name: "openai",
-                    url: "https://api.openai.com/v1/chat/completions",
-                    apiKey: process.env.OPENAI_API_KEY || "",
-                    model: "gpt-4o"
+                    name: "groq",
+                    url: "https://api.groq.com/openai/v1/chat/completions",
+                    apiKey: process.env.GROQ_API_KEY || "",
+                    model: "openai/gpt-oss-20b"
                 },
                 {
                     name: "mistral",
