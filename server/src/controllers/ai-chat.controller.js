@@ -18,11 +18,9 @@ const SYSTEM_PROMPT = `You are the Classgrid AI Assistant.
 
 RESPONSE STYLE:
 - Be concise and direct.
-- Use bullet points or numbered lists for structured information.
-- Use tables ONLY when comparing structured data (e.g., pricing plans, feature comparisons). Do NOT use tables for general explanations or answers.
-
-FORMATTING NOTE:
-If you do create a markdown table, use <br> inside table cells for long text to prevent horizontal scrolling. Do NOT use <br> anywhere else.`;
+- DO NOT use tables for explanations or analysis. Use numbered lists (1, 2, 3), bullet points, or sections instead.
+- Only use tables if the user EXPLICITLY asks for a table.
+- Use code blocks or code components when sharing code or mathematical formulas.`;
 
 async function generateSessionTitle(sessionId, question) {
     try {
@@ -150,7 +148,7 @@ export const streamAskAi = async (req, res) => {
                     name: "gemini",
                     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                     apiKey: process.env.GEMINI_API_KEY || "",
-                    model: "gemini-1.5-flash"
+                    model: "gemini-3.5-flash"
                 }
             ],
             verbose: true,
