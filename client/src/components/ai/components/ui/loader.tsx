@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "../utils";
+import { cn } from "../../utils";
 
 interface LoaderProps {
   size?: "sm" | "md" | "lg";
