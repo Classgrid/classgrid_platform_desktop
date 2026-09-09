@@ -57,7 +57,15 @@ async function generateSessionTitle(sessionId, question) {
             maxToolDepth: 0
         });
         if (answer && !answer.includes("[RATE_LIMITED]")) {
-            const cleanTitle = answer.trim().replace(/^["']|["']$/g, '');
+            let cleanTitle = answer.trim().replace(/^["']|["']$/g, '');
+            // Strip common AI prefixes
+            cleanTitle = cleanTitle.replace(/^(Title:|Title:|\*\*Title:\*\*)\s*/i, '');
+            
+            // Hard limit to 35 characters so it never overflows the sidebar
+            if (cleanTitle.length > 35) {
+                cleanTitle = cleanTitle.substring(0, 32).trim() + "...";
+            }
+
             if (cleanTitle.length > 0) {
                 await updateSessionTitle(sessionId, cleanTitle);
             }
