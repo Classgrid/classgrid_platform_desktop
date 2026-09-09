@@ -269,8 +269,9 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   const renderSessionItem = (session: ChatSession) => {
     const isEditing = editingSessionId === session.id;
     
-    // Clean up AI hallucinations anywhere in the string
-    let displayTitle = session.title.replace(/\*\*Title:\*\*/gi, '')
+    // Clean up AI hallucinations anywhere in the string, fallback to empty string if title is null
+    let displayTitle = (session.title || "New Chat")
+                                    .replace(/\*\*Title:\*\*/gi, '')
                                     .replace(/Title:/gi, '')
                                     .replace(/["']/g, '')
                                     .trim();

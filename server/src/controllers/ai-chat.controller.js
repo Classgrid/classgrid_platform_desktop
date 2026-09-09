@@ -444,7 +444,20 @@ export const createPublicShare = async (req, res) => {
 export const getPublicShare = async (req, res) => {
     try {
         const { shareId } = req.params;
-        const snapshot = await getSharedSnapshot(shareId);
+        
+        let snapshot = null;
+        let attempts = 0;
+        
+        // Retry loop to handle the race condition where the user visits the link 
+        // before the background save has finished (up to ~1.5 seconds)
+        while (attempts < 5) {
+            snapshot = await getSharedSnapshot(shareId);
+            if (snapshot) break;
+            
+            // Wait 300ms before checking again
+            await new Promise(resolve => setTimeout(resolve, 300));
+            attempts++;
+        }
 
         if (!snapshot) {
             return res.status(404).json({ error: "Shared chat not found" });
