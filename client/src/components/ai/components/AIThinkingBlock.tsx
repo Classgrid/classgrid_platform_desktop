@@ -4,7 +4,7 @@ import { Card } from "@/components/marketing_ui/card";
 import { Loader } from "./ui/loader";
 import { useEffect, useRef, useState } from "react";
 
-export default function AIThinkingBlock({ thinkingContent }: { thinkingContent?: string }) {
+export default function AIThinkingBlock({ thinkingContent, isFinished }: { thinkingContent?: string, isFinished?: boolean }) {
 const [scrollPosition, setScrollPosition] = useState(0);
 const contentRef = useRef<HTMLDivElement>(null);
 const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -14,6 +14,7 @@ const ThinkingContent = thinkingContent || "";
 const [timer, setTimer] = useState(0);
 
 useEffect(() => {
+  if (isFinished) return;
   const timerInterval = setInterval(() => {
     setTimer((prev) => prev + 1);
   }, 1000);
@@ -21,9 +22,13 @@ useEffect(() => {
   return () => {
     clearInterval(timerInterval);
   };
-}, []);
+}, [isFinished]);
 
 useEffect(() => {
+  if (isFinished) {
+    if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
+    return;
+  }
   if (contentRef.current) {
     const scrollHeight = contentRef.current.scrollHeight;
     const clientHeight = contentRef.current.clientHeight;
@@ -45,26 +50,26 @@ useEffect(() => {
       }
     };
   }
-}, [ThinkingContent]);
+}, [ThinkingContent, isFinished]);
 
 useEffect(() => {
-  if (contentRef.current) {
+  if (contentRef.current && !isFinished) {
     contentRef.current.scrollTop = scrollPosition;
   }
-}, [scrollPosition]);
+}, [scrollPosition, isFinished]);
 
 return (
   <>
     <div className="flex flex-col p-3 max-w-xl">
       <div className="flex items-center justify-start gap-2 mb-4">
-        <Loader size={"sm"} />
+        {!isFinished && <Loader size={"sm"} />}
         <p
           className="bg-[linear-gradient(110deg,#404040,35%,#fff,50%,#404040,75%,#404040)] bg-[length:200%_100%] bg-clip-text text-base text-transparent animate-[shimmer_5s_linear_infinite]"
           style={{
-            animation: "shimmer 5s linear infinite",
+            animation: isFinished ? "none" : "shimmer 5s linear infinite",
           }}
         >
-          HextaAI is thinking
+          Thinking
         </p>
         <span className="text-sm text-muted-foreground">
           {timer}s
