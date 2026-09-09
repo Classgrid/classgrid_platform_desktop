@@ -55,7 +55,8 @@ jobs:
             
             # Install production dependencies only to save memory and avoid OOM
             # DO NOT use rm -rf node_modules here, it breaks the running PM2 processes during zero-downtime deploys!
-            npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
+            # Use --force to repair any corrupted packages in-place.
+            npm install --omit=dev --no-audit --no-fund --legacy-peer-deps --force
 
             # INSTALL REDIS IF MISSING
             if ! command -v redis-server &> /dev/null; then
