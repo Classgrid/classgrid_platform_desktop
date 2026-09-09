@@ -49,9 +49,9 @@ jobs:
 
             cd server
             echo "$PRODUCTION_ENV" > .env
-            # Wipe node_modules to clear the corrupted state, but keep package-lock.json
-            rm -rf node_modules
+            
             # Install production dependencies only to save memory and avoid OOM
+            # DO NOT use rm -rf node_modules here, it breaks the running PM2 processes during zero-downtime deploys!
             npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
 
             # INSTALL REDIS IF MISSING
