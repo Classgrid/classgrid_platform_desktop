@@ -146,9 +146,15 @@ export function SharedChatPage() {
       {/* ── Center Column with slightly lighter background ── */}
       <div className="shared-content-inner">
         
-        {/* Top text: Shared by... */}
-        <div className="shared-by-header">
-          Shared by <strong>{chat.sharedBy}</strong>
+        {/* Top text: Shared by profile chip */}
+        <div className="shared-by-container">
+          <span className="shared-by-text">Shared by</span>
+          <div className="shared-by-profile">
+            <div className="shared-by-avatar">
+              {chat.sharedBy.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+            </div>
+            <strong className="shared-by-name">{chat.sharedBy}</strong>
+          </div>
         </div>
 
         {/* Context Card (like Vercel's AI SDK card) */}
@@ -228,14 +234,45 @@ export function SharedChatPage() {
           border-right: 1px solid rgba(255, 255, 255, 0.04);
         }
 
-        /* ── "Shared by" Text ── */
-        .shared-by-header {
+        /* ── "Shared by" Profile Chip ── */
+        .shared-by-container {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 24px;
           font-size: 14px;
           color: #888;
-          margin-bottom: 24px;
         }
 
-        .shared-by-header strong {
+        .shared-by-profile {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: #1a1a1a;
+          padding: 4px 12px 4px 4px;
+          border-radius: 20px;
+          border: 1px solid rgba(255,255,255,0.08);
+          transition: border-color 0.2s;
+        }
+
+        .shared-by-profile:hover {
+          border-color: rgba(255,255,255,0.2);
+        }
+
+        .shared-by-avatar {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #10b981, #059669);
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 11px;
+          font-weight: 600;
+        }
+
+        .shared-by-name {
           color: #ededed;
           font-weight: 500;
         }
