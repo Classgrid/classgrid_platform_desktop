@@ -48,9 +48,10 @@ async function generateSessionTitle(sessionId, question) {
         });
         const answer = await client.generate({
             messages: [
-                { role: "system", content: "You are a title generator. Generate a very short 3-5 word title for the user's message. Output ONLY the raw words, without quotes or punctuation." },
+                { role: "system", content: "You are a title generator. Generate a very short 3-5 word title for the user's message. Output ONLY the raw words, without quotes or punctuation. DO NOT explain your thought process. DO NOT output any XML or thoughts." },
                 { role: "user", content: question }
-            ]
+            ],
+            maxToolDepth: 0
         });
         if (answer && !answer.includes("[RATE_LIMITED]")) {
             const cleanTitle = answer.trim().replace(/^["']|["']$/g, '');
