@@ -62,6 +62,7 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import { MermaidViewer } from "./MermaidViewer";
 
 // â”€â”€â”€ SDK-local type definitions & stubs â”€â”€â”€
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
@@ -700,15 +701,21 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
         components={{
           code({ node, inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || "");
+            const language = match ? match[1] : "";
+            
+            if (!inline && language === "mermaid") {
+              return <MermaidViewer chart={String(children).replace(/\n$/, "")} />;
+            }
+
             if (!inline) {
               return (
                 <div className="w-full pb-2 overflow-hidden">
                   <CodeBlockClient
-                    language={match ? match[1] : ""}
+                    language={language}
                     rawCode={String(children).replace(/\n$/, "")}
                     html={`<pre class="text-[13px] py-4 px-4 !m-0 flex flex-col"><code class="font-mono hljs">${
-                      !isTyping && match && match[1] && hljs.getLanguage(match[1])
-                        ? hljs.highlight(String(children).replace(/\n$/, ""), { language: match[1] }).value
+                      !isTyping && language && hljs.getLanguage(language)
+                        ? hljs.highlight(String(children).replace(/\n$/, ""), { language }).value
                         : String(children).replace(/\n$/, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
                     }</code></pre>`}
                   />

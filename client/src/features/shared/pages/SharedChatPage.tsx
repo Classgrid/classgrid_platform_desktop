@@ -18,6 +18,7 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import { MermaidViewer } from "../../components/ai/components/MermaidViewer";
 
 interface SharedMessage {
   role: "user" | "assistant";
@@ -67,6 +68,13 @@ function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
           rehypePlugins={[rehypeKatex]}
           components={{
             code({ node, inline, className, children, ...props }: any) {
+              const match = /language-(\w+)/.exec(className || "");
+              const language = match ? match[1] : "";
+              
+              if (!inline && language === "mermaid") {
+                return <MermaidViewer chart={String(children).replace(/\n$/, "")} />;
+              }
+
               if (!inline) {
                 return (
                   <pre className="shared-code-block">

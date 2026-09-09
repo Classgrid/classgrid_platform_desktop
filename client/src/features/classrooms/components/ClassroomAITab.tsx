@@ -42,6 +42,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import { MermaidViewer } from "../../components/ai/components/MermaidViewer";
 
 const preprocessLaTeX = (content: string) => {
   if (!content) return "";
@@ -281,6 +282,18 @@ export const ClassroomAITab: React.FC<ClassroomAITabProps> = ({
                       <ReactMarkdown
                         remarkPlugins={[remarkMath]}
                         rehypePlugins={[rehypeKatex]}
+                        components={{
+                          code({ node, inline, className, children, ...props }: any) {
+                            const match = /language-(\w+)/.exec(className || "");
+                            const language = match ? match[1] : "";
+                            
+                            if (!inline && language === "mermaid") {
+                              return <MermaidViewer chart={String(children).replace(/\n$/, "")} />;
+                            }
+                            
+                            return <code className={className} {...props}>{children}</code>;
+                          }
+                        }}
                       >
                         {preprocessLaTeX(msg.content)}
                       </ReactMarkdown>
