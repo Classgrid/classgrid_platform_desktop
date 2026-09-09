@@ -20,15 +20,9 @@ export function CopyBlockClient({ text, label = 'copy' }: { text: string; label?
           title="Copy text"
         >
           {copied ? (
-            <>
-              <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
-            </>
+            <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           ) : (
-            <>
-              <Copy className="w-3.5 h-3.5" />
-              <span>Copy</span>
-            </>
+            <Copy className="w-3.5 h-3.5" />
           )}
         </button>
       </div>
