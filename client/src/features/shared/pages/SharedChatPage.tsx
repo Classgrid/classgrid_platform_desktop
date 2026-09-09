@@ -140,20 +140,18 @@ export function SharedChatPage() {
       <div className="shared-content-inner">
         
         {/* Top text: Shared by profile chip */}
-        <div className="shared-by-container">
-          <span className="shared-by-text">Shared by</span>
-          <div className="shared-by-profile">
-            {chat.sharedByAvatar ? (
-              <img src={chat.sharedByAvatar} alt={chat.sharedBy} className="shared-by-avatar" />
-            ) : (
-              <div className="shared-by-avatar fallback">
-                {chat.sharedBy.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
-              </div>
-            )}
-            <div className="shared-by-info">
-              <strong className="shared-by-name">{chat.sharedBy}</strong>
-              {chat.sharedByEmail && <span className="shared-by-email">{chat.sharedByEmail}</span>}
+        {/* Author Block (Changelog style: Centered, clean) */}
+        <div className="changelog-author-block">
+          {chat.sharedByAvatar ? (
+            <img src={chat.sharedByAvatar} alt={chat.sharedBy} className="author-avatar" />
+          ) : (
+            <div className="author-avatar fallback">
+              {chat.sharedBy.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
             </div>
+          )}
+          <div className="author-text-col">
+            <span className="author-name">{chat.sharedBy}</span>
+            {chat.sharedByEmail && <span className="author-email">{chat.sharedByEmail}</span>}
           </div>
         </div>
 
@@ -235,39 +233,23 @@ export function SharedChatPage() {
           border-right: 1px solid rgba(255, 255, 255, 0.04);
         }
 
-        /* ── "Shared by" Profile Chip ── */
-        .shared-by-container {
+        /* ── Changelog-Style Author Block ── */
+        .changelog-author-block {
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 12px;
-          margin-bottom: 24px;
-          font-size: 13px;
-          color: #888;
+          margin-bottom: 32px;
         }
 
-        .shared-by-profile {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          background: #1a1a1a;
-          padding: 4px 10px 4px 4px;
-          border-radius: 20px;
-          border: 1px solid rgba(255,255,255,0.08);
-          transition: border-color 0.2s;
-        }
-
-        .shared-by-profile:hover {
-          border-color: rgba(255,255,255,0.2);
-        }
-
-        .shared-by-avatar {
+        .author-avatar {
           width: 32px;
           height: 32px;
           border-radius: 50%;
           object-fit: cover;
         }
 
-        .shared-by-avatar.fallback {
+        .author-avatar.fallback {
           background: #333;
           color: #ededed;
           display: flex;
@@ -277,21 +259,24 @@ export function SharedChatPage() {
           font-weight: 600;
         }
 
-        .shared-by-info {
+        .author-text-col {
           display: flex;
           flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
         }
 
-        .shared-by-name {
+        .author-name {
           color: #ededed;
+          font-size: 14px;
           font-weight: 500;
+          line-height: 1;
         }
 
-        .shared-by-email {
+        .author-email {
           color: #888;
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1;
-          margin-top: 2px;
         }
 
         /* ── Context Card ── */
