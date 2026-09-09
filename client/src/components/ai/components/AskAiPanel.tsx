@@ -1313,32 +1313,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     return () => clearInterval(interval);
   }, [bannedUntil]);
 
-  // Check if user is already banned on page load
-  useEffect(() => {
-    async function checkBanStatus() {
-      try {
-        const endpoint = typeof import.meta !== "undefined" && import.meta.env
-          ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in") + "/api/ai/ask"
-          : "/api/ai/ask";
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ question: "__ban_check__" }),
-        });
-        if (res.status === 403) {
-          const data = await res.json().catch(() => ({}));
-          setIsTerminated(true);
-          if (data?.bannedUntil) {
-            setBannedUntil(new Date(data.bannedUntil));
-          }
-        }
-      } catch (_) {
-        // silently ignore network errors
-      }
-    }
-    if (open) void checkBanStatus();
-  }, [open]);
+
 
   function handleClearChat() {
     setMessages([]);
