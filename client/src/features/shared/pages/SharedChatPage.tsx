@@ -448,6 +448,78 @@ export function SharedChatPage() {
             border-right: none;
           }
         }
+
+        /* ── Hover Effects ── */
+        .shared-link:hover {
+          text-decoration: underline;
+        }
+
+        /* ─────────────────────────────────────────────────────────
+         *  LIGHT MODE OVERRIDES
+         * ───────────────────────────────────────────────────────── */
+        @media (prefers-color-scheme: light) {
+          .shared-page {
+            background: #ffffff;
+            color: #111111;
+          }
+          
+          .shared-logo-link {
+            color: #111111;
+          }
+          
+          .shared-content-inner {
+            background: #ffffff;
+            border-left: 1px solid rgba(0, 0, 0, 0.08);
+            border-right: 1px solid rgba(0, 0, 0, 0.08);
+          }
+          
+          .shared-by-text-prefix {
+            color: #666666;
+          }
+          
+          .author-name {
+            color: #111111;
+          }
+          
+          .author-email {
+            color: #666666;
+          }
+          
+          .user-bubble {
+            background: #f4f4f5;
+            color: #111111;
+          }
+          
+          .assistant-content {
+            color: #111111;
+          }
+          
+          .assistant-content h1, 
+          .assistant-content h2, 
+          .assistant-content h3, 
+          .assistant-content h4,
+          .assistant-content strong {
+            color: #111111;
+          }
+          
+          .assistant-content blockquote {
+            border-left: 3px solid #e5e7eb;
+            color: #6b7280;
+          }
+          
+          .shared-code-block {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+          }
+          
+          .shared-inline-code {
+            background: rgba(0, 0, 0, 0.06);
+          }
+          
+          .shared-link {
+            color: #2563eb;
+          }
+        }
       `}</style>
     </div>
   );
