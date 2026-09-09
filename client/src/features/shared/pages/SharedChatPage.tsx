@@ -468,17 +468,17 @@ export function SharedChatPage() {
         @media (prefers-color-scheme: light) {
           .shared-page {
             background: #ffffff;
-            color: #111111;
+            color: #171717;
           }
           
           .shared-logo-link {
-            color: #111111;
+            color: #171717;
           }
           
           .shared-content-inner {
-            background: #ffffff;
-            border-left: 1px solid rgba(0, 0, 0, 0.08);
-            border-right: 1px solid rgba(0, 0, 0, 0.08);
+            background: #fafafa;
+            border-left: 1px solid #eaeaea;
+            border-right: 1px solid #eaeaea;
           }
           
           .shared-by-text-prefix {
@@ -486,7 +486,7 @@ export function SharedChatPage() {
           }
           
           .author-name {
-            color: #111111;
+            color: #171717;
           }
           
           .author-email {
@@ -494,12 +494,12 @@ export function SharedChatPage() {
           }
           
           .user-bubble {
-            background: #f4f4f5;
-            color: #111111;
+            background: #000000;
+            color: #ffffff;
           }
           
           .assistant-content {
-            color: #111111;
+            color: #171717;
           }
           
           .assistant-content h1, 
@@ -507,25 +507,25 @@ export function SharedChatPage() {
           .assistant-content h3, 
           .assistant-content h4,
           .assistant-content strong {
-            color: #111111;
+            color: #171717;
           }
           
           .assistant-content blockquote {
-            border-left: 3px solid #e5e7eb;
-            color: #6b7280;
+            border-left: 3px solid #eaeaea;
+            color: #666666;
           }
           
           .shared-code-block {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
+            background: #fafafa;
+            border: 1px solid #eaeaea;
           }
           
           .shared-inline-code {
-            background: rgba(0, 0, 0, 0.06);
+            background: rgba(0, 0, 0, 0.05);
           }
           
           .shared-link {
-            color: #2563eb;
+            color: #0070f3;
           }
         }
       `}</style>
