@@ -39,6 +39,18 @@ import { ClassroomContent } from '../types/classroom.types';
 import { classroomApi } from '../services/classroomApi';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
+
+const preprocessLaTeX = (content: string) => {
+  if (!content) return "";
+  return content
+    .replace(/\\\[/g, () => '$$')
+    .replace(/\\\]/g, () => '$$')
+    .replace(/\\\(/g, () => '$')
+    .replace(/\\\)/g, () => '$');
+};
 
 interface PDFViewerModalProps {
   isOpen: boolean;
@@ -181,7 +193,12 @@ export const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ isOpen, onClose,
             
             <div className="flex-1 p-6 overflow-y-auto">
               <div className="prose prose-sm prose-indigo max-w-none [&_p]:mb-3 [&_ul]:mb-3 [&_ol]:mb-3 [&_li]:mb-1 [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-sm">
-                <ReactMarkdown>{summary}</ReactMarkdown>
+                <ReactMarkdown
+                  remarkPlugins={[remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
+                >
+                  {preprocessLaTeX(summary)}
+                </ReactMarkdown>
               </div>
             </div>
           </div>

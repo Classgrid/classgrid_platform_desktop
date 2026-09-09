@@ -36,6 +36,15 @@ interface SharedChat {
 
 /* ── Removed Fake Logo Component ── */
 
+const preprocessLaTeX = (content: string) => {
+  if (!content) return "";
+  return content
+    .replace(/\\\[/g, () => '$$')
+    .replace(/\\\]/g, () => '$$')
+    .replace(/\\\(/g, () => '$')
+    .replace(/\\\)/g, () => '$');
+};
+
 /* ── Single Message Row ── */
 function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
   if (isUser) {
@@ -76,7 +85,7 @@ function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
             },
           }}
         >
-          {msg.content}
+          {preprocessLaTeX(msg.content)}
         </ReactMarkdown>
       </div>
     </div>

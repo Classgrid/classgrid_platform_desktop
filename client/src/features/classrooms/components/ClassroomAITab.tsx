@@ -39,6 +39,18 @@ import { useCurrentUser } from '@/features/auth/queries/useCurrentUser';
 import { Button } from '@/components/marketing_ui/button';
 import { apiClient } from '@/lib/apiClient';
 import ReactMarkdown from 'react-markdown';
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
+
+const preprocessLaTeX = (content: string) => {
+  if (!content) return "";
+  return content
+    .replace(/\\\[/g, () => '$$')
+    .replace(/\\\]/g, () => '$$')
+    .replace(/\\\(/g, () => '$')
+    .replace(/\\\)/g, () => '$');
+};
 
 interface ClassroomAITabProps {
   classroomId: string;
@@ -266,7 +278,12 @@ export const ClassroomAITab: React.FC<ClassroomAITabProps> = ({
                 {msg.role === 'assistant' ? (
                   <div className="prose prose-sm prose-gray max-w-none [&_p]:mb-2 [&_ul]:mb-2 [&_ol]:mb-2 [&_pre]:bg-gray-800 [&_pre]:text-gray-100 [&_pre]:rounded-lg [&_code]:text-indigo-600 [&_code]:bg-indigo-50 [&_code]:px-1 [&_code]:rounded">
                     {msg.content ? (
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                      >
+                        {preprocessLaTeX(msg.content)}
+                      </ReactMarkdown>
                     ) : (
                       <div className="flex items-center gap-2 text-gray-400">
                         <Loader2 className="w-4 h-4 animate-spin" />

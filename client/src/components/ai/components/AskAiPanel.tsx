@@ -682,6 +682,15 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
   );
 }
 
+const preprocessLaTeX = (content: string) => {
+  if (!content) return "";
+  return content
+    .replace(/\\\[/g, () => '$$')
+    .replace(/\\\]/g, () => '$$')
+    .replace(/\\\(/g, () => '$')
+    .replace(/\\\)/g, () => '$');
+};
+
 const AssistantMessageContent = memo(({ content, isTyping }: { content: string, isTyping?: boolean }) => {
   return (
     <div className="space-y-3 text-sm leading-relaxed overflow-hidden break-words prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:p-0">
@@ -764,7 +773,7 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
           }
         }}
       >
-        {content}
+        {preprocessLaTeX(content)}
       </ReactMarkdown>
     </div>
   );
