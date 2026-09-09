@@ -139,8 +139,9 @@ export function SharedChatPage() {
       {/* ── Center Column Wrapper ── */}
       <div className="shared-center-wrapper">
         
-        {/* Author Block (Stacked: Photo -> Name -> Email) */}
+        {/* Author Block (Stacked: "Shared by" -> Photo -> Name -> Email) */}
         <div className="changelog-author-block">
+          <span className="shared-by-text-prefix">Shared by</span>
           {chat.sharedByAvatar ? (
             <img src={chat.sharedByAvatar} alt={chat.sharedBy} className="author-avatar" />
           ) : (
@@ -238,6 +239,13 @@ export function SharedChatPage() {
           gap: 8px;
           margin-bottom: 32px;
           text-align: center;
+        }
+
+        .shared-by-text-prefix {
+          color: #888;
+          font-size: 14px;
+          font-weight: 400;
+          margin-bottom: 4px;
         }
 
         .author-avatar {
