@@ -268,6 +268,10 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
 
   const renderSessionItem = (session: ChatSession) => {
     const isEditing = editingSessionId === session.id;
+    let displayTitle = session.title.replace(/^(Title:|Title:|\*\*Title:\*\*)\s*/i, '').trim();
+    if (displayTitle.length > 25) {
+      displayTitle = displayTitle.substring(0, 25).trim() + "...";
+    }
 
     return (
       <SidebarMenuItem key={session.id}>
@@ -289,7 +293,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
               onClick={() => handleLoadChat(session.id)}
               className="h-auto py-1.5 cursor-pointer flex-1"
               render={
-                <span className="truncate block w-full pr-6">{session.title}</span>
+                <span className="truncate block w-full pr-6">{displayTitle}</span>
               }
             />
           )}
