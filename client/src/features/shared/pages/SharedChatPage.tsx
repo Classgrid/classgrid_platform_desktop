@@ -139,9 +139,8 @@ export function SharedChatPage() {
       {/* ── Center Column Wrapper ── */}
       <div className="shared-center-wrapper">
         
-        {/* Author Block (Changelog style, but positioned outside like Vercel) */}
+        {/* Author Block (Stacked: Photo -> Name -> Email) */}
         <div className="changelog-author-block">
-          <span className="shared-by-text-prefix">Shared by</span>
           {chat.sharedByAvatar ? (
             <img src={chat.sharedByAvatar} alt={chat.sharedBy} className="author-avatar" />
           ) : (
@@ -238,23 +237,12 @@ export function SharedChatPage() {
           align-items: center;
           gap: 8px;
           margin-bottom: 32px;
-        }
-        
-        .author-name-row {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .shared-by-text-prefix {
-          color: #888;
-          font-size: 14px;
-          font-weight: 400;
+          text-align: center;
         }
 
         .author-avatar {
-          width: 24px;
-          height: 24px;
+          width: 48px;
+          height: 48px;
           border-radius: 50%;
           object-fit: cover;
         }
@@ -265,28 +253,28 @@ export function SharedChatPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 12px;
+          font-size: 16px;
           font-weight: 600;
         }
 
         .author-text-col {
           display: flex;
           flex-direction: column;
-          align-items: flex-start;
-          gap: 4px;
+          align-items: center;
+          gap: 2px;
         }
 
         .author-name {
           color: #ededed;
           font-size: 14px;
-          font-weight: 500;
-          line-height: 1;
+          font-weight: 600;
+          line-height: 1.2;
         }
 
         .author-email {
           color: #888;
           font-size: 13px;
-          line-height: 1;
+          line-height: 1.2;
         }
 
         /* ── Messages ── */
@@ -335,11 +323,48 @@ export function SharedChatPage() {
         }
 
         .assistant-content p {
-          margin: 0 0 10px;
+          margin-bottom: 12px;
         }
 
         .assistant-content p:last-child {
           margin-bottom: 0;
+        }
+
+        /* Markdown lists, blockquotes, etc. */
+        .assistant-content ul {
+          list-style-type: disc;
+          padding-left: 20px;
+          margin-bottom: 12px;
+        }
+
+        .assistant-content ol {
+          list-style-type: decimal;
+          padding-left: 20px;
+          margin-bottom: 12px;
+        }
+
+        .assistant-content li {
+          margin-bottom: 4px;
+        }
+        
+        .assistant-content li:last-child {
+          margin-bottom: 0;
+        }
+
+        .assistant-content strong {
+          font-weight: 600;
+          color: #fff;
+        }
+        
+        .assistant-content em {
+          font-style: italic;
+        }
+        
+        .assistant-content blockquote {
+          border-left: 3px solid #333;
+          padding-left: 16px;
+          margin: 12px 0;
+          color: #888;
         }
 
         /* Headings inline/tight */
