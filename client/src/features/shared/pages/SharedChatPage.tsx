@@ -207,6 +207,7 @@ export function SharedChatPage() {
         .shared-logo-icon {
           width: 24px;
           height: 24px;
+          object-fit: contain;
         }
 
         .shared-logo-text {
@@ -232,7 +233,7 @@ export function SharedChatPage() {
           align-items: center;
           gap: 12px;
           margin-bottom: 24px;
-          font-size: 14px;
+          font-size: 13px;
           color: #888;
         }
 
@@ -241,7 +242,7 @@ export function SharedChatPage() {
           align-items: center;
           gap: 8px;
           background: #1a1a1a;
-          padding: 4px 12px 4px 4px;
+          padding: 4px 10px 4px 4px;
           border-radius: 20px;
           border: 1px solid rgba(255,255,255,0.08);
           transition: border-color 0.2s;
@@ -252,15 +253,15 @@ export function SharedChatPage() {
         }
 
         .shared-by-avatar {
-          width: 24px;
-          height: 24px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
           background: #333; /* Removed green gradient, just neutral dark */
           color: #ededed;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 600;
         }
 
@@ -273,12 +274,12 @@ export function SharedChatPage() {
         .shared-context-card {
           display: flex;
           align-items: center;
-          gap: 16px;
-          padding: 16px 20px;
+          gap: 12px;
+          padding: 12px 16px;
           background: #111;
           border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 8px;
-          margin-bottom: 40px;
+          border-radius: 6px;
+          margin-bottom: 32px;
         }
 
         .shared-context-icon {
@@ -286,24 +287,24 @@ export function SharedChatPage() {
         }
 
         .shared-context-icon svg {
-          width: 20px;
-          height: 20px;
+          width: 16px;
+          height: 16px;
         }
 
         .shared-context-info {
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 2px;
         }
 
         .shared-context-title {
-          font-size: 15px;
-          font-weight: 600;
+          font-size: 14px;
+          font-weight: 500;
           color: #ededed;
         }
 
         .shared-context-url {
-          font-size: 13px;
+          font-size: 12px;
           color: #666;
         }
 
@@ -311,7 +312,7 @@ export function SharedChatPage() {
         .shared-messages {
           display: flex;
           flex-direction: column;
-          gap: 32px;
+          gap: 28px;
         }
 
         .shared-msg-row {
@@ -326,9 +327,9 @@ export function SharedChatPage() {
 
         .user-bubble {
           background: #1e1e1e;
-          padding: 12px 16px;
-          border-radius: 16px;
-          font-size: 15px;
+          padding: 8px 14px;
+          border-radius: 12px;
+          font-size: 14px;
           line-height: 1.5;
           color: #ededed;
           max-width: 80%;
@@ -341,8 +342,8 @@ export function SharedChatPage() {
         }
 
         .assistant-content {
-          font-size: 15px;
-          line-height: 1.7;
+          font-size: 14px;
+          line-height: 1.6;
           color: #ededed;
           width: 100%;
         }
