@@ -159,7 +159,7 @@ export const streamAskAi = async (req, res) => {
                     name: "groq",
                     url: "https://api.groq.com/openai/v1/chat/completions",
                     apiKey: process.env.GROQ_API_KEY || "",
-                    model: "llama-3.1-8b-instant"
+                    model: "openai/gpt-oss-20b"
                 },
                 {
                     name: "mistral",
@@ -171,7 +171,10 @@ export const streamAskAi = async (req, res) => {
                     name: "gemini",
                     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                     apiKey: process.env.GEMINI_API_KEY || "",
-                    model: "gemini-1.5-flash"
+                    // 🚨 AI WARNING: DO NOT CHANGE THIS TO gemini-1.5-flash 🚨
+                    // gemini-1.5-flash was deprecated and completely removed by Google in 2025.
+                    // If you change this back to 1.5, the backend will crash and hang.
+                    model: "gemini-3.5-flash"
                 }
             ],
             verbose: true,
