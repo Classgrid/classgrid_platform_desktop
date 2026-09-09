@@ -158,24 +158,7 @@ export function SharedChatPage() {
         {/* ── Inner Content (Context Card & Messages) ── */}
         <div className="shared-content-inner">
           
-          {/* Context Card (like Vercel's AI SDK card) */}
-        <div className="shared-context-card">
-          <div className="shared-context-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-          </div>
-          <div className="shared-context-info">
-            <div className="shared-context-title">{chat.title}</div>
-            <div className="shared-context-url">https://share.classgrid.in/shared/{shareId}</div>
-          </div>
-        </div>
-
-        {/* Chat Messages */}
+          {/* Chat Messages */}
         <div className="shared-messages">
           {chat.messages.map((msg, i) => (
             <MessageRow key={i} msg={msg} isUser={msg.role === "user"} />
@@ -296,46 +279,8 @@ export function SharedChatPage() {
 
         .author-email {
           color: #888;
-          font-size: 12px;
+          font-size: 13px;
           line-height: 1;
-        }
-
-        /* ── Context Card ── */
-        .shared-context-card {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px 16px;
-          background: #111;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 6px;
-          margin-bottom: 32px;
-        }
-
-        .shared-context-icon {
-          color: #888;
-        }
-
-        .shared-context-icon svg {
-          width: 16px;
-          height: 16px;
-        }
-
-        .shared-context-info {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-
-        .shared-context-title {
-          font-size: 14px;
-          font-weight: 500;
-          color: #ededed;
-        }
-
-        .shared-context-url {
-          font-size: 12px;
-          color: #666;
         }
 
         /* ── Messages ── */
