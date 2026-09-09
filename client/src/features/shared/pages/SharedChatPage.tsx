@@ -476,9 +476,9 @@ export function SharedChatPage() {
           }
           
           .shared-content-inner {
-            background: #fafafa;
-            border-left: 1px solid #eaeaea;
-            border-right: 1px solid #eaeaea;
+            background: #ffffff;
+            border-left: none;
+            border-right: none;
           }
           
           .shared-by-text-prefix {
@@ -516,7 +516,7 @@ export function SharedChatPage() {
           }
           
           .shared-code-block {
-            background: #fafafa;
+            background: #ffffff;
             border: 1px solid #eaeaea;
           }
           
