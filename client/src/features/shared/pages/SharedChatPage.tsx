@@ -416,11 +416,15 @@ export function SharedChatPage() {
         .shared-code-block {
           background: rgba(255, 255, 255, 0.05);
           border-radius: 6px;
-          padding: 12px 16px;
           overflow-x: auto;
           margin: 8px 0;
           font-family: 'JetBrains Mono', monospace;
-          font-size: 13px;
+          
+          /* Match Link Share Alert sizing */
+          width: 100%;
+          max-width: 100%;
+          padding: 16px 20px;
+          font-size: 14px;
         }
 
         .shared-inline-code {
