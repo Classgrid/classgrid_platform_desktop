@@ -273,22 +273,13 @@ export function SharedChatPage() {
           opacity: 0.8;
         }
 
-        /* ── Header ── */
+        /* ── Header (simple logo, not a bar) ── */
         .shared-header {
-          position: sticky;
-          top: 0;
-          z-index: 50;
-          display: flex;
-          align-items: center;
-          height: 56px;
-          padding: 0 24px;
-          background: rgba(10, 10, 10, 0.8);
-          backdrop-filter: blur(12px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          padding: 20px 24px;
         }
 
         .shared-logo-link {
-          display: flex;
+          display: inline-flex;
           align-items: center;
           gap: 10px;
           text-decoration: none;
@@ -297,7 +288,7 @@ export function SharedChatPage() {
         }
 
         .shared-logo-link:hover {
-          opacity: 0.8;
+          opacity: 0.7;
         }
 
         .shared-logo-icon {
