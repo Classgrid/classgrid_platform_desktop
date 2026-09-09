@@ -251,8 +251,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   const location = useLocation();
 
   // Extract base path, e.g., if we are on /superadmin/agent/123, base is /superadmin
-  const basePathMatch = location.pathname.match(/^(\/[^\/]+(?:\/[^\/]+)?)(?:\/agent|\/dashboard)?/);
-  const basePath = basePathMatch ? basePathMatch[1] : "";
+  const basePath = location.pathname.split(/(?=\/agent|\/dashboard)/)[0];
 
   const handleNewChat = () => {
     navigate(`${basePath}/agent`);
