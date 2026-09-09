@@ -63,6 +63,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { MermaidViewer } from "./MermaidViewer";
+import { PdfAttachment } from "@/features/chat/components/PdfAttachment";
 
 // â”€â”€â”€ SDK-local type definitions & stubs â”€â”€â”€
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
@@ -2177,9 +2178,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         )}
 
                         {/* Other Documents using FilePreviewModal */}
-                        {message.attachments.filter(a => !a.mimeType.startsWith("image/")).length > 0 && (
+                        {isUser && message.attachments && message.attachments.filter(a => !a.mimeType.startsWith("image/") && a.mimeType !== "application/pdf").length > 0 && (
                           <div className="flex flex-wrap gap-2 justify-end">
-                            {message.attachments.filter(a => !a.mimeType.startsWith("image/")).map((att, i) => {
+                            {message.attachments.filter(a => !a.mimeType.startsWith("image/") && a.mimeType !== "application/pdf").map((att, i) => {
                               const Icon = getFileIcon(att.mimeType);
                               return (
                                 <button
@@ -2201,6 +2202,20 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                             })}
                           </div>
                         )}
+                      </div>
+                    )}
+                    
+                    {/* PDFs using PdfAttachment */}
+                    {isUser && message.attachments && message.attachments.filter(a => a.mimeType === "application/pdf").length > 0 && (
+                      <div className="flex flex-col gap-2 mt-2">
+                        {message.attachments.filter(a => a.mimeType === "application/pdf").map((att, i) => (
+                          <PdfAttachment 
+                            key={`${att.name}-${i}`}
+                            url={att.url}
+                            filename={att.name}
+                            size={att.size || 0}
+                          />
+                        ))}
                       </div>
                     )}
                   </div>

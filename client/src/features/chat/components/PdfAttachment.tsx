@@ -48,9 +48,10 @@ interface PdfAttachmentProps {
   filename: string;
   size: number;
   isSending?: boolean;
+  uploadProgress?: number;
 }
 
-export function PdfAttachment({ url, filename, size, isSending }: PdfAttachmentProps) {
+export function PdfAttachment({ url, filename, size, isSending, uploadProgress }: PdfAttachmentProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [error, setError] = useState<boolean>(false);
 
