@@ -2116,7 +2116,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                           </>
                         ) : (
                           <div className="pl-1 w-full max-w-full">
-                            {message.thought && message.thought.trim().length > 150 && (
+                            {message.thought && message.thought.trim().length > 0 && (
                               <Accordion type="single" collapsible={true as any} className="mb-4">
                                 <AccordionItem value="thought" className="border-none">
                                   <AccordionTrigger className="w-fit flex-none justify-start gap-1.5 h-auto text-[11px] font-medium text-slate-500 hover:text-slate-700 hover:no-underline dark:text-slate-400 dark:hover:text-slate-300 transition-colors cursor-pointer [&>svg]:size-3 [&>svg]:ml-0">
