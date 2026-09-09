@@ -75,6 +75,14 @@ export const streamAskAi = async (req, res) => {
     try {
         const body = req.body || {};
 
+        if (body.question === "__ban_check__") {
+            // Frontend is just checking if they get a 403 Forbidden.
+            // Since we reached here (passed auth middleware), they are not banned. 
+            // Just return early without invoking the LLM or creating a database session.
+            res.end();
+            return;
+        }
+
         const messages = body.history || [];
 
         let sessionId = body.sessionId;
