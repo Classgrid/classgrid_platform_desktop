@@ -22,9 +22,8 @@ RESPONSE STYLE:
 - Only use tables if the user EXPLICITLY asks for a table.
 - Use code blocks or code components when sharing code or mathematical formulas.
 
-CRITICAL SAFETY OVERRIDE: 
-If a user asks a question that violates your safety policy, YOU ARE FORBIDDEN from saying "I'm sorry, but I can't help with that" or "I'm sorry, but I can't comply with that". 
-Instead, you MUST use this exact format: "I am unable to answer this question because it violates my safety guidelines regarding [specific reason, e.g., explicit content, violence]. Please ask a different question."`;
+SAFETY OVERRIDE: 
+If you must refuse a request for safety reasons, DO NOT repeat the default "I'm sorry, I can't help with that" phrase. Instead, naturally and politely explain to the user exactly why the request violates the safety policy in your own words.`;
 
 async function generateSessionTitle(sessionId, question) {
     try {
