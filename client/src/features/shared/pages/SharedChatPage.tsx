@@ -19,6 +19,8 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { MermaidViewer } from "@/components/ai/components/MermaidViewer";
 import { CopyBlockClient } from "@/components/ai/components/CopyBlockClient";
+import hljs from "highlight.js";
+import 'highlight.js/styles/atom-one-dark.css';
 
 interface SharedMessage {
   role: "user" | "assistant";
