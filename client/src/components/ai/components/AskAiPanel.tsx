@@ -694,6 +694,48 @@ const preprocessLaTeX = (content: string) => {
     .replace(/\\\)/g, () => '$');
 };
 
+// We need to define `pre` to just return children because we handle block code fully inside the `code` component.
+// Otherwise, Tailwind's typography plugin will wrap our custom cards in a dark <pre> box and force monospace.
+const MarkdownComponents = {
+  pre({ children }: any) {
+    return <>{children}</>;
+  },
+  code({ node, inline, className, children, ...props }: any, isTyping?: boolean) {
+    const match = /language-(\w+)/.exec(className || "");
+    const language = match ? match[1] : "";
+    
+    if (!inline && language === "mermaid") {
+      return <MermaidViewer chart={String(children).replace(/\n$/, "")} />;
+    }
+
+    if (!inline && ["prompt", "email", "message", "copy"].includes(language)) {
+      return <CopyBlockClient text={String(children).replace(/\n$/, "")} label={language} />;
+    }
+
+    if (!inline) {
+      return (
+        <div className="w-full pb-2 overflow-hidden not-prose">
+          <CodeBlockClient
+            language={language}
+            rawCode={String(children).replace(/\n$/, "")}
+            html={`<pre class="text-[13px] py-4 px-4 !m-0 flex flex-col"><code class="font-mono hljs">${
+              !isTyping && language && hljs.getLanguage(language)
+                ? hljs.highlight(String(children).replace(/\n$/, ""), { language }).value
+                : String(children).replace(/\n$/, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            }</code></pre>`}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <code className="bg-slate-100 dark:bg-white/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md text-[13px] font-mono break-words" {...props}>
+        {children}
+      </code>
+    );
+  }
+};
+
 const AssistantMessageContent = memo(({ content, isTyping }: { content: string, isTyping?: boolean }) => {
   return (
     <div className="space-y-3 text-sm leading-relaxed overflow-hidden break-words prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:p-0">
@@ -701,39 +743,8 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
         remarkPlugins={[remarkMath]}
         rehypePlugins={[rehypeKatex]}
         components={{
-          code({ node, inline, className, children, ...props }: any) {
-            const match = /language-(\w+)/.exec(className || "");
-            const language = match ? match[1] : "";
-            
-            if (!inline && language === "mermaid") {
-              return <MermaidViewer chart={String(children).replace(/\n$/, "")} />;
-            }
-
-            if (!inline && ["prompt", "email", "message", "copy"].includes(language)) {
-              return <CopyBlockClient text={String(children).replace(/\n$/, "")} label={language} />;
-            }
-
-            if (!inline) {
-              return (
-                <div className="w-full pb-2 overflow-hidden">
-                  <CodeBlockClient
-                    language={language}
-                    rawCode={String(children).replace(/\n$/, "")}
-                    html={`<pre class="text-[13px] py-4 px-4 !m-0 flex flex-col"><code class="font-mono hljs">${
-                      !isTyping && language && hljs.getLanguage(language)
-                        ? hljs.highlight(String(children).replace(/\n$/, ""), { language }).value
-                        : String(children).replace(/\n$/, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                    }</code></pre>`}
-                  />
-                </div>
-              );
-            }
-            return (
-              <code className="bg-muted px-1.5 py-0.5 rounded-md text-emerald-600 dark:text-emerald-400 font-mono text-[13px]" {...props}>
-                {children}
-              </code>
-            );
-          },
+          ...MarkdownComponents,
+          code: (props: any) => MarkdownComponents.code(props, isTyping),
           table({ children, ...props }) {
             return (
               <div className="w-full pb-2 overflow-x-auto">

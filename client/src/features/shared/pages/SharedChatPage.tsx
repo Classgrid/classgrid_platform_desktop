@@ -67,6 +67,9 @@ function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
           remarkPlugins={[remarkMath]}
           rehypePlugins={[rehypeKatex]}
           components={{
+            pre({ children }: any) {
+              return <>{children}</>;
+            },
             code({ node, inline, className, children, ...props }: any) {
               const match = /language-(\w+)/.exec(className || "");
               const language = match ? match[1] : "";
@@ -81,8 +84,12 @@ function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
 
               if (!inline) {
                 return (
-                  <pre className="shared-code-block">
-                    <code {...props}>{children}</code>
+                  <pre className="shared-code-block not-prose">
+                    <code className="hljs font-mono text-[13.5px]">
+                      {language && hljs.getLanguage(language)
+                        ? <span dangerouslySetInnerHTML={{ __html: hljs.highlight(String(children).replace(/\n$/, ""), { language }).value }} />
+                        : children}
+                    </code>
                   </pre>
                 );
               }
