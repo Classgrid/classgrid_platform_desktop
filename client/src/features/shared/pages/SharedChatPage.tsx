@@ -213,10 +213,10 @@ export function SharedChatPage() {
         .shared-center-wrapper {
           margin: 0 auto;
           width: 100%;
-          max-width: 880px;
+          max-width: 650px;
           display: flex;
           flex-direction: column;
-          padding: 48px 24px;
+          padding: 16px;
         }
 
         /* ── Inner Content ── */
@@ -234,21 +234,27 @@ export function SharedChatPage() {
         /* ── Changelog-Style Author Block ── */
         .changelog-author-block {
           display: flex;
+          flex-direction: column;
           align-items: center;
-          justify-content: center;
-          gap: 12px;
+          gap: 8px;
           margin-bottom: 32px;
+        }
+        
+        .author-name-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
         }
 
         .shared-by-text-prefix {
           color: #888;
-          font-size: 13px;
-          margin-right: 4px;
+          font-size: 14px;
+          font-weight: 400;
         }
 
         .author-avatar {
-          width: 32px;
-          height: 32px;
+          width: 24px;
+          height: 24px;
           border-radius: 50%;
           object-fit: cover;
         }
@@ -302,10 +308,10 @@ export function SharedChatPage() {
 
         .user-bubble {
           background: #2a2a2a;
-          padding: 8px 14px;
-          border-radius: 16px;
-          font-size: 15px;
-          line-height: 1.55;
+          padding: 8px 16px;
+          border-radius: 12px;
+          font-size: 14px;
+          line-height: 24px;
           font-weight: 400;
           letter-spacing: normal;
           color: #ededed;
@@ -319,12 +325,13 @@ export function SharedChatPage() {
         }
 
         .assistant-content {
-          font-size: 15px;
-          line-height: 1.55;
+          font-size: 14px;
+          line-height: 24px;
           font-weight: 400;
           letter-spacing: normal;
           color: #ededed;
           width: 100%;
+          max-width: 95%;
         }
 
         .assistant-content p {
@@ -340,7 +347,7 @@ export function SharedChatPage() {
         .assistant-content h2, 
         .assistant-content h3, 
         .assistant-content h4 {
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 600;
           margin: 16px 0 4px;
           color: #fff;
@@ -360,7 +367,8 @@ export function SharedChatPage() {
         /* Code blocks (subtle, no huge borders) */
         .shared-code-block {
           background: rgba(255, 255, 255, 0.05);
-          border-radius: 6px;
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
           overflow-x: auto;
           margin: 8px 0;
           font-family: 'JetBrains Mono', monospace;
@@ -368,7 +376,7 @@ export function SharedChatPage() {
           /* Match Link Share Alert sizing */
           width: 100%;
           max-width: 100%;
-          padding: 16px 20px;
+          padding: 10px 12px;
           font-size: 14px;
         }
 
