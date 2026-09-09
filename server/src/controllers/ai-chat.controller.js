@@ -477,6 +477,7 @@ export const getPublicShare = async (req, res) => {
         res.json({
             title: snapshot.title,
             sharedBy: snapshot.user_name,
+            sharedByEmail: snapshot.user_email,
             messages,
             createdAt: snapshot.created_at,
         });
