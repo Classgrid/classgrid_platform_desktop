@@ -21,7 +21,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   const [sessions, setSessions] = React.useState<ChatSession[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [activeSessionId, setActiveSessionId] = React.useState<string | null>(null);
-  
+
   // State for Three-Dot menu operations
   const [editingSessionId, setEditingSessionId] = React.useState<string | null>(null);
   const [editingTitle, setEditingTitle] = React.useState("");
@@ -48,7 +48,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
     const endpoint = typeof import.meta !== "undefined" && import.meta.env
       ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in") + "/api/ai/sessions"
       : "/api/ai/sessions";
-      
+
     fetch(endpoint, { credentials: "include" })
       .then(res => res.json())
       .then(data => {
@@ -74,7 +74,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
     const d = new Date(dateString);
     return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
   };
-  
+
   const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
     ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
     : "";
@@ -89,15 +89,15 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
       });
       if (res.ok) {
         if (updates.pinned !== undefined) {
-            toast.success(updates.pinned ? "Chat pinned successfully!" : "Chat unpinned.");
+          toast.success(updates.pinned ? "Chat pinned successfully!" : "Chat unpinned.");
         }
         fetchSessions();
       } else {
         const errData = await res.json();
         if (errData.error) {
-            toast.error(errData.error);
+          toast.error(errData.error);
         } else {
-            toast.error("Failed to update chat.");
+          toast.error("Failed to update chat.");
         }
       }
     } catch (e) {
@@ -243,7 +243,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   const filteredSessions = sessions.filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase()));
   const pinnedSessions = filteredSessions.filter(s => s.pinned);
   const unpinnedSessions = filteredSessions.filter(s => !s.pinned);
-  
+
   const todaySessions = unpinnedSessions.filter(s => isToday(s.created_at));
   const previousSessions = unpinnedSessions.filter(s => !isToday(s.created_at));
 
@@ -253,7 +253,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   // Extract base path robustly by finding the 'agent' segment
   const pathParts = location.pathname.split('/');
   const agentIndex = pathParts.indexOf('agent');
-  const baseAgentPath = agentIndex !== -1 
+  const baseAgentPath = agentIndex !== -1
     ? pathParts.slice(0, agentIndex + 1).join('/')
     : location.pathname;
 
@@ -268,13 +268,13 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
 
   const renderSessionItem = (session: ChatSession) => {
     const isEditing = editingSessionId === session.id;
-    
+
     // Clean up AI hallucinations anywhere in the string, fallback to empty string if title is null
     let displayTitle = (session.title || "New Chat")
-                                    .replace(/\*\*Title:\*\*/gi, '')
-                                    .replace(/Title:/gi, '')
-                                    .replace(/["']/g, '')
-                                    .trim();
+      .replace(/\*\*Title:\*\*/gi, '')
+      .replace(/Title:/gi, '')
+      .replace(/["']/g, '')
+      .trim();
 
     return (
       <SidebarMenuItem key={session.id}>
@@ -308,12 +308,12 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                   <MoreHorizontal className="w-4 h-4" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                align="end" 
+              <DropdownMenuContent
+                align="end"
                 sideOffset={4}
                 className="w-[180px] z-[100] bg-[#202123] dark:bg-[#202123] text-[#ececf1] border border-white/10 rounded-xl p-1.5 shadow-xl"
               >
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ececf1] rounded-md transition-colors"
                   onClick={() => {
                     setShareSessionId(session.id);
@@ -323,8 +323,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                   <Share className="w-4 h-4" strokeWidth={1.5} />
                   Share
                 </DropdownMenuItem>
-                
-                <DropdownMenuItem 
+
+                <DropdownMenuItem
                   className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ececf1] rounded-md transition-colors"
                   onClick={() => {
                     setEditingSessionId(session.id);
@@ -334,8 +334,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                   <Pencil className="w-4 h-4" strokeWidth={1.5} />
                   Rename
                 </DropdownMenuItem>
-                
-                <DropdownMenuItem 
+
+                <DropdownMenuItem
                   className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ececf1] rounded-md transition-colors"
                   onClick={() => {
                     if (!session.pinned && pinnedSessions.length >= 5) {
@@ -350,8 +350,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator className="bg-white/10 my-1" />
-                
-                <DropdownMenuItem 
+
+                <DropdownMenuItem
                   className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer text-[#ef4444] hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ef4444] rounded-md transition-colors"
                   onClick={() => handleDeleteSession(session.id)}
                 >
@@ -370,69 +370,69 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
     <>
       <SidebarGroup className="pt-1">
         <div className="px-2 pb-3 mb-3 border-b border-border/50">
-        <Button 
-          onClick={handleNewChat}
-          className="w-full justify-start gap-2 h-9 px-3 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="font-medium text-sm">New Chat</span>
-        </Button>
-      </div>
+          <Button
+            onClick={handleNewChat}
+            className="w-full justify-start gap-2 h-9 px-3 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="font-medium text-sm">New Chat</span>
+          </Button>
+        </div>
 
-      <SidebarGroupContent>
-        <Accordion defaultValue={["pinned", "today", "previous"]} multiple className="w-full">
-          {pinnedSessions.length > 0 && (
-            <AccordionItem value="pinned" className="border-none mb-2">
+        <SidebarGroupContent>
+          <Accordion defaultValue={["pinned", "today", "previous"]} multiple className="w-full">
+            {pinnedSessions.length > 0 && (
+              <AccordionItem value="pinned" className="border-none mb-2">
+                <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pinned</span>
+                </AccordionTrigger>
+                <AccordionContent className="pb-0 pt-1 px-0">
+                  <SidebarMenu>
+                    {pinnedSessions.map(renderSessionItem)}
+                  </SidebarMenu>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+
+            <AccordionItem value="today" className="border-none mb-2">
               <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pinned</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Today</span>
               </AccordionTrigger>
               <AccordionContent className="pb-0 pt-1 px-0">
                 <SidebarMenu>
-                  {pinnedSessions.map(renderSessionItem)}
+                  {loading && <div className="px-2 text-xs text-muted-foreground py-2">Loading...</div>}
+                  {!loading && todaySessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">No chats today</div>}
+                  {todaySessions.map(renderSessionItem)}
                 </SidebarMenu>
               </AccordionContent>
             </AccordionItem>
-          )}
 
-          <AccordionItem value="today" className="border-none mb-2">
-            <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Today</span>
-            </AccordionTrigger>
-            <AccordionContent className="pb-0 pt-1 px-0">
-              <SidebarMenu>
-                {loading && <div className="px-2 text-xs text-muted-foreground py-2">Loading...</div>}
-                {!loading && todaySessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">No chats today</div>}
-                {todaySessions.map(renderSessionItem)}
-              </SidebarMenu>
-            </AccordionContent>
-          </AccordionItem>
+            <AccordionItem value="previous" className="border-none">
+              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Previous</span>
+              </AccordionTrigger>
+              <AccordionContent className="pb-0 pt-1 px-0">
+                <SidebarMenu>
+                  {!loading && previousSessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">No previous chats</div>}
+                  {previousSessions.map(renderSessionItem)}
+                </SidebarMenu>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </SidebarGroupContent>
+      </SidebarGroup>
 
-          <AccordionItem value="previous" className="border-none">
-            <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Previous</span>
-            </AccordionTrigger>
-            <AccordionContent className="pb-0 pt-1 px-0">
-              <SidebarMenu>
-                {!loading && previousSessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">No previous chats</div>}
-                {previousSessions.map(renderSessionItem)}
-              </SidebarMenu>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </SidebarGroupContent>
-    </SidebarGroup>
-      
       {/* Share Modal - Layout style: ChatGPT, Colors: Classgrid Theme (global.css) */}
       {shareModalOpen && shareSessionId && typeof document !== "undefined" && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => { setShareModalOpen(false); setPublicShareUrl(null); setLinkCopied(false); }}>
           <div className="bg-background text-foreground border border-border rounded-2xl w-[440px] shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            
+
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <h3 className="text-base font-semibold truncate max-w-[300px]">
                 {sessions.find(s => s.id === shareSessionId)?.title || "Share Chat"}
               </h3>
-              <button 
+              <button
                 onClick={() => { setShareModalOpen(false); setPublicShareUrl(null); setLinkCopied(false); }}
                 className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-full p-1.5 transition-colors"
               >
@@ -448,7 +448,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                     Classgrid AI <span className="text-muted-foreground font-normal text-xs">&lt;agent@classgrid.in&gt;</span>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-center mb-6">
                   <div className="text-[11px] text-muted-foreground font-medium">
                     {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} (0 minutes ago)
@@ -469,101 +469,98 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
 
             {/* Actions Grid */}
             <div className="px-6 pb-8 pt-2 flex items-center justify-center gap-5 flex-wrap">
-               {/* Copy Link */}
-               <button
-                  className="flex flex-col items-center gap-2.5 group cursor-pointer"
-                  onClick={async () => {
-                    if (publicShareUrl) {
-                       await navigator.clipboard.writeText(publicShareUrl);
-                       setLinkCopied(true);
-                       toast.success("Link copied!");
-                       setTimeout(() => setLinkCopied(false), 2000);
-                    } else {
-                       handleCreatePublicLink(shareSessionId);
-                    }
-                  }}
-                  disabled={isCreatingLink}
-                >
-                  <div className="w-12 h-12 rounded-full bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
-                    {isCreatingLink ? <Loader2 className="w-5 h-5 animate-spin" /> : linkCopied ? <Check className="w-5 h-5" /> : <Link2 className="w-5 h-5" />}
-                  </div>
-                  <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">Copy link</span>
-                </button>
+              {/* Copy Link */}
+              <button
+                className="flex flex-col items-center gap-2.5 group cursor-pointer"
+                onClick={async () => {
+                  if (publicShareUrl) {
+                    await navigator.clipboard.writeText(publicShareUrl);
+                    setLinkCopied(true);
+                    toast.success("Link copied!");
+                    setTimeout(() => setLinkCopied(false), 2000);
+                  } else {
+                    handleCreatePublicLink(shareSessionId);
+                  }
+                }}
+                disabled={isCreatingLink}
+              >
+                <div className="w-12 h-12 rounded-full bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
+                  {isCreatingLink ? <Loader2 className="w-5 h-5 animate-spin" /> : linkCopied ? <Check className="w-5 h-5" /> : <Link2 className="w-5 h-5" />}
+                </div>
+                <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">Copy link</span>
+              </button>
 
-                {/* WhatsApp */}
-                <button
-                  className="flex flex-col items-center gap-2.5 group cursor-pointer"
-                  onClick={() => {
-                    if (publicShareUrl) {
-                      handleShareWhatsApp(publicShareUrl);
-                    } else {
-                      toast.error("Create a public link first");
-                    }
-                  }}
-                  disabled={!publicShareUrl}
-                >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-                    publicShareUrl 
-                      ? 'bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground' 
-                      : 'bg-muted/50 text-muted-foreground/30'
+              {/* WhatsApp */}
+              <button
+                className="flex flex-col items-center gap-2.5 group cursor-pointer"
+                onClick={() => {
+                  if (publicShareUrl) {
+                    handleShareWhatsApp(publicShareUrl);
+                  } else {
+                    toast.error("Create a public link first");
+                  }
+                }}
+                disabled={!publicShareUrl}
+              >
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${publicShareUrl
+                    ? 'bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground'
+                    : 'bg-muted/50 text-muted-foreground/30'
                   }`}>
-                    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                    </svg>
-                  </div>
-                  <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">WhatsApp</span>
-                </button>
+                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
+                </div>
+                <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">WhatsApp</span>
+              </button>
 
-                {/* LinkedIn */}
-                <button
-                  className="flex flex-col items-center gap-2.5 group cursor-pointer"
-                  onClick={() => {
-                    if (publicShareUrl) {
-                      handleShareLinkedIn(publicShareUrl);
-                    } else {
-                      toast.error("Create a public link first");
-                    }
-                  }}
-                  disabled={!publicShareUrl}
-                >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-                    publicShareUrl 
-                      ? 'bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground' 
-                      : 'bg-muted/50 text-muted-foreground/30'
+              {/* LinkedIn */}
+              <button
+                className="flex flex-col items-center gap-2.5 group cursor-pointer"
+                onClick={() => {
+                  if (publicShareUrl) {
+                    handleShareLinkedIn(publicShareUrl);
+                  } else {
+                    toast.error("Create a public link first");
+                  }
+                }}
+                disabled={!publicShareUrl}
+              >
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${publicShareUrl
+                    ? 'bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground'
+                    : 'bg-muted/50 text-muted-foreground/30'
                   }`}>
-                    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-                      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                    </svg>
-                  </div>
-                  <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">LinkedIn</span>
-                </button>
+                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                  </svg>
+                </div>
+                <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">LinkedIn</span>
+              </button>
 
-                {/* Email */}
-                <button
-                  className="flex flex-col items-center gap-2.5 group cursor-pointer"
-                  onClick={() => handleShareEmail(shareSessionId)}
-                  disabled={isSharingEmail || sharedEmailSuccess}
-                >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-                    sharedEmailSuccess
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground'
+              {/* Email */}
+              <button
+                className="flex flex-col items-center gap-2.5 group cursor-pointer"
+                onClick={() => handleShareEmail(shareSessionId)}
+                disabled={isSharingEmail || sharedEmailSuccess}
+              >
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${sharedEmailSuccess
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground'
                   }`}>
-                    {sharedEmailSuccess ? <Check className="w-5 h-5" /> : isSharingEmail ? <Loader2 className="w-5 h-5 animate-spin" /> : <Mail className="w-5 h-5" />}
-                  </div>
-                  <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">Email</span>
-                </button>
+                  {sharedEmailSuccess ? <Check className="w-5 h-5" /> : isSharingEmail ? <Loader2 className="w-5 h-5 animate-spin" /> : <Mail className="w-5 h-5" />}
+                </div>
+                <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">Email</span>
+              </button>
 
-                {/* Copy Text */}
-                <button
-                  className="flex flex-col items-center gap-2.5 group cursor-pointer"
-                  onClick={() => handleCopyText(shareSessionId)}
-                >
-                  <div className="w-12 h-12 rounded-full bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
-                    <Copy className="w-5 h-5" />
-                  </div>
-                  <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">Text</span>
-                </button>
+              {/* Copy Text */}
+              <button
+                className="flex flex-col items-center gap-2.5 group cursor-pointer"
+                onClick={() => handleCopyText(shareSessionId)}
+              >
+                <div className="w-12 h-12 rounded-full bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
+                  <Copy className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">Text</span>
+              </button>
             </div>
 
           </div>

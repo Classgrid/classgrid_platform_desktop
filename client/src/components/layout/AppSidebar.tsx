@@ -117,7 +117,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
   // Auto-open menus based on route changes
   useEffect(() => {
     setShowStorageMenu(location.pathname.startsWith("/superadmin/storage"));
-    // Don't auto-open Agent menu on route change — only open via user click or first message
+    setShowAgentMenu(location.pathname.startsWith("/superadmin/agent"));
   }, [location.pathname, agentItem]);
 
   // Auto-open Agent menu when first question is sent
@@ -218,7 +218,10 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                                 } else if (item.label === "Agent") {
                                   e.preventDefault();
                                   setShowAgentMenu(true);
-                                  if (item.to) navigate(item.to);
+                                  // Only navigate to home if we are NOT already somewhere in the agent section
+                                  if (item.to && !location.pathname.startsWith("/superadmin/agent")) {
+                                    navigate(item.to);
+                                  }
                                 }
                               }}
                               render={
@@ -246,7 +249,10 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                                       if (item.label === "Agent") {
                                         e.preventDefault();
                                         setShowAgentMenu(true);
-                                        if (item.to) navigate(item.to);
+                                        // Only navigate to home if we are NOT already somewhere in the agent section
+                                        if (item.to && !location.pathname.startsWith("/superadmin/agent")) {
+                                          navigate(item.to);
+                                        }
                                       } else if (item.hasNestedNav) {
                                         e.preventDefault();
                                         setShowStorageMenu(true);
