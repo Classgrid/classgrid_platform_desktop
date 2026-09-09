@@ -29,6 +29,7 @@ interface SharedChat {
   title: string;
   sharedBy: string;
   sharedByEmail?: string;
+  sharedByAvatar?: string;
   messages: SharedMessage[];
   createdAt: string;
 }
@@ -142,10 +143,17 @@ export function SharedChatPage() {
         <div className="shared-by-container">
           <span className="shared-by-text">Shared by</span>
           <div className="shared-by-profile">
-            <div className="shared-by-avatar">
-              {chat.sharedBy.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+            {chat.sharedByAvatar ? (
+              <img src={chat.sharedByAvatar} alt={chat.sharedBy} className="shared-by-avatar" />
+            ) : (
+              <div className="shared-by-avatar fallback">
+                {chat.sharedBy.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+              </div>
+            )}
+            <div className="shared-by-info">
+              <strong className="shared-by-name">{chat.sharedBy}</strong>
+              {chat.sharedByEmail && <span className="shared-by-email">{chat.sharedByEmail}</span>}
             </div>
-            <strong className="shared-by-name">{chat.sharedBy}</strong>
           </div>
         </div>
 
@@ -253,21 +261,37 @@ export function SharedChatPage() {
         }
 
         .shared-by-avatar {
-          width: 20px;
-          height: 20px;
+          width: 32px;
+          height: 32px;
           border-radius: 50%;
-          background: #333; /* Removed green gradient, just neutral dark */
+          object-fit: cover;
+        }
+
+        .shared-by-avatar.fallback {
+          background: #333;
           color: #ededed;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 10px;
+          font-size: 12px;
           font-weight: 600;
+        }
+
+        .shared-by-info {
+          display: flex;
+          flex-direction: column;
         }
 
         .shared-by-name {
           color: #ededed;
           font-weight: 500;
+        }
+
+        .shared-by-email {
+          color: #888;
+          font-size: 11px;
+          line-height: 1;
+          margin-top: 2px;
         }
 
         /* ── Context Card ── */

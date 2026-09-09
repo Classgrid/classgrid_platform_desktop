@@ -474,10 +474,22 @@ export const getPublicShare = async (req, res) => {
             ? JSON.parse(snapshot.messages)
             : snapshot.messages;
 
+        let sharedByAvatar = null;
+        try {
+            const User = (await import('../models/User.js')).default;
+            const realUser = await User.findOne({ email: snapshot.user_email }).select('profilePicture');
+            if (realUser && realUser.profilePicture) {
+                sharedByAvatar = realUser.profilePicture;
+            }
+        } catch (err) {
+            console.error("Error fetching real user for share:", err);
+        }
+
         res.json({
             title: snapshot.title,
             sharedBy: snapshot.user_name,
             sharedByEmail: snapshot.user_email,
+            sharedByAvatar: sharedByAvatar,
             messages,
             createdAt: snapshot.created_at,
         });
