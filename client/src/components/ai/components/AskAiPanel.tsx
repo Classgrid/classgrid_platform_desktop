@@ -1076,6 +1076,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   // Restore active chat on page reload, or start fresh if user changed
   useEffect(() => {
+    if (readOnly) return; // Do not overwrite state for read-only viewer (e.g. Shared Chat)
+
     const currentEmail = session?.user?.email || "";
     const storedEmail = localStorage.getItem("classgrid_ai_user_email") || "";
     const savedSessionId = sessionStorage.getItem("classgrid_ai_session_id");
@@ -1670,7 +1672,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           credentials: "include",
           body: JSON.stringify({
             question: `Create a 3 to 5 word summary title for this message. Output ONLY the raw words, no quotes, no preambles: ${displayQuestion}`,
-            history: [{ role: "system", content: "You are a title generator. Output only a short title, without quotes." }]
+            history: [{ role: "system", content: "You are a title generator. Output only a short title, without quotes." }],
+            isIncognito: true
           })
         })
           .then(async (res) => {
