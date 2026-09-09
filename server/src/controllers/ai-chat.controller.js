@@ -51,19 +51,22 @@ async function generateSessionTitle(sessionId, question) {
         });
         const answer = await client.generate({
             messages: [
-                { role: "system", content: "You are a title generator. Generate a very short 3-5 word title for the user's message. Output ONLY the raw words, without quotes or punctuation. DO NOT explain your thought process. DO NOT output any XML or thoughts." },
+                { role: "system", content: "You are a title generator. Generate a VERY SHORT 2-3 word title for the user's message. Output ONLY the raw words. DO NOT output '**Title:**'. DO NOT use quotes." },
                 { role: "user", content: question }
             ],
             maxToolDepth: 0
         });
         if (answer && !answer.includes("[RATE_LIMITED]")) {
             let cleanTitle = answer.trim().replace(/^["']|["']$/g, '');
-            // Strip common AI prefixes
-            cleanTitle = cleanTitle.replace(/^(Title:|Title:|\*\*Title:\*\*)\s*/i, '');
+            // Strip common AI prefixes anywhere in the string
+            cleanTitle = cleanTitle.replace(/\*\*Title:\*\*/gi, '')
+                                   .replace(/Title:/gi, '')
+                                   .replace(/["']/g, '')
+                                   .trim();
             
-            // Hard limit to 35 characters so it never overflows the sidebar
-            if (cleanTitle.length > 35) {
-                cleanTitle = cleanTitle.substring(0, 32).trim() + "...";
+            // Hard limit to 28 characters so it never overflows the sidebar, no manual dots
+            if (cleanTitle.length > 28) {
+                cleanTitle = cleanTitle.substring(0, 28).trim();
             }
 
             if (cleanTitle.length > 0) {
@@ -392,33 +395,45 @@ const SHARE_BASE_URL = process.env.SHARE_BASE_URL || "https://share.classgrid.in
  * Creates a public share link for a chat session.
  * Authenticated — only the session owner can share.
  */
+import crypto from 'crypto';
+
 export const createPublicShare = async (req, res) => {
     try {
         const { id } = req.params;
-        const session = await getSessionById(id);
+        
+        // INSTANT RESPONSE: Pre-generate the share ID and URL
+        const shareId = crypto.randomBytes(8).toString('base64url').slice(0, 10);
+        const shareUrl = `${SHARE_BASE_URL}/${shareId}`;
 
-        if (!session || session.user_email !== req.user.email) {
-            return res.status(403).json({ error: "Forbidden" });
-        }
+        // Return immediately to frontend so it feels incredibly fast
+        res.json({ success: true, shareId, shareUrl });
 
-        const messages = await getSessionMessages(id);
+        // BACKGROUND PROCESSING: Do the heavy database work asynchronously
+        (async () => {
+            try {
+                const session = await getSessionById(id);
+                if (!session || session.user_email !== req.user.email) return;
 
-        // Create a frozen snapshot
-        const snapshot = await createSharedSnapshot(
-            id,
-            req.user.email,
-            req.user.name || req.user.email.split('@')[0],
-            session.title,
-            messages.map(m => ({ role: m.role, content: m.content, created_at: m.created_at }))
-        );
+                const messages = await getSessionMessages(id);
 
-        const shareUrl = `${SHARE_BASE_URL}/${snapshot.share_id}`;
-        console.info(`[Chat API] ✅ Public share created: ${shareUrl} for session ${id}`);
-
-        res.json({ success: true, shareId: snapshot.share_id, shareUrl });
+                await createSharedSnapshot(
+                    id,
+                    req.user.email,
+                    req.user.name || req.user.email.split('@')[0],
+                    session.title,
+                    messages.map(m => ({ role: m.role, content: m.content, created_at: m.created_at })),
+                    shareId // Pass the pre-generated ID
+                );
+                console.info(`[Chat API] ✅ Public share created in background: ${shareUrl} for session ${id}`);
+            } catch (err) {
+                console.error(`[Chat API] ❌ Background share creation failed:`, err);
+            }
+        })();
     } catch (e) {
-        console.error(`[Chat API] ❌ Failed to create public share:`, e);
-        res.status(500).json({ error: "Failed to create public share link" });
+        console.error(`[Chat API] ❌ Failed to start public share creation:`, e);
+        if (!res.headersSent) {
+            res.status(500).json({ error: "Failed to create public share link" });
+        }
     }
 };
 

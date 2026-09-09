@@ -268,9 +268,16 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
 
   const renderSessionItem = (session: ChatSession) => {
     const isEditing = editingSessionId === session.id;
-    let displayTitle = session.title.replace(/^(Title:|Title:|\*\*Title:\*\*)\s*/i, '').trim();
-    if (displayTitle.length > 25) {
-      displayTitle = displayTitle.substring(0, 25).trim() + "...";
+    
+    // Clean up AI hallucinations anywhere in the string
+    let displayTitle = session.title.replace(/\*\*Title:\*\*/gi, '')
+                                    .replace(/Title:/gi, '')
+                                    .replace(/["']/g, '')
+                                    .trim();
+    
+    // Hard slice if ridiculously long, but don't add manual dots
+    if (displayTitle.length > 28) {
+      displayTitle = displayTitle.substring(0, 28).trim();
     }
 
     return (

@@ -175,8 +175,8 @@ function generateShareId() {
  * Stores a frozen copy of all messages so the shared link remains valid
  * even if the original session is later edited or deleted.
  */
-export async function createSharedSnapshot(sessionId, userEmail, userName, title, messages) {
-    const shareId = generateShareId();
+export async function createSharedSnapshot(sessionId, userEmail, userName, title, messages, providedShareId = null) {
+    const shareId = providedShareId || generateShareId();
 
     const { data, error } = await primarySupabaseClient
         .from('shared_chat_snapshots')
