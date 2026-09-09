@@ -50,13 +50,15 @@ jobs:
             cd server
             echo "$PRODUCTION_ENV" > .env
             
-            # Fix permissions in case root owns any files (which causes Permission Denied during npm install)
+            # Fix permissions in case root owns any files
             sudo chown -R ubuntu:ubuntu . || true
             
-            # Install production dependencies only to save memory and avoid OOM
-            # DO NOT use rm -rf node_modules here, it breaks the running PM2 processes during zero-downtime deploys!
-            # Use --force to repair any corrupted packages in-place.
-            npm install --omit=dev --no-audit --no-fund --legacy-peer-deps --force
+            # The node_modules folder is irreparably corrupted from earlier permission errors.
+            # We MUST completely wipe it this one time to fix the googleapis MODULE_NOT_FOUND error.
+            rm -rf node_modules || true
+            
+            # Install pristine production dependencies
+            npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
 
             # INSTALL REDIS IF MISSING
             if ! command -v redis-server &> /dev/null; then
