@@ -230,10 +230,10 @@ export function SharedChatPage() {
         .shared-center-wrapper {
           margin: 0 auto;
           width: 100%;
-          max-width: 800px;
+          max-width: 960px;
           display: flex;
           flex-direction: column;
-          padding-top: 48px;
+          padding: 48px 24px;
         }
 
         /* ── Inner Content ── */
@@ -244,16 +244,17 @@ export function SharedChatPage() {
           padding: 48px 40px;
           border-left: 1px solid rgba(255, 255, 255, 0.04);
           border-right: 1px solid rgba(255, 255, 255, 0.04);
+          display: flex;
+          flex-direction: column;
         }
 
         /* ── Changelog-Style Author Block ── */
         .changelog-author-block {
           display: flex;
           align-items: center;
-          justify-content: flex-start;
+          justify-content: center;
           gap: 12px;
-          margin-bottom: 24px;
-          padding-left: 40px; /* Aligns exactly with the inner content padding */
+          margin-bottom: 32px;
         }
 
         .shared-by-text-prefix {
