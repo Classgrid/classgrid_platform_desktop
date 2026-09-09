@@ -136,12 +136,12 @@ export function SharedChatPage() {
         </a>
       </header>
 
-      {/* ── Center Column with slightly lighter background ── */}
-      <div className="shared-content-inner">
+      {/* ── Center Column Wrapper ── */}
+      <div className="shared-center-wrapper">
         
-        {/* Top text: Shared by profile chip */}
-        {/* Author Block (Changelog style: Centered, clean) */}
+        {/* Author Block (Changelog style, but positioned outside like Vercel) */}
         <div className="changelog-author-block">
+          <span className="shared-by-text-prefix">Shared by</span>
           {chat.sharedByAvatar ? (
             <img src={chat.sharedByAvatar} alt={chat.sharedBy} className="author-avatar" />
           ) : (
@@ -155,7 +155,10 @@ export function SharedChatPage() {
           </div>
         </div>
 
-        {/* Context Card (like Vercel's AI SDK card) */}
+        {/* ── Inner Content (Context Card & Messages) ── */}
+        <div className="shared-content-inner">
+          
+          {/* Context Card (like Vercel's AI SDK card) */}
         <div className="shared-context-card">
           <div className="shared-context-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -180,6 +183,8 @@ export function SharedChatPage() {
         </div>
 
       </div>
+
+    </div>
 
       <style>{`
         /* ── Page Shell ── */
@@ -221,13 +226,21 @@ export function SharedChatPage() {
           font-weight: 600;
         }
 
-        /* ── Center Column ── */
-        .shared-content-inner {
+        /* ── Center Wrapper ── */
+        .shared-center-wrapper {
           margin: 0 auto;
           width: 100%;
           max-width: 800px;
-          background: #0a0a0a; /* Slightly lighter inner background */
-          min-height: calc(100vh - 60px);
+          display: flex;
+          flex-direction: column;
+          padding-top: 48px;
+        }
+
+        /* ── Inner Content ── */
+        .shared-content-inner {
+          width: 100%;
+          background: #0a0a0a;
+          min-height: calc(100vh - 120px);
           padding: 48px 40px;
           border-left: 1px solid rgba(255, 255, 255, 0.04);
           border-right: 1px solid rgba(255, 255, 255, 0.04);
@@ -237,9 +250,16 @@ export function SharedChatPage() {
         .changelog-author-block {
           display: flex;
           align-items: center;
-          justify-content: center;
+          justify-content: flex-start;
           gap: 12px;
-          margin-bottom: 32px;
+          margin-bottom: 24px;
+          padding-left: 40px; /* Aligns exactly with the inner content padding */
+        }
+
+        .shared-by-text-prefix {
+          color: #888;
+          font-size: 13px;
+          margin-right: 4px;
         }
 
         .author-avatar {
@@ -321,7 +341,7 @@ export function SharedChatPage() {
         .shared-messages {
           display: flex;
           flex-direction: column;
-          gap: 28px;
+          gap: 24px;
         }
 
         .shared-msg-row {
@@ -335,10 +355,10 @@ export function SharedChatPage() {
         }
 
         .user-bubble {
-          background: #1e1e1e;
+          background: #2a2a2a;
           padding: 8px 14px;
-          border-radius: 12px;
-          font-size: 14px;
+          border-radius: 16px;
+          font-size: 13px;
           line-height: 1.5;
           color: #ededed;
           max-width: 80%;
@@ -351,38 +371,59 @@ export function SharedChatPage() {
         }
 
         .assistant-content {
-          font-size: 14px;
+          font-size: 13px;
           line-height: 1.6;
           color: #ededed;
           width: 100%;
         }
 
         .assistant-content p {
-          margin: 0 0 16px;
+          margin: 0 0 10px;
         }
 
         .assistant-content p:last-child {
           margin-bottom: 0;
         }
 
-        /* Code blocks */
-        .shared-code-block {
-          background: #000;
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 8px;
-          padding: 16px;
-          overflow-x: auto;
-          margin: 16px 0;
-          font-family: 'JetBrains Mono', monospace;
+        /* Headings inline/tight */
+        .assistant-content h1, 
+        .assistant-content h2, 
+        .assistant-content h3, 
+        .assistant-content h4 {
           font-size: 13px;
+          font-weight: 600;
+          margin: 16px 0 4px;
+          color: #fff;
+        }
+
+        /* Lists */
+        .assistant-content ul, 
+        .assistant-content ol {
+          margin: 0 0 10px 20px;
+          padding: 0;
+        }
+
+        .assistant-content li {
+          margin-bottom: 4px;
+        }
+
+        /* Code blocks (subtle, no huge borders) */
+        .shared-code-block {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 6px;
+          padding: 8px 12px;
+          overflow-x: auto;
+          margin: 8px 0;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 12px;
         }
 
         .shared-inline-code {
-          background: #1e1e1e;
-          padding: 2px 6px;
+          background: rgba(255, 255, 255, 0.1);
+          padding: 2px 4px;
           border-radius: 4px;
           font-family: 'JetBrains Mono', monospace;
-          font-size: 13px;
+          font-size: 12px;
         }
 
         /* Links */
