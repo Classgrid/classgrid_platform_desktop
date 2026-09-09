@@ -14,11 +14,15 @@ import {
 } from "../services/ai-chat.service.js";
 import { sendEmail } from "../services/aws-ses.service.js";
 // The system prompt was originally in ./prompt, we will define it here or import it if needed.
-const SYSTEM_PROMPT = `You are the Classgrid AI Assistant. 
+const SYSTEM_PROMPT = `You are the Classgrid AI Assistant.
 
-IMPORTANT FORMATTING RULES:
-When creating markdown tables, you MUST use html line breaks (<br>) inside table cells if the text is long. This prevents the table from becoming excessively wide and forcing the user to scroll horizontally. 
-CRITICAL: ONLY use <br> tags INSIDE table cells. Do NOT use <br> tags anywhere else in your response.`;
+RESPONSE STYLE:
+- Be concise and direct.
+- Use bullet points or numbered lists for structured information.
+- Use tables ONLY when comparing structured data (e.g., pricing plans, feature comparisons). Do NOT use tables for general explanations or answers.
+
+FORMATTING NOTE:
+If you do create a markdown table, use <br> inside table cells for long text to prevent horizontal scrolling. Do NOT use <br> anywhere else.`;
 
 async function generateSessionTitle(sessionId, question) {
     try {
@@ -32,7 +36,7 @@ async function generateSessionTitle(sessionId, question) {
                 },
                 {
                     name: "gemini",
-                    url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
+                    url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                     apiKey: process.env.GEMINI_API_KEY || "",
                     model: "gemini-3.5-flash"
                 },
@@ -144,7 +148,7 @@ export const streamAskAi = async (req, res) => {
                 },
                 {
                     name: "gemini",
-                    url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
+                    url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                     apiKey: process.env.GEMINI_API_KEY || "",
                     model: "gemini-3.5-flash"
                 }
@@ -200,28 +204,42 @@ export const streamAskAi = async (req, res) => {
             }
         });
 
+        let requestAborted = false;
+        
+        req.on('close', () => {
+            requestAborted = true;
+            if (!res.writableEnded) res.end();
+        });
+
         // 4. Run the Client and pass SSE writes inside the callbacks
         const answer = await client.generate({
             messages,
+            timeoutMs: 20000,
             onStatus: (status) => {
+                if (requestAborted) return;
                 const mappedLabel = status === "search web" ? "searching" : status;
-                res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`);
+                if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`);
             },
             onThought: (thought) => {
-                res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`);
+                if (requestAborted) return;
+                if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`);
             }
         });
 
+        if (requestAborted) {
+            return; // Client disconnected, exit silently
+        }
+
         // 5. Send back the sessionId if it was provided by the client, just in case
-        if (sessionId) {
+        if (sessionId && !res.writableEnded) {
             res.write(`data: ${JSON.stringify({ type: "session_info", sessionId })}\n\n`);
         }
 
-        if (!answer) {
+        if (!answer && !res.writableEnded) {
             res.write(`data: ${JSON.stringify({ type: "answer", answer: "Failed to get an answer from the AI." })}\n\n`);
-        } else if (answer === "[RATE_LIMITED]") {
+        } else if (answer === "[RATE_LIMITED]" && !res.writableEnded) {
             res.write(`data: ${JSON.stringify({ type: "answer", answer: "I'm currently experiencing high traffic and cannot process your request right now." })}\n\n`);
-        } else {
+        } else if (!res.writableEnded) {
             // Save Assistant response
             if (!isIncognito && sessionId) {
                 await saveMessage(sessionId, "assistant", answer, []);
@@ -231,9 +249,11 @@ export const streamAskAi = async (req, res) => {
 
     } catch (err) {
         console.error("API Route Error:", err);
-        res.write(`data: ${JSON.stringify({ type: "answer", answer: "An error occurred while calling the AI." })}\n\n`);
+        if (!res.writableEnded) {
+            res.write(`data: ${JSON.stringify({ type: "answer", answer: "An error occurred while calling the AI." })}\n\n`);
+        }
     } finally {
-        res.end();
+        if (!res.writableEnded) res.end();
     }
 };
 

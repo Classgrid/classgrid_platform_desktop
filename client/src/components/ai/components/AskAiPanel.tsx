@@ -57,6 +57,7 @@ import { toast } from "sonner";
 import FilePreviewModal, { type FilePreviewSource } from "./FilePreviewModal";
 import { DocsImageViewer } from "./DocsImageViewer";
 import { ScrollSpyTOC } from "./TOC";
+import AIThinkingBlock from "./AIThinkingBlock";
 
 // â”€â”€â”€ SDK-local type definitions & stubs â”€â”€â”€
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
@@ -2252,24 +2253,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
-                  className="flex items-end gap-2"
                 >
-                  <div className="pl-1">
-                    <div className="flex items-center gap-2 text-base text-muted-foreground">
-                      <motion.span
-                        className="font-medium bg-[length:200%_100%] bg-clip-text text-transparent bg-[linear-gradient(110deg,#94a3b8,45%,#0f172a,55%,#94a3b8)] dark:bg-[linear-gradient(110deg,#475569,45%,#ffffff,55%,#475569)]"
-                        animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                      >
-                        {thinkingLabel}
-                      </motion.span>
-                      {(thinkingLabel === "Searching the web" || thinkingLabel === "Reading webpage" || thinkingLabel === "Reading image" || thinkingLabel === "Reading document") ? (
-                        <SearchingSpinner reducedMotion={Boolean(prefersReducedMotion)} />
-                      ) : (
-                        <TypingDots reducedMotion={Boolean(prefersReducedMotion)} />
-                      )}
-                    </div>
-                  </div>
+                  <AIThinkingBlock
+                    thinkingContent={(() => {
+                      const lastMsg = messages[messages.length - 1];
+                      return lastMsg?.role === "assistant" ? (lastMsg.thought || "") : "";
+                    })()}
+                  />
                 </motion.div>
               ) : null}
             </AnimatePresence>
