@@ -148,7 +148,7 @@ export const streamAskAi = async (req, res) => {
                     name: "gemini",
                     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                     apiKey: process.env.GEMINI_API_KEY || "",
-                    model: "gemini-3.5-flash"
+                    model: "gemini-1.5-flash"
                 }
             ],
             verbose: true,
