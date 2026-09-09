@@ -42,8 +42,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
-import { MermaidViewer } from "../../components/ai/components/MermaidViewer";
-import { CopyBlockClient } from "../../components/ai/components/CopyBlockClient";
+import { MermaidViewer } from "@/components/ai/components/MermaidViewer";
+import { CopyBlockClient } from "@/components/ai/components/CopyBlockClient";
 
 const preprocessLaTeX = (content: string) => {
   if (!content) return "";

@@ -17,8 +17,8 @@ import { useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import { MermaidViewer } from "../../components/ai/components/MermaidViewer";
-import { CopyBlockClient } from "../../components/ai/components/CopyBlockClient";
+import { MermaidViewer } from "@/components/ai/components/MermaidViewer";
+import { CopyBlockClient } from "@/components/ai/components/CopyBlockClient";
 
 interface SharedMessage {
   role: "user" | "assistant";
