@@ -358,8 +358,10 @@ export function SharedChatPage() {
           background: #2a2a2a;
           padding: 8px 14px;
           border-radius: 16px;
-          font-size: 13px;
-          line-height: 1.5;
+          font-size: 15px;
+          line-height: 1.55;
+          font-weight: 400;
+          letter-spacing: normal;
           color: #ededed;
           max-width: 80%;
           word-wrap: break-word;
@@ -371,8 +373,10 @@ export function SharedChatPage() {
         }
 
         .assistant-content {
-          font-size: 13px;
-          line-height: 1.6;
+          font-size: 15px;
+          line-height: 1.55;
+          font-weight: 400;
+          letter-spacing: normal;
           color: #ededed;
           width: 100%;
         }
@@ -390,7 +394,7 @@ export function SharedChatPage() {
         .assistant-content h2, 
         .assistant-content h3, 
         .assistant-content h4 {
-          font-size: 13px;
+          font-size: 15px;
           font-weight: 600;
           margin: 16px 0 4px;
           color: #fff;
@@ -411,11 +415,11 @@ export function SharedChatPage() {
         .shared-code-block {
           background: rgba(255, 255, 255, 0.05);
           border-radius: 6px;
-          padding: 8px 12px;
+          padding: 12px 16px;
           overflow-x: auto;
           margin: 8px 0;
           font-family: 'JetBrains Mono', monospace;
-          font-size: 12px;
+          font-size: 13px;
         }
 
         .shared-inline-code {
@@ -423,7 +427,7 @@ export function SharedChatPage() {
           padding: 2px 4px;
           border-radius: 4px;
           font-family: 'JetBrains Mono', monospace;
-          font-size: 12px;
+          font-size: 13px;
         }
 
         /* Links */
