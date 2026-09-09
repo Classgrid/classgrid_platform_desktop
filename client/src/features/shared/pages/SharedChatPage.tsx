@@ -467,7 +467,7 @@ export function SharedChatPage() {
          * ───────────────────────────────────────────────────────── */
         @media (prefers-color-scheme: light) {
           .shared-page {
-            background: #ffffff;
+            background: #fafafa;
             color: #171717;
           }
           
@@ -477,8 +477,8 @@ export function SharedChatPage() {
           
           .shared-content-inner {
             background: #ffffff;
-            border-left: none;
-            border-right: none;
+            border-left: 1px solid #eaeaea;
+            border-right: 1px solid #eaeaea;
           }
           
           .shared-by-text-prefix {
