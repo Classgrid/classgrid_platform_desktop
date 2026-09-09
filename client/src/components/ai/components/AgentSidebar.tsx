@@ -275,11 +275,6 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                                     .replace(/Title:/gi, '')
                                     .replace(/["']/g, '')
                                     .trim();
-    
-    // Hard slice if ridiculously long, but don't add manual dots
-    if (displayTitle.length > 28) {
-      displayTitle = displayTitle.substring(0, 28).trim();
-    }
 
     return (
       <SidebarMenuItem key={session.id}>

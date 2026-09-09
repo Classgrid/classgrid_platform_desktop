@@ -408,19 +408,25 @@ export const createPublicShare = async (req, res) => {
         // Return immediately to frontend so it feels incredibly fast
         res.json({ success: true, shareId, shareUrl });
 
+        // Extract variables synchronously before the request ends
+        const userEmail = req.user?.email;
+        const userName = req.user?.name || (userEmail ? userEmail.split('@')[0] : "User");
+
         // BACKGROUND PROCESSING: Do the heavy database work asynchronously
         (async () => {
             try {
-                const session = await getSessionById(id);
-                if (!session || session.user_email !== req.user.email) return;
+                if (!userEmail) return;
 
-                const messages = await getSessionMessages(id);
+                const session = await getSessionById(id);
+                if (!session || session.user_email !== userEmail) return;
+
+                const messages = await getSessionMessages(id) || [];
 
                 await createSharedSnapshot(
                     id,
-                    req.user.email,
-                    req.user.name || req.user.email.split('@')[0],
-                    session.title,
+                    userEmail,
+                    userName,
+                    session.title || "Classgrid AI Chat",
                     messages.map(m => ({ role: m.role, content: m.content, created_at: m.created_at })),
                     shareId // Pass the pre-generated ID
                 );
