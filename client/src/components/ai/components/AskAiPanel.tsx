@@ -1672,6 +1672,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     setSubmitting(true);
     setThinking(true);
     setThinkingLabel("Thinking");
+    const requestStartTime = Date.now(); // Track when we start thinking
     userScrolledUpRef.current = false; // Reset scroll lock for new question
 
     const uploadedAttachments: AiAttachment[] = filesToUpload;
@@ -1883,6 +1884,15 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     lastMsg = { id: createMessageId("assistant"), role: "assistant", content: "", createdAt: Date.now() };
                     targetPrev = [...prev, lastMsg];
                   }
+
+                  // If thought took less than 4 seconds, clear it so it doesn't render in history
+                  if (!lastMsg.content && lastMsg.thought) {
+                    const duration = Date.now() - requestStartTime;
+                    if (duration < 4000) {
+                      lastMsg = { ...lastMsg, thought: undefined };
+                    }
+                  }
+
                   return [
                     ...targetPrev.slice(0, -1),
                     { ...lastMsg, content: (lastMsg.content || "") + (event.token || "") }
