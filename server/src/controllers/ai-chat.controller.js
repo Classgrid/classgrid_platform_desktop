@@ -215,7 +215,7 @@ export const streamAskAi = async (req, res) => {
         // 4. Run the Client and pass SSE writes inside the callbacks
         const answer = await client.generate({
             messages,
-            timeoutMs: 20000,
+            timeoutMs: 120000,
             onStatus: (status) => {
                 if (requestAborted) return;
                 const mappedLabel = status === "search web" ? "searching" : status;
