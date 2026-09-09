@@ -213,7 +213,7 @@ export function SharedChatPage() {
         .shared-center-wrapper {
           margin: 0 auto;
           width: 100%;
-          max-width: 960px;
+          max-width: 880px;
           display: flex;
           flex-direction: column;
           padding: 48px 24px;
