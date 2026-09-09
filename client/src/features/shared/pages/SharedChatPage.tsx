@@ -33,15 +33,7 @@ interface SharedChat {
   createdAt: string;
 }
 
-/* ── Classgrid Logo SVG ── */
-function ClassgridLogo({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="32" height="32" rx="8" fill="#10b981" />
-      <path d="M8 10h4v4H8zM14 10h4v4h-4zM20 10h4v4h-4zM8 16h4v4H8zM14 16h4v4h-4zM20 16h4v4h-4z" fill="white" fillOpacity="0.9" />
-    </svg>
-  );
-}
+/* ── Removed Fake Logo Component ── */
 
 /* ── Single Message Row ── */
 function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
@@ -135,10 +127,10 @@ export function SharedChatPage() {
     <div className="shared-page">
       {/* Outer page is pure black #000 */}
 
-      {/* ── Header (simple logo) ── */}
+      {/* ── Header (Real logo) ── */}
       <header className="shared-header">
         <a href="https://classgrid.in" className="shared-logo-link" target="_blank" rel="noopener noreferrer">
-          <ClassgridLogo className="shared-logo-icon" />
+          <img src="/logo.png" alt="Classgrid" className="shared-logo-icon" />
           <span className="shared-logo-text">Classgrid</span>
         </a>
       </header>
@@ -263,8 +255,8 @@ export function SharedChatPage() {
           width: 24px;
           height: 24px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #10b981, #059669);
-          color: #fff;
+          background: #333; /* Removed green gradient, just neutral dark */
+          color: #ededed;
           display: flex;
           align-items: center;
           justify-content: center;
