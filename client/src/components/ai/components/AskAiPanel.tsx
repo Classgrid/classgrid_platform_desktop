@@ -58,6 +58,10 @@ import FilePreviewModal, { type FilePreviewSource } from "./FilePreviewModal";
 import { DocsImageViewer } from "./DocsImageViewer";
 import { ScrollSpyTOC } from "./TOC";
 import AIThinkingBlock from "./AIThinkingBlock";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 
 // â”€â”€â”€ SDK-local type definitions & stubs â”€â”€â”€
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
@@ -679,135 +683,89 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
 }
 
 const AssistantMessageContent = memo(({ content, isTyping }: { content: string, isTyping?: boolean }) => {
-  const blocks = useMemo(() => buildStructuredBlocks(content), [content]);
-
   return (
-    <div className="space-y-3 text-sm leading-relaxed overflow-hidden break-words">
-      {blocks.map((block, index) => {
-        if (block.type === "paragraph") {
-          return (
-            <p key={`p-${index}`} className="text-slate-900 dark:text-white whitespace-pre-wrap">
-              {renderInlineText(block.text)}
-            </p>
-          );
-        }
-
-        if (block.type === "list") {
-          return (
-            <ul key={`l-${index}`} className="space-y-2">
-              {block.items.map((item, itemIndex) => (
-                <li key={`li-${index}-${itemIndex}`} className="flex gap-2 text-slate-800 dark:text-slate-200">
-                  <span className="min-w-5 font-medium text-emerald-600 dark:text-emerald-400">
-                    {item.indexLabel ?? "\u2022"}
-                  </span>
-                  <span>{renderInlineText(item.text)}</span>
-                </li>
-              ))}
-            </ul>
-          );
-        }
-
-        if (block.type === "table") {
-          return (
-            <div key={`t-${index}`} className="w-full pb-2">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {block.headers.map((h, i) => (
-                        <TableHead key={i} className={cn("font-semibold text-slate-900 dark:text-white", i < block.headers.length - 1 && "border-r")}>
-                          {renderInlineText(h)}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {block.rows.map((row, rIndex) => (
-                      <TableRow key={rIndex}>
-                        {row.map((cell, cIndex) => (
-                          <TableCell key={cIndex} className={cn("text-muted-foreground", cIndex < row.length - 1 && "border-r")}>
-                            {renderInlineText(cell)}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          );
-        }
-
-        if (block.type === "code") {
-          let highlighted = block.code;
-
-          // Disable CPU-heavy syntax highlighting while actively typing to prevent scrolling freeze and main thread locks
-          if (!isTyping) {
-            try {
-              if (block.language && hljs.getLanguage(block.language)) {
-                highlighted = hljs.highlight(block.code, { language: block.language }).value;
-              } else {
-                highlighted = hljs.highlightAuto(block.code).value;
-              }
-            } catch (e) {
-              highlighted = block.code
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
+    <div className="space-y-3 text-sm leading-relaxed overflow-hidden break-words prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:p-0">
+      <ReactMarkdown
+        remarkPlugins={[remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        components={{
+          code({ node, inline, className, children, ...props }: any) {
+            const match = /language-(\w+)/.exec(className || "");
+            if (!inline) {
+              return (
+                <div className="w-full pb-2 overflow-hidden">
+                  <CodeBlockClient
+                    language={match ? match[1] : ""}
+                    rawCode={String(children).replace(/\n$/, "")}
+                    html={`<pre class="text-[13px] py-4 px-4 !m-0 flex flex-col"><code class="font-mono hljs">${
+                      !isTyping && match && match[1] && hljs.getLanguage(match[1])
+                        ? hljs.highlight(String(children).replace(/\n$/, ""), { language: match[1] }).value
+                        : String(children).replace(/\n$/, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    }</code></pre>`}
+                  />
+                </div>
+              );
             }
-          } else {
-            highlighted = block.code
-              .replace(/&/g, "&amp;")
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;");
-          }
-
-          // Build line-numbered HTML (COMMENTED OUT FOR AI CHAT UI)
-          /*
-          const highlightedLines = highlighted.split("\n");
-          const lineRows = highlightedLines.map((line, i) =>
-            `<div class="flex w-max min-w-full"><span class="sticky left-0 z-10 shrink-0 w-14 pr-4 text-right select-none text-slate-400 bg-[#fafbfc] border-r border-slate-200 dark:text-zinc-600 dark:bg-[#111113] dark:border-white/5">${i + 1}</span><span class="px-4 whitespace-pre">${line || " "}</span></div>`
-          ).join("");
-          */
-          const finalHtml = `<pre class="text-[13px] py-4 px-4 !m-0 flex flex-col"><code class="font-mono hljs">${highlighted}</code></pre>`;
-
-          return (
-            <div key={`c-${index}`} className="w-full pb-2 overflow-hidden">
-              <CodeBlockClient rawCode={block.code} html={finalHtml} language={block.language} />
-            </div>
-          );
-        }
-
-        const Icon = getSectionIcon(block.title);
-        return (
-          <div key={`s-${index}`} className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Icon className="h-4 w-4 text-emerald-400" />
-              <h3 className="font-semibold text-slate-900 dark:text-white">{block.title.replace(/\*\*/g, "")}</h3>
-            </div>
-            {block.items && block.items.length > 0 ? (
-              <ul className="space-y-2">
-                {block.items.map((item, itemIndex) => (
-                  <li key={`sli-${index}-${itemIndex}`} className="flex gap-2 text-slate-900 dark:text-white">
-                    <span className="min-w-5 font-medium text-emerald-400">
-                      {item.indexLabel ?? "\u2022"}
-                    </span>
-                    <span>{renderInlineText(item.text)}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="space-y-2">
-                {block.paragraphs.map((paragraph, paragraphIndex) => (
-                  <p key={`sp-${index}-${paragraphIndex}`} className="text-slate-900 dark:text-white whitespace-pre-wrap">
-                    {renderInlineText(paragraph)}
-                  </p>
-                ))}
+            return (
+              <code className="bg-muted px-1.5 py-0.5 rounded-md text-emerald-600 dark:text-emerald-400 font-mono text-[13px]" {...props}>
+                {children}
+              </code>
+            );
+          },
+          table({ children, ...props }) {
+            return (
+              <div className="w-full pb-2 overflow-x-auto">
+                <div className="rounded-md border min-w-[500px]">
+                  <Table {...props}>{children}</Table>
+                </div>
               </div>
-            )}
-          </div>
-        );
-      })}
+            );
+          },
+          thead({ children, ...props }) {
+            return <TableHeader {...props}>{children}</TableHeader>;
+          },
+          tbody({ children, ...props }) {
+            return <TableBody {...props}>{children}</TableBody>;
+          },
+          tr({ children, ...props }) {
+            return <TableRow {...props}>{children}</TableRow>;
+          },
+          th({ children, ...props }) {
+            return <TableHead className="font-semibold text-slate-900 dark:text-white border-r last:border-r-0" {...props}>{children}</TableHead>;
+          },
+          td({ children, ...props }) {
+            return <TableCell className="text-muted-foreground border-r last:border-r-0" {...props}>{children}</TableCell>;
+          },
+          a({ href, children, ...props }) {
+            const external = href && /^https?:\/\//i.test(href);
+            return (
+              <a
+                href={href}
+                target={external ? "_blank" : undefined}
+                rel={external ? "noreferrer" : undefined}
+                className="font-semibold text-emerald-600 underline underline-offset-4 transition-colors hover:text-emerald-500 dark:text-emerald-400"
+                {...props}
+              >
+                {children}
+              </a>
+            );
+          },
+          p({ children, ...props }) {
+            return <p className="text-slate-900 dark:text-white whitespace-pre-wrap mb-3 last:mb-0" {...props}>{children}</p>;
+          },
+          ul({ children, ...props }) {
+            return <ul className="space-y-2 mb-3 last:mb-0 ml-4 list-disc marker:text-emerald-600" {...props}>{children}</ul>;
+          },
+          ol({ children, ...props }) {
+            return <ol className="space-y-2 mb-3 last:mb-0 ml-4 list-decimal marker:text-emerald-600" {...props}>{children}</ol>;
+          },
+          li({ children, ...props }) {
+            return <li className="text-slate-800 dark:text-slate-200" {...props}>{children}</li>;
+          }
+        }}
+      >
+        {content}
+      </ReactMarkdown>
     </div>
   );
 });
@@ -2158,7 +2116,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                           </>
                         ) : (
                           <div className="pl-1 w-full max-w-full">
-                            {message.thought && (
+                            {message.thought && message.thought.trim().length > 150 && (
                               <Accordion type="single" collapsible={true as any} className="mb-4">
                                 <AccordionItem value="thought" className="border-none">
                                   <AccordionTrigger className="w-fit flex-none justify-start gap-1.5 h-auto text-[11px] font-medium text-slate-500 hover:text-slate-700 hover:no-underline dark:text-slate-400 dark:hover:text-slate-300 transition-colors cursor-pointer [&>svg]:size-3 [&>svg]:ml-0">

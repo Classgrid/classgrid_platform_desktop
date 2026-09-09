@@ -99,3 +99,15 @@ initLeadStream();
 server.listen(PORT, () => {
   console.log(`🔥 Server running at http://localhost:${PORT} (Socket.io Native)`);
 });
+
+// ─────────────────────────────────────────────────────────
+// 🛑 Graceful Shutdown for Zero-Downtime Deployments (PM2)
+// ─────────────────────────────────────────────────────────
+process.on('SIGINT', () => {
+  console.log('🛑 PM2 SIGINT received: Gracefully shutting down HTTP server...');
+  // server.close() stops accepting new connections and waits for active ones to finish
+  server.close(() => {
+    console.log('✅ All active connections finished. Exiting safely.');
+    process.exit(0);
+  });
+});

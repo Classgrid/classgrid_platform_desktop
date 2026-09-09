@@ -28,7 +28,7 @@ module.exports = {
             max_memory_restart: "512M",
 
             // ── Graceful shutdown (close open connections before killing)
-            kill_timeout: 5000,      // 5s grace period
+            kill_timeout: 30000,      // 30s grace period
             listen_timeout: 10000,   // 10s for process to signal ready
 
             // ── Default Development env
