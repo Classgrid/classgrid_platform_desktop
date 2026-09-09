@@ -1184,8 +1184,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         if (res.ok) {
           const data = await res.json();
           const loadedMessages = data.messages.map((m: any) => ({
+            id: m.id || crypto.randomUUID(),
             role: m.role,
             content: m.content,
+            fileUrls: m.file_urls || undefined,
             createdAt: m.created_at ? new Date(m.created_at).getTime() : Date.now()
           }));
           setMessages(loadedMessages);
