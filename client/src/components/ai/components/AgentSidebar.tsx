@@ -250,16 +250,20 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Extract base path, e.g., if we are on /superadmin/agent/123, base is /superadmin
-  const basePath = location.pathname.split(/(?=\/agent|\/dashboard)/)[0];
+  // Extract base path robustly by finding the 'agent' segment
+  const pathParts = location.pathname.split('/');
+  const agentIndex = pathParts.indexOf('agent');
+  const baseAgentPath = agentIndex !== -1 
+    ? pathParts.slice(0, agentIndex + 1).join('/')
+    : location.pathname;
 
   const handleNewChat = () => {
-    navigate(`${basePath}/agent`);
+    navigate(baseAgentPath);
     window.dispatchEvent(new Event("agent:new-chat")); // Keep event for legacy state reset if needed
   };
 
   const handleLoadChat = (sessionId: string) => {
-    navigate(`${basePath}/agent/${sessionId}`);
+    navigate(`${baseAgentPath}/${sessionId}`);
   };
 
   const renderSessionItem = (session: ChatSession) => {
