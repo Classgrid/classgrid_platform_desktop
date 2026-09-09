@@ -53,6 +53,9 @@ jobs:
             # Fix permissions in case root owns any files
             sudo chown -R ubuntu:ubuntu . || true
             
+            # Force wipe node_modules to fix recent Mongoose corruption
+            sudo rm -rf node_modules
+            
             # Run npm install. If it fails due to corruption (like ENOTEMPTY), wipe node_modules using sudo and retry.
             npm install --omit=dev --no-audit --no-fund --legacy-peer-deps || (sudo rm -rf node_modules && npm install --omit=dev --no-audit --no-fund --legacy-peer-deps)
 
