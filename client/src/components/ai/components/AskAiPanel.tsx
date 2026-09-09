@@ -64,6 +64,7 @@ import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { MermaidViewer } from "./MermaidViewer";
 import { PdfAttachment } from "@/features/chat/components/PdfAttachment";
+import { CopyBlockClient } from "./CopyBlockClient";
 
 // â”€â”€â”€ SDK-local type definitions & stubs â”€â”€â”€
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
@@ -706,6 +707,10 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
             
             if (!inline && language === "mermaid") {
               return <MermaidViewer chart={String(children).replace(/\n$/, "")} />;
+            }
+
+            if (!inline && ["prompt", "email", "message", "copy"].includes(language)) {
+              return <CopyBlockClient text={String(children).replace(/\n$/, "")} label={language} />;
             }
 
             if (!inline) {

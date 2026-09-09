@@ -43,6 +43,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { MermaidViewer } from "../../components/ai/components/MermaidViewer";
+import { CopyBlockClient } from "../../components/ai/components/CopyBlockClient";
 
 const preprocessLaTeX = (content: string) => {
   if (!content) return "";
@@ -204,6 +205,10 @@ export const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ isOpen, onClose,
                       
                       if (!inline && language === "mermaid") {
                         return <MermaidViewer chart={String(children).replace(/\n$/, "")} />;
+                      }
+
+                      if (!inline && ["prompt", "email", "message", "copy"].includes(language)) {
+                        return <CopyBlockClient text={String(children).replace(/\n$/, "")} label={language} />;
                       }
                       
                       return <code className={className} {...props}>{children}</code>;

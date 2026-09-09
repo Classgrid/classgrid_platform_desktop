@@ -17,8 +17,8 @@ import { useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import "katex/dist/katex.min.css";
 import { MermaidViewer } from "../../components/ai/components/MermaidViewer";
+import { CopyBlockClient } from "../../components/ai/components/CopyBlockClient";
 
 interface SharedMessage {
   role: "user" | "assistant";
@@ -73,6 +73,10 @@ function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
               
               if (!inline && language === "mermaid") {
                 return <MermaidViewer chart={String(children).replace(/\n$/, "")} />;
+              }
+
+              if (!inline && ["prompt", "email", "message", "copy"].includes(language)) {
+                return <CopyBlockClient text={String(children).replace(/\n$/, "")} label={language} />;
               }
 
               if (!inline) {
