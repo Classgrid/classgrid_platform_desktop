@@ -927,7 +927,11 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction }: {
             );
           } catch (e) {
             if (isTyping) {
-              return null;
+              return (
+                <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-[13px] italic animate-pulse my-2">
+                  Generating interface...
+                </div>
+              );
             }
             return <div className="text-red-500 text-[13px] p-4 border border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-900/20 rounded-xl my-4">Failed to parse approval card props: {(e as Error).message}</div>;
           }
