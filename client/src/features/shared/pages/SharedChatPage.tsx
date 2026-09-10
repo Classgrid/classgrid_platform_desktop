@@ -97,6 +97,13 @@ function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
               }
               return <code className="shared-inline-code" {...props}>{children}</code>;
             },
+            blockquote({ children, ...props }) {
+              return (
+                <blockquote className="border-l-[3px] border-slate-300 dark:border-[#4B4B4B] pl-4 my-4 text-slate-700 dark:text-[#ececf1] bg-transparent" {...props}>
+                  {children}
+                </blockquote>
+              );
+            },
             a({ href, children, ...props }) {
               return (
                 <a href={href} target="_blank" rel="noreferrer" className="shared-link" {...props}>

@@ -709,6 +709,13 @@ const preprocessLaTeX = (content: string) => {
 // We need to define `pre` to just return children because we handle block code fully inside the `code` component.
 // Otherwise, Tailwind's typography plugin will wrap our custom cards in a dark <pre> box and force monospace.
 const MarkdownComponents = {
+  blockquote({ children, ...props }: any) {
+    return (
+      <blockquote className="border-l-[3px] border-slate-300 dark:border-[#4B4B4B] pl-4 my-4 text-slate-700 dark:text-[#ececf1] bg-transparent" {...props}>
+        {children}
+      </blockquote>
+    );
+  },
   pre({ children }: any) {
     return <>{children}</>;
   },
