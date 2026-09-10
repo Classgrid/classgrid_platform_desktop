@@ -34,6 +34,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   const [publicShareUrl, setPublicShareUrl] = React.useState<string | null>(null);
   const [isCreatingLink, setIsCreatingLink] = React.useState(false);
   const [linkCopied, setLinkCopied] = React.useState(false);
+  const [sharePreviewMessages, setSharePreviewMessages] = React.useState<any[]>([]);
+  const [isLoadingPreview, setIsLoadingPreview] = React.useState(false);
 
   React.useEffect(() => {
     const handleActiveSessionChanged = (e: any) => {
@@ -78,6 +80,23 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
     ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
     : "";
+
+  React.useEffect(() => {
+    if (shareModalOpen && shareSessionId) {
+      setIsLoadingPreview(true);
+      fetch(`${endpointPrefix}/api/ai/sessions/${shareSessionId}/messages`, { credentials: "include" })
+        .then(res => res.json())
+        .then(data => {
+          if (data.messages) {
+            setSharePreviewMessages(data.messages);
+          }
+        })
+        .catch(console.error)
+        .finally(() => setIsLoadingPreview(false));
+    } else {
+      setSharePreviewMessages([]);
+    }
+  }, [shareModalOpen, shareSessionId, endpointPrefix]);
 
   const handleUpdateSession = async (id: string, updates: any) => {
     try {
@@ -428,7 +447,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
       {/* Share Modal - Exact ChatGPT Replica (Light & Dark Mode Support) */}
       {shareModalOpen && shareSessionId && typeof document !== "undefined" && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/20 dark:bg-black/60 backdrop-blur-sm" onClick={() => { setShareModalOpen(false); setPublicShareUrl(null); setLinkCopied(false); }}>
-          <div className="bg-white dark:bg-[#212121] text-slate-900 dark:text-[#ececf1] rounded-3xl w-[540px] shadow-2xl overflow-hidden font-sans border-0 dark:border dark:border-white/10" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-[#212121] text-slate-900 dark:text-[#ececf1] rounded-3xl w-[640px] shadow-2xl overflow-hidden font-sans border-0 dark:border dark:border-white/10" onClick={(e) => e.stopPropagation()}>
 
             {/* Header */}
             <div className="flex items-center justify-between px-8 pt-8 pb-4">
@@ -449,29 +468,30 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 
                 {/* Simulated Chat Content - Using Exact Classgrid Chat Styling */}
                 <div className="flex flex-col gap-6">
-                   {/* User Bubble */}
-                   <div className="bg-[#f1f1ef] dark:bg-[#2C2C2C] px-[14px] py-[6px] rounded-[16px] max-w-[85%] self-end">
-                     <p className="text-[16px] leading-[24px] text-[#37352f] dark:text-[#F0EFED]">
-                       Please share the conversation transcript for: <span className="font-semibold">{sessions.find(s => s.id === shareSessionId)?.title || "this topic"}</span>
-                     </p>
-                   </div>
-                   
-                   {/* AI Text */}
-                   <div className="text-[15px] leading-[1.6] text-[#2C2C2B] dark:text-[#F0EFED]">
-                     <p className="mb-3">I can certainly help you with that.</p>
-                     <p className="mb-2 font-semibold">Here is the order from highest to lowest:</p>
-                     <ul className="list-disc pl-[22px] marker:text-[#37352f] dark:marker:text-[#F0EFED] space-y-1">
-                       <li className="py-[2px] pl-[2px]">Full conversation context and history</li>
-                       <li className="py-[2px] pl-[2px]">AI generated insights</li>
-                       <li className="py-[2px] pl-[2px]">Secure public link sharing</li>
-                     </ul>
-                   </div>
+                  {isLoadingPreview ? (
+                    <div className="flex items-center justify-center h-full pt-16">
+                      <Loader2 className="w-8 h-8 animate-spin text-slate-300 dark:text-white/20" />
+                    </div>
+                  ) : (
+                    sharePreviewMessages.slice(0, 4).map((msg: any, idx: number) => {
+                      const isUser = msg.role === 'user';
+                      return (
+                        <div key={idx} className={isUser ? "bg-[#f1f1ef] dark:bg-[#2C2C2C] px-[14px] py-[6px] rounded-[16px] max-w-[85%] self-end" : "text-[15px] leading-[1.6] text-[#2C2C2B] dark:text-[#F0EFED] w-full"}>
+                          {isUser ? (
+                            <p className="text-[16px] leading-[24px] text-[#37352f] dark:text-[#F0EFED] break-words whitespace-pre-wrap">{msg.content}</p>
+                          ) : (
+                            <div className="whitespace-pre-wrap">{msg.content}</div>
+                          )}
+                        </div>
+                      )
+                    })
+                  )}
                 </div>
                 
                 {/* The Fade Out Gradient (Adapts to Light/Dark) */}
                 <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/90 dark:from-[#2f2f2f] dark:via-[#2f2f2f]/90 to-transparent flex items-end justify-end p-5">
                   {/* Classgrid Watermark */}
-                  <span className="font-bold text-slate-900 dark:text-white text-xl tracking-tight select-none">Classgrid AI</span>
+                  <span className="font-bold text-slate-900 dark:text-white text-xl tracking-tight select-none">CLASSGRID</span>
                 </div>
               </div>
             </div>
