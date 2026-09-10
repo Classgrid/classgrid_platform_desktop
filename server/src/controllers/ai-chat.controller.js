@@ -479,14 +479,28 @@ export const shareChatSession = async (req, res) => {
             transcript += `${msg.role === 'user' ? 'You' : 'Classgrid AI'}:\n${msg.content}\n\n`;
         });
 
+        const htmlBody = `
+            <!DOCTYPE html>
+            <html>
+            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                <p>Hi,</p>
+                <p>Here is the chat transcript you requested for: <strong>${session.title}</strong>.</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                <pre style="font-family: inherit; white-space: pre-wrap; font-size: 14px; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eaeaea;">${transcript}</pre>
+                <p style="color: #888; font-size: 12px; margin-top: 30px;">Sent securely from Classgrid.</p>
+            </body>
+            </html>
+        `;
+
         // sendEmail from aws-ses.service.js takes a named object
         await sendEmail({
-            fromName: "Classgrid AI",
-            fromEmail: "agent@classgrid.in",
+            fromName: "Classgrid Support",
+            fromEmail: "support@classgrid.in",
+            replyTo: "support@classgrid.in",
             to: req.user.email,
-            subject: `Classgrid AI Chat: ${session.title}`,
-            text: transcript,
-            html: `<pre style="font-family: sans-serif; white-space: pre-wrap;">${transcript}</pre>`,
+            subject: `Chat Transcript: ${session.title}`,
+            text: `Hi,\n\nHere is the chat transcript you requested for: ${session.title}.\n\n---\n\n${transcript}`,
+            html: htmlBody,
         });
 
         console.info(`[Chat API] ✅ Chat transcript emailed to ${req.user.email} for session ${id}`);
