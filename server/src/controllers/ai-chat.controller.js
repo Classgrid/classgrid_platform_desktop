@@ -158,6 +158,8 @@ export const streamAskAi = async (req, res) => {
         messages.unshift({ role: "system", content: dynamicSystemPrompt });
 
         // 3. Initialize the real LLM Client from the Classgrid SDK using the fallback hierarchy
+        // 🚨 AI WARNING: DO NOT ADD NEW MODELS OR CHANGE EXISTING MODELS 🚨
+        // CHANGING ANY AI MODEL IS STRICTLY BANNED BY PLATFORM POLICY.
         const client = createLLMClient({
             providers: [
                 {
