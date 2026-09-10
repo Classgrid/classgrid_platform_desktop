@@ -823,14 +823,14 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
           },
           ul({ children, ...props }) {
             // Level 1 = disc (filled), nested ul inside = circle (hollow) — matches Notion exactly
-            return <ul className="mb-3 last:mb-0 pl-5 list-disc [&_ul]:list-[circle] [&_ul]:pl-5 [&_ul]:mb-0" {...props}>{children}</ul>;
+            return <ul className="mb-3 last:mb-0 pl-[22px] list-disc [&_ul]:list-[circle] [&_ul]:pl-[22px] [&_ul]:mb-0 marker:text-[#37352f] dark:marker:text-[#F0EFED]" {...props}>{children}</ul>;
           },
           ol({ children, ...props }) {
-            return <ol className="mb-3 last:mb-0 pl-5 list-decimal" {...props}>{children}</ol>;
+            return <ol className="mb-3 last:mb-0 pl-[22px] list-decimal marker:text-[#37352f] dark:marker:text-[#F0EFED]" {...props}>{children}</ol>;
           },
           li({ children, ...props }) {
             // Notion DevTools: padding-top: 2px; padding-bottom: 2px; padding-inline-start: 6px
-            return <li className="text-[#2C2C2B] dark:text-[#F0EFED] py-[2px] pl-[6px] whitespace-pre-wrap break-words [&>p]:m-0 [&>p]:inline" {...props}>{children}</li>;
+            return <li className="text-[#2C2C2B] dark:text-[#F0EFED] py-[2px] pl-[2px] break-words [&>p]:m-0 [&>p]:inline" {...props}>{children}</li>;
           },
           blockquote({ children, ...props }) {
             return <blockquote className="border-l-[3px] border-slate-200 dark:border-slate-700 pl-4 my-4 text-slate-500 dark:text-slate-400 italic" {...props}>{children}</blockquote>;
