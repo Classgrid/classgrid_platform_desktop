@@ -163,16 +163,16 @@ export const streamAskAi = async (req, res) => {
         const client = createLLMClient({
             providers: [
                 {
-                    name: "groq",
-                    url: "https://api.groq.com/openai/v1/chat/completions",
-                    apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b"
-                },
-                {
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
                     apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
                     model: "open-mistral-nemo"
+                },
+                {
+                    name: "groq",
+                    url: "https://api.groq.com/openai/v1/chat/completions",
+                    apiKey: process.env.GROQ_API_KEY || "",
+                    model: "openai/gpt-oss-20b"
                 },
                 {
                     name: "gemini",
