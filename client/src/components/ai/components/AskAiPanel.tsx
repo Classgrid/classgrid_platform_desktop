@@ -749,8 +749,11 @@ const MarkdownComponents = {
 };
 
 const AssistantMessageContent = memo(({ content, isTyping }: { content: string, isTyping?: boolean }) => {
-  // Preprocess content to fix AI generating fake • bullets instead of real Markdown lists
-  const processedContent = content.replace(/^[•◦]\s/gm, '- ');
+  // Preprocess: convert AI's fake bullet chars (•, ◦) to real Markdown lists.
+  // Also handle indented sub-bullets (4 spaces + -) that come after a • parent.
+  const processedContent = content
+    .replace(/^[•]\s/gm, '- ')   // top-level • → -
+    .replace(/^\s{4}[◦-]\s/gm, (m) => '    - '); // keep nested sub-bullets as indented -
   
   return (
     <div className="space-y-4 text-[16px] leading-[24px] overflow-hidden break-words max-w-none">
@@ -817,13 +820,14 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
             return <h4 className="text-[1em] font-semibold text-[#2C2C2B] dark:text-[#F0EFED] leading-[1.3] m-0 p-0 mb-1 mt-3 first:mt-0" {...props}>{children}</h4>;
           },
           ul({ children, ...props }) {
-            return <ul className="mb-3 last:mb-0 pl-6 list-disc marker:text-[#37352f] dark:marker:text-[rgba(255,255,255,0.4)]" {...props}>{children}</ul>;
+            return <ul className="mb-3 last:mb-0 pl-5 list-disc marker:text-[#37352f] dark:marker:text-[rgba(255,255,255,0.4)]" {...props}>{children}</ul>;
           },
           ol({ children, ...props }) {
-            return <ol className="mb-3 last:mb-0 pl-6 list-decimal marker:text-[#37352f] dark:marker:text-[rgba(255,255,255,0.4)]" {...props}>{children}</ol>;
+            return <ol className="mb-3 last:mb-0 pl-5 list-decimal marker:text-[#37352f] dark:marker:text-[rgba(255,255,255,0.4)]" {...props}>{children}</ol>;
           },
           li({ children, ...props }) {
-            return <li className="text-[#2C2C2B] dark:text-[#F0EFED] my-1 pl-1 whitespace-pre-wrap break-words [&>p]:m-0" {...props}>{children}</li>;
+            // Notion DevTools: padding-top: 2px; padding-bottom: 2px; padding-inline-start: 6px
+            return <li className="text-[#2C2C2B] dark:text-[#F0EFED] py-[2px] pl-[6px] whitespace-pre-wrap break-words [&>p]:m-0 [&>p]:inline" {...props}>{children}</li>;
           },
           blockquote({ children, ...props }) {
             return <blockquote className="border-l-[3px] border-slate-200 dark:border-slate-700 pl-4 my-4 text-slate-500 dark:text-slate-400 italic" {...props}>{children}</blockquote>;
