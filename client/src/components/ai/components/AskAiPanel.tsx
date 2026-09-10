@@ -796,22 +796,22 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
             );
           },
           p({ children, ...props }) {
-            return <p className="text-[#37352f] dark:text-slate-200 whitespace-pre-wrap mb-4 px-[2px] last:mb-0" {...props}>{children}</p>;
+            return <p className="text-[#2C2C2B] dark:text-slate-200 whitespace-pre-wrap mb-4 px-[2px] last:mb-0" {...props}>{children}</p>;
           },
           strong({ children, ...props }) {
-            return <strong className="font-semibold text-[#37352f] dark:text-white" {...props}>{children}</strong>;
+            return <strong className="font-semibold text-[#2C2C2B] dark:text-white" {...props}>{children}</strong>;
           },
           h1({ children, ...props }) {
-            return <h1 className="text-[1.875em] font-semibold text-[#37352f] dark:text-white leading-[1.3] mt-6 mb-3 first:mt-0" {...props}>{children}</h1>;
+            return <h1 className="text-[1.875em] font-semibold text-[#2C2C2B] dark:text-white leading-[1.3] m-0 p-0" {...props}>{children}</h1>;
           },
           h2({ children, ...props }) {
-            return <h2 className="text-[1.5em] font-semibold text-[#37352f] dark:text-white leading-[1.3] mt-5 mb-2 first:mt-0" {...props}>{children}</h2>;
+            return <h2 className="text-[1.5em] font-semibold text-[#2C2C2B] dark:text-white leading-[1.3] m-0 p-0" {...props}>{children}</h2>;
           },
           h3({ children, ...props }) {
-            return <h3 className="text-[1.25em] font-semibold text-[#37352f] dark:text-white leading-[1.3] m-0 p-0 mt-4 mb-2 first:mt-0" {...props}>{children}</h3>;
+            return <h3 className="text-[1.25em] font-semibold text-[#2C2C2B] dark:text-white leading-[1.3] m-0 p-0" {...props}>{children}</h3>;
           },
           h4({ children, ...props }) {
-            return <h4 className="text-[1em] font-semibold text-[#37352f] dark:text-white leading-[1.3] mt-3 mb-1 first:mt-0" {...props}>{children}</h4>;
+            return <h4 className="text-[1em] font-semibold text-[#2C2C2B] dark:text-white leading-[1.3] m-0 p-0" {...props}>{children}</h4>;
           },
           ul({ children, ...props }) {
             return <ul className="space-y-[4px] mb-4 last:mb-0 ml-5 list-disc marker:text-[#37352f] dark:marker:text-slate-500" {...props}>{children}</ul>;
