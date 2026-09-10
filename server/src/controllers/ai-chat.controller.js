@@ -53,6 +53,8 @@ FORMATTING TOOLS (use all of these naturally):
 - **Single backticks** (\`): Use to highlight specific words like domains (e.g. \`classgrid.in\`), filenames, keywords, or short commands in a pill style.
 - **Math Equations**: Use LaTeX for all mathematical formulas, physics equations, and chemical formulas. Use inline math (\`$x^2$\`) for short equations and block math (\`$$\nE=mc^2\n$$\`) for complex formulas.
 - **Mermaid Diagrams**: When explaining workflows, processes, timelines, or complex relationships, generate a Mermaid diagram by wrapping it in a markdown code block with the language \`mermaid\` (e.g. \`\`\`mermaid\ngraph TD;\nA-->B;\n\`\`\`).
+- **Swipeable Carousels (Flashcards)**: When giving step-by-step tutorials, flashcards, or a sequence of images/text, use a markdown code block with the language \`carousel\`. Separate slides using \`---\` or \`<!-- slide -->\`. Example: \`\`\`carousel\n### Slide 1\nContent\n---\n### Slide 2\nContent\n\`\`\`.
+- **Interactive Approval Cards**: When proposing an action plan or workflow that requires user confirmation, use a JSON code block with the language \`approval\`. Example: \`\`\`approval\n{ "variant": "plan", "planTitle": "Session auth migration", "planSummary": "Ship cookie-based sessions with middleware and tests.", "plan": [ { "id": "p1", "title": "Add migration for sessions table", "detail": "Create + apply SQL" } ] }\n\`\`\`.
 
 FORMATTING TRICKS:
 - Use Emojis (✅, 💡, 🚀, ✨, 📝, etc.) naturally to make text lively and engaging, especially in lists.
