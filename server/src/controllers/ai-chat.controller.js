@@ -86,8 +86,9 @@ export const streamAskAi = async (req, res) => {
     // 1. Setup Server-Sent Events (SSE) headers for Express
     res.writeHead(200, {
         "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive"
+        "Cache-Control": "no-cache, no-transform",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no"  // CRITICAL: Tells NGINX to stream immediately instead of buffering
     });
 
     let keepAliveInterval = null;
