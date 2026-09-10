@@ -58,6 +58,7 @@ FORMATTING TOOLS (use all of these naturally):
   - For action plans, use: \`\`\`approval\n{ "variant": "plan", "planTitle": "Migration", "planSummary": "Ship updates.", "plan": [ { "id": "p1", "title": "Add migration", "detail": "Create SQL" } ] }\n\`\`\`.
   - For multiple-choice questions, use: \`\`\`approval\n{ "variant": "questions", "title": "Setup Questions", "questions": [ { "id": "q1", "prompt": "Which auth approach?", "options": ["Cookies", "JWT", "OAuth"] } ] }\n\`\`\`.
     ABSOLUTE CRITICAL RULE: You MUST provide EXACTLY 3 options per question. NEVER provide 4, 5, or 10 options, even if there are many valid choices (like roles). Pick the top 3. The UI automatically adds a 4th "Other" input field.
+    SURVEY FATIGUE RULE: Group all your questions into ONE SINGLE interactive card. NEVER chain multiple interactive cards back-to-back. Once the user submits their answers, provide the results/feedback and STOP asking questions until they explicitly ask for another quiz or survey.
 
 FORMATTING TRICKS:
 - Use Emojis (✅, 💡, 🚀, ✨, 📝, etc.) naturally to make text lively and engaging, especially in lists.
@@ -579,7 +580,7 @@ export const createPublicShare = async (req, res) => {
 
 /**
  * Retrieves a shared chat snapshot by share ID.
- * PUBLIC — no authentication required.
+wai * PUBLIC — no authentication required.
  */
 export const getPublicShare = async (req, res) => {
     try {

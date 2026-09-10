@@ -939,7 +939,8 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                 </div>
               );
             }
-            return <div className="text-red-500 text-[13px] p-4 border border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-900/20 rounded-xl my-4">Failed to parse approval card props: {(e as Error).message}</div>;
+            // Gracefully degrade to rendering as a standard code block if JSON is permanently malformed
+            return MarkdownComponents.code({ node, inline, className, children, ...props }, isTyping);
           }
         }
         return MarkdownComponents.code({ node, inline, className, children, ...props }, isTyping);
