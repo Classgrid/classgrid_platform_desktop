@@ -2090,11 +2090,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   animate={{ opacity: 1 }}
                   transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.16 }}
                   className={cn(
-                    "flex items-end gap-2 w-full",
-                    isUser ? "justify-end" : "justify-start"
+                    "flex w-full mb-6",
+                    "justify-start"
                   )}
                 >
-                  <div className={cn("flex flex-col gap-1.5 min-w-0", isUser ? "order-1 items-end max-w-[75%]" : "order-2 w-full")}>
+                  <div className="flex flex-col gap-2 w-full">
 
                     {/* â”€â”€ Text Bubble â”€â”€ */}
                     {message.content && (
@@ -2103,40 +2103,35 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         className={cn(
                           "relative min-w-0 transition-all duration-700 msg-target-glow scroll-mt-12",
                           isUser
-                            ? "rounded-2xl rounded-br-none px-4 py-2.5 bg-foreground text-background"
-                            : "w-full max-w-full bg-transparent text-foreground"
+                            ? "w-full rounded-xl px-5 py-4 bg-slate-50/80 dark:bg-slate-800/40 text-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-800/60"
+                            : "w-full max-w-full bg-transparent text-foreground mt-2"
                         )}
                       >
-                        {isUser && (
-                          <svg
-                            width="8"
-                            height="12"
-                            viewBox="0 0 8 12"
-                            fill="currentColor"
-                            className="absolute bottom-0 -right-1.5 text-foreground"
-                          >
-                            <path d="M0 0V12H8C5 12 2 9 0 0Z" />
-                          </svg>
-                        )}
                         {isUser ? (
                           <>
-                            <p className="text-sm leading-relaxed break-words break-all whitespace-pre-wrap relative z-10">{message.content}</p>
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+                                <UserRound className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
+                              </div>
+                              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">You</span>
+                            </div>
+                            <p className="text-[15px] leading-relaxed break-words break-all whitespace-pre-wrap relative z-10 pl-7">{message.content}</p>
                             {message.contextUrl && (
                               <a
                                 href={message.contextUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="mt-1.5 flex items-center gap-1.5 text-[11px] text-sky-300 dark:text-sky-300 hover:text-sky-200 transition-opacity relative z-10"
+                                className="mt-2 ml-7 flex items-center w-fit gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-md hover:bg-slate-50 transition-colors relative z-10"
                               >
                                 <FileText className="h-3 w-3" />
-                                <span className="underline underline-offset-2 truncate max-w-[200px]">
+                                <span className="truncate max-w-[200px]">
                                   {message.contextTitle || message.contextUrl}
                                 </span>
                               </a>
                             )}
                           </>
                         ) : (
-                          <div className="pl-1 w-full max-w-full">
+                          <div className="w-full max-w-full">
                             {message.thought && message.thought.trim().length > 0 && (
                               <Accordion type="single" collapsible={true as any} className="mb-4">
                                 <AccordionItem value="thought" className="border-none">
