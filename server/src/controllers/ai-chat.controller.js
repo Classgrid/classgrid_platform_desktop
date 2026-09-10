@@ -494,9 +494,9 @@ export const shareChatSession = async (req, res) => {
 
         // sendEmail from aws-ses.service.js takes a named object
         await sendEmail({
-            fromName: "Classgrid Support",
-            fromEmail: "support@classgrid.in",
-            replyTo: "support@classgrid.in",
+            fromName: "Classgrid",
+            fromEmail: "hello@classgrid.in",
+            replyTo: "hello@classgrid.in",
             to: req.user.email,
             subject: `Chat Transcript: ${session.title}`,
             text: `Hi,\n\nHere is the chat transcript you requested for: ${session.title}.\n\n---\n\n${transcript}`,
