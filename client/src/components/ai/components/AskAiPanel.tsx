@@ -2120,9 +2120,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     initial={prefersReducedMotion ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.16 }}
-                  className="flex w-full"
+                  className={cn("flex w-full mb-6", isUser ? "justify-end" : "justify-start")}
                 >
-                  <div className="flex flex-col gap-1.5 min-w-0 w-full">
+                  <div className={cn("flex flex-col gap-1.5 min-w-0", isUser ? "items-end max-w-[75%]" : "w-full")}>
 
                     {/* â”€â”€ Text Bubble â”€â”€ */}
                     {message.content && (
