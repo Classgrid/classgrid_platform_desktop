@@ -118,10 +118,10 @@ async function generateSessionTitle(sessionId, question) {
             let cleanTitle = answer.trim().replace(/^["']|["']$/g, '');
             // Strip common AI prefixes anywhere in the string
             cleanTitle = cleanTitle.replace(/\*\*Title:\*\*/gi, '')
-                                   .replace(/Title:/gi, '')
-                                   .replace(/["']/g, '')
-                                   .trim();
-            
+                .replace(/Title:/gi, '')
+                .replace(/["']/g, '')
+                .trim();
+
             // Hard limit to 28 characters so it never overflows the sidebar, no manual dots
             if (cleanTitle.length > 28) {
                 cleanTitle = cleanTitle.substring(0, 28).trim();
@@ -167,7 +167,7 @@ export const streamAskAi = async (req, res) => {
         // historyDepth: how many messages to give the LLM context (default 25, max 500)
         const historyDepth = Math.min(parseInt(body.historyDepth, 10) || 25, 500);
         let messages = [];
-        
+
         const userEmail = req.user?.email || body.userEmail || 'unknown@classgrid.in';
 
         if (sessionId && !isIncognito) {
@@ -197,7 +197,7 @@ export const streamAskAi = async (req, res) => {
                 sessionId = session.id;
                 // Generate a real title in the background (delayed 5s to avoid competing with main LLM call for API rate limits)
                 setTimeout(() => generateSessionTitle(sessionId, body.question).catch(console.error), 5000);
-                
+
                 // Send back the sessionId immediately so the frontend sidebar can update instantly
                 res.write(`data: ${JSON.stringify({ type: "session_info", sessionId })}\n\n`);
             }
@@ -318,7 +318,7 @@ export const streamAskAi = async (req, res) => {
         });
 
         let requestAborted = false;
-        
+
         req.on('close', () => {
             requestAborted = true;
             if (!res.writableEnded) res.end();
@@ -332,7 +332,7 @@ export const streamAskAi = async (req, res) => {
             }
             try {
                 // Send a real event rather than a comment to guarantee it bypasses proxy buffers
-                res.write(`data: ${JSON.stringify({ type: "ping" })}\n\n`); 
+                res.write(`data: ${JSON.stringify({ type: "ping" })}\n\n`);
             } catch (err) {
                 console.error("Failed to send keep-alive ping:", err);
                 requestAborted = true;
@@ -350,19 +350,19 @@ export const streamAskAi = async (req, res) => {
                 const mappedLabel = status === "search web" ? "searching" : status;
                 try {
                     res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`);
-                } catch (e) {}
+                } catch (e) { }
             },
             onThought: (thought) => {
                 if (requestAborted || res.writableEnded) return;
                 try {
                     res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`);
-                } catch (e) {}
+                } catch (e) { }
             },
             onToken: (token) => {
                 if (requestAborted || res.writableEnded) return;
                 try {
                     res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`);
-                } catch (e) {}
+                } catch (e) { }
             }
         });
 
@@ -474,7 +474,7 @@ export const shareChatSession = async (req, res) => {
     try {
         const { id } = req.params;
         const session = await getSessionById(id);
-        
+
         if (!session || session.user_email !== req.user.email) {
             return res.status(403).json({ error: "Forbidden" });
         }
@@ -534,7 +534,7 @@ import crypto from 'crypto';
 export const createPublicShare = async (req, res) => {
     try {
         const { id } = req.params;
-        
+
         // INSTANT RESPONSE: Pre-generate the share ID and URL
         const shareId = crypto.randomBytes(8).toString('base64url').slice(0, 10);
         const shareUrl = `${SHARE_BASE_URL}/shared/${shareId}`;
@@ -584,16 +584,16 @@ export const createPublicShare = async (req, res) => {
 export const getPublicShare = async (req, res) => {
     try {
         const { shareId } = req.params;
-        
+
         let snapshot = null;
         let attempts = 0;
-        
+
         // Retry loop to handle the race condition where the user visits the link 
         // before the background save has finished (up to ~1.5 seconds)
         while (attempts < 5) {
             snapshot = await getSharedSnapshot(shareId);
             if (snapshot) break;
-            
+
             // Wait 300ms before checking again
             await new Promise(resolve => setTimeout(resolve, 300));
             attempts++;
