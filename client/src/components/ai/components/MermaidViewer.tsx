@@ -27,6 +27,8 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
   const [loading, setLoading] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
 
+  const [zoom, setZoom] = useState(1);
+
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
@@ -71,7 +73,10 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
 
   // Escape key closes fullscreen
   useEffect(() => {
-    if (!fullscreen) return;
+    if (!fullscreen) {
+      setZoom(1); // Reset zoom on close
+      return;
+    }
     const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFullscreen(false); };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
@@ -81,6 +86,20 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
   useEffect(() => {
     document.body.style.overflow = fullscreen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
+  }, [fullscreen]);
+
+  // Zoom with mouse scroll
+  useEffect(() => {
+    if (!fullscreen) return;
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setZoom(prev => {
+        const delta = e.deltaY > 0 ? -0.15 : 0.15;
+        return Math.min(Math.max(0.5, prev + delta), 6);
+      });
+    };
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    return () => window.removeEventListener("wheel", handleWheel);
   }, [fullscreen]);
 
   return (
@@ -134,20 +153,28 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
                 <X className="w-5 h-5" />
               </button>
 
-              {/* SVG rendered fullscreen */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.88 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.88 }}
-                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                className="w-full h-full flex items-center justify-center p-10 overflow-auto [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
+              {/* SVG rendered fullscreen with Zoom & Pan */}
+              <div 
+                className="w-full h-full flex items-center justify-center p-10 overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
-                dangerouslySetInnerHTML={{ __html: svgContent }}
-              />
+              >
+                <motion.div
+                  drag
+                  dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }}
+                  dragElastic={0.1}
+                  initial={{ opacity: 0, scale: 0.88 }}
+                  animate={{ opacity: 1, scale: zoom }}
+                  exit={{ opacity: 0, scale: 0.88 }}
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                  className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto cursor-grab active:cursor-grabbing"
+                  dangerouslySetInnerHTML={{ __html: svgContent }}
+                />
+              </div>
 
               {/* Hint */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[10000] text-black/25 dark:text-white/25 text-[10px] tracking-wide select-none pointer-events-none">
-                Click backdrop or press Esc to close
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[10000] flex flex-col items-center text-black/40 dark:text-white/40 text-[11px] tracking-wide select-none pointer-events-none">
+                <span>Scroll to zoom • Drag to pan</span>
+                <span className="opacity-60 mt-0.5">Click backdrop or press Esc to close</span>
               </div>
             </motion.div>
           )}
