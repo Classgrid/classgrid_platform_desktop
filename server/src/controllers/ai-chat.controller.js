@@ -248,7 +248,7 @@ export const streamAskAi = async (req, res) => {
         // 4. Run the Client and pass SSE writes inside the callbacks
         const answer = await client.generate({
             messages,
-            timeoutMs: 600000, // 10 MINUTES - Maxed out so it never times out
+            timeoutMs: 45000, // 45 SECONDS - Fail fast instead of hanging indefinitely if Mistral gets stuck
             onStatus: (status) => {
                 if (requestAborted) return;
                 const mappedLabel = status === "search web" ? "searching" : status;
@@ -284,7 +284,7 @@ export const streamAskAi = async (req, res) => {
     } catch (err) {
         console.error("API Route Error:", err);
         if (!res.writableEnded) {
-            res.write(`data: ${JSON.stringify({ type: "answer", answer: "An error occurred while calling the AI." })}\n\n`);
+            res.write(`data: ${JSON.stringify({ type: "error", error: "The AI took too long to respond or encountered an error. Please try again." })}\n\n`);
         }
     } finally {
         if (keepAliveInterval) clearInterval(keepAliveInterval);
