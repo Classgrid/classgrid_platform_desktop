@@ -915,21 +915,28 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
               }
             }
             return (
-              <ApprovalCard 
-                {...parsedProps} 
-                isHistorical={isHistorical}
-                onApprove={(payload) => {
-                  if (payload?.answers) {
-                    const formatted = Object.entries(payload.answers).map(([k, v]) => `- ${v}`).join("\n");
-                    onApprovalActionRef.current?.(`Here are my answers:\n${formatted}`);
-                  } else {
-                    onApprovalActionRef.current?.(`I approve this plan.`);
-                  }
-                }}
-                onReject={() => {
-                  onApprovalActionRef.current?.(`I want to skip this or I do not approve.`);
-                }}
-              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="w-full"
+              >
+                <ApprovalCard 
+                  {...parsedProps} 
+                  isHistorical={isHistorical}
+                  onApprove={(payload) => {
+                    if (payload?.answers) {
+                      const formatted = Object.entries(payload.answers).map(([k, v]) => `- ${v}`).join("\n");
+                      onApprovalActionRef.current?.(`Here are my answers:\n${formatted}`);
+                    } else {
+                      onApprovalActionRef.current?.(`I approve this plan.`);
+                    }
+                  }}
+                  onReject={() => {
+                    onApprovalActionRef.current?.(`I want to skip this or I do not approve.`);
+                  }}
+                />
+              </motion.div>
             );
           } catch (e) {
             if (isTyping) {
