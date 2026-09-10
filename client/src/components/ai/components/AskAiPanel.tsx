@@ -931,29 +931,29 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction }: {
         }
         return MarkdownComponents.code({ node, inline, className, children, ...props }, isTyping);
       },
-      table({ children, ...props }) {
+      table({ children, ...props }: any) {
         return (
-          <div className="w-full pb-2 overflow-x-auto">
-            <div className="rounded-md border min-w-[500px]">
-              <Table {...props}>{children}</Table>
+          <div className="w-full pb-2 overflow-x-auto my-4">
+            <div className="rounded-md border border-slate-200 dark:border-white/10 min-w-[500px]">
+              <table className="w-full text-sm" {...props}>{children}</table>
             </div>
           </div>
         );
       },
-      thead({ children, ...props }) {
-        return <TableHeader {...props}>{children}</TableHeader>;
+      thead({ children, ...props }: any) {
+        return <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10" {...props}>{children}</thead>;
       },
-      tbody({ children, ...props }) {
-        return <TableBody {...props}>{children}</TableBody>;
+      tbody({ children, ...props }: any) {
+        return <tbody className="divide-y divide-slate-200 dark:divide-white/10" {...props}>{children}</tbody>;
       },
-      tr({ children, ...props }) {
-        return <TableRow {...props}>{children}</TableRow>;
+      tr({ children, ...props }: any) {
+        return <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors" {...props}>{children}</tr>;
       },
-      th({ children, ...props }) {
-        return <TableHead className="font-semibold text-slate-900 dark:text-white border-r last:border-r-0" {...props}>{children}</TableHead>;
+      th({ children, ...props }: any) {
+        return <th className="h-10 px-4 text-left align-middle font-semibold text-slate-900 dark:text-white border-r border-slate-200 dark:border-white/10 last:border-r-0" {...props}>{children}</th>;
       },
-      td({ children, ...props }) {
-        return <TableCell className="text-muted-foreground border-r last:border-r-0" {...props}>{children}</TableCell>;
+      td({ children, ...props }: any) {
+        return <td className="p-4 align-middle text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-white/10 last:border-r-0" {...props}>{children}</td>;
       },
       a({ href, children, ...props }) {
         const external = href && /^https?:\/\//i.test(href);
