@@ -60,7 +60,7 @@ import { ScrollSpyTOC } from "./TOC";
 import AIThinkingBlock from "./AIThinkingBlock";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
-import remarkGfm from "remark-gfm";
+
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { MermaidViewer } from "./MermaidViewer";
@@ -741,7 +741,7 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
   return (
     <div className="space-y-3 text-sm leading-relaxed overflow-hidden break-words prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:p-0">
       <ReactMarkdown
-        remarkPlugins={[remarkMath, remarkGfm]}
+        remarkPlugins={[remarkMath]}
         rehypePlugins={[rehypeKatex]}
         components={{
           ...MarkdownComponents,
@@ -2031,7 +2031,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   const panelChat = (
     <div ref={variant !== "full-page" ? chatScrollRef : undefined} className={cn("overscroll-contain [scrollbar-width:thin] [scrollbar-gutter:stable]", variant === "full-page" ? "w-full" : "flex-1 min-h-0 overflow-y-auto")}>
-      <div className={cn("flex flex-col gap-4 px-4 py-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]", variant === "full-page" && "max-w-3xl mx-auto w-full pb-52")}>
+      <div className={cn("flex flex-col gap-4 px-4 py-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]", variant === "full-page" && (isSidebarCollapsed ? "max-w-6xl" : "max-w-[52rem]"), variant === "full-page" && "mx-auto w-full pb-52")}>
         {isLoadingChat ? (
           <div className="flex-1 flex items-center justify-center py-16 h-full">
             <Spinner className="w-8 h-8 text-muted-foreground" />
@@ -2090,11 +2090,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   animate={{ opacity: 1 }}
                   transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.16 }}
                   className={cn(
-                    "flex w-full mb-6",
-                    "justify-start"
+                    "flex items-end gap-2 w-full",
+                    isUser ? "justify-end" : "justify-start"
                   )}
                 >
-                  <div className="flex flex-col gap-2 w-full">
+                  <div className={cn("flex flex-col gap-1.5 min-w-0", isUser ? "order-1 items-end max-w-[75%]" : "order-2 w-full")}>
 
                     {/* â”€â”€ Text Bubble â”€â”€ */}
                     {message.content && (
@@ -2103,35 +2103,40 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         className={cn(
                           "relative min-w-0 transition-all duration-700 msg-target-glow scroll-mt-12",
                           isUser
-                            ? "w-full rounded-xl px-5 py-4 bg-slate-50/80 dark:bg-slate-800/40 text-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-800/60"
-                            : "w-full max-w-full bg-transparent text-foreground mt-2"
+                            ? "rounded-2xl rounded-br-none px-4 py-2.5 bg-foreground text-background"
+                            : "w-full max-w-full bg-transparent text-foreground"
                         )}
                       >
+                        {isUser && (
+                          <svg
+                            width="8"
+                            height="12"
+                            viewBox="0 0 8 12"
+                            fill="currentColor"
+                            className="absolute bottom-0 -right-1.5 text-foreground"
+                          >
+                            <path d="M0 0V12H8C5 12 2 9 0 0Z" />
+                          </svg>
+                        )}
                         {isUser ? (
                           <>
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
-                                <UserRound className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
-                              </div>
-                              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">You</span>
-                            </div>
-                            <p className="text-[15px] leading-relaxed break-words break-all whitespace-pre-wrap relative z-10 pl-7">{message.content}</p>
+                            <p className="text-sm leading-relaxed break-words break-all whitespace-pre-wrap relative z-10">{message.content}</p>
                             {message.contextUrl && (
                               <a
                                 href={message.contextUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="mt-2 ml-7 flex items-center w-fit gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-md hover:bg-slate-50 transition-colors relative z-10"
+                                className="mt-1.5 flex items-center gap-1.5 text-[11px] text-sky-300 dark:text-sky-300 hover:text-sky-200 transition-opacity relative z-10"
                               >
                                 <FileText className="h-3 w-3" />
-                                <span className="truncate max-w-[200px]">
+                                <span className="underline underline-offset-2 truncate max-w-[200px]">
                                   {message.contextTitle || message.contextUrl}
                                 </span>
                               </a>
                             )}
                           </>
                         ) : (
-                          <div className="w-full max-w-full">
+                          <div className="pl-1 w-full max-w-full">
                             {message.thought && message.thought.trim().length > 0 && (
                               <Accordion type="single" collapsible={true as any} className="mb-4">
                                 <AccordionItem value="thought" className="border-none">
