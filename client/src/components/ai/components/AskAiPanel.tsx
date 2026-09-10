@@ -934,8 +934,22 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
           } catch (e) {
             if (isTyping) {
               return (
-                <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-[13px] italic animate-pulse my-2">
-                  Crafting
+                <div className="flex items-center gap-2 my-4 pl-1">
+                  <p
+                    className="bg-[linear-gradient(110deg,#404040,35%,#fff,50%,#404040,75%,#404040)] bg-[length:200%_100%] bg-clip-text text-base text-transparent animate-[shimmer_5s_linear_infinite]"
+                  >
+                    Crafting
+                  </p>
+                  <style>{`
+                    @keyframes shimmer {
+                      0% {
+                        background-position: 200% 0;
+                      }
+                      100% {
+                        background-position: -200% 0;
+                      }
+                    }
+                  `}</style>
                 </div>
               );
             }
