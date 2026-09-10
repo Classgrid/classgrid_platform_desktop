@@ -843,40 +843,7 @@ const MarkdownComponents = {
       return <MarkdownCarousel content={String(children).replace(/\n$/, "")} components={MarkdownComponents} />;
     }
 
-    if (!inline && language === "approval") {
-      try {
-        let props = JSON.parse(String(children));
-        
-        // Robust normalization for AI hallucinations
-        if (props.variant === "survey" || props.variant === "questions" || props.questions) {
-          props.variant = "questions";
-          
-          if (Array.isArray(props.questions)) {
-            props.questions = props.questions.map((q: any) => {
-              // Map "question" -> "prompt"
-              const prompt = q.prompt || q.question || q.title || "Question";
-              
-              // Map options (array of objects -> array of strings)
-              let options = q.options || [];
-              if (options.length > 0 && typeof options[0] === 'object') {
-                options = options.map((opt: any) => opt.label || opt.value || JSON.stringify(opt));
-              }
-              
-              return {
-                ...q,
-                id: q.id || Math.random().toString(36).substring(7),
-                prompt,
-                options
-              };
-            });
-          }
-        }
 
-        return <ApprovalCard {...props} />;
-      } catch (e) {
-        return <div className="text-red-500 text-sm">Failed to parse approval card props: {(e as Error).message}</div>;
-      }
-    }
 
     if (!inline && ["prompt", "email", "message", "copy"].includes(language)) {
       return <CopyBlockClient text={String(children).replace(/\n$/, "")} label={language} />;
@@ -906,7 +873,7 @@ const MarkdownComponents = {
   }
 };
 
-const AssistantMessageContent = memo(({ content, isTyping }: { content: string, isTyping?: boolean }) => {
+const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction }: { content: string, isTyping?: boolean, onApprovalAction?: (text: string) => void }) => {
   // Preprocess AI output:
   // 1. Convert fake bullet chars to real Markdown list markers
   // 2. Remove blank lines between consecutive list items (prevents <p> wrap inside <li> = big gaps)
@@ -915,17 +882,140 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
     .replace(/^\s{4}[◦]\s/gm, '    - ')
     .replace(/(^[ \t]*[-*][ \t].*)\n{2,}(?=[ \t]*[-*][ \t])/gm, '$1\n'); // collapse blank lines between bullets
 
+  const components = React.useMemo(() => {
+    return {
+      ...MarkdownComponents,
+      code({ node, inline, className, children, ...props }: any) {
+        const match = /language-(\w+)/.exec(className || "");
+        const language = match ? match[1] : "";
+        if (!inline && language === "approval") {
+          try {
+            let parsedProps = JSON.parse(String(children));
+            if (parsedProps.variant === "survey" || parsedProps.variant === "questions" || parsedProps.questions) {
+              parsedProps.variant = "questions";
+              if (Array.isArray(parsedProps.questions)) {
+                parsedProps.questions = parsedProps.questions.map((q: any) => {
+                  const prompt = q.prompt || q.question || q.title || "Question";
+                  let options = q.options || [];
+                  if (options.length > 0 && typeof options[0] === 'object') {
+                    options = options.map((opt: any) => opt.label || opt.value || JSON.stringify(opt));
+                  }
+                  return {
+                    ...q,
+                    id: q.id || Math.random().toString(36).substring(7),
+                    prompt,
+                    options
+                  };
+                });
+              }
+            }
+            return (
+              <ApprovalCard 
+                {...parsedProps} 
+                onApprove={(payload) => {
+                  if (payload?.answers) {
+                    const formatted = Object.entries(payload.answers).map(([k, v]) => `- ${v}`).join("\n");
+                    onApprovalAction?.(`Here are my answers:\n${formatted}`);
+                  } else {
+                    onApprovalAction?.(`I approve this plan.`);
+                  }
+                }}
+                onReject={() => {
+                  onApprovalAction?.(`I want to skip this or I do not approve.`);
+                }}
+              />
+            );
+          } catch (e) {
+            return <div className="text-red-500 text-sm">Failed to parse approval card props: {(e as Error).message}</div>;
+          }
+        }
+        return MarkdownComponents.code({ node, inline, className, children, ...props }, isTyping);
+      },
+      table({ children, ...props }) {
+        return (
+          <div className="w-full pb-2 overflow-x-auto">
+            <div className="rounded-md border min-w-[500px]">
+              <Table {...props}>{children}</Table>
+            </div>
+          </div>
+        );
+      },
+      thead({ children, ...props }) {
+        return <TableHeader {...props}>{children}</TableHeader>;
+      },
+      tbody({ children, ...props }) {
+        return <TableBody {...props}>{children}</TableBody>;
+      },
+      tr({ children, ...props }) {
+        return <TableRow {...props}>{children}</TableRow>;
+      },
+      th({ children, ...props }) {
+        return <TableHead className="font-semibold text-slate-900 dark:text-white border-r last:border-r-0" {...props}>{children}</TableHead>;
+      },
+      td({ children, ...props }) {
+        return <TableCell className="text-muted-foreground border-r last:border-r-0" {...props}>{children}</TableCell>;
+      },
+      a({ href, children, ...props }) {
+        const external = href && /^https?:\/\//i.test(href);
+        return (
+          <a
+            href={href}
+            target={external ? "_blank" : undefined}
+            rel={external ? "noreferrer" : undefined}
+            className="font-medium text-blue-600 dark:text-blue-400 underline underline-offset-4 transition-colors hover:text-blue-500"
+            {...props}
+          >
+            {children}
+          </a>
+        );
+      },
+      p({ children, ...props }) {
+        return <p className="text-[#2C2C2B] dark:text-[#F0EFED] whitespace-pre-wrap mb-3 last:mb-0" {...props}>{children}</p>;
+      },
+      strong({ children, ...props }) {
+        return <strong className="font-semibold text-[#2C2C2B] dark:text-[#F0EFED]" {...props}>{children}</strong>;
+      },
+      h1({ children, ...props }) {
+        return <h1 className="text-[1.875em] font-semibold text-[#2C2C2B] dark:text-[#F0EFED] leading-[1.3] m-0 p-0 mb-3 mt-6 first:mt-0" {...props}>{children}</h1>;
+      },
+      h2({ children, ...props }) {
+        return <h2 className="text-[1.5em] font-semibold text-[#2C2C2B] dark:text-[#F0EFED] leading-[1.3] m-0 p-0 mb-2 mt-5 first:mt-0" {...props}>{children}</h2>;
+      },
+      h3({ children, ...props }) {
+        return <h3 className="text-[1.25em] font-semibold text-[#2C2C2B] dark:text-[#F0EFED] leading-[1.3] m-0 p-0 mb-2 mt-4 first:mt-0" {...props}>{children}</h3>;
+      },
+      h4({ children, ...props }) {
+        return <h4 className="text-[1em] font-semibold text-[#2C2C2B] dark:text-[#F0EFED] leading-[1.3] m-0 p-0 mb-1 mt-3 first:mt-0" {...props}>{children}</h4>;
+      },
+      ul({ children, ...props }) {
+        // Level 1 = disc (filled), nested ul inside = circle (hollow) — matches Notion exactly
+        return <ul className="mb-3 last:mb-0 pl-[22px] list-disc [&_ul]:list-[circle] [&_ul]:pl-[22px] [&_ul]:mb-0 marker:text-[#37352f] dark:marker:text-[#F0EFED]" {...props}>{children}</ul>;
+      },
+      ol({ children, ...props }) {
+        return <ol className="mb-3 last:mb-0 pl-[22px] list-decimal marker:text-[#37352f] dark:marker:text-[#F0EFED]" {...props}>{children}</ol>;
+      },
+      li({ children, ...props }) {
+        // Notion DevTools: padding-top: 2px; padding-bottom: 2px; padding-inline-start: 6px
+        return <li className="text-[#2C2C2B] dark:text-[#F0EFED] py-[2px] pl-[2px] break-words [&>p]:m-0 [&>p]:inline" {...props}>{children}</li>;
+      },
+      blockquote({ className, children, ...props }) {
+        // If it's a GitHub alert, defer to the main MarkdownComponents blockquote to get the rich colors
+        if (className?.includes("markdown-alert")) {
+          return MarkdownComponents.blockquote({ className, children, ...props });
+        }
+        return <blockquote className="border-l-[3px] border-slate-200 dark:border-slate-700 pl-4 my-4 text-slate-500 dark:text-slate-400 italic" {...props}>{children}</blockquote>;
+      },
+      hr({ ...props }) {
+        return <hr className="my-6 border-slate-100 dark:border-slate-800" {...props} />;
+      }
+    };
+  }, [isTyping, onApprovalAction]);
+
   return (
     <div className="space-y-4 text-[16px] leading-[24px] overflow-hidden break-words max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkMath, remarkGfm, remarkGithubAlerts]}
         rehypePlugins={[rehypeKatex]}
-        components={{
-          ...MarkdownComponents,
-          code: (props: any) => MarkdownComponents.code(props, isTyping),
-          table({ children, ...props }) {
-            return (
-              <div className="w-full pb-2 overflow-x-auto">
                 <div className="rounded-md border min-w-[500px]">
                   <Table {...props}>{children}</Table>
                 </div>
@@ -2341,7 +2431,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 </AccordionItem>
                               </Accordion>
                             )}
-                            <AssistantMessageContent content={message.content} isTyping={message.typing} />
+                            <AssistantMessageContent 
+                              content={message.content} 
+                              isTyping={message.typing} 
+                              onApprovalAction={(text) => {
+                                if (canSubmit) void askQuestion(text);
+                              }}
+                            />
                           </div>
                         )}
                         {!isUser && !message.typing && message.content.length > 0 && (

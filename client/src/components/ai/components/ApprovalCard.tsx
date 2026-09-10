@@ -252,7 +252,7 @@ export function ApprovalCard({
   const resolvedApprove =
     approveLabel ??
     (variant === "questions"
-      ? "Continue"
+      ? (safeStep < questions.length - 1 ? "Next Question" : "Submit Answers")
       : variant === "command"
         ? "Run"
         : "Approve");
@@ -265,6 +265,10 @@ export function ApprovalCard({
   const handleApprove = (nextAnswers?: Record<string, string>) => {
     if (variant === "questions") {
       const a = nextAnswers ?? answers;
+      if (safeStep < questions.length - 1) {
+        goToStep(safeStep + 1);
+        return;
+      }
       const ok = questions.every((q) => Boolean(a[q.id]?.trim()));
       if (!ok) return;
       onApprove?.({ answers: a });
