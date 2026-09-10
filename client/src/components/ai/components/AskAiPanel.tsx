@@ -2031,7 +2031,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   const panelChat = (
     <div ref={variant !== "full-page" ? chatScrollRef : undefined} className={cn("overscroll-contain [scrollbar-width:thin] [scrollbar-gutter:stable]", variant === "full-page" ? "w-full" : "flex-1 min-h-0 overflow-y-auto")}>
-      <div className={cn("flex flex-col gap-4 px-4 py-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]", variant === "full-page" && (isSidebarCollapsed ? "max-w-6xl" : "max-w-[52rem]"), variant === "full-page" && "mx-auto w-full pb-52")}>
+      <div className={cn("flex flex-col gap-4 px-4 py-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]", variant === "full-page" && "max-w-3xl mx-auto w-full pb-52")}>
         {isLoadingChat ? (
           <div className="flex-1 flex items-center justify-center py-16 h-full">
             <Spinner className="w-8 h-8 text-muted-foreground" />
