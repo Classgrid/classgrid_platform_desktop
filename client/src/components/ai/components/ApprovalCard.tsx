@@ -285,6 +285,15 @@ export function ApprovalCard({
   };
 
   const handleReject = () => {
+    if (variant === "questions") {
+      if (safeStep < questions.length - 1) {
+        goToStep(safeStep + 1);
+        return;
+      }
+      setIsSubmitted(true);
+      onApprove?.({ answers });
+      return;
+    }
     setIsSubmitted(true);
     onReject?.();
   };
