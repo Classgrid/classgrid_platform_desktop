@@ -20,6 +20,8 @@ import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
 import { MermaidViewer } from "@/components/ai/components/MermaidViewer";
 import { CopyBlockClient } from "@/components/ai/components/CopyBlockClient";
+import { CodeBlockClient } from "@/components/ai/components/CodeBlockClient";
+import { Info, Lightbulb, MessageSquareWarning, AlertTriangle, OctagonAlert } from "lucide-react";
 import hljs from "highlight.js";
 import 'highlight.js/styles/atom-one-dark.css';
 
@@ -87,16 +89,25 @@ function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
 
               if (!inline) {
                 return (
-                  <pre className="shared-code-block not-prose">
-                    <code className="hljs font-mono text-[13.5px]">
-                      {language && hljs.getLanguage(language)
-                        ? <span dangerouslySetInnerHTML={{ __html: hljs.highlight(String(children).replace(/\n$/, ""), { language }).value }} />
-                        : children}
-                    </code>
-                  </pre>
+                  <div className="w-full pb-2 overflow-hidden not-prose">
+                    <CodeBlockClient
+                      language={language}
+                      rawCode={String(children).replace(/\n$/, "")}
+                      html={`<pre class="text-[13px] py-4 px-4 !m-0 flex flex-col"><code class="font-mono hljs">${
+                        language && hljs.getLanguage(language)
+                          ? hljs.highlight(String(children).replace(/\n$/, ""), { language }).value
+                          : String(children).replace(/\n$/, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                      }</code></pre>`}
+                    />
+                  </div>
                 );
               }
-              return <code className="shared-inline-code" {...props}>{children}</code>;
+
+              return (
+                <code className="bg-slate-100 dark:bg-white/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md text-[13px] font-mono break-words" {...props}>
+                  {children}
+                </code>
+              );
             },
             table({ children, ...props }) {
               return (
@@ -122,7 +133,42 @@ function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
             td({ children, ...props }) {
               return <td className="p-4 align-middle text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-white/10 last:border-r-0" {...props}>{children}</td>;
             },
-            blockquote({ children, ...props }) {
+            blockquote({ className, children, ...props }: any) {
+              if (className?.includes("markdown-alert")) {
+                const type = className.replace("markdown-alert", "").trim().replace("markdown-alert-", "");
+                let icon = null;
+                let colorClass = "border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-600 dark:bg-slate-800/50 dark:text-slate-300";
+                
+                if (type === "note") {
+                  icon = <Info className="w-5 h-5 text-blue-500" />;
+                  colorClass = "border-blue-500 bg-blue-50/50 text-blue-900 dark:border-blue-500/50 dark:bg-blue-900/20 dark:text-blue-200";
+                } else if (type === "tip") {
+                  icon = <Lightbulb className="w-5 h-5 text-emerald-500" />;
+                  colorClass = "border-emerald-500 bg-emerald-50/50 text-emerald-900 dark:border-emerald-500/50 dark:bg-emerald-900/20 dark:text-emerald-200";
+                } else if (type === "important") {
+                  icon = <MessageSquareWarning className="w-5 h-5 text-purple-500" />;
+                  colorClass = "border-purple-500 bg-purple-50/50 text-purple-900 dark:border-purple-500/50 dark:bg-purple-900/20 dark:text-purple-200";
+                } else if (type === "warning") {
+                  icon = <AlertTriangle className="w-5 h-5 text-amber-500" />;
+                  colorClass = "border-amber-500 bg-amber-50/50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-900/20 dark:text-amber-200";
+                } else if (type === "caution") {
+                  icon = <OctagonAlert className="w-5 h-5 text-red-500" />;
+                  colorClass = "border-red-500 bg-red-50/50 text-red-900 dark:border-red-500/50 dark:bg-red-900/20 dark:text-red-200";
+                }
+          
+                return (
+                  <div className={`my-5 border-l-4 rounded-r-lg px-5 py-4 ${colorClass}`} {...props}>
+                    <div className="flex items-center gap-2 font-semibold mb-2">
+                      {icon}
+                      <span className="capitalize">{type}</span>
+                    </div>
+                    <div className="text-[15px] leading-relaxed [&>p]:m-0 [&>p]:mb-2 [&>p:last-child]:mb-0">
+                      {children}
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <blockquote className="border-l-[3px] border-slate-300 dark:border-[#4B4B4B] pl-4 my-4 text-slate-700 dark:text-[#ececf1] bg-transparent" {...props}>
                   {children}
