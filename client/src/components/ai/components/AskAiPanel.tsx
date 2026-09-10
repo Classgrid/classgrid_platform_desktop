@@ -31,6 +31,11 @@ import {
   Trash2,
   UserRound,
   X,
+  Info,
+  Lightbulb,
+  MessageSquareWarning,
+  AlertTriangle,
+  OctagonAlert,
   type LucideIcon,
 } from "lucide-react";
 
@@ -61,12 +66,21 @@ import AIThinkingBlock from "./AIThinkingBlock";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import remarkGfm from "remark-gfm";
+import remarkGithubAlerts from "remark-github-alerts";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/marketing_ui/carousel";
 
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { MermaidViewer } from "./MermaidViewer";
 import { PdfAttachment } from "@/features/chat/components/PdfAttachment";
 import { CopyBlockClient } from "./CopyBlockClient";
+import { ApprovalCard } from "./ApprovalCard";
 
 // â”€â”€â”€ SDK-local type definitions & stubs â”€â”€â”€
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
@@ -706,15 +720,113 @@ const preprocessLaTeX = (content: string) => {
     .replace(/\\\)/g, () => '$');
 };
 
+// MarkdownCarousel Component for rendering swipeable flashcards/slides inside the chat
+const MarkdownCarousel = memo(({ content, components }: { content: string, components: any }) => {
+  const rawSlides = content.split(/(?:<!--\s*slide\s*-->|^-{3,}$)/m);
+  const slides = rawSlides.map(s => s.trim()).filter(s => s.length > 0);
+
+  if (slides.length === 0) return null;
+
+  return (
+    <div className="w-full my-6 not-prose">
+      <Carousel opts={{ align: "start", loop: true }} className="w-full">
+        <CarouselContent>
+          {slides.map((slide, index) => (
+            <CarouselItem key={index}>
+              <div className="p-1 h-full">
+                <div className="bg-white dark:bg-[#2C2C2C] border border-slate-200 dark:border-white/10 rounded-xl p-6 min-h-[200px] h-full shadow-sm flex flex-col justify-center">
+                  <div className="space-y-4 text-[16px] leading-[24px] overflow-hidden break-words max-w-none">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkMath, remarkGfm, remarkGithubAlerts]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={components}
+                    >
+                      {slide}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <div className="flex items-center justify-center gap-2 mt-4 relative">
+          <CarouselPrevious className="relative inset-0 translate-x-0 translate-y-0 h-8 w-8" />
+          <div className="text-xs text-muted-foreground font-medium">Swipe</div>
+          <CarouselNext className="relative inset-0 translate-x-0 translate-y-0 h-8 w-8" />
+        </div>
+      </Carousel>
+    </div>
+  );
+});
+
 // We need to define `pre` to just return children because we handle block code fully inside the `code` component.
 // Otherwise, Tailwind's typography plugin will wrap our custom cards in a dark <pre> box and force monospace.
 const MarkdownComponents = {
-  blockquote({ children, ...props }: any) {
+  blockquote({ className, children, ...props }: any) {
+    if (className?.includes("markdown-alert")) {
+      const type = className.replace("markdown-alert", "").trim().replace("markdown-alert-", "");
+      let icon = null;
+      let colorClass = "border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-600 dark:bg-slate-800/50 dark:text-slate-300";
+      
+      if (type === "note") {
+        icon = <Info className="w-5 h-5 text-blue-500" />;
+        colorClass = "border-blue-500 bg-blue-50/50 text-blue-900 dark:border-blue-500/50 dark:bg-blue-900/20 dark:text-blue-200";
+      } else if (type === "tip") {
+        icon = <Lightbulb className="w-5 h-5 text-emerald-500" />;
+        colorClass = "border-emerald-500 bg-emerald-50/50 text-emerald-900 dark:border-emerald-500/50 dark:bg-emerald-900/20 dark:text-emerald-200";
+      } else if (type === "important") {
+        icon = <MessageSquareWarning className="w-5 h-5 text-purple-500" />;
+        colorClass = "border-purple-500 bg-purple-50/50 text-purple-900 dark:border-purple-500/50 dark:bg-purple-900/20 dark:text-purple-200";
+      } else if (type === "warning") {
+        icon = <AlertTriangle className="w-5 h-5 text-amber-500" />;
+        colorClass = "border-amber-500 bg-amber-50/50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-900/20 dark:text-amber-200";
+      } else if (type === "caution") {
+        icon = <OctagonAlert className="w-5 h-5 text-red-500" />;
+        colorClass = "border-red-500 bg-red-50/50 text-red-900 dark:border-red-500/50 dark:bg-red-900/20 dark:text-red-200";
+      }
+
+      return (
+        <div className={`my-5 border-l-4 rounded-r-lg px-5 py-4 ${colorClass}`} {...props}>
+          <div className="flex items-center gap-2 font-semibold mb-2">
+            {icon}
+            <span className="capitalize">{type}</span>
+          </div>
+          <div className="text-[15px] leading-relaxed [&>p]:m-0 [&>p]:mb-2 [&>p:last-child]:mb-0">
+            {children}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <blockquote className="border-l-[3px] border-slate-300 dark:border-[#4B4B4B] pl-4 my-4 text-slate-700 dark:text-[#ececf1] bg-transparent" {...props}>
         {children}
       </blockquote>
     );
+  },
+  table({ children, ...props }: any) {
+    return (
+      <div className="w-full pb-2 overflow-x-auto my-4">
+        <div className="rounded-md border border-slate-200 dark:border-white/10 min-w-[500px]">
+          <table className="w-full text-sm" {...props}>{children}</table>
+        </div>
+      </div>
+    );
+  },
+  thead({ children, ...props }: any) {
+    return <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10" {...props}>{children}</thead>;
+  },
+  tbody({ children, ...props }: any) {
+    return <tbody className="divide-y divide-slate-200 dark:divide-white/10" {...props}>{children}</tbody>;
+  },
+  tr({ children, ...props }: any) {
+    return <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors" {...props}>{children}</tr>;
+  },
+  th({ children, ...props }: any) {
+    return <th className="h-10 px-4 text-left align-middle font-semibold text-slate-900 dark:text-white border-r border-slate-200 dark:border-white/10 last:border-r-0" {...props}>{children}</th>;
+  },
+  td({ children, ...props }: any) {
+    return <td className="p-4 align-middle text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-white/10 last:border-r-0" {...props}>{children}</td>;
   },
   pre({ children }: any) {
     return <>{children}</>;
@@ -725,6 +837,19 @@ const MarkdownComponents = {
     
     if (!inline && language === "mermaid") {
       return <MermaidViewer chart={String(children).replace(/\n$/, "")} />;
+    }
+
+    if (!inline && language === "carousel") {
+      return <MarkdownCarousel content={String(children).replace(/\n$/, "")} components={MarkdownComponents} />;
+    }
+
+    if (!inline && language === "approval") {
+      try {
+        const props = JSON.parse(String(children));
+        return <ApprovalCard {...props} />;
+      } catch (e) {
+        return <div className="text-red-500 text-sm">Failed to parse approval card props: {(e as Error).message}</div>;
+      }
     }
 
     if (!inline && ["prompt", "email", "message", "copy"].includes(language)) {
@@ -767,7 +892,7 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
   return (
     <div className="space-y-4 text-[16px] leading-[24px] overflow-hidden break-words max-w-none">
       <ReactMarkdown
-        remarkPlugins={[remarkMath, remarkGfm]}
+        remarkPlugins={[remarkMath, remarkGfm, remarkGithubAlerts]}
         rehypePlugins={[rehypeKatex]}
         components={{
           ...MarkdownComponents,
@@ -839,7 +964,11 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
             // Notion DevTools: padding-top: 2px; padding-bottom: 2px; padding-inline-start: 6px
             return <li className="text-[#2C2C2B] dark:text-[#F0EFED] py-[2px] pl-[2px] break-words [&>p]:m-0 [&>p]:inline" {...props}>{children}</li>;
           },
-          blockquote({ children, ...props }) {
+          blockquote({ className, children, ...props }) {
+            // If it's a GitHub alert, defer to the main MarkdownComponents blockquote to get the rich colors
+            if (className?.includes("markdown-alert")) {
+              return MarkdownComponents.blockquote({ className, children, ...props });
+            }
             return <blockquote className="border-l-[3px] border-slate-200 dark:border-slate-700 pl-4 my-4 text-slate-500 dark:text-slate-400 italic" {...props}>{children}</blockquote>;
           },
           hr({ ...props }) {
@@ -1364,7 +1493,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         })
         .catch((err) => console.error("Failed to fetch user context", err));
     }
-  }, [session]);
+  }, [session?.user?.email]);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const isGenerating = submitting || thinking || (messages[messages.length - 1]?.typing === true);
