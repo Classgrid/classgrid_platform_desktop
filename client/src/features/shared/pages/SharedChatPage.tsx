@@ -16,6 +16,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
 import { MermaidViewer } from "@/components/ai/components/MermaidViewer";
 import { CopyBlockClient } from "@/components/ai/components/CopyBlockClient";
@@ -64,9 +65,9 @@ function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
   // Vercel style Assistant Message: plain text left-aligned
   return (
     <div className="shared-msg-row assistant-row">
-      <div className="assistant-content">
+      <div className="assistant-content overflow-hidden break-words max-w-none">
         <ReactMarkdown
-          remarkPlugins={[remarkMath]}
+          remarkPlugins={[remarkMath, remarkGfm]}
           rehypePlugins={[rehypeKatex]}
           components={{
             pre({ children }: any) {
@@ -96,6 +97,30 @@ function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
                 );
               }
               return <code className="shared-inline-code" {...props}>{children}</code>;
+            },
+            table({ children, ...props }) {
+              return (
+                <div className="w-full pb-2 overflow-x-auto my-4">
+                  <div className="rounded-md border border-slate-200 dark:border-white/10 min-w-[500px]">
+                    <table className="w-full text-sm" {...props}>{children}</table>
+                  </div>
+                </div>
+              );
+            },
+            thead({ children, ...props }) {
+              return <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10" {...props}>{children}</thead>;
+            },
+            tbody({ children, ...props }) {
+              return <tbody className="divide-y divide-slate-200 dark:divide-white/10" {...props}>{children}</tbody>;
+            },
+            tr({ children, ...props }) {
+              return <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors" {...props}>{children}</tr>;
+            },
+            th({ children, ...props }) {
+              return <th className="h-10 px-4 text-left align-middle font-semibold text-slate-900 dark:text-white border-r border-slate-200 dark:border-white/10 last:border-r-0" {...props}>{children}</th>;
+            },
+            td({ children, ...props }) {
+              return <td className="p-4 align-middle text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-white/10 last:border-r-0" {...props}>{children}</td>;
             },
             blockquote({ children, ...props }) {
               return (
