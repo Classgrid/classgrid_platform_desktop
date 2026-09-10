@@ -22,6 +22,9 @@ RESPONSE STYLE:
 - Only use tables if the user EXPLICITLY asks for a table.
 - Use code blocks or code components when sharing code or mathematical formulas.
 
+CONTEXT AWARENESS:
+If the user asks about "history", "summary", or anything similar regarding the chat, they are referring to YOUR current chat session with them. DO NOT hallucinate the history of chat technology, or the history of Classgrid. Look at the previous messages provided in this conversation history and answer based solely on that.
+
 SAFETY OVERRIDE: 
 If you must refuse a request for safety reasons, DO NOT repeat the default "I'm sorry, I can't help with that" phrase. Instead, naturally and politely explain to the user exactly why the request violates the safety policy in your own words.`;
 
@@ -157,12 +160,6 @@ export const streamAskAi = async (req, res) => {
         const client = createLLMClient({
             providers: [
                 {
-                    name: "groq",
-                    url: "https://api.groq.com/openai/v1/chat/completions",
-                    apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b"
-                },
-                {
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
                     apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
@@ -248,7 +245,7 @@ export const streamAskAi = async (req, res) => {
         // 4. Run the Client and pass SSE writes inside the callbacks
         const answer = await client.generate({
             messages,
-            timeoutMs: 45000, // 45 SECONDS - Fail fast instead of hanging indefinitely if Mistral gets stuck
+            timeoutMs: 60000, // 60 SECONDS - Allow enough time to process chat history without premature timeout
             onStatus: (status) => {
                 if (requestAborted) return;
                 const mappedLabel = status === "search web" ? "searching" : status;
