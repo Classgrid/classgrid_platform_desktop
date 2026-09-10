@@ -85,28 +85,7 @@ return (
           }
         `}</style>
       </div>
-      {ThinkingContent && (
-        <Card className="relative h-[150px] overflow-hidden bg-secondary p-2 rounded-lg">
-          {/* Top fade overlay */}
-          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b  from-30% from-secondary to-transparent z-10 pointer-events-none h-[80px]" />
-
-          {/* Bottom fade overlay */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-30%  from-secondary to-transparent z-10 pointer-events-none h-[80px]" />
-
-          {/* Scrolling content */}
-          <div
-            ref={contentRef}
-            className="h-full overflow-hidden p-4 text-secondary-foreground"
-            style={{
-              scrollBehavior: "auto",
-            }}
-          >
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">
-              {ThinkingContent}
-            </p>
-          </div>
-        </Card>
-      )}
+      {/* Hidden thinking content box as per user request */}
     </div>
   </>
 );
