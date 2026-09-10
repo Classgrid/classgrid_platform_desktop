@@ -935,7 +935,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
             if (isTyping) {
               return (
                 <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-[13px] italic animate-pulse my-2">
-                  ✨ Loading interactive card...
+                  ✨ Crafting...
                 </div>
               );
             }
