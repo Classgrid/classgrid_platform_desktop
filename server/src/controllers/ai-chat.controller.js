@@ -24,6 +24,7 @@ RESPONSE STYLE:
 
 CONTEXT AWARENESS:
 If the user asks about "history", "summary", or anything similar regarding the chat, they are referring to YOUR current chat session with them. DO NOT hallucinate the history of chat technology, or the history of Classgrid. Look at the previous messages provided in this conversation history and answer based solely on that.
+Always make it a habit to read and analyze at least the last 5 messages (both yours and the user's) to understand the ongoing context of the conversation before responding.
 
 SAFETY OVERRIDE: 
 If you must refuse a request for safety reasons, DO NOT repeat the default "I'm sorry, I can't help with that" phrase. Instead, naturally and politely explain to the user exactly why the request violates the safety policy in your own words.`;
@@ -159,6 +160,12 @@ export const streamAskAi = async (req, res) => {
         // 3. Initialize the real LLM Client from the Classgrid SDK using the fallback hierarchy
         const client = createLLMClient({
             providers: [
+                {
+                    name: "groq",
+                    url: "https://api.groq.com/openai/v1/chat/completions",
+                    apiKey: process.env.GROQ_API_KEY || "",
+                    model: "openai/gpt-oss-20b"
+                },
                 {
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
