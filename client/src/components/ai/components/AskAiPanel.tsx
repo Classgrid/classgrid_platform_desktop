@@ -926,7 +926,15 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction }: {
               />
             );
           } catch (e) {
-            return <div className="text-red-500 text-sm">Failed to parse approval card props: {(e as Error).message}</div>;
+            if (isTyping) {
+              return (
+                <div className="flex items-center gap-3 p-4 border rounded-xl bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 text-[14px] animate-pulse my-4">
+                  <div className="h-4 w-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+                  Generating interactive card...
+                </div>
+              );
+            }
+            return <div className="text-red-500 text-[13px] p-4 border border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-900/20 rounded-xl my-4">Failed to parse approval card props: {(e as Error).message}</div>;
           }
         }
         return MarkdownComponents.code({ node, inline, className, children, ...props }, isTyping);
