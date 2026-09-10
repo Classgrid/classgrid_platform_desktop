@@ -749,7 +749,7 @@ const MarkdownComponents = {
 
 const AssistantMessageContent = memo(({ content, isTyping }: { content: string, isTyping?: boolean }) => {
   return (
-    <div className="space-y-4 text-[15px] leading-[1.7] overflow-hidden break-words max-w-none">
+    <div className="space-y-4 text-[16px] leading-[24px] overflow-hidden break-words max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkMath]}
         rehypePlugins={[rehypeKatex]}
@@ -2131,13 +2131,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         className={cn(
                           "relative min-w-0 transition-all duration-700 msg-target-glow scroll-mt-12",
                           isUser
-                            ? "rounded-xl px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50"
+                            ? "rounded-2xl px-5 py-3 bg-[#f1f1ef] dark:bg-slate-800"
                             : "w-full max-w-full bg-transparent text-foreground"
                         )}
                       >
                         {isUser ? (
                           <>
-                            <p className="text-[15px] leading-relaxed break-words break-all whitespace-pre-wrap text-slate-800 dark:text-slate-200">{message.content}</p>
+                            <p className="text-[16px] leading-[24px] break-words break-all whitespace-pre-wrap text-[#37352f] dark:text-slate-200 cursor-text">{message.content}</p>
                             {message.contextUrl && (
                               <a
                                 href={message.contextUrl}
