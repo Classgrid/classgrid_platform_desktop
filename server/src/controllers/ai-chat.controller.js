@@ -291,6 +291,10 @@ export const streamAskAi = async (req, res) => {
             onThought: (thought) => {
                 if (requestAborted) return;
                 if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`);
+            },
+            onToken: (token) => {
+                if (requestAborted) return;
+                if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`);
             }
         });
 
