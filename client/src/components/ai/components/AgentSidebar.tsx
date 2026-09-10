@@ -447,11 +447,11 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
       {/* Share Modal - Exact ChatGPT Replica (Light & Dark Mode Support) */}
       {shareModalOpen && shareSessionId && typeof document !== "undefined" && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/20 dark:bg-black/60 backdrop-blur-sm" onClick={() => { setShareModalOpen(false); setPublicShareUrl(null); setLinkCopied(false); }}>
-          <div className="bg-white dark:bg-[#212121] text-slate-900 dark:text-[#ececf1] rounded-3xl w-[640px] shadow-2xl overflow-hidden font-sans border-0 dark:border dark:border-white/10" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-[#212121] text-slate-900 dark:text-[#ececf1] rounded-3xl w-[760px] max-w-[95vw] shadow-2xl overflow-hidden font-sans border-0 dark:border dark:border-white/10" onClick={(e) => e.stopPropagation()}>
 
             {/* Header */}
-            <div className="flex items-center justify-between px-8 pt-8 pb-4">
-              <h3 className="text-[22px] font-semibold truncate pr-4 text-slate-900 dark:text-white tracking-tight">
+            <div className="flex items-center justify-between px-8 pt-8 pb-5 border-b border-gray-100 dark:border-white/10">
+              <h3 className="text-[26px] font-bold truncate pr-4 text-slate-900 dark:text-white tracking-tight">
                 {sessions.find(s => s.id === shareSessionId)?.title || "Share Chat"}
               </h3>
               <button
@@ -463,8 +463,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
             </div>
 
             {/* Preview Card */}
-            <div className="px-8 py-2">
-              <div className="bg-white dark:bg-[#2f2f2f] rounded-2xl p-6 shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-none dark:border dark:border-white/10 relative overflow-hidden flex flex-col h-[280px]">
+            <div className="px-8 pt-6 pb-2">
+              <div className="bg-white dark:bg-[#2f2f2f] rounded-2xl p-6 shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-none dark:border dark:border-white/10 relative overflow-hidden flex flex-col h-[380px]">
                 
                 {/* Simulated Chat Content - Using Exact Classgrid Chat Styling */}
                 <div className="flex flex-col gap-6">
