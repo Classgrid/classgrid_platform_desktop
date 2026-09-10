@@ -260,7 +260,7 @@ export function ApprovalCard({
   const resolvedReject =
     rejectLabel ?? (variant === "plan" ? "View Plan" : "Skip");
 
-  const canContinue = variant !== "questions" || allAnswered;
+  const canContinue = true;
 
   const handleApprove = (nextAnswers?: Record<string, string>) => {
     if (variant === "questions") {
@@ -269,8 +269,6 @@ export function ApprovalCard({
         goToStep(safeStep + 1);
         return;
       }
-      const ok = questions.every((q) => Boolean(a[q.id]?.trim()));
-      if (!ok) return;
       onApprove?.({ answers: a });
       return;
     }
