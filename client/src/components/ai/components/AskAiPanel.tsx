@@ -1777,10 +1777,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           attachments: uploadedAttachments.length > 0 ? uploadedAttachments.map(a => ({ url: a.url, name: a.name, mimeType: a.mimeType })) : undefined,
           history: messages
             .filter((m) => m.role === "user" || m.role === "assistant")
-            .slice(-40)
+            .slice(-500)
             .map((m) => ({
               role: m.role,
-              content: m.content.length > 2000 ? m.content.substring(0, 2000) + "\n...[TRUNCATED]" : m.content
+              content: m.content && m.content.length > 2000 ? m.content.substring(0, 2000) + "\n...[TRUNCATED]" : (m.content || "")
             })),
           pageContext: {
             ...pageContext,
@@ -1883,7 +1883,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   const thoughtText = event.thought || event.content || "";
                   return [
                     ...targetPrev.slice(0, -1),
-                    { ...lastMsg, thought: (lastMsg.thought || "") + thoughtText + "\n\n" }
+                    { ...lastMsg, thought: (lastMsg.thought || "") + thoughtText }
                   ];
                 });
               } else if (event.type === "error") {
