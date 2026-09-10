@@ -12,12 +12,14 @@ import {
     createSharedSnapshot,
     getSharedSnapshot
 } from "../services/ai-chat.service.js";
+import { getHistory, appendToHistory, invalidateHistoryCache } from "../services/ai-chat-history.service.js";
 import { sendEmail } from "../services/aws-ses.service.js";
 // The system prompt was originally in ./prompt, we will define it here or import it if needed.
 const SYSTEM_PROMPT = `You are the Classgrid AI Assistant.
 
 RESPONSE STYLE:
 - Be concise and direct.
+- NEVER prefix your responses with "Thought", "Thought:", or "Conversation summary". Speak naturally and directly to the user.
 - DO NOT use tables for explanations or analysis. Use numbered lists (1, 2, 3), bullet points, or sections instead.
 - Only use tables if the user EXPLICITLY asks for a table.
 - Use code blocks or code components when sharing code or mathematical formulas.
@@ -103,15 +105,39 @@ export const streamAskAi = async (req, res) => {
             return;
         }
 
-        const messages = body.history || [];
-
         let sessionId = body.sessionId;
         const isIncognito = body.isIncognito || false;
+
+        // ─── HISTORY: Read from Redis (hot) → Supabase (cold). NEVER trust frontend body.history. ───
+        // The frontend no longer controls chat history. The backend owns it entirely.
+        // historyDepth: how many messages to give the LLM context (default 25, max 500)
+        const historyDepth = Math.min(parseInt(body.historyDepth, 10) || 25, 500);
+        let messages = [];
+        
+        const userEmail = req.user?.email || body.userEmail || 'unknown@classgrid.in';
+
+        if (sessionId && !isIncognito) {
+            // 🚨 CRITICAL SECURITY CHECK: Verify Ownership before loading history 🚨
+            const sessionData = await getSessionById(sessionId);
+            if (!sessionData) {
+                res.write(`data: ${JSON.stringify({ type: "error", error: "Session not found." })}\n\n`);
+                res.end();
+                return;
+            }
+            if (sessionData.user_email !== userEmail) {
+                console.error(`[SECURITY] Unauthorized chat access attempt! User ${userEmail} tried to access session ${sessionId} owned by ${sessionData.user_email}`);
+                res.write(`data: ${JSON.stringify({ type: "error", error: "Unauthorized. You do not have permission to view this chat." })}\n\n`);
+                res.end();
+                return;
+            }
+
+            // Ownership verified, safe to load history
+            messages = await getHistory(sessionId, historyDepth);
+        }
 
         // 2a. If not incognito and no session exists, create one
         if (!isIncognito && !sessionId && body.question) {
             const title = body.question.length > 50 ? body.question.substring(0, 47) + "..." : body.question;
-            const userEmail = req.user?.email || body.userEmail || 'unknown@classgrid.in';
             const session = await createSession(userEmail, title, false);
             if (session) {
                 sessionId = session.id;
@@ -123,9 +149,10 @@ export const streamAskAi = async (req, res) => {
             }
         }
 
-        // 2b. If not incognito, save the user message to DB (fire-and-forget, don't block LLM call)
+        // 2b. Save user message: to Supabase (source of truth) + Redis (cache) in parallel
         if (!isIncognito && sessionId && body.question) {
             saveMessage(sessionId, "user", body.question, body.fileUrls || []).catch(err => console.error("Failed to save user message:", err));
+            appendToHistory(sessionId, "user", body.question).catch(err => console.error("Failed to append user msg to Redis:", err));
         }
 
         if (body.question) {
@@ -164,16 +191,16 @@ export const streamAskAi = async (req, res) => {
         const client = createLLMClient({
             providers: [
                 {
-                    name: "groq",
-                    url: "https://api.groq.com/openai/v1/chat/completions",
-                    apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b"
-                },
-                {
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
                     apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
                     model: "open-mistral-nemo"
+                },
+                {
+                    name: "groq",
+                    url: "https://api.groq.com/openai/v1/chat/completions",
+                    apiKey: process.env.GROQ_API_KEY || "",
+                    model: "openai/gpt-oss-20b"
                 },
                 {
                     name: "gemini",
@@ -281,9 +308,10 @@ export const streamAskAi = async (req, res) => {
         } else if (answer === "[RATE_LIMITED]" && !res.writableEnded) {
             res.write(`data: ${JSON.stringify({ type: "answer", answer: "I'm currently experiencing high traffic and cannot process your request right now." })}\n\n`);
         } else if (!res.writableEnded) {
-            // Save Assistant response (fire-and-forget, don't block SSE delivery)
+            // Save Assistant response: to Supabase (source of truth) + Redis (cache) in parallel
             if (!isIncognito && sessionId) {
                 saveMessage(sessionId, "assistant", answer, []).catch(err => console.error("Failed to save assistant message:", err));
+                appendToHistory(sessionId, "assistant", answer).catch(err => console.error("Failed to append assistant reply to Redis:", err));
             }
             res.write(`data: ${JSON.stringify({ type: "answer", answer })}\n\n`);
         }
@@ -361,6 +389,8 @@ export const deleteChatSession = async (req, res) => {
     try {
         const { id } = req.params;
         await deleteSession(id);
+        // Purge Redis cache for this session so stale history is never served
+        invalidateHistoryCache(id).catch(err => console.warn("Failed to invalidate Redis cache on delete:", err));
         res.json({ success: true });
     } catch (e) {
         console.error("Error deleting session:", e);
