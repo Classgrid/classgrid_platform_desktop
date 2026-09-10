@@ -2131,7 +2131,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         className={cn(
                           "relative min-w-0 transition-all duration-700 msg-target-glow scroll-mt-12",
                           isUser
-                            ? "rounded-[20px] px-5 py-2.5 bg-[#f1f1ef] dark:bg-slate-800"
+                            ? "rounded-[16px] px-[14px] py-[6px] bg-[#f1f1ef] dark:bg-slate-800"
                             : "w-full max-w-full bg-transparent text-foreground"
                         )}
                       >
