@@ -232,11 +232,13 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
 
   // ── WHATSAPP ──
   const handleShareWhatsApp = (url: string) => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank");
+    const text = `Read the chat that I recently had on my Classgrid agent. I am sharing the public link here:\n${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   // ── LINKEDIN ──
   const handleShareLinkedIn = (url: string) => {
+    // Note: LinkedIn only accepts the 'url' parameter. It reads the title and image from the page's Open Graph (OG) tags.
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, "_blank");
   };
 
@@ -309,34 +311,35 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                align="end"
-                sideOffset={4}
-                className="w-[180px] z-[100] bg-[#202123] dark:bg-[#202123] text-[#ececf1] border border-white/10 rounded-xl p-1.5 shadow-xl"
+                side="right"
+                align="start"
+                sideOffset={8}
+                className="w-[180px] z-[100] bg-white dark:bg-[#202123] text-slate-700 dark:text-[#ececf1] border border-slate-200 dark:border-white/10 rounded-2xl p-2 shadow-2xl"
               >
                 <DropdownMenuItem
-                  className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ececf1] rounded-md transition-colors"
+                  className="gap-3 py-2 px-3 text-[14px] cursor-pointer hover:bg-slate-100 dark:hover:bg-[#343541] focus:bg-slate-100 dark:focus:bg-[#343541] focus:text-slate-900 dark:focus:text-[#ececf1] rounded-xl transition-colors"
                   onClick={() => {
                     setShareSessionId(session.id);
                     setShareModalOpen(true);
                   }}
                 >
-                  <Share className="w-4 h-4" strokeWidth={1.5} />
+                  <Share className="w-4 h-4 text-slate-500 dark:text-white/70" strokeWidth={2} />
                   Share
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ececf1] rounded-md transition-colors"
+                  className="gap-3 py-2 px-3 text-[14px] cursor-pointer hover:bg-slate-100 dark:hover:bg-[#343541] focus:bg-slate-100 dark:focus:bg-[#343541] focus:text-slate-900 dark:focus:text-[#ececf1] rounded-xl transition-colors"
                   onClick={() => {
                     setEditingSessionId(session.id);
                     setEditingTitle(session.title);
                   }}
                 >
-                  <Pencil className="w-4 h-4" strokeWidth={1.5} />
+                  <Pencil className="w-4 h-4 text-slate-500 dark:text-white/70" strokeWidth={2} />
                   Rename
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ececf1] rounded-md transition-colors"
+                  className="gap-3 py-2 px-3 text-[14px] cursor-pointer hover:bg-slate-100 dark:hover:bg-[#343541] focus:bg-slate-100 dark:focus:bg-[#343541] focus:text-slate-900 dark:focus:text-[#ececf1] rounded-xl transition-colors"
                   onClick={() => {
                     if (!session.pinned && pinnedSessions.length >= 5) {
                       toast.error("You can only pin up to 5 chats.");
@@ -345,17 +348,17 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                     handleUpdateSession(session.id, { pinned: !session.pinned });
                   }}
                 >
-                  <Pin className="w-4 h-4" strokeWidth={1.5} />
+                  <Pin className="w-4 h-4 text-slate-500 dark:text-white/70" strokeWidth={2} />
                   {session.pinned ? "Unpin chat" : "Pin chat"}
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator className="bg-white/10 my-1" />
+                <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/10 my-1.5 mx-1" />
 
                 <DropdownMenuItem
-                  className="gap-3 py-1.5 px-2.5 text-[13px] cursor-pointer text-[#ef4444] hover:bg-[#343541] focus:bg-[#343541] focus:text-[#ef4444] rounded-md transition-colors"
+                  className="gap-3 py-2 px-3 text-[14px] cursor-pointer text-[#ef4444] hover:bg-red-50 dark:hover:bg-red-500/10 focus:bg-red-50 dark:focus:bg-red-500/10 focus:text-[#ef4444] rounded-xl transition-colors"
                   onClick={() => handleDeleteSession(session.id)}
                 >
-                  <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                  <Trash2 className="w-4 h-4 text-[#ef4444]" strokeWidth={2} />
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -422,56 +425,63 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
         </SidebarGroupContent>
       </SidebarGroup>
 
-      {/* Share Modal - Layout style: ChatGPT, Colors: Classgrid Theme (global.css) */}
+      {/* Share Modal - Exact ChatGPT Replica (Light & Dark Mode Support) */}
       {shareModalOpen && shareSessionId && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => { setShareModalOpen(false); setPublicShareUrl(null); setLinkCopied(false); }}>
-          <div className="bg-background text-foreground border border-border rounded-2xl w-[440px] shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/20 dark:bg-black/60 backdrop-blur-sm" onClick={() => { setShareModalOpen(false); setPublicShareUrl(null); setLinkCopied(false); }}>
+          <div className="bg-white dark:bg-[#212121] text-slate-900 dark:text-[#ececf1] rounded-3xl w-[540px] shadow-2xl overflow-hidden font-sans border-0 dark:border dark:border-white/10" onClick={(e) => e.stopPropagation()}>
 
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h3 className="text-base font-semibold truncate max-w-[300px]">
+            <div className="flex items-center justify-between px-8 pt-8 pb-4">
+              <h3 className="text-[22px] font-semibold truncate pr-4 text-slate-900 dark:text-white tracking-tight">
                 {sessions.find(s => s.id === shareSessionId)?.title || "Share Chat"}
               </h3>
               <button
                 onClick={() => { setShareModalOpen(false); setPublicShareUrl(null); setLinkCopied(false); }}
-                className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-full p-1.5 transition-colors"
+                className="text-slate-500 hover:text-slate-800 dark:text-white/70 dark:hover:text-white rounded-lg p-2 transition-colors cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" strokeWidth={2} />
               </button>
             </div>
 
             {/* Preview Card */}
-            <div className="px-6 py-6">
-              <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="text-foreground font-semibold text-sm flex items-center gap-2">
-                    Classgrid AI <span className="text-muted-foreground font-normal text-xs">&lt;agent@classgrid.in&gt;</span>
-                  </div>
+            <div className="px-8 py-2">
+              <div className="bg-white dark:bg-[#2f2f2f] rounded-2xl p-6 shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-none dark:border dark:border-white/10 relative overflow-hidden flex flex-col h-[280px]">
+                
+                {/* Simulated Chat Content - Using Exact Classgrid Chat Styling */}
+                <div className="flex flex-col gap-6">
+                   {/* User Bubble */}
+                   <div className="bg-[#f1f1ef] dark:bg-[#2C2C2C] px-[14px] py-[6px] rounded-[16px] max-w-[85%] self-end">
+                     <p className="text-[16px] leading-[24px] text-[#37352f] dark:text-[#F0EFED]">
+                       Please share the conversation transcript for: <span className="font-semibold">{sessions.find(s => s.id === shareSessionId)?.title || "this topic"}</span>
+                     </p>
+                   </div>
+                   
+                   {/* AI Text */}
+                   <div className="text-[15px] leading-[1.6] text-[#2C2C2B] dark:text-[#F0EFED]">
+                     <p className="mb-3">I can certainly help you with that.</p>
+                     <p className="mb-2 font-semibold">Here is the order from highest to lowest:</p>
+                     <ul className="list-disc pl-[22px] marker:text-[#37352f] dark:marker:text-[#F0EFED] space-y-1">
+                       <li className="py-[2px] pl-[2px]">Full conversation context and history</li>
+                       <li className="py-[2px] pl-[2px]">AI generated insights</li>
+                       <li className="py-[2px] pl-[2px]">Secure public link sharing</li>
+                     </ul>
+                   </div>
                 </div>
-
-                <div className="flex justify-center mb-6">
-                  <div className="text-[11px] text-muted-foreground font-medium">
-                    {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} (0 minutes ago)
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center text-[11px] text-muted-foreground mb-3 border-b border-border pb-2">
-                  <span>to me</span>
-                  <span>transcript</span>
-                </div>
-
-                <div className="text-sm text-foreground/80 font-medium truncate flex items-center justify-between">
-                  <span className="truncate pr-4">Chat Transcript: {sessions.find(s => s.id === shareSessionId)?.title}...</span>
-                  <span className="font-bold text-foreground text-base shrink-0">Classgrid AI</span>
+                
+                {/* The Fade Out Gradient (Adapts to Light/Dark) */}
+                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/90 dark:from-[#2f2f2f] dark:via-[#2f2f2f]/90 to-transparent flex items-end justify-end p-5">
+                  {/* Classgrid Watermark */}
+                  <span className="font-bold text-slate-900 dark:text-white text-xl tracking-tight select-none">Classgrid AI</span>
                 </div>
               </div>
             </div>
 
-            {/* Actions Grid */}
-            <div className="px-6 pb-8 pt-2 flex items-center justify-center gap-5 flex-wrap">
+            {/* Actions Grid (4 HUGE BUTTONS) */}
+            <div className="px-8 pb-10 pt-6 flex items-center justify-center gap-7">
+              
               {/* Copy Link */}
               <button
-                className="flex flex-col items-center gap-2.5 group cursor-pointer"
+                className="flex flex-col items-center gap-3 group cursor-pointer"
                 onClick={async () => {
                   if (publicShareUrl) {
                     await navigator.clipboard.writeText(publicShareUrl);
@@ -484,15 +494,15 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 }}
                 disabled={isCreatingLink}
               >
-                <div className="w-12 h-12 rounded-full bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
-                  {isCreatingLink ? <Loader2 className="w-5 h-5 animate-spin" /> : linkCopied ? <Check className="w-5 h-5" /> : <Link2 className="w-5 h-5" />}
+                <div className="w-[56px] h-[56px] rounded-full bg-primary text-primary-foreground flex items-center justify-center transition-transform hover:scale-105 shadow-sm">
+                  {isCreatingLink ? <Loader2 className="w-6 h-6 animate-spin" /> : linkCopied ? <Check className="w-6 h-6" /> : <Link2 className="w-6 h-6" />}
                 </div>
-                <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">Copy link</span>
+                <span className="text-[12px] text-slate-400 dark:text-white/60 font-medium">Copy link</span>
               </button>
 
               {/* WhatsApp */}
               <button
-                className="flex flex-col items-center gap-2.5 group cursor-pointer"
+                className="flex flex-col items-center gap-3 group cursor-pointer"
                 onClick={() => {
                   if (publicShareUrl) {
                     handleShareWhatsApp(publicShareUrl);
@@ -502,20 +512,17 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 }}
                 disabled={!publicShareUrl}
               >
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${publicShareUrl
-                    ? 'bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground'
-                    : 'bg-muted/50 text-muted-foreground/30'
-                  }`}>
-                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                <div className={`w-[56px] h-[56px] rounded-full flex items-center justify-center transition-transform shadow-sm ${publicShareUrl ? 'bg-primary text-primary-foreground hover:scale-105' : 'bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-white/30'}`}>
+                  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                   </svg>
                 </div>
-                <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">WhatsApp</span>
+                <span className="text-[12px] text-slate-400 dark:text-white/60 font-medium">WhatsApp</span>
               </button>
 
               {/* LinkedIn */}
               <button
-                className="flex flex-col items-center gap-2.5 group cursor-pointer"
+                className="flex flex-col items-center gap-3 group cursor-pointer"
                 onClick={() => {
                   if (publicShareUrl) {
                     handleShareLinkedIn(publicShareUrl);
@@ -525,44 +532,27 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 }}
                 disabled={!publicShareUrl}
               >
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${publicShareUrl
-                    ? 'bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground'
-                    : 'bg-muted/50 text-muted-foreground/30'
-                  }`}>
-                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                <div className={`w-[56px] h-[56px] rounded-full flex items-center justify-center transition-transform shadow-sm ${publicShareUrl ? 'bg-primary text-primary-foreground hover:scale-105' : 'bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-white/30'}`}>
+                  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
                     <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                   </svg>
                 </div>
-                <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">LinkedIn</span>
+                <span className="text-[12px] text-slate-400 dark:text-white/60 font-medium">LinkedIn</span>
               </button>
 
               {/* Email */}
               <button
-                className="flex flex-col items-center gap-2.5 group cursor-pointer"
+                className="flex flex-col items-center gap-3 group cursor-pointer"
                 onClick={() => handleShareEmail(shareSessionId)}
                 disabled={isSharingEmail || sharedEmailSuccess}
               >
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${sharedEmailSuccess
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground'
-                  }`}>
-                  {sharedEmailSuccess ? <Check className="w-5 h-5" /> : isSharingEmail ? <Loader2 className="w-5 h-5 animate-spin" /> : <Mail className="w-5 h-5" />}
+                <div className={`w-[56px] h-[56px] rounded-full flex items-center justify-center transition-transform shadow-sm ${sharedEmailSuccess ? 'bg-green-600 text-white hover:scale-105' : 'bg-primary text-primary-foreground hover:scale-105'}`}>
+                  {sharedEmailSuccess ? <Check className="w-6 h-6" /> : isSharingEmail ? <Loader2 className="w-6 h-6 animate-spin" /> : <Mail className="w-6 h-6" />}
                 </div>
-                <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">Email</span>
+                <span className="text-[12px] text-slate-400 dark:text-white/60 font-medium">Email</span>
               </button>
 
-              {/* Copy Text */}
-              <button
-                className="flex flex-col items-center gap-2.5 group cursor-pointer"
-                onClick={() => handleCopyText(shareSessionId)}
-              >
-                <div className="w-12 h-12 rounded-full bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
-                  <Copy className="w-5 h-5" />
-                </div>
-                <span className="text-[11px] text-muted-foreground group-hover:text-foreground font-medium transition-colors">Text</span>
-              </button>
             </div>
-
           </div>
         </div>,
         document.body
