@@ -845,7 +845,33 @@ const MarkdownComponents = {
 
     if (!inline && language === "approval") {
       try {
-        const props = JSON.parse(String(children));
+        let props = JSON.parse(String(children));
+        
+        // Robust normalization for AI hallucinations
+        if (props.variant === "survey" || props.variant === "questions" || props.questions) {
+          props.variant = "questions";
+          
+          if (Array.isArray(props.questions)) {
+            props.questions = props.questions.map((q: any) => {
+              // Map "question" -> "prompt"
+              const prompt = q.prompt || q.question || q.title || "Question";
+              
+              // Map options (array of objects -> array of strings)
+              let options = q.options || [];
+              if (options.length > 0 && typeof options[0] === 'object') {
+                options = options.map((opt: any) => opt.label || opt.value || JSON.stringify(opt));
+              }
+              
+              return {
+                ...q,
+                id: q.id || Math.random().toString(36).substring(7),
+                prompt,
+                options
+              };
+            });
+          }
+        }
+
         return <ApprovalCard {...props} />;
       } catch (e) {
         return <div className="text-red-500 text-sm">Failed to parse approval card props: {(e as Error).message}</div>;
