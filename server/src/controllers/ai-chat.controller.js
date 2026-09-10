@@ -115,17 +115,17 @@ export const streamAskAi = async (req, res) => {
             const session = await createSession(userEmail, title, false);
             if (session) {
                 sessionId = session.id;
-                // Generate a real title in the background
-                generateSessionTitle(sessionId, body.question).catch(console.error);
+                // Generate a real title in the background (delayed 5s to avoid competing with main LLM call for API rate limits)
+                setTimeout(() => generateSessionTitle(sessionId, body.question).catch(console.error), 5000);
                 
                 // Send back the sessionId immediately so the frontend sidebar can update instantly
                 res.write(`data: ${JSON.stringify({ type: "session_info", sessionId })}\n\n`);
             }
         }
 
-        // 2b. If not incognito, save the user message to DB immediately
+        // 2b. If not incognito, save the user message to DB (fire-and-forget, don't block LLM call)
         if (!isIncognito && sessionId && body.question) {
-            await saveMessage(sessionId, "user", body.question, body.fileUrls || []);
+            saveMessage(sessionId, "user", body.question, body.fileUrls || []).catch(err => console.error("Failed to save user message:", err));
         }
 
         if (body.question) {
@@ -186,7 +186,7 @@ export const streamAskAi = async (req, res) => {
                 }
             ],
             verbose: true,
-            maxToolDepth: 5,
+            maxToolDepth: 2,
             defaultMaxTokens: 2000,
             tools: [
                 {
@@ -281,9 +281,9 @@ export const streamAskAi = async (req, res) => {
         } else if (answer === "[RATE_LIMITED]" && !res.writableEnded) {
             res.write(`data: ${JSON.stringify({ type: "answer", answer: "I'm currently experiencing high traffic and cannot process your request right now." })}\n\n`);
         } else if (!res.writableEnded) {
-            // Save Assistant response
+            // Save Assistant response (fire-and-forget, don't block SSE delivery)
             if (!isIncognito && sessionId) {
-                await saveMessage(sessionId, "assistant", answer, []);
+                saveMessage(sessionId, "assistant", answer, []).catch(err => console.error("Failed to save assistant message:", err));
             }
             res.write(`data: ${JSON.stringify({ type: "answer", answer })}\n\n`);
         }
