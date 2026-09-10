@@ -60,6 +60,7 @@ import { ScrollSpyTOC } from "./TOC";
 import AIThinkingBlock from "./AIThinkingBlock";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
 
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
@@ -751,7 +752,7 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
   return (
     <div className="space-y-4 text-[16px] leading-[24px] overflow-hidden break-words max-w-none">
       <ReactMarkdown
-        remarkPlugins={[remarkMath]}
+        remarkPlugins={[remarkMath, remarkGfm]}
         rehypePlugins={[rehypeKatex]}
         components={{
           ...MarkdownComponents,
@@ -795,31 +796,31 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
             );
           },
           p({ children, ...props }) {
-            return <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap mb-4 last:mb-0" {...props}>{children}</p>;
+            return <p className="text-[#37352f] dark:text-slate-200 whitespace-pre-wrap mb-4 px-[2px] last:mb-0" {...props}>{children}</p>;
           },
           strong({ children, ...props }) {
-            return <strong className="font-semibold text-slate-900 dark:text-white" {...props}>{children}</strong>;
+            return <strong className="font-semibold text-[#37352f] dark:text-white" {...props}>{children}</strong>;
           },
           h1({ children, ...props }) {
-            return <h1 className="text-xl font-semibold text-slate-900 dark:text-white mt-6 mb-3 first:mt-0" {...props}>{children}</h1>;
+            return <h1 className="text-[1.875em] font-semibold text-[#37352f] dark:text-white leading-[1.3] mt-6 mb-3 first:mt-0" {...props}>{children}</h1>;
           },
           h2({ children, ...props }) {
-            return <h2 className="text-lg font-semibold text-slate-900 dark:text-white mt-5 mb-2 first:mt-0" {...props}>{children}</h2>;
+            return <h2 className="text-[1.5em] font-semibold text-[#37352f] dark:text-white leading-[1.3] mt-5 mb-2 first:mt-0" {...props}>{children}</h2>;
           },
           h3({ children, ...props }) {
-            return <h3 className="text-base font-semibold text-slate-900 dark:text-white mt-4 mb-2 first:mt-0" {...props}>{children}</h3>;
+            return <h3 className="text-[1.25em] font-semibold text-[#37352f] dark:text-white leading-[1.3] m-0 p-0 mt-4 mb-2 first:mt-0" {...props}>{children}</h3>;
           },
           h4({ children, ...props }) {
-            return <h4 className="text-[15px] font-semibold text-slate-900 dark:text-white mt-3 mb-1 first:mt-0" {...props}>{children}</h4>;
+            return <h4 className="text-[1em] font-semibold text-[#37352f] dark:text-white leading-[1.3] mt-3 mb-1 first:mt-0" {...props}>{children}</h4>;
           },
           ul({ children, ...props }) {
-            return <ul className="space-y-1.5 mb-4 last:mb-0 ml-5 list-disc marker:text-slate-400 dark:marker:text-slate-500" {...props}>{children}</ul>;
+            return <ul className="space-y-[4px] mb-4 last:mb-0 ml-5 list-disc marker:text-[#37352f] dark:marker:text-slate-500" {...props}>{children}</ul>;
           },
           ol({ children, ...props }) {
-            return <ol className="space-y-1.5 mb-4 last:mb-0 ml-5 list-decimal marker:text-slate-400 dark:marker:text-slate-500" {...props}>{children}</ol>;
+            return <ol className="space-y-[4px] mb-4 last:mb-0 ml-5 list-decimal marker:text-[#37352f] dark:marker:text-slate-500" {...props}>{children}</ol>;
           },
           li({ children, ...props }) {
-            return <li className="text-slate-700 dark:text-slate-200 pl-1" {...props}>{children}</li>;
+            return <li className="text-[#37352f] dark:text-slate-200 py-[2px] pl-[6px] whitespace-break-spaces break-words" {...props}>{children}</li>;
           },
           blockquote({ children, ...props }) {
             return <blockquote className="border-l-[3px] border-slate-200 dark:border-slate-700 pl-4 my-4 text-slate-500 dark:text-slate-400 italic" {...props}>{children}</blockquote>;
