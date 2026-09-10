@@ -496,7 +496,7 @@ export const shareChatSession = async (req, res) => {
         await sendEmail({
             fromName: "Classgrid",
             fromEmail: "hello@classgrid.in",
-            replyTo: "hello@classgrid.in",
+            replyTo: "support@classgrid.in",
             to: req.user.email,
             subject: `Chat Transcript: ${session.title}`,
             text: `Hi,\n\nHere is the chat transcript you requested for: ${session.title}.\n\n---\n\n${transcript}`,
