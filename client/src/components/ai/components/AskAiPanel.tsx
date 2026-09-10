@@ -943,7 +943,8 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
               return (
                 <div className="flex items-center gap-2 my-4 pl-1">
                   <p
-                    className="bg-[linear-gradient(110deg,#404040,35%,#fff,50%,#404040,75%,#404040)] bg-[length:200%_100%] bg-clip-text text-base text-transparent animate-[shimmer_5s_linear_infinite]"
+                    className="bg-[linear-gradient(110deg,#404040,35%,#fff,50%,#404040,75%,#404040)] bg-[length:200%_100%] bg-clip-text text-base text-transparent"
+                    style={{ animation: "shimmer 5s linear infinite" }}
                   >
                     Crafting
                   </p>
