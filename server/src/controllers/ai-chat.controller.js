@@ -22,7 +22,8 @@ RESPONSE STYLE:
 - Format structure using proper Markdown headings (##, ###). Do NOT use plain bold text or uppercase lines as faux headers.
 - Use standard Markdown lists (- or *) and numbered lists (1., 2.). Do NOT use raw bullet characters (•).
 - Use markdown tables when comparing items or presenting structured data.
-- NEVER wrap your general text response in a markdown code block (\`\`\`). Only use code blocks for actual programming code (Python, JS, SQL, etc).
+- NEVER wrap your general text response in a markdown code block (```). Only use code blocks for actual programming code (Python, JS, SQL, etc).
+- CRITICAL: When the user asks you to generate a draft, email, template, or any text meant to be easily copied, you MUST wrap it inside a markdown code block with the language set to 'copy' (e.g. \`\`\`copy). This triggers the UI copy component.
 - Keep a warm, professional tone appropriate for educators and students.
 
 SECRECY (ABSOLUTE):
@@ -99,6 +100,8 @@ export const streamAskAi = async (req, res) => {
         "Connection": "keep-alive",
         "X-Accel-Buffering": "no"  // CRITICAL: Tells NGINX to stream immediately instead of buffering
     });
+    // Send 2KB of whitespace padding to force NGINX, Vercel Edge, and AWS ALB to immediately flush headers and start the stream
+    res.write(':' + Array(2048).join(' ') + '\n\n');
 
     let keepAliveInterval = null;
     try {
@@ -277,31 +280,45 @@ export const streamAskAi = async (req, res) => {
             if (!res.writableEnded) res.end();
         });
 
-        // --- KEEP ALIVE PING FOR NGINX ---
+        // --- KEEP ALIVE PING FOR NGINX / PROXIES ---
         keepAliveInterval = setInterval(() => {
             if (requestAborted || res.writableEnded) {
                 clearInterval(keepAliveInterval);
                 return;
             }
-            res.write(`:\n\n`); // Sending an SSE comment to keep connection open
+            try {
+                // Send a real event rather than a comment to guarantee it bypasses proxy buffers
+                res.write(`data: ${JSON.stringify({ type: "ping" })}\n\n`); 
+            } catch (err) {
+                console.error("Failed to send keep-alive ping:", err);
+                requestAborted = true;
+                clearInterval(keepAliveInterval);
+            }
         }, 15000);
 
         // 4. Run the Client and pass SSE writes inside the callbacks
         const answer = await client.generate({
             messages,
-            timeoutMs: 60000, // 60 SECONDS - Allow enough time to process chat history without premature timeout
+            maxToolDepth: 5,
+            timeoutMs: 300000, // 300 SECONDS (5 MIN) - Required for slow 'Thinking' models like Claude Opus to prevent timeouts
             onStatus: (status) => {
-                if (requestAborted) return;
+                if (requestAborted || res.writableEnded) return;
                 const mappedLabel = status === "search web" ? "searching" : status;
-                if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`);
+                try {
+                    res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`);
+                } catch (e) {}
             },
             onThought: (thought) => {
-                if (requestAborted) return;
-                if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`);
+                if (requestAborted || res.writableEnded) return;
+                try {
+                    res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`);
+                } catch (e) {}
             },
             onToken: (token) => {
-                if (requestAborted) return;
-                if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`);
+                if (requestAborted || res.writableEnded) return;
+                try {
+                    res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`);
+                } catch (e) {}
             }
         });
 
