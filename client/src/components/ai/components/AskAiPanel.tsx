@@ -749,12 +749,14 @@ const MarkdownComponents = {
 };
 
 const AssistantMessageContent = memo(({ content, isTyping }: { content: string, isTyping?: boolean }) => {
-  // Preprocess: convert AI's fake bullet chars (•, ◦) to real Markdown lists.
-  // Also handle indented sub-bullets (4 spaces + -) that come after a • parent.
+  // Preprocess AI output:
+  // 1. Convert fake bullet chars to real Markdown list markers
+  // 2. Remove blank lines between consecutive list items (prevents <p> wrap inside <li> = big gaps)
   const processedContent = content
-    .replace(/^[•]\s/gm, '- ')   // top-level • → -
-    .replace(/^\s{4}[◦-]\s/gm, (m) => '    - '); // keep nested sub-bullets as indented -
-  
+    .replace(/^[•]\s/gm, '- ')
+    .replace(/^\s{4}[◦]\s/gm, '    - ')
+    .replace(/(^[ \t]*[-*][ \t].*)\n{2,}(?=[ \t]*[-*][ \t])/gm, '$1\n'); // collapse blank lines between bullets
+
   return (
     <div className="space-y-4 text-[16px] leading-[24px] overflow-hidden break-words max-w-none">
       <ReactMarkdown
@@ -820,10 +822,11 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
             return <h4 className="text-[1em] font-semibold text-[#2C2C2B] dark:text-[#F0EFED] leading-[1.3] m-0 p-0 mb-1 mt-3 first:mt-0" {...props}>{children}</h4>;
           },
           ul({ children, ...props }) {
-            return <ul className="mb-3 last:mb-0 pl-5 list-disc marker:text-[#37352f] dark:marker:text-[rgba(255,255,255,0.4)]" {...props}>{children}</ul>;
+            // Level 1 = disc (filled), nested ul inside = circle (hollow) — matches Notion exactly
+            return <ul className="mb-3 last:mb-0 pl-5 list-disc [&_ul]:list-[circle] [&_ul]:pl-5 [&_ul]:mb-0 marker:text-[#37352f] dark:marker:text-[rgba(255,255,255,0.6)]" {...props}>{children}</ul>;
           },
           ol({ children, ...props }) {
-            return <ol className="mb-3 last:mb-0 pl-5 list-decimal marker:text-[#37352f] dark:marker:text-[rgba(255,255,255,0.4)]" {...props}>{children}</ol>;
+            return <ol className="mb-3 last:mb-0 pl-5 list-decimal marker:text-[#37352f] dark:marker:text-[rgba(255,255,255,0.6)]" {...props}>{children}</ol>;
           },
           li({ children, ...props }) {
             // Notion DevTools: padding-top: 2px; padding-bottom: 2px; padding-inline-start: 6px
