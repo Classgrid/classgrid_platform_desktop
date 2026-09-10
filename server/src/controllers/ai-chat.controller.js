@@ -86,6 +86,7 @@ export const streamAskAi = async (req, res) => {
         "Connection": "keep-alive"
     });
 
+    let keepAliveInterval = null;
     try {
         const body = req.body || {};
 
@@ -235,6 +236,15 @@ export const streamAskAi = async (req, res) => {
             if (!res.writableEnded) res.end();
         });
 
+        // --- KEEP ALIVE PING FOR NGINX ---
+        keepAliveInterval = setInterval(() => {
+            if (requestAborted || res.writableEnded) {
+                clearInterval(keepAliveInterval);
+                return;
+            }
+            res.write(`:\n\n`); // Sending an SSE comment to keep connection open
+        }, 15000);
+
         // 4. Run the Client and pass SSE writes inside the callbacks
         const answer = await client.generate({
             messages,
@@ -277,6 +287,7 @@ export const streamAskAi = async (req, res) => {
             res.write(`data: ${JSON.stringify({ type: "answer", answer: "An error occurred while calling the AI." })}\n\n`);
         }
     } finally {
+        if (keepAliveInterval) clearInterval(keepAliveInterval);
         if (!res.writableEnded) res.end();
     }
 };

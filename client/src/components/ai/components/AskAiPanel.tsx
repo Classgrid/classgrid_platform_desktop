@@ -1777,8 +1777,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           attachments: uploadedAttachments.length > 0 ? uploadedAttachments.map(a => ({ url: a.url, name: a.name, mimeType: a.mimeType })) : undefined,
           history: messages
             .filter((m) => m.role === "user" || m.role === "assistant")
-            .slice(-10)
-            .map((m) => ({ role: m.role, content: m.content })),
+            .slice(-4)
+            .map((m) => ({
+              role: m.role,
+              content: m.content.length > 2000 ? m.content.substring(0, 2000) + "\n...[TRUNCATED]" : m.content
+            })),
           pageContext: {
             ...pageContext,
             pageHistory: pageHistory,
@@ -1927,7 +1930,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             await typeAssistantResponse(answer);
           }
         } else {
-          throw new Error("Unable to answer right now. Please try again.");
+          throw new Error("The AI connection was interrupted. Please try again.");
         }
       } else {
         // Fallback: JSON response (for ban_check or older format)
@@ -1956,10 +1959,14 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         setThinking(false);
         return;
       }
-      const rawMessage =
+      let rawMessage =
         error instanceof Error && error.message.trim().length > 0
           ? error.message
           : "Unable to answer right now. Please try again.";
+
+      if (rawMessage.includes("Failed to fetch") || rawMessage.includes("fetch failed") || rawMessage.includes("NetworkError")) {
+        rawMessage = "The connection timed out or was dropped. Please try again or ask a shorter question.";
+      }
 
       // If terminated, add support info to the message shown in chat
       const fallback = wasTerminated || rawMessage.includes("terminated") || rawMessage.includes("restricted")
