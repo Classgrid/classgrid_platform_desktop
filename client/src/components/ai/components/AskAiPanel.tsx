@@ -749,6 +749,9 @@ const MarkdownComponents = {
 };
 
 const AssistantMessageContent = memo(({ content, isTyping }: { content: string, isTyping?: boolean }) => {
+  // Preprocess content to fix AI generating fake • bullets instead of real Markdown lists
+  const processedContent = content.replace(/^[•◦]\s/gm, '- ');
+  
   return (
     <div className="space-y-4 text-[16px] leading-[24px] overflow-hidden break-words max-w-none">
       <ReactMarkdown
@@ -830,7 +833,7 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
           }
         }}
       >
-        {preprocessLaTeX(content)}
+        {preprocessLaTeX(processedContent)}
       </ReactMarkdown>
     </div>
   );
