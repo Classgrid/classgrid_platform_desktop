@@ -823,10 +823,10 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
           },
           ul({ children, ...props }) {
             // Level 1 = disc (filled), nested ul inside = circle (hollow) — matches Notion exactly
-            return <ul className="mb-3 last:mb-0 pl-5 list-disc [&_ul]:list-[circle] [&_ul]:pl-5 [&_ul]:mb-0 marker:text-[#37352f] dark:marker:text-[rgba(255,255,255,0.6)]" {...props}>{children}</ul>;
+            return <ul className="mb-3 last:mb-0 pl-5 list-disc [&_ul]:list-[circle] [&_ul]:pl-5 [&_ul]:mb-0" {...props}>{children}</ul>;
           },
           ol({ children, ...props }) {
-            return <ol className="mb-3 last:mb-0 pl-5 list-decimal marker:text-[#37352f] dark:marker:text-[rgba(255,255,255,0.6)]" {...props}>{children}</ol>;
+            return <ol className="mb-3 last:mb-0 pl-5 list-decimal" {...props}>{children}</ol>;
           },
           li({ children, ...props }) {
             // Notion DevTools: padding-top: 2px; padding-bottom: 2px; padding-inline-start: 6px
