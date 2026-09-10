@@ -559,14 +559,14 @@ function renderInlineText(rawText: string) {
           href={href}
           target={external ? "_blank" : undefined}
           rel={external ? "noreferrer" : undefined}
-          className="font-semibold text-emerald-600 underline underline-offset-4 transition-colors hover:text-emerald-500 dark:text-emerald-400"
+          className="font-medium text-blue-600 dark:text-blue-400 underline underline-offset-4 transition-colors hover:text-blue-500"
         >
           {cleanLabel}
         </a>
       );
     } else if (boldText) {
       nodes.push(
-        <strong key={`bold-${match.index}`} className="font-semibold text-emerald-600 dark:text-emerald-400">
+        <strong key={`bold-${match.index}`} className="font-semibold text-slate-900 dark:text-white">
           {boldText}
         </strong>
       );
@@ -603,10 +603,20 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
 
   async function handleCopy() {
     try {
-      // Strip bold markers and links for plain text copy
+      // Strip ALL markdown for clean plain-text copy (like Notion)
       const plainText = content
-        .replace(/\*\*(.+?)\*\*/g, "$1")
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+        .replace(/^#{1,6}\s+/gm, "")           // headings
+        .replace(/\*\*(.+?)\*\*/g, "$1")        // bold
+        .replace(/\*(.+?)\*/g, "$1")            // italic
+        .replace(/`([^`]+)`/g, "$1")            // inline code
+        .replace(/```[\s\S]*?```/g, "")          // code blocks
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // links
+        .replace(/^[\-\*]\s+/gm, "• ")          // bullets → clean bullet
+        .replace(/^\d+\.\s+/gm, (m) => m)       // keep numbered lists
+        .replace(/^>\s+/gm, "")                 // blockquotes
+        .replace(/\|[^\n]+\|/g, "")             // table rows
+        .replace(/^[\-:| ]+$/gm, "")            // table separators
+        .replace(/\n{3,}/g, "\n\n")             // collapse blank lines
         .trim();
       await navigator.clipboard.writeText(plainText);
       setCopied(true);
@@ -739,7 +749,7 @@ const MarkdownComponents = {
 
 const AssistantMessageContent = memo(({ content, isTyping }: { content: string, isTyping?: boolean }) => {
   return (
-    <div className="space-y-3 text-sm leading-relaxed overflow-hidden break-words prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:p-0">
+    <div className="space-y-4 text-[15px] leading-[1.7] overflow-hidden break-words max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkMath]}
         rehypePlugins={[rehypeKatex]}
@@ -777,7 +787,7 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
                 href={href}
                 target={external ? "_blank" : undefined}
                 rel={external ? "noreferrer" : undefined}
-                className="font-semibold text-emerald-600 underline underline-offset-4 transition-colors hover:text-emerald-500 dark:text-emerald-400"
+                className="font-medium text-blue-600 dark:text-blue-400 underline underline-offset-4 transition-colors hover:text-blue-500"
                 {...props}
               >
                 {children}
@@ -785,16 +795,37 @@ const AssistantMessageContent = memo(({ content, isTyping }: { content: string, 
             );
           },
           p({ children, ...props }) {
-            return <p className="text-slate-900 dark:text-white whitespace-pre-wrap mb-3 last:mb-0" {...props}>{children}</p>;
+            return <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap mb-4 last:mb-0" {...props}>{children}</p>;
+          },
+          strong({ children, ...props }) {
+            return <strong className="font-semibold text-slate-900 dark:text-white" {...props}>{children}</strong>;
+          },
+          h1({ children, ...props }) {
+            return <h1 className="text-xl font-semibold text-slate-900 dark:text-white mt-6 mb-3 first:mt-0" {...props}>{children}</h1>;
+          },
+          h2({ children, ...props }) {
+            return <h2 className="text-lg font-semibold text-slate-900 dark:text-white mt-5 mb-2 first:mt-0" {...props}>{children}</h2>;
+          },
+          h3({ children, ...props }) {
+            return <h3 className="text-base font-semibold text-slate-900 dark:text-white mt-4 mb-2 first:mt-0" {...props}>{children}</h3>;
+          },
+          h4({ children, ...props }) {
+            return <h4 className="text-[15px] font-semibold text-slate-900 dark:text-white mt-3 mb-1 first:mt-0" {...props}>{children}</h4>;
           },
           ul({ children, ...props }) {
-            return <ul className="space-y-2 mb-3 last:mb-0 ml-4 list-disc marker:text-emerald-600" {...props}>{children}</ul>;
+            return <ul className="space-y-1.5 mb-4 last:mb-0 ml-5 list-disc marker:text-slate-400 dark:marker:text-slate-500" {...props}>{children}</ul>;
           },
           ol({ children, ...props }) {
-            return <ol className="space-y-2 mb-3 last:mb-0 ml-4 list-decimal marker:text-emerald-600" {...props}>{children}</ol>;
+            return <ol className="space-y-1.5 mb-4 last:mb-0 ml-5 list-decimal marker:text-slate-400 dark:marker:text-slate-500" {...props}>{children}</ol>;
           },
           li({ children, ...props }) {
-            return <li className="text-slate-800 dark:text-slate-200" {...props}>{children}</li>;
+            return <li className="text-slate-700 dark:text-slate-200 pl-1" {...props}>{children}</li>;
+          },
+          blockquote({ children, ...props }) {
+            return <blockquote className="border-l-[3px] border-slate-200 dark:border-slate-700 pl-4 my-4 text-slate-500 dark:text-slate-400 italic" {...props}>{children}</blockquote>;
+          },
+          hr({ ...props }) {
+            return <hr className="my-6 border-slate-100 dark:border-slate-800" {...props} />;
           }
         }}
       >
@@ -2031,7 +2062,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   const panelChat = (
     <div ref={variant !== "full-page" ? chatScrollRef : undefined} className={cn("overscroll-contain [scrollbar-width:thin] [scrollbar-gutter:stable]", variant === "full-page" ? "w-full" : "flex-1 min-h-0 overflow-y-auto")}>
-      <div className={cn("flex flex-col gap-4 px-4 py-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]", variant === "full-page" && (isSidebarCollapsed ? "max-w-6xl" : "max-w-[52rem]"), variant === "full-page" && "mx-auto w-full pb-52")}>
+      <div className={cn("flex flex-col gap-4 px-4 py-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]", variant === "full-page" && "max-w-[48rem] mx-auto w-full pb-52")}>
         {isLoadingChat ? (
           <div className="flex-1 flex items-center justify-center py-16 h-full">
             <Spinner className="w-8 h-8 text-muted-foreground" />
@@ -2089,12 +2120,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     initial={prefersReducedMotion ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.16 }}
-                  className={cn(
-                    "flex items-end gap-2 w-full",
-                    isUser ? "justify-end" : "justify-start"
-                  )}
+                  className="flex w-full"
                 >
-                  <div className={cn("flex flex-col gap-1.5 min-w-0", isUser ? "order-1 items-end max-w-[75%]" : "order-2 w-full")}>
+                  <div className="flex flex-col gap-1.5 min-w-0 w-full">
 
                     {/* â”€â”€ Text Bubble â”€â”€ */}
                     {message.content && (
@@ -2103,24 +2131,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         className={cn(
                           "relative min-w-0 transition-all duration-700 msg-target-glow scroll-mt-12",
                           isUser
-                            ? "rounded-2xl rounded-br-none px-4 py-2.5 bg-foreground text-background"
+                            ? "rounded-xl px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50"
                             : "w-full max-w-full bg-transparent text-foreground"
                         )}
                       >
-                        {isUser && (
-                          <svg
-                            width="8"
-                            height="12"
-                            viewBox="0 0 8 12"
-                            fill="currentColor"
-                            className="absolute bottom-0 -right-1.5 text-foreground"
-                          >
-                            <path d="M0 0V12H8C5 12 2 9 0 0Z" />
-                          </svg>
-                        )}
                         {isUser ? (
                           <>
-                            <p className="text-sm leading-relaxed break-words break-all whitespace-pre-wrap relative z-10">{message.content}</p>
+                            <p className="text-[15px] leading-relaxed break-words break-all whitespace-pre-wrap text-slate-800 dark:text-slate-200">{message.content}</p>
                             {message.contextUrl && (
                               <a
                                 href={message.contextUrl}
