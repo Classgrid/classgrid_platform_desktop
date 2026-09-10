@@ -146,6 +146,7 @@ export interface ApprovalCardProps {
   title?: string;
   approveLabel?: string;
   rejectLabel?: string;
+  isHistorical?: boolean;
   onApprove?: (payload?: { answers?: Record<string, string> }) => void;
   onReject?: () => void;
   className?: string;
@@ -163,6 +164,7 @@ export function ApprovalCard({
   title,
   approveLabel,
   rejectLabel,
+  isHistorical,
   onApprove,
   onReject,
   className,
@@ -176,6 +178,7 @@ export function ApprovalCard({
   const [planExpanded, setPlanExpanded] = useState(false);
   const [autoSecs, setAutoSecs] = useState(AUTO_APPROVE_SECS);
   const [autoUI, setAutoUI] = useState<"active" | "leaving" | "gone">("active");
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoFadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoFired = useRef(false);
@@ -192,6 +195,10 @@ export function ApprovalCard({
       if (autoFadeTimer.current) clearTimeout(autoFadeTimer.current);
     };
   }, []);
+
+  if (isHistorical || isSubmitted) {
+    return null;
+  }
 
   const safeStep = Math.min(step, Math.max(questions.length - 1, 0));
   const allAnswered =
@@ -269,13 +276,16 @@ export function ApprovalCard({
         goToStep(safeStep + 1);
         return;
       }
+      setIsSubmitted(true);
       onApprove?.({ answers: a });
       return;
     }
+    setIsSubmitted(true);
     onApprove?.();
   };
 
   const handleReject = () => {
+    setIsSubmitted(true);
     onReject?.();
   };
 

@@ -873,7 +873,12 @@ const MarkdownComponents = {
   }
 };
 
-const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction }: { content: string, isTyping?: boolean, onApprovalAction?: (text: string) => void }) => {
+const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isHistorical }: { content: string, isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean }) => {
+  const onApprovalActionRef = React.useRef(onApprovalAction);
+  React.useEffect(() => {
+    onApprovalActionRef.current = onApprovalAction;
+  }, [onApprovalAction]);
+
   // Preprocess AI output:
   // 1. Convert fake bullet chars to real Markdown list markers
   // 2. Remove blank lines between consecutive list items (prevents <p> wrap inside <li> = big gaps)
@@ -912,16 +917,17 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction }: {
             return (
               <ApprovalCard 
                 {...parsedProps} 
+                isHistorical={isHistorical}
                 onApprove={(payload) => {
                   if (payload?.answers) {
                     const formatted = Object.entries(payload.answers).map(([k, v]) => `- ${v}`).join("\n");
-                    onApprovalAction?.(`Here are my answers:\n${formatted}`);
+                    onApprovalActionRef.current?.(`Here are my answers:\n${formatted}`);
                   } else {
-                    onApprovalAction?.(`I approve this plan.`);
+                    onApprovalActionRef.current?.(`I approve this plan.`);
                   }
                 }}
                 onReject={() => {
-                  onApprovalAction?.(`I want to skip this or I do not approve.`);
+                  onApprovalActionRef.current?.(`I want to skip this or I do not approve.`);
                 }}
               />
             );
@@ -2367,6 +2373,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                             <AssistantMessageContent 
                               content={message.content} 
                               isTyping={message.typing} 
+                              isHistorical={index < messages.length - 1}
                               onApprovalAction={(text) => {
                                 if (!submitting) void askQuestion(text);
                               }}
