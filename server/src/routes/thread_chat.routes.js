@@ -1511,7 +1511,7 @@ router.post('/:id/messages', isAuthenticated, upload.array('files', 80), async (
                 recipient: m.user_id,
                 type: 'chat',
                 title: thread.type === 'group' ? `New message in ${groupForThread?.name || 'Group'}` : `New message from ${req.user.name || 'User'}`,
-                message: lastMsgText,
+                message: lastMsgText || 'New message',
                 link: `/platform/chat?threadId=${threadId}`,
                 relatedId: threadId,
                 organization_id: thread.org_id || req.user.organization_id,

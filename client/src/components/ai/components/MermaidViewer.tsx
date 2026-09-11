@@ -23,7 +23,6 @@ const sanitizeMermaid = (chart: string): string => {
 
 export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onRetry?: (errorMsg: string) => void, isTyping?: boolean }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const hasRetried = useRef(false);
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,9 +53,9 @@ export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onR
 
   useEffect(() => {
     let isMounted = true;
+    let localHasRetried = false;
     setLoading(true);
     setError(null);
-    hasRetried.current = false;
 
     // Debounce: only render after 1500ms of no changes (streaming fully stopped)
     const timer = setTimeout(() => {
@@ -87,8 +86,8 @@ export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onR
             console.error('Mermaid render error:', err?.message || err);
             setError('Repairing diagram...');
             setLoading(false);
-            if (onRetry && !hasRetried.current) {
-              hasRetried.current = true;
+            if (onRetry && !localHasRetried) {
+              localHasRetried = true;
               onRetry(err?.message || "Invalid diagram syntax");
             }
             window.dispatchEvent(
