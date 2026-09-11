@@ -845,7 +845,7 @@ const MarkdownComponents = {
   pre({ children }: any) {
     return <>{children}</>;
   },
-  code({ node, inline, className, children, ...props }: any, isTyping?: boolean) {
+  code({ node, inline, className, children, ...props }: any, isTyping?: boolean, onRetry?: (errorMsg: string) => void) {
     const codeString = String(children).replace(/\n$/, "");
     
     // 🚨 Intercept URLs/Links that the AI hallucinates into code blocks 🚨
@@ -872,7 +872,7 @@ const MarkdownComponents = {
     const isMermaid = language === "mermaid" || codeString.trim().startsWith("graph ") || codeString.trim().startsWith("sequenceDiagram") || codeString.trim().startsWith("pie") || codeString.trim().startsWith("gantt") || codeString.trim().startsWith("stateDiagram") || codeString.trim().startsWith("classDiagram");
 
     if (!inline && isMermaid) {
-      return <MermaidViewer chart={codeString} onRetry={onRetryRef.current} />;
+      return <MermaidViewer chart={codeString} onRetry={onRetry} />;
     }
 
     if (!inline && language === "carousel") {
@@ -1043,7 +1043,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
             );
           }
         }
-        return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current);
+        return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current, onRetryRef.current);
       },
       table({ children, ...props }: any) {
         return (
