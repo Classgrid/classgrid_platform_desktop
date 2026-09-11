@@ -952,24 +952,29 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
           } catch (e) {
             if (isTypingRef.current) {
               return (
-                <div className="flex items-center gap-2 my-4 pl-1">
-                  <p
-                    className="bg-[linear-gradient(110deg,#404040,35%,#fff,50%,#404040,75%,#404040)] bg-[length:200%_100%] bg-clip-text text-base text-transparent"
-                    style={{ animation: "shimmer 5s linear infinite" }}
+                <motion.div 
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2.5 my-4 pl-1 text-emerald-600 dark:text-emerald-400"
+                >
+                  <motion.div
+                     animate={{ rotate: [0, 15, -15, 0] }}
+                     transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                   >
-                    Crafting
-                  </p>
-                  <style>{`
-                    @keyframes shimmer {
-                      0% {
-                        background-position: 200% 0;
-                      }
-                      100% {
-                        background-position: -200% 0;
-                      }
-                    }
-                  `}</style>
-                </div>
+                    <Sparkles className="w-[15px] h-[15px]" />
+                  </motion.div>
+                  <span className="text-[13px] font-medium tracking-wide">Crafting interactive card</span>
+                  <motion.div className="flex items-center gap-1 ml-0.5">
+                    {[0, 1, 2].map((i) => (
+                      <motion.span
+                        key={i}
+                        className="w-1 h-1 rounded-full bg-emerald-600/70 dark:bg-emerald-400/70"
+                        animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
+                        transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15 }}
+                      />
+                    ))}
+                  </motion.div>
+                </motion.div>
               );
             }
             // Show graceful error state on interruption instead of leaking raw JSON
@@ -2420,7 +2425,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                             />
                           </div>
                         )}
-                        {!isUser && !message.typing && message.content.length > 0 && (
+                        {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && (
                           <div className="pl-1 mt-3">
                             <MessageActions content={message.content} messageId={message.id} />
                           </div>
