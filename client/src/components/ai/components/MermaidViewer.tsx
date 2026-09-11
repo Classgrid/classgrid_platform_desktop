@@ -84,9 +84,12 @@ export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onR
               return;
             }
             console.error('Mermaid render error:', err?.message || err);
-            setError('The AI generated an invalid diagram format.');
+            setError('Repairing diagram...');
             setLoading(false);
-            // We are REMOVING the automatic onRetry call here to prevent infinite retry loops.
+            if (onRetry && !hasRetried.current) {
+              hasRetried.current = true;
+              onRetry(err?.message || "Invalid diagram syntax");
+            }
             window.dispatchEvent(
               new CustomEvent('trigger-auto-repair', {
                 detail: { error: err?.message || err, chart }

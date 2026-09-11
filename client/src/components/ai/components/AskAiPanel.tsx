@@ -1672,6 +1672,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     }
   }, [session?.user?.email]);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const retryCountRef = useRef(0);
 
   const isGenerating = submitting || thinking || (messages[messages.length - 1]?.typing === true);
 
@@ -1958,6 +1959,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   }, [askQuestion]);
 
   async function askQuestion(question: string, options?: { hidden?: boolean }) {
+    if (!options?.hidden) {
+      retryCountRef.current = 0;
+    }
     let displayQuestion = question.trim();
     let apiQuestion = question.trim();
     const isDocsContextActive = pageContext?.path?.startsWith("/docs") && pageContext.path !== lastSentDocsPath;
@@ -2504,6 +2508,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               isHistorical={index < messages.length - 1}
                               onRetry={index === messages.length - 1 ? (errorMsg) => {
                                 if (askQuestionRef.current) {
+                                  if (retryCountRef.current >= 1) {
+                                    console.log("Max auto-retries reached. Aborting retry loop.");
+                                    return;
+                                  }
+                                  retryCountRef.current += 1;
                                   const isMermaid = errorMsg.toLowerCase().includes("mermaid");
                                   askQuestionRef.current(
                                     isMermaid
