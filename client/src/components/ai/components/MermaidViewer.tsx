@@ -126,7 +126,7 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
 
   return (
     <>
-      <div className="relative group flex justify-center items-center p-4 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#1e1e1e] min-h-[100px] overflow-x-auto overflow-y-hidden my-4">
+      <div className={`relative flex justify-center items-center p-6 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#1e1e1e] min-h-[100px] overflow-x-auto overflow-y-hidden my-4 ${showCode ? "items-start justify-start !p-4" : ""}`}>
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-black/30 z-10">
             <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
@@ -142,14 +142,14 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
           </div>
         ) : (
           <>
-            <div ref={ref} className={`w-full flex justify-center [&>svg]:max-w-full [&>svg]:h-auto ${showCode ? "hidden" : ""}`} />
+            <div ref={ref} className={`w-full flex justify-center [&>svg]:max-w-full [&>svg]:h-auto ${showCode ? "hidden" : "pt-4 pb-2"}`} />
             {showCode && (
-              <div className="w-full max-h-[300px] overflow-y-auto p-4 bg-slate-50 dark:bg-black/20 font-mono text-xs text-slate-700 dark:text-slate-300 whitespace-pre">
+              <div className="w-full max-h-[400px] overflow-y-auto font-mono text-[13px] leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre text-left">
                 {chart}
               </div>
             )}
             {svgContent && (
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-white/10 shadow-sm border border-slate-200 dark:border-white/5">
+              <div className="absolute top-3 right-3 opacity-80 hover:opacity-100 transition-opacity flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-[#2a2a2a] shadow-sm border border-slate-200 dark:border-white/5">
                 <button
                   onClick={handleCopy}
                   className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/20 text-slate-500 dark:text-slate-300 transition-colors"
