@@ -165,10 +165,10 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
             
             {/* Linear Style 3-Dot Dropdown */}
             {svgContent && (
-              <div className="absolute top-3 left-2 z-[50]" ref={dropdownRef}>
+              <div className="absolute top-3 -left-10 z-[50] opacity-0 group-hover:opacity-100 transition-opacity duration-200" ref={dropdownRef}>
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowDropdown(!showDropdown); }}
-                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                  className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
@@ -295,16 +295,7 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
               <div className="w-full h-full flex" onClick={(e) => e.stopPropagation()}>
                 
                 {/* SVG rendered fullscreen with Zoom & Pan */}
-                <div 
-                  className="flex-1 h-full flex items-center justify-center p-10 overflow-hidden relative"
-                  onWheel={(e) => {
-                    if (e.deltaY < 0) {
-                      setZoom(z => Math.min(z + 0.1, 5));
-                    } else {
-                      setZoom(z => Math.max(z - 0.1, 0.5));
-                    }
-                  }}
-                >
+                <div className="flex-1 h-full flex items-center justify-center p-10 overflow-hidden relative">
                   <motion.div
                     drag
                     dragMomentum={false}
