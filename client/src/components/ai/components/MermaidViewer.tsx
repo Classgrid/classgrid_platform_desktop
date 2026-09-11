@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import mermaid from 'mermaid';
-import { Loader2, Maximize2, X, AlertCircle, Copy, Check, Code2 } from 'lucide-react';
+import { Loader2, Maximize2, X, AlertCircle, Copy, Check, Code2, Link as LinkIcon } from 'lucide-react';
+import { toast } from "sonner";
 import { AnimatePresence, motion } from 'framer-motion';
 
 mermaid.initialize({
@@ -32,6 +33,7 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
   const handleCopy = () => {
     navigator.clipboard.writeText(chart);
     setCopied(true);
+    toast.success("Code contents copied to clipboard");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -151,6 +153,18 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
             {svgContent && (
               <div className="absolute top-3 right-3 opacity-80 hover:opacity-100 flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-[#2a2a2a] shadow-sm border border-slate-200 dark:border-white/5">
                 <button
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success("Diagram URL copied to clipboard");
+                  }}
+                  className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/20 text-slate-500 dark:text-slate-300 active:scale-95"
+                  title="Copy diagram link"
+                >
+                  <LinkIcon className="w-3.5 h-3.5" />
+                </button>
+                <div className="w-px h-3.5 bg-slate-300 dark:bg-white/20 mx-0.5" />
+                <button
                   onClick={(e) => { e.stopPropagation(); handleCopy(); }}
                   className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/20 text-slate-500 dark:text-slate-300 active:scale-95"
                   title="Copy mermaid source"
@@ -194,7 +208,19 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
               {/* Top Right Buttons */}
               <div className="absolute top-4 right-4 z-[10000] flex items-center gap-1 p-1 rounded-full bg-black/10 dark:bg-white/10 backdrop-blur-md">
                 <button
-                  onClick={handleCopy}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success("Diagram URL copied to clipboard");
+                  }}
+                  className="p-2.5 rounded-full hover:bg-black/20 dark:hover:bg-white/20 text-black/60 dark:text-white/60 transition-all cursor-pointer active:scale-95"
+                  title="Copy diagram link"
+                >
+                  <LinkIcon className="w-4 h-4" />
+                </button>
+                <div className="w-px h-4 bg-black/20 dark:bg-white/20 mx-1" />
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleCopy(); }}
                   className="p-2.5 rounded-full hover:bg-black/20 dark:hover:bg-white/20 text-black/60 dark:text-white/60 transition-all cursor-pointer"
                   title="Copy mermaid source"
                 >
