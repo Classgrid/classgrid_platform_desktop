@@ -861,7 +861,7 @@ export function ChatWindow({ thread, currentUserId, orgUsers }: ChatWindowProps)
       )}
 
       {/* Message Input */}
-      <div className="shrink-0 relative z-20 bg-background">
+      <div className="shrink-0 w-full relative z-20 bg-background">
         <ChatInput
           onSendMessage={handleSendMessage}
           isSending={isSending}

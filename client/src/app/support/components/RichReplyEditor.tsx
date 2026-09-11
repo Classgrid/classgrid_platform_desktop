@@ -1,38 +1,3 @@
-/*
- * =========================================================================================
- * STRICT SECURITY POLICY:
- * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
- * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
- * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
- * =========================================================================================
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
- * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
- * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
- * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
- * ─────────────────────────────────────────────────────────
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 NAMING CONVENTION RULE 🚨
- * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
- * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
- * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
- * ─────────────────────────────────────────────────────────
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 HOSTING & ARCHITECTURE RULE 🚨
- * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
- * 2. FRONTEND IS HOSTED ON VERCEL
- * ─────────────────────────────────────────────────────────
- */
-
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 "use client";
 
@@ -90,7 +55,6 @@ function Sep() {
 export interface RichReplyEditorRef {
   clear: () => void;
   getHTML: () => string;
-  setHTML: (html: string) => void;
   getFiles: () => File[];
 }
 
@@ -187,7 +151,7 @@ const RichReplyEditor = forwardRef<RichReplyEditorRef, RichReplyEditorProps>(
       }
     }, []);
 
-    // Expose clear, getHTML, and setHTML methods
+    // Expose clear and getHTML methods
     useImperativeHandle(ref, () => ({
       clear: () => {
         if (editorRef.current) {
@@ -197,12 +161,6 @@ const RichReplyEditor = forwardRef<RichReplyEditorRef, RichReplyEditorProps>(
         setFiles([]);
       },
       getHTML: () => editorRef.current?.innerHTML || "",
-      setHTML: (html: string) => {
-        if (editorRef.current) {
-          editorRef.current.innerHTML = html;
-          onChange(html);
-        }
-      },
       getFiles: () => files,
     }), [onChange, files]);
 
@@ -689,7 +647,7 @@ const RichReplyEditor = forwardRef<RichReplyEditorRef, RichReplyEditorProps>(
               onClick={handleEditorClick}
               onMouseOver={handleMouseOver}
               onMouseOut={handleMouseOut}
-              className="caret-primary p-4 bg-transparent text-sm text-foreground outline-none prose prose-sm dark:prose-invert max-w-none break-words [&_p]:mb-3 [&_p]:leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-zinc-500 dark:empty:before:text-zinc-500 empty:before:pointer-events-none [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-4 [&_li]:!mb-0 [&_li]:!py-0.5 [&_li_*]:!mb-0 [&_li_*]:!mt-0 [&_li_p]:!leading-relaxed [&_li_div]:!leading-relaxed [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic [&_a]:!text-blue-500 [&_a]:!no-underline [&_a]:cursor-pointer [&_u]:!decoration-emerald-500 [&_u]:underline-offset-4 [&_u]:decoration-2 [&_span[style*='underline']]:!decoration-emerald-500 [&_span[style*='underline']]:underline-offset-4 [&_span[style*='underline']]:decoration-2 [&_img]:max-w-[150px] [&_img]:max-h-[150px] [&_img]:object-cover [&_img]:rounded-lg [&_img]:cursor-pointer [&_img]:border [&_img]:border-border [&_img]:shadow-sm [&_img]:inline-block [&_img]:m-2 hover:[&_img]:opacity-80"
+              className="caret-primary p-4 bg-transparent text-sm text-foreground outline-none prose prose-sm dark:prose-invert max-w-none break-words break-all [&_p]:mb-3 [&_p]:leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-zinc-500 dark:empty:before:text-zinc-500 empty:before:pointer-events-none [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-4 [&_li]:!mb-0 [&_li]:!py-0.5 [&_li_*]:!mb-0 [&_li_*]:!mt-0 [&_li_p]:!leading-relaxed [&_li_div]:!leading-relaxed [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic [&_a]:!text-blue-500 [&_a]:!no-underline [&_a]:cursor-pointer [&_u]:!decoration-emerald-500 [&_u]:underline-offset-4 [&_u]:decoration-2 [&_span[style*='underline']]:!decoration-emerald-500 [&_span[style*='underline']]:underline-offset-4 [&_span[style*='underline']]:decoration-2 [&_img]:max-w-[150px] [&_img]:max-h-[150px] [&_img]:object-cover [&_img]:rounded-lg [&_img]:cursor-pointer [&_img]:border [&_img]:border-border [&_img]:shadow-sm [&_img]:inline-block [&_img]:m-2 hover:[&_img]:opacity-80"
               style={{ minHeight, maxHeight, overflowY: "auto", overflowX: "hidden" }}
             />
 

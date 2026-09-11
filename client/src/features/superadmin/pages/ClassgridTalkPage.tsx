@@ -1,52 +1,5 @@
-/**
- * ==============================================================================
- * 🚨 AI AGENT WARNING: BREADCRUMB POLICY 🚨
- * ==============================================================================
- * NEVER hardcode "Super Admin Dashboard /" as a breadcrumb on any deep dive page.
- * Deep dive pages or sub-pages MUST accurately reflect the actual parent pages 
- * they were opened from (e.g., Organizations / [Name] / Configuration / ...).
- * DO NOT use generic dashboard text for breadcrumbs.
- * ==============================================================================
- */
-
-/*
- * =========================================================================================
- * STRICT SECURITY POLICY:
- * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
- * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
- * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
- * =========================================================================================
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
- * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
- * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
- * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
- * ─────────────────────────────────────────────────────────
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 NAMING CONVENTION RULE 🚨
- * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
- * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
- * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
- * ─────────────────────────────────────────────────────────
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 HOSTING & ARCHITECTURE RULE 🚨
- * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
- * 2. FRONTEND IS HOSTED ON VERCEL
- * ─────────────────────────────────────────────────────────
- */
-
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
 import {
   MessageSquare,
   AlertCircle,
@@ -63,47 +16,27 @@ import {
   Copy,
   ArrowLeft,
   FileText,
-  Search,
-  Calendar,
-  X,
-  Lock,
-  Edit2,
 } from "lucide-react";
-import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { StatCard } from "@/components/marketing_ui/StatCard";
 import { RecentActivityTable } from "@/components/marketing_ui/data-table";
 import { Button } from "@/components/marketing_ui/button";
-import { Switch } from "@/components/marketing_ui/switch";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogFooter,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "@/components/marketing_ui/alert-dialog";
 import { Spinner } from "@/components/marketing_ui/spinner";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/marketing_ui/tooltip";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { motion, AnimatePresence } from "framer-motion";
-import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
 
 import { toast } from "sonner";
-import { getSocket } from "@/lib/socketClient";
-import RichReplyEditor from "@/app/support/components/RichReplyEditor";
-import type { RichReplyEditorRef } from "@/app/support/components/RichReplyEditor";
-import FilePreviewModal from "@/app/support/components/FilePreviewModal";
-import type { FilePreviewSource } from "@/app/support/components/FilePreviewModal";
+import RichReplyEditor, {
+  type RichReplyEditorRef,
+} from "@/app/support/components/RichReplyEditor";
+import FilePreviewModal, {
+  type FilePreviewSource,
+} from "@/app/support/components/FilePreviewModal";
 import {
   useReplyToTicket,
   useSupportTickets,
   useUpdateTicket,
   useDeleteTicket,
-  useEditTicketReply,
-  useTicketDraft,
-  useSaveTicketDraft,
 } from "../queries/useSupportTickets";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 import type {
@@ -111,6 +44,7 @@ import type {
   TicketStatus,
   TicketPriority,
 } from "../services/superAdminApi";
+import { RefreshButton } from "@/components/marketing_ui/refresh-button";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -182,26 +116,16 @@ function getRequester(ticket: SupportTicket) {
       ticket.submittedBy?.name ??
       ticket.submitterName ??
       ticket.name ??
-      (ticket as any).createdBy?.name ??
-      (ticket as any).author ??
       "Unknown",
     email:
       ticket.submittedBy?.email ??
       ticket.submitterEmail ??
       ticket.email ??
-      (ticket as any).createdBy?.email ??
       "",
     role:
       ticket.submittedBy?.role ??
-      (ticket as any).createdBy?.role ??
       (ticket as any).requester?.role ??
       (ticket as any).submitterRole ??
-      "",
-    profilePicture:
-      ticket.submittedBy?.profilePicture ??
-      (ticket as any).createdBy?.profilePicture ??
-      (ticket as any).requester?.profilePicture ??
-      (ticket as any).profilePicture ??
       "",
   };
 }
@@ -240,15 +164,6 @@ function getInitials(name: string) {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-function formatTicketDate(dateString: string | Date) {
-  const date = new Date(dateString);
-  const currentYear = new Date().getFullYear();
-  if (date.getFullYear() !== currentYear) {
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  }
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 const avatarColors = [
@@ -330,16 +245,6 @@ const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "reopened", label: "Reopened" },
 ];
 
-const ORG_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "", label: "Org Type: All" },
-  { value: "school", label: "School" },
-  { value: "junior_college", label: "Junior College" },
-  { value: "engineering", label: "Engineering" },
-  { value: "coaching", label: "Coaching" },
-  { value: "diploma", label: "Diploma" },
-  { value: "other", label: "Other" },
-];
-
 const PRIORITY_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "", label: "All Priority" },
   { value: "high", label: "High" },
@@ -398,12 +303,6 @@ const CATEGORY_LABELS: Record<string, string> = {
 export function ClassgridTalkPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
-  const [orgTypeFilter, setOrgTypeFilter] = useState("");
-  const [orgNameFilter, setOrgNameFilter] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [dateFrom, setDateFrom] = useState<Date | undefined>();
-  const [dateTo, setDateTo] = useState<Date | undefined>();
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(
     null
   );
@@ -417,83 +316,7 @@ export function ClassgridTalkPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [assigningTicketId, setAssigningTicketId] = useState<string | null>(null);
 
-  // New states for editing and confirmation
-  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
-  const editEditorRef = useRef<RichReplyEditorRef>(null);
-  const [sendEmailWithReply, setSendEmailWithReply] = useState(true);
-
   const { data: currentUser } = useCurrentUser();
-
-  // ── AI Draft Support ──
-  const { data: draftData, isLoading: isDraftLoading } = useTicketDraft(selectedTicket?._id || null);
-  const saveDraftMutation = useSaveTicketDraft();
-  const isSendingRef = useRef(false);
-  const [isAiDraft, setIsAiDraft] = useState(false);
-
-  const draftLoadedForTicketId = useRef<string | null>(null);
-
-  // Load draft into editor when ticket changes or draft loads
-  useEffect(() => {
-    if (!selectedTicket || isDraftLoading) return;
-    
-    // Only load the draft ONCE per ticket activation to prevent cursor jumping
-    if (draftLoadedForTicketId.current === selectedTicket._id) return;
-
-    if (draftData?.draft?.draftContent !== undefined) {
-      const draftContent = draftData.draft.draftContent || "";
-      let parsed = draftContent;
-      try {
-        const p = JSON.parse(draftContent);
-        if (p.text || p.content) parsed = p.content || p.text;
-      } catch(e) {}
-      
-      // Inject the current user's name if the AI left the [ADMIN_NAME] placeholder
-      if (currentUser?.name) {
-        parsed = parsed.replace(/\[ADMIN_NAME\]/g, currentUser.name);
-      } else {
-        parsed = parsed.replace(/\[ADMIN_NAME\]/g, "Customer Success Manager");
-      }
-      
-      setReplyBody(parsed);
-      replyEditorRef.current?.setHTML(parsed);
-      setIsAiDraft(draftData.draft.source === "ai_generated");
-      draftLoadedForTicketId.current = selectedTicket._id;
-    } else {
-      setReplyBody("");
-      replyEditorRef.current?.clear();
-      setIsAiDraft(false);
-      draftLoadedForTicketId.current = selectedTicket._id;
-    }
-  }, [selectedTicket?._id, draftData?.draft?.draftContent, isDraftLoading, currentUser?.name]);
-
-  // Debounced auto-save draft
-  useEffect(() => {
-    if (!selectedTicket || replyBody === undefined) return;
-    
-    let parsedDraft = draftData?.draft?.draftContent || "";
-    try {
-      const p = JSON.parse(parsedDraft);
-      if (p.text || p.content) parsedDraft = p.content || p.text;
-    } catch(e) {}
-    
-    if (currentUser?.name) {
-      parsedDraft = parsedDraft.replace(/\[ADMIN_NAME\]/g, currentUser.name);
-    } else {
-      parsedDraft = parsedDraft.replace(/\[ADMIN_NAME\]/g, "Customer Success Manager");
-    }
-    
-    if (replyBody === parsedDraft) return;
-
-    const timer = setTimeout(() => {
-      if (isSendingRef.current) return; // Prevent race condition with manual send
-      saveDraftMutation.mutate({ id: selectedTicket._id, draftContent: replyBody });
-      if (isAiDraft && replyBody !== parsedDraft) {
-        setIsAiDraft(false);
-      }
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, [replyBody, selectedTicket?._id, draftData?.draft?.draftContent, currentUser?.name]);
 
   const { data, isLoading, isError, refetch, isFetching } = useSupportTickets({
     status: statusFilter || undefined,
@@ -502,182 +325,12 @@ export function ClassgridTalkPage() {
     type: "inquiry",
   });
 
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
-
-    socket.on("support_ticket_created", () => refetch());
-    socket.on("support_ticket_updated", () => refetch());
-    return () => {
-      socket.off("support_ticket_created");
-      socket.off("support_ticket_updated");
-    };
-  }, [refetch]);
-
   const updateTicket = useUpdateTicket();
   const replyToTicket = useReplyToTicket();
   const deleteTicketMutation = useDeleteTicket();
-  const editTicketReply = useEditTicketReply();
 
   const tickets = data?.tickets ?? [];
-
-  // ── Auto-Open & Auto-Assign from URL ──
-  const [searchParams, setSearchParams] = useSearchParams();
-  useEffect(() => {
-    const ticketId = searchParams.get("ticketId");
-    const autoAssign = searchParams.get("autoAssign") === "true";
-
-    if (ticketId && currentUser) {
-      const processTicket = (targetTicket: SupportTicket) => {
-        if (!selectedTicket || selectedTicket._id !== targetTicket._id) {
-          setSelectedTicket(targetTicket);
-        }
-
-        const currentAssigneeId =
-          typeof targetTicket.assignedTo === "object"
-            ? targetTicket.assignedTo?._id
-            : targetTicket.assignedTo;
-
-        if (autoAssign && currentAssigneeId !== currentUser._id) {
-          updateTicket.mutate(
-            { id: targetTicket._id, assignedTo: currentUser._id },
-            {
-              onSuccess: (res) => {
-                toast.success("Ticket auto-assigned to you");
-                if (res.ticket) setSelectedTicket(res.ticket);
-                refetch();
-              },
-            }
-          );
-        }
-
-        searchParams.delete("ticketId");
-        searchParams.delete("autoAssign");
-        setSearchParams(searchParams);
-      };
-
-      const foundInList = tickets.find((t) => t._id === ticketId);
-      if (foundInList) {
-        processTicket(foundInList);
-      } else {
-        // Explicitly fetch the ticket if it's new and not in the cached list yet
-        import("../services/superAdminApi").then(({ supportApi }) => {
-          supportApi.getTicket(ticketId).then((res) => {
-            if (res.success && res.ticket) {
-              processTicket(res.ticket);
-            }
-          }).catch(console.error);
-        });
-      }
-    }
-  }, [tickets, searchParams, currentUser]);
   const apiStats = data?.stats;
-
-  const orgTypes = useMemo(() => {
-    const types = new Set<string>();
-    tickets.forEach((t) => {
-      const type = (t as any).organization_id?.org_type;
-      if (type) types.add(type);
-    });
-    return Array.from(types).sort();
-  }, [tickets]);
-
-  const orgEntries = useMemo(() => {
-    const map = new Map<string, string>();
-    tickets.forEach((t) => {
-      const name = (t as any).organization_id?.name || (t as any).institution;
-      const logo = (t as any).organization_id?.logo_url || "";
-      if (name && !map.has(name)) map.set(name, logo);
-    });
-    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [tickets]);
-
-  const roles = useMemo(() => {
-    const rs = new Set<string>();
-    tickets.forEach((t) => {
-      const role = t.submittedBy?.role;
-      if (role) rs.add(role);
-    });
-    return Array.from(rs).sort();
-  }, [tickets]);
-
-  // Client-side search & date filtering
-  const filteredTickets = useMemo(() => {
-    let result = tickets;
-
-    if (orgTypeFilter) {
-      result = result.filter((t) => {
-        const type = (t as any).organization_id?.org_type;
-        return type && type.toLowerCase() === orgTypeFilter.toLowerCase();
-      });
-    }
-
-    if (orgNameFilter) {
-      result = result.filter((t) => {
-        const name = (t as any).organization_id?.name || (t as any).institution;
-        return name === orgNameFilter;
-      });
-    }
-    
-    if (roleFilter) {
-      result = result.filter((t) => t.submittedBy?.role === roleFilter);
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const cleanQ = q.replace(/^#/, "");
-
-      result = result.filter((t) => {
-        const req = getRequester(t);
-        const name = req.name.toLowerCase();
-        const email = req.email.toLowerCase();
-        const id = (t._id || "").toLowerCase();
-
-        return (
-          id.includes(cleanQ) ||
-          name.includes(q) ||
-          email.includes(q)
-        );
-      });
-    }
-    if (dateFrom) {
-      const startOfDay = new Date(dateFrom);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(dateFrom);
-      endOfDay.setHours(23, 59, 59, 999);
-      
-      result = result.filter((t) => {
-        const cDate = new Date(t.createdAt);
-        const uDate = t.updatedAt ? new Date(t.updatedAt) : cDate;
-        
-        // Check if ticket was created or updated on this day
-        if ((cDate >= startOfDay && cDate <= endOfDay) || 
-            (uDate >= startOfDay && uDate <= endOfDay)) {
-          return true;
-        }
-
-        // Also check if any reply was made on this day
-        if (t.replies && Array.isArray(t.replies)) {
-          return t.replies.some((r: any) => {
-            const rDate = new Date(r.createdAt);
-            return rDate >= startOfDay && rDate <= endOfDay;
-          });
-        }
-        
-        return false;
-      });
-    }
-
-    if (priorityFilter) {
-      result = result.filter((t) => t.priority === priorityFilter);
-    }
-    
-    if (statusFilter) {
-      result = result.filter((t) => t.status === statusFilter);
-    }
-
-    return result;
-  }, [tickets, searchQuery, dateFrom, orgTypeFilter, orgNameFilter, roleFilter, priorityFilter, statusFilter]);
 
   const displayStats = useMemo(
     () => ({
@@ -751,6 +404,7 @@ export function ClassgridTalkPage() {
     const cleanText = currentHTML.replace(/<[^>]+>/g, "").trim();
     const files = replyEditorRef.current?.getFiles() || [];
     
+    // Allow submission if there is text OR if there are files attached
     if (!selectedTicket || (!cleanText && files.length === 0)) return;
 
     try {
@@ -758,42 +412,17 @@ export function ClassgridTalkPage() {
         id: selectedTicket._id,
         message: currentHTML,
         files: files.length > 0 ? files : undefined,
-        sendEmail: sendEmailWithReply,
       });
       setSelectedTicket(result.ticket);
       setReplyBody("");
       replyEditorRef.current?.clear();
-      // Clear draft on successful send
-      saveDraftMutation.mutate({ id: selectedTicket._id, draftContent: "" });
       refetch();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to add reply");
-    } finally {
-      setTimeout(() => {
-        isSendingRef.current = false;
-      }, 500);
-    }
-  };
-
-  const submitEditReply = async (replyId: string) => {
-    if (!selectedTicket || !editEditorRef.current || isSendingRef.current) return;
-    const currentHTML = editEditorRef.current.getHTML() || "";
-    const cleanText = currentHTML.replace(/<[^>]+>/g, "").trim();
-    if (!cleanText) return;
-
-    isSendingRef.current = true;
-    try {
-      const result = await editTicketReply.mutateAsync({
-        ticketId: selectedTicket._id,
-        replyId,
-        message: currentHTML,
-      });
-      setSelectedTicket(result.ticket);
-      setEditingReplyId(null);
-      refetch();
-      toast.success("Reply updated successfully");
+      
+      setReplySent(true);
+      if (replySentTimerRef.current) clearTimeout(replySentTimerRef.current);
+      replySentTimerRef.current = setTimeout(() => setReplySent(false), 10000);
     } catch {
-      toast.error("Failed to update reply");
+      toast.error("Failed to send reply");
     }
   };
 
@@ -801,10 +430,16 @@ export function ClassgridTalkPage() {
   if (!selectedTicket) {
     return (
       <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-        {/* Header - Actions only */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-4">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Classgrid Talk Inquiries</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage inquiries from prospective institutions. All conversations are threaded and tracked.
+            </p>
+          </div>
           <div className="flex items-center gap-2">
-            
+            <RefreshButton onClick={() => refetch()} isFetching={isFetching} />
           </div>
         </div>
 
@@ -832,89 +467,48 @@ export function ClassgridTalkPage() {
           />
         </div>
 
-        {/* ═══ FILTER BAR ═══ */}
-        <SuperadminFilterBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          searchPlaceholder="Search by name, email, or inquiry ID..."
-        >
-          {/* Org Name */}
-          <div className="w-[150px]">
-            <ResponsiveSelect
-              className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
-              value={orgNameFilter}
-              onChange={(e) => setOrgNameFilter(e.target.value)}
-            >
-              <option value="">Org Name: All</option>
-              {orgEntries.map(([name, logo]) => (
-                <option key={name} value={name}>
-                  <span className="flex items-center gap-2">
-                    {logo ? (
-                      <img src={logo} alt="" className="w-4 h-4 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <span className="w-4 h-4 rounded-full bg-muted shrink-0 flex items-center justify-center text-[9px] font-bold text-muted-foreground">{name.charAt(0)}</span>
-                    )}
-                    <span className="truncate">{name}</span>
-                  </span>
-                </option>
-              ))}
-            </ResponsiveSelect>
-          </div>
-
-          {/* Org Type */}
-          <div className="w-[150px]">
-            <ResponsiveSelect
-              className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
-              value={orgTypeFilter}
-              onChange={(e) => setOrgTypeFilter(e.target.value)}
-            >
-              <option value="">Org Type: All</option>
-              {orgTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, " ")}
-                </option>
-              ))}
-            </ResponsiveSelect>
-          </div>
-
-          {/* Date picker */}
-          <div className="w-[180px] max-w-[180px] overflow-hidden relative">
-            <NikhilTimeCalendar
-              value={dateFrom}
-              onChange={setDateFrom}
-              placeholder="Select Date"
-              popDirection="down"
-              showTime={false}
-              className="h-9 w-full pr-8"
-            />
-            {dateFrom && (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent bg-background"
-                title="Clear date"
+        {/* Filters */}
+        <div className="flex items-center gap-2 mb-4">
+          <Filter size={14} className="text-muted-foreground shrink-0" />
+          <ResponsiveSelect
+            className="flex h-9 w-full sm:w-[180px] items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            {STATUS_OPTIONS.map((o) => (
+              <option 
+                key={o.value} 
+                value={o.value}
+                data-color={o.value ? statusColor(o.value) : undefined}
               >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-
-          {/* Status */}
-          <div className="w-[150px]">
-            <ResponsiveSelect
-              className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">Status: All</option>
-              {STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value} data-color={o.value ? statusColor(o.value) : undefined}>
+                {o.label}
+              </option>
+            ))}
+          </ResponsiveSelect>
+          <ResponsiveSelect
+            className="flex h-9 w-full sm:w-[180px] items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+          >
+            {PRIORITY_OPTIONS.map((o) => {
+              let pColor;
+              if (o.value === "low") pColor = "bg-zinc-400";
+              else if (o.value === "medium") pColor = "bg-amber-500";
+              else if (o.value === "high") pColor = "bg-orange-500";
+              else if (o.value === "urgent") pColor = "bg-red-500";
+              
+              return (
+                <option 
+                  key={o.value} 
+                  value={o.value}
+                  data-color={pColor}
+                >
                   {o.label}
                 </option>
-              ))}
-            </ResponsiveSelect>
-          </div>
-        </SuperadminFilterBar>
+              );
+            })}
+          </ResponsiveSelect>
+        </div>
 
         {/* Ticket List */}
         <div className="mt-4">
@@ -928,18 +522,12 @@ export function ClassgridTalkPage() {
               isLoading={isLoading}
               skeletonLines={6}
               emptyMessage="No tickets found. Adjust your filters or check back later."
-              rows={filteredTickets.map((ticket) => {
+              rows={tickets.map((ticket) => {
                 const name =
                   ticket.submittedBy?.name ??
                   ticket.submitterName ??
                   ticket.name ??
                   "Unknown";
-
-                const profilePicture = 
-                  ticket.submittedBy?.profilePicture ??
-                  (ticket as any).createdBy?.profilePicture ??
-                  (ticket as any).requester?.profilePicture ??
-                  null;
 
                 const conversation = getConversation(ticket);
                 let unreadCount = 0;
@@ -953,26 +541,22 @@ export function ClassgridTalkPage() {
                     <div className="flex items-center gap-3">
                       <div className="relative shrink-0">
                         <div
-                          className={`w-9 h-9 rounded-full flex items-center justify-center overflow-hidden text-white font-bold text-xs ${getAvatarColor(
+                          className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs ${getAvatarColor(
                             name
                           )}`}
                         >
-                          {profilePicture ? (
-                            <img src={profilePicture} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            getInitials(name)
-                          )}
+                          {getInitials(name)}
                         </div>
                         {unreadCount > 0 && (
                           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-blue-500 border-2 border-card" />
                         )}
                       </div>
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className="font-semibold text-foreground text-sm truncate" title={name}>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-semibold text-foreground text-sm">
                           {name}
                         </span>
                         {(ticket as any).organization_id?.name && (
-                          <span className="text-[10px] text-muted-foreground truncate">
+                          <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
                             {(ticket as any).organization_id.name}
                           </span>
                         )}
@@ -980,20 +564,15 @@ export function ClassgridTalkPage() {
                     </div>
                   ),
                   subject: (
-                    <div className="flex flex-col gap-1.5 min-w-0">
-                      <span className="text-sm text-foreground font-medium truncate" title={ticket.subject}>
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-sm text-foreground">
                         {ticket.subject}
                       </span>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] text-muted-foreground">
-                          Created: {formatTicketDate(ticket.createdAt)}
+                      {unreadCount > 0 && (
+                        <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full w-fit">
+                          {unreadCount} new message{unreadCount > 1 ? "s" : ""}
                         </span>
-                        {unreadCount > 0 && (
-                          <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full w-fit ml-1">
-                            {unreadCount} new message{unreadCount > 1 ? "s" : ""}
-                          </span>
-                        )}
-                      </div>
+                      )}
                     </div>
                   ),
                   status: (
@@ -1036,9 +615,7 @@ export function ClassgridTalkPage() {
                             <TooltipTrigger asChild>
                               <div className="flex items-center gap-2 px-2 py-1 rounded-full border border-border bg-card text-xs font-medium text-foreground w-fit cursor-default hover:border-foreground/20 transition-colors">
                                 <div className="w-5 h-5 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-border">
-                                  {ticket.assignedTo.profilePicture ? (
-                                    <img src={ticket.assignedTo.profilePicture} alt="" className="w-full h-full object-cover" />
-                                  ) : currentUser?.profilePicture && ticket.assignedTo._id === currentUser._id ? (
+                                  {currentUser?.profilePicture && ticket.assignedTo._id === currentUser._id ? (
                                     <img src={currentUser.profilePicture} alt="" className="w-full h-full object-cover" />
                                   ) : (
                                     <div className={`w-full h-full flex items-center justify-center text-white font-bold text-[9px] ${getAvatarColor(ticket.assignedTo.name)}`}>
@@ -1137,7 +714,11 @@ export function ClassgridTalkPage() {
         >
           {statusLabel(selectedTicket.status)}
         </span>
-        
+        <RefreshButton
+            onClick={() => refetch()}
+            isFetching={isFetching}
+            className="ml-auto"
+          />
       </div>
 
       {/* 2-Column Grid */}
@@ -1169,89 +750,45 @@ export function ClassgridTalkPage() {
                 <div className="flex-1 min-w-0">
                   <div className="mb-3">
                     <div className="flex items-center flex-wrap gap-y-1 gap-x-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center">
-                          <span className="font-bold text-sm text-foreground">
-                            {msg.author}
+                      <div className="flex items-center">
+                        <span className="font-bold text-sm text-foreground">
+                          {msg.author}
+                        </span>
+                        {(msg as any).authorRole === "super_admin" && (
+                          <span
+                            className="ml-1.5 inline-flex items-center"
+                            title="Verified Admin"
+                          >
+                            <BadgeCheck className="w-4 h-4 text-white fill-[#1DA1F2] dark:text-[#0f0f0f]" />
                           </span>
-                          {(msg as any).authorRole === "super_admin" && (
-                            <span
-                              className="ml-1.5 inline-flex items-center"
-                              title="Verified Admin"
-                            >
-                              <BadgeCheck className="w-4 h-4 text-white fill-[#1DA1F2] dark:text-[#0f0f0f]" />
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {fmtDateTime(msg.date)}
-                        </p>
+                        )}
                       </div>
-                      
-                      {msg.role === "admin" && msg.author === (currentUser?.name || currentUser?.email) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingReplyId((msg as any)._id)}
-                          className="h-6 px-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          <Edit2 className="w-3 h-3 mr-1" /> Edit
-                        </Button>
-                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {fmtDateTime(msg.date)}
+                      </p>
                     </div>
                     {(msg as any).orgName && (
                       <div className="mt-1.5">
                         <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-muted/60 border border-border text-xs font-medium text-muted-foreground">
                           {(msg as any).orgLogo && (
-                            <img src={(msg as any).orgLogo} alt="" className="w-4 h-4 rounded-none object-contain" />
+                            <img src={(msg as any).orgLogo} alt="" className="w-4 h-4 rounded-sm object-contain" />
                           )}
                           {(msg as any).orgName}
                         </span>
                       </div>
                     )}
                   </div>
-                  {editingReplyId === (msg as any)._id ? (
-                    <div className="mt-2">
-                      <RichReplyEditor
-                        ref={editEditorRef}
-                        initialHtml={msg.body}
-                        onChange={() => {}}
-                        minHeight={150}
-                        placeholder="Edit your reply..."
-                        hideAttachments
-                        onSubmit={() => submitEditReply((msg as any)._id)}
-                      />
-                      <div className="flex items-center justify-end gap-2 mt-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingReplyId(null)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => submitEditReply((msg as any)._id)}
-                          disabled={editTicketReply.isPending}
-                        >
-                          {editTicketReply.isPending ? "Saving..." : "Save Changes"}
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      className="whitespace-pre-wrap break-words text-base text-foreground leading-relaxed [&_*]:!text-foreground [&>p]:mb-4 last:[&>p]:mb-0 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-4 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:mb-4 [&>li]:mb-1.5 [&>strong]:!font-bold [&>h1]:text-xl [&>h1]:!font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:!font-bold [&>h2]:mb-3 [&>h3]:text-base [&>h3]:!font-bold [&>h3]:mb-2 [&>blockquote]:border-l-4 [&>blockquote]:border-primary/50 [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:my-3 [&_a]:!text-blue-500 [&_a]:!no-underline hover:[&_a]:!text-blue-400 [&_u]:!decoration-emerald-500 [&_u]:underline-offset-4 [&_u]:decoration-2 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:border [&_img]:border-border [&_img]:my-4 [&_img]:max-h-[500px] [&_img]:object-contain overflow-hidden"
-                      dangerouslySetInnerHTML={{ __html: msg.body }}
-                      onClick={(e) => {
-                        const target = e.target as HTMLElement;
-                        if (target.tagName === "IMG") {
-                          const src = (target as HTMLImageElement).src;
-                          setPreviewFile({ name: "Image preview", src });
-                        }
-                      }}
-                    />
-                  )}
+                  <div
+                    className="whitespace-pre-wrap break-words break-all text-base text-foreground leading-relaxed [&>p]:mb-4 last:[&>p]:mb-0 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-4 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:mb-4 [&>li]:mb-1.5 [&>strong]:font-bold [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-bold [&>h2]:mb-3 [&>h3]:text-base [&>h3]:font-bold [&>h3]:mb-2 [&>blockquote]:border-l-4 [&>blockquote]:border-primary/50 [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:my-3 [&_a]:!text-blue-500 [&_a]:!no-underline hover:[&_a]:!text-blue-400 [&_u]:!decoration-emerald-500 [&_u]:underline-offset-4 [&_u]:decoration-2 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:border [&_img]:border-border [&_img]:my-4 [&_img]:max-h-[500px] [&_img]:object-contain overflow-hidden"
+                    dangerouslySetInnerHTML={{ __html: msg.body }}
+                    onClick={(e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.tagName === "IMG") {
+                        const src = (target as HTMLImageElement).src;
+                        setPreviewFile({ name: "Image preview", src });
+                      }
+                    }}
+                  />
 
                   {/* Message Attachments */}
                   {(msg as any).attachments &&
@@ -1352,56 +889,25 @@ export function ClassgridTalkPage() {
                   <RichReplyEditor
                     ref={replyEditorRef}
                     onChange={(text) => {
-                      if (isSendingRef.current) return;
                       setReplyBody(text);
                       if (text.trim() && replySent) {
                         setReplySent(false);
                         if (replySentTimerRef.current) clearTimeout(replySentTimerRef.current);
                       }
                     }}
-                    placeholder={isDraftLoading ? "Loading draft..." : "Type your reply here..."}
+                    placeholder="Type your reply here..."
                     minHeight={300}
                     onSubmit={submitReply}
                   />
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <p>
-                        Press Enter to send, Shift+Enter for new line.
-                      </p>
-                      {isAiDraft && (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 font-medium">
-                          ✨ AI Draft 
-                          {draftData?.draft?.aiContext && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger className="cursor-help">
-                                  <AlertCircle className="w-3.5 h-3.5" />
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-[300px]">
-                                  <p><strong>AI Context:</strong> {draftData.draft.aiContext}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2" title="If checked, the user will receive an email about this reply.">
-                        <label htmlFor="send-email-toggle" className="text-xs font-semibold text-foreground cursor-pointer">
-                          Send Email
-                        </label>
-                        <Switch
-                          id="send-email-toggle"
-                          checked={sendEmailWithReply}
-                          onCheckedChange={setSendEmailWithReply}
-                        />
-                      </div>
-                      <Button
-                        variant="primary"
-                        onClick={submitReply}
-                        disabled={!replyBody.trim() || replyToTicket.isPending}
-                      >
+                    <p className="text-xs text-muted-foreground">
+                      Press Enter to send, Shift+Enter for new line.
+                    </p>
+                    <Button
+                      variant="primary"
+                      onClick={submitReply}
+                      disabled={!replyBody.trim() || replyToTicket.isPending}
+                    >
                       {replyToTicket.isPending ? (
                         <>
                           <Spinner className="w-4 h-4 mr-2" />
@@ -1417,7 +923,6 @@ export function ClassgridTalkPage() {
                   </div>
                 </div>
               </div>
-            </div>
             )
           ) : (
             <div className="mt-8 pt-8 border-t border-border text-center py-6">
@@ -1441,8 +946,6 @@ export function ClassgridTalkPage() {
               <MetaRow
                 label="Requester"
                 value={selectedRequester?.name || "-"}
-                avatar={selectedRequester?.profilePicture}
-                showFallbackAvatar={true}
               />
               <MetaRow
                 label="Email"
@@ -1481,16 +984,7 @@ export function ClassgridTalkPage() {
                 </dt>
                 <dd className="text-right text-muted-foreground min-w-0 break-words text-sm flex items-center justify-end gap-2 flex-wrap">
                   {selectedTicket.assignedTo?.name ? (
-                    <div className="flex items-center gap-1.5">
-                      {selectedTicket.assignedTo.profilePicture ? (
-                        <img src={selectedTicket.assignedTo.profilePicture} alt="" className="w-5 h-5 rounded-full object-cover" />
-                      ) : (
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-[9px] ${getAvatarColor(selectedTicket.assignedTo.name)}`}>
-                          {getInitials(selectedTicket.assignedTo.name)}
-                        </div>
-                      )}
-                      <span className="text-foreground font-medium">{selectedTicket.assignedTo.name}</span>
-                    </div>
+                    <span className="text-foreground font-medium">{selectedTicket.assignedTo.name}</span>
                   ) : (
                     <>
                       <span>Unassigned</span>
@@ -1558,11 +1052,6 @@ export function ClassgridTalkPage() {
                     disabled={updateTicket.isPending}
                     className="flex-1 h-8 px-2 text-sm rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 min-w-0"
                   >
-                    {(pendingStatus || selectedTicket.status) === "reopened" && (
-                      <option value="reopened" disabled data-color={statusColor("reopened")}>
-                        Reopened
-                      </option>
-                    )}
                     {STATUS_CHANGE_OPTIONS.map((s) => (
                       <option 
                         key={s} 
@@ -1591,32 +1080,6 @@ export function ClassgridTalkPage() {
                 {selectedMessages.length} message
                 {selectedMessages.length !== 1 ? "s" : ""} in this thread
               </div>
-
-              {selectedTicket.status !== "closed" && (
-                <div className="pt-2">
-                  <Button
-                    variant="outline"
-                    className="w-full text-xs gap-1.5"
-                    disabled={updateTicket.isPending}
-                    onClick={() => {
-                      updateTicket.mutate(
-                        { id: selectedTicket._id, status: "closed" },
-                        {
-                          onSuccess: (res) => {
-                            toast.success("Enquiry closed");
-                            if (res.ticket) setSelectedTicket(res.ticket);
-                            refetch();
-                          },
-                          onError: () => toast.error("Failed to close enquiry"),
-                        }
-                      );
-                    }}
-                  >
-                    <Lock className="w-3.5 h-3.5" />
-                    {updateTicket.isPending && updateTicket.variables?.status === "closed" ? "Closing..." : "Close Enquiry"}
-                  </Button>
-                </div>
-              )}
 
               <div className="pt-2">
                 <Button
@@ -1769,6 +1232,7 @@ export function ClassgridTalkPage() {
         }}
         variant="danger"
       />
+
     </div>
   );
 }
@@ -1780,15 +1244,11 @@ function MetaRow({
   value,
   mono,
   copyValue,
-  avatar,
-  showFallbackAvatar,
 }: {
   label: string;
   value: string;
   mono?: boolean;
   copyValue?: string;
-  avatar?: string;
-  showFallbackAvatar?: boolean;
 }) {
   return (
     <div className="flex items-start justify-between gap-2 min-w-0">
@@ -1798,14 +1258,6 @@ function MetaRow({
       <dd
         className={`text-right text-muted-foreground min-w-0 break-words ${mono ? "font-mono" : ""} text-sm flex items-center justify-end gap-1.5`}
       >
-        {avatar && (
-          <img src={avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
-        )}
-        {!avatar && showFallbackAvatar && value !== "-" && !value.startsWith("#") && (
-           <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-[9px] ${getAvatarColor(value)}`}>
-             {getInitials(value)}
-           </div>
-        )}
         <span>{value}</span>
         {copyValue && (
           <Button
