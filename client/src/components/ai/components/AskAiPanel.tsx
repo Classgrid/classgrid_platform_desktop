@@ -37,6 +37,7 @@ import {
   MessageSquareWarning,
   AlertTriangle,
   OctagonAlert,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
 
