@@ -53,7 +53,8 @@ const preprocessLaTeX = (content: string) => {
 
 const formatApprovalCard = (content: string) => {
   if (!content) return "";
-  return content.replace(/\[APPR_CARD\]([\s\S]*?)\[\/APPR_CARD\]/g, (match, jsonString) => {
+
+  const replacer = (match: string, jsonString: string) => {
     try {
       const data = JSON.parse(jsonString.trim());
       if (data.variant === 'questions' && Array.isArray(data.questions)) {
@@ -82,7 +83,11 @@ const formatApprovalCard = (content: string) => {
     } catch (e) {
       return "";
     }
-  }).trim();
+  };
+
+  let processed = content.replace(/\[APPR_CARD\]([\s\S]*?)\[\/APPR_CARD\]/gi, replacer);
+  processed = processed.replace(/```(?:appr|approval|APPR|APPROVAL)\s*\n([\s\S]*?)```/gi, replacer);
+  return processed.trim();
 };
 
 /* ── Single Message Row ── */

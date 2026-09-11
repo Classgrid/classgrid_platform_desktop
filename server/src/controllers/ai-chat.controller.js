@@ -474,7 +474,8 @@ export const deleteChatSession = async (req, res) => {
 
 const formatApprovalCard = (content) => {
     if (!content) return "";
-    return content.replace(/\[APPR_CARD\]([\s\S]*?)\[\/APPR_CARD\]/g, (match, jsonString) => {
+
+    const replacer = (match, jsonString) => {
         try {
             const data = JSON.parse(jsonString.trim());
             if (data.variant === 'questions' && Array.isArray(data.questions)) {
@@ -503,7 +504,11 @@ const formatApprovalCard = (content) => {
         } catch (e) {
             return "";
         }
-    }).trim();
+    };
+
+    let processed = content.replace(/\[APPR_CARD\]([\s\S]*?)\[\/APPR_CARD\]/gi, replacer);
+    processed = processed.replace(/```(?:appr|approval|APPR|APPROVAL)\s*\n([\s\S]*?)```/gi, replacer);
+    return processed.trim();
 };
 
 export const shareChatSession = async (req, res) => {
