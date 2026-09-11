@@ -279,12 +279,9 @@ export function ChatConversation({
               }
 
               return (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  layout
-                  transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                <div
+                  key={(msg as any)._clientKey || msg.id}
+                  className="flex flex-col"
                 >
                   <ChatBubble
                     message={msg}
@@ -312,7 +309,7 @@ export function ChatConversation({
                     onAcknowledge={onAcknowledge}
                     onPin={onPin}
                   />
-                </motion.div>
+                </div>
               );
             })}
           </div>
