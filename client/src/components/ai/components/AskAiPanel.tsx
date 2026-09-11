@@ -876,6 +876,38 @@ const MarkdownComponents = {
 const memoizedRemarkPlugins = [remarkMath, remarkGfm, remarkGithubAlerts];
 const memoizedRehypePlugins = [rehypeKatex];
 
+const CraftingBlock = () => {
+  const [timer, setTimer] = React.useState(0);
+  React.useEffect(() => {
+    const timerInterval = setInterval(() => {
+      setTimer((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timerInterval);
+  }, []);
+
+  return (
+    <div className="flex flex-col p-3 max-w-xl">
+      <div className="flex items-center justify-start gap-2 mb-4">
+        <p
+          className="bg-[linear-gradient(110deg,#404040,35%,#fff,50%,#404040,75%,#404040)] bg-[length:200%_100%] bg-clip-text text-base text-transparent animate-[shimmer_5s_linear_infinite]"
+          style={{ animation: "shimmer 5s linear infinite" }}
+        >
+          Crafting
+        </p>
+        <span className="text-sm text-muted-foreground">
+          {timer}s
+        </span>
+        <style>{`
+          @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+        `}</style>
+      </div>
+    </div>
+  );
+};
+
 const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isHistorical }: { content: string, isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean }) => {
   const onApprovalActionRef = React.useRef(onApprovalAction);
   const isTypingRef = React.useRef(isTyping);
@@ -951,31 +983,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
             );
           } catch (e) {
             if (isTypingRef.current) {
-              return (
-                <motion.div 
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2.5 my-4 pl-1 text-emerald-600 dark:text-emerald-400"
-                >
-                  <motion.div
-                     animate={{ rotate: [0, 15, -15, 0] }}
-                     transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                  >
-                    <Sparkles className="w-[15px] h-[15px]" />
-                  </motion.div>
-                  <span className="text-[13px] font-medium tracking-wide">Crafting interactive card</span>
-                  <motion.div className="flex items-center gap-1 ml-0.5">
-                    {[0, 1, 2].map((i) => (
-                      <motion.span
-                        key={i}
-                        className="w-1 h-1 rounded-full bg-emerald-600/70 dark:bg-emerald-400/70"
-                        animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
-                        transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15 }}
-                      />
-                    ))}
-                  </motion.div>
-                </motion.div>
-              );
+              return <CraftingBlock />;
             }
             // Show graceful error state on interruption instead of leaking raw JSON
             return (
