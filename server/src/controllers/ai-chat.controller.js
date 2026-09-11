@@ -224,6 +224,7 @@ export const streamAskAi = async (req, res) => {
 
         let dynamicSystemPrompt = SYSTEM_PROMPT;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user asks for a flowchart, diagram, or graph, output ONLY the valid Mermaid code block (\`\`\`mermaid\n...\n\`\`\`). Do NOT include any conversational preamble or filler text (e.g. "Here is the flowchart"). This saves time and tokens.`;
+        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user asks you to create a diagram, plan, or perform a task but DOES NOT provide the necessary context (e.g., just says "make a flow chart"), DO NOT guess or hallucinate the content. You MUST stop and ask clarifying questions first (e.g., "What process should this flowchart cover? Please share the steps."). DO NOT generate anything until you have sufficient information.`;
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {

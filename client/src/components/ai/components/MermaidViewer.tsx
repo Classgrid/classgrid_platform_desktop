@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import mermaid from 'mermaid';
-import { Loader2, Maximize2, X } from 'lucide-react';
+import { Loader2, Maximize2, X, AlertCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 mermaid.initialize({
@@ -129,8 +129,12 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
           </div>
         )}
         {error ? (
-          <div className="w-full overflow-x-auto bg-slate-50 dark:bg-black/20 p-4 rounded-lg font-mono text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
-            {chart}
+          <div className="w-full bg-slate-50 dark:bg-black/20 p-4 rounded-lg flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 min-h-[120px] border border-slate-200 dark:border-white/10">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertCircle className="w-4 h-4 text-orange-500" />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Diagram Incomplete</span>
+            </div>
+            <span className="text-[13px] text-center max-w-[250px]">The diagram could not be fully rendered due to missing or invalid syntax.</span>
           </div>
         ) : (
           <>
