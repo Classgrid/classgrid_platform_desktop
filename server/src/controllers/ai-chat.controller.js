@@ -239,6 +239,24 @@ export const streamAskAi = async (req, res) => {
                 return; // SKIP THE LLM ENTIRELY!
             }
             
+            // Short-circuit the AI completely if the user asks for the time or date
+            const timeDateWords = ["what is the time", "what time is it", "whats the time", "current time", "what is the date", "whats the date", "today's date", "todays date", "current date"];
+            if (timeDateWords.some(w => cleanMsg.includes(w)) && (!body.fileUrls || body.fileUrls.length === 0) && cleanMsg.length < 50) {
+                const now = new Date();
+                const formattedDate = now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const formattedTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+                const fastReply = `🕒 The current date is **${formattedDate}** and the time is **${formattedTime}**.`;
+                
+                if (!isIncognito && sessionId) {
+                    saveMessage(sessionId, "assistant", fastReply, []).catch(err => console.error(err));
+                    appendToHistory(sessionId, "assistant", fastReply).catch(err => console.error(err));
+                }
+                res.write(`data: ${JSON.stringify({ type: "answer", answer: fastReply })}\n\n`);
+                if (keepAliveInterval) clearInterval(keepAliveInterval);
+                res.end();
+                return; // SKIP THE LLM ENTIRELY!
+            }
+            
             messages.push({ role: "user", content });
         }
 
