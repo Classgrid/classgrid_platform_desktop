@@ -483,6 +483,7 @@ function ChatPageInner() {
         file_size: f.size
       })),
       reactions: {},
+      isSending: files.length > 0,
       _clientKey: tempId
     } as any;
 
