@@ -451,17 +451,17 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
       editorRef.current.innerHTML = "";
     }
     
-    try {
-      onSendMessage(text, finalFiles, options).catch(console.error);
-    } finally {
-      setIsSendingLocal(false);
+    // Fire and forget for Optimistic UI
+    onSendMessage(text, finalFiles, options).catch(console.error).finally(() => {
       if (onTyping && hasMedia) {
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
           onTyping(false, 'uploading');
-        }, 8000);
+        }, 1000);
       }
-    }
+    });
+
+    setIsSendingLocal(false);
   };
 
   // handleKeyDown moved directly to the element to handle text logic
