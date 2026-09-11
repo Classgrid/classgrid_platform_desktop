@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import mermaid from 'mermaid';
-import { Loader2, Maximize2, X, AlertCircle, Copy, Check, Code2 } from 'lucide-react';
+import { Loader2, Maximize2, X, AlertCircle, Copy, Check, Code2, Link as LinkIcon, MoreVertical, FileText } from 'lucide-react';
 import { toast } from "sonner";
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -29,6 +29,18 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
   const [fullscreen, setFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showCode, setShowCode] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(chart);
@@ -127,8 +139,8 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
   }, [fullscreen]);
 
   return (
-    <>
-      <div className={`relative flex justify-center items-center p-6 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#1e1e1e] min-h-[100px] overflow-x-auto overflow-y-hidden my-4 ${showCode ? "items-start justify-start !p-4" : ""}`}>
+    <div className="w-full relative group mermaid-wrapper">
+      <div className={`relative flex justify-center items-center p-6 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#1e1e1e] min-h-[100px] overflow-visible my-4 ${showCode ? "items-start justify-start !p-4" : ""}`}>
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-black/30 z-10">
             <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
@@ -148,6 +160,66 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
             {showCode && (
               <div className="w-full max-h-[400px] overflow-y-auto font-mono text-[13px] leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre text-left">
                 {chart}
+              </div>
+            )}
+            
+            {/* Linear Style 3-Dot Dropdown */}
+            {svgContent && (
+              <div className="absolute top-3 left-2 z-[50]" ref={dropdownRef}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowDropdown(!showDropdown); }}
+                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+                <AnimatePresence>
+                  {showDropdown && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                      transition={{ duration: 0.1 }}
+                      className="absolute top-full left-0 mt-1 w-44 bg-white dark:bg-[#222] border border-slate-200 dark:border-white/10 rounded-lg shadow-xl py-1 flex flex-col z-[100]"
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(window.location.href);
+                          toast.success("Diagram URL copied to clipboard");
+                          setShowDropdown(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-[13px] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 text-left"
+                      >
+                        <LinkIcon className="w-3.5 h-3.5 opacity-70" />
+                        Copy link
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(chart);
+                          toast.success("Diagram copied to clipboard");
+                          setShowDropdown(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-[13px] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 text-left"
+                      >
+                        <Copy className="w-3.5 h-3.5 opacity-70" />
+                        Copy diagram
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(chart);
+                          toast.success("Code contents copied to clipboard");
+                          setShowDropdown(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-[13px] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 text-left"
+                      >
+                        <FileText className="w-3.5 h-3.5 opacity-70" />
+                        Copy source
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             )}
             {svgContent && (
@@ -277,6 +349,6 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
         </AnimatePresence>,
         document.body
       )}
-    </>
+    </div>
   );
 };
