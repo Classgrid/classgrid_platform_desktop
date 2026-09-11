@@ -984,7 +984,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                       const formatted = parsedProps.questions.map((q: any) => {
                         const ans = payload?.answers?.[q.id];
                         if (!ans || ans.trim() === "") {
-                          return `- ${q.prompt}: [SKIPPED]`;
+                          return `- ${q.prompt}: Skipped`;
                         }
                         return `- ${q.prompt}: ${ans}`;
                       }).join("\n");

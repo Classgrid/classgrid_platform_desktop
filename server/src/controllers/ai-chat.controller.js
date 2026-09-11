@@ -486,7 +486,10 @@ export const shareChatSession = async (req, res) => {
         let transcript = `Chat Transcript: ${session.title}\n\n`;
         transcript += `Exported on ${new Date().toLocaleString()}\n\n---\n\n`;
         messages.forEach((msg) => {
-            transcript += `${msg.role === 'user' ? 'You' : 'Classgrid AI'}:\n${msg.content}\n\n`;
+            const cleanContent = (msg.content || "").replace(/\[APPR_CARD\][\s\S]*?\[\/APPR_CARD\]/g, '').trim();
+            if (cleanContent) {
+                transcript += `${msg.role === 'user' ? 'You' : 'Classgrid AI'}:\n${cleanContent}\n\n`;
+            }
         });
 
         const htmlBody = `
@@ -563,7 +566,11 @@ export const createPublicShare = async (req, res) => {
                     userEmail,
                     userName,
                     session.title || "Classgrid AI Chat",
-                    messages.map(m => ({ role: m.role, content: m.content, created_at: m.created_at })),
+                    messages.map(m => ({ 
+                        role: m.role, 
+                        content: (m.content || "").replace(/\[APPR_CARD\][\s\S]*?\[\/APPR_CARD\]/g, '').trim(), 
+                        created_at: m.created_at 
+                    })).filter(m => m.content),
                     shareId // Pass the pre-generated ID
                 );
                 console.info(`[Chat API] ✅ Public share created in background: ${shareUrl} for session ${id}`);

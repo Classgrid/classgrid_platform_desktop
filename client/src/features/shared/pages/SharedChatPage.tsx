@@ -268,9 +268,11 @@ export function SharedChatPage() {
           
           {/* Chat Messages */}
         <div className="shared-messages">
-          {chat.messages.map((msg, i) => (
-            <MessageRow key={i} msg={msg} isUser={msg.role === "user"} />
-          ))}
+          {chat.messages.map((msg, i) => {
+            const cleanContent = (msg.content || "").replace(/\[APPR_CARD\][\s\S]*?\[\/APPR_CARD\]/g, '').trim();
+            if (!cleanContent) return null;
+            return <MessageRow key={i} msg={{ ...msg, content: cleanContent }} isUser={msg.role === "user"} />;
+          })}
         </div>
 
       </div>
