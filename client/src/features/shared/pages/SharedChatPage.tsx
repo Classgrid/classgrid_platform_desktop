@@ -51,6 +51,40 @@ const preprocessLaTeX = (content: string) => {
     .replace(/\\\)/g, () => '$');
 };
 
+const formatApprovalCard = (content: string) => {
+  if (!content) return "";
+  return content.replace(/\[APPR_CARD\]([\s\S]*?)\[\/APPR_CARD\]/g, (match, jsonString) => {
+    try {
+      const data = JSON.parse(jsonString.trim());
+      if (data.variant === 'questions' && Array.isArray(data.questions)) {
+        let formattedText = `**${data.title || 'Questions'}**\n\n`;
+        data.questions.forEach((q: any, idx: number) => {
+          formattedText += `**${idx + 1}. ${q.prompt}**\n`;
+          if (Array.isArray(q.options)) {
+            q.options.forEach((opt: string, oIdx: number) => {
+              formattedText += `${String.fromCharCode(97 + oIdx)}) ${opt}\n`;
+            });
+          }
+          formattedText += '\n';
+        });
+        return formattedText.trim();
+      } else if (data.variant === 'poll' && data.question) {
+        let formattedText = `**Poll: ${data.question}**\n\n`;
+        if (Array.isArray(data.options)) {
+          data.options.forEach((opt: string) => {
+            formattedText += `- ${opt}\n`;
+          });
+        }
+        return formattedText.trim();
+      } else {
+        return "";
+      }
+    } catch (e) {
+      return "";
+    }
+  }).trim();
+};
+
 /* ── Single Message Row ── */
 function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
   if (isUser) {
@@ -269,7 +303,7 @@ export function SharedChatPage() {
           {/* Chat Messages */}
         <div className="shared-messages">
           {chat.messages.map((msg, i) => {
-            const cleanContent = (msg.content || "").replace(/\[APPR_CARD\][\s\S]*?\[\/APPR_CARD\]/g, '').trim();
+            const cleanContent = formatApprovalCard(msg.content || "");
             if (!cleanContent) return null;
             return <MessageRow key={i} msg={{ ...msg, content: cleanContent }} isUser={msg.role === "user"} />;
           })}

@@ -472,6 +472,40 @@ export const deleteChatSession = async (req, res) => {
     }
 };
 
+const formatApprovalCard = (content) => {
+    if (!content) return "";
+    return content.replace(/\[APPR_CARD\]([\s\S]*?)\[\/APPR_CARD\]/g, (match, jsonString) => {
+        try {
+            const data = JSON.parse(jsonString.trim());
+            if (data.variant === 'questions' && Array.isArray(data.questions)) {
+                let formattedText = `**${data.title || 'Questions'}**\n\n`;
+                data.questions.forEach((q, idx) => {
+                    formattedText += `**${idx + 1}. ${q.prompt}**\n`;
+                    if (Array.isArray(q.options)) {
+                        q.options.forEach((opt, oIdx) => {
+                            formattedText += `${String.fromCharCode(97 + oIdx)}) ${opt}\n`;
+                        });
+                    }
+                    formattedText += '\n';
+                });
+                return formattedText.trim();
+            } else if (data.variant === 'poll' && data.question) {
+                let formattedText = `**Poll: ${data.question}**\n\n`;
+                if (Array.isArray(data.options)) {
+                    data.options.forEach((opt) => {
+                        formattedText += `- ${opt}\n`;
+                    });
+                }
+                return formattedText.trim();
+            } else {
+                return "";
+            }
+        } catch (e) {
+            return "";
+        }
+    }).trim();
+};
+
 export const shareChatSession = async (req, res) => {
     try {
         const { id } = req.params;
@@ -486,7 +520,7 @@ export const shareChatSession = async (req, res) => {
         let transcript = `Chat Transcript: ${session.title}\n\n`;
         transcript += `Exported on ${new Date().toLocaleString()}\n\n---\n\n`;
         messages.forEach((msg) => {
-            const cleanContent = (msg.content || "").replace(/\[APPR_CARD\][\s\S]*?\[\/APPR_CARD\]/g, '').trim();
+            const cleanContent = formatApprovalCard(msg.content || "");
             if (cleanContent) {
                 transcript += `${msg.role === 'user' ? 'You' : 'Classgrid AI'}:\n${cleanContent}\n\n`;
             }
@@ -568,7 +602,7 @@ export const createPublicShare = async (req, res) => {
                     session.title || "Classgrid AI Chat",
                     messages.map(m => ({ 
                         role: m.role, 
-                        content: (m.content || "").replace(/\[APPR_CARD\][\s\S]*?\[\/APPR_CARD\]/g, '').trim(), 
+                        content: formatApprovalCard(m.content || ""), 
                         created_at: m.created_at 
                     })).filter(m => m.content),
                     shareId // Pass the pre-generated ID
