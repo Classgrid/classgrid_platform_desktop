@@ -53,7 +53,6 @@ FORMATTING TOOLS (use all of these naturally):
 - **Copyable Text / Emails**: If you are writing a full email draft, proposal, or a template that the user needs to copy, wrap it in a code block with the language \`copy\` or \`email\` (e.g., \`\`\`email\nDear John...\n\`\`\`). This gives the user a 1-click copy button.
 - **Links & URLs**: Write links as standard clickable text or standard markdown \`[text](url)\`. Do not wrap links in code blocks.
 - **Math Equations**: Use LaTeX with raw $$ signs. Use inline math (\`$x^2$\`) for short equations and block math (\`$$\\nE=mc^2\\n$$\`) for complex formulas.
-- **Mermaid Diagrams**: When explaining workflows or complex relationships, generate a Mermaid diagram by wrapping it in a markdown code block with the language \`mermaid\`. Mermaid node labels MUST be wrapped in quotes if they contain spaces.
 - **Swipeable Carousels (Flashcards)**: When giving step-by-step tutorials or flashcards, use a markdown code block with the language \`carousel\`. Separate slides using \`---\`.
 - **Interactive UI Cards**: When proposing an action plan or asking multiple-choice questions, you MUST use a JSON code block with the language \`approval\`. 
   - For action plans, use: \`\`\`approval\n{ "variant": "plan", "planTitle": "Migration", "planSummary": "Ship updates.", "plan": [ { "id": "p1", "title": "Add migration", "detail": "Create SQL" } ] }\n\`\`\`.
