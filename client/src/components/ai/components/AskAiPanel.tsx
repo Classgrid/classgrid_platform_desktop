@@ -873,11 +873,20 @@ const MarkdownComponents = {
   }
 };
 
+const memoizedRemarkPlugins = [remarkMath, remarkGfm, remarkGithubAlerts];
+const memoizedRehypePlugins = [rehypeKatex];
+
 const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isHistorical }: { content: string, isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean }) => {
   const onApprovalActionRef = React.useRef(onApprovalAction);
+  const isTypingRef = React.useRef(isTyping);
+  
   React.useEffect(() => {
     onApprovalActionRef.current = onApprovalAction;
   }, [onApprovalAction]);
+
+  React.useEffect(() => {
+    isTypingRef.current = isTyping;
+  }, [isTyping]);
 
   // Preprocess AI output:
   // 1. Convert fake bullet chars to real Markdown list markers
@@ -893,7 +902,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
       code({ node, inline, className, children, ...props }: any) {
         const match = /language-(\w+)/.exec(className || "");
         const language = match ? match[1] : "";
-        const isApprovalLang = !inline && language && (language === "approval" || (isTyping && "approval".startsWith(language.toLowerCase())));
+        const isApprovalLang = !inline && language && "approval".startsWith(language.toLowerCase());
         
         if (isApprovalLang) {
           try {
@@ -941,7 +950,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
               </motion.div>
             );
           } catch (e) {
-            if (isTyping) {
+            if (isTypingRef.current) {
               return (
                 <div className="flex items-center gap-2 my-4 pl-1">
                   <p
@@ -972,7 +981,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
             );
           }
         }
-        return MarkdownComponents.code({ node, inline, className, children, ...props }, isTyping);
+        return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current);
       },
       table({ children, ...props }: any) {
         return (
@@ -1052,14 +1061,14 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
         return <hr className="my-6 border-slate-100 dark:border-slate-800" {...props} />;
       }
     };
-  }, [isTyping]); // onApprovalAction removed to prevent hover/interaction render loops
+  }, [isHistorical]); // isTyping removed in favor of isTypingRef to prevent unmount flashes
 
 
   return (
     <div className="space-y-4 text-[16px] leading-[24px] overflow-hidden break-words max-w-none">
       <ReactMarkdown
-        remarkPlugins={[remarkMath, remarkGfm, remarkGithubAlerts]}
-        rehypePlugins={[rehypeKatex]}
+        remarkPlugins={memoizedRemarkPlugins}
+        rehypePlugins={memoizedRehypePlugins}
         components={components}
       >
         {preprocessLaTeX(processedContent)}
