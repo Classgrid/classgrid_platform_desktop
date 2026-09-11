@@ -968,7 +968,16 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                   {...parsedProps} 
                   isHistorical={isHistorical}
                   onApprove={(payload) => {
-                    if (payload?.answers) {
+                    if (parsedProps.questions && Array.isArray(parsedProps.questions)) {
+                      const formatted = parsedProps.questions.map((q: any) => {
+                        const ans = payload?.answers?.[q.id];
+                        if (!ans || ans.trim() === "") {
+                          return `- ${q.prompt}: [SKIPPED]`;
+                        }
+                        return `- ${q.prompt}: ${ans}`;
+                      }).join("\n");
+                      onApprovalActionRef.current?.(`Here are my answers:\n${formatted}`);
+                    } else if (payload?.answers) {
                       const formatted = Object.entries(payload.answers).map(([k, v]) => `- ${v}`).join("\n");
                       onApprovalActionRef.current?.(`Here are my answers:\n${formatted}`);
                     } else {
