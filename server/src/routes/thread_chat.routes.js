@@ -108,7 +108,7 @@ async function getUnreadCounts(userId) {
 // Multi-file upload: max 80 files total, max 100MB each
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 }
+  limits: { fileSize: 150 * 1024 * 1024 }
 });
 
 // CRON: Unpin expired messages
@@ -1320,13 +1320,13 @@ router.post('/:id/messages', isAuthenticated, upload.array('files', 80), async (
         if (file.size > 12 * 1024 * 1024) return res.status(400).json({ error: `Image too large: max 12MB. (${file.originalname})` });
         imgCount++;
       } else if (isVideo) {
-        if (file.size > 100 * 1024 * 1024) return res.status(400).json({ error: `Video too large: max 100MB. (${file.originalname})` });
+        if (file.size > 150 * 1024 * 1024) return res.status(400).json({ error: `Video too large: max 150MB. (${file.originalname})` });
         vidCount++;
       } else if (isPdf) {
-        if (file.size > 100 * 1024 * 1024) return res.status(400).json({ error: `PDF too large: max 100MB. (${file.originalname})` });
+        if (file.size > 150 * 1024 * 1024) return res.status(400).json({ error: `PDF too large: max 150MB. (${file.originalname})` });
         pdfCount++;
       } else {
-        if (file.size > 100 * 1024 * 1024) return res.status(400).json({ error: `File too large: max 100MB. (${file.originalname})` });
+        if (file.size > 150 * 1024 * 1024) return res.status(400).json({ error: `File too large: max 150MB. (${file.originalname})` });
         otherCount++;
       }
     }

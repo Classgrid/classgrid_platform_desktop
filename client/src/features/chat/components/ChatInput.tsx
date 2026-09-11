@@ -377,11 +377,11 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
     }
 
     const IMAGE_MAX  = 12  * 1024 * 1024;
-    const OTHER_MAX  = 100 * 1024 * 1024;
+    const OTHER_MAX  = 150 * 1024 * 1024;
     for (const f of files) {
       const maxAllowed = f.type.startsWith('image/') ? IMAGE_MAX : OTHER_MAX;
       if (f.size > maxAllowed) {
-        const limitLabel = f.type.startsWith('image/') ? '12 MB' : '100 MB';
+        const limitLabel = f.type.startsWith('image/') ? '12 MB' : '150 MB';
         toast.error('File too large', {
           description: `"${f.name}" exceeds the ${limitLabel} limit. Please remove it before sending.`,
         });
@@ -484,7 +484,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
       const isVideo = file.type.startsWith('video/');
       const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
       
-      let maxSize = 100 * 1024 * 1024; // 100 MB default
+      let maxSize = 150 * 1024 * 1024; // 150 MB default
       if (isImage) maxSize = 12 * 1024 * 1024; // 12 MB for images
 
       // We no longer block by size here, we let it into the UI so the user can see it's too large
@@ -699,7 +699,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
           .filter(({ file }) => !(file.type.startsWith("image/") || file.type.startsWith("video/")));
 
         const galleryImages = mediaFilesWithIndex.map(({ file, index }) => {
-          const hasError = file.size > (file.type.startsWith('image/') ? 12 * 1024 * 1024 : 100 * 1024 * 1024);
+          const hasError = file.size > (file.type.startsWith('image/') ? 12 * 1024 * 1024 : 150 * 1024 * 1024);
           return {
             id: index.toString(),
             src: URL.createObjectURL(file),
@@ -765,8 +765,8 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
                         <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                           <span className="text-xs font-semibold truncate text-foreground">{file.name}</span>
                           <span className="text-[10px] text-muted-foreground">{getDocStyle().label} • {formatSize(file.size)}</span>
-                          {file.size > (100 * 1024 * 1024) && (
-                            <span className="text-[10px] text-red-500 font-bold leading-none">File too large (&gt;100MB)</span>
+                          {file.size > (150 * 1024 * 1024) && (
+                            <span className="text-[10px] text-red-500 font-bold leading-none">File too large (&gt;150MB)</span>
                           )}
                         </div>
                       </div>
@@ -1040,7 +1040,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
                     e.preventDefault();
                     
                     // Same disabled checks as the send button
-                    const isInvalidSize = files.some(f => f.size > (f.type.startsWith('image/') ? 12 * 1024 * 1024 : 100 * 1024 * 1024));
+                    const isInvalidSize = files.some(f => f.size > (f.type.startsWith('image/') ? 12 * 1024 * 1024 : 150 * 1024 * 1024));
                     const isInvalidState = isSending || isSendingLocal || (!message.replace(/<[^>]*>?/gm, '').trim() && files.length === 0 && !audioBlob) || isRecording || currentTextLength > 65000 || isInvalidSize;
                     
                     if (!isInvalidState) {
@@ -1194,9 +1194,9 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
             
             <button
               onClick={handleSend}
-              disabled={isSending || isSendingLocal || (!message.replace(/<[^>]*>?/gm, '').trim() && files.length === 0 && !audioBlob) || isRecording || message.length > 65000 || files.some(f => f.size > (f.type.startsWith('image/') ? 12 * 1024 * 1024 : 100 * 1024 * 1024))}
+              disabled={isSending || isSendingLocal || (!message.replace(/<[^>]*>?/gm, '').trim() && files.length === 0 && !audioBlob) || isRecording || message.length > 65000 || files.some(f => f.size > (f.type.startsWith('image/') ? 12 * 1024 * 1024 : 150 * 1024 * 1024))}
               className={`p-3 rounded-full text-primary-foreground transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed mb-0.5 flex items-center justify-center w-11 h-11 ${scheduledDate ? 'bg-indigo-500 hover:bg-indigo-600' : 'bg-primary hover:bg-primary/90'}`}
-              title={(isSending || isSendingLocal) ? 'Sending...' : files.some(f => f.size > (f.type.startsWith('image/') ? 12 * 1024 * 1024 : 100 * 1024 * 1024)) ? 'File too large' : scheduledDate ? 'Schedule Message' : 'Send Message'}
+              title={(isSending || isSendingLocal) ? 'Sending...' : files.some(f => f.size > (f.type.startsWith('image/') ? 12 * 1024 * 1024 : 150 * 1024 * 1024)) ? 'File too large' : scheduledDate ? 'Schedule Message' : 'Send Message'}
             >
               {(isSending || isSendingLocal) ? <Spinner className="w-5 h-5" /> : scheduledDate ? <Clock className="w-5 h-5" /> : <Send className="w-5 h-5 ml-0.5" />}
             </button>
