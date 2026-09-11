@@ -872,7 +872,7 @@ const MarkdownComponents = {
     const isMermaid = language === "mermaid" || codeString.trim().startsWith("graph ") || codeString.trim().startsWith("sequenceDiagram") || codeString.trim().startsWith("pie") || codeString.trim().startsWith("gantt") || codeString.trim().startsWith("stateDiagram") || codeString.trim().startsWith("classDiagram");
 
     if (!inline && isMermaid) {
-      return <MermaidViewer chart={codeString} onRetry={triggerAiRetry} />;
+      return <MermaidViewer chart={codeString} onRetry={onRetryRef.current} />;
     }
 
     if (!inline && language === "carousel") {
@@ -944,17 +944,16 @@ const CraftingBlock = () => {
   );
 };
 
-const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isHistorical }: { content: string, isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean }) => {
+const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isHistorical, onRetry }: { content: string, isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean, onRetry?: (error: string) => void }) => {
   const onApprovalActionRef = React.useRef(onApprovalAction);
   const isTypingRef = React.useRef(isTyping);
+  const onRetryRef = React.useRef(onRetry);
   
   React.useEffect(() => {
     onApprovalActionRef.current = onApprovalAction;
-  }, [onApprovalAction]);
-
-  React.useEffect(() => {
     isTypingRef.current = isTyping;
-  }, [isTyping]);
+    onRetryRef.current = onRetry;
+  }, [onApprovalAction, isTyping, onRetry]);
 
   // Preprocess AI output:
   // 1. Convert fake bullet chars to real Markdown list markers
@@ -963,10 +962,6 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
     .replace(/^[•]\s/gm, '- ')
     .replace(/^\s{4}[◦]\s/gm, '    - ')
     .replace(/(^[ \t]*[-*][ \t].*)\n{2,}(?=[ \t]*[-*][ \t])/gm, '$1\n'); // collapse blank lines between bullets
-
-  const triggerAiRetry = useCallback((errorMessage: string) => {
-    void askQuestion(`SYSTEM: You made a syntax error: ${errorMessage}\nPlease apologize to the user and retry generating it with corrected formatting.`, { hidden: true });
-  }, []);
 
   const components = React.useMemo(() => {
     return {
@@ -1036,7 +1031,9 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
             }
             
             // If it finishes typing but fails to parse, trigger a silent background retry!
-            triggerAiRetry(e?.message || "Invalid JSON syntax in interactive card");
+            if (onRetryRef.current) {
+              onRetryRef.current(e?.message || "Invalid JSON syntax in interactive card");
+            }
             
             return (
               <div className="p-4 my-4 bg-slate-50 dark:bg-[#222] rounded-xl border border-slate-200 dark:border-white/5 flex flex-col items-center justify-center min-h-[120px]">
@@ -1148,6 +1145,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const sidebarContext = useContext(SidebarContext);
   const isSidebarCollapsed = sidebarContext?.state === "collapsed";
   const prefersReducedMotion = useReducedMotion();
+
+  // Ref to hold latest askQuestion to avoid stale closures in retries
+  const askQuestionRef = useRef<any>(null);
+
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -1936,6 +1937,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     });
   }
 
+  useEffect(() => {
+    askQuestionRef.current = askQuestion;
+  }, [askQuestion]);
+
   async function askQuestion(question: string, options?: { hidden?: boolean }) {
     let displayQuestion = question.trim();
     let apiQuestion = question.trim();
@@ -2481,6 +2486,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               content={message.content} 
                               isTyping={message.typing} 
                               isHistorical={index < messages.length - 1}
+                              onRetry={(errorMsg) => {
+                                if (askQuestionRef.current) {
+                                  askQuestionRef.current(`SYSTEM: You made a syntax error: ${errorMsg}\nPlease apologize to the user briefly and retry generating the interactive card with corrected formatting.`, { hidden: true });
+                                }
+                              }}
                               onApprovalAction={(text) => {
                                 if (!submitting) void askQuestion(text);
                               }}

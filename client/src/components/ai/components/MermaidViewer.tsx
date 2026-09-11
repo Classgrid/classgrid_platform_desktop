@@ -21,7 +21,7 @@ const sanitizeMermaid = (chart: string): string => {
     .trim();
 };
 
-export const MermaidViewer = ({ chart }: { chart: string }) => {
+export const MermaidViewer = ({ chart, onRetry }: { chart: string, onRetry?: (errorMsg: string) => void }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -78,9 +78,11 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
         } catch (err: any) {
           if (isMounted) {
             console.error('Mermaid render error:', err?.message || err);
-            // Provide a cleaner error message instead of the raw SVG text
-            setError('Syntax error in diagram. Waiting for AI to correct it...');
+            setError('Repairing diagram...');
             setLoading(false);
+            if (onRetry) {
+              onRetry(err?.message || "Invalid Mermaid syntax");
+            }
             window.dispatchEvent(
               new CustomEvent('trigger-auto-repair', {
                 detail: { error: err?.message || err, chart }
@@ -169,7 +171,7 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
               <AlertCircle className="w-4 h-4 text-orange-500" />
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Diagram Incomplete</span>
             </div>
-            <span className="text-[13px] text-center max-w-[250px]">The diagram could not be fully rendered due to missing or invalid syntax.</span>
+            <span className="text-[13px] text-center max-w-[250px]">{error === 'Repairing diagram...' ? 'The AI made a syntax error. We are repairing it in the background...' : 'The diagram could not be fully rendered due to missing or invalid syntax.'}</span>
           </div>
         ) : (
           <>
