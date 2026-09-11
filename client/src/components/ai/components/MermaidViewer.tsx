@@ -223,7 +223,16 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
               <div className="w-full h-full flex" onClick={(e) => e.stopPropagation()}>
                 
                 {/* SVG rendered fullscreen with Zoom & Pan */}
-                <div className="flex-1 h-full flex items-center justify-center p-10 overflow-hidden relative">
+                <div 
+                  className="flex-1 h-full flex items-center justify-center p-10 overflow-hidden relative"
+                  onWheel={(e) => {
+                    if (e.deltaY < 0) {
+                      setZoom(z => Math.min(z + 0.1, 5));
+                    } else {
+                      setZoom(z => Math.max(z - 0.1, 0.5));
+                    }
+                  }}
+                >
                   <motion.div
                     drag
                     dragMomentum={false}
