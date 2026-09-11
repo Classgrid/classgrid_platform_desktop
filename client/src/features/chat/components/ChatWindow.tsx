@@ -737,7 +737,7 @@ export function ChatWindow({ thread, currentUserId, orgUsers }: ChatWindowProps)
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 bg-muted/20 relative custom-scrollbar flex flex-col"
+        className="flex-1 overflow-y-auto overflow-x-hidden min-w-0 p-4 bg-muted/20 relative custom-scrollbar flex flex-col"
       >
         {/* Loading indicator at top when fetching older messages */}
         {isFetchingNextPage && (
