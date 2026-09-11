@@ -149,25 +149,25 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
               </div>
             )}
             {svgContent && (
-              <div className="absolute top-3 right-3 opacity-80 hover:opacity-100 transition-opacity flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-[#2a2a2a] shadow-sm border border-slate-200 dark:border-white/5">
+              <div className="absolute top-3 right-3 opacity-80 hover:opacity-100 flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-[#2a2a2a] shadow-sm border border-slate-200 dark:border-white/5">
                 <button
-                  onClick={handleCopy}
-                  className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/20 text-slate-500 dark:text-slate-300 transition-colors"
+                  onClick={(e) => { e.stopPropagation(); handleCopy(); }}
+                  className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/20 text-slate-500 dark:text-slate-300 active:scale-95"
                   title="Copy mermaid source"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
                 <button
-                  onClick={() => setShowCode(!showCode)}
-                  className={`p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/20 transition-colors ${showCode ? "text-indigo-500 bg-indigo-50 dark:bg-indigo-500/20" : "text-slate-500 dark:text-slate-300"}`}
+                  onClick={(e) => { e.stopPropagation(); setShowCode(!showCode); }}
+                  className={`p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/20 active:scale-95 ${showCode ? "text-indigo-500 bg-indigo-50 dark:bg-indigo-500/20" : "text-slate-500 dark:text-slate-300"}`}
                   title="View source code"
                 >
                   <Code2 className="w-3.5 h-3.5" />
                 </button>
                 <div className="w-px h-3.5 bg-slate-300 dark:bg-white/20 mx-0.5" />
                 <button
-                  onClick={() => setFullscreen(true)}
-                  className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/20 text-slate-500 dark:text-slate-300 transition-colors"
+                  onClick={(e) => { e.stopPropagation(); setFullscreen(true); }}
+                  className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/20 text-slate-500 dark:text-slate-300 active:scale-95"
                   title="View fullscreen"
                 >
                   <Maximize2 className="w-3.5 h-3.5" />
