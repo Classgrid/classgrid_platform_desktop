@@ -482,8 +482,9 @@ function ChatPageInner() {
         file_type: f.type,
         file_size: f.size
       })),
-      reactions: {}
-    };
+      reactions: {},
+      _clientKey: tempId
+    } as any;
 
     setMessages((prev) => [...prev, tempMessage]);
     setReplyTo(null);
@@ -498,7 +499,7 @@ function ChatPageInner() {
         if (prev.some(m => m.id === sentMessage.id)) {
           return prev.filter(m => m.id !== tempId);
         }
-        return prev.map((m) => (m.id === tempId ? sentMessage : m));
+        return prev.map((m) => (m.id === tempId ? { ...sentMessage, _clientKey: tempId } : m));
       });
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.message || "Failed to send message";
@@ -832,7 +833,7 @@ function ChatPageInner() {
           
           if (tempMsgIndex !== -1) {
             const next = [...prev];
-            next[tempMsgIndex] = payload;
+            next[tempMsgIndex] = { ...payload, _clientKey: (prev[tempMsgIndex] as any)._clientKey || prev[tempMsgIndex].id };
             return next;
           }
         }

@@ -300,8 +300,9 @@ export function ChatWindow({ thread, currentUserId, orgUsers }: ChatWindowProps)
         id: tempId, thread_id: threadId, sender_id: currentUserId,
         sender_name: "You", user_avatar: null, message: text,
         reply_to: replyTo ? { id: replyTo.id, sender_name: replyTo.sender_name, message: replyTo.message } : null,
-        is_deleted: false, created_at: now, attachments: [], reactions: {}
-      };
+        is_deleted: false, created_at: now, attachments: [], reactions: {},
+        _clientKey: tempId
+      } as any;
       queryClient.setQueryData(["chat-messages", threadId], (oldData: any) => {
         if (!oldData?.pages) return oldData;
         const newPages = [...oldData.pages];
@@ -313,7 +314,7 @@ export function ChatWindow({ thread, currentUserId, orgUsers }: ChatWindowProps)
         setReplyTo(null);
         queryClient.setQueryData(["chat-messages", threadId], (oldData: any) => {
           if (!oldData?.pages) return oldData;
-          return { ...oldData, pages: oldData.pages.map((page: ChatMessage[]) => page.map(m => m.id === tempId ? sentMsg : m)) };
+          return { ...oldData, pages: oldData.pages.map((page: ChatMessage[]) => page.map(m => m.id === tempId ? { ...sentMsg, _clientKey: tempId } : m)) };
         });
         if (scrollRef.current) setTimeout(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, 50);
       } catch (error) {
@@ -795,7 +796,7 @@ export function ChatWindow({ thread, currentUserId, orgUsers }: ChatWindowProps)
             const uploadProgress = msgUpload?.progress ?? 0;
 
             return (
-              <div key={msg.id} className="flex flex-col">
+              <div key={(msg as any)._clientKey || msg.id} className="flex flex-col">
                 <ChatBubble
                   message={{ ...msg, isSending: isUploading, uploadProgress } as any}
                   isMine={isMine}
