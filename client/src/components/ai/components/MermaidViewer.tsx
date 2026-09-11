@@ -224,8 +224,9 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
                 <div className="flex-1 h-full flex items-center justify-center p-10 overflow-hidden relative">
                   <motion.div
                     drag
+                    dragMomentum={false}
+                    dragElastic={0}
                     dragConstraints={{ left: -4000, right: 4000, top: -4000, bottom: 4000 }}
-                    dragElastic={0.1}
                     initial={{ opacity: 0, scale: 0.88 }}
                     animate={{ opacity: 1, scale: zoom }}
                     exit={{ opacity: 0, scale: 0.88 }}
