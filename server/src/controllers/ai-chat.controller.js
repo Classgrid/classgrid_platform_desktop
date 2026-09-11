@@ -311,6 +311,20 @@ export const streamAskAi = async (req, res) => {
                 {
                     type: "function",
                     function: {
+                        name: "get_timezone_time",
+                        description: "Get the exact current date and time for a specific city or timezone. Use this WHENEVER the user asks for the time in a different location (e.g., London, Tokyo, EST).",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                timeZone: { type: "string", description: "The IANA timezone string (e.g., 'Europe/London', 'America/New_York', 'Asia/Tokyo'). Guess the best timezone based on the city requested." }
+                            },
+                            required: ["timeZone"]
+                        }
+                    }
+                },
+                {
+                    type: "function",
+                    function: {
                         name: "search_web",
                         description: "Search the live web for competitor analysis, news, or external facts.",
                         parameters: {
@@ -324,6 +338,17 @@ export const streamAskAi = async (req, res) => {
                 }
             ],
             toolHandlers: {
+                get_timezone_time: async (args) => {
+                    try {
+                        const tz = args.timeZone || 'UTC';
+                        const now = new Date();
+                        const date = now.toLocaleDateString('en-US', { timeZone: tz, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                        const time = now.toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+                        return `SUCCESS: The exact current time in ${tz} is ${time} on ${date}. Return this exact time to the user without doing any math.`;
+                    } catch (e) {
+                        return `Error getting time for ${args.timeZone}. Please ensure it is a valid IANA timezone string like 'Europe/London'.`;
+                    }
+                },
                 search_web: async (args) => {
                     const tavilyKey = process.env.TAVILY_API_KEY?.trim();
                     if (!tavilyKey) return "Search failed because TAVILY_API_KEY is missing.";
