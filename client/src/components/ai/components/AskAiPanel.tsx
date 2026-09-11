@@ -1036,14 +1036,8 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
             }
             
             // If it finishes typing but fails to parse, trigger a silent background retry!
-            triggerAiRetry(e?.message || "Invalid JSON syntax in interactive card");
-            
-            return (
-              <div className="p-4 my-4 bg-slate-50 dark:bg-[#222] rounded-xl border border-slate-200 dark:border-white/5 flex flex-col items-center justify-center min-h-[120px]">
-                <Spinner className="w-5 h-5 text-indigo-500 mb-2" />
-                <div className="text-[13px] font-medium text-slate-700 dark:text-slate-300">Repairing interactive card...</div>
-              </div>
-            );
+            // We use a separate component to trigger this inside a useEffect to prevent infinite render loops!
+            return <RepairingCard errorMessage={e?.message || "Invalid JSON syntax in interactive card"} onRepair={triggerAiRetry} />;
           }
         }
         return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current);
@@ -1141,6 +1135,19 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
     </div>
   );
 });
+
+const RepairingCard = ({ errorMessage, onRepair }: { errorMessage: string, onRepair: (msg: string) => void }) => {
+  useEffect(() => {
+    onRepair(errorMessage);
+  }, [errorMessage, onRepair]);
+
+  return (
+    <div className="p-4 my-4 bg-slate-50 dark:bg-[#222] rounded-xl border border-slate-200 dark:border-white/5 flex flex-col items-center justify-center min-h-[120px]">
+      <Spinner className="w-5 h-5 text-indigo-500 mb-2" />
+      <div className="text-[13px] font-medium text-slate-700 dark:text-slate-300">Repairing interactive card...</div>
+    </div>
+  );
+};
 
 export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow", initialMessages, autoFocus = true, readOnly = false }: AskAiPanelProps) {
   const { data: user } = useCurrentUser();
