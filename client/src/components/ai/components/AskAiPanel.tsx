@@ -2503,7 +2503,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               isHistorical={index < messages.length - 1}
                               onRetry={(errorMsg) => {
                                 if (askQuestionRef.current) {
-                                  askQuestionRef.current(`SYSTEM: You made a syntax error: ${errorMsg}\nPlease apologize to the user briefly and retry generating the interactive card with corrected formatting.`, { hidden: true });
+                                  const isMermaid = errorMsg.toLowerCase().includes("mermaid");
+                                  askQuestionRef.current(
+                                    isMermaid
+                                      ? `SYSTEM: You made a diagram error: ${errorMsg.replace(/mermaid/ig, 'diagram')}\nPlease apologize to the user briefly and retry generating the diagram with corrected formatting. NEVER use the word 'Mermaid'.`
+                                      : `SYSTEM: You made a syntax error: ${errorMsg}\nPlease apologize to the user briefly and retry generating the interactive card with corrected formatting.`,
+                                    { hidden: true }
+                                  );
                                 }
                               }}
                               onApprovalAction={(text) => {

@@ -86,7 +86,7 @@ export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onR
             setError('Repairing diagram...');
             setLoading(false);
             if (onRetry) {
-              onRetry(err?.message || "Invalid Mermaid syntax");
+              onRetry(err?.message || "Invalid diagram syntax");
             }
             window.dispatchEvent(
               new CustomEvent('trigger-auto-repair', {
