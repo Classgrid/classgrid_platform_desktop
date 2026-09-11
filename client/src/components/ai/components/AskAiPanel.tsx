@@ -845,7 +845,7 @@ const MarkdownComponents = {
   pre({ children }: any) {
     return <>{children}</>;
   },
-  code({ node, inline, className, children, ...props }: any, isTyping?: boolean) {
+  code({ node, inline, className, children, ...props }: any, isTyping?: boolean, onRetry?: (msg: string) => void) {
     const codeString = String(children).replace(/\n$/, "");
     
     // 🚨 Intercept URLs/Links that the AI hallucinates into code blocks 🚨
@@ -872,7 +872,7 @@ const MarkdownComponents = {
     const isMermaid = language === "mermaid" || codeString.trim().startsWith("graph ") || codeString.trim().startsWith("sequenceDiagram") || codeString.trim().startsWith("pie") || codeString.trim().startsWith("gantt") || codeString.trim().startsWith("stateDiagram") || codeString.trim().startsWith("classDiagram");
 
     if (!inline && isMermaid) {
-      return <MermaidViewer chart={codeString} />;
+      return <MermaidViewer chart={codeString} onRetry={onRetry} />;
     }
 
     if (!inline && language === "carousel") {
@@ -964,6 +964,10 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
     .replace(/^\s{4}[◦]\s/gm, '    - ')
     .replace(/(^[ \t]*[-*][ \t].*)\n{2,}(?=[ \t]*[-*][ \t])/gm, '$1\n'); // collapse blank lines between bullets
 
+  const triggerAiRetry = useCallback((errorMessage: string) => {
+    void askQuestion(`SYSTEM: You made a syntax error: ${errorMessage}\nPlease apologize to the user and retry generating it with corrected formatting.`, { hidden: true });
+  }, []);
+
   const components = React.useMemo(() => {
     return {
       ...MarkdownComponents,
@@ -1031,17 +1035,12 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
               return <CraftingBlock />;
             }
             
-            // Dispatch a window event so AskAiPanel (which has access to askQuestion) can handle the retry
-            window.dispatchEvent(new CustomEvent('ai:card-retry', { detail: { error: e?.message || 'Invalid JSON' } }));
-            
-            return (
-              <div className="p-4 my-4 bg-slate-50 dark:bg-[#222] rounded-xl border border-slate-200 dark:border-white/5 flex flex-col items-center justify-center min-h-[80px]">
-                <div className="text-[13px] text-slate-500 dark:text-slate-400 italic">Regenerating...</div>
-              </div>
-            );
+            // If it finishes typing but fails to parse, trigger a silent background retry!
+            // We use a separate component to trigger this inside a useEffect to prevent infinite render loops!
+            return <RepairingCard errorMessage={e?.message || "Invalid JSON syntax in interactive card"} onRepair={triggerAiRetry} />;
           }
         }
-        return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current);
+        return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current, triggerAiRetry);
       },
       table({ children, ...props }: any) {
         return (
@@ -1943,24 +1942,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       );
     });
   }
-
-  // Listen for retry events from interactive card / mermaid failures
-  useEffect(() => {
-    let retryTimeout: any = null;
-    const handleCardRetry = (e: any) => {
-      const errorMsg = e?.detail?.error || 'syntax error';
-      // Debounce to prevent multiple retries firing
-      if (retryTimeout) clearTimeout(retryTimeout);
-      retryTimeout = setTimeout(() => {
-        void askQuestion(`SYSTEM: You made a syntax error: ${errorMsg}. Please apologize briefly and retry generating the interactive card with corrected JSON formatting.`, { hidden: true });
-      }, 500);
-    };
-    window.addEventListener('ai:card-retry', handleCardRetry);
-    return () => {
-      window.removeEventListener('ai:card-retry', handleCardRetry);
-      if (retryTimeout) clearTimeout(retryTimeout);
-    };
-  }, []);
 
   async function askQuestion(question: string, options?: { hidden?: boolean }) {
     let displayQuestion = question.trim();
