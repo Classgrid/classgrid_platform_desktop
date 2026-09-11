@@ -2501,8 +2501,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   const isMermaid = errorMsg.toLowerCase().includes("mermaid");
                                   askQuestionRef.current(
                                     isMermaid
-                                      ? `SYSTEM: You made a diagram error: ${errorMsg.replace(/mermaid/ig, 'diagram')}\nPlease apologize to the user briefly and retry generating the diagram with corrected formatting. NEVER use the word 'Mermaid'.`
-                                      : `SYSTEM: You made a syntax error: ${errorMsg}\nPlease apologize to the user briefly and retry generating the interactive card with corrected formatting.`,
+                                      ? `[SYSTEM AUTO-RETRY: SILENT] You made a syntax error in your diagram: ${errorMsg.replace(/mermaid/ig, 'diagram')}\nPlease output ONLY the corrected code block. DO NOT apologize, DO NOT explain, DO NOT say you are fixing it. Just output the raw code block.`
+                                      : `[SYSTEM AUTO-RETRY: SILENT] You made a syntax error: ${errorMsg}\nPlease output ONLY the corrected interactive card json. DO NOT apologize, DO NOT explain. Just output the raw code block.`,
                                     { hidden: true }
                                   );
                                 }
