@@ -41,10 +41,15 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
       // Run off the main thread to avoid UI freeze
       const idleId = (window.requestIdleCallback || ((cb: any) => setTimeout(cb, 100)))(async () => {
         if (!isMounted) return;
+        
+        const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
+        const tempDiv = document.createElement('div');
+        tempDiv.style.display = 'none';
+        document.body.appendChild(tempDiv);
+        
         try {
           const sanitized = sanitizeMermaid(chart);
-          const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
-          const { svg } = await mermaid.render(id, sanitized);
+          const { svg } = await mermaid.render(id, sanitized, tempDiv);
           if (isMounted) {
             setSvgContent(svg);
             if (ref.current) ref.current.innerHTML = svg;
@@ -54,9 +59,22 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
         } catch (err: any) {
           if (isMounted) {
             console.error('Mermaid render error:', err?.message || err);
-            setError(err?.message?.split('\n')[0] || 'Failed to render diagram');
+            // Provide a cleaner error message instead of the raw SVG text
+            setError('Syntax error in diagram. Waiting for AI to correct it...');
             setLoading(false);
           }
+        } finally {
+          // Cleanup temporary container and any orphaned elements Mermaid leaves behind on error
+          tempDiv.remove();
+          const orphanedSvg = document.getElementById(`d${id}`);
+          if (orphanedSvg) orphanedSvg.remove();
+          
+          // Mermaid sometimes leaves a generic error element with id="dmermaid" or similar
+          const genericOrphan = document.getElementById('d' + id);
+          if (genericOrphan) genericOrphan.remove();
+          
+          // Also try to find any elements with 'error-icon' that Mermaid might have injected directly into the body
+          document.querySelectorAll('svg[id^="dmermaid-"]').forEach(el => el.remove());
         }
       });
 
