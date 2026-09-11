@@ -1,0 +1,44 @@
+name: Deploy Frontend to EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'client/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and Deploy Frontend
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd /var/www/classgrid_platform
+            
+            # Pull the latest code from GitHub
+            git fetch origin main
+            git reset --hard origin/main
+            
+            # FREE UP RAM TO PREVENT OUT-OF-MEMORY CRASHES DURING VITE BUILD
+            sudo fallocate -l 2G /swapfile || true
+            sudo chmod 600 /swapfile || true
+            sudo mkswap /swapfile || true
+            sudo swapon /swapfile || true
+            sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches' || true
+
+            cd client
+            
+            # Fix permissions in case root owns any files
+            sudo chown -R ubuntu:ubuntu . || true
+            
+            # Run npm install and build
+            npm install --legacy-peer-deps
+            npm run build
