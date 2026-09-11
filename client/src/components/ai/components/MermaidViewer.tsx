@@ -224,17 +224,20 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
                 <div className="flex-1 h-full flex items-center justify-center p-10 overflow-hidden relative">
                   <motion.div
                     drag
-                    dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }}
+                    dragConstraints={{ left: -4000, right: 4000, top: -4000, bottom: 4000 }}
                     dragElastic={0.1}
                     initial={{ opacity: 0, scale: 0.88 }}
                     animate={{ opacity: 1, scale: zoom }}
                     exit={{ opacity: 0, scale: 0.88 }}
-                    transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                    transition={{
+                      opacity: { duration: 0.2 },
+                      scale: { type: "tween", duration: 0 }
+                    }}
                     className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto cursor-grab active:cursor-grabbing"
                     dangerouslySetInnerHTML={{ __html: svgContent }}
                   />
                   {/* Hint */}
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[10000] flex flex-col items-center text-black/40 dark:text-white/40 text-[11px] tracking-wide select-none pointer-events-none">
+                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[10000] flex flex-col items-center text-black/60 dark:text-white/60 text-[11px] tracking-wide select-none pointer-events-none bg-white/80 dark:bg-black/80 px-4 py-1.5 rounded-full backdrop-blur-md border border-black/5 dark:border-white/5">
                     <span>Scroll to zoom • Drag to pan</span>
                     <span className="opacity-60 mt-0.5">Click backdrop or press Esc to close</span>
                   </div>
