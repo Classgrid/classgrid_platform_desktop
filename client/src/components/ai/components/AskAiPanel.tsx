@@ -2819,13 +2819,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 {isGenerating ? (
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon"
+                    variant="primary"
                     onClick={handleStop}
-                    className="h-8 w-8 shrink-0 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all shadow-sm cursor-pointer"
+                    className="h-8 rounded-full bg-foreground text-background hover:bg-foreground/90 px-3 text-[11px] font-medium shadow-sm transition-all active:scale-95"
+                    title="Stop generating"
                   >
-                    <Square className="h-3.5 w-3.5 fill-current" />
-                    <span className="sr-only">Stop generating</span>
+                    <Square className="mr-1.5 h-3 w-3 fill-current opacity-80" />
+                    Stop
                   </Button>
                 ) : (
                   <Button
