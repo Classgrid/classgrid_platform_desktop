@@ -893,7 +893,9 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
       code({ node, inline, className, children, ...props }: any) {
         const match = /language-(\w+)/.exec(className || "");
         const language = match ? match[1] : "";
-        if (!inline && language === "approval") {
+        const isApprovalLang = !inline && language && (language === "approval" || (isTyping && "approval".startsWith(language.toLowerCase())));
+        
+        if (isApprovalLang) {
           try {
             let parsedProps = JSON.parse(String(children));
             if (parsedProps.variant === "survey" || parsedProps.variant === "questions" || parsedProps.questions) {
@@ -961,8 +963,13 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                 </div>
               );
             }
-            // Gracefully degrade to rendering as a standard code block if JSON is permanently malformed
-            return MarkdownComponents.code({ node, inline, className, children, ...props }, isTyping);
+            // Show graceful error state on interruption instead of leaking raw JSON
+            return (
+              <div className="p-4 my-4 bg-red-50 dark:bg-red-900/10 text-red-500 rounded-xl border border-red-200 dark:border-red-900/50 text-[14px]">
+                <div className="font-semibold mb-1">Generation Interrupted</div>
+                <div className="opacity-80">The interactive card could not be fully generated.</div>
+              </div>
+            );
           }
         }
         return MarkdownComponents.code({ node, inline, className, children, ...props }, isTyping);
@@ -1045,7 +1052,8 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
         return <hr className="my-6 border-slate-100 dark:border-slate-800" {...props} />;
       }
     };
-  }, [isTyping, onApprovalAction]);
+  }, [isTyping]); // onApprovalAction removed to prevent hover/interaction render loops
+
 
   return (
     <div className="space-y-4 text-[16px] leading-[24px] overflow-hidden break-words max-w-none">
