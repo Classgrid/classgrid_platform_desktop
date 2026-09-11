@@ -243,6 +243,13 @@ export const streamAskAi = async (req, res) => {
         }
 
         let dynamicSystemPrompt = SYSTEM_PROMPT;
+        
+        // Inject current date/time to prevent the AI from hallucinating the date or asking the user to run JS
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const formattedTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+        dynamicSystemPrompt += `\n\n--- CURRENT SYSTEM TIME ---\nThe current date is ${formattedDate} and the time is ${formattedTime}. If the user asks for the date or time, provide this exact information. NEVER ask the user to run code or check their device to find the date.`;
+
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (HIGHEST PRIORITY): If a user asks you to perform ANY task (e.g. "make a flowchart", "write an email", "create a plan") BUT they do not provide the necessary data, topic, or context, your ONLY ALLOWED RESPONSE is a question asking for that information. Under NO circumstances should you generate placeholder content, guess the topic, or attempt to fulfill the request without the context.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user explicitly asks for a flowchart, diagram, or graph AND provides the context, output ONLY the valid Mermaid code block (\`\`\`mermaid\n...\n\`\`\`). Do NOT include any conversational preamble or filler text.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user says "okay", "thanks", "got it", "done", or simply acknowledges your previous response, DO NOT generate more content, flowcharts, or code. Simply say "You're welcome!" or "Let me know if you need anything else!" and STOP.`;
