@@ -239,13 +239,20 @@ export const streamAskAi = async (req, res) => {
                 return; // SKIP THE LLM ENTIRELY!
             }
             
-            // Short-circuit the AI completely if the user asks for the time or date
-            const timeDateWords = ["what is the time", "what time is it", "whats the time", "current time", "what is the date", "whats the date", "today's date", "todays date", "current date"];
-            if (timeDateWords.some(w => cleanMsg.includes(w)) && (!body.fileUrls || body.fileUrls.length === 0) && cleanMsg.length < 50) {
+            // Short-circuit the AI completely if the user asks for the time or date (handles typos and short phrases)
+            const isTimeQuery = cleanMsg.length < 40 && (
+                cleanMsg.includes("time") || 
+                cleanMsg.includes("date") || 
+                cleanMsg.includes("day is it")
+            );
+            if (isTimeQuery && (!body.fileUrls || body.fileUrls.length === 0)) {
                 const now = new Date();
-                const formattedDate = now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                const formattedTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
-                const fastReply = `🕒 The current date is **${formattedDate}** and the time is **${formattedTime}**.`;
+                const dateIST = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const timeIST = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
+                const dateUTC = now.toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const timeUTC = now.toLocaleTimeString('en-US', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit' });
+                
+                const fastReply = `🕒 **Current Date & Time:**\n\n**🇮🇳 IST (India):** ${dateIST}, at ${timeIST}\n**🌍 UTC (Global):** ${dateUTC}, at ${timeUTC} UTC`;
                 
                 if (!isIncognito && sessionId) {
                     saveMessage(sessionId, "assistant", fastReply, []).catch(err => console.error(err));
@@ -264,9 +271,12 @@ export const streamAskAi = async (req, res) => {
         
         // Inject current date/time to prevent the AI from hallucinating the date or asking the user to run JS
         const now = new Date();
-        const formattedDate = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        const formattedTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
-        dynamicSystemPrompt += `\n\n--- CURRENT SYSTEM TIME ---\nThe current date is ${formattedDate} and the time is ${formattedTime}. If the user asks for the date or time, you MUST provide this exact information directly in your response. NEVER output placeholders like "[Your local time here]". NEVER output JavaScript code or tell the user to use the browser console to check the time. Just state the date and time directly.`;
+        const dateIST = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const timeIST = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
+        const dateUTC = now.toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const timeUTC = now.toLocaleTimeString('en-US', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit' });
+        
+        dynamicSystemPrompt += `\n\n--- CURRENT SYSTEM TIME ---\nThe current date and time in IST (India Standard Time) is ${dateIST} at ${timeIST}. The current date and time in UTC is ${dateUTC} at ${timeUTC}. If the user asks for the date or time, you MUST provide this exact information directly in your response. NEVER output placeholders like "[Your local time here]". NEVER output JavaScript code or tell the user to use the browser console to check the time. Just state the date and time directly.`;
 
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (HIGHEST PRIORITY): If a user asks you to perform ANY task (e.g. "make a flowchart", "write an email", "create a plan") BUT they do not provide the necessary data, topic, or context, your ONLY ALLOWED RESPONSE is a question asking for that information. Under NO circumstances should you generate placeholder content, guess the topic, or attempt to fulfill the request without the context.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user explicitly asks for a flowchart, diagram, or graph AND provides the context, output ONLY the valid Mermaid code block (\`\`\`mermaid\n...\n\`\`\`). Do NOT include any conversational preamble or filler text.`;
