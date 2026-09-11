@@ -879,10 +879,10 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Input
+            <input
               type="file"
               multiple
-              className="hidden"
+              hidden
               ref={fileInputRef}
               onChange={handleFileSelect}
             />
@@ -973,7 +973,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
                 ref={editorRef}
                 contentEditable
                 data-placeholder="Type a message..."
-                className="w-full min-w-0 flex-1 max-h-[150px] overflow-y-auto custom-scrollbar py-3 px-3 outline-none text-[15px] leading-relaxed break-words [word-break:break-word] relative empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/70 empty:before:pointer-events-none"
+                className="w-full min-w-0 flex-1 max-h-[150px] min-h-[44px] overflow-y-auto custom-scrollbar py-3 px-3 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 text-[15px] text-foreground leading-relaxed break-words break-all [word-break:break-word] whitespace-pre-wrap bg-transparent resize-none border-none relative empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/70 empty:before:pointer-events-none [&_a]:text-blue-500 [&_a]:underline"
                 onInput={(e) => {
                   const html = e.currentTarget.innerHTML;
                   const text = e.currentTarget.textContent || "";
@@ -1082,7 +1082,6 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
                     }
                   }
                 }}
-                className="w-full min-w-0 bg-transparent resize-none outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 py-3 px-4 text-sm text-foreground empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none min-h-[44px] max-h-[120px] overflow-y-auto overflow-x-hidden cursor-text break-words break-all [word-break:break-word] whitespace-pre-wrap [&_a]:text-blue-500 [&_a]:underline border-none"
                 style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
               />
             </div>
