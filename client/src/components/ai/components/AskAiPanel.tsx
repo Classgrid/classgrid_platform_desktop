@@ -872,6 +872,21 @@ const MarkdownComponents = {
     const isMermaid = language === "mermaid" || codeString.trim().startsWith("graph ") || codeString.trim().startsWith("sequenceDiagram") || codeString.trim().startsWith("pie") || codeString.trim().startsWith("gantt") || codeString.trim().startsWith("stateDiagram") || codeString.trim().startsWith("classDiagram");
 
     if (!inline && isMermaid) {
+      if (isTyping) {
+        return (
+          <div className="w-full relative group mermaid-wrapper">
+            <div className="flex flex-col items-center justify-center p-6 border border-slate-200 dark:border-white/10 rounded-xl bg-slate-50 dark:bg-black/20 text-slate-500 min-h-[150px]">
+              <div className="flex items-center justify-center mb-4">
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                <span className="text-sm font-medium">Drawing diagram...</span>
+              </div>
+              <pre className="w-full p-4 rounded-lg bg-black/5 dark:bg-black/40 text-[11px] text-slate-400 font-mono opacity-70 whitespace-pre-wrap">
+                {codeString}
+              </pre>
+            </div>
+          </div>
+        );
+      }
       return <MermaidViewer chart={codeString} onRetry={onRetry} />;
     }
 

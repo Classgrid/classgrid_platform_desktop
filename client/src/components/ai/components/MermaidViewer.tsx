@@ -21,7 +21,7 @@ const sanitizeMermaid = (chart: string): string => {
     .trim();
 };
 
-export const MermaidViewer = ({ chart, onRetry }: { chart: string, onRetry?: (errorMsg: string) => void }) => {
+export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onRetry?: (errorMsg: string) => void, isTyping?: boolean }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +77,11 @@ export const MermaidViewer = ({ chart, onRetry }: { chart: string, onRetry?: (er
           }
         } catch (err: any) {
           if (isMounted) {
+            if (isTyping) {
+              // Ignore syntax errors while the AI is still streaming the code block
+              console.warn('Mermaid incomplete while typing:', err?.message || err);
+              return;
+            }
             console.error('Mermaid render error:', err?.message || err);
             setError('Repairing diagram...');
             setLoading(false);
@@ -106,7 +111,7 @@ export const MermaidViewer = ({ chart, onRetry }: { chart: string, onRetry?: (er
       return () => {
         if (window.cancelIdleCallback) window.cancelIdleCallback(idleId);
       };
-    }, 1500);
+    }, 800);
 
     return () => {
       isMounted = false;
