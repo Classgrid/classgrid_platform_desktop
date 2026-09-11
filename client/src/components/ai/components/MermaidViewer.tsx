@@ -69,12 +69,43 @@ export const MermaidViewer = ({ chart, onRetry }: { chart: string, onRetry?: (er
         try {
           // Dynamically set the theme based on the current app theme mode before rendering
           const isDark = document.documentElement.classList.contains('dark');
-          mermaid.initialize({
-            startOnLoad: false,
-            theme: isDark ? 'dark' : 'default',
-            securityLevel: 'loose',
-            fontFamily: 'inherit',
-          });
+          if (isDark) {
+            mermaid.initialize({
+              startOnLoad: false,
+              theme: 'base',
+              securityLevel: 'loose',
+              themeVariables: {
+                background: 'transparent',
+                primaryTextColor: '#e2e8f0',
+                secondaryTextColor: '#cbd5e1',
+                tertiaryTextColor: '#94a3b8',
+                primaryColor: '#1e293b',
+                primaryBorderColor: '#475569',
+                secondaryColor: '#334155',
+                secondaryBorderColor: '#475569',
+                tertiaryColor: '#1e293b',
+                tertiaryBorderColor: '#475569',
+                lineColor: '#64748b',
+                nodeBorder: '#475569',
+                mainBkg: '#1e293b',
+                nodeBkg: '#1e293b',
+                clusterBkg: '#0f172a',
+                clusterBorder: '#334155',
+                titleColor: '#e2e8f0',
+                edgeLabelBackground: '#1e293b',
+                noteBkgColor: '#334155',
+                noteTextColor: '#e2e8f0',
+                noteBorderColor: '#475569',
+              },
+            });
+          } else {
+            // Light mode: use the exact original settings, untouched
+            mermaid.initialize({
+              startOnLoad: false,
+              theme: 'default',
+              securityLevel: 'loose',
+            });
+          }
 
           const sanitized = sanitizeMermaid(chart);
           const { svg } = await mermaid.render(id, sanitized);
