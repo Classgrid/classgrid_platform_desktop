@@ -2766,7 +2766,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     <ArrowUp className="h-4 w-4" />
                     <span className="sr-only">Send question</span>
                   </Button>
-                )}
               </div>
             </div>
           </form>

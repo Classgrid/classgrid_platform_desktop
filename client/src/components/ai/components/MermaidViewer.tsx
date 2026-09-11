@@ -129,9 +129,8 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
           </div>
         )}
         {error ? (
-          <div className="text-red-500 text-sm flex flex-col items-center">
-            <span className="font-semibold mb-1">Diagram Error</span>
-            <code className="text-xs max-w-full overflow-hidden text-ellipsis">{error}</code>
+          <div className="w-full overflow-x-auto bg-slate-50 dark:bg-black/20 p-4 rounded-lg font-mono text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+            {chart}
           </div>
         ) : (
           <>
