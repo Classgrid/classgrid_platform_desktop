@@ -43,15 +43,10 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
         if (!isMounted) return;
         
         const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
-        const tempDiv = document.createElement('div');
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.visibility = 'hidden';
-        tempDiv.style.top = '-9999px';
-        document.body.appendChild(tempDiv);
         
         try {
           const sanitized = sanitizeMermaid(chart);
-          const { svg } = await mermaid.render(id, sanitized, tempDiv);
+          const { svg } = await mermaid.render(id, sanitized);
           if (isMounted) {
             setSvgContent(svg);
             if (ref.current) ref.current.innerHTML = svg;
@@ -66,8 +61,7 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
             setLoading(false);
           }
         } finally {
-          // Cleanup temporary container and any orphaned elements Mermaid leaves behind on error
-          tempDiv.remove();
+          // Cleanup any orphaned elements Mermaid leaves behind on error
           const orphanedSvg = document.getElementById(`d${id}`);
           if (orphanedSvg) orphanedSvg.remove();
           
