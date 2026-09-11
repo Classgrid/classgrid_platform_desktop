@@ -1,38 +1,3 @@
-/*
- * =========================================================================================
- * STRICT SECURITY POLICY:
- * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
- * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
- * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
- * =========================================================================================
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
- * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
- * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
- * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
- * ─────────────────────────────────────────────────────────
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 NAMING CONVENTION RULE 🚨
- * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
- * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
- * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
- * ─────────────────────────────────────────────────────────
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 HOSTING & ARCHITECTURE RULE 🚨
- * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
- * 2. FRONTEND IS HOSTED ON VERCEL
- * ─────────────────────────────────────────────────────────
- */
-
 import { useState, useRef, useEffect } from "react";
 import { Send, Paperclip, X, Smile, Film, FileText, Mic, Square, Trash2, BarChart2, Image as ImageIcon, Clock, SlidersHorizontal, BellOff, Bell, Camera, Video, Users, BadgeCheck } from "lucide-react";
 import { Spinner } from "@/components/marketing_ui/spinner";
@@ -603,7 +568,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
   });
 
   return (
-    <div className="flex flex-col w-full bg-background border-t border-border relative">
+    <div className="flex flex-col bg-background border-t border-border relative">
       {/* Mentions Dropdown - Moved to root to prevent any CSS clipping */}
       {showMentions && mentionableUsers && thread?.type === 'group' && (
           <div className="absolute bottom-[100%] mb-2 left-4 bg-popover text-popover-foreground border border-border shadow-2xl rounded-[1.25rem] max-h-72 overflow-y-auto z-[9999] w-[320px] p-2 custom-scrollbar backdrop-blur-xl bg-opacity-95 dark:bg-[#1f2228] dark:border-[#2f3336]">
