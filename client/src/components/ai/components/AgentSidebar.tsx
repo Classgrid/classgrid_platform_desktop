@@ -512,7 +512,14 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                       <Loader2 className="w-8 h-8 animate-spin text-slate-300 dark:text-white/20" />
                     </div>
                   ) : (
-                    sharePreviewMessages.slice(0, 4).map((msg: any, idx: number) => {
+                    sharePreviewMessages
+                      .filter((msg: any) => {
+                        if (msg.role === 'user') return true;
+                        const textOnly = msg.content.replace(/```[\s\S]*?```/g, "").trim();
+                        return textOnly.length > 0;
+                      })
+                      .slice(0, 4)
+                      .map((msg: any, idx: number) => {
                       const isUser = msg.role === 'user';
                       return (
                         <div key={idx} className={isUser ? "bg-[#f1f1ef] dark:bg-[#2C2C2C] px-[14px] py-[6px] rounded-[16px] max-w-[85%] self-end" : "text-[15px] leading-[1.6] text-[#2C2C2B] dark:text-[#F0EFED] w-full"}>
@@ -521,10 +528,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                           ) : (
                             <div className="whitespace-pre-wrap text-[14px]">{
                               msg.content
-                                .replace(/```mermaid[\s\S]*?```/g, "📊 [Interactive Diagram]")
-                                .replace(/```approval[\s\S]*?```/g, "📋 [Interactive UI]")
-                                .replace(/```(copy|email)[\s\S]*?```/g, "📝 [Document Template]")
-                                .replace(/```[\s\S]*?```/g, "💻 [Code Snippet]")
+                                .replace(/```[\s\S]*?```/g, "")
+                                .trim()
                             }</div>
                           )}
                         </div>
