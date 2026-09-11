@@ -1028,13 +1028,9 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
             if (isTypingRef.current) {
               return <CraftingBlock />;
             }
-            // Show graceful error state on interruption instead of leaking raw JSON
-            return (
-              <div className="p-4 my-4 bg-red-50 dark:bg-red-900/10 text-red-500 rounded-xl border border-red-200 dark:border-red-900/50 text-[14px]">
-                <div className="font-semibold mb-1">Generation Interrupted</div>
-                <div className="opacity-80">The interactive card could not be fully generated.</div>
-              </div>
-            );
+            // If generation finished but JSON is invalid, fallback to showing the raw code block
+            // instead of hiding it behind a red error message.
+            return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current);
           }
         }
         return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current);
