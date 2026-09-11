@@ -21,7 +21,7 @@ const sanitizeMermaid = (chart: string): string => {
     .trim();
 };
 
-export const MermaidViewer = ({ chart, onRetry }: { chart: string, onRetry?: (error: string) => void }) => {
+export const MermaidViewer = ({ chart }: { chart: string }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -63,50 +63,10 @@ export const MermaidViewer = ({ chart, onRetry }: { chart: string, onRetry?: (er
       // Run off the main thread to avoid UI freeze
       const idleId = (window.requestIdleCallback || ((cb: any) => setTimeout(cb, 100)))(async () => {
         if (!isMounted) return;
-        
-        const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
-        
-        try {
-          // Dynamically set the theme based on the current app theme mode before rendering
-          const isDark = document.documentElement.classList.contains('dark');
-          if (isDark) {
-            mermaid.initialize({
-              startOnLoad: false,
-              theme: 'base',
-              securityLevel: 'loose',
-              themeVariables: {
-                background: 'transparent',
-                primaryTextColor: '#e2e8f0',
-                secondaryTextColor: '#cbd5e1',
-                tertiaryTextColor: '#94a3b8',
-                primaryColor: '#1e293b',
-                primaryBorderColor: '#475569',
-                secondaryColor: '#334155',
-                secondaryBorderColor: '#475569',
-                tertiaryColor: '#1e293b',
-                tertiaryBorderColor: '#475569',
-                lineColor: '#64748b',
-                nodeBorder: '#475569',
-                mainBkg: '#1e293b',
-                nodeBkg: '#1e293b',
-                clusterBkg: '#0f172a',
-                clusterBorder: '#334155',
-                titleColor: '#e2e8f0',
-                edgeLabelBackground: '#1e293b',
-                noteBkgColor: '#334155',
-                noteTextColor: '#e2e8f0',
-                noteBorderColor: '#475569',
-              },
-            });
-          } else {
-            // Light mode: use the exact original settings, untouched
-            mermaid.initialize({
-              startOnLoad: false,
-              theme: 'default',
-              securityLevel: 'loose',
-            });
-          }
 
+        const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
+
+        try {
           const sanitized = sanitizeMermaid(chart);
           const { svg } = await mermaid.render(id, sanitized);
           if (isMounted) {
@@ -119,21 +79,23 @@ export const MermaidViewer = ({ chart, onRetry }: { chart: string, onRetry?: (er
           if (isMounted) {
             console.error('Mermaid render error:', err?.message || err);
             // Provide a cleaner error message instead of the raw SVG text
-            setError('Repairing diagram...');
+            setError('Syntax error in diagram. Waiting for AI to correct it...');
             setLoading(false);
-            if (onRetry) {
-              onRetry(err?.message || "Invalid Mermaid syntax");
-            }
+            window.dispatchEvent(
+              new CustomEvent('trigger-auto-repair', {
+                detail: { error: err?.message || err, chart }
+              })
+            );
           }
         } finally {
           // Cleanup any orphaned elements Mermaid leaves behind on error
           const orphanedSvg = document.getElementById(`d${id}`);
           if (orphanedSvg) orphanedSvg.remove();
-          
+
           // Mermaid sometimes leaves a generic error element with id="dmermaid" or similar
           const genericOrphan = document.getElementById('d' + id);
           if (genericOrphan) genericOrphan.remove();
-          
+
           // Also try to find any elements with 'error-icon' that Mermaid might have injected directly into the body
           document.querySelectorAll('svg[id^="dmermaid-"]').forEach(el => el.remove());
         }
@@ -207,7 +169,7 @@ export const MermaidViewer = ({ chart, onRetry }: { chart: string, onRetry?: (er
               <AlertCircle className="w-4 h-4 text-orange-500" />
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Diagram Incomplete</span>
             </div>
-            <span className="text-[13px] text-center max-w-[250px]">{error === 'Repairing diagram...' ? 'The AI made a syntax error. We are repairing it in the background...' : 'The diagram could not be fully rendered due to missing or invalid syntax.'}</span>
+            <span className="text-[13px] text-center max-w-[250px]">The diagram could not be fully rendered due to missing or invalid syntax.</span>
           </div>
         ) : (
           <>
@@ -217,7 +179,7 @@ export const MermaidViewer = ({ chart, onRetry }: { chart: string, onRetry?: (er
                 {chart}
               </div>
             )}
-            
+
             {/* Linear Style 3-Dot Dropdown */}
             {svgContent && (
               <div className="absolute top-3 -left-8 z-[50]" ref={dropdownRef}>
@@ -342,7 +304,7 @@ export const MermaidViewer = ({ chart, onRetry }: { chart: string, onRetry?: (er
 
               {/* Layout Container */}
               <div className="w-full h-full flex" onClick={(e) => e.stopPropagation()}>
-                
+
                 {/* SVG rendered fullscreen with Zoom & Pan */}
                 <div className="flex-1 h-full flex items-center justify-center p-10 overflow-hidden relative">
                   <motion.div
@@ -369,7 +331,7 @@ export const MermaidViewer = ({ chart, onRetry }: { chart: string, onRetry?: (er
 
                 {/* Code Pane (Dual View) */}
                 {showCode && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
