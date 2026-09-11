@@ -844,11 +844,26 @@ const MarkdownComponents = {
     return <>{children}</>;
   },
   code({ node, inline, className, children, ...props }: any, isTyping?: boolean) {
+    const codeString = String(children).replace(/\n$/, "");
+    
+    // 🚨 Intercept URLs/Links that the AI hallucinates into code blocks 🚨
+    const isJustAUrl = /^(https?:\/\/[^\s]+|wss?:\/\/[^\s]+|[\w-]+\.classgrid\.in[^\s]*)$/i.test(codeString.trim());
+    if (isJustAUrl) {
+      const url = (codeString.trim().startsWith('http') || codeString.trim().startsWith('ws')) ? codeString.trim() : `https://${codeString.trim()}`;
+      return (
+        <a href={url} target="_blank" rel="noopener noreferrer" className="text-indigo-500 dark:text-indigo-400 hover:underline break-all">
+          {codeString.trim()}
+        </a>
+      );
+    }
+
     const match = /language-(\w+)/.exec(className || "");
     const language = match ? match[1] : "";
     
-    if (!inline && language === "mermaid") {
-      return <MermaidViewer chart={String(children).replace(/\n$/, "")} />;
+    const isMermaid = language === "mermaid" || codeString.trim().startsWith("graph ") || codeString.trim().startsWith("sequenceDiagram") || codeString.trim().startsWith("pie") || codeString.trim().startsWith("gantt") || codeString.trim().startsWith("stateDiagram") || codeString.trim().startsWith("classDiagram");
+
+    if (!inline && isMermaid) {
+      return <MermaidViewer chart={codeString} />;
     }
 
     if (!inline && language === "carousel") {

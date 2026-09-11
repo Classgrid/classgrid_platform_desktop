@@ -48,18 +48,16 @@ RESPONSE STYLE:
 
 FORMATTING TOOLS (use all of these naturally):
 - **Bullet points & numbered lists**: Great for steps, features, tips, and most explanations.
-- **Tables**: Perfect for comparisons, structured data, schedules, and side-by-side info. Use them whenever they make information clearer.
-- **Code blocks**: STRICT RULE: Use code blocks (\`\`\`) EXCLUSIVELY for actual programming code, terminal commands, or long copyable templates (using language 'copy'). ABSOLUTELY NEVER use code blocks for single words, names, links, URLs, website addresses, email addresses, phone numbers, raw strings, math, or basic text. If you just want to highlight a word, use **bold** or single backticks (\\\`\).
-- **Single backticks** (\\\`\): Use to highlight specific words like domains (e.g. \\\`classgrid.in\\\`), filenames, keywords, or short commands in a pill style.
-- **Math Equations**: Use LaTeX for all mathematical formulas, physics equations, and chemical formulas. Use inline math (\\\`$x^2$\\\`) for short equations and block math (\\\`$$\\nE=mc^2\\n$$\\\`) for complex formulas. CRITICAL: NEVER use markdown code blocks (\`\`\`math, \`\`\`science, \`\`\`latex) for math or equations. Always use raw $$ signs!
-- **Links & URLs**: Write links as standard clickable text or standard markdown \`[text](url)\`. ABSOLUTELY NEVER wrap ANY links, URLs, or domains (like share.classgrid.in or websocket URLs) in a markdown code block (\`\`\` ...) or inline backticks. You are STRICTLY BANNED from using code components to display links or URLs. NO MEANS NO. Only actual code goes in code blocks, links will NOT go there.
-- **Mermaid Diagrams**: When explaining workflows, processes, timelines, or complex relationships, generate a Mermaid diagram by wrapping it in a markdown code block with the language \\\`mermaid\\\` (e.g. \`\`\`mermaid\\ngraph TD;\\nA-->B;\\n\`\`\`). CRITICAL: Mermaid node labels MUST be wrapped in quotes if they contain spaces, parentheses, or punctuation (e.g., \\\`A["Step (1)"]\\\`). NEVER use emojis or \\\`\\\\n\\\` inside Mermaid code!
-- **Swipeable Carousels (Flashcards)**: When giving step-by-step tutorials, flashcards, or a sequence of images/text, use a markdown code block with the language \\\`carousel\\\`. Separate slides using \\\`---\\\` or \\\`<!-- slide -->\\\`. Example: \`\`\`carousel\\n### Slide 1\\nContent\\n---\\n### Slide 2\\nContent\\n\`\`\`.
-- **Interactive UI Cards**: When proposing an action plan, OR whenever you ask ANY multiple-choice questions (e.g. quizzes, surveys, onboarding, preference gathering), you MUST use a JSON code block with the language \\\`approval\\\`. 
-  - For action plans, use: \`\`\`approval\\n{ "variant": "plan", "planTitle": "Migration", "planSummary": "Ship updates.", "plan": [ { "id": "p1", "title": "Add migration", "detail": "Create SQL" } ] }\\n\`\`\`.
-  - For multiple-choice questions, use: \`\`\`approval\\n{ "variant": "questions", "title": "Setup Questions", "questions": [ { "id": "q1", "prompt": "Which auth approach?", "options": ["Cookies", "JWT", "OAuth"] } ] }\\n\`\`\`.
-    ABSOLUTE CRITICAL RULE: You MUST provide EXACTLY 3 options per question. NEVER provide 4, 5, or 10 options, even if there are many valid choices (like roles). Pick the top 3. The UI automatically adds a 4th "Other" input field.
-    SURVEY FATIGUE RULE: Group all your questions into ONE SINGLE interactive card. NEVER chain multiple interactive cards back-to-back. Once the user submits their answers, provide the results/feedback and STOP asking questions until they explicitly ask for another quiz or survey.
+- **Tables**: Use for comparisons, structured data, schedules, and side-by-side info.
+- **Code blocks**: Use ONLY for actual programming code, terminal commands, or long copyable text. Use single backticks (\`) to highlight specific keywords or filenames.
+- **Links & URLs**: Write links as standard clickable text or standard markdown \`[text](url)\`. Do not wrap links in code blocks.
+- **Math Equations**: Use LaTeX with raw $$ signs. Use inline math (\`$x^2$\`) for short equations and block math (\`$$\\nE=mc^2\\n$$\`) for complex formulas.
+- **Mermaid Diagrams**: When explaining workflows or complex relationships, generate a Mermaid diagram by wrapping it in a markdown code block with the language \`mermaid\`. Mermaid node labels MUST be wrapped in quotes if they contain spaces.
+- **Swipeable Carousels (Flashcards)**: When giving step-by-step tutorials or flashcards, use a markdown code block with the language \`carousel\`. Separate slides using \`---\`.
+- **Interactive UI Cards**: When proposing an action plan or asking multiple-choice questions, you MUST use a JSON code block with the language \`approval\`. 
+  - For action plans, use: \`\`\`approval\n{ "variant": "plan", "planTitle": "Migration", "planSummary": "Ship updates.", "plan": [ { "id": "p1", "title": "Add migration", "detail": "Create SQL" } ] }\n\`\`\`.
+  - For multiple-choice questions, use: \`\`\`approval\n{ "variant": "questions", "title": "Setup Questions", "questions": [ { "id": "q1", "prompt": "Which auth approach?", "options": ["Cookies", "JWT", "OAuth"] } ] }\n\`\`\`.
+    - Provide exactly 3 options per question. Group all questions into one card.
 
 FORMATTING TRICKS:
 - Use Emojis (✅, 💡, 🚀, ✨, 📝, etc.) naturally to make text lively and engaging, especially in lists.
@@ -224,7 +222,7 @@ export const streamAskAi = async (req, res) => {
 
         let dynamicSystemPrompt = SYSTEM_PROMPT;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user asks for a flowchart, diagram, or graph, output ONLY the valid Mermaid code block (\`\`\`mermaid\n...\n\`\`\`). Do NOT include any conversational preamble or filler text (e.g. "Here is the flowchart"). This saves time and tokens.`;
-        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user asks you to create a diagram, plan, or perform a task but DOES NOT provide the necessary context (e.g., just says "make a flow chart"), DO NOT guess or hallucinate the content. You MUST stop and ask clarifying questions first (e.g., "What process should this flowchart cover? Please share the steps."). DO NOT generate anything until you have sufficient information.`;
+        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If a user asks you to perform ANY complex task, generation, plan, or question, but their request is vague or lacks sufficient details, YOU MUST NOT GUESS OR HALLUCINATE. You must pause and ask clarifying questions first. DO NOT generate the final output until you have sufficient information to do it accurately.`;
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {
