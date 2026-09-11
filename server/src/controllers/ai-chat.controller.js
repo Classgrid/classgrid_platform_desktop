@@ -218,12 +218,34 @@ export const streamAskAi = async (req, res) => {
             if (body.fileUrls && body.fileUrls.length > 0) {
                 content += "\n\nAttached Files:\n" + body.fileUrls.join('\n');
             }
+            
+            const cleanMsg = (body.question || "").trim().replace(/[.!?,]/g, "").toLowerCase();
+            const ackWords = ["ok", "okay", "thanks", "thank you", "done", "got it", "cool", "awesome", "perfect", "great", "nice"];
+            
+            // Short-circuit the AI completely if the user just says "okay" or "thanks" without any files
+            if (ackWords.includes(cleanMsg) && (!body.fileUrls || body.fileUrls.length === 0)) {
+                const fastReply = "You're welcome! Let me know if you need anything else.";
+                
+                // Save assistant message to DB just like normal
+                if (!isIncognito && sessionId) {
+                    saveMessage(sessionId, "assistant", fastReply, []).catch(err => console.error(err));
+                    appendToHistory(sessionId, "assistant", fastReply).catch(err => console.error(err));
+                }
+
+                // Send the final answer immediately and close the stream
+                res.write(`data: ${JSON.stringify({ type: "answer", answer: fastReply })}\n\n`);
+                if (keepAliveInterval) clearInterval(keepAliveInterval);
+                res.end();
+                return; // SKIP THE LLM ENTIRELY!
+            }
+            
             messages.push({ role: "user", content });
         }
 
         let dynamicSystemPrompt = SYSTEM_PROMPT;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (HIGHEST PRIORITY): If a user asks you to perform ANY task (e.g. "make a flowchart", "write an email", "create a plan") BUT they do not provide the necessary data, topic, or context, your ONLY ALLOWED RESPONSE is a question asking for that information. Under NO circumstances should you generate placeholder content, guess the topic, or attempt to fulfill the request without the context.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user explicitly asks for a flowchart, diagram, or graph AND provides the context, output ONLY the valid Mermaid code block (\`\`\`mermaid\n...\n\`\`\`). Do NOT include any conversational preamble or filler text.`;
+        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user says "okay", "thanks", "got it", "done", or simply acknowledges your previous response, DO NOT generate more content, flowcharts, or code. Simply say "You're welcome!" or "Let me know if you need anything else!" and STOP.`;
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {
