@@ -247,7 +247,7 @@ export function ChatSidebar({
               </div>
             ) : (
               <>
-                <h2 className="text-xl font-bold text-foreground ml-1">Chats</h2>
+                <h2 className="text-xl font-bold text-foreground ml-8">Chats</h2>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={onNewChat}
