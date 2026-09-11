@@ -859,6 +859,13 @@ const MarkdownComponents = {
 
     const match = /language-(\w+)/.exec(className || "");
     const language = match ? match[1] : "";
+
+    // 🚨 Intercept Hallucinated Prose in Code Blocks 🚨
+    // If the AI wraps an entire normal sentence in backticks, un-wrap it so the user doesn't see a random grey box.
+    const isProse = !language && codeString.length > 15 && codeString.includes(" ") && !/[{}();=<>\[\]\/\\]/.test(codeString) && !/const|let|var|function|import|export|if|for|while/.test(codeString);
+    if (isProse) {
+       return <span className={!inline ? "block mb-4" : ""}>{codeString}</span>;
+    }
     
     const isMermaid = language === "mermaid" || codeString.trim().startsWith("graph ") || codeString.trim().startsWith("sequenceDiagram") || codeString.trim().startsWith("pie") || codeString.trim().startsWith("gantt") || codeString.trim().startsWith("stateDiagram") || codeString.trim().startsWith("classDiagram");
 
