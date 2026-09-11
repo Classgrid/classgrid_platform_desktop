@@ -138,6 +138,18 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
     return () => window.removeEventListener("wheel", handleWheel);
   }, [fullscreen]);
 
+  const handleDropdownCopy = async (text: string, successMessage: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(successMessage);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      toast.error("Failed to copy to clipboard");
+    } finally {
+      setShowDropdown(false);
+    }
+  };
+
   return (
     <div className="w-full relative group mermaid-wrapper">
       <div className={`relative flex justify-center items-center p-6 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#1e1e1e] min-h-[100px] overflow-visible my-4 ${showCode ? "items-start justify-start !p-4" : ""}`}>
@@ -184,9 +196,7 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigator.clipboard.writeText(window.location.href);
-                          toast.success("Diagram URL copied to clipboard");
-                          setShowDropdown(false);
+                          handleDropdownCopy(window.location.href, "Diagram URL copied to clipboard");
                         }}
                         className="w-full flex items-center gap-2 px-3 py-1.5 text-[13px] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 text-left"
                       >
@@ -196,9 +206,7 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigator.clipboard.writeText(chart);
-                          toast.success("Diagram copied to clipboard");
-                          setShowDropdown(false);
+                          handleDropdownCopy(chart, "Diagram copied to clipboard");
                         }}
                         className="w-full flex items-center gap-2 px-3 py-1.5 text-[13px] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 text-left"
                       >
@@ -208,9 +216,7 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigator.clipboard.writeText(chart);
-                          toast.success("Code contents copied to clipboard");
-                          setShowDropdown(false);
+                          handleDropdownCopy(chart, "Code contents copied to clipboard");
                         }}
                         className="w-full flex items-center gap-2 px-3 py-1.5 text-[13px] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 text-left"
                       >
