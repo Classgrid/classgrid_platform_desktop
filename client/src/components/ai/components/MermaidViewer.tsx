@@ -174,11 +174,10 @@ export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onR
         )}
         {error ? (
           <div className="w-full bg-slate-50 dark:bg-black/20 p-4 rounded-lg flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 min-h-[120px] border border-slate-200 dark:border-white/10">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertCircle className="w-4 h-4 text-orange-500" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Diagram Incomplete</span>
-            </div>
-            <span className="text-[13px] text-center max-w-[250px]">{error === 'Repairing diagram...' ? 'The AI made a syntax error. We are repairing it in the background...' : 'The diagram could not be fully rendered due to missing or invalid syntax.'}</span>
+            <Loader2 className="w-5 h-5 text-indigo-500 animate-spin mb-2" />
+            <span className="text-[13px] text-center max-w-[250px]">
+              Optimizing diagram layout...
+            </span>
           </div>
         ) : (
           <>
