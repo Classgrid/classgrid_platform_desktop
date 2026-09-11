@@ -21,6 +21,20 @@ const sanitizeMermaid = (chart: string): string => {
     .trim();
 };
 
+// Aggressive local auto-repair to fix common AI syntax errors instantly (under 10ms) without LLM latency
+const autoRepairMermaidSyntax = (chart: string): string => {
+  return chart.split('\n').map(line => {
+    // 1. Fix subgraphs with quotes or brackets: `subgraph [" Title "]` -> `subgraph Title`
+    if (line.trim().startsWith('subgraph ')) {
+      return line.replace(/[\[\]"']/g, '').trim();
+    }
+    // 2. Remove all double quotes. Mermaid text is usually fine unquoted, but unclosed quotes break the parser.
+    line = line.replace(/"/g, '');
+    // 3. Remove ampersands and semicolons outside of HTML entities if they cause issues, but just quotes is usually enough.
+    return line;
+  }).join('\n');
+};
+
 export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onRetry?: (errorMsg: string) => void, isTyping?: boolean }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [svgContent, setSvgContent] = useState<string | null>(null);
@@ -69,21 +83,38 @@ export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onR
 
         try {
           const sanitized = sanitizeMermaid(chart);
-          const { svg } = await mermaid.render(id, sanitized);
+          let finalSvg = "";
+          try {
+            const { svg } = await mermaid.render(id, sanitized);
+            finalSvg = svg;
+          } catch (firstErr) {
+            // First render failed. Instantly try aggressive local repair!
+            console.warn('Mermaid first render failed, attempting instant local repair...', firstErr);
+            const aggressivelyRepaired = autoRepairMermaidSyntax(sanitized);
+            const id2 = `mermaid-repair-${Math.random().toString(36).substring(2, 9)}`;
+            const { svg } = await mermaid.render(id2, aggressivelyRepaired);
+            finalSvg = svg;
+            
+            // Clean up the first failed orphan
+            const orphanedSvg = document.getElementById(`d${id}`);
+            if (orphanedSvg) orphanedSvg.remove();
+          }
+
           if (isMounted) {
-            setSvgContent(svg);
-            if (ref.current) ref.current.innerHTML = svg;
+            setSvgContent(finalSvg);
+            if (ref.current) ref.current.innerHTML = finalSvg;
             setLoading(false);
             setError(null);
           }
         } catch (err: any) {
+          // If EVEN THE REPAIR fails, then we fall back to the slow LLM retry
           if (isMounted) {
             if (isTyping) {
               // Ignore syntax errors while the AI is still streaming the code block
               console.warn('Mermaid incomplete while typing:', err?.message || err);
               return;
             }
-            console.error('Mermaid render error:', err?.message || err);
+            console.error('Mermaid render error (even after repair):', err?.message || err);
             setError('Repairing diagram...');
             setLoading(false);
             if (onRetry && !localHasRetried) {
