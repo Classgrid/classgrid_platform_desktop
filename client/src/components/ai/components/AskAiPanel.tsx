@@ -713,11 +713,23 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
 
 const preprocessLaTeX = (content: string) => {
   if (!content) return "";
-  return content
+  let processed = content
     .replace(/\\\[/g, () => '$$')
     .replace(/\\\]/g, () => '$$')
     .replace(/\\\(/g, () => '$')
     .replace(/\\\)/g, () => '$');
+
+  // Strip code block wrappers for math/science to let KaTeX handle them normally
+  processed = processed.replace(/```(?:math|science|latex|equation)\n?([\s\S]*?)```/gi, (match, p1) => {
+    return `$$\n${p1.trim()}\n$$`;
+  });
+
+  // Strip code block wrappers for links to let GFM auto-link them normally
+  processed = processed.replace(/```links?\n?([\s\S]*?)```/gi, (match, p1) => {
+    return p1.trim();
+  });
+
+  return processed;
 };
 
 // MarkdownCarousel Component for rendering swipeable flashcards/slides inside the chat
