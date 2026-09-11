@@ -23,6 +23,7 @@ const sanitizeMermaid = (chart: string): string => {
 
 export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onRetry?: (errorMsg: string) => void, isTyping?: boolean }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const hasRetried = useRef(false);
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
