@@ -288,7 +288,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
           const text = `Read the chat that I recently had on my Classgrid agent. I am sharing the public link here:\n${urlToShare}`;
           finalUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
        } else if (platform === 'linkedin') {
-          finalUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(urlToShare)}`;
+          const text = `Read the chat that I recently had on my Classgrid agent. I am sharing the public link here:\n${urlToShare}`;
+          finalUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
        }
        
        if (newWindow) {
