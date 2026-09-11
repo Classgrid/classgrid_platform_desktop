@@ -603,7 +603,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
   });
 
   return (
-    <div className="flex flex-col bg-background border-t border-border relative">
+    <div className="flex flex-col w-full bg-background border-t border-border relative">
       {/* Mentions Dropdown - Moved to root to prevent any CSS clipping */}
       {showMentions && mentionableUsers && thread?.type === 'group' && (
           <div className="absolute bottom-[100%] mb-2 left-4 bg-popover text-popover-foreground border border-border shadow-2xl rounded-[1.25rem] max-h-72 overflow-y-auto z-[9999] w-[320px] p-2 custom-scrollbar backdrop-blur-xl bg-opacity-95 dark:bg-[#1f2228] dark:border-[#2f3336]">
