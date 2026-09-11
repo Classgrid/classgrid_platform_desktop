@@ -482,8 +482,7 @@ function ChatPageInner() {
         file_type: f.type,
         file_size: f.size
       })),
-      reactions: {},
-      isSending: true
+      reactions: {}
     };
 
     setMessages((prev) => [...prev, tempMessage]);
