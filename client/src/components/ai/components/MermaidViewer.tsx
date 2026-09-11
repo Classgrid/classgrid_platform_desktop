@@ -21,7 +21,7 @@ const sanitizeMermaid = (chart: string): string => {
     .trim();
 };
 
-export const MermaidViewer = ({ chart }: { chart: string }) => {
+export const MermaidViewer = ({ chart, onRetry }: { chart: string, onRetry?: (error: string) => void }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +67,15 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
         const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
         
         try {
+          // Dynamically set the theme based on the current app theme mode before rendering
+          const isDark = document.documentElement.classList.contains('dark');
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: isDark ? 'dark' : 'default',
+            securityLevel: 'loose',
+            fontFamily: 'inherit',
+          });
+
           const sanitized = sanitizeMermaid(chart);
           const { svg } = await mermaid.render(id, sanitized);
           if (isMounted) {
@@ -79,8 +88,11 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
           if (isMounted) {
             console.error('Mermaid render error:', err?.message || err);
             // Provide a cleaner error message instead of the raw SVG text
-            setError('Syntax error in diagram. Waiting for AI to correct it...');
+            setError('Repairing diagram...');
             setLoading(false);
+            if (onRetry) {
+              onRetry(err?.message || "Invalid Mermaid syntax");
+            }
           }
         } finally {
           // Cleanup any orphaned elements Mermaid leaves behind on error
@@ -164,7 +176,7 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
               <AlertCircle className="w-4 h-4 text-orange-500" />
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Diagram Incomplete</span>
             </div>
-            <span className="text-[13px] text-center max-w-[250px]">The diagram could not be fully rendered due to missing or invalid syntax.</span>
+            <span className="text-[13px] text-center max-w-[250px]">{error === 'Repairing diagram...' ? 'The AI made a syntax error. We are repairing it in the background...' : 'The diagram could not be fully rendered due to missing or invalid syntax.'}</span>
           </div>
         ) : (
           <>

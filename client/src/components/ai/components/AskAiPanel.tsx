@@ -160,6 +160,7 @@ type ChatMessage = {
   attachments?: AiAttachment[];
   thought?: string;
   tocSummary?: string;
+  hidden?: boolean;
 };
 
 type ListItem = {
@@ -871,7 +872,7 @@ const MarkdownComponents = {
     const isMermaid = language === "mermaid" || codeString.trim().startsWith("graph ") || codeString.trim().startsWith("sequenceDiagram") || codeString.trim().startsWith("pie") || codeString.trim().startsWith("gantt") || codeString.trim().startsWith("stateDiagram") || codeString.trim().startsWith("classDiagram");
 
     if (!inline && isMermaid) {
-      return <MermaidViewer chart={codeString} />;
+      return <MermaidViewer chart={codeString} onRetry={triggerAiRetry} />;
     }
 
     if (!inline && language === "carousel") {
@@ -963,6 +964,10 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
     .replace(/^\s{4}[◦]\s/gm, '    - ')
     .replace(/(^[ \t]*[-*][ \t].*)\n{2,}(?=[ \t]*[-*][ \t])/gm, '$1\n'); // collapse blank lines between bullets
 
+  const triggerAiRetry = useCallback((errorMessage: string) => {
+    void askQuestion(`SYSTEM: You made a syntax error: ${errorMessage}\nPlease apologize to the user and retry generating it with corrected formatting.`, { hidden: true });
+  }, []);
+
   const components = React.useMemo(() => {
     return {
       ...MarkdownComponents,
@@ -1025,15 +1030,18 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                 />
               </motion.div>
             );
-          } catch (e) {
+          } catch (e: any) {
             if (isTypingRef.current) {
               return <CraftingBlock />;
             }
-            // For non-technical users (like students), never show raw JSON or scary red errors.
-            // Show a friendly, conversational fallback message if the interactive card fails to generate.
+            
+            // If it finishes typing but fails to parse, trigger a silent background retry!
+            triggerAiRetry(e?.message || "Invalid JSON syntax in interactive card");
+            
             return (
-              <div className="p-4 my-2 text-[14px] text-slate-500 dark:text-slate-400 italic bg-slate-50 dark:bg-[#222] rounded-xl border border-slate-200 dark:border-white/5">
-                Oops, I had a little trouble generating this interactive card. Could you ask me to try again?
+              <div className="p-4 my-4 bg-slate-50 dark:bg-[#222] rounded-xl border border-slate-200 dark:border-white/5 flex flex-col items-center justify-center min-h-[120px]">
+                <Spinner className="w-5 h-5 text-indigo-500 mb-2" />
+                <div className="text-[13px] font-medium text-slate-700 dark:text-slate-300">Repairing interactive card...</div>
               </div>
             );
           }
@@ -1928,7 +1936,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     });
   }
 
-  async function askQuestion(question: string) {
+  async function askQuestion(question: string, options?: { hidden?: boolean }) {
     let displayQuestion = question.trim();
     let apiQuestion = question.trim();
     const isDocsContextActive = pageContext?.path?.startsWith("/docs") && pageContext.path !== lastSentDocsPath;
@@ -2012,6 +2020,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         contextUrl: sentContextUrl,
         contextTitle: sentContextTitle,
         attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
+        hidden: options?.hidden,
       },
     ];
 
@@ -2388,6 +2397,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         ) : (
           <>
             {messages.map((message, index) => {
+              if (message.hidden) return null;
+              
               const isUser = message.role === "user";
 
               let showDateHeader = false;
