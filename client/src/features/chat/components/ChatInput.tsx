@@ -973,6 +973,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
                 ref={editorRef}
                 contentEditable
                 data-placeholder="Type a message..."
+                className="w-full min-w-0 flex-1 max-h-[150px] overflow-y-auto custom-scrollbar py-3 px-3 outline-none text-[15px] leading-relaxed break-words [word-break:break-word] relative empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/70 empty:before:pointer-events-none"
                 onInput={(e) => {
                   const html = e.currentTarget.innerHTML;
                   const text = e.currentTarget.textContent || "";
