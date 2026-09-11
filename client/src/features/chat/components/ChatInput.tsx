@@ -1,3 +1,38 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+ * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+ * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+ * ─────────────────────────────────────────────────────────
+ */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { useState, useRef, useEffect } from "react";
 import { Send, Paperclip, X, Smile, Film, FileText, Mic, Square, Trash2, BarChart2, Image as ImageIcon, Clock, SlidersHorizontal, BellOff, Bell, Camera, Video, Users, BadgeCheck } from "lucide-react";
 import { Spinner } from "@/components/marketing_ui/spinner";
@@ -568,7 +603,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
   });
 
   return (
-    <div className="flex flex-col w-full bg-background border-t border-border relative">
+    <div className="flex flex-col bg-background border-t border-border relative">
       {/* Mentions Dropdown - Moved to root to prevent any CSS clipping */}
       {showMentions && mentionableUsers && thread?.type === 'group' && (
           <div className="absolute bottom-[100%] mb-2 left-4 bg-popover text-popover-foreground border border-border shadow-2xl rounded-[1.25rem] max-h-72 overflow-y-auto z-[9999] w-[320px] p-2 custom-scrollbar backdrop-blur-xl bg-opacity-95 dark:bg-[#1f2228] dark:border-[#2f3336]">
@@ -973,7 +1008,6 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
                 ref={editorRef}
                 contentEditable
                 data-placeholder="Type a message..."
-                className="w-full min-w-0 flex-1 max-h-[150px] overflow-y-auto custom-scrollbar py-3 px-3 outline-none text-[15px] leading-relaxed break-words [word-break:break-word] relative empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/70 empty:before:pointer-events-none"
                 onInput={(e) => {
                   const html = e.currentTarget.innerHTML;
                   const text = e.currentTarget.textContent || "";
@@ -1082,7 +1116,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
                     }
                   }
                 }}
-                className="w-full min-w-0 bg-transparent resize-none outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 py-3 px-4 text-sm text-foreground empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none min-h-[44px] max-h-[120px] overflow-y-auto overflow-x-hidden cursor-text break-words break-all [word-break:break-word] whitespace-pre-wrap [&_a]:text-blue-500 [&_a]:underline border-none"
+                className="w-full min-w-0 bg-transparent resize-none outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 py-3 px-4 text-sm text-foreground empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none min-h-[44px] max-h-[120px] overflow-y-auto overflow-x-hidden cursor-text break-words [word-break:break-word] whitespace-pre-wrap [&_a]:text-blue-500 [&_a]:underline border-none"
                 style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
               />
             </div>
