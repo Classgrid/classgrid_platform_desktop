@@ -747,7 +747,7 @@ const MarkdownCarousel = memo(({ content, components }: { content: string, compo
             <CarouselItem key={index}>
               <div className="p-1 h-full">
                 <div className="bg-white dark:bg-[#2C2C2C] border border-slate-200 dark:border-white/10 rounded-xl p-6 min-h-[200px] h-full shadow-sm flex flex-col justify-center">
-                  <div className="space-y-4 text-[16px] leading-[24px] overflow-hidden break-words max-w-none">
+                  <div className="space-y-4 text-[16px] leading-[24px] overflow-visible break-words max-w-none">
                     <ReactMarkdown
                       remarkPlugins={[remarkMath, remarkGfm, remarkGithubAlerts]}
                       rehypePlugins={[rehypeKatex]}
@@ -1121,7 +1121,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
 
 
   return (
-    <div className="space-y-4 text-[16px] leading-[24px] overflow-hidden break-words max-w-none">
+    <div className="space-y-4 text-[16px] leading-[24px] overflow-visible break-words max-w-none">
       <ReactMarkdown
         remarkPlugins={memoizedRemarkPlugins}
         rehypePlugins={memoizedRehypePlugins}

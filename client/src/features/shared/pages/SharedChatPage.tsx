@@ -106,7 +106,7 @@ function MessageRow({ msg, isUser }: { msg: SharedMessage; isUser: boolean }) {
   // Vercel style Assistant Message: plain text left-aligned
   return (
     <div className="shared-msg-row assistant-row">
-      <div className="assistant-content overflow-hidden break-words max-w-none">
+      <div className="assistant-content overflow-visible break-words max-w-none">
         <ReactMarkdown
           remarkPlugins={[remarkMath, remarkGfm]}
           rehypePlugins={[rehypeKatex]}

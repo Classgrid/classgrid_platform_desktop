@@ -519,7 +519,13 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                           {isUser ? (
                             <p className="text-[16px] leading-[24px] text-[#37352f] dark:text-[#F0EFED] break-words whitespace-pre-wrap">{msg.content}</p>
                           ) : (
-                            <div className="whitespace-pre-wrap">{msg.content}</div>
+                            <div className="whitespace-pre-wrap text-[14px]">{
+                              msg.content
+                                .replace(/```mermaid[\s\S]*?```/g, "📊 [Interactive Diagram]")
+                                .replace(/```approval[\s\S]*?```/g, "📋 [Interactive UI]")
+                                .replace(/```(copy|email)[\s\S]*?```/g, "📝 [Document Template]")
+                                .replace(/```[\s\S]*?```/g, "💻 [Code Snippet]")
+                            }</div>
                           )}
                         </div>
                       )
