@@ -845,7 +845,7 @@ const MarkdownComponents = {
   pre({ children }: any) {
     return <>{children}</>;
   },
-  code({ node, inline, className, children, ...props }: any, isTyping?: boolean, onRetry?: (msg: string) => void) {
+  code({ node, inline, className, children, ...props }: any, isTyping?: boolean) {
     const codeString = String(children).replace(/\n$/, "");
     
     // 🚨 Intercept URLs/Links that the AI hallucinates into code blocks 🚨
@@ -872,7 +872,7 @@ const MarkdownComponents = {
     const isMermaid = language === "mermaid" || codeString.trim().startsWith("graph ") || codeString.trim().startsWith("sequenceDiagram") || codeString.trim().startsWith("pie") || codeString.trim().startsWith("gantt") || codeString.trim().startsWith("stateDiagram") || codeString.trim().startsWith("classDiagram");
 
     if (!inline && isMermaid) {
-      return <MermaidViewer chart={codeString} onRetry={onRetry} />;
+      return <MermaidViewer chart={codeString} onRetry={triggerAiRetry} />;
     }
 
     if (!inline && language === "carousel") {
@@ -1040,7 +1040,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
             return <RepairingCard errorMessage={e?.message || "Invalid JSON syntax in interactive card"} onRepair={triggerAiRetry} />;
           }
         }
-        return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current, triggerAiRetry);
+        return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current);
       },
       table({ children, ...props }: any) {
         return (
