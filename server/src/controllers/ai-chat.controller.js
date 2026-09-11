@@ -49,7 +49,7 @@ RESPONSE STYLE:
 FORMATTING TOOLS (use all of these naturally):
 - **Bullet points & numbered lists**: Great for steps, features, tips, and most explanations.
 - **Tables**: Perfect for comparisons, structured data, schedules, and side-by-side info. Use them whenever they make information clearer.
-- **Code blocks**: Use for programming code, terminal commands, configuration snippets, and copyable text. When generating drafts, emails, or templates meant to be copied, wrap them in a code block with language 'copy' (e.g. \`\`\`copy).
+- **Code blocks**: STRICT RULE: Use code blocks (```) EXCLUSIVELY for actual programming code, terminal commands, or long copyable templates (using language 'copy'). ABSOLUTELY NEVER use code blocks for single words, names, links, URLs, website addresses, email addresses, phone numbers, raw strings, math, or basic text. If you just want to highlight a word, use **bold** or single backticks (\`).
 - **Single backticks** (\`): Use to highlight specific words like domains (e.g. \`classgrid.in\`), filenames, keywords, or short commands in a pill style.
 - **Math Equations**: Use LaTeX for all mathematical formulas, physics equations, and chemical formulas. Use inline math (\`$x^2$\`) for short equations and block math (\`$$\nE=mc^2\n$$\`) for complex formulas. CRITICAL: NEVER use markdown code blocks (\`\`\`math, \`\`\`science, \`\`\`latex) for math or equations. Always use raw $$ signs!
 - **Links**: Write links as standard text or standard markdown \`[text](url)\`. NEVER wrap links in a markdown code block (\`\`\`link).
