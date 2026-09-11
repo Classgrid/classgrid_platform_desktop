@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import mermaid from 'mermaid';
-import { Loader2, Maximize2, X, AlertCircle } from 'lucide-react';
+import { Loader2, Maximize2, X, AlertCircle, Copy, Check, Code2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 mermaid.initialize({
@@ -26,6 +26,14 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showCode, setShowCode] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(chart);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const [zoom, setZoom] = useState(1);
 
@@ -134,15 +142,37 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
           </div>
         ) : (
           <>
-            <div ref={ref} className="w-full flex justify-center [&>svg]:max-w-full [&>svg]:h-auto" />
+            <div ref={ref} className={`w-full flex justify-center [&>svg]:max-w-full [&>svg]:h-auto ${showCode ? "hidden" : ""}`} />
+            {showCode && (
+              <div className="w-full max-h-[300px] overflow-y-auto p-4 bg-slate-50 dark:bg-black/20 font-mono text-xs text-slate-700 dark:text-slate-300 whitespace-pre">
+                {chart}
+              </div>
+            )}
             {svgContent && (
-              <button
-                onClick={() => setFullscreen(true)}
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-500 dark:text-slate-300"
-                title="View fullscreen"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-white/10 shadow-sm border border-slate-200 dark:border-white/5">
+                <button
+                  onClick={handleCopy}
+                  className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/20 text-slate-500 dark:text-slate-300 transition-colors"
+                  title="Copy mermaid source"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  onClick={() => setShowCode(!showCode)}
+                  className={`p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/20 transition-colors ${showCode ? "text-indigo-500 bg-indigo-50 dark:bg-indigo-500/20" : "text-slate-500 dark:text-slate-300"}`}
+                  title="View source code"
+                >
+                  <Code2 className="w-3.5 h-3.5" />
+                </button>
+                <div className="w-px h-3.5 bg-slate-300 dark:bg-white/20 mx-0.5" />
+                <button
+                  onClick={() => setFullscreen(true)}
+                  className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/20 text-slate-500 dark:text-slate-300 transition-colors"
+                  title="View fullscreen"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             )}
           </>
         )}
@@ -161,38 +191,72 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
               className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/95 dark:bg-black/95 backdrop-blur-sm cursor-zoom-out"
               onClick={() => setFullscreen(false)}
             >
-              {/* Close button */}
-              <button
-                className="absolute top-4 right-4 z-[10000] p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-black/60 dark:text-white/60 transition-all cursor-pointer"
-                onClick={(e) => { e.stopPropagation(); setFullscreen(false); }}
-                aria-label="Close fullscreen"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              {/* SVG rendered fullscreen with Zoom & Pan */}
-              <div 
-                className="w-full h-full flex items-center justify-center p-10 overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <motion.div
-                  drag
-                  dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }}
-                  dragElastic={0.1}
-                  initial={{ opacity: 0, scale: 0.88 }}
-                  animate={{ opacity: 1, scale: zoom }}
-                  exit={{ opacity: 0, scale: 0.88 }}
-                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                  className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto cursor-grab active:cursor-grabbing"
-                  dangerouslySetInnerHTML={{ __html: svgContent }}
-                />
+              {/* Top Right Buttons */}
+              <div className="absolute top-4 right-4 z-[10000] flex items-center gap-1 p-1 rounded-full bg-black/10 dark:bg-white/10 backdrop-blur-md">
+                <button
+                  onClick={handleCopy}
+                  className="p-2.5 rounded-full hover:bg-black/20 dark:hover:bg-white/20 text-black/60 dark:text-white/60 transition-all cursor-pointer"
+                  title="Copy mermaid source"
+                >
+                  {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={() => setShowCode(!showCode)}
+                  className={`p-2.5 rounded-full hover:bg-black/20 dark:hover:bg-white/20 transition-all cursor-pointer ${showCode ? "text-indigo-500 bg-black/10 dark:bg-white/10" : "text-black/60 dark:text-white/60"}`}
+                  title="Toggle source code"
+                >
+                  <Code2 className="w-4 h-4" />
+                </button>
+                <div className="w-px h-5 bg-black/20 dark:bg-white/20 mx-1" />
+                <button
+                  className="p-2.5 rounded-full hover:bg-black/20 dark:hover:bg-white/20 text-black/60 dark:text-white/60 transition-all cursor-pointer"
+                  onClick={(e) => { e.stopPropagation(); setFullscreen(false); }}
+                  aria-label="Close fullscreen"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* Hint */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[10000] flex flex-col items-center text-black/40 dark:text-white/40 text-[11px] tracking-wide select-none pointer-events-none">
-                <span>Scroll to zoom • Drag to pan</span>
-                <span className="opacity-60 mt-0.5">Click backdrop or press Esc to close</span>
+              {/* Layout Container */}
+              <div className="w-full h-full flex" onClick={(e) => e.stopPropagation()}>
+                
+                {/* SVG rendered fullscreen with Zoom & Pan */}
+                <div className="flex-1 h-full flex items-center justify-center p-10 overflow-hidden relative">
+                  <motion.div
+                    drag
+                    dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }}
+                    dragElastic={0.1}
+                    initial={{ opacity: 0, scale: 0.88 }}
+                    animate={{ opacity: 1, scale: zoom }}
+                    exit={{ opacity: 0, scale: 0.88 }}
+                    transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                    className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto cursor-grab active:cursor-grabbing"
+                    dangerouslySetInnerHTML={{ __html: svgContent }}
+                  />
+                  {/* Hint */}
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[10000] flex flex-col items-center text-black/40 dark:text-white/40 text-[11px] tracking-wide select-none pointer-events-none">
+                    <span>Scroll to zoom • Drag to pan</span>
+                    <span className="opacity-60 mt-0.5">Click backdrop or press Esc to close</span>
+                  </div>
+                </div>
+
+                {/* Code Pane (Dual View) */}
+                {showCode && (
+                  <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    className="w-[400px] h-full bg-slate-50 dark:bg-[#121212] border-l border-slate-200 dark:border-white/10 flex flex-col pt-20 pb-6 px-6"
+                  >
+                    <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-wider">Mermaid Source</div>
+                    <div className="flex-1 overflow-y-auto font-mono text-[13px] text-slate-700 dark:text-slate-300 whitespace-pre">
+                      {chart}
+                    </div>
+                  </motion.div>
+                )}
               </div>
+
+
             </motion.div>
           )}
         </AnimatePresence>,
