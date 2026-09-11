@@ -1,3 +1,38 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+ * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+ * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+ * ─────────────────────────────────────────────────────────
+ */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { useState, useEffect } from "react";
 import { Clock, Calendar, Edit2, Trash2, X, AlertCircle, ArrowLeft } from "lucide-react";
 import { fetchScheduledMessages, cancelScheduledMessage, editScheduledMessage, ScheduledMessage } from "../services/chatApi";
@@ -6,7 +41,8 @@ import { Spinner } from "@/components/marketing_ui/spinner";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import DOMPurify from 'dompurify';
 import React, { useRef } from "react";
-import RichReplyEditor, { type RichReplyEditorRef } from "@/app/support/components/RichReplyEditor";
+import RichReplyEditor from "@/app/support/components/RichReplyEditor";
+import type { RichReplyEditorRef } from "@/app/support/components/RichReplyEditor";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 
 interface ScheduledMessagesViewProps {

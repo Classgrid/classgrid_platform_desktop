@@ -568,7 +568,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
   });
 
   return (
-    <div className="flex flex-col bg-background border-t border-border relative">
+    <div className="flex flex-col w-full shrink-0 bg-background border-t border-border relative">
       {/* Mentions Dropdown - Moved to root to prevent any CSS clipping */}
       {showMentions && mentionableUsers && thread?.type === 'group' && (
           <div className="absolute bottom-[100%] mb-2 left-4 bg-popover text-popover-foreground border border-border shadow-2xl rounded-[1.25rem] max-h-72 overflow-y-auto z-[9999] w-[320px] p-2 custom-scrollbar backdrop-blur-xl bg-opacity-95 dark:bg-[#1f2228] dark:border-[#2f3336]">
@@ -973,6 +973,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
                 ref={editorRef}
                 contentEditable
                 data-placeholder="Type a message..."
+                className="w-full min-w-0 flex-1 max-h-[150px] overflow-y-auto custom-scrollbar py-3 px-3 outline-none text-[15px] leading-relaxed break-words [word-break:break-word] relative empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/70 empty:before:pointer-events-none"
                 onInput={(e) => {
                   const html = e.currentTarget.innerHTML;
                   const text = e.currentTarget.textContent || "";

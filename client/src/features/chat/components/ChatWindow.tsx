@@ -1,3 +1,38 @@
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+ * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+ * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+ * ─────────────────────────────────────────────────────────
+ */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
+
 import { useLayoutEffect, useRef, useMemo, useEffect, useState } from "react";
 import { useQueryClient, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Spinner } from "@/components/marketing_ui/spinner";
@@ -702,7 +737,7 @@ export function ChatWindow({ thread, currentUserId, orgUsers }: ChatWindowProps)
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 bg-muted/20 relative custom-scrollbar flex flex-col"
+        className="flex-1 overflow-y-auto overflow-x-hidden min-w-0 p-4 bg-muted/20 relative custom-scrollbar flex flex-col"
       >
         {/* Loading indicator at top when fetching older messages */}
         {isFetchingNextPage && (
@@ -826,7 +861,7 @@ export function ChatWindow({ thread, currentUserId, orgUsers }: ChatWindowProps)
       )}
 
       {/* Message Input */}
-      <div className="shrink-0 relative z-20 bg-background">
+      <div className="shrink-0 w-full relative z-20 bg-background">
         <ChatInput
           onSendMessage={handleSendMessage}
           isSending={isSending}
