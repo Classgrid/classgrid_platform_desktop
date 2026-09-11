@@ -1,8 +1,9 @@
-
 import React, { useEffect, useMemo, useRef, useState, useCallback, memo, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { SidebarContext, SidebarTrigger } from "@/components/marketing_ui/sidebar";
 import hljs from "highlight.js";
+import "highlight.js/styles/github-dark.css";
+import JSON5 from 'json5';
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowUp,
@@ -972,7 +973,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
         
         if (isApprovalLang) {
           try {
-            let parsedProps = JSON.parse(String(children));
+            let parsedProps = JSON5.parse(String(children));
             if (parsedProps.variant === "survey" || parsedProps.variant === "questions" || parsedProps.questions) {
               parsedProps.variant = "questions";
               if (Array.isArray(parsedProps.questions)) {
@@ -1028,9 +1029,13 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
             if (isTypingRef.current) {
               return <CraftingBlock />;
             }
-            // If generation finished but JSON is invalid, fallback to showing the raw code block
-            // instead of hiding it behind a red error message.
-            return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current);
+            // For non-technical users (like students), never show raw JSON or scary red errors.
+            // Show a friendly, conversational fallback message if the interactive card fails to generate.
+            return (
+              <div className="p-4 my-2 text-[14px] text-slate-500 dark:text-slate-400 italic bg-slate-50 dark:bg-[#222] rounded-xl border border-slate-200 dark:border-white/5">
+                Oops, I had a little trouble generating this interactive card. Could you ask me to try again?
+              </div>
+            );
           }
         }
         return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current);
