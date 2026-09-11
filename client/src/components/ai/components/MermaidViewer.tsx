@@ -44,7 +44,9 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
         
         const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
         const tempDiv = document.createElement('div');
-        tempDiv.style.display = 'none';
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.visibility = 'hidden';
+        tempDiv.style.top = '-9999px';
         document.body.appendChild(tempDiv);
         
         try {
