@@ -587,8 +587,8 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
               </div>
             </button>
           )}
-          {mentionableUsers
-            .filter(u => u.name?.toLowerCase().includes(mentionQuery))
+          {(mentionableUsers || [])
+              .filter(u => u.name?.toLowerCase().includes(mentionQuery))
             .map(u => (
               <button
                 key={u._id || u.id}

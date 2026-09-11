@@ -495,7 +495,16 @@ function ChatPageInner() {
         ? { id: replyTo.id, sender_name: replyTo.sender_name, message: replyTo.message }
         : null;
       
-      const sentMessage = await sendMessage(activeThread.id, text, files, replyData, options);
+      const sentMessage = await sendMessage(
+        activeThread.id, 
+        text, 
+        files, 
+        replyData, 
+        options,
+        (pct) => {
+          setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, uploadProgress: pct } : m)));
+        }
+      );
       setMessages((prev) => {
         if (prev.some(m => m.id === sentMessage.id)) {
           return prev.filter(m => m.id !== tempId);
