@@ -239,30 +239,7 @@ export const streamAskAi = async (req, res) => {
                 return; // SKIP THE LLM ENTIRELY!
             }
             
-            // Short-circuit the AI completely if the user asks for the time or date (handles typos and short phrases)
-            const isTimeQuery = cleanMsg.length < 40 && (
-                cleanMsg.includes("time") || 
-                cleanMsg.includes("date") || 
-                cleanMsg.includes("day is it")
-            );
-            if (isTimeQuery && (!body.fileUrls || body.fileUrls.length === 0)) {
-                const now = new Date();
-                const dateIST = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                const timeIST = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
-                const dateUTC = now.toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                const timeUTC = now.toLocaleTimeString('en-US', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit' });
-                
-                const fastReply = `🕒 **Current Date & Time:**\n\n**🇮🇳 IST (India):** ${dateIST}, at ${timeIST}\n**🌍 UTC (Global):** ${dateUTC}, at ${timeUTC} UTC`;
-                
-                if (!isIncognito && sessionId) {
-                    saveMessage(sessionId, "assistant", fastReply, []).catch(err => console.error(err));
-                    appendToHistory(sessionId, "assistant", fastReply).catch(err => console.error(err));
-                }
-                res.write(`data: ${JSON.stringify({ type: "answer", answer: fastReply })}\n\n`);
-                if (keepAliveInterval) clearInterval(keepAliveInterval);
-                res.end();
-                return; // SKIP THE LLM ENTIRELY!
-            }
+
             
             messages.push({ role: "user", content });
         }
