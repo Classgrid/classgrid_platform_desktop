@@ -40,6 +40,7 @@ import User from '../models/User.js'; // MongoDB User model
 import { broadcastToChannel } from '../services/realtimeBroadcast.js';
 import { studentNotesClient, primarySupabaseClient } from '../config/supabaseClient.js';
 import { uploadBufferToR2, deleteFromR2, getPresignedUploadUrl } from "../config/r2Client.js";
+import mongoose from 'mongoose';
 
 
 const router = express.Router();
@@ -82,7 +83,6 @@ router.get('/users', isAuthenticated, async (req, res) => {
       .lean();
       
     // Fetch forum usernames
-    const mongoose = (await import('mongoose')).default;
     const db = mongoose.connection.db;
     let forumMap = {};
     if (db && members.length > 0) {
