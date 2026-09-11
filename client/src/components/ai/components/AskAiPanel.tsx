@@ -1720,7 +1720,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   const hasDocsContext = pageContext?.path?.startsWith("/docs") && pageContext.path !== lastSentDocsPath;
   const isAnyFileUploading = attachedFiles.some(f => f.status === "uploading");
-  const canSubmit = (input.trim().length > 0 || hasDocsContext || attachedFiles.length > 0) && !submitting && !isAnyFileUploading;
+  const canSubmit = (input.trim().length > 0 || hasDocsContext || attachedFiles.length > 0) && !isAnyFileUploading;
   const emptyState = useMemo(() => messages.length === 0, [messages.length]);
   const suggestedQuestions = useMemo(() => suggestedQuestionsForPage(pageContext), [pageContext]);
 
@@ -1921,7 +1921,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       }));
 
     if (!apiQuestion && !isDocsContextActive && filesToUpload.length === 0) return;
-    if (submitting) return;
 
     if (isDocsContextActive && pageContext?.path && filesToUpload.length === 0) {
       const docsUrl = `https://classgrid.in${pageContext.path}`;
@@ -2755,21 +2754,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 </div>
               )}
 
-              {/* Bottom Right action bar: send/stop */}
+              {/* Bottom Right action bar: send */}
               <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
-
-                {isGenerating ? (
-                  <Button
-                    type="button"
-                    variant="primary"
-                    onClick={handleStop}
-                    className="h-8 rounded-full bg-foreground text-background hover:bg-foreground/90 px-3 text-[11px] font-medium shadow-sm transition-all active:scale-95"
-                    title="Stop generating"
-                  >
-                    <Square className="mr-1.5 h-3 w-3 fill-current opacity-80" />
-                    Stop
-                  </Button>
-                ) : (
                   <Button
                     type="submit"
                     variant="ghost"
