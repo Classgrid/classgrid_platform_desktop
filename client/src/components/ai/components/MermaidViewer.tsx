@@ -165,7 +165,7 @@ export const MermaidViewer = ({ chart }: { chart: string }) => {
             
             {/* Linear Style 3-Dot Dropdown */}
             {svgContent && (
-              <div className="absolute top-3 -left-10 z-[50] opacity-0 group-hover:opacity-100 transition-opacity duration-200" ref={dropdownRef}>
+              <div className="absolute top-3 -left-8 z-[50]" ref={dropdownRef}>
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowDropdown(!showDropdown); }}
                   className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
