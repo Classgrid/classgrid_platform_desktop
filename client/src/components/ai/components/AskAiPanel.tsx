@@ -2502,7 +2502,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               content={message.content} 
                               isTyping={message.typing} 
                               isHistorical={index < messages.length - 1}
-                              onRetry={(errorMsg) => {
+                              onRetry={index === messages.length - 1 ? (errorMsg) => {
                                 if (askQuestionRef.current) {
                                   const isMermaid = errorMsg.toLowerCase().includes("mermaid");
                                   askQuestionRef.current(
@@ -2512,7 +2512,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     { hidden: true }
                                   );
                                 }
-                              }}
+                              } : undefined}
                               onApprovalAction={(text) => {
                                 if (!submitting) void askQuestion(text);
                               }}
@@ -2820,8 +2820,20 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 </div>
               )}
 
-              {/* Bottom Right action bar: send */}
+              {/* Bottom Right action bar: send OR stop */}
               <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+                {isGenerating ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleStop}
+                    className="h-8 w-8 shrink-0 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all shadow-sm cursor-pointer"
+                  >
+                    <Square className="h-3.5 w-3.5 fill-current" />
+                    <span className="sr-only">Stop generating</span>
+                  </Button>
+                ) : (
                   <Button
                     type="submit"
                     variant="ghost"
@@ -2832,6 +2844,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     <ArrowUp className="h-4 w-4" />
                     <span className="sr-only">Send question</span>
                   </Button>
+                )}
               </div>
             </div>
           </form>

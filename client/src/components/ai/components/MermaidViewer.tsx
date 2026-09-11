@@ -55,6 +55,7 @@ export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onR
     let isMounted = true;
     setLoading(true);
     setError(null);
+    hasRetried.current = false;
 
     // Debounce: only render after 1500ms of no changes (streaming fully stopped)
     const timer = setTimeout(() => {
@@ -83,11 +84,9 @@ export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onR
               return;
             }
             console.error('Mermaid render error:', err?.message || err);
-            setError('Repairing diagram...');
+            setError('The AI generated an invalid diagram format.');
             setLoading(false);
-            if (onRetry) {
-              onRetry(err?.message || "Invalid diagram syntax");
-            }
+            // We are REMOVING the automatic onRetry call here to prevent infinite retry loops.
             window.dispatchEvent(
               new CustomEvent('trigger-auto-repair', {
                 detail: { error: err?.message || err, chart }
