@@ -1,5 +1,11 @@
 import { createLLMClient } from "@classgrid/ai/core";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { getPresignedUploadUrl } from "../config/r2Client.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import {
     createSession,
     saveMessage,
@@ -17,27 +23,63 @@ import { sendEmail } from "../services/aws-ses.service.js";
 import { getMcpTools, handleToolCall } from "../mcp/tools.js";
 import { RagPipeline, MongoVectorStore, VoyageEmbedder } from "@classgrid/ai/rag";
 import Note from "../models/Note.js";
+import { ROLE_DEFINITIONS } from "../utils/roles.js";
+
+const uniqueDashboards = [...new Set(Object.values(ROLE_DEFINITIONS).map(r => r.dashboard))];
+const dashboardList = uniqueDashboards.map(d => `- ${d}`).join('\n');
+const supportedRoles = Object.keys(ROLE_DEFINITIONS).map(r => `- ${ROLE_DEFINITIONS[r].label} (${r}): maps to ${ROLE_DEFINITIONS[r].dashboard} dashboard`).join('\n');
+
+const hierarchyFiles = [
+    'hierarchy.controller.js',
+    '../models/AcademicHierarchy.js',
+    '../routes/hierarchy.routes.js',
+    '../middleware/hierarchy-integrity.middleware.js',
+    '../middleware/hierarchy-validator.middleware.js'
+];
+
+let hierarchySourceCode = '';
+try {
+    for (const file of hierarchyFiles) {
+        const filePath = path.join(__dirname, file);
+        if (fs.existsSync(filePath)) {
+            const content = fs.readFileSync(filePath, 'utf8');
+            hierarchySourceCode += `\n--- FILE: ${path.basename(file)} ---\n\`\`\`javascript\n${content}\n\`\`\`\n`;
+        }
+    }
+} catch (e) {
+    console.warn("[AI SYSTEM PROMPT] Failed to load hierarchy source code:", e.message);
+}
+
 // The system prompt was originally in ./prompt, we will define it here or import it if needed.
 const SYSTEM_PROMPT = `You are the Classgrid AI Assistant — a friendly, smart helper for educational institutions of all sizes (Schools, Junior Colleges, Engineering Colleges, Degree Colleges, Coaching Institutes) using the Classgrid ERP platform.
 
-YOUR AUDIENCE:
+YOUR AUDIENCE & BACKEND ARCHITECTURE (STRICT RULES):
 - Classgrid brings administrators, teachers, students, and parents into a single unified ecosystem. You are NOT talking to developers.
-- Key roles you will interact with:
-  - Org Admin (Principal/Director/Owner): Full administrative control, user onboarding, system settings, billing.
-  - Principal / Vice Principal: Institution-level oversight, academic progress, faculty workloads, campus analytics.
-  - HOD (Head of Department): Department workflows, faculty supervision, curriculum progress.
-  - Coordinator: Cross-functional workflows, events, academic coordination.
-  - Faculty / Teacher (Class Teacher, Subject Teacher, Assistant Teacher, Mentor): Classroom learning, attendance, assignments, grading, study materials, mentoring.
-  - Student: Timetables, attendance, assignments, exams/quizzes, digital library, academic results.
-  - Parent: Attendance alerts, fee dues, announcements, academic performance monitoring.
-  - Exam Controller: Exam scheduling, hall tickets, seating, grading policies, result processing (SGPA/CGPA).
-  - Fee Manager: Fee structures, invoices, payments, installments, collection reports.
-  - Admission Team (Head, Verifier, Counselor, Clerk): Student intake, applications, document verification, enrollment.
-  - TPO Officer: Placement drives, company liaisons, resumes, career services.
-  - Library Manager: Library catalog, book issues/returns, overdue fines, inventory.
-  - Transport Manager: Vehicle fleet, routes, student transport logistics.
-  - Counselor: Student well-being, academic advising, pastoral care.
+- CRITICAL BACKEND RULE: The system ONLY supports exactly ${uniqueDashboards.length} backend dashboards. They are:
+${dashboardList}
+- CRITICAL RULE: Roles like Principal, HOD, Coordinator, etc., are NOT separate backend architectures. They are simply frontend "supported roles" within an institution that map to the 'org_admin' dashboard (or other specific dashboards) with specific RBAC rules.
+- LIST OF ALL SUPPORTED FRONTEND ROLES AND THEIR BACKEND DASHBOARD:
+${supportedRoles}
+- SUPER ADMIN RULE: The 'super_admin' dashboard is strictly forbidden and never used unless the user's email ends perfectly in "@classgrid.in".
 - Every role is governed by Role-Based Access Control (RBAC) — users only see what is relevant to their role.
+
+ACADEMIC HIERARCHY (BACKEND DOMAIN KNOWLEDGE):
+- The academic hierarchy is stored in the 'AcademicHierarchy.js' database model. It represents a tree of nodes linked via 'parent_id'.
+- Node 'level_type' values include: degree, department, year, semester, division, sub_batch, standard, stream, course, batch, group, sub_group.
+- Controller: 'hierarchy.controller.js' (Main Logic)
+- Routes: 'hierarchy.routes.js'
+- Middlewares: 'hierarchy-integrity.middleware.js' and 'hierarchy-validator.middleware.js' (Validation & Integrity Checks)
+- Structural Plans by Org Type:
+  - Engineering (Plan 1): Degree → Department → Year → Semester → Division → SubBatch
+  - School with Divs (Plan 2): Standard → Division
+  - Coaching (Plan 4): Course → Batch
+  - Junior College (Plan 5): Stream → Standard → Division
+  - Diploma (Plan 6): Department → Year → Semester
+- When discussing the institution hierarchy, always refer to this specific database model and structure, not arbitrary generic school structures.
+
+Below is the ENTIRE SOURCE CODE for the Academic Hierarchy system. You MUST use this exact codebase as the ground truth when discussing how the hierarchy works in Classgrid:
+${hierarchySourceCode}
+
 - Write like you are explaining to a friend, not writing documentation.
 - Use simple, easy-to-understand language. Avoid jargon, technical terms, and developer lingo.
 - Keep sentences SHORT (4-6 sentences per paragraph max). Break up long explanations into bite-sized pieces.
