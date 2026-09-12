@@ -14,6 +14,7 @@ import {
 } from "../services/ai-chat.service.js";
 import { getHistory, appendToHistory, invalidateHistoryCache } from "../services/ai-chat-history.service.js";
 import { sendEmail } from "../services/aws-ses.service.js";
+import { getMcpTools, handleToolCall } from "../mcp/tools.js";
 // The system prompt was originally in ./prompt, we will define it here or import it if needed.
 const SYSTEM_PROMPT = `You are the Classgrid AI Assistant — a friendly, smart helper for educational institutions of all sizes (Schools, Junior Colleges, Engineering Colleges, Degree Colleges, Coaching Institutes) using the Classgrid ERP platform.
 
@@ -308,6 +309,14 @@ export const streamAskAi = async (req, res) => {
             maxToolDepth: 2,
             defaultMaxTokens: 2000,
             tools: [
+                ...getMcpTools().map(t => ({
+                    type: "function",
+                    function: {
+                        name: t.name,
+                        description: t.description,
+                        parameters: t.inputSchema
+                    }
+                })),
                 {
                     type: "function",
                     function: {
@@ -338,6 +347,10 @@ export const streamAskAi = async (req, res) => {
                 }
             ],
             toolHandlers: {
+                unified_db_query: async (args) => {
+                    const result = await handleToolCall('unified_db_query', args);
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
                 get_timezone_time: async (args) => {
                     try {
                         const tz = args.timeZone || 'UTC';
