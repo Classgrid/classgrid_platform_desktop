@@ -58,14 +58,14 @@ export const getMcpTools = () => [
   },
   {
     name: 'generate_pdf',
-    description: 'Generates a PDF document from HTML or Markdown using the Cloudflare Sandbox. Returns a secure download URL.',
+    description: 'Generates a PDF document from HTML or raw data. If you have a large list of data, pass the JSON array into `rawData` instead of writing a giant HTML table, and the backend will format it for you.',
     inputSchema: {
       type: 'object',
       properties: {
-        content: { type: 'string', description: 'The HTML or Markdown content to convert into a PDF.' },
-        title: { type: 'string', description: 'The title of the PDF document.' }
-      },
-      required: ['content']
+        content: { type: 'string', description: 'Optional HTML or Markdown content.' },
+        title: { type: 'string', description: 'The title of the PDF document.' },
+        rawData: { type: 'array', items: { type: 'object' }, description: 'Optional JSON array of data. Use this for large lists instead of formatting HTML manually.' }
+      }
     }
   },
   {
@@ -149,7 +149,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           if (actualCollectionName === 'users') {
             result = await collection.aggregate([
               { $match: query },
-              { $limit: 50 },
+              { $limit: 1000 },
                 {
                   $addFields: {
                     orgObjId: { $convert: { input: "$organization_id", to: "objectId", onError: null, onNull: null } }
@@ -166,7 +166,7 @@ export const handleToolCall = async (name, args, context = {}) => {
                 { $project: { orgObjId: 0 } }
             ]).toArray();
           } else {
-            result = await collection.find(query).limit(50).toArray();
+            result = await collection.find(query).limit(1000).toArray();
           }
         } else if (operation === 'findOne') {
           result = await collection.findOne(query);
@@ -211,7 +211,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         if (operation === 'find' || operation === 'findOne') {
-          let sbQuery = sb.from(collectionOrTable).select('*').match(query).limit(operation === 'findOne' ? 1 : 50);
+          let sbQuery = sb.from(collectionOrTable).select('*').match(query).limit(operation === 'findOne' ? 1 : 1000);
           const { data: sbData, error } = await sbQuery;
           if (error) throw error;
           result = operation === 'findOne' ? (sbData[0] || null) : sbData;
@@ -325,11 +325,21 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'generate_pdf') {
-        const { content, title } = args;
+        let { content = '', title, rawData } = args;
         
         console.log(`\n📄 [AWS NATIVE] AI is generating a REAL PDF document securely using Puppeteer!`);
         
         try {
+            if (rawData && Array.isArray(rawData) && rawData.length > 0) {
+                const keys = Object.keys(rawData[0]).filter(k => typeof rawData[0][k] !== 'object' && k !== '_id' && k !== 'password');
+                let tableHtml = `<table><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr>`;
+                for (const row of rawData) {
+                    tableHtml += `<tr>${keys.map(k => `<td>${row[k] || ''}</td>`).join('')}</tr>`;
+                }
+                tableHtml += `</table>`;
+                content += tableHtml;
+            }
+            
             // Launch native headless browser to render true PDF
             const browser = await puppeteer.launch({ 
                 headless: 'new',
