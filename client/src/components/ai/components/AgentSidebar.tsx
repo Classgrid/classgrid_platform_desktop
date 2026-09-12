@@ -363,7 +363,9 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
               className="h-auto py-1.5 cursor-pointer flex-1 min-w-0"
               render={
                 <div className="flex items-center gap-2.5 w-full min-w-0 pr-8">
-                  <ChatBubbleIcon className="w-[15px] h-[15px] shrink-0 text-muted-foreground/80" />
+                  {session.pinned && (
+                    <ChatBubbleIcon className="w-[15px] h-[15px] shrink-0 text-muted-foreground/80" />
+                  )}
                   <span className="truncate block min-w-0 flex-1">{displayTitle}</span>
                 </div>
               }
