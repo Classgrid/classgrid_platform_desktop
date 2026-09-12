@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
 import { getChatSb } from '../config/supabaseClient.js';
 import redis from '../config/redis.js';
-import fs from 'fs';
 import path from 'path';
 import { sendEmail } from '../services/aws-ses.service.js';
 import { s3Client, BUCKET_NAME, CDN_BASE_URL } from '../config/s3Client.js';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
+import puppeteer from 'puppeteer';
 import { exec } from 'child_process';
 import util from 'util';
 
@@ -327,42 +327,60 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'generate_pdf') {
         const { content, title } = args;
         
-        console.log(`\n📄 [CLOUDFLARE SANDBOX] AI is generating a PDF document securely on the Edge Network!`);
+        console.log(`\n📄 [AWS NATIVE] AI is generating a REAL PDF document securely using Puppeteer!`);
         
         try {
-            const response = await fetch(sandboxUrl, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer classgrid-super-secret-key-2026'
-                },
-                body: JSON.stringify({ action: 'generate_pdf', text: content })
+            // Launch native headless browser to render true PDF
+            const browser = await puppeteer.launch({ 
+                headless: 'new',
+                args: ['--no-sandbox', '--disable-setuid-sandbox'] 
             });
-            const result = await response.json();
-            if (result.success && result.base64) {
-                // Decode the base64 PDF binary
-                const pdfBuffer = Buffer.from(result.base64, 'base64');
-                
-                const fileName = `${title ? title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'generated_' + Date.now()}.pdf`;
-                
-                // Upload directly to AWS S3 so the CDN link works
-                const s3Key = `reports/${fileName}`;
-                await s3Client.send(new PutObjectCommand({
-                    Bucket: BUCKET_NAME,
-                    Key: s3Key,
-                    Body: pdfBuffer,
-                    ContentType: 'application/pdf'
-                }));
-                
-                const cdnUrl = `${CDN_BASE_URL}/${s3Key}`;
-                return {
-                    content: [{ type: 'text', text: `SUCCESS! PDF generated and uploaded to AWS CDN.\nCDN Download URL: ${cdnUrl}` }],
-                };
-            } else {
-                throw new Error(result.error || "Failed to generate PDF");
-            }
+            const page = await browser.newPage();
+            
+            // Inject content. Wrap in basic HTML if it doesn't have it.
+            const finalHtml = content.includes('<!DOCTYPE html>') ? content : `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>${title || 'Document'}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+                        h1 { color: #3eaf28; text-align: center; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                    </style>
+                </head>
+                <body>
+                    ${title ? `<h1>${title}</h1>` : ''}
+                    ${content}
+                </body>
+                </html>
+            `;
+            
+            await page.setContent(finalHtml, { waitUntil: 'networkidle0' });
+            
+            // Generate the PDF buffer
+            const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });
+            await browser.close();
+            
+            const fileName = `${title ? title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'generated_' + Date.now()}.pdf`;
+            
+            // Upload directly to AWS S3 so the CDN link works
+            const s3Key = `reports/${fileName}`;
+            await s3Client.send(new PutObjectCommand({
+                Bucket: BUCKET_NAME,
+                Key: s3Key,
+                Body: pdfBuffer,
+                ContentType: 'application/pdf'
+            }));
+            
+            const cdnUrl = `${CDN_BASE_URL}/${s3Key}`;
+            return {
+                content: [{ type: 'text', text: `SUCCESS! PDF generated and uploaded to AWS CDN.\nCDN Download URL: ${cdnUrl}` }],
+            };
         } catch (e) {
-            return { content: [{ type: 'text', text: `Failed to generate PDF via Sandbox Worker: ${e.message}` }] };
+            return { content: [{ type: 'text', text: `Failed to generate PDF via Puppeteer: ${e.message}` }] };
         }
     }
 

@@ -264,7 +264,7 @@ export const streamAskAi = async (req, res) => {
         dynamicSystemPrompt += `\n\n--- CURRENT SYSTEM TIME ---\nThe current time in IST (India) is ${timeIST} on ${dateIST}. The current time in UTC is ${timeUTC} on ${dateUTC}. If the user asks for the time in ANY other timezone or city (like London or Tokyo), you MUST use the \`get_timezone_time\` tool to find the exact time. DO NOT attempt to calculate timezone math yourself, you will get it wrong. NEVER output placeholders like "[Your local time here]".`;
 
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (HIGHEST PRIORITY): If a user asks you to perform ANY task (e.g. "make a flowchart", "write an email", "create a plan") BUT they do not provide the necessary data, topic, or context, your ONLY ALLOWED RESPONSE is a question asking for that information. Under NO circumstances should you generate placeholder content, guess the topic, or attempt to fulfill the request without the context.`;
-        
+
         dynamicSystemPrompt += `\n\n--- DATABASE ACCESS RULES (CRITICAL) ---
 You have direct read/write access to the Classgrid backend databases via the \`unified_db_query\` tool. 
 If the user asks you to check tickets, read logs, view user data, provision a school, or perform ANY administrative task, YOU MUST USE THE \`unified_db_query\` TOOL to fetch the real data.
@@ -314,7 +314,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user says "okay", "thanks", "got it", "done", or simply acknowledges your previous response, DO NOT generate more content, flowcharts, or code. Simply say "You're welcome!" or "Let me know if you need anything else!" and STOP.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: DO NOT get caught in an infinite loop. If you find yourself calling the exact same tool with the exact same arguments repeatedly, STOP immediately and change your approach.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: When outputting data in tables or lists, NEVER wrap single words, names, roles, or email addresses in Markdown code blocks (backticks). Output them as plain text. Only use code blocks for actual programming code, Mermaid charts, or JSON.`;
-        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (EXHAUSTIVE TOOL UTILIZATION & COMPLETENESS - READ CAREFULLY): YOU HAVE A SEVERE FLAW WHERE YOU TRUNCATE LISTS TO EXACTLY 2 ITEMS. THIS IS UNACCEPTABLE. If a database query returns 14 items, you MUST process all 14 items. NEVER print just 2 items. If the user asks you to generate a PDF of a list, DO NOT type the list in the chat box at all! Simply fetch the data from the database, and IMMEDIATELY pass the entire JSON array directly into the 'generate_pdf' tool. DO NOT narrate. DO NOT say "I will now generate a PDF". Just execute the tools sequentially (unified_db_query -> generate_pdf -> send_email) and only reply to the user once you have the final CDN link.`;
+        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (EXHAUSTIVE TOOL UTILIZATION & COMPLETENESS - READ CAREFULLY): YOU HAVE A SEVERE FLAW WHERE YOU TRUNCATE LISTS OR SUMMARIZE DATA. THIS IS STRICTLY FORBIDDEN. If a database query returns 14 items, you MUST include all 14 items in your response and in your generated PDF. NEVER print just 1 or 2 items as an example. If the user asks you to generate a PDF of a list, DO NOT type the list in the chat box at all! Simply fetch the data from the database, use ALL OF THE DATA to construct a giant HTML table, and pass that entire HTML string into the 'generate_pdf' tool. DO NOT narrate. Just execute the tools sequentially (unified_db_query -> generate_pdf -> send_email) and only reply to the user once you have the final CDN link.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (AI SANDBOX SUPERPOWERS): You now have access to a secure Cloudflare Edge Sandbox via the 'run_code' and 'generate_pdf' tools! If a user asks you to perform complex data analysis, calculate math (e.g., averages, standard deviation), or process data, you MUST write a Python script and use 'run_code' to get the exact answer. If the user asks for a report, you MUST use 'generate_pdf' to give them a beautiful downloadable document. Combine this with your database tools (SQL/MongoDB) to fetch data first, then process it in Python!`;
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
@@ -499,15 +499,15 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                     if (args.fromEmail && !args.fromEmail.endsWith('@classgrid.in')) {
                         return "ERROR: You can only send emails from an @classgrid.in address.";
                     }
-                    
+
                     const isSuperAdmin = req.user?.email?.endsWith('@classgrid.in') || body.userRole === 'super_admin' || body.userRole === 'org_admin';
                     if (!isSuperAdmin) {
                         return "SECURITY ERROR: Access Denied. Only Admins are authorized to use the AI email sending tool.";
                     }
                     try {
-                        await sendEmail({ 
-                            to: args.to, 
-                            subject: args.subject, 
+                        await sendEmail({
+                            to: args.to,
+                            subject: args.subject,
                             html: args.body,
                             fromName: args.fromName,
                             fromEmail: args.fromEmail
@@ -521,18 +521,18 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                     try {
                         const voyageKey = process.env.VOYAGE_API_KEY?.trim();
                         if (!voyageKey) return "RAG Search failed: VOYAGE_API_KEY is missing from environment variables.";
-                        
+
                         let PlatformRagChunk;
                         try {
                             PlatformRagChunk = mongoose.model('PlatformRagChunk');
                         } catch {
                             PlatformRagChunk = mongoose.model('PlatformRagChunk', new mongoose.Schema({}, { strict: false }), 'platform_rag_chunks');
                         }
-                        
+
                         const embedder = new VoyageEmbedder({ apiKey: voyageKey, provider: 'voyage' });
                         const vectorStore = new MongoVectorStore(PlatformRagChunk, "vector_index", "embedding");
                         const pipeline = new RagPipeline({ embedder, vectorStore });
-                        
+
                         const result = await pipeline.retrieve(args.query, { topK: 3 });
                         if (result.chunks.length === 0) {
                             return "RAG Search found no relevant documents in the 'platform_rag_chunks' collection.";
@@ -571,7 +571,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
         // 4. Run the Client with Auto-Correction & Fallback Loop
         const questionText = body.question || "";
         const isDiagramRequest = questionText.toLowerCase().includes("flowchart") || questionText.toLowerCase().includes("diagram") || questionText.toLowerCase().includes("graph") || questionText.toLowerCase().includes("mermaid");
-        
+
         let answer = null;
         let attempt = 1;
         const maxAttempts = 2;
@@ -585,7 +585,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
 
                 answer = await currentClient.generate({
                     messages,
-                    timeoutMs: isDiagramRequest && attempt === 1 ? 5000 : 300000, 
+                    timeoutMs: isDiagramRequest && attempt === 1 ? 5000 : 300000,
                     onStatus: (status) => {
                         if (requestAborted || res.writableEnded) return;
                         const mappedLabel = status === "search web" ? "searching" : status;
@@ -621,7 +621,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                     if (!answer && isDiagramRequest) answer = "Failed to generate a valid diagram. Please try rephrasing your request.";
                     break;
                 }
-                
+
                 // Add correction prompt for attempt 2
                 if (isDiagramRequest) {
                     if (answer && answer !== "[RATE_LIMITED]") messages.push({ role: "assistant", content: answer });
@@ -866,24 +866,24 @@ export const createPublicShare = async (req, res) => {
                     userEmail,
                     userName,
                     session.title || "Classgrid AI Chat",
-                    messages.map(m => ({ 
-                        role: m.role, 
-                        content: formatApprovalCard(m.content || ""), 
-                        created_at: m.created_at 
+                    messages.map(m => ({
+                        role: m.role,
+                        content: formatApprovalCard(m.content || ""),
+                        created_at: m.created_at
                     })).filter(m => m.content),
                     shareId // Pass the pre-generated ID
                 );
-        console.info(`[Chat API] ✅ Public share created in background: ${shareUrl} for session ${id}`);
-    } catch (err) {
-        console.error(`[Chat API] ❌ Background share creation failed:`, err);
-    }
-})();
+                console.info(`[Chat API] ✅ Public share created in background: ${shareUrl} for session ${id}`);
+            } catch (err) {
+                console.error(`[Chat API] ❌ Background share creation failed:`, err);
+            }
+        })();
     } catch (e) {
-    console.error(`[Chat API] ❌ Failed to start public share creation:`, e);
-    if (!res.headersSent) {
-        res.status(500).json({ error: "Failed to create public share link" });
+        console.error(`[Chat API] ❌ Failed to start public share creation:`, e);
+        if (!res.headersSent) {
+            res.status(500).json({ error: "Failed to create public share link" });
+        }
     }
-}
 };
 
 /**
