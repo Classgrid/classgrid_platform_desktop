@@ -31,6 +31,9 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   const [loading, setLoading] = React.useState(false);
   const [activeSessionId, setActiveSessionId] = React.useState<string | null>(null);
 
+  const [pinnedOpen, setPinnedOpen] = React.useState(false);
+  const [recentOpen, setRecentOpen] = React.useState(false);
+
   // State for Three-Dot menu operations
   const [editingSessionId, setEditingSessionId] = React.useState<string | null>(null);
   const [editingTitle, setEditingTitle] = React.useState("");
@@ -391,6 +394,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 <DropdownMenuItem
                   className="gap-3 py-2 px-3 text-[14px] cursor-pointer hover:bg-slate-100 dark:hover:bg-[#343541] focus:bg-slate-100 dark:focus:bg-[#343541] focus:text-slate-900 dark:focus:text-[#ececf1] rounded-xl transition-colors"
                   onClick={() => {
+                    setPinnedOpen(false);
+                    setRecentOpen(false);
                     setShareSessionId(session.id);
                     setShareModalOpen(true);
                   }}
@@ -402,6 +407,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 <DropdownMenuItem
                   className="gap-3 py-2 px-3 text-[14px] cursor-pointer hover:bg-slate-100 dark:hover:bg-[#343541] focus:bg-slate-100 dark:focus:bg-[#343541] focus:text-slate-900 dark:focus:text-[#ececf1] rounded-xl transition-colors"
                   onClick={() => {
+                    setPinnedOpen(false);
+                    setRecentOpen(false);
                     setEditingSessionId(session.id);
                     setEditingTitle(session.title);
                   }}
@@ -413,6 +420,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 <DropdownMenuItem
                   className="gap-3 py-2 px-3 text-[14px] cursor-pointer hover:bg-slate-100 dark:hover:bg-[#343541] focus:bg-slate-100 dark:focus:bg-[#343541] focus:text-slate-900 dark:focus:text-[#ececf1] rounded-xl transition-colors"
                   onClick={() => {
+                    setPinnedOpen(false);
+                    setRecentOpen(false);
                     if (!session.pinned && pinnedSessions.length >= 5) {
                       toast.error("You can only pin up to 5 chats.");
                       return;
@@ -428,7 +437,11 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
 
                 <DropdownMenuItem
                   className="gap-3 py-2 px-3 text-[14px] cursor-pointer text-[#ef4444] hover:bg-red-50 dark:hover:bg-red-500/10 focus:bg-red-50 dark:focus:bg-red-500/10 focus:text-[#ef4444] rounded-xl transition-colors"
-                  onClick={() => handleDeleteSession(session.id)}
+                  onClick={() => {
+                    setPinnedOpen(false);
+                    setRecentOpen(false);
+                    handleDeleteSession(session.id);
+                  }}
                 >
                   <Trash2 className="w-4 h-4 text-[#ef4444]" strokeWidth={2} />
                   Delete
@@ -441,8 +454,9 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
     );
   };
 
-  if (isCollapsed) {
-    return (
+  return (
+    <>
+      {isCollapsed ? (
       <SidebarGroup className="pt-1">
         <SidebarGroupContent>
           <SidebarMenu>
@@ -472,7 +486,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <Popover>
+              <Popover open={pinnedOpen} onOpenChange={setPinnedOpen}>
                 <PopoverTrigger asChild>
                   <div className="w-full">
                     <SidebarMenuButton 
@@ -497,7 +511,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <Popover>
+              <Popover open={recentOpen} onOpenChange={setRecentOpen}>
                 <PopoverTrigger asChild>
                   <div className="w-full">
                     <SidebarMenuButton 
@@ -529,11 +543,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
-    );
-  }
-
-  return (
-    <>
+      ) : (
       <SidebarGroup className="pt-1">
         <div className="px-2 pb-3 mb-3 border-b border-border/50">
           <Button
@@ -587,6 +597,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
           </Accordion>
         </SidebarGroupContent>
       </SidebarGroup>
+      )}
 
       {/* Share Modal - Exact ChatGPT Replica (Light & Dark Mode Support) */}
       {shareModalOpen && shareSessionId && typeof document !== "undefined" && createPortal(

@@ -122,6 +122,8 @@ function PopoverDescription({
   )
 }
 
+const PopoverClose = PopoverPrimitive.Close
+
 export {
   Popover,
   PopoverContent,
@@ -129,4 +131,5 @@ export {
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
+  PopoverClose,
 }
