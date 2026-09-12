@@ -195,13 +195,13 @@ router.get("/auto-close-tickets", async (req, res) => {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        const result = await SupportTicket.updateMany(
+        const result = await SupportTicket.collection.updateMany(
             {
                 status: "resolved",
                 resolvedAt: { $lt: sevenDaysAgo }
             },
             {
-                $set: { status: "closed" },
+                $set: { status: "closed", updatedAt: new Date() },
                 $push: {
                     events: {
                         type: 'statusChanged',

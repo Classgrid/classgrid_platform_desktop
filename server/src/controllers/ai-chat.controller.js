@@ -399,7 +399,10 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
             ],
             toolHandlers: {
                 unified_db_query: async (args) => {
-                    const result = await handleToolCall('unified_db_query', args);
+                    const userEmail = req.user?.email || body.userEmail || '';
+                    const userRole = body.userRole || '';
+                    const subdomain = body.subdomain || '';
+                    const result = await handleToolCall('unified_db_query', args, { userEmail, userRole, subdomain });
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
                 get_timezone_time: async (args) => {

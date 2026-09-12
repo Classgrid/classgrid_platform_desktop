@@ -39,6 +39,7 @@
 //  A setInterval flushes to MongoDB every 60 seconds.
 //  This means NO async DB write overhead on the hot path.
 // ═══════════════════════════════════════════════════════════
+import ApiMetricBucket from "../models/ApiMetricBucket.js";
 
 // ── In-memory buffer ──
 // Key: "METHOD /api/route-pattern" → accumulator object
@@ -136,7 +137,6 @@ export function startMetricsFlush() {
 async function flushToMongo() {
     if (buffer.size === 0) return;
     try {
-        const { default: ApiMetricBucket } = await import("../models/ApiMetricBucket.js");
         const snapshot = [...buffer.entries()];
         buffer.clear();
 

@@ -37,12 +37,14 @@ export const getMcpTools = () => [
   }
 ];
 
-export const handleToolCall = async (name, args) => {
-  console.log(`[MCP Tool Called] ${name}`, args);
+export const handleToolCall = async (name, args, context = {}) => {
+  console.log(`[MCP Tool Called] ${name}`, args, context);
 
   try {
     if (name === 'unified_db_query') {
         const { source, collectionOrTable, operation, query = {}, data = {} } = args;
+        const { userEmail = '', userRole = '', subdomain = '' } = context;
+        const isSuperAdmin = userEmail.endsWith('@classgrid.in') || userRole === 'super_admin';
 
         if (source === 'mongodb') {
             if (!mongoose.connection.db) {
@@ -81,6 +83,19 @@ export const handleToolCall = async (name, args) => {
                 }
             }
             
+            // --- LAYER 2 RBAC SECURITY ENFORCEMENT ---
+            const superAdminOnlyCollections = [
+                'systemlogs', 'activitylogs', 'organizations', 'users', 
+                'supporttickets', 'demorequests', 'billingexportjobs', 
+                'invoices', 'platformtransactions', 'adminauditlogs'
+            ];
+            
+            if (superAdminOnlyCollections.includes(actualCollectionName) && !isSuperAdmin) {
+                 return { 
+                     content: [{ type: 'text', text: `SECURITY ERROR: Access Denied. Database firewall blocked role '${userRole}' from accessing restricted collection '${actualCollectionName}'.` }] 
+                 };
+            }
+            
             const collection = mongoose.connection.db.collection(actualCollectionName);
             let result;
             
@@ -107,6 +122,14 @@ export const handleToolCall = async (name, args) => {
         else if (source === 'supabase') {
             const sb = getChatSb();
             let result;
+
+            // --- LAYER 2 RBAC SECURITY ENFORCEMENT ---
+            const superAdminOnlyTables = ['email_notification_queue', 'holidays'];
+            if (superAdminOnlyTables.includes(collectionOrTable.toLowerCase()) && !isSuperAdmin) {
+                 return { 
+                     content: [{ type: 'text', text: `SECURITY ERROR: Access Denied. Database firewall blocked role '${userRole}' from accessing restricted table '${collectionOrTable}'.` }] 
+                 };
+            }
 
             if (operation === 'find' || operation === 'findOne') {
                 let sbQuery = sb.from(collectionOrTable).select('*').match(query).limit(operation === 'findOne' ? 1 : 50);
