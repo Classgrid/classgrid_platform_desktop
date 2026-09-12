@@ -51,6 +51,7 @@ export const handleToolCall = async (name, args) => {
             // Map cheat sheet model names to actual pluralized collection names
             const collectionMap = {
                 'SupportTicket': 'supporttickets',
+                'SupportConversation': 'supportconversations',
                 'Message': 'messages',
                 'DemoRequest': 'demorequests',
                 'User': 'users',

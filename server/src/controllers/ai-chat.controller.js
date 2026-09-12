@@ -271,6 +271,7 @@ DO NOT say "I cannot access internal systems" or "I don't have access to your da
 --- DATABASE SCHEMA CHEAT SHEET ---
 Use these exact names for the \`collectionOrTable\` parameter:
 - Tickets: MongoDB collection \`SupportTicket\`
+- Classgrid Talk / Inquiries: MongoDB collection \`SupportConversation\`
 - Chat/Messages: MongoDB collection \`Message\`
 - Demo Requests: MongoDB collection \`DemoRequest\`
 - Users: MongoDB collection \`User\`
