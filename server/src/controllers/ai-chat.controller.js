@@ -310,6 +310,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
 
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user explicitly asks for a flowchart, diagram, or graph AND provides the context, output ONLY the valid Mermaid code block (\`\`\`mermaid\n...\n\`\`\`). Do NOT include any conversational preamble or filler text.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user says "okay", "thanks", "got it", "done", or simply acknowledges your previous response, DO NOT generate more content, flowcharts, or code. Simply say "You're welcome!" or "Let me know if you need anything else!" and STOP.`;
+        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: DO NOT get caught in an infinite loop. If you find yourself calling the exact same tool with the exact same arguments repeatedly, STOP immediately and change your approach.`;
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {
@@ -357,7 +358,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                 }
             ],
             verbose: false,
-            maxToolDepth: 10,
+            maxToolDepth: 25,
             defaultMaxTokens: 2000,
             tools: [
                 ...getMcpTools().map(t => ({
