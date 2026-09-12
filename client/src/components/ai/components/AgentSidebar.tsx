@@ -338,9 +338,9 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
 
     return (
       <SidebarMenuItem key={session.id}>
-        <div className="relative group w-full flex items-center">
+        <div className="relative group w-full flex items-center min-w-0">
           {isEditing ? (
-            <div className="flex-1 px-2 py-1">
+            <div className="flex-1 px-2 py-1 min-w-0">
               <Input
                 autoFocus
                 className="h-7 text-xs px-2 w-full bg-background"
@@ -354,9 +354,12 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
             <SidebarMenuButton
               isActive={session.id === activeSessionId}
               onClick={() => handleLoadChat(session.id)}
-              className="h-auto py-1.5 cursor-pointer flex-1"
+              className="h-auto py-1.5 cursor-pointer flex-1 min-w-0"
               render={
-                <span className="truncate block w-full pr-6">{displayTitle}</span>
+                <div className="flex items-center gap-2.5 w-full min-w-0 pr-8">
+                  <MessageSquare className="w-[15px] h-[15px] shrink-0 text-muted-foreground/80" strokeWidth={1.5} />
+                  <span className="truncate block min-w-0 flex-1">{displayTitle}</span>
+                </div>
               }
             />
           )}

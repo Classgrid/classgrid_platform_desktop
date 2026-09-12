@@ -409,7 +409,9 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                             properties: {
                                 to: { type: "string", description: "The recipient's email address" },
                                 subject: { type: "string", description: "The email subject" },
-                                body: { type: "string", description: "The email body (HTML or plain text)" }
+                                body: { type: "string", description: "The email body (HTML or plain text)" },
+                                fromName: { type: "string", description: "Optional name of the sender (e.g., 'Classgrid Support')" },
+                                fromEmail: { type: "string", description: "Optional sender email, MUST end with @classgrid.in (e.g., 'admin@classgrid.in')" }
                             },
                             required: ["to", "subject", "body"]
                         }
@@ -478,13 +480,24 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                     }
                 },
                 send_email: async (args) => {
-                    const isSuperAdmin = req.user?.email?.endsWith('@classgrid.in') || body.userRole === 'super_admin';
+                    // Check if they tried to spoof another domain
+                    if (args.fromEmail && !args.fromEmail.endsWith('@classgrid.in')) {
+                        return "ERROR: You can only send emails from an @classgrid.in address.";
+                    }
+                    
+                    const isSuperAdmin = req.user?.email?.endsWith('@classgrid.in') || body.userRole === 'super_admin' || body.userRole === 'org_admin';
                     if (!isSuperAdmin) {
-                        return "SECURITY ERROR: Access Denied. Only Super Admins are authorized to use the AI email sending tool. Do NOT attempt to send the email again.";
+                        return "SECURITY ERROR: Access Denied. Only Admins are authorized to use the AI email sending tool.";
                     }
                     try {
-                        await sendEmail(args.to, args.subject, args.body);
-                        return `SUCCESS: Email sent successfully to ${args.to}`;
+                        await sendEmail({ 
+                            to: args.to, 
+                            subject: args.subject, 
+                            html: args.body,
+                            fromName: args.fromName,
+                            fromEmail: args.fromEmail
+                        });
+                        return `SUCCESS: Email sent successfully to ${args.to} from ${args.fromEmail || 'default'}`;
                     } catch (e) {
                         return `FAILED to send email: ${e.message}`;
                     }
