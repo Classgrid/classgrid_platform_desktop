@@ -47,7 +47,20 @@ export const handleToolCall = async (name, args) => {
             if (!mongoose.connection.db) {
                 throw new Error("MongoDB connection not established");
             }
-            const collection = mongoose.connection.db.collection(collectionOrTable);
+
+            // Map cheat sheet model names to actual pluralized collection names
+            const collectionMap = {
+                'SupportTicket': 'supporttickets',
+                'Message': 'messages',
+                'DemoRequest': 'demorequests',
+                'User': 'users',
+                'Organization': 'organizations',
+                'SystemLog': 'systemlogs',
+                'ActivityLog': 'activitylogs'
+            };
+            const actualCollectionName = collectionMap[collectionOrTable] || collectionOrTable;
+            
+            const collection = mongoose.connection.db.collection(actualCollectionName);
             let result;
             
             if (operation === 'find') {
