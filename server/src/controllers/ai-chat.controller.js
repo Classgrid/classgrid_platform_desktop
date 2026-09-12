@@ -282,7 +282,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
 - Tickets: \`SupportTicket\`
 - Classgrid Talk: \`SupportConversation\`
 - Demo Requests: \`DemoRequest\`
-- Users / Accounts: \`User\`
+- Users / Accounts: \`User\` (To filter by role, use exact lowercase strings: "org_admin", "super_admin", "student", "faculty". Do NOT use capitalized "Org Admin" or guess other names)
 - Student Profiles: \`UserProfile\`
 - Organizations: \`Organization\`
 - Classrooms: \`Classroom\`
