@@ -125,6 +125,7 @@ import billingDemoRoutes from "../src/routes/billing-demo.routes.js";
 import billingCheckoutRoutes from "../src/routes/billing-checkout.routes.js";
 import { publicTenantRouter, orgWebsiteRouter, superAdminWebsiteRouter } from "../src/routes/org-website.routes.js";
 import extractSubdomain, { resolveTenant, getPublicTenantInfo } from "../src/middleware/subdomain-router.middleware.js";
+import { createMcpRouter } from "../src/mcp/index.js";
 import { sendEmail } from "../src/services/aws-ses.service.js";
 import { metricsMiddleware, startMetricsFlush } from "../src/middleware/metrics.middleware.js";
 import { enforceFeatureFlags, platformAccessGate } from "../src/middleware/feature-flag.middleware.js";
@@ -392,6 +393,9 @@ app.use("/api/dropdowns", dropdownRoutes);
 app.use("/api/public/tenant", publicTenantRouter);   // GET /api/public/tenant/resolve?slug=...
 app.use("/api/org-website", orgWebsiteRouter);       // Org admin CMS endpoints
 app.use("/api/super-admin", superAdminWebsiteRouter);// Super admin: list all websites
+
+// 🤖 Mount MCP Server
+app.use(createMcpRouter(express.Router()));
 
 // 🌐 MODULE 22: Public Tenant Info (Subdomain Resolution)
 app.get("/api/tenant/info", getPublicTenantInfo);

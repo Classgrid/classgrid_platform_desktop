@@ -218,14 +218,14 @@ export const streamAskAi = async (req, res) => {
             if (body.fileUrls && body.fileUrls.length > 0) {
                 content += "\n\nAttached Files:\n" + body.fileUrls.join('\n');
             }
-            
+
             const cleanMsg = (body.question || "").trim().replace(/[.!?,]/g, "").toLowerCase();
             const ackWords = ["ok", "okay", "thanks", "thank you", "done", "got it", "cool", "awesome", "perfect", "great", "nice"];
-            
+
             // Short-circuit the AI completely if the user just says "okay" or "thanks" without any files
             if (ackWords.includes(cleanMsg) && (!body.fileUrls || body.fileUrls.length === 0)) {
                 const fastReply = "You're welcome! Let me know if you need anything else.";
-                
+
                 // Save assistant message to DB just like normal
                 if (!isIncognito && sessionId) {
                     saveMessage(sessionId, "assistant", fastReply, []).catch(err => console.error(err));
@@ -238,21 +238,21 @@ export const streamAskAi = async (req, res) => {
                 res.end();
                 return; // SKIP THE LLM ENTIRELY!
             }
-            
 
-            
+
+
             messages.push({ role: "user", content });
         }
 
         let dynamicSystemPrompt = SYSTEM_PROMPT;
-        
+
         // Inject current date/time to prevent the AI from hallucinating the date or asking the user to run JS
         const now = new Date();
         const dateIST = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         const timeIST = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
         const dateUTC = now.toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         const timeUTC = now.toLocaleTimeString('en-US', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit' });
-        
+
         dynamicSystemPrompt += `\n\n--- CURRENT SYSTEM TIME ---\nThe current time in IST (India) is ${timeIST} on ${dateIST}. The current time in UTC is ${timeUTC} on ${dateUTC}. If the user asks for the time in ANY other timezone or city (like London or Tokyo), you MUST use the \`get_timezone_time\` tool to find the exact time. DO NOT attempt to calculate timezone math yourself, you will get it wrong. NEVER output placeholders like "[Your local time here]".`;
 
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (HIGHEST PRIORITY): If a user asks you to perform ANY task (e.g. "make a flowchart", "write an email", "create a plan") BUT they do not provide the necessary data, topic, or context, your ONLY ALLOWED RESPONSE is a question asking for that information. Under NO circumstances should you generate placeholder content, guess the topic, or attempt to fulfill the request without the context.`;
@@ -673,17 +673,17 @@ export const createPublicShare = async (req, res) => {
                     })).filter(m => m.content),
                     shareId // Pass the pre-generated ID
                 );
-                console.info(`[Chat API] ✅ Public share created in background: ${shareUrl} for session ${id}`);
-            } catch (err) {
-                console.error(`[Chat API] ❌ Background share creation failed:`, err);
-            }
-        })();
-    } catch (e) {
-        console.error(`[Chat API] ❌ Failed to start public share creation:`, e);
-        if (!res.headersSent) {
-            res.status(500).json({ error: "Failed to create public share link" });
-        }
+        console.info(`[Chat API] ✅ Public share created in background: ${shareUrl} for session ${id}`);
+    } catch (err) {
+        console.error(`[Chat API] ❌ Background share creation failed:`, err);
     }
+})();
+    } catch (e) {
+    console.error(`[Chat API] ❌ Failed to start public share creation:`, e);
+    if (!res.headersSent) {
+        res.status(500).json({ error: "Failed to create public share link" });
+    }
+}
 };
 
 /**
