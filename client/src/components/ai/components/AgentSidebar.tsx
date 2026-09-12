@@ -440,8 +440,6 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
 
   return (
     <>
-  return (
-    <>
       <div className="flex flex-col items-center gap-4 w-full pt-4">
         {/* New Chat Button */}
         <Button
