@@ -48,10 +48,6 @@ import { Building2, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Button } from "@/components/marketing_ui/button";
 
-import { Building2, ExternalLink } from "lucide-react";
-import { Badge } from "@/components/marketing_ui/badge";
-import { Button } from "@/components/marketing_ui/button";
-
 import type {
   OrganizationDetailSnapshot,
   OrganizationFullProfile,
