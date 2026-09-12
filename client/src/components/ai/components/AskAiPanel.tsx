@@ -2801,7 +2801,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               />
 
               {/* Bottom Left action bar: paperclip */}
-              {(pageContext?.path?.startsWith("/docs") || variant === "full-page") && !isGenerating && (
+              {!isGenerating && (
                 <div className="absolute bottom-3 left-4">
                   <button
                     type="button"
