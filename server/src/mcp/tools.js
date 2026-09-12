@@ -55,6 +55,7 @@ export const getMcpTools = () => [
       },
       required: ['language', 'code']
     }
+  },
   {
     name: 'generate_pdf',
     description: 'Generates a PDF document from HTML or raw data. If you have a large list of data, pass the JSON array into `rawData` instead of writing a giant HTML table, and the backend will format it for you.',
