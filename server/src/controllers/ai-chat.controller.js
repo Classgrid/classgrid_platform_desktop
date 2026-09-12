@@ -15,6 +15,8 @@ import {
 import { getHistory, appendToHistory, invalidateHistoryCache } from "../services/ai-chat-history.service.js";
 import { sendEmail } from "../services/aws-ses.service.js";
 import { getMcpTools, handleToolCall } from "../mcp/tools.js";
+import { RagPipeline, MongoVectorStore, VoyageEmbedder } from "@classgrid/ai/rag";
+import Note from "../models/Note.js";
 // The system prompt was originally in ./prompt, we will define it here or import it if needed.
 const SYSTEM_PROMPT = `You are the Classgrid AI Assistant — a friendly, smart helper for educational institutions of all sizes (Schools, Junior Colleges, Engineering Colleges, Degree Colleges, Coaching Institutes) using the Classgrid ERP platform.
 
@@ -396,6 +398,36 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                             required: ["query"]
                         }
                     }
+                },
+                {
+                    type: "function",
+                    function: {
+                        name: "send_email",
+                        description: "Send an email to a user. Use this to contact users, send reminders, or communicate externally.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                to: { type: "string", description: "The recipient's email address" },
+                                subject: { type: "string", description: "The email subject" },
+                                body: { type: "string", description: "The email body (HTML or plain text)" }
+                            },
+                            required: ["to", "subject", "body"]
+                        }
+                    }
+                },
+                {
+                    type: "function",
+                    function: {
+                        name: "search_knowledge_base",
+                        description: "Search the institution's unstructured knowledge base (Notes, Articles, Policies) using semantic vector search (RAG) to find answers to questions.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                query: { type: "string", description: "The search query or question to find answers for." }
+                            },
+                            required: ["query"]
+                        }
+                    }
                 }
             ],
             toolHandlers: {
@@ -443,6 +475,37 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                         }
                     } catch (e) {
                         return "Web Search failed: " + e;
+                    }
+                },
+                send_email: async (args) => {
+                    const isSuperAdmin = req.user?.email?.endsWith('@classgrid.in') || body.userRole === 'super_admin';
+                    if (!isSuperAdmin) {
+                        return "SECURITY ERROR: Access Denied. Only Super Admins are authorized to use the AI email sending tool. Do NOT attempt to send the email again.";
+                    }
+                    try {
+                        await sendEmail(args.to, args.subject, args.body);
+                        return `SUCCESS: Email sent successfully to ${args.to}`;
+                    } catch (e) {
+                        return `FAILED to send email: ${e.message}`;
+                    }
+                },
+                search_knowledge_base: async (args) => {
+                    try {
+                        const voyageKey = process.env.VOYAGE_API_KEY?.trim();
+                        if (!voyageKey) return "RAG Search failed: VOYAGE_API_KEY is missing from environment variables.";
+                        
+                        const embedder = new VoyageEmbedder({ apiKey: voyageKey, provider: 'voyage' });
+                        // Using Note model and 'vector_index' as the default index.
+                        const vectorStore = new MongoVectorStore(Note, "vector_index", "embedding");
+                        const pipeline = new RagPipeline({ embedder, vectorStore });
+                        
+                        const result = await pipeline.retrieve(args.query, { topK: 3 });
+                        if (result.chunks.length === 0) {
+                            return "RAG Search found no relevant documents. The vector index might be empty or the collection has no embeddings yet.";
+                        }
+                        return `RAG Search Results:\n\n${result.contextText}`;
+                    } catch (e) {
+                        return `RAG Search failed: ${e.message}. Note: If this fails with a MongoServerError about '$vectorSearch', it means the Atlas Vector Index hasn't been created yet.`;
                     }
                 }
             }
