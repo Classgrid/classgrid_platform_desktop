@@ -357,7 +357,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                 }
             ],
             verbose: false,
-            maxToolDepth: 2,
+            maxToolDepth: 10,
             defaultMaxTokens: 2000,
             tools: [
                 ...getMcpTools().map(t => ({
@@ -487,7 +487,6 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
 
                 answer = await currentClient.generate({
                     messages,
-                    maxToolDepth: 5,
                     timeoutMs: isDiagramRequest && attempt === 1 ? 5000 : 300000, 
                     onStatus: (status) => {
                         if (requestAborted || res.writableEnded) return;
