@@ -51,7 +51,7 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        language: { type: 'string', enum: ['python', 'javascript'], description: 'The programming language.' },
+        language: { type: 'string', enum: ['python', 'javascript', 'bash'], description: 'The programming language or shell.' },
         code: { type: 'string', description: 'The raw code string to execute.' }
       },
       required: ['language', 'code']
