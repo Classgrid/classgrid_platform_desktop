@@ -6,6 +6,7 @@ import { sendEmail } from '../services/aws-ses.service.js';
 import { s3Client, BUCKET_NAME, CDN_BASE_URL } from '../config/s3Client.js';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import puppeteer from 'puppeteer';
+import Handlebars from 'handlebars';
 import { exec } from 'child_process';
 import util from 'util';
 
@@ -78,7 +79,7 @@ export const getMcpTools = () => [
         collectionOrTable: { type: 'string', description: 'The collection or table name' },
         query: { type: 'object', description: 'The database query (e.g. { role: "student" })' },
         title: { type: 'string', description: 'The title of the PDF document.' },
-        customCss: { type: 'string', description: 'Optional. Write beautiful custom CSS to style the table, headers, and body. The user expects premium, stunning designs.' }
+        htmlTemplate: { type: 'string', description: 'Optional Handlebars HTML template. Use {{#each rows}} ... {{/each}} to loop over the data. You have 100% control over the CSS and HTML structure.' }
       },
       required: ['source', 'collectionOrTable', 'query', 'title']
     }
@@ -421,9 +422,9 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'generate_pdf_from_db') {
-        const { source, collectionOrTable, query, title, customCss } = args;
+        const { source, collectionOrTable, query, title, htmlTemplate } = args;
         try {
-            console.log(`\n📄 [AWS NATIVE] AI is directly fetching data and generating PDF to bypass token limits!`);
+            console.log(`\n📄 [AWS NATIVE] AI is directly fetching data and using Handlebars to bypass token limits!`);
             let result;
             if (source === 'mongodb') {
                 const collectionName = collectionOrTable.toLowerCase() === 'user' ? 'users' : collectionOrTable;
@@ -447,38 +448,42 @@ export const handleToolCall = async (name, args, context = {}) => {
                 return { content: [{ type: 'text', text: 'No data found for the given query.' }] };
             }
 
-            const keys = Object.keys(result[0]).filter(k => typeof result[0][k] !== 'object' && k !== '_id' && k !== 'password');
-            let tableHtml = `<table><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr>`;
-            for (const row of result) {
-                tableHtml += `<tr>${keys.map(k => `<td>${row[k] || ''}</td>`).join('')}</tr>`;
+            let finalHtml;
+            if (htmlTemplate) {
+                const template = Handlebars.compile(htmlTemplate);
+                finalHtml = template({ rows: result, title });
+            } else {
+                const keys = Object.keys(result[0]).filter(k => typeof result[0][k] !== 'object' && k !== '_id' && k !== 'password');
+                let tableHtml = `<table><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr>`;
+                for (const row of result) {
+                    tableHtml += `<tr>${keys.map(k => `<td>${row[k] || ''}</td>`).join('')}</tr>`;
+                }
+                tableHtml += `</table>`;
+
+                const defaultCss = `
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 30px; color: #1a1a1a; background-color: #f9fafb; }
+                    h1 { color: #111827; text-align: center; font-size: 24px; margin-bottom: 20px; font-weight: 600; }
+                    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; font-size: 13px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+                    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+                    th { background-color: #f3f4f6; color: #374151; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
+                    tr:last-child td { border-bottom: none; }
+                    tr:nth-child(even) { background-color: #f8fafc; }
+                `;
+
+                finalHtml = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>${title || 'Report'}</title>
+                        <style>${defaultCss}</style>
+                    </head>
+                    <body>
+                        <h1>${title} (Total: ${result.length})</h1>
+                        ${tableHtml}
+                    </body>
+                    </html>
+                `;
             }
-            tableHtml += `</table>`;
-
-            const defaultCss = `
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 30px; color: #1a1a1a; background-color: #f9fafb; }
-                h1 { color: #111827; text-align: center; font-size: 24px; margin-bottom: 20px; font-weight: 600; }
-                table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; font-size: 13px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-                th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-                th { background-color: #f3f4f6; color: #374151; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
-                tr:last-child td { border-bottom: none; }
-                tr:nth-child(even) { background-color: #f8fafc; }
-            `;
-
-            const finalHtml = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>${title || 'Report'}</title>
-                    <style>
-                        ${customCss ? customCss : defaultCss}
-                    </style>
-                </head>
-                <body>
-                    <h1>${title} (Total: ${result.length})</h1>
-                    ${tableHtml}
-                </body>
-                </html>
-            `;
 
             const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
             const page = await browser.newPage();
