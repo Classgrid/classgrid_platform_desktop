@@ -329,7 +329,7 @@ If unsure, try querying MongoDB first.`;
                     model: "gemini-3.5-flash"
                 }
             ],
-            verbose: true,
+            verbose: false,
             maxToolDepth: 2,
             defaultMaxTokens: 2000,
             tools: [
