@@ -588,8 +588,12 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
 
                 if (requestAborted) return;
 
+                if (!answer) {
+                    throw new Error("AI generation returned null. All providers timed out or failed.");
+                }
+
                 // Validate Mermaid syntax on server if requested
-                if (isDiagramRequest && answer && answer !== "[RATE_LIMITED]") {
+                if (isDiagramRequest && answer !== "[RATE_LIMITED]") {
                     if (!answer.includes("```mermaid")) {
                         throw new Error("Invalid or missing Mermaid syntax");
                     }
@@ -599,7 +603,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
             } catch (err) {
                 console.warn(`[AI Chat] Attempt ${attempt} failed:`, err.message);
                 if (attempt === maxAttempts) {
-                    if (!answer) answer = "Failed to generate a valid diagram. Please try rephrasing your request.";
+                    if (!answer && isDiagramRequest) answer = "Failed to generate a valid diagram. Please try rephrasing your request.";
                     break;
                 }
                 
