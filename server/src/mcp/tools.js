@@ -4,6 +4,8 @@ import redis from '../config/redis.js';
 import fs from 'fs';
 import path from 'path';
 import { sendEmail } from '../services/aws-ses.service.js';
+import { s3Client, BUCKET_NAME, CDN_BASE_URL } from '../config/s3Client.js';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { exec } from 'child_process';
 import util from 'util';
 
@@ -341,32 +343,20 @@ export const handleToolCall = async (name, args, context = {}) => {
                 // Decode the base64 PDF binary
                 const pdfBuffer = Buffer.from(result.base64, 'base64');
                 
-                // --- AWS S3 UPLOAD LOGIC ---
-                // In production, this buffer is uploaded to the AWS S3 bucket:
-                // await s3Client.send(new PutObjectCommand({
-                //     Bucket: process.env.AWS_CDN_BUCKET,
-                //     Key: `generated/${title || 'document'}.pdf`,
-                //     Body: pdfBuffer,
-                //     ContentType: 'application/pdf'
-                // }));
-                
-                // For now, we simulate the S3 upload by writing it locally
-                const fs = require('fs');
-                const path = require('path');
                 const fileName = `${title ? title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'generated_' + Date.now()}.pdf`;
-                const filePath = path.join(__dirname, '..', '..', 'public', 'generated', fileName);
                 
-                // Ensure directory exists
-                const dir = path.dirname(filePath);
-                if (!fs.existsSync(dir)){
-                    fs.mkdirSync(dir, { recursive: true });
-                }
+                // Upload directly to AWS S3 so the CDN link works
+                const s3Key = `reports/${fileName}`;
+                await s3Client.send(new PutObjectCommand({
+                    Bucket: BUCKET_NAME,
+                    Key: s3Key,
+                    Body: pdfBuffer,
+                    ContentType: 'application/pdf'
+                }));
                 
-                fs.writeFileSync(filePath, pdfBuffer);
-                const cdnUrl = `https://cdn.classgrid.in/generated/${fileName}`;
-
+                const cdnUrl = `${CDN_BASE_URL}/${s3Key}`;
                 return {
-                    content: [{ type: 'text', text: `SUCCESS: PDF generated and uploaded to AWS successfully. The secure CDN download URL is: ${cdnUrl}` }],
+                    content: [{ type: 'text', text: `SUCCESS! PDF generated and uploaded to AWS CDN.\nCDN Download URL: ${cdnUrl}` }],
                 };
             } else {
                 throw new Error(result.error || "Failed to generate PDF");
