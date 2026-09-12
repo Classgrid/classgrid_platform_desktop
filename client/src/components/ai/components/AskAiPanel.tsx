@@ -2379,7 +2379,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   const panelChat = (
     <div ref={variant !== "full-page" ? chatScrollRef : undefined} className={cn("overscroll-contain [scrollbar-width:thin] [scrollbar-gutter:stable]", variant === "full-page" ? "w-full" : "flex-1 min-h-0 overflow-y-auto")}>
-      <div className={cn("flex flex-col gap-4 px-4 py-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]", variant === "full-page" && "max-w-[64rem] mx-auto w-full pb-52")}>
+      <div className={cn("flex flex-col gap-4 px-4 py-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]", variant === "full-page" && "max-w-[48rem] mx-auto w-full pb-52")}>
         {isLoadingChat ? (
           <div className="flex-1 flex items-center justify-center py-16 h-full">
             <Spinner className="w-8 h-8 text-muted-foreground" />
@@ -2642,7 +2642,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         )}
       </AnimatePresence>
 
-      <div className={cn(variant === "full-page" && "relative max-w-[68rem] mx-auto w-full pointer-events-auto")}>
+      <div className={cn(variant === "full-page" && "relative max-w-[52rem] mx-auto w-full pointer-events-auto")}>
 
         {isTerminated ? (
           <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm font-medium text-red-500">
@@ -2846,9 +2846,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           animation: targetGlowPulse 2.5s ease-in-out forwards;
         }
       `}</style>
-      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+      {/* ───────────────────────────────────────────────────────────────────────── 
           FULL-PAGE: ChatGPT-style centered layout
-          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+          ────────────────────────────────────────────────────────────────────────── */}
       {variant === "full-page" ? (
         <div className="w-full h-full bg-background flex flex-row">
           <div className="flex-1 relative flex flex-col h-full">
