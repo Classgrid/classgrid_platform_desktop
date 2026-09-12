@@ -64,7 +64,6 @@ import { Input } from "@/components/marketing_ui/input";
 import { RecentActivityTable, DataTable } from "@/components/marketing_ui/data-table";
 import { StatCard } from "@/components/marketing_ui/StatCard";
 import { Switch } from "@/components/marketing_ui/switch";
-import { Switch } from "@/components/marketing_ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/marketing_ui/tooltip";
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
