@@ -422,7 +422,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                     type: "function",
                     function: {
                         name: "search_knowledge_base",
-                        description: "Search the institution's unstructured knowledge base (Notes, Articles, Policies) using semantic vector search (RAG) to find answers to questions.",
+                        description: "Search the institution's unstructured knowledge base (Notes, Articles, Policies) using semantic vector search (RAG) to find answers to questions. DO NOT use this for listing database items like users, admins, or tickets. RAG only returns 3 chunks of text and CANNOT list items.",
                         parameters: {
                             type: "object",
                             properties: {
