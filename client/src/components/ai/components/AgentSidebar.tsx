@@ -17,6 +17,12 @@ interface ChatSession {
   pinned?: boolean;
 }
 
+const ChatBubbleIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path fill="none" d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092a10 10 0 1 0-4.777-4.719" />
+  </svg>
+);
+
 export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) {
   const [sessions, setSessions] = React.useState<ChatSession[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -357,7 +363,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
               className="h-auto py-1.5 cursor-pointer flex-1 min-w-0"
               render={
                 <div className="flex items-center gap-2.5 w-full min-w-0 pr-8">
-                  <MessageSquare className="w-[15px] h-[15px] shrink-0 text-muted-foreground/80" strokeWidth={1.5} />
+                  <ChatBubbleIcon className="w-[15px] h-[15px] shrink-0 text-muted-foreground/80" />
                   <span className="truncate block min-w-0 flex-1">{displayTitle}</span>
                 </div>
               }
