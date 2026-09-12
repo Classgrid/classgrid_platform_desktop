@@ -1,6 +1,9 @@
 import mongoose from 'mongoose';
 import { getChatSb } from '../config/supabaseClient.js';
 import redis from '../config/redis.js';
+import fs from 'fs';
+import path from 'path';
+import { sendEmail } from '../services/aws-ses.service.js';
 import { exec } from 'child_process';
 import util from 'util';
 
@@ -61,6 +64,19 @@ export const getMcpTools = () => [
         title: { type: 'string', description: 'The title of the PDF document.' }
       },
       required: ['content']
+    }
+  },
+  {
+    name: 'send_email',
+    description: 'Sends an email to a specified recipient using AWS SES. Use this to send reports, PDFs, or notifications directly from the chat.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        to: { type: 'string', description: 'The recipient email address.' },
+        subject: { type: 'string', description: 'The subject of the email.' },
+        body: { type: 'string', description: 'The text or HTML body of the email.' }
+      },
+      required: ['to', 'subject', 'body']
     }
   }
 ];
@@ -357,6 +373,25 @@ export const handleToolCall = async (name, args, context = {}) => {
             }
         } catch (e) {
             return { content: [{ type: 'text', text: `Failed to generate PDF via Sandbox Worker: ${e.message}` }] };
+        }
+    }
+
+    if (name === 'send_email') {
+        const { to, subject, body } = args;
+        console.log(`\n📧 [AWS SES] AI is sending an email to ${to}`);
+        try {
+            await sendEmail({
+                to,
+                subject,
+                html: body,
+                text: body,
+                fromName: 'Classgrid AI Agent'
+            });
+            return {
+                content: [{ type: 'text', text: `SUCCESS! Email successfully sent to ${to}.` }]
+            };
+        } catch (e) {
+            return { content: [{ type: 'text', text: `Failed to send email via AWS SES: ${e.message}` }] };
         }
     }
 

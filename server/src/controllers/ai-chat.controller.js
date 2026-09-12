@@ -451,6 +451,10 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                     const result = await handleToolCall('generate_pdf', args, {});
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
+                send_email: async (args) => {
+                    const result = await handleToolCall('send_email', args, {});
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
                 get_timezone_time: async (args) => {
                     try {
                         const tz = args.timeZone || 'UTC';
