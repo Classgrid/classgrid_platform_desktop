@@ -318,6 +318,11 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: When outputting data in tables or lists, NEVER wrap single words, names, roles, or email addresses in Markdown code blocks (backticks). Output them as plain text. Only use code blocks for actual programming code, Mermaid charts, or JSON.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (DATA FETCHING & EMAILS): \n1. If the user asks you to fetch or show data (even 500+ or 1000+ items), YOU MUST use 'unified_db_query' and literally type out all the items directly in the chat. DO NOT hallucinate fake text files or fake names.\n2. NEVER generate a PDF or send an email automatically. NEVER even ask the user "Would you like me to make a PDF?".\n3. IF the user explicitly demands a PDF (e.g., "Generate a PDF report"), YOU MUST DO IT using 'generate_pdf_from_db'. Provide the CDN link and STOP. Do NOT email it unless they explicitly said "email it". Once you give the link, close the task.\n4. NEVER use '$ne' to exclude emails you think you already sent. When fetching users, just run a clean '{ role: "org_admin" }' query and list them.\n5. STRICT EMAIL APPROVAL GATE: NEVER execute the 'send_email' tool in the same turn that you generate the email draft. Even if the user explicitly says 'send an email to everyone right now', you MUST first output the draft in the chat, ask for approval, and STOP. You are strictly forbidden from executing 'send_email' until the user replies with 'Approved' or 'Send it' in the subsequent turn.\n6. NEVER generate "Proof of Delivery" PDFs or argue with the user about whether emails were sent. If the user says emails were sent twice, apologize and accept it. LLMs cannot see physical delivery logs.\n\nDATABASE SCHEMA HINTS:\n- Organization Admins have the exact role string "org_admin" in the database.\n- Students have the role "student".\n- Server/API traffic logs are stored in the "systemlogs" MongoDB collection.\n- Super Admin audit logs (dashboard logs) are stored in the "AdminAuditLog" model/collection.\n- Emails sent by the system (and by the AI) are stored in the "NotificationLog" model/collection. Query this collection to verify if an email was actually sent!`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (CLOUDFLARE SANDBOX TERMINAL): You now have access to a secure Cloudflare Edge Sandbox with Interactive Terminal (PTY) capabilities! You can use the 'run_code' tool to execute 'python', 'javascript', AND 'bash' commands safely. If a user asks you to perform complex data analysis, you MUST write a script and use 'run_code'. If you need missing libraries (e.g., pdfplumber, pandas), use 'run_code' with language 'bash' to run 'pip install' or standard terminal commands inside the sandbox first! Combine this with your database tools (SQL/MongoDB) to fetch data.`;
+        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (DOCUMENT PARSING & OCR): If the user's message contains "Attached Files:" with URLs (like PDFs or Images), YOU MUST parse them!
+1. Use the 'run_code' tool (language: python) to download and extract the text.
+2. For PDFs, write a python script using 'urllib.request' to download the file, and 'pdfplumber' or 'PyPDF2' to extract text. Example: \`import urllib.request, pdfplumber; urllib.request.urlretrieve("URL", "temp.pdf"); pdf = pdfplumber.open("temp.pdf"); print("".join([p.extract_text() for p in pdf.pages]))\`
+3. For Images, use 'pytesseract' and 'Pillow' (you may need to run bash 'apt-get install tesseract-ocr' or 'pip install pytesseract pillow' first if missing).
+4. If asked to generate a CSV/Excel file, use 'pandas' to generate the file, base64 encode it in Python, and use the 'upload_file_to_cdn' tool to get a download link to give the user!`;
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {
@@ -453,6 +458,16 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                     const result = await handleToolCall('generate_pdf', args, {});
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
+                upload_file_to_cdn: async (args) => {
+                    try {
+                        const buffer = Buffer.from(args.base64Content, 'base64');
+                        const { uploadBufferToR2 } = await import("../config/r2Client.js");
+                        const url = await uploadBufferToR2(buffer, args.fileName, args.mimeType, `ai-generated/${Date.now()}-${args.fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`);
+                        return `SUCCESS: File uploaded. Public URL: ${url}`;
+                    } catch (e) {
+                        return `FAILED to upload file: ${e.message}`;
+                    }
+                },
                 generate_pdf_from_db: async (args) => {
                     const result = await handleToolCall('generate_pdf_from_db', args, {});
                     return result.isError ? result.content[0].text : result.content[0].text;
@@ -508,13 +523,19 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                         return "SECURITY ERROR: Access Denied. Only Admins are authorized to use the AI email sending tool.";
                     }
                     try {
-                        const info = await sendEmail({
+                        const emailPayload = {
                             to: args.to,
                             subject: args.subject,
                             html: args.body,
                             fromName: args.fromName,
                             fromEmail: args.fromEmail
-                        });
+                        };
+                        
+                        if (args.attachments && Array.isArray(args.attachments) && args.attachments.length > 0) {
+                            emailPayload.attachments = args.attachments;
+                        }
+
+                        const info = await sendEmail(emailPayload);
                         
                         await NotificationLog.create({
                             type: "EMAIL",

@@ -93,9 +93,34 @@ export const getMcpTools = () => [
       properties: {
         to: { type: 'string', description: 'The recipient email address.' },
         subject: { type: 'string', description: 'The subject of the email.' },
-        body: { type: 'string', description: 'REQUIRED: A fully formed, beautiful HTML string containing the email body. You MUST write raw HTML with inline CSS for styling (e.g., modern fonts, padding, colors). DO NOT use Markdown.' }
+        body: { type: 'string', description: 'REQUIRED: A fully formed, beautiful HTML string containing the email body. You MUST write raw HTML with inline CSS for styling (e.g., modern fonts, padding, colors). DO NOT use Markdown.' },
+        attachments: {
+          type: 'array',
+          description: 'Optional. A list of files to attach to the email. Each item MUST have a "filename" and EITHER "path" (a valid URL) OR "content" (base64 string).',
+          items: {
+            type: 'object',
+            properties: {
+              filename: { type: 'string', description: 'Name of the attached file (e.g. report.pdf)' },
+              path: { type: 'string', description: 'Direct public URL to the file to attach (e.g. a CDN link).' },
+              content: { type: 'string', description: 'Raw base64 string of the file content.' }
+            }
+          }
+        }
       },
       required: ['to', 'subject', 'body']
+    }
+  },
+  {
+    name: 'upload_file_to_cdn',
+    description: 'Uploads a base64 encoded file to the Classgrid R2 CDN and returns a public URL. Use this to share files you generated (like Excel, CSV, PDF) with the user in the chat.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        fileName: { type: 'string', description: 'The name of the file, including extension (e.g. data.csv, report.xlsx)' },
+        base64Content: { type: 'string', description: 'The raw base64 encoded string of the file content (WITHOUT the data prefix).' },
+        mimeType: { type: 'string', description: 'The MIME type of the file (e.g. text/csv, application/pdf)' }
+      },
+      required: ['fileName', 'base64Content', 'mimeType']
     }
   }
 ];
