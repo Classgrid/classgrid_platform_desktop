@@ -100,7 +100,22 @@ export const handleToolCall = async (name, args, context = {}) => {
             let result;
             
             if (operation === 'find') {
-                result = await collection.find(query).limit(50).toArray();
+                if (actualCollectionName === 'users') {
+                    result = await collection.aggregate([
+                        { $match: query },
+                        { $limit: 50 },
+                        {
+                            $lookup: {
+                                from: 'organizations',
+                                localField: 'organization',
+                                foreignField: '_id',
+                                as: 'organization_details'
+                            }
+                        }
+                    ]).toArray();
+                } else {
+                    result = await collection.find(query).limit(50).toArray();
+                }
             } else if (operation === 'findOne') {
                 result = await collection.findOne(query);
             } else if (operation === 'countDocuments') {
