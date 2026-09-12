@@ -849,8 +849,18 @@ const MarkdownComponents = {
   code({ node, inline, className, children, ...props }: any, isTyping?: boolean, onRetry?: (errorMsg: string) => void) {
     const codeString = String(children).replace(/\n$/, "");
     
+    // 🚨 Intercept Emails that the AI hallucinates into code blocks (e.g. inside tables) 🚨
+    const isJustAnEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(codeString.trim());
+    if (isJustAnEmail) {
+      return (
+        <a href={`mailto:${codeString.trim()}`} className="text-indigo-500 dark:text-indigo-400 hover:underline break-all">
+          {codeString.trim()}
+        </a>
+      );
+    }
+
     // 🚨 Intercept URLs/Links that the AI hallucinates into code blocks 🚨
-    const isJustAUrl = /^(https?:\/\/[^\s]+|wss?:\/\/[^\s]+|[\w-]+\.classgrid\.in[^\s]*)$/i.test(codeString.trim());
+    const isJustAUrl = /^(https?:\/\/[^\s]+|wss?:\/\/[^\s]+|www\.[^\s]+|[\w-]+\.classgrid\.in[^\s]*)$/i.test(codeString.trim());
     if (isJustAUrl) {
       const url = (codeString.trim().startsWith('http') || codeString.trim().startsWith('ws')) ? codeString.trim() : `https://${codeString.trim()}`;
       return (
@@ -867,6 +877,12 @@ const MarkdownComponents = {
     // If the AI wraps an entire normal sentence in backticks, un-wrap it so the user doesn't see a random grey box.
     const isProse = !language && codeString.length > 15 && codeString.includes(" ") && !/[{}();=<>\[\]\/\\]/.test(codeString) && !/const|let|var|function|import|export|if|for|while/.test(codeString);
     if (isProse) {
+       return <span className={!inline ? "block mb-4" : ""}>{codeString}</span>;
+    }
+    
+    // 🚨 Intercept Hallucinated Single Words (like `teacher` or emails inside tables) 🚨
+    const isSingleWordHallucination = !language && !codeString.includes('\n') && codeString.length < 50 && !/[{}();=<>\[\]\/\\]/.test(codeString) && !/const|let|var|function|import|export|if|for|while/.test(codeString);
+    if (isSingleWordHallucination) {
        return <span className={!inline ? "block mb-4" : ""}>{codeString}</span>;
     }
     

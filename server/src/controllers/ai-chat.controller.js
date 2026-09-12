@@ -443,6 +443,14 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                     const result = await handleToolCall('unified_db_query', args, { userEmail, userRole, subdomain });
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
+                run_code: async (args) => {
+                    const result = await handleToolCall('run_code', args, {});
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                generate_pdf: async (args) => {
+                    const result = await handleToolCall('generate_pdf', args, {});
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
                 get_timezone_time: async (args) => {
                     try {
                         const tz = args.timeZone || 'UTC';

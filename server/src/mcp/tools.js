@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 import { getChatSb } from '../config/supabaseClient.js';
 import redis from '../config/redis.js';
+import { exec } from 'child_process';
+import util from 'util';
+
+const execPromise = util.promisify(exec);
 
 export const getMcpTools = () => [
   {
@@ -128,14 +132,20 @@ export const handleToolCall = async (name, args, context = {}) => {
             result = await collection.aggregate([
               { $match: query },
               { $limit: 50 },
-              {
-                $lookup: {
-                  from: 'organizations',
-                  localField: 'organization',
-                  foreignField: '_id',
-                  as: 'organization_details'
-                }
-              }
+                {
+                  $addFields: {
+                    orgObjId: { $convert: { input: "$organization_id", to: "objectId", onError: null, onNull: null } }
+                  }
+                },
+                {
+                  $lookup: {
+                    from: 'organizations',
+                    localField: 'orgObjId',
+                    foreignField: '_id',
+                    as: 'organization_details'
+                  }
+                },
+                { $project: { orgObjId: 0 } }
             ]).toArray();
           } else {
             result = await collection.find(query).limit(50).toArray();
@@ -254,6 +264,21 @@ export const handleToolCall = async (name, args, context = {}) => {
       } else {
         throw new Error(`Unsupported data source: ${source}`);
       }
+    }
+
+    if (name === 'execute_terminal_command') {
+        const { command } = args;
+        console.log(`\n⚠️ [TERMINAL ACCESS] AI is executing native command: ${command}`);
+        try {
+            const { stdout, stderr } = await execPromise(command);
+            return {
+                content: [{ type: 'text', text: `Command executed successfully.\nSTDOUT:\n${stdout}\nSTDERR:\n${stderr}` }]
+            };
+        } catch (e) {
+            return {
+                content: [{ type: 'text', text: `Command failed!\nError: ${e.message}\nSTDOUT:\n${e.stdout || ''}\nSTDERR:\n${e.stderr || ''}` }]
+            };
+        }
     }
 
     const sandboxUrl = 'https://ai-sandbox-worker.nikhil-shinde-6b9.workers.dev';
