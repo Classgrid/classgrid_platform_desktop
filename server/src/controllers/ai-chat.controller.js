@@ -471,7 +471,8 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
         }, 15000);
 
         // 4. Run the Client with Auto-Correction & Fallback Loop
-        const isDiagramRequest = content ? (content.toLowerCase().includes("flowchart") || content.toLowerCase().includes("diagram") || content.toLowerCase().includes("graph") || content.toLowerCase().includes("mermaid")) : false;
+        const questionText = body.question || "";
+        const isDiagramRequest = questionText.toLowerCase().includes("flowchart") || questionText.toLowerCase().includes("diagram") || questionText.toLowerCase().includes("graph") || questionText.toLowerCase().includes("mermaid");
         
         let answer = null;
         let attempt = 1;
