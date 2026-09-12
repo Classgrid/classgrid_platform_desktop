@@ -55,7 +55,6 @@ export const getMcpTools = () => [
       },
       required: ['language', 'code']
     }
-  },
   {
     name: 'generate_pdf',
     description: 'Generates a PDF document from HTML or raw data. If you have a large list of data, pass the JSON array into `rawData` instead of writing a giant HTML table, and the backend will format it for you.',
@@ -66,6 +65,20 @@ export const getMcpTools = () => [
         title: { type: 'string', description: 'The title of the PDF document.' },
         rawData: { type: 'array', items: { type: 'object' }, description: 'Optional JSON array of data. Use this for large lists instead of formatting HTML manually.' }
       }
+    }
+  },
+  {
+    name: 'generate_pdf_from_db',
+    description: 'Generates a PDF document by directly querying the database and formatting the results. Use this tool for HUGE data dumps (e.g. "Fetch all 600 students") to completely bypass your token memory limits. You just provide the query, and the backend does everything.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        source: { type: 'string', enum: ['mongodb', 'supabase'], description: 'The database source' },
+        collectionOrTable: { type: 'string', description: 'The collection or table name' },
+        query: { type: 'object', description: 'The database query (e.g. { role: "student" })' },
+        title: { type: 'string', description: 'The title of the PDF document.' }
+      },
+      required: ['source', 'collectionOrTable', 'query', 'title']
     }
   },
   {
@@ -189,7 +202,18 @@ export const handleToolCall = async (name, args, context = {}) => {
           throw new Error(`Unsupported MongoDB operation: ${operation}`);
         }
 
-        let outputText = JSON.stringify(result, null, 2);
+        // 🚨 AI TOKEN OVERFLOW PROTECTION 🚨
+        // We use a custom stringify replacer to strip out massive useless fields (like passwords, base64 images, tokens, etc.)
+        // across ALL collections. This prevents the LLM from hitting its 2000 token limit and truncating the output to 1-2 items!
+        const aiSafetyReplacer = (key, value) => {
+            const forbiddenKeys = ['password', 'profilePicture', 'profileBanner', 'logo', 'favicon', 'signature', 'activationToken', 'resetPasswordToken', 'payroll_config', 'preferences', 'settings'];
+            if (forbiddenKeys.includes(key)) return undefined;
+            // Also truncate any ridiculously long string that might be a base64 image or giant HTML block
+            if (typeof value === 'string' && value.length > 500) return "[TRUNCATED HUGE STRING]";
+            return value;
+        };
+
+        let outputText = JSON.stringify(result, aiSafetyReplacer, 2);
         if (Array.isArray(result) && result.length > 2) {
           outputText += `\n\n[SYSTEM DIRECTIVE TO AI: The database returned EXACTLY ${result.length} items. YOU ARE STRICTLY FORBIDDEN from truncating this list in your response to the user. You MUST transcribe ALL ${result.length} items. Do not stop early. Do not summarize.]`;
         }
@@ -391,6 +415,79 @@ export const handleToolCall = async (name, args, context = {}) => {
             };
         } catch (e) {
             return { content: [{ type: 'text', text: `Failed to generate PDF via Puppeteer: ${e.message}` }] };
+        }
+    }
+
+    if (name === 'generate_pdf_from_db') {
+        const { source, collectionOrTable, query, title } = args;
+        try {
+            console.log(`\n📄 [AWS NATIVE] AI is directly fetching data and generating PDF to bypass token limits!`);
+            let result;
+            if (source === 'mongodb') {
+                const collectionName = collectionOrTable.toLowerCase() === 'user' ? 'users' : collectionOrTable;
+                const collection = mongoose.connection.collection(collectionName);
+                if (collectionName === 'users') {
+                    result = await collection.aggregate([
+                        { $match: query },
+                        { $limit: 1000 },
+                        { $addFields: { orgObjId: { $convert: { input: "$organization_id", to: "objectId", onError: null, onNull: null } } } },
+                        { $lookup: { from: "organizations", localField: "orgObjId", foreignField: "_id", as: "organization_details" } },
+                        { $project: { orgObjId: 0 } }
+                    ]).toArray();
+                } else {
+                    result = await collection.find(query).limit(1000).toArray();
+                }
+            } else {
+                return { content: [{ type: 'text', text: 'generate_pdf_from_db only supports mongodb right now.' }] };
+            }
+
+            if (!result || result.length === 0) {
+                return { content: [{ type: 'text', text: 'No data found for the given query.' }] };
+            }
+
+            const keys = Object.keys(result[0]).filter(k => typeof result[0][k] !== 'object' && k !== '_id' && k !== 'password');
+            let tableHtml = `<table><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr>`;
+            for (const row of result) {
+                tableHtml += `<tr>${keys.map(k => `<td>${row[k] || ''}</td>`).join('')}</tr>`;
+            }
+            tableHtml += `</table>`;
+
+            const finalHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>${title || 'Report'}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+                        h1 { color: #3eaf28; text-align: center; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+                        th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                    </style>
+                </head>
+                <body>
+                    <h1>${title} (Total: ${result.length})</h1>
+                    ${tableHtml}
+                </body>
+                </html>
+            `;
+
+            const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+            const page = await browser.newPage();
+            await page.setContent(finalHtml, { waitUntil: 'networkidle0' });
+            const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });
+            await browser.close();
+
+            const fileName = `${title ? title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'db_report_' + Date.now()}.pdf`;
+            const s3Key = `reports/${fileName}`;
+            await s3Client.send(new PutObjectCommand({ Bucket: BUCKET_NAME, Key: s3Key, Body: pdfBuffer, ContentType: 'application/pdf' }));
+            
+            const cdnUrl = `${CDN_BASE_URL}/${s3Key}`;
+            return {
+                content: [{ type: 'text', text: `SUCCESS! Fetched ${result.length} items directly from DB and generated PDF.\nCDN Download URL: ${cdnUrl}` }],
+            };
+        } catch (e) {
+            return { content: [{ type: 'text', text: `Failed: ${e.message}` }] };
         }
     }
 

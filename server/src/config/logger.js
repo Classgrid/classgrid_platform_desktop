@@ -102,18 +102,24 @@ const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
 
 // Add MongoDB transport if URI is available
 if (mongoUri) {
-    transports.push(
-        new winston.transports.MongoDB({
-            // Store ALL logs (info, warn, error) — no level filter
-            db: mongoUri,
-            collection: "systemlogs",
-            format: combine(injectContextFormat(), timestamp(), metadata()),
-            expireAfterSeconds: 432000, // 5 days
-            capped: true,
-            cappedSize: 10485760, // 10MB
-            cappedMax: 10000 // Max 10,000 logs
-        })
-    );
+    const mongoTransport = new winston.transports.MongoDB({
+        // Store ALL logs (info, warn, error) — no level filter
+        db: mongoUri,
+        collection: "systemlogs",
+        format: combine(injectContextFormat(), timestamp(), metadata()),
+        expireAfterSeconds: 432000, // 5 days
+        capped: true,
+        cappedSize: 10485760, // 10MB
+        cappedMax: 10000, // Max 10,000 logs
+        options: { useUnifiedTopology: true }
+    });
+
+    // 🚨 Prevent winston-mongodb from crashing the Node.js process if connection resets (ECONNRESET)
+    mongoTransport.on('error', (err) => {
+        console.error('[winston-mongodb] Transport error:', err);
+    });
+
+    transports.push(mongoTransport);
 }
 
 // Configure main logger
