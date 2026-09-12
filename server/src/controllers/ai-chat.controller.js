@@ -261,7 +261,17 @@ export const streamAskAi = async (req, res) => {
         dynamicSystemPrompt += `\n\n--- DATABASE ACCESS RULES (CRITICAL) ---
 You have direct read/write access to the Classgrid backend databases via the \`unified_db_query\` tool. 
 If the user asks you to check tickets, read logs, view user data, provision a school, or perform ANY administrative task, YOU MUST USE THE \`unified_db_query\` TOOL to fetch the real data.
-DO NOT say "I cannot access internal systems" or "I don't have access to your dashboard". You DO have access. Use your tool to fetch the data and then answer the user.`;
+DO NOT say "I cannot access internal systems" or "I don't have access to your dashboard". You DO have access. Use your tool to fetch the data and then answer the user.
+
+--- DATABASE SCHEMA CHEAT SHEET ---
+Use these exact names for the \`collectionOrTable\` parameter:
+- Tickets: MongoDB collection \`SupportTicket\`
+- Chat/Messages: MongoDB collection \`Message\`
+- Demo Requests: MongoDB collection \`DemoRequest\`
+- Users: MongoDB collection \`User\`
+- Organizations/Schools: MongoDB collection \`Organization\`
+- System Logs: MongoDB collection \`SystemLog\` or \`ActivityLog\`
+If unsure, try querying MongoDB first.`;
 
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user explicitly asks for a flowchart, diagram, or graph AND provides the context, output ONLY the valid Mermaid code block (\`\`\`mermaid\n...\n\`\`\`). Do NOT include any conversational preamble or filler text.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user says "okay", "thanks", "got it", "done", or simply acknowledges your previous response, DO NOT generate more content, flowcharts, or code. Simply say "You're welcome!" or "Let me know if you need anything else!" and STOP.`;
