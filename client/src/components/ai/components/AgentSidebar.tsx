@@ -2,11 +2,12 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { MessageSquare, Plus, Search, Pin, MoreHorizontal, Pencil, Trash2, Share, Copy, Mail, Check, Link2, FileText, ExternalLink, X, Loader2, SquarePen } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/marketing_ui/sidebar";
+import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from "@/components/marketing_ui/sidebar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/marketing_ui/popover";
 import { Input } from "@/components/marketing_ui/input";
 import { Button } from "@/components/marketing_ui/button";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/marketing_ui/accordion";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/marketing_ui/popover";
+
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/marketing_ui/dropdown-menu";
 import { toast } from "sonner";
 
@@ -24,6 +25,8 @@ const ChatBubbleIcon = ({ className }: { className?: string }) => (
 );
 
 export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) {
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
   const [sessions, setSessions] = React.useState<ChatSession[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [activeSessionId, setActiveSessionId] = React.useState<string | null>(null);
@@ -438,36 +441,18 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
     );
   };
 
-  return (
-    <>
+  if (isCollapsed) {
+    return (
       <div className="flex flex-col items-center gap-4 w-full pt-4">
-        {/* New Chat Button */}
-        <Button
-          variant="ghost"
-          onClick={handleNewChat}
-          className="w-10 h-10 p-0 rounded-xl bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 cursor-pointer"
-          title="New Chat"
-        >
+        <Button variant="ghost" onClick={handleNewChat} className="w-10 h-10 p-0 rounded-xl bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 cursor-pointer" title="New Chat">
           <SquarePen className="w-5 h-5" strokeWidth={1.5} />
         </Button>
-
-        {/* Search Button (Optional, can just trigger new chat or open search) */}
-        <Button
-          variant="ghost"
-          className="w-10 h-10 p-0 rounded-xl bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 cursor-pointer"
-          title="Search"
-        >
+        <Button variant="ghost" className="w-10 h-10 p-0 rounded-xl bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 cursor-pointer" title="Search">
           <Search className="w-5 h-5" strokeWidth={1.5} />
         </Button>
-
-        {/* Pinned Chats Popover */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-10 h-10 p-0 rounded-xl bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 cursor-pointer"
-              title="Pinned Chats"
-            >
+            <Button variant="ghost" className="w-10 h-10 p-0 rounded-xl bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 cursor-pointer" title="Pinned Chats">
               <Pin className="w-5 h-5" strokeWidth={1.5} />
             </Button>
           </PopoverTrigger>
@@ -479,15 +464,9 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
             </SidebarMenu>
           </PopoverContent>
         </Popover>
-
-        {/* Recent Chats Popover */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-10 h-10 p-0 rounded-xl bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 cursor-pointer"
-              title="Recent Chats"
-            >
+            <Button variant="ghost" className="w-10 h-10 p-0 rounded-xl bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 cursor-pointer" title="Recent Chats">
               <ChatBubbleIcon className="w-6 h-6" />
             </Button>
           </PopoverTrigger>
@@ -498,7 +477,6 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
               {!loading && todaySessions.length === 0 && <div className="px-2 text-sm text-slate-400">No chats today</div>}
               {todaySessions.map(renderSessionItem)}
             </SidebarMenu>
-
             <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-2 mt-4">Previous</div>
             <SidebarMenu>
               {!loading && previousSessions.length === 0 && <div className="px-2 text-sm text-slate-400">No previous chats</div>}
@@ -507,6 +485,64 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
           </PopoverContent>
         </Popover>
       </div>
+    );
+  }
+
+  return (
+    <>
+      <SidebarGroup className="pt-1">
+        <div className="px-2 pb-3 mb-3 border-b border-border/50">
+          <Button
+            onClick={handleNewChat}
+            className="w-full justify-start gap-2 h-9 px-3 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="font-medium text-sm">New Chat</span>
+          </Button>
+        </div>
+
+        <SidebarGroupContent>
+          <Accordion defaultValue={["pinned", "today", "previous"]} multiple className="w-full">
+            {pinnedSessions.length > 0 && (
+              <AccordionItem value="pinned" className="border-none mb-2">
+                <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pinned</span>
+                </AccordionTrigger>
+                <AccordionContent className="pb-0 pt-1 px-0">
+                  <SidebarMenu>
+                    {pinnedSessions.map(renderSessionItem)}
+                  </SidebarMenu>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+
+            <AccordionItem value="today" className="border-none mb-2">
+              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Today</span>
+              </AccordionTrigger>
+              <AccordionContent className="pb-0 pt-1 px-0">
+                <SidebarMenu>
+                  {loading && <div className="px-2 text-xs text-muted-foreground py-2">Loading...</div>}
+                  {!loading && todaySessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">No chats today</div>}
+                  {todaySessions.map(renderSessionItem)}
+                </SidebarMenu>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="previous" className="border-none">
+              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Previous</span>
+              </AccordionTrigger>
+              <AccordionContent className="pb-0 pt-1 px-0">
+                <SidebarMenu>
+                  {!loading && previousSessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">No previous chats</div>}
+                  {previousSessions.map(renderSessionItem)}
+                </SidebarMenu>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </SidebarGroupContent>
+      </SidebarGroup>
 
       {/* Share Modal - Exact ChatGPT Replica (Light & Dark Mode Support) */}
       {shareModalOpen && shareSessionId && typeof document !== "undefined" && createPortal(
