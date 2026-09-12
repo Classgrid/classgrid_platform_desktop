@@ -507,14 +507,20 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                         const voyageKey = process.env.VOYAGE_API_KEY?.trim();
                         if (!voyageKey) return "RAG Search failed: VOYAGE_API_KEY is missing from environment variables.";
                         
+                        let ArticleEmbedding;
+                        try {
+                            ArticleEmbedding = mongoose.model('ArticleEmbedding');
+                        } catch {
+                            ArticleEmbedding = mongoose.model('ArticleEmbedding', new mongoose.Schema({}, { strict: false }), 'articleembeddings');
+                        }
+                        
                         const embedder = new VoyageEmbedder({ apiKey: voyageKey, provider: 'voyage' });
-                        // Using Note model and 'vector_index' as the default index.
-                        const vectorStore = new MongoVectorStore(Note, "vector_index", "embedding");
+                        const vectorStore = new MongoVectorStore(ArticleEmbedding, "vector_index", "embedding");
                         const pipeline = new RagPipeline({ embedder, vectorStore });
                         
                         const result = await pipeline.retrieve(args.query, { topK: 3 });
                         if (result.chunks.length === 0) {
-                            return "RAG Search found no relevant documents. The vector index might be empty or the collection has no embeddings yet.";
+                            return "RAG Search found no relevant documents in the 'articleembeddings' collection.";
                         }
                         return `RAG Search Results:\n\n${result.contextText}`;
                     } catch (e) {

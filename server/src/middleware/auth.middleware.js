@@ -35,6 +35,8 @@
 
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import SystemSettings from "../models/SystemSettings.js";
+import Organization from "../models/Organization.js";
 import connectDB from "../../config/db.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
@@ -72,7 +74,6 @@ export const isAuthenticated = async (req, res, next) => {
         await connectDB();
 
         // Dynamically check system settings for emergency locks
-        const { default: SystemSettings } = await import("../models/SystemSettings.js");
         const settings = await SystemSettings.findOne();
 
         if (decoded.isProvisional) {
@@ -147,7 +148,6 @@ export const isAuthenticated = async (req, res, next) => {
 
         // Organization status check
         if (user.organization_id && user.role !== "super_admin") {
-            const { default: Organization } = await import("../models/Organization.js");
             const org = await Organization.findById(user.organization_id).select("status").lean();
             if (org && ["suspended", "blocked"].includes(org.status)) {
                 return res.status(403).json({
