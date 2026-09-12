@@ -9,6 +9,7 @@ import puppeteer from 'puppeteer';
 import Handlebars from 'handlebars';
 import { exec } from 'child_process';
 import util from 'util';
+import { marked } from 'marked';
 
 const execPromise = util.promisify(exec);
 
@@ -92,7 +93,7 @@ export const getMcpTools = () => [
       properties: {
         to: { type: 'string', description: 'The recipient email address.' },
         subject: { type: 'string', description: 'The subject of the email.' },
-        body: { type: 'string', description: 'The text or HTML body of the email.' }
+        body: { type: 'string', description: 'REQUIRED: A fully formed, beautiful HTML string containing the email body. You MUST write raw HTML with inline CSS for styling (e.g., modern fonts, padding, colors). DO NOT use Markdown.' }
       },
       required: ['to', 'subject', 'body']
     }
@@ -512,8 +513,8 @@ export const handleToolCall = async (name, args, context = {}) => {
                 to,
                 subject,
                 html: body,
-                text: body,
-                fromName: 'Classgrid AI Agent'
+                text: body.replace(/<[^>]*>?/gm, ''), // fallback plain text
+                fromName: 'Classgrid Team'
             });
             return {
                 content: [{ type: 'text', text: `SUCCESS! Email successfully sent to ${to}.` }]

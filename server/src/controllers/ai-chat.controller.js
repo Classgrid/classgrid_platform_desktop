@@ -14,6 +14,8 @@ import {
 } from "../services/ai-chat.service.js";
 import { getHistory, appendToHistory, invalidateHistoryCache } from "../services/ai-chat-history.service.js";
 import { sendEmail } from "../services/aws-ses.service.js";
+import mongoose from "mongoose";
+import NotificationLog from "../models/NotificationLog.js";
 import { getMcpTools, handleToolCall } from "../mcp/tools.js";
 import { RagPipeline, MongoVectorStore, VoyageEmbedder } from "@classgrid/ai/rag";
 import Note from "../models/Note.js";
@@ -70,7 +72,7 @@ FORMATTING TOOLS (use all of these naturally):
 
 FORMATTING TRICKS:
 - Use Emojis (✅, 💡, 🚀, ✨, 📝, etc.) naturally to make text lively and engaging, especially in lists.
-- Use Markdown Blockquotes (\`>\`) to beautifully format email drafts, letter templates, proposals, important rules, or tips. (e.g., \`> Dear [Name],\\n> \\n> I wanted to reach out...\`).
+- NEVER use Markdown for emails sent via the send_email tool. You MUST write raw, beautifully styled HTML with inline CSS. For chat messages, you can still use Markdown.
 - Use **bold** for key terms and important words within sentences.
 - Use **Horizontal Rules** (\`---\`) to separate distinct topics or split an explanation from a summary.
 
@@ -314,7 +316,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user says "okay", "thanks", "got it", "done", or simply acknowledges your previous response, DO NOT generate more content, flowcharts, or code. Simply say "You're welcome!" or "Let me know if you need anything else!" and STOP.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: DO NOT get caught in an infinite loop. If you find yourself calling the exact same tool with the exact same arguments repeatedly, STOP immediately and change your approach.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: When outputting data in tables or lists, NEVER wrap single words, names, roles, or email addresses in Markdown code blocks (backticks). Output them as plain text. Only use code blocks for actual programming code, Mermaid charts, or JSON.`;
-        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (DATA FETCHING & PDF GENERATION): \n1. If the user asks you to fetch or show data (even 500+ or 1000+ items), YOU MUST use 'unified_db_query' and literally type out all the items directly in the chat. DO NOT hallucinate fake text files or fake names.\n2. NEVER generate a PDF or send an email automatically. NEVER even ask the user "Would you like me to make a PDF?".\n3. IF the user explicitly demands a PDF (e.g., "Generate a PDF report"), YOU MUST DO IT using 'generate_pdf_from_db'. Provide the CDN link and STOP. Do NOT email it unless they explicitly said "email it". Once you give the link, close the task.\n4. NEVER use '$ne' to exclude emails you think you already sent. When fetching users, just run a clean '{ role: "org_admin" }' query and list them. Do NOT execute the 'send_email' tool unless the user EXPLICITLY commands you in their very last message.\n\nDATABASE SCHEMA HINTS:\n- Organization Admins have the exact role string "org_admin" in the database.\n- Students have the role "student".`;
+        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (DATA FETCHING & EMAILS): \n1. If the user asks you to fetch or show data (even 500+ or 1000+ items), YOU MUST use 'unified_db_query' and literally type out all the items directly in the chat. DO NOT hallucinate fake text files or fake names.\n2. NEVER generate a PDF or send an email automatically. NEVER even ask the user "Would you like me to make a PDF?".\n3. IF the user explicitly demands a PDF (e.g., "Generate a PDF report"), YOU MUST DO IT using 'generate_pdf_from_db'. Provide the CDN link and STOP. Do NOT email it unless they explicitly said "email it". Once you give the link, close the task.\n4. NEVER use '$ne' to exclude emails you think you already sent. When fetching users, just run a clean '{ role: "org_admin" }' query and list them.\n5. STRICT EMAIL APPROVAL GATE: NEVER execute the 'send_email' tool in the same turn that you generate the email draft. Even if the user explicitly says 'send an email to everyone right now', you MUST first output the draft in the chat, ask for approval, and STOP. You are strictly forbidden from executing 'send_email' until the user replies with 'Approved' or 'Send it' in the subsequent turn.\n6. NEVER generate "Proof of Delivery" PDFs or argue with the user about whether emails were sent. If the user says emails were sent twice, apologize and accept it. LLMs cannot see physical delivery logs.\n\nDATABASE SCHEMA HINTS:\n- Organization Admins have the exact role string "org_admin" in the database.\n- Students have the role "student".`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (CLOUDFLARE SANDBOX TERMINAL): You now have access to a secure Cloudflare Edge Sandbox with Interactive Terminal (PTY) capabilities! You can use the 'run_code' tool to execute 'python', 'javascript', AND 'bash' commands safely. If a user asks you to perform complex data analysis, you MUST write a script and use 'run_code'. If you need missing libraries (e.g., pdfplumber, pandas), use 'run_code' with language 'bash' to run 'pip install' or standard terminal commands inside the sandbox first! Combine this with your database tools (SQL/MongoDB) to fetch data.`;
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
@@ -412,7 +414,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                             properties: {
                                 to: { type: "string", description: "The recipient's email address" },
                                 subject: { type: "string", description: "The email subject" },
-                                body: { type: "string", description: "The email body (HTML or plain text)" },
+                                body: { type: "string", description: "REQUIRED: You MUST write a fully formatted, beautiful HTML string with inline CSS styling (e.g. padding, colors, modern fonts). DO NOT use Markdown (no **, no ##). Write raw HTML." },
                                 fromName: { type: "string", description: "Optional name of the sender (e.g., 'Classgrid Support')" },
                                 fromEmail: { type: "string", description: "Optional sender email, MUST end with @classgrid.in (e.g., 'admin@classgrid.in')" }
                             },
@@ -455,10 +457,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                     const result = await handleToolCall('generate_pdf_from_db', args, {});
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
-                send_email: async (args) => {
-                    const result = await handleToolCall('send_email', args, {});
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
+
                 get_timezone_time: async (args) => {
                     try {
                         const tz = args.timeZone || 'UTC';
@@ -509,13 +508,23 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
                         return "SECURITY ERROR: Access Denied. Only Admins are authorized to use the AI email sending tool.";
                     }
                     try {
-                        await sendEmail({
+                        const info = await sendEmail({
                             to: args.to,
                             subject: args.subject,
                             html: args.body,
                             fromName: args.fromName,
                             fromEmail: args.fromEmail
                         });
+                        
+                        await NotificationLog.create({
+                            type: "EMAIL",
+                            recipient: args.to,
+                            status: "SENT",
+                            providerMessageId: info?.messageId || 'unknown',
+                            metadata: { subject: args.subject, aiGenerated: true },
+                            userId: req.user?._id || null
+                        });
+
                         return `SUCCESS: Email sent successfully to ${args.to} from ${args.fromEmail || 'default'}`;
                     } catch (e) {
                         return `FAILED to send email: ${e.message}`;

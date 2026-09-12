@@ -40,6 +40,7 @@
     "ioredis": "^5.10.1",
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.3",
+    "marked": "^18.0.12",
     "mongoose": "^9.2.3",
     "multer": "^2.2.0",
     "multer-s3": "^3.0.1",
