@@ -77,7 +77,8 @@ export const getMcpTools = () => [
         source: { type: 'string', enum: ['mongodb', 'supabase'], description: 'The database source' },
         collectionOrTable: { type: 'string', description: 'The collection or table name' },
         query: { type: 'object', description: 'The database query (e.g. { role: "student" })' },
-        title: { type: 'string', description: 'The title of the PDF document.' }
+        title: { type: 'string', description: 'The title of the PDF document.' },
+        customCss: { type: 'string', description: 'Optional. Write beautiful custom CSS to style the table, headers, and body. The user expects premium, stunning designs.' }
       },
       required: ['source', 'collectionOrTable', 'query', 'title']
     }
@@ -420,7 +421,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'generate_pdf_from_db') {
-        const { source, collectionOrTable, query, title } = args;
+        const { source, collectionOrTable, query, title, customCss } = args;
         try {
             console.log(`\n📄 [AWS NATIVE] AI is directly fetching data and generating PDF to bypass token limits!`);
             let result;
@@ -453,17 +454,23 @@ export const handleToolCall = async (name, args, context = {}) => {
             }
             tableHtml += `</table>`;
 
+            const defaultCss = `
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 30px; color: #1a1a1a; background-color: #f9fafb; }
+                h1 { color: #111827; text-align: center; font-size: 24px; margin-bottom: 20px; font-weight: 600; }
+                table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; font-size: 13px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+                th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+                th { background-color: #f3f4f6; color: #374151; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
+                tr:last-child td { border-bottom: none; }
+                tr:nth-child(even) { background-color: #f8fafc; }
+            `;
+
             const finalHtml = `
                 <!DOCTYPE html>
                 <html>
                 <head>
                     <title>${title || 'Report'}</title>
                     <style>
-                        body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
-                        h1 { color: #3eaf28; text-align: center; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-                        th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
-                        th { background-color: #f2f2f2; }
+                        ${customCss ? customCss : defaultCss}
                     </style>
                 </head>
                 <body>
