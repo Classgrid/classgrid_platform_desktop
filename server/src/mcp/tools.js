@@ -20,7 +20,7 @@ export const getMcpTools = () => [
         },
         operation: {
           type: 'string',
-          enum: ['find', 'findOne', 'insert', 'update', 'delete', 'countDocuments'],
+          enum: ['find', 'findOne', 'insert', 'update', 'delete', 'countDocuments', 'distinct', 'aggregate'],
           description: 'The operation to perform.'
         },
         query: {
@@ -105,6 +105,13 @@ export const handleToolCall = async (name, args, context = {}) => {
                 result = await collection.findOne(query);
             } else if (operation === 'countDocuments') {
                 result = { count: await collection.countDocuments(query) };
+            } else if (operation === 'distinct') {
+                const field = data?.field || query?.field || 'role';
+                const filter = query?.filter || (query?.field ? {} : query);
+                result = await collection.distinct(field, filter);
+            } else if (operation === 'aggregate') {
+                const pipeline = Array.isArray(query) ? query : (Array.isArray(data) ? data : data?.pipeline || query?.pipeline || []);
+                result = await collection.aggregate(pipeline).toArray();
             } else if (operation === 'update') {
                 result = await collection.updateMany(query, { $set: data });
             } else if (operation === 'insert') {
