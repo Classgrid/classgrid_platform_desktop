@@ -1,11 +1,5 @@
 import { createLLMClient } from "@classgrid/ai/core";
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { getPresignedUploadUrl } from "../config/r2Client.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 import {
     createSession,
     saveMessage,
@@ -29,27 +23,6 @@ const uniqueDashboards = [...new Set(Object.values(ROLE_DEFINITIONS).map(r => r.
 const dashboardList = uniqueDashboards.map(d => `- ${d}`).join('\n');
 const supportedRoles = Object.keys(ROLE_DEFINITIONS).map(r => `- ${ROLE_DEFINITIONS[r].label} (${r}): maps to ${ROLE_DEFINITIONS[r].dashboard} dashboard`).join('\n');
 
-const hierarchyFiles = [
-    'hierarchy.controller.js',
-    '../models/AcademicHierarchy.js',
-    '../routes/hierarchy.routes.js',
-    '../middleware/hierarchy-integrity.middleware.js',
-    '../middleware/hierarchy-validator.middleware.js'
-];
-
-let hierarchySourceCode = '';
-try {
-    for (const file of hierarchyFiles) {
-        const filePath = path.join(__dirname, file);
-        if (fs.existsSync(filePath)) {
-            const content = fs.readFileSync(filePath, 'utf8');
-            hierarchySourceCode += `\n--- FILE: ${path.basename(file)} ---\n\`\`\`javascript\n${content}\n\`\`\`\n`;
-        }
-    }
-} catch (e) {
-    console.warn("[AI SYSTEM PROMPT] Failed to load hierarchy source code:", e.message);
-}
-
 // The system prompt was originally in ./prompt, we will define it here or import it if needed.
 const SYSTEM_PROMPT = `You are the Classgrid AI Assistant — a friendly, smart helper for educational institutions of all sizes (Schools, Junior Colleges, Engineering Colleges, Degree Colleges, Coaching Institutes) using the Classgrid ERP platform.
 
@@ -64,22 +37,7 @@ ${supportedRoles}
 - Every role is governed by Role-Based Access Control (RBAC) — users only see what is relevant to their role.
 
 ACADEMIC HIERARCHY (BACKEND DOMAIN KNOWLEDGE):
-- The academic hierarchy is stored in the 'AcademicHierarchy.js' database model. It represents a tree of nodes linked via 'parent_id'.
-- Node 'level_type' values include: degree, department, year, semester, division, sub_batch, standard, stream, course, batch, group, sub_group.
-- Controller: 'hierarchy.controller.js' (Main Logic)
-- Routes: 'hierarchy.routes.js'
-- Middlewares: 'hierarchy-integrity.middleware.js' and 'hierarchy-validator.middleware.js' (Validation & Integrity Checks)
-- Structural Plans by Org Type:
-  - Engineering (Plan 1): Degree → Department → Year → Semester → Division → SubBatch
-  - School with Divs (Plan 2): Standard → Division
-  - Coaching (Plan 4): Course → Batch
-  - Junior College (Plan 5): Stream → Standard → Division
-  - Diploma (Plan 6): Department → Year → Semester
-- When discussing the institution hierarchy, always refer to this specific database model and structure, not arbitrary generic school structures.
-
-Below is the ENTIRE SOURCE CODE for the Academic Hierarchy system. You MUST use this exact codebase as the ground truth when discussing how the hierarchy works in Classgrid:
-${hierarchySourceCode}
-
+- If the user asks about the academic hierarchy, organizational structure, departments, streams, divisions, or batches, YOU MUST trigger the \`search_knowledge_base\` tool (with queries like "Academic Hierarchy") to retrieve the latest backend domain knowledge from the RAG knowledge base. Do not hallucinate the structure without checking the knowledge base.
 - Write like you are explaining to a friend, not writing documentation.
 - Use simple, easy-to-understand language. Avoid jargon, technical terms, and developer lingo.
 - Keep sentences SHORT (4-6 sentences per paragraph max). Break up long explanations into bite-sized pieces.
