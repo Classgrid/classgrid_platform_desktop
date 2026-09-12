@@ -318,13 +318,10 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: When outputting data in tables or lists, NEVER wrap single words, names, roles, or email addresses in Markdown code blocks (backticks). Output them as plain text. Only use code blocks for actual programming code, Mermaid charts, or JSON.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (DATA FETCHING & EMAILS): \n1. If the user asks you to fetch or show data (even 500+ or 1000+ items), YOU MUST use 'unified_db_query' and literally type out all the items directly in the chat. DO NOT hallucinate fake text files or fake names.\n2. NEVER generate a PDF or send an email automatically. NEVER even ask the user "Would you like me to make a PDF?".\n3. IF the user explicitly demands a PDF (e.g., "Generate a PDF report"), YOU MUST DO IT using 'generate_pdf_from_db'. Provide the CDN link and STOP. Do NOT email it unless they explicitly said "email it". Once you give the link, close the task.\n4. NEVER use '$ne' to exclude emails you think you already sent. When fetching users, just run a clean '{ role: "org_admin" }' query and list them.\n5. STRICT EMAIL APPROVAL GATE: NEVER execute the 'send_email' tool in the same turn that you generate the email draft. Even if the user explicitly says 'send an email to everyone right now', you MUST first output the draft in the chat, ask for approval, and STOP. You are strictly forbidden from executing 'send_email' until the user replies with 'Approved' or 'Send it' in the subsequent turn.\n6. NEVER generate "Proof of Delivery" PDFs or argue with the user about whether emails were sent. If the user says emails were sent twice, apologize and accept it. LLMs cannot see physical delivery logs.\n\nDATABASE SCHEMA HINTS:\n- Organization Admins have the exact role string "org_admin" in the database.\n- Students have the role "student".\n- Server/API traffic logs are stored in the "systemlogs" MongoDB collection.\n- Super Admin audit logs (dashboard logs) are stored in the "AdminAuditLog" model/collection.\n- Emails sent by the system (and by the AI) are stored in the "NotificationLog" model/collection. Query this collection to verify if an email was actually sent!`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (CLOUDFLARE SANDBOX TERMINAL): You now have access to a secure Cloudflare Edge Sandbox with Interactive Terminal (PTY) capabilities! You can use the 'run_code' tool to execute 'python', 'javascript', AND 'bash' commands safely. If a user asks you to perform complex data analysis, you MUST write a script and use 'run_code'. If you need missing libraries (e.g., pdfplumber, pandas), use 'run_code' with language 'bash' to run 'pip install' or standard terminal commands inside the sandbox first! Combine this with your database tools (SQL/MongoDB) to fetch data.`;
-        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (DOCUMENT PARSING & OCR - BANNED BEHAVIORS): If the user's message contains "Attached Files:" with URLs (like PDFs or Images), YOU MUST READ AND PARSE THEM IMMEDIATELY!
-IT IS STRICTLY FORBIDDEN to ask the user for permission to parse or read a file (e.g. NEVER ask "Would you like me to attempt OCR?" or "Should I try another method?"). 
-If standard PDF extraction (like pdfplumber) returns empty text (because it's a scanned image), YOU MUST AUTOMATICALLY fallback and write a script to use OCR (e.g., pdf2image and pytesseract) on the PDF WITHOUT ASKING! Do NOT make excuses about corrupted files, password protection, or non-text content. Just execute the fallback OCR script.
-1. Use the 'run_code' tool (language: python) to download and extract the text.
-2. For PDFs, write a python script using 'urllib.request' to download the file. Try 'pdfplumber' first. If the output is empty, you MUST install and use 'pdf2image' and 'pytesseract' in the same sandbox to OCR the PDF pages. Example: \`import urllib.request, pdfplumber; urllib.request.urlretrieve("URL", "temp.pdf"); pdf = pdfplumber.open("temp.pdf"); text="".join([p.extract_text() or "" for p in pdf.pages]); print(text)\`
-3. For Images, use 'pytesseract' and 'Pillow' (you may need to run bash 'apt-get install tesseract-ocr' or 'pip install pytesseract pillow pdf2image' first if missing).
-4. If asked to generate a CSV/Excel file, use 'pandas' to generate the file, base64 encode it in Python, and use the 'upload_file_to_cdn' tool to get a download link to give the user!`;
+        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (DOCUMENT PARSING): If the user's message contains "Attached Files:" with URLs, YOU MUST READ AND PARSE THEM IMMEDIATELY!
+IT IS STRICTLY FORBIDDEN to ask the user for permission to parse or read a file. 
+1. YOU MUST USE the 'parse_document' tool to extract the text from the attached file URL. This tool natively handles both PDFs and Images using advanced OCR. Do NOT try to write Python scripts for OCR.
+2. If asked to generate a CSV/Excel file from the extracted text, use the 'run_code' tool (language: python) with 'pandas' to generate the file, base64 encode it, and then use the 'upload_file_to_cdn' tool to get a download link!`;
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {
@@ -444,7 +441,7 @@ If standard PDF extraction (like pdfplumber) returns empty text (because it's a 
                     }
                 }
             ],
-            toolHandlers: {
+            toolHandlers: Object.fromEntries(Object.entries({
                 unified_db_query: async (args) => {
                     const userEmail = req.user?.email || body.userEmail || '';
                     const userRole = body.userRole || '';
@@ -468,6 +465,39 @@ If standard PDF extraction (like pdfplumber) returns empty text (because it's a 
                         return `SUCCESS: File uploaded. Public URL: ${url}`;
                     } catch (e) {
                         return `FAILED to upload file: ${e.message}`;
+                    }
+                },
+                parse_document: async (args) => {
+                    try {
+                        const { url, mimeType } = args;
+                        const fetch = (await import('node-fetch')).default || global.fetch;
+                        const response = await fetch(url);
+                        if (!response.ok) throw new Error(`Failed to fetch file: ${response.statusText}`);
+                        
+                        const arrayBuffer = await response.arrayBuffer();
+                        const buffer = Buffer.from(arrayBuffer);
+                        let text = "";
+                        
+                        if (mimeType === 'application/pdf' || url.toLowerCase().endsWith('.pdf')) {
+                            const pdfMod = await import('pdf-parse');
+                            const pdfParse = pdfMod.default || pdfMod;
+                            const data = await (typeof pdfParse === 'function' ? pdfParse(buffer) : pdfParse.default(buffer));
+                            text = data.text;
+                        } else if (mimeType.startsWith('image/') || url.match(/\.(png|jpg|jpeg)$/i)) {
+                            const tessMod = await import('tesseract.js');
+                            const Tesseract = tessMod.default || tessMod;
+                            const result = await Tesseract.recognize(buffer, 'eng');
+                            text = result.data.text;
+                        } else {
+                            text = buffer.toString('utf-8');
+                        }
+                        
+                        if (!text || text.trim().length === 0) {
+                            return "ERROR: The file was read, but no text could be extracted. It might be a scanned PDF or empty file. Tell the user you couldn't extract the text.";
+                        }
+                        return `DOCUMENT CONTENTS:\n${text}`;
+                    } catch (e) {
+                        return `FAILED to parse document: ${e.message}`;
                     }
                 },
                 generate_pdf_from_db: async (args) => {
@@ -578,7 +608,16 @@ If standard PDF extraction (like pdfplumber) returns empty text (because it's a 
                         return `RAG Search failed: ${e.message}. Note: If this fails with a MongoServerError about '$vectorSearch', it means the Atlas Vector Index hasn't been created yet.`;
                     }
                 }
-            }
+            }).map(([toolName, handler]) => [
+                toolName,
+                async (args) => {
+                    try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) {}
+                    let resultStr;
+                    try { resultStr = await handler(args); } catch(err) { resultStr = "Error: " + (err.message || String(err)); }
+                    try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result: resultStr })}\n\n`); } catch (e) {}
+                    return resultStr;
+                }
+            ]))
         });
 
         let requestAborted = false;

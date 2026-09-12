@@ -122,6 +122,18 @@ export const getMcpTools = () => [
       },
       required: ['fileName', 'base64Content', 'mimeType']
     }
+  },
+  {
+    name: 'parse_document',
+    description: 'Downloads a file (PDF or Image) from a URL and extracts all text from it. Use this tool IMMEDIATELY to read any attached user files.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'The direct URL of the file to parse' },
+        mimeType: { type: 'string', description: 'The MIME type (e.g. application/pdf, image/png, image/jpeg)' }
+      },
+      required: ['url', 'mimeType']
+    }
   }
 ];
 
