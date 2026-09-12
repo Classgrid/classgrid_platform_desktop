@@ -136,8 +136,16 @@ export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onR
           const genericOrphan = document.getElementById('d' + id);
           if (genericOrphan) genericOrphan.remove();
 
-          // Also try to find any elements with 'error-icon' that Mermaid might have injected directly into the body
-          document.querySelectorAll('svg[id^="dmermaid-"]').forEach(el => el.remove());
+          // Aggressively remove ANY mermaid error elements injected into the DOM
+          document.querySelectorAll('svg[id^="dmermaid"]').forEach(el => el.remove());
+          document.querySelectorAll('.error-icon').forEach(el => el.remove());
+          
+          // Fallback: remove any SVG at the end of the body that contains "Syntax error in text"
+          document.querySelectorAll('body > svg').forEach(svg => {
+             if (svg.textContent?.includes('Syntax error') || svg.textContent?.includes('version 11.17.')) {
+                 svg.remove();
+             }
+          });
         }
       });
 

@@ -271,22 +271,35 @@ DO NOT say "I cannot access internal systems" or "I don't have access to your da
 When you read System Logs or Activity Logs, DO NOT dump raw API endpoints (e.g. "/api/threads"), status codes (e.g. "304"), or raw JSON to the user. Translate the logs into human-readable insights (e.g. "The system is running smoothly and notifications are syncing"). Act like a highly polished executive assistant, not a backend developer reading a terminal.`;
 
         dynamicSystemPrompt += `\n\n--- DATABASE SCHEMA CHEAT SHEET ---
-Use these exact names for the \`collectionOrTable\` parameter:
-- Tickets: MongoDB collection \`SupportTicket\`
-- Classgrid Talk / Inquiries: MongoDB collection \`SupportConversation\`
-- Chat/Messages: MongoDB collection \`Message\`
-- Demo Requests: MongoDB collection \`DemoRequest\`
-- Users / Accounts: MongoDB collection \`User\`
-- Student Profiles / Counts: MongoDB collection \`UserProfile\`
-- Organizations/Schools: MongoDB collection \`Organization\`
-- Classrooms: MongoDB collection \`Classroom\`
-- Assignments: MongoDB collection \`Assignment\`
-- Notes / Study Material: MongoDB collection \`Note\`
-- Attendance: MongoDB collection \`Attendance\` or \`AttendanceRecord\`
-- Exams: MongoDB collection \`Exam\`
-- Fees: MongoDB collection \`FeeRecord\`
-- System Logs: MongoDB collection \`SystemLog\` or \`ActivityLog\`
-If unsure, try querying MongoDB first.`;
+1. MongoDB (source="mongodb", collectionOrTable="ModelName"):
+- Tickets: \`SupportTicket\`
+- Classgrid Talk: \`SupportConversation\`
+- Demo Requests: \`DemoRequest\`
+- Users / Accounts: \`User\`
+- Student Profiles: \`UserProfile\`
+- Organizations: \`Organization\`
+- Classrooms: \`Classroom\`
+- Assignments: \`Assignment\`
+- Notes / Study Material: \`Note\`
+- Attendance: \`Attendance\` or \`AttendanceRecord\`
+- Exams: \`Exam\`
+- Fees: \`FeeRecord\`
+- System Logs: \`SystemLog\` or \`ActivityLog\`
+*Note: The tool auto-pluralizes MongoDB names. If you need a module not listed here, just guess its PascalCase name (e.g. "LeaveRequest", "Timetable", "Invoice") and it will work!*
+
+2. Supabase (source="supabase", collectionOrTable="table_name"):
+- Chat Messages: \`messages\`
+- Chat Threads: \`threads\`
+- Classroom Chat: \`classroom_messages\`
+- Attachments: \`attachments\`
+- Holidays: \`holidays\`
+- Email Queue: \`email_notification_queue\`
+
+3. Redis (source="redis", collectionOrTable="key_pattern"):
+- Use operation="find" to list keys (e.g. collectionOrTable="user:profile:*")
+- Use operation="findOne" to get the value of a specific key
+- Unread Counts: \`unread:{userId}\`
+- Mentions: \`mentions:{userId}\``;
 
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user explicitly asks for a flowchart, diagram, or graph AND provides the context, output ONLY the valid Mermaid code block (\`\`\`mermaid\n...\n\`\`\`). Do NOT include any conversational preamble or filler text.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user says "okay", "thanks", "got it", "done", or simply acknowledges your previous response, DO NOT generate more content, flowcharts, or code. Simply say "You're welcome!" or "Let me know if you need anything else!" and STOP.`;

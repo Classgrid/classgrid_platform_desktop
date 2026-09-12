@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { getChatSb } from '../config/supabaseClient.js';
+import redis from '../config/redis.js';
 
 export const getMcpTools = () => [
   {
@@ -10,12 +11,12 @@ export const getMcpTools = () => [
       properties: {
         source: {
           type: 'string',
-          enum: ['mongodb', 'supabase'],
+          enum: ['mongodb', 'supabase', 'redis'],
           description: 'The database source to query.'
         },
         collectionOrTable: {
           type: 'string',
-          description: 'The name of the MongoDB collection or Supabase table.'
+          description: 'The name of the MongoDB collection, Supabase table, or Redis key/pattern.'
         },
         operation: {
           type: 'string',
@@ -126,6 +127,46 @@ export const handleToolCall = async (name, args) => {
                 result = sbData;
             } else {
                 throw new Error(`Unsupported Supabase operation: ${operation}`);
+            }
+
+            return {
+                content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+        } 
+        else if (source === 'redis') {
+            if (!redis || redis.status !== 'ready') {
+                throw new Error("Redis connection not established");
+            }
+            let result;
+            const key = collectionOrTable; // collectionOrTable is used as the Redis key or pattern
+
+            if (operation === 'find') {
+                // Return all keys matching pattern (e.g. "user:profile:*")
+                result = await redis.keys(key);
+            } else if (operation === 'findOne') {
+                const type = await redis.type(key);
+                if (type === 'hash') {
+                    result = await redis.hgetall(key);
+                } else if (type === 'string') {
+                    result = await redis.get(key);
+                    try { result = JSON.parse(result); } catch (e) { /* ignore */ }
+                } else if (type === 'list') {
+                    result = await redis.lrange(key, 0, -1);
+                } else if (type === 'set') {
+                    result = await redis.smembers(key);
+                } else {
+                    result = `Unsupported redis type: ${type} or key does not exist`;
+                }
+            } else if (operation === 'delete') {
+                result = { deleted: await redis.del(key) };
+            } else if (operation === 'insert' || operation === 'update') {
+                if (typeof data === 'object' && data !== null) {
+                    result = await redis.hset(key, data);
+                } else {
+                    result = await redis.set(key, String(data));
+                }
+            } else {
+                throw new Error(`Unsupported Redis operation: ${operation}. Supported: find (keys), findOne (get), insert/update (set/hset), delete (del)`);
             }
 
             return {
