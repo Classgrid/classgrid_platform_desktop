@@ -2491,22 +2491,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               content={message.content} 
                               isTyping={message.typing} 
                               isHistorical={index < messages.length - 1}
-                              onRetry={index === messages.length - 1 ? (errorMsg) => {
-                                if (askQuestionRef.current) {
-                                  if (retryCountRef.current >= 1) {
-                                    console.log("Max auto-retries reached. Aborting retry loop.");
-                                    return;
-                                  }
-                                  retryCountRef.current += 1;
-                                  const isMermaid = errorMsg.toLowerCase().includes("mermaid");
-                                  askQuestionRef.current(
-                                    isMermaid
-                                      ? `[SYSTEM AUTO-RETRY: SILENT] You made a syntax error in your diagram: ${errorMsg.replace(/mermaid/ig, 'diagram')}\nPlease output ONLY the corrected code block. DO NOT apologize, DO NOT explain, DO NOT say you are fixing it. Just output the raw code block.`
-                                      : `[SYSTEM AUTO-RETRY: SILENT] You made a syntax error: ${errorMsg}\nPlease output ONLY the corrected interactive card json. DO NOT apologize, DO NOT explain. Just output the raw code block.`,
-                                    { hidden: true }
-                                  );
-                                }
-                              } : undefined}
+                              onRetry={undefined}
                               onApprovalAction={(text) => {
                                 if (!submitting) void askQuestion(text);
                               }}

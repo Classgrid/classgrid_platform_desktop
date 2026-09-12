@@ -276,8 +276,15 @@ Use these exact names for the \`collectionOrTable\` parameter:
 - Classgrid Talk / Inquiries: MongoDB collection \`SupportConversation\`
 - Chat/Messages: MongoDB collection \`Message\`
 - Demo Requests: MongoDB collection \`DemoRequest\`
-- Users: MongoDB collection \`User\`
+- Users / Accounts: MongoDB collection \`User\`
+- Student Profiles / Counts: MongoDB collection \`UserProfile\`
 - Organizations/Schools: MongoDB collection \`Organization\`
+- Classrooms: MongoDB collection \`Classroom\`
+- Assignments: MongoDB collection \`Assignment\`
+- Notes / Study Material: MongoDB collection \`Note\`
+- Attendance: MongoDB collection \`Attendance\` or \`AttendanceRecord\`
+- Exams: MongoDB collection \`Exam\`
+- Fees: MongoDB collection \`FeeRecord\`
 - System Logs: MongoDB collection \`SystemLog\` or \`ActivityLog\`
 If unsure, try querying MongoDB first.`;
 
@@ -440,35 +447,66 @@ If unsure, try querying MongoDB first.`;
             }
         }, 15000);
 
-        // 4. Run the Client and pass SSE writes inside the callbacks
-        const answer = await client.generate({
-            messages,
-            maxToolDepth: 5,
-            timeoutMs: 300000, // 300 SECONDS (5 MIN) - Required for slow 'Thinking' models like Claude Opus to prevent timeouts
-            onStatus: (status) => {
-                if (requestAborted || res.writableEnded) return;
-                const mappedLabel = status === "search web" ? "searching" : status;
-                try {
-                    res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`);
-                } catch (e) { }
-            },
-            onThought: (thought) => {
-                if (requestAborted || res.writableEnded) return;
-                try {
-                    res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`);
-                } catch (e) { }
-            },
-            onToken: (token) => {
-                if (requestAborted || res.writableEnded) return;
-                try {
-                    res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`);
-                } catch (e) { }
-            }
-        });
+        // 4. Run the Client with Auto-Correction & Fallback Loop
+        const isDiagramRequest = content ? (content.toLowerCase().includes("flowchart") || content.toLowerCase().includes("diagram") || content.toLowerCase().includes("graph") || content.toLowerCase().includes("mermaid")) : false;
+        
+        let answer = null;
+        let attempt = 1;
+        const maxAttempts = 2;
+        let currentClient = client;
 
-        if (requestAborted) {
-            return; // Client disconnected, exit silently
+        while (attempt <= maxAttempts) {
+            try {
+                if (attempt > 1 && !res.writableEnded) {
+                    res.write(`data: ${JSON.stringify({ type: "status", label: "auto-correcting syntax with fallback model..." })}\n\n`);
+                }
+
+                answer = await currentClient.generate({
+                    messages,
+                    maxToolDepth: 5,
+                    timeoutMs: isDiagramRequest && attempt === 1 ? 5000 : 300000, 
+                    onStatus: (status) => {
+                        if (requestAborted || res.writableEnded) return;
+                        const mappedLabel = status === "search web" ? "searching" : status;
+                        try { res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`); } catch (e) { }
+                    },
+                    onThought: (thought) => {
+                        if (requestAborted || res.writableEnded) return;
+                        try { res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`); } catch (e) { }
+                    },
+                    onToken: isDiagramRequest ? undefined : (token) => {
+                        if (requestAborted || res.writableEnded) return;
+                        try { res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`); } catch (e) { }
+                    }
+                });
+
+                if (requestAborted) return;
+
+                // Validate Mermaid syntax on server if requested
+                if (isDiagramRequest && answer && answer !== "[RATE_LIMITED]") {
+                    if (!answer.includes("```mermaid")) {
+                        throw new Error("Invalid or missing Mermaid syntax");
+                    }
+                }
+
+                break; // Success
+            } catch (err) {
+                console.warn(`[AI Chat] Attempt ${attempt} failed:`, err.message);
+                if (attempt === maxAttempts) {
+                    if (!answer) answer = "Failed to generate a valid diagram. Please try rephrasing your request.";
+                    break;
+                }
+                
+                // Add correction prompt for attempt 2
+                if (isDiagramRequest) {
+                    if (answer && answer !== "[RATE_LIMITED]") messages.push({ role: "assistant", content: answer });
+                    messages.push({ role: "user", content: "ERROR: You failed to output a valid ```mermaid flowchart block or you timed out. Fix the syntax errors and try again. Output ONLY the raw markdown." });
+                }
+                attempt++;
+            }
         }
+
+        if (requestAborted) return;
 
         // 5. Send back the sessionId if it was provided by the client, just in case
         if (sessionId && !res.writableEnded) {

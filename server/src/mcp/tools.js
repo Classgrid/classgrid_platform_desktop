@@ -55,11 +55,30 @@ export const handleToolCall = async (name, args) => {
                 'Message': 'messages',
                 'DemoRequest': 'demorequests',
                 'User': 'users',
+                'UserProfile': 'userprofiles',
                 'Organization': 'organizations',
                 'SystemLog': 'systemlogs',
-                'ActivityLog': 'activitylogs'
+                'ActivityLog': 'activitylogs',
+                'Assignment': 'assignments',
+                'AssignmentSubmission': 'assignmentsubmissions',
+                'Note': 'notes',
+                'Classroom': 'classrooms',
+                'Attendance': 'attendances',
+                'AttendanceRecord': 'attendancerecords',
+                'Exam': 'exams',
+                'FeeRecord': 'feerecords',
+                'Invoice': 'invoices',
+                'Lead': 'leads'
             };
-            const actualCollectionName = collectionMap[collectionOrTable] || collectionOrTable;
+            // Fallback for models not explicitly mapped: lowercase and add 's' (Mongoose default)
+            let actualCollectionName = collectionMap[collectionOrTable];
+            if (!actualCollectionName) {
+                if (collectionOrTable.endsWith('y')) {
+                    actualCollectionName = collectionOrTable.slice(0, -1).toLowerCase() + 'ies';
+                } else {
+                    actualCollectionName = collectionOrTable.toLowerCase() + 's';
+                }
+            }
             
             const collection = mongoose.connection.db.collection(actualCollectionName);
             let result;
