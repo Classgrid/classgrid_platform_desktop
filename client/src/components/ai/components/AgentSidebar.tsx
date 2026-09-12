@@ -443,48 +443,92 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
 
   if (isCollapsed) {
     return (
-      <div className="flex flex-col items-center gap-4 w-full pt-4">
-        <Button variant="ghost" onClick={handleNewChat} className="w-10 h-10 p-0 rounded-xl bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 cursor-pointer" title="New Chat">
-          <SquarePen className="w-5 h-5" strokeWidth={1.5} />
-        </Button>
-        <Button variant="ghost" className="w-10 h-10 p-0 rounded-xl bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 cursor-pointer" title="Search">
-          <Search className="w-5 h-5" strokeWidth={1.5} />
-        </Button>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" className="w-10 h-10 p-0 rounded-xl bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 cursor-pointer" title="Pinned Chats">
-              <Pin className="w-5 h-5" strokeWidth={1.5} />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent side="right" align="start" sideOffset={10} className="w-[280px] p-2 bg-white dark:bg-[#202123] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl">
-            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-2">Pinned</div>
-            <SidebarMenu>
-              {pinnedSessions.length === 0 && <div className="px-2 text-sm text-slate-400">No pinned chats</div>}
-              {pinnedSessions.map(renderSessionItem)}
-            </SidebarMenu>
-          </PopoverContent>
-        </Popover>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" className="w-10 h-10 p-0 rounded-xl bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 cursor-pointer" title="Recent Chats">
-              <ChatBubbleIcon className="w-6 h-6" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent side="right" align="start" sideOffset={10} className="w-[280px] p-2 bg-white dark:bg-[#202123] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl max-h-[70vh] overflow-y-auto">
-            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-2">Today</div>
-            <SidebarMenu className="mb-4">
-              {loading && <div className="px-2 text-sm text-slate-400">Loading...</div>}
-              {!loading && todaySessions.length === 0 && <div className="px-2 text-sm text-slate-400">No chats today</div>}
-              {todaySessions.map(renderSessionItem)}
-            </SidebarMenu>
-            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-2 mt-4">Previous</div>
-            <SidebarMenu>
-              {!loading && previousSessions.length === 0 && <div className="px-2 text-sm text-slate-400">No previous chats</div>}
-              {previousSessions.map(renderSessionItem)}
-            </SidebarMenu>
-          </PopoverContent>
-        </Popover>
-      </div>
+      <SidebarGroup className="pt-1">
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                tooltip="New Chat" 
+                onClick={handleNewChat}
+                render={
+                  <div className="flex items-center gap-3 w-full cursor-pointer">
+                    <SquarePen size={20} />
+                    <span className="truncate">New Chat</span>
+                  </div>
+                }
+              />
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                tooltip="Search"
+                render={
+                  <div className="flex items-center gap-3 w-full cursor-pointer">
+                    <Search size={20} />
+                    <span className="truncate">Search</span>
+                  </div>
+                }
+              />
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <div className="w-full">
+                    <SidebarMenuButton 
+                      tooltip="Pinned Chats"
+                      render={
+                        <div className="flex items-center gap-3 w-full cursor-pointer">
+                          <Pin size={20} />
+                          <span className="truncate">Pinned Chats</span>
+                        </div>
+                      }
+                    />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent side="right" align="start" sideOffset={10} className="w-[280px] p-2 bg-white dark:bg-[#202123] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl">
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-2">Pinned</div>
+                  <SidebarMenu>
+                    {pinnedSessions.length === 0 && <div className="px-2 text-sm text-slate-400">No pinned chats</div>}
+                    {pinnedSessions.map(renderSessionItem)}
+                  </SidebarMenu>
+                </PopoverContent>
+              </Popover>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <div className="w-full">
+                    <SidebarMenuButton 
+                      tooltip="Recent Chats"
+                      render={
+                        <div className="flex items-center gap-3 w-full cursor-pointer">
+                          <ChatBubbleIcon className="w-[20px] h-[20px]" />
+                          <span className="truncate">Recent Chats</span>
+                        </div>
+                      }
+                    />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent side="right" align="start" sideOffset={10} className="w-[280px] p-2 bg-white dark:bg-[#202123] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl max-h-[70vh] overflow-y-auto">
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-2">Today</div>
+                  <SidebarMenu className="mb-4">
+                    {loading && <div className="px-2 text-sm text-slate-400">Loading...</div>}
+                    {!loading && todaySessions.length === 0 && <div className="px-2 text-sm text-slate-400">No chats today</div>}
+                    {todaySessions.map(renderSessionItem)}
+                  </SidebarMenu>
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-2 mt-4">Previous</div>
+                  <SidebarMenu>
+                    {!loading && previousSessions.length === 0 && <div className="px-2 text-sm text-slate-400">No previous chats</div>}
+                    {previousSessions.map(renderSessionItem)}
+                  </SidebarMenu>
+                </PopoverContent>
+              </Popover>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
     );
   }
 
