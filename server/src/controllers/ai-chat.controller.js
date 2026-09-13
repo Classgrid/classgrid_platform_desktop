@@ -156,9 +156,8 @@ The sandbox already includes tools such as:
 - Long-running commands must be controlled or run in the background so they do not block the task.
 
 ### How to Handle User Attachments (CRITICAL INSTRUCTION)
-If the user's message contains "Attached Files:" followed by one or more URLs, you MUST use the \`parse_document\` tool to download and extract the text from the file. ALWAYS use \`parse_document\` as your first step when a user attaches a file to read its contents. 
-CRITICAL: Never use execute_terminal_command or curl to download attachments. You MUST use the native parse_document tool because it has secure internal access to private files.
-DO NOT write a Python script manually to read basic documents; use the \`parse_document\` tool first. The \`parse_document\` tool securely bypasses R2 restrictions using internal S3 credentials!
+If the user's message contains "Attached Files:" followed by one or more URLs, you MUST use the \`parse_document\` tool to download and extract the text from the file. ALWAYS use \`parse_document\` as your first step when a user attaches a file.
+CRITICAL RULE FOR ATTACHMENTS: Use \`parse_document\` ONLY ONCE per attached file! If you receive an empty string or a warning that the file is an image/scanned PDF, DO NOT call \`parse_document\` again. Instead, IMMEDIATELY call \`internal_thought\` and then call \`execute_terminal_command\` to run an OCR script on the file as instructed. Do NOT get stuck in a loop calling parse_document.
 
 ### How to Upload Files to CDN (CRITICAL INSTRUCTION)
 If you generate a file (like an Excel sheet, PDF, or image) inside the sandbox and need to give the user a download link, you MUST use the native \`upload_file_to_cdn\` tool. 
@@ -712,35 +711,54 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
                         const code = `
 import os, sys, tempfile, subprocess
 import urllib.request
+from urllib.parse import urlparse
 import pymupdf
 
 url = "${safeUrl}"
+path = None
+
 try:
     path, _ = urllib.request.urlretrieve(url)
-    doc = pymupdf.open(path)
-    native_text = "\\n".join(page.get_text() for page in doc).strip()
-    ocr_text = ""
-    if len(native_text) < 20:
-        print("OCR_FALLBACK: Native PDF text is empty; rendering pages for OCR.")
-        with tempfile.TemporaryDirectory() as image_dir:
-            for index, page in enumerate(doc, start=1):
-                image_path = os.path.join(image_dir, f"page-{index}.png")
-                page.get_pixmap(matrix=pymupdf.Matrix(3, 3), alpha=False).save(image_path)
-                result = subprocess.run(
-                    ["tesseract", image_path, "stdout", "--psm", "6"],
-                    capture_output=True, text=True, timeout=90
-                )
-                if result.returncode != 0:
-                    print(f"OCR_WARNING page {index}: {result.stderr.strip()}")
-                ocr_text += "\\n" + result.stdout
-    text = native_text if len(native_text) >= 20 else ocr_text.strip()
-    if text:
-        print("DOCUMENT CONTENTS:\\n" + text)
-    else:
-        print("DOCUMENT_NO_TEXT: The file opened successfully, but neither embedded text nor OCR produced readable text.")
 except Exception as e:
-    print("DOCUMENT_PARSE_ERROR:", type(e).__name__, str(e))
-`;                        const result = await handleToolCall('run_code', { language: 'python', code }, { sessionId });
+    print(f"Direct download failed ({e}), attempting secure internal S3 fetch...")
+    try:
+        import boto3
+        parsed = urlparse(url)
+        key = parsed.path.lstrip('/')
+        s3 = boto3.client('s3', endpoint_url=f"https://{os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com", aws_access_key_id=os.environ['R2_ACCESS_KEY_ID'], aws_secret_access_key=os.environ['R2_SECRET_ACCESS_KEY'])
+        path = tempfile.mktemp(suffix=".png" if ".png" in url.lower() else ".pdf")
+        s3.download_file(os.environ.get('R2_BUCKET_NAME', 'classgrid-storage'), key, path)
+    except Exception as e2:
+        print("DOCUMENT_PARSE_ERROR: Failed downloading document via S3:", type(e2).__name__, str(e2))
+        sys.exit(1)
+
+if path:
+    try:
+        doc = pymupdf.open(path)
+        native_text = "\\n".join(page.get_text() for page in doc).strip()
+        ocr_text = ""
+        if len(native_text) < 20:
+            print("OCR_FALLBACK: Native PDF text is empty; rendering pages for OCR.")
+            with tempfile.TemporaryDirectory() as image_dir:
+                for index, page in enumerate(doc, start=1):
+                    image_path = os.path.join(image_dir, f"page-{index}.png")
+                    page.get_pixmap(matrix=pymupdf.Matrix(3, 3), alpha=False).save(image_path)
+                    result = subprocess.run(
+                        ["tesseract", image_path, "stdout", "--psm", "6"],
+                        capture_output=True, text=True, timeout=90
+                    )
+                    if result.returncode != 0:
+                        print(f"OCR_WARNING page {index}: {result.stderr.strip()}")
+                    ocr_text += "\\n" + result.stdout
+        text = native_text if len(native_text) >= 20 else ocr_text.strip()
+        if text:
+            print("DOCUMENT CONTENTS:\\n" + text)
+        else:
+            print("DOCUMENT_NO_TEXT: The file opened successfully, but neither embedded text nor OCR produced readable text.")
+    except Exception as e:
+        print("DOCUMENT_PARSE_ERROR:", type(e).__name__, str(e))
+`;
+                        const result = await handleToolCall('run_code', { language: 'python', code }, { sessionId });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     } catch (e) {
                         return `FAILED to parse document in sandbox: ${e.message}`;
