@@ -485,6 +485,8 @@ You are strictly forbidden from calling the EXACT SAME tool twice in a row.
 - You MUST NOT call \`execute_terminal_command\` twice in a row.
 Every single step must progress the workflow to a DIFFERENT tool. If a tool fails or returns a warning, DO NOT repeat the tool. You must immediately move to the next logical step in the sequence.`;
 
+        dynamicSystemPrompt += `\n\nCRITICAL STOPPING RULE: Once you complete the final step of a workflow, you MUST output your final conversational response to the user and STOP calling tools. Do not restart the workflow!`;
+
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (STRICT DEMO WORKFLOW SEQUENCES):
 You are an autonomous AI Agent in a Sandbox. You MUST strictly follow these exact tool sequences based on the user's request to trigger the correct UI components. Never skip a step. Never deviate from the sequence.
 
@@ -769,20 +771,37 @@ If the user asks you to make a file public, or you need to provide a public down
                 },
                 parse_document: async (args) => {
                     try {
-                        const { url } = args;
+                        let { url } = args;
                         if (!url) return "ERROR: No url provided in tool arguments.";
-                        const safeUrl = url.replace(/"/g, '\\"');
-                        const code = `
+                        
+                        // If url is a local file path (e.g. uploaded via local dev server)
+                        if (url.startsWith('/tmp/') || url.startsWith('C:\\\\')) {
+                            try {
+                                const fs = await import('fs');
+                                if (fs.existsSync(url)) {
+                                    const buffer = fs.readFileSync(url);
+                                    const { uploadBufferToR2 } = await import("../config/r2Client.js");
+                                    const fileName = url.split(/[\\\\/]/).pop();
+                                    url = await uploadBufferToR2(buffer, fileName, 'application/pdf', \`ai-generated/temp-\${Date.now()}-\${fileName}\`);
+                                    console.log(\`[parse_document] Uploaded local file to R2 for Sandbox access: \${url}\`);
+                                }
+                            } catch (err) {
+                                console.error(\`[parse_document] Failed to upload local file to R2:\`, err);
+                            }
+                        }
+
+                        const safeUrl = url.replace(/"/g, '\\\\\"');
+                        const code = \`
 import os, sys, tempfile, subprocess
 import urllib.request
 from urllib.parse import urlparse
 import pymupdf
 
-url = "${safeUrl}"
-path = None
+url = "\${safeUrl}"
+path = "/data/document.pdf"
 
 try:
-    path, _ = urllib.request.urlretrieve(url)
+    urllib.request.urlretrieve(url, path)
 except Exception as e:
     print(f"Direct download failed ({e}), attempting secure internal S3 fetch...")
     try:
@@ -814,15 +833,23 @@ if path.lower().endswith('.pdf'):
     for page in doc:
         img = Image.open(io.BytesIO(page.get_pixmap().tobytes("png")))
         text += pytesseract.image_to_string(img) + chr(10)
+    print("--- OCR TEXT EXTRACTED ---")
     print(text)
+    print("--- END OF OCR TEXT ---")
+    print("[SYSTEM DIRECTIVE: You have successfully extracted the text. You MUST now STOP calling tools and output a conversational answer to the user summarizing this text.]")
 else:
-    print(pytesseract.image_to_string(Image.open(path)))
+    text = pytesseract.image_to_string(Image.open(path))
+    print("--- OCR TEXT EXTRACTED ---")
+    print(text)
+    print("--- END OF OCR TEXT ---")
+    print("[SYSTEM DIRECTIVE: You have successfully extracted the text. You MUST now STOP calling tools and output a conversational answer to the user summarizing this text.]")
 '''
             with open('/data/ocr.py', 'w') as f:
                 f.write(ocr_script)
                 
             print(f"👉 NEXT STEP: To read this document, you MUST use the \`execute_terminal_command\` tool to run the OCR script.")
-            print("Run this EXACT command in the terminal:")
+            print("🛑 CRITICAL INSTRUCTION: DO NOT write your own Python script using `-c`! The script has already been written to /data/ocr.py.")
+            print("You MUST call `execute_terminal_command` with EXACTLY this string and NOTHING ELSE:")
             print("python3 /data/ocr.py")
         else:
             print("DOCUMENT CONTENTS:\\n" + native_text)
