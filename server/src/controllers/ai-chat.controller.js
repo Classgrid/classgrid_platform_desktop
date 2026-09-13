@@ -238,16 +238,16 @@ async function generateSessionTitle(sessionId, question) {
         const client = createLLMClient({
             providers: [
                 {
+                    name: "groq",
+                    url: "https://api.groq.com/openai/v1/chat/completions",
+                    apiKey: process.env.GROQ_API_KEY || "",
+                    model: "llama-3.1-70b-versatile"
+                },
+                {
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
                     apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
                     model: "open-mistral-nemo"
-                },
-                {
-                    name: "groq",
-                    url: "https://api.groq.com/openai/v1/chat/completions",
-                    apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b"
                 },
                 {
                     name: "gemini",
@@ -504,16 +504,16 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
         const client = createLLMClient({
             providers: [
                 {
+                    name: "groq",
+                    url: "https://api.groq.com/openai/v1/chat/completions",
+                    apiKey: process.env.GROQ_API_KEY || "",
+                    model: "llama-3.1-70b-versatile"
+                },
+                {
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
                     apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
                     model: "open-mistral-nemo"
-                },
-                {
-                    name: "groq",
-                    url: "https://api.groq.com/openai/v1/chat/completions",
-                    apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b"
                 },
                 {
                     name: "gemini",
