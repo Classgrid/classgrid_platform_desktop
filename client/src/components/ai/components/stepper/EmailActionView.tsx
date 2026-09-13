@@ -13,7 +13,6 @@ export function EmailActionView({ to, subject, bodyPreview }: EmailActionViewPro
   const safeSubject = typeof subject === 'object' ? JSON.stringify(subject) : String(subject || '');
   const safeBodyPreview = typeof bodyPreview === 'object' ? JSON.stringify(bodyPreview, null, 2) : String(bodyPreview || '');
 
-  const [isExpanded, setIsExpanded] = useState(true);
   const [showAllEmails, setShowAllEmails] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,23 +55,15 @@ export function EmailActionView({ to, subject, bodyPreview }: EmailActionViewPro
           </div>
         </div>
 
-        {/* Middle: Inner Accordion Trigger */}
-        <button 
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-1.5 px-4 py-3 text-[14px] text-slate-500 dark:text-[#9b9b9b] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors w-full text-left"
-        >
-          Drafted email
-          {isExpanded ? <ChevronDown className="h-3.5 w-3.5 opacity-60 ml-0.5" /> : <ChevronRight className="h-3.5 w-3.5 opacity-60 ml-0.5" />}
-        </button>
+        {/* Middle: Divider */}
+        <div className="h-[1px] w-full bg-slate-200/80 dark:bg-white/10" />
 
         {/* Bottom: Email Body */}
-        {isExpanded && (
-          <div className="px-4 pb-4 pt-1">
-            <div className="bg-slate-50 dark:bg-[#1a1a1a] rounded-lg p-3 text-[13.5px] text-slate-600 dark:text-[#a3a3a3] whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto custom-scrollbar [scrollbar-color:#D3D1CB_transparent] dark:[scrollbar-color:rgba(255,255,255,0.2)_transparent] [scrollbar-width:thin]">
-              {safeBodyPreview}
-            </div>
+        <div className="px-4 pb-4 pt-4">
+          <div className="bg-slate-50 dark:bg-[#1a1a1a] rounded-lg p-3 text-[13.5px] text-slate-600 dark:text-[#a3a3a3] whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto custom-scrollbar [scrollbar-color:#D3D1CB_transparent] dark:[scrollbar-color:rgba(255,255,255,0.2)_transparent] [scrollbar-width:thin]">
+            {safeBodyPreview}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Floating Dialog for All Emails */}

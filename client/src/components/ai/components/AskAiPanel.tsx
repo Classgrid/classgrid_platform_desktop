@@ -2635,11 +2635,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                         }
 
                                         if (step.tool === 'send_email') {
-                                          return (
+                                          const draftingStep = (
                                             <AgentStepAccordion
-                                              key={step.id}
-                                              title={step.status === 'success' ? "Sent email" : "Drafting email"}
-                                              status={step.status}
+                                              key={`${step.id}-draft`}
+                                              title={step.status === 'success' ? "Drafted email" : "Drafting email"}
+                                              status={step.status === 'success' ? 'success' : step.status}
                                               defaultExpanded={step.status === 'loading'}
                                             >
                                               <EmailActionView
@@ -2649,6 +2649,31 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                               />
                                             </AgentStepAccordion>
                                           );
+
+                                          if (step.status === 'success') {
+                                            let toCount = 1;
+                                            if (step.args?.to && step.args.to.includes(',')) {
+                                              toCount = step.args.to.split(',').length;
+                                            }
+                                            return (
+                                              <React.Fragment key={step.id}>
+                                                {draftingStep}
+                                                <AgentStepAccordion
+                                                  key={`${step.id}-sent`}
+                                                  title="Sent email"
+                                                  status="success"
+                                                  defaultExpanded={true}
+                                                >
+                                                  <EmailSentView
+                                                    toCount={toCount}
+                                                    subject={step.args?.subject || "No Subject"}
+                                                  />
+                                                </AgentStepAccordion>
+                                              </React.Fragment>
+                                            );
+                                          }
+
+                                          return draftingStep;
                                         }
 
                                         if (step.tool === 'search_web') {
