@@ -13,18 +13,28 @@ export function MasterWorkflowWrapper({
 }) {
   const [isFinished, setIsFinished] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [loopKey, setLoopKey] = useState(0);
 
   useEffect(() => {
-    console.log('MasterBox Mounted! totalTimeMs:', totalTimeMs);
-    const timeout = setTimeout(() => {
-      console.log('MasterBox Timeout Fired!');
+    // 1. Finish the workflow
+    const finishTimeout = setTimeout(() => {
       setIsFinished(true);
+      
+      // 2. Wait 3 seconds, then reset and loop!
+      const resetTimeout = setTimeout(() => {
+        setIsFinished(false);
+        setIsExpanded(false);
+        setLoopKey(prev => prev + 1); // Remounts children to restart animation
+      }, 3000);
+      
+      return () => clearTimeout(resetTimeout);
     }, totalTimeMs);
-    return () => clearTimeout(timeout);
-  }, [totalTimeMs]);
+    
+    return () => clearTimeout(finishTimeout);
+  }, [totalTimeMs, loopKey]);
 
   return (
-    <div className="relative">
+    <div className="relative" key={loopKey}>
       {/* Master Box Header - Only visible when finished */}
       {isFinished && (
         <button
