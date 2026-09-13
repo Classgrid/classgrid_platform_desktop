@@ -1,0 +1,30 @@
+name: Emergency Cleanup Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clear PM2 logs and free disk space on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "Current disk space:"
+            df -h
+            echo "Flushing PM2 logs..."
+            pm2 flush
+            echo "Deleting old PM2 log files..."
+            sudo rm -rf /home/ubuntu/.pm2/logs/*
+            echo "Pruning docker (if applicable)..."
+            docker system prune -a -f || true
+            echo "Cleaning apt cache..."
+            sudo apt-get clean
+            echo "Cleaning systemd journal..."
+            sudo journalctl --vacuum-time=1d || true
+            echo "New disk space:"
+            df -h
