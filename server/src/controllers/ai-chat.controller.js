@@ -748,19 +748,18 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
                 execute_terminal_command: async (args) => {
-                    return await handleToolCall('execute_terminal_command', args, { sessionId });
+                    const result = await handleToolCall('execute_terminal_command', args, { sessionId });
+                    return result.isError ? result.content[0].text : result.content[0].text;
                 },
                 run_code: async (args) => {
-                    return await handleToolCall('run_code', args, { sessionId });
+                    const result = await handleToolCall('run_code', args, { sessionId });
+                    return result.isError ? result.content[0].text : result.content[0].text;
                 },
                 unified_db_query: async (args) => {
                     const userEmail = req.user?.email || body.userEmail || '';
                     const userRole = req.user?.role || body.userRole || '';
                     const subdomain = req.user?.subdomain || body.subdomain || '';
-                    return await handleToolCall('unified_db_query', args, { userEmail, userRole, subdomain });
-                },
-                run_code: async (args) => {
-                    const result = await handleToolCall('run_code', args, { sessionId });
+                    const result = await handleToolCall('unified_db_query', args, { userEmail, userRole, subdomain });
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
                 generate_pdf: async (args) => {
