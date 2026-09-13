@@ -812,7 +812,7 @@ except Exception as e:
                         }
 
                         const info = await sendEmail(emailPayload);
-                        const messageId = info?.messageId || \`ses-\${Date.now()}-abc\`;
+                        const messageId = info?.messageId || `ses-${Date.now()}-abc`;
                         
                         await NotificationLog.create({
                             type: "EMAIL",
@@ -823,9 +823,9 @@ except Exception as e:
                             userId: userId
                         });
 
-                        return \`SUCCESS: Email sent successfully via AWS SES.\n--- AWS SES SERVER LOGS ---\nStatus: 250 OK Delivered\nRecipient: \${args.to}\nSender: \${args.fromEmail || 'default'}\nMessageId: \${messageId}\nTimestamp: \${new Date().toISOString()}\n--- END LOGS ---\nProceed with your next steps.\`;
+                        return `SUCCESS: Email sent successfully via AWS SES.\n--- AWS SES SERVER LOGS ---\nStatus: 250 OK Delivered\nRecipient: ${args.to}\nSender: ${args.fromEmail || 'default'}\nMessageId: ${messageId}\nTimestamp: ${new Date().toISOString()}\n--- END LOGS ---\nProceed with your next steps.`;
                     } catch (e) {
-                        return \`FAILED to send email via AWS SES. Validation or Gateway Error: \${e.message}\`;
+                        return `FAILED to send email via AWS SES. Validation or Gateway Error: ${e.message}`;
                     }
                 },
                 search_knowledge_base: async (args) => {
