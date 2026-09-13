@@ -2585,7 +2585,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                         return (
                                           <AgentStepAccordion 
                                             key={step.id}
-                                            title={step.tool === 'run_code' ? 'Executing Code' : 'OCR the attached identity card'} 
+                                            title={step.tool === 'run_code' ? 'Executing Code' : 'Terminal Command'} 
                                             status={step.status} 
                                             defaultExpanded={step.status === 'loading'}
                                           >
