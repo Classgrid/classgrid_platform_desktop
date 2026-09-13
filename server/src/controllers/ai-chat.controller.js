@@ -764,7 +764,8 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
             ],
             toolHandlers: Object.fromEntries(Object.entries({
                 internal_thought: async (args) => {
-                    const { title, details } = args;
+                    const title = args?.title || "Thought Process";
+                    const details = args?.details || (typeof args === 'object' ? JSON.stringify(args) : String(args));
                     res.write(`data: ${JSON.stringify({ type: "thought", thought: `**${title}**\n${details}` })}\n\n`);
                     const result = await handleToolCall('internal_thought', args, { userEmail, userRole, subdomain, sessionId });
                     return result.isError ? result.content[0].text : result.content[0].text;

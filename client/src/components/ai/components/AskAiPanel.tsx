@@ -2577,8 +2577,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     {/* CombinedReasoningBlock MUST be first child - direct sibling of steps */}
                                     {((message.thought && message.thought.trim().length > 0) || (index === messages.length - 1 && thinking)) && (
                                       <CombinedReasoningBlock
-                                        sentences={message.thought && message.thought.trim().length > 0 ? message.thought.trim().split(/(?<=[.!?])\s+/).filter(Boolean) : []}
-                                        isStreaming={index === messages.length - 1 && (thinking || !message.content)}
+                                        sentences={message.thought && message.thought.trim().length > 0 ? message.thought.trim().split(/(?<=[.!?\n])\s+/).filter(Boolean) : []}
+                                        isStreaming={index === messages.length - 1 && thinking && !(message.steps && message.steps.some(s => s.status === 'loading'))}
                                       />
                                     )}
 
