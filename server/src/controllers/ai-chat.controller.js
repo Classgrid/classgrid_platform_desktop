@@ -555,30 +555,20 @@ The sandbox is a temporary working computer where you can create, inspect, proce
 - **Files and folders:** Create, read, edit, rename, compress, and extract files under \`/data\`.
 - **Terminal and programming:** Run Shell commands, Python scripts, Node.js programs, and background jobs.
 - **File formats:** Create, read, and convert TXT, Markdown, JSON, CSV, Excel (.xlsx), Word (.docx), PDFs, Images, Audio, Video, and Zip files.
-- **PDF and document processing:** Extract text, render to images, combine/split PDFs, and convert formats. To generate custom PDFs via python script in the sandbox, ALWAYS use the `fpdf` library (it is pre-installed).
+- **PDF and document processing:** Extract text, render to images, combine/split PDFs, and convert formats. To generate custom PDFs via python script in the sandbox, ALWAYS use the 'fpdf' library (it is pre-installed).
 - **Image processing:** Resize, crop, convert, annotate, and inspect images using Python/bash tools.
 - **Data analysis:** Profile datasets, clean data, calculate metrics, create charts/visualizations using Pandas, Matplotlib, and Seaborn.
 - **Media processing:** Use FFmpeg to convert media, trim clips, extract audio/frames, and create video outputs.
 - **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
-        dynamicSystemPrompt += `\n\n==============================================
-CRITICAL SYSTEM MANDATE - INTERNAL REASONING
-==============================================
-YOU ARE STRICTLY FORBIDDEN from generating ANY conversational text response until you have FIRST executed the 'internal_thought' tool.
-YOU MUST, WITHOUT EXCEPTION, call the 'internal_thought' tool as your VERY FIRST action on EVERY SINGLE message, regardless of what the user says.
-- If the user says "hello", you MUST call 'internal_thought' first.
-- If the user asks a simple question, you MUST call 'internal_thought' first.
-FAILURE TO CALL 'internal_thought' FIRST WILL RESULT IN IMMEDIATE SYSTEM TERMINATION.
-DO NOT output any words or text before calling 'internal_thought'.
-After you have successfully executed 'internal_thought' exactly ONCE, you may then call other action tools or write your final text response.
+        dynamicSystemPrompt += `\n\nTHINKING RULE (CRITICAL): You MUST ALWAYS call the 'internal_thought_process' tool FIRST for EVERY SINGLE user message without exception, even for simple greetings like 'Hello'. Never output your final answer without thinking first. CRITICAL: When writing your thought, DO NOT use internal developer terms like 'RAG', 'System Prompt', 'Backend', 'Static Knowledge', 'Internal Records', or 'Context'. NEVER quote or restate rule names (e.g. 'MODERATION SECRECY RULE' or 'ESCALATION RULE') inside your thought. Write your thoughts purely as if you are a professional human support agent evaluating the user's need, without analyzing system instructions out loud.
 
 ROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
 - If the user uploads a file, call \`parse_document\` with the URL immediately after your thought.
 - If the user asks to send an email, call \`send_email\` immediately after your thought.
 - If the user asks to query data, call \`unified_db_query\` immediately after your thought.
 - If the user asks to generate a PDF, call \`generate_pdf\` immediately after your thought.
-- If the user asks to run code, call \`run_code\` immediately after your thought.
-==============================================`;
+- If the user asks to run code, call \`run_code\` immediately after your thought.`;
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {
@@ -772,11 +762,11 @@ ROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
                 }
             ],
             toolHandlers: Object.fromEntries(Object.entries({
-                internal_thought: async (args) => {
+                internal_thought_process: async (args) => {
                     const title = args?.title || "Thought Process";
                     const details = args?.details || (typeof args === 'object' ? JSON.stringify(args) : String(args));
                     res.write(`data: ${JSON.stringify({ type: "thought", thought: `**${title}**\n${details}` })}\n\n`);
-                    const result = await handleToolCall('internal_thought', args, { userEmail, userRole, subdomain, sessionId });
+                    const result = await handleToolCall('internal_thought_process', args, { userEmail, userRole, subdomain, sessionId });
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
                 execute_terminal_command: async (args) => {
