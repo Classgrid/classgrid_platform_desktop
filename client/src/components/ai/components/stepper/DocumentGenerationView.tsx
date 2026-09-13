@@ -42,41 +42,30 @@ export function DocumentGenerationView({ fileName, pageCount, size, hideAnimatio
 
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  // Simulate live generation progress pipeline ONLY when visible
+  // Simulate live generation progress pipeline
   useEffect(() => {
     if (hideAnimation) return;
 
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        setProgress(0);
-        setStage('uploading');
-        
-        const interval = setInterval(() => {
-          setProgress(p => {
-            if (p >= 100) {
-              clearInterval(interval);
-              setStage('processing');
-              
-              // Stay in skeleton processing state for ~2.5 seconds
-              setTimeout(() => setStage('complete'), 2500);
-              
-              return 100;
-            }
-            // Increment by random amounts to feel like real generation
-            return Math.min(p + Math.floor(Math.random() * 20) + 5, 100);
-          });
-        }, 400);
+    setProgress(0);
+    setStage('uploading');
+    
+    const interval = setInterval(() => {
+      setProgress(p => {
+        if (p >= 100) {
+          clearInterval(interval);
+          setStage('processing');
+          
+          // Stay in skeleton processing state for ~2.5 seconds
+          setTimeout(() => setStage('complete'), 2500);
+          
+          return 100;
+        }
+        // Increment by random amounts to feel like real generation
+        return Math.min(p + Math.floor(Math.random() * 20) + 5, 100);
+      });
+    }, 400);
 
-        // Disconnect once started so it doesn't restart if scrolled out of view
-        observer.disconnect();
-      }
-    });
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => observer.disconnect();
+    return () => clearInterval(interval);
   }, [fileName, hideAnimation]);
 
   return (
