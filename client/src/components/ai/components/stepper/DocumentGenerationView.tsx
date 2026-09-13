@@ -60,12 +60,17 @@ export function DocumentGenerationView({ fileName, pageCount, size, hideAnimatio
   useEffect(() => {
     if (progress >= 100 && stage === 'uploading') {
       setStage('processing');
+    }
+  }, [progress, stage]);
+
+  useEffect(() => {
+    if (stage === 'processing') {
       const timeout = setTimeout(() => {
         setStage('complete');
       }, 2500);
       return () => clearTimeout(timeout);
     }
-  }, [progress, stage]);
+  }, [stage]);
 
   return (
     <div ref={containerRef} className="flex flex-col relative min-h-[70px]">
