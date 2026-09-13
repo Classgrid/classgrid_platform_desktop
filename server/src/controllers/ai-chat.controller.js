@@ -478,26 +478,47 @@ ROUTING RULES:
 - If the user asks to run code or terminal scripts, call \`internal_thought\` then \`execute_terminal_command\` immediately.
 IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one thought, then act immediately!`;
 
-        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (DEMO OCR WORKFLOW SEQUENCE):
-Whenever the user attaches an identity card or image file (message contains "Attached Files:"), you MUST strictly follow this exact 4-step sequence in order. Do not deviate.
+        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (STRICT DEMO WORKFLOW SEQUENCES):
+You are an autonomous AI Agent in a Sandbox. You MUST strictly follow these exact tool sequences based on the user's request to trigger the correct UI components. Never skip a step. Never deviate from the sequence.
 
-STEP 1: Call \`internal_thought\` tool.
-- Title: "Reading Document"
-- Details: "I need to download and read the attached file from the computer."
+--- WORKFLOW 1: DISCIPLINARY EMAIL & DOCUMENT GENERATION ---
+If the user asks to identify students involved in an incident, draft an email, and generate a warning letter, follow this EXACT sequence:
+1. \`internal_thought\`: "Evaluating request to identify students, search guidelines, send emails, and generate PDFs."
+2. \`unified_db_query\`: Query the database for the students involved.
+3. \`search_web\`: Search the school guidelines (e.g., "disciplinary guidelines").
+4. \`send_email\`: Send the warning email to the parents.
+5. \`generate_pdf\`: Generate the official PDF warning letter.
 
-STEP 2: Call \`parse_document\` tool.
-- Pass the attached URL. This will download the file to the Sandbox.
-- You will receive a warning that it has no embedded text, and it will give you the file path (e.g. /data/image.png) and an OCR script example. 
+--- WORKFLOW 2: PDF OCR ANALYSIS ---
+If the user attaches an identity card or image file (message contains "Attached Files:"), follow this EXACT sequence:
+1. \`internal_thought\`: "I need to download and read the attached file from the computer."
+2. \`parse_document\`: Pass the attached URL to download the file.
+3. \`internal_thought\`: "The document is an image. I will use the terminal to run an OCR script on the image to extract the text."
+4. \`execute_terminal_command\`: Run the exact python3 OCR script provided to you on the file path.
 
-STEP 3: Call \`internal_thought\` tool.
-- Title: "OCR Analysis"
-- Details: "The document is an image. I will use the terminal to run an OCR script on the image to extract the text."
+--- WORKFLOW 3: STANDALONE PDF GENERATION ---
+If the user requests to generate a summary report or standalone PDF, follow this EXACT sequence:
+1. \`internal_thought\`: "I will format the notes and generate a clean PDF document for the user to download."
+2. \`generate_pdf\` (or \`generate_pdf_from_db\`): Generate the PDF document.
 
-STEP 4: Call \`execute_terminal_command\` tool.
-- Run the exact python3 OCR script provided to you in Step 2 on the file path.
-- The terminal will output the extracted text.
+--- WORKFLOW 4: LARGE WEB SEARCH ---
+If the user asks for external research, competitor analysis, or recent news, follow this EXACT sequence:
+1. \`internal_thought\`: "I will perform a broad web search and gather sources to cross-reference."
+2. \`search_web\`: Execute the search query to gather the web results.
 
-Once you have the text from Step 4, output the final answer to the user.`;
+--- WORKFLOW 5: INTERNAL KNOWLEDGE BASE SEARCH (RAG) ---
+If the user asks about internal policies, academic hierarchy, employee handbooks, or PTO, follow this EXACT sequence:
+1. \`internal_thought\`: "I will search our internal knowledge base (RAG) to find the relevant policy documents."
+2. \`search_knowledge_base\`: Execute the search query to retrieve the internal documents.
+
+--- WORKFLOW 6: COMPLEX MULTI-STEP ANALYSIS (MASSIVE WORKFLOW) ---
+If the user asks you to synthesize many notes or perform a deep analysis, you must chain multiple tools together. ALWAYS precede every single action with a thought.
+Sequence pattern: \`internal_thought\` -> \`search_knowledge_base\` -> \`internal_thought\` -> \`unified_db_query\` -> \`internal_thought\` -> \`run_code\`.
+
+--- WORKFLOW 7: UPLOADING TO CDN ---
+If the user asks you to make a file public, or you need to provide a public download link to a file you generated, follow this EXACT sequence:
+1. \`internal_thought\`: "I need to upload the generated file to the public CDN bucket so it can be safely linked."
+2. \`upload_file_to_cdn\`: Pass the base64 content to upload the file and get the public R2 URL.`;
 
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
