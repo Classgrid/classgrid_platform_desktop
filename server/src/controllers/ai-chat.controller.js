@@ -772,8 +772,17 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
                         if (buffer.length < 100) {
                             return "FAILED to upload file: The provided base64 string is too short or empty. This usually means your script failed to generate the file correctly. Fix your script and try again.";
                         }
-                        const { uploadBufferToR2 } = await import("../config/r2Client.js");
-                        const url = await uploadBufferToR2(buffer, args.fileName, args.mimeType, `ai-generated/${Date.now()}-${args.fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`);
+                        const { s3Client, BUCKET_NAME, CDN_BASE_URL } = await import("../config/s3Client.js");
+                        const { PutObjectCommand } = await import("@aws-sdk/client-s3");
+                        const safeFileName = args.fileName.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
+                        const s3Key = `ai-generated/${Date.now()}-${safeFileName}`;
+                        await s3Client.send(new PutObjectCommand({
+                          Bucket: BUCKET_NAME,
+                          Key: s3Key,
+                          Body: buffer,
+                          ContentType: args.mimeType
+                        }));
+                        const url = `${CDN_BASE_URL}/${s3Key}`;
                         return `SUCCESS: File uploaded. Public URL: ${url}`;
                     } catch (e) {
                         return `FAILED to upload file: ${e.message}`;
