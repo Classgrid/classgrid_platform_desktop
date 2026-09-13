@@ -782,22 +782,22 @@ If the user asks you to make a file public, or you need to provide a public down
                                     const buffer = fs.readFileSync(url);
                                     const { uploadBufferToR2 } = await import("../config/r2Client.js");
                                     const fileName = url.split(/[\\\\/]/).pop();
-                                    url = await uploadBufferToR2(buffer, fileName, 'application/pdf', \`ai-generated/temp-\${Date.now()}-\${fileName}\`);
-                                    console.log(\`[parse_document] Uploaded local file to R2 for Sandbox access: \${url}\`);
+                                    url = await uploadBufferToR2(buffer, fileName, 'application/pdf', `ai-generated/temp-${Date.now()}-${fileName}`);
+                                    console.log(`[parse_document] Uploaded local file to R2 for Sandbox access: ${url}`);
                                 }
                             } catch (err) {
-                                console.error(\`[parse_document] Failed to upload local file to R2:\`, err);
+                                console.error(`[parse_document] Failed to upload local file to R2:`, err);
                             }
                         }
 
-                        const safeUrl = url.replace(/"/g, '\\\\\"');
-                        const code = \`
+                        const safeUrl = url.replace(/"/g, '\\"');
+                        const code = `
 import os, sys, tempfile, subprocess
 import urllib.request
 from urllib.parse import urlparse
 import pymupdf
 
-url = "\${safeUrl}"
+url = "${safeUrl}"
 path = "/data/document.pdf"
 
 try:
@@ -849,7 +849,7 @@ else:
                 
             print(f"👉 NEXT STEP: To read this document, you MUST use the \`execute_terminal_command\` tool to run the OCR script.")
             print("🛑 CRITICAL INSTRUCTION: DO NOT write your own Python script using `-c`! The script has already been written to /data/ocr.py.")
-            print("You MUST call `execute_terminal_command` with EXACTLY this string and NOTHING ELSE:")
+            print("You MUST call \`execute_terminal_command\` with EXACTLY this string and NOTHING ELSE:")
             print("python3 /data/ocr.py")
         else:
             print("DOCUMENT CONTENTS:\\n" + native_text)
