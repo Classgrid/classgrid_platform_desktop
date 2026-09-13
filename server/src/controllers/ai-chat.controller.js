@@ -555,20 +555,22 @@ The sandbox is a temporary working computer where you can create, inspect, proce
 - **Files and folders:** Create, read, edit, rename, compress, and extract files under \`/data\`.
 - **Terminal and programming:** Run Shell commands, Python scripts, Node.js programs, and background jobs.
 - **File formats:** Create, read, and convert TXT, Markdown, JSON, CSV, Excel (.xlsx), Word (.docx), PDFs, Images, Audio, Video, and Zip files.
-- **PDF and document processing:** Extract text, render to images, combine/split PDFs, and convert formats. (CRITICAL: DO NOT use run_code to generate PDFs, use generate_pdf tool instead!)
+- **PDF and document processing:** Extract text, render to images, combine/split PDFs, and convert formats. To generate custom PDFs via python script in the sandbox, ALWAYS use the `fpdf` library (it is pre-installed).
 - **Image processing:** Resize, crop, convert, annotate, and inspect images using Python/bash tools.
 - **Data analysis:** Profile datasets, clean data, calculate metrics, create charts/visualizations using Pandas, Matplotlib, and Seaborn.
 - **Media processing:** Use FFmpeg to convert media, trim clips, extract audio/frames, and create video outputs.
 - **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (AGENT CHAIN OF THOUGHT): You are an autonomous Agent.
-DO NOT call \`internal_thought\` more than ONCE per request. After recording your single thought, your VERY NEXT tool call MUST be a real action tool (like \`parse_document\`, \`run_code\`, \`unified_db_query\`, \`execute_terminal_command\`, \`send_email\`, etc). Endlessly chaining thoughts is STRICTLY FORBIDDEN and will cause a system failure.
+You MUST call the \`internal_thought\` tool ON EVERY SINGLE REPLY before you generate any text response or call any other tool. 
+Even if the user just says "hello", you MUST use the \`internal_thought\` tool first to plan your response.
+DO NOT call \`internal_thought\` more than ONCE per request. After recording your single thought, you may generate your text response or call an action tool (like \`parse_document\`, \`run_code\`, \`unified_db_query\`, \`execute_terminal_command\`, \`send_email\`, etc). Endlessly chaining thoughts is STRICTLY FORBIDDEN and will cause a system failure.
 ROUTING RULES:
-- If the user uploads a file (message contains "Attached Files:"), call \`parse_document\` with the URL immediately.
-- If the user asks to send an email, call \`send_email\` immediately. Do NOT use run_code for emails.
-- If the user asks to query data, call \`unified_db_query\` immediately.
-- If the user asks to generate a PDF, call \`generate_pdf\` or \`generate_pdf_from_db\` immediately.
-- If the user asks to run code or scripts, call \`run_code\` immediately.
+- If the user uploads a file (message contains "Attached Files:"), call \`parse_document\` with the URL immediately after your thought.
+- If the user asks to send an email, call \`send_email\` immediately after your thought.
+- If the user asks to query data, call \`unified_db_query\` immediately after your thought.
+- If the user asks to generate a PDF, call \`generate_pdf\` immediately after your thought.
+- If the user asks to run code or scripts, call \`run_code\` immediately after your thought.
 IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one thought, then act immediately!`;
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;

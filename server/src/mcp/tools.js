@@ -80,7 +80,7 @@ export const getMcpTools = () => [
   },
   {
     name: 'internal_thought',
-    description: 'Optional UI progress update. Use it at most once per request and never instead of an action tool. Do not use it before reading an attached file.',
+    description: 'REQUIRED UI progress update. You MUST use this tool FIRST on every single message to plan your response, even for simple greetings. DO NOT use it more than once per request.',
     inputSchema: {
       type: 'object',
       properties: {
