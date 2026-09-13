@@ -469,13 +469,13 @@ The sandbox is a temporary working computer where you can create, inspect, proce
 - **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (AGENT CHAIN OF THOUGHT): You are an autonomous Agent.
-DO NOT call \`internal_thought\` more than ONCE per request. After recording your single thought, your VERY NEXT tool call MUST be a real action tool (like \`parse_document\`, \`run_code\`, \`unified_db_query\`, \`execute_terminal_command\`, \`send_email\`, etc). Endlessly chaining thoughts is STRICTLY FORBIDDEN and will cause a system failure.
+Always precede EVERY action (tool call) with a single \`internal_thought\` explaining to the user what you are about to do and why. 
+After recording your single thought, your VERY NEXT tool call MUST be a real action tool (like \`parse_document\`, \`run_code\`, \`unified_db_query\`, \`execute_terminal_command\`, \`send_email\`, etc). Endlessly chaining thoughts without actions in between is STRICTLY FORBIDDEN.
 ROUTING RULES:
-- If the user uploads a file (message contains "Attached Files:"), call \`parse_document\` with the URL immediately.
-- If the user asks to send an email, call \`send_email\` immediately. Do NOT use run_code for emails.
-- If the user asks to query data, call \`unified_db_query\` immediately.
-- If the user asks to generate a PDF, call \`generate_pdf\` or \`generate_pdf_from_db\` immediately.
-- If the user asks to run code or scripts, call \`run_code\` immediately.
+- If the user uploads a file (message contains "Attached Files:"), call \`internal_thought\` then \`parse_document\` with the URL immediately.
+- If the user asks to send an email, call \`internal_thought\` then \`send_email\` immediately.
+- If the user asks to query data, call \`internal_thought\` then \`unified_db_query\` immediately.
+- If the user asks to run code or terminal scripts, call \`internal_thought\` then \`execute_terminal_command\` immediately.
 IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one thought, then act immediately!`;
 
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
