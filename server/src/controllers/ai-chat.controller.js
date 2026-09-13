@@ -561,15 +561,18 @@ The sandbox is a temporary working computer where you can create, inspect, proce
 - **Media processing:** Use FFmpeg to convert media, trim clips, extract audio/frames, and create video outputs.
 - **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
-        dynamicSystemPrompt += `\n\nTHINKING RULE (CRITICAL): You MUST ALWAYS call the 'internal_thought_process' tool FIRST for EVERY SINGLE user message without exception, even for simple greetings like 'Hello'. Never output your final answer without thinking first. CRITICAL: When writing your thought, DO NOT use internal developer terms like 'System Prompt', 'Backend', 'Tools', 'JSON', or 'Sandbox'. NEVER quote or restate rule names inside your thought. Write your thoughts purely as if you are a senior platform administrator evaluating the request (e.g., 'I need to check the organization settings' or 'I will search for the student record'), without analyzing system instructions out loud.
-URGENCY RULE (ABSOLUTE PRIORITY): Your thought MUST be extremely concise. Do NOT spend more than 3 seconds thinking. You must execute the 'internal_thought_process' tool instantly and keep the text very short so the UI updates immediately!
+        dynamicSystemPrompt += `\n\nTHINKING RULE (CRITICAL): You MUST ALWAYS call the 'internal_thought_process' tool FIRST for EVERY SINGLE user message to plan your response.
+URGENCY RULE: Your thought MUST be extremely concise. Keep it under 2 sentences so the UI updates immediately!
+IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly ONCE at the very beginning. After it finishes, you are FREE to chain multiple action tools (like run_code, search_web), and you are FREE to write your final conversational response to the user without calling the thought tool again.`;
 
-ROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
+        if (!isIncognito) {
+            dynamicSystemPrompt += `\n\nROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
 - If the user uploads a file, call \`parse_document\` with the URL immediately after your thought.
 - If the user asks to send an email, call \`send_email\` immediately after your thought.
 - If the user asks to query data, call \`unified_db_query\` immediately after your thought.
 - If the user asks to generate a PDF, call \`generate_pdf\` immediately after your thought.
 - If the user asks to run code, call \`run_code\` immediately after your thought.`;
+        }
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {
@@ -680,11 +683,11 @@ ROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
                         parameters: {
                             type: "object",
                             properties: {
-                                fileName: { type: "string", description: "The name of the file (e.g. 'report.pdf')" },
-                                mimeType: { type: "string", description: "The MIME type (e.g. 'application/pdf', 'image/png')" },
-                                base64Content: { type: "string", description: "The file content encoded as a base64 string" }
+                                base64Data: { type: "string", description: "The base64 encoded contents of the file." },
+                                fileName: { type: "string", description: "The desired name of the file (e.g. report.pdf)." },
+                                mimeType: { type: "string", description: "The MIME type (e.g. application/pdf, image/png)." }
                             },
-                            required: ["fileName", "mimeType", "base64Content"]
+                            required: ["base64Data", "fileName", "mimeType"]
                         }
                     }
                 },
@@ -1073,7 +1076,7 @@ except Exception as e:
 
                 break; // Success
             } catch (err) {
-                console.warn(`[AI Chat] Attempt ${attempt} failed:`, err.message);
+                console.error(`[AI Chat] Attempt ${attempt} CRITICAL ERROR:`, err);
                 if (attempt === maxAttempts) {
                     if (!answer && isDiagramRequest) answer = "Failed to generate a valid diagram. Please try rephrasing your request.";
                     break;
