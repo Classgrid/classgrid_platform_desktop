@@ -313,7 +313,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'execute_terminal_command') {
-      const { command } = args;
+      let command = args?.command || '';
       const { sessionId = 'default', userEmail = 'unknown' } = context;
 
       console.log(`\n=================================================`);

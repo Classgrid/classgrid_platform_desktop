@@ -156,8 +156,9 @@ The sandbox already includes tools such as:
 - Long-running commands must be controlled or run in the background so they do not block the task.
 
 ### How to Handle User Attachments (CRITICAL INSTRUCTION)
-If the user's message contains "Attached Files:" followed by one or more URLs, you MUST use the \`parse_document\` tool to download and extract the text from the file. ALWAYS use \`parse_document\` as your first step when a user attaches a file.
-CRITICAL RULE FOR ATTACHMENTS: Use \`parse_document\` ONLY ONCE per attached file! If you receive an empty string or a warning that the file is an image/scanned PDF, DO NOT call \`parse_document\` again. Instead, IMMEDIATELY call \`internal_thought\` and then call \`execute_terminal_command\` to run an OCR script on the file as instructed. Do NOT get stuck in a loop calling parse_document.
+If the user's message contains "Attached Files:" followed by one or more URLs, you MUST use the \`parse_document\` tool to download and extract the text from the file. ALWAYS use \`parse_document\` as your first step when a user attaches a file to read its contents. 
+CRITICAL: Never use execute_terminal_command or curl to download attachments. You MUST use the native parse_document tool because it has secure internal access to private files.
+DO NOT write a Python script manually to read basic documents; use the \`parse_document\` tool first. The \`parse_document\` tool securely bypasses R2 restrictions using internal S3 credentials!
 
 ### How to Upload Files to CDN (CRITICAL INSTRUCTION)
 If you generate a file (like an Excel sheet, PDF, or image) inside the sandbox and need to give the user a download link, you MUST use the native \`upload_file_to_cdn\` tool. 
@@ -240,7 +241,7 @@ async function generateSessionTitle(sessionId, question) {
                     name: "groq",
                     url: "https://api.groq.com/openai/v1/chat/completions",
                     apiKey: process.env.GROQ_API_KEY || "",
-                    model: "llama-3.1-70b-versatile"
+                    model: "openai/gpt-oss-20b"
                 },
                 {
                     name: "mistral",
@@ -469,65 +470,14 @@ The sandbox is a temporary working computer where you can create, inspect, proce
 - **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (AGENT CHAIN OF THOUGHT): You are an autonomous Agent.
-Always precede EVERY action (tool call) with a single \`internal_thought\` explaining to the user what you are about to do and why. 
-After recording your single thought, your VERY NEXT tool call MUST be a real action tool (like \`parse_document\`, \`run_code\`, \`unified_db_query\`, \`execute_terminal_command\`, \`send_email\`, etc). Endlessly chaining thoughts without actions in between is STRICTLY FORBIDDEN.
+DO NOT call \`internal_thought\` more than ONCE per request. After recording your single thought, your VERY NEXT tool call MUST be a real action tool (like \`parse_document\`, \`run_code\`, \`unified_db_query\`, \`execute_terminal_command\`, \`send_email\`, etc). Endlessly chaining thoughts is STRICTLY FORBIDDEN and will cause a system failure.
 ROUTING RULES:
-- If the user uploads a file (message contains "Attached Files:"), call \`internal_thought\` then \`parse_document\` with the URL immediately.
-- If the user asks to send an email, call \`internal_thought\` then \`send_email\` immediately.
-- If the user asks to query data, call \`internal_thought\` then \`unified_db_query\` immediately.
-- If the user asks to run code or terminal scripts, call \`internal_thought\` then \`execute_terminal_command\` immediately.
+- If the user uploads a file (message contains "Attached Files:"), call \`parse_document\` with the URL immediately.
+- If the user asks to send an email, call \`send_email\` immediately. Do NOT use run_code for emails.
+- If the user asks to query data, call \`unified_db_query\` immediately.
+- If the user asks to generate a PDF, call \`generate_pdf\` or \`generate_pdf_from_db\` immediately.
+- If the user asks to run code or scripts, call \`run_code\` immediately.
 IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one thought, then act immediately!`;
-
-        dynamicSystemPrompt += `\n\nCRITICAL ANTI-LOOPING RULE:
-You are strictly forbidden from calling the EXACT SAME tool twice in a row. 
-- You MUST NOT call \`internal_thought\` twice in a row.
-- You MUST NOT call \`parse_document\` twice in a row.
-- You MUST NOT call \`execute_terminal_command\` twice in a row.
-Every single step must progress the workflow to a DIFFERENT tool. If a tool fails or returns a warning, DO NOT repeat the tool. You must immediately move to the next logical step in the sequence.`;
-
-        dynamicSystemPrompt += `\n\nCRITICAL STOPPING RULE: Once you complete the final step of a workflow, you MUST output your final conversational response to the user and STOP calling tools. Do not restart the workflow!`;
-
-        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (STRICT DEMO WORKFLOW SEQUENCES):
-You are an autonomous AI Agent in a Sandbox. You MUST strictly follow these exact tool sequences based on the user's request to trigger the correct UI components. Never skip a step. Never deviate from the sequence.
-
---- WORKFLOW 1: DISCIPLINARY EMAIL & DOCUMENT GENERATION ---
-If the user asks to identify students involved in an incident, draft an email, and generate a warning letter, follow this EXACT sequence:
-1. \`internal_thought\`: "Evaluating request to identify students, search guidelines, send emails, and generate PDFs."
-2. \`unified_db_query\`: Query the database for the students involved.
-3. \`search_web\`: Search the school guidelines (e.g., "disciplinary guidelines").
-4. \`send_email\`: Send the warning email to the parents.
-5. \`generate_pdf\`: Generate the official PDF warning letter.
-
---- WORKFLOW 2: PDF OCR ANALYSIS ---
-If the user attaches an identity card or image file (message contains "Attached Files:"), follow this EXACT sequence:
-1. \`internal_thought\`: "I need to download and read the attached file from the computer."
-2. \`parse_document\`: Pass the attached URL to download the file.
-3. \`internal_thought\`: "The document is an image. I will use the terminal to run an OCR script on the image to extract the text."
-4. \`execute_terminal_command\`: Run the exact python3 OCR script provided to you on the file path.
-
---- WORKFLOW 3: STANDALONE PDF GENERATION ---
-If the user requests to generate a summary report or standalone PDF, follow this EXACT sequence:
-1. \`internal_thought\`: "I will format the notes and generate a clean PDF document for the user to download."
-2. \`generate_pdf\` (or \`generate_pdf_from_db\`): Generate the PDF document.
-
---- WORKFLOW 4: LARGE WEB SEARCH ---
-If the user asks for external research, competitor analysis, or recent news, follow this EXACT sequence:
-1. \`internal_thought\`: "I will perform a broad web search and gather sources to cross-reference."
-2. \`search_web\`: Execute the search query to gather the web results.
-
---- WORKFLOW 5: INTERNAL KNOWLEDGE BASE SEARCH (RAG) ---
-If the user asks about internal policies, academic hierarchy, employee handbooks, or PTO, follow this EXACT sequence:
-1. \`internal_thought\`: "I will search our internal knowledge base (RAG) to find the relevant policy documents."
-2. \`search_knowledge_base\`: Execute the search query to retrieve the internal documents.
-
---- WORKFLOW 6: COMPLEX MULTI-STEP ANALYSIS (MASSIVE WORKFLOW) ---
-If the user asks you to synthesize many notes or perform a deep analysis, you must chain multiple tools together. ALWAYS precede every single action with a thought.
-Sequence pattern: \`internal_thought\` -> \`search_knowledge_base\` -> \`internal_thought\` -> \`unified_db_query\` -> \`internal_thought\` -> \`run_code\`.
-
---- WORKFLOW 7: UPLOADING TO CDN ---
-If the user asks you to make a file public, or you need to provide a public download link to a file you generated, follow this EXACT sequence:
-1. \`internal_thought\`: "I need to upload the generated file to the public CDN bucket so it can be safely linked."
-2. \`upload_file_to_cdn\`: Pass the base64 content to upload the file and get the public R2 URL.`;
 
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
@@ -557,7 +507,7 @@ If the user asks you to make a file public, or you need to provide a public down
                     name: "groq",
                     url: "https://api.groq.com/openai/v1/chat/completions",
                     apiKey: process.env.GROQ_API_KEY || "",
-                    model: "llama-3.1-70b-versatile"
+                    model: "openai/gpt-oss-20b"
                 },
                 {
                     name: "mistral",
@@ -575,7 +525,7 @@ If the user asks you to make a file public, or you need to provide a public down
                     model: "gemini-3.5-flash"
                 }
             ],
-            verbose: true,
+            verbose: false,
             maxToolDepth: 25,
             defaultMaxTokens: 2000,
             tools: [
@@ -678,21 +628,6 @@ If the user asks you to make a file public, or you need to provide a public down
                 {
                     type: "function",
                     function: {
-                        name: "internal_thought",
-                        description: "Use this tool to record your reasoning or planning before taking an action.",
-                        parameters: {
-                            type: "object",
-                            properties: {
-                                title: { type: "string", description: "A short, 2-5 word summary of what you are thinking." },
-                                details: { type: "string", description: "Your internal thought process in detail." }
-                            },
-                            required: ["title", "details"]
-                        }
-                    }
-                },
-                {
-                    type: "function",
-                    function: {
                         name: "send_email",
                         description: "Send an email to a user. Use this to contact users, send reminders, or communicate externally.",
                         parameters: {
@@ -771,41 +706,19 @@ If the user asks you to make a file public, or you need to provide a public down
                 },
                 parse_document: async (args) => {
                     try {
-                        let { url } = args;
+                        const { url } = args;
                         if (!url) return "ERROR: No url provided in tool arguments.";
-                        
-                        // If url is a local file path (e.g. uploaded via local dev server)
-                        if (url.startsWith('/tmp/') || url.startsWith('C:\\\\')) {
-                            try {
-                                const fs = await import('fs');
-                                if (fs.existsSync(url)) {
-                                    const buffer = fs.readFileSync(url);
-                                    const { uploadBufferToR2 } = await import("../config/r2Client.js");
-                                    const fileName = url.split(/[\\\\/]/).pop();
-                                    url = await uploadBufferToR2(buffer, fileName, 'application/pdf', `ai-generated/temp-${Date.now()}-${fileName}`);
-                                    console.log(`[parse_document] Uploaded local file to R2 for Sandbox access: ${url}`);
-                                }
-                            } catch (err) {
-                                console.error(`[parse_document] Failed to upload local file to R2:`, err);
-                            }
-                        }
-
                         const safeUrl = url.replace(/"/g, '\\"');
                         const code = `
-import os, sys, tempfile, subprocess
-import urllib.request
+import urllib.request, urllib.error, tempfile, sys, os
 from urllib.parse import urlparse
 import pymupdf
 
 url = "${safeUrl}"
-parsed = urlparse(url)
-filename = os.path.basename(parsed.path)
-if not filename:
-    filename = "document.pdf"
-path = os.path.join('/data', filename)
+path = None
 
 try:
-    urllib.request.urlretrieve(url, path)
+    path, _ = urllib.request.urlretrieve(url)
 except Exception as e:
     print(f"Direct download failed ({e}), attempting secure internal S3 fetch...")
     try:
@@ -813,86 +726,23 @@ except Exception as e:
         parsed = urlparse(url)
         key = parsed.path.lstrip('/')
         s3 = boto3.client('s3', endpoint_url=f"https://{os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com", aws_access_key_id=os.environ['R2_ACCESS_KEY_ID'], aws_secret_access_key=os.environ['R2_SECRET_ACCESS_KEY'])
-        filename = key.split('/')[-1] if '/' in key else "downloaded_file.pdf"
-        path = os.path.join('/data', filename)
+        path = tempfile.mktemp(suffix=".pdf" if ".pdf" in url.lower() else "")
         s3.download_file(os.environ.get('R2_BUCKET_NAME', 'classgrid-storage'), key, path)
     except Exception as e2:
-        print("DOCUMENT_PARSE_ERROR: Failed downloading document via S3:", type(e2).__name__, str(e2))
+        print("ERROR downloading document via S3:", e2)
         sys.exit(1)
 
 if path:
     try:
-        ext = path.lower().split('.')[-1]
-        native_text = ""
-        is_image_or_scanned = False
-        
-        if ext == 'pdf':
+        if url.lower().endswith('.pdf') or 'pdf' in url.lower() or 'ai-chat-uploads' in url.lower():
             doc = pymupdf.open(path)
-            native_text = "\\n".join(page.get_text() for page in doc).strip()
-            if len(native_text) < 20:
-                is_image_or_scanned = True
-        elif ext in ['pptx', 'docx']:
-            import zipfile, re
-            text_content = []
-            try:
-                with zipfile.ZipFile(path, 'r') as z:
-                    for fname in z.namelist():
-                        if fname.endswith('.xml'):
-                            xml_content = z.read(fname).decode('utf-8')
-                            texts = re.findall(r'<[a-z]:t[^>]*>(.*?)</[a-z]:t>', xml_content)
-                            for t in texts:
-                                t = re.sub(r'<[^>]+>', '', t).strip()
-                                if t:
-                                    text_content.append(t)
-                native_text = "\\n".join(text_content)
-                if len(native_text) < 20:
-                    is_image_or_scanned = True
-            except Exception as e:
-                print("Failed to unzip or read archive:", str(e))
-                is_image_or_scanned = False
-        elif ext in ['png', 'jpg', 'jpeg', 'bmp', 'tiff', 'webp']:
-            is_image_or_scanned = True
-        elif ext in ['txt', 'csv', 'json', 'md', 'xml']:
-            with open(path, 'r', encoding='utf-8') as f:
-                native_text = f.read()
+            text = "\\n".join([page.get_text() for page in doc])
+            print("DOCUMENT CONTENTS:\\n" + text)
         else:
-            print("DOCUMENT_PARSE_ERROR: Unsupported file extension:", ext)
-            sys.exit(0)
-            
-        if is_image_or_scanned:
-            print(f"⚠️ DOCUMENT_NO_TEXT: The file opened successfully, but it has no embedded text (it is an image or scanned document).")
-            
-            ocr_script = f'''import sys, pymupdf, pytesseract, io
-from PIL import Image
-path = "{path}"
-ext = path.lower().split('.')[-1]
-text = ""
-if ext == 'pdf':
-    doc = pymupdf.open(path)
-    for page in doc:
-        img = Image.open(io.BytesIO(page.get_pixmap().tobytes("png")))
-        text += pytesseract.image_to_string(img) + chr(10)
-elif ext in ['pptx', 'docx']:
-    print("Cannot OCR a PPTX/DOCX file directly.")
-    sys.exit(1)
-else:
-    text = pytesseract.image_to_string(Image.open(path))
-print("--- OCR TEXT EXTRACTED ---")
-print(text)
-print("--- END OF OCR TEXT ---")
-print("[SYSTEM DIRECTIVE: You have successfully extracted the text. You MUST now STOP calling tools and output a conversational answer to the user summarizing this text.]")
-'''
-            with open('/data/ocr.py', 'w') as f:
-                f.write(ocr_script)
-                
-            print(f"👉 NEXT STEP: To read this document, you MUST use the \`execute_terminal_command\` tool to run the OCR script.")
-            print("🛑 CRITICAL INSTRUCTION: DO NOT write your own Python script using `-c`! The script has already been written to /data/ocr.py.")
-            print("You MUST call \`execute_terminal_command\` with EXACTLY this string and NOTHING ELSE:")
-            print("python3 /data/ocr.py")
-        else:
-            print("DOCUMENT CONTENTS:\\n" + native_text)
+            with open(path, 'r') as f:
+                print("DOCUMENT CONTENTS:\\n" + f.read())
     except Exception as e:
-        print("DOCUMENT_PARSE_ERROR:", type(e).__name__, str(e))
+        print("ERROR parsing document content:", e)
 `;
                         const result = await handleToolCall('run_code', { language: 'python', code }, { sessionId });
                         return result.isError ? result.content[0].text : result.content[0].text;
@@ -952,7 +802,7 @@ print("[SYSTEM DIRECTIVE: You have successfully extracted the text. You MUST now
                     }
                     try {
                         const userId = req.user?._id || null;
-                        
+
                         // IDEMPOTENCY CHECK: Prevent duplicate emails within 15 minutes
                         const tenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
                         const recentEmail = await NotificationLog.findOne({
@@ -976,14 +826,14 @@ print("[SYSTEM DIRECTIVE: You have successfully extracted the text. You MUST now
                             fromName: args.fromName,
                             fromEmail: args.fromEmail
                         };
-                        
+
                         if (args.attachments && Array.isArray(args.attachments) && args.attachments.length > 0) {
                             emailPayload.attachments = args.attachments;
                         }
 
                         const info = await sendEmail(emailPayload);
                         const messageId = info?.messageId || `ses-${Date.now()}-abc`;
-                        
+
                         await NotificationLog.create({
                             type: "EMAIL",
                             recipient: args.to,
@@ -1026,10 +876,10 @@ print("[SYSTEM DIRECTIVE: You have successfully extracted the text. You MUST now
             }).map(([toolName, handler]) => [
                 toolName,
                 async (args) => {
-                    try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) {}
+                    try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
                     let resultStr;
-                    try { resultStr = await handler(args); } catch(err) { resultStr = "Error: " + (err.message || String(err)); }
-                    try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result: resultStr })}\n\n`); } catch (e) {}
+                    try { resultStr = await handler(args); } catch (err) { resultStr = "Error: " + (err.message || String(err)); }
+                    try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result: resultStr })}\n\n`); } catch (e) { }
                     return resultStr;
                 }
             ]))
@@ -1095,14 +945,12 @@ print("[SYSTEM DIRECTIVE: You have successfully extracted the text. You MUST now
                         try { res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`); } catch (e) { }
                     },
                     onToolCall: (toolName, args) => {
-                        console.log(`\n[AI Chat] 🛠️ AI requested tool: ${toolName}`);
-                        console.log(`[AI Chat] 📥 Arguments:`, JSON.stringify(args, null, 2));
                         accSteps.push({
                             id: Date.now().toString(),
                             type: toolName === 'internal_thought' ? 'thought' : 'tool',
                             tool: toolName,
                             title: args?.title || 'Thinking',
-                            details: args?.details || args?.thought || '',
+                            details: args?.details || '',
                             args: args,
                             status: 'loading'
                         });
@@ -1110,8 +958,6 @@ print("[SYSTEM DIRECTIVE: You have successfully extracted the text. You MUST now
                         try { res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
                     },
                     onToolResult: (toolName, result) => {
-                        console.log(`[AI Chat] ✅ Tool finished: ${toolName}`);
-                        console.log(`[AI Chat] 📤 Returned to AI:`, typeof result === 'string' ? result.substring(0, 500) + (result.length > 500 ? '... [TRUNCATED]' : '') : result);
                         const step = accSteps.find(s => s.tool === toolName && s.status === 'loading');
                         if (step) {
                             step.status = 'success';
