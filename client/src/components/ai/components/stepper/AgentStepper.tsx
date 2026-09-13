@@ -10,7 +10,7 @@ export function AgentStepper({ children, className }: AgentStepperProps) {
   // Generate CSS for up to 30 children to cascade their animations
   const cascadeCss = Array.from({ length: 30 }).map((_, i) => `
     .stepper-container > *:nth-child(${i + 1}) { 
-      animation-delay: ${i === 0 ? 0 : i * 1000}ms; 
+      animation-delay: ${i === 0 ? 0 : i * 70}ms; 
     }
   `).join('');
 
