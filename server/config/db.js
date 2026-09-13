@@ -68,7 +68,7 @@ const connectDB = async () => {
 
   if (!cached.promise) {
     const opts = {
-      bufferCommands: false,
+      bufferCommands: true,
       maxPoolSize: POOL_CONFIG.maxPoolSize,
       minPoolSize: POOL_CONFIG.minPoolSize,
       serverSelectionTimeoutMS: 5000,

@@ -798,9 +798,11 @@ from urllib.parse import urlparse
 import pymupdf
 
 url = "${safeUrl}"
-path = "/data/document.pdf"
-
-try:
+parsed = urlparse(url)
+filename = os.path.basename(parsed.path)
+if not filename:
+    filename = "document.pdf"
+path = os.path.join('/data', filename)try:
     urllib.request.urlretrieve(url, path)
 except Exception as e:
     print(f"Direct download failed ({e}), attempting secure internal S3 fetch...")
@@ -818,31 +820,65 @@ except Exception as e:
 
 if path:
     try:
-        doc = pymupdf.open(path)
-        native_text = "\\n".join(page.get_text() for page in doc).strip()
+        ext = path.lower().split('.')[-1]
+        native_text = ""
+        is_image_or_scanned = False
         
-        if len(native_text) < 20:
+        if ext == 'pdf':
+            doc = pymupdf.open(path)
+            native_text = "\\n".join(page.get_text() for page in doc).strip()
+            if len(native_text) < 20:
+                is_image_or_scanned = True
+        elif ext in ['pptx', 'docx']:
+            import zipfile, re
+            text_content = []
+            try:
+                with zipfile.ZipFile(path, 'r') as z:
+                    for fname in z.namelist():
+                        if fname.endswith('.xml'):
+                            xml_content = z.read(fname).decode('utf-8')
+                            texts = re.findall(r'<[a-z]:t[^>]*>(.*?)</[a-z]:t>', xml_content)
+                            for t in texts:
+                                t = re.sub(r'<[^>]+>', '', t).strip()
+                                if t:
+                                    text_content.append(t)
+                native_text = "\\n".join(text_content)
+                if len(native_text) < 20:
+                    is_image_or_scanned = True
+            except Exception as e:
+                print("Failed to unzip or read archive:", str(e))
+                is_image_or_scanned = False
+        elif ext in ['png', 'jpg', 'jpeg', 'bmp', 'tiff', 'webp']:
+            is_image_or_scanned = True
+        elif ext in ['txt', 'csv', 'json', 'md', 'xml']:
+            with open(path, 'r', encoding='utf-8') as f:
+                native_text = f.read()
+        else:
+            print("DOCUMENT_PARSE_ERROR: Unsupported file extension:", ext)
+            sys.exit(0)
+            
+        if is_image_or_scanned:
             print(f"⚠️ DOCUMENT_NO_TEXT: The file opened successfully, but it has no embedded text (it is an image or scanned document).")
             
             ocr_script = f'''import sys, pymupdf, pytesseract, io
 from PIL import Image
 path = "{path}"
-if path.lower().endswith('.pdf'):
+ext = path.lower().split('.')[-1]
+text = ""
+if ext == 'pdf':
     doc = pymupdf.open(path)
-    text = ""
     for page in doc:
         img = Image.open(io.BytesIO(page.get_pixmap().tobytes("png")))
         text += pytesseract.image_to_string(img) + chr(10)
-    print("--- OCR TEXT EXTRACTED ---")
-    print(text)
-    print("--- END OF OCR TEXT ---")
-    print("[SYSTEM DIRECTIVE: You have successfully extracted the text. You MUST now STOP calling tools and output a conversational answer to the user summarizing this text.]")
+elif ext in ['pptx', 'docx']:
+    print("Cannot OCR a PPTX/DOCX file directly.")
+    sys.exit(1)
 else:
     text = pytesseract.image_to_string(Image.open(path))
-    print("--- OCR TEXT EXTRACTED ---")
-    print(text)
-    print("--- END OF OCR TEXT ---")
-    print("[SYSTEM DIRECTIVE: You have successfully extracted the text. You MUST now STOP calling tools and output a conversational answer to the user summarizing this text.]")
+print("--- OCR TEXT EXTRACTED ---")
+print(text)
+print("--- END OF OCR TEXT ---")
+print("[SYSTEM DIRECTIVE: You have successfully extracted the text. You MUST now STOP calling tools and output a conversational answer to the user summarizing this text.]")
 '''
             with open('/data/ocr.py', 'w') as f:
                 f.write(ocr_script)
