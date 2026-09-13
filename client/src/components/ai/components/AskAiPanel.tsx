@@ -2082,6 +2082,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
         hidden: options?.hidden,
       },
+      {
+        id: createMessageId("assistant"),
+        role: "assistant",
+        content: "",
+        createdAt: Date.now(),
+      },
     ];
 
     setMessages(nextMessages);
@@ -2534,7 +2540,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     <div className={cn("flex flex-col gap-1.5 min-w-0", isUser ? "items-end max-w-[75%]" : "w-full")}>
 
                       {/* â”€â”€ Text Bubble â”€â”€ */}
-                      {(message.content || (message.steps && message.steps.length > 0)) && (
+                      {(message.content || (message.steps && message.steps.length > 0) || (message.thought && message.thought.trim().length > 0) || (!isUser && index === messages.length - 1 && thinking)) && (
                         <div
                           id={isUser ? `msg-${message.id}` : undefined}
                           className={cn(
