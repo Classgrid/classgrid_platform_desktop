@@ -29,10 +29,7 @@ export function MasterWorkflowTestingWrapper({
           className="flex items-center gap-3 cursor-pointer hover:bg-muted/30 rounded-lg p-1 pr-3 -ml-1 transition-colors w-full text-left mb-2"
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          {/* Stepper Dot Area */}
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full py-1 relative z-20">
-            <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 transition-colors" />
-          </div>
+          {/* No Stepper Dot for Master Box */}
 
           <div className="flex items-center gap-1.5">
             <ChevronRight
