@@ -2304,7 +2304,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
                   const step = updatedSteps[actualIndex];
                   if (step.type === 'tool') {
-                    updatedSteps[actualIndex] = { ...step, status: 'success', result: event.result };
+                    const isError = event.result && typeof event.result === 'string' && (event.result.trim().startsWith('Error:') || event.result.trim().startsWith('ERROR:') || event.result.trim().startsWith('FAILED:'));
+                    updatedSteps[actualIndex] = { ...step, status: isError ? 'error' : 'success', result: event.result };
                   } else if (step.type === 'thought') {
                     updatedSteps[actualIndex] = { ...step, status: 'success' };
                   }

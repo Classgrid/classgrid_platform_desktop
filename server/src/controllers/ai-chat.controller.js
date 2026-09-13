@@ -581,6 +581,8 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
         messages.unshift({ role: "system", content: dynamicSystemPrompt });
 
         // 3. Initialize the real LLM Client from the Classgrid SDK using the fallback hierarchy
+        let accSteps = []; // hoisted here so tool wrappers can push to it
+
         // 🚨 AI WARNING: DO NOT ADD NEW MODELS OR CHANGE EXISTING MODELS 🚨
         // CHANGING ANY AI MODEL IS STRICTLY BANNED BY PLATFORM POLICY.
         const client = createLLMClient({
@@ -945,9 +947,26 @@ except Exception as e:
             }).map(([toolName, handler]) => [
                 toolName,
                 async (args) => {
+                    accSteps.push({
+                        id: Date.now().toString(),
+                        type: toolName === 'internal_thought' ? 'thought' : 'tool',
+                        tool: toolName,
+                        title: args?.title || 'Thinking',
+                        details: args?.details || '',
+                        args: args,
+                        status: 'loading'
+                    });
                     try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
                     let resultStr;
                     try { resultStr = await handler(args); } catch (err) { resultStr = "Error: " + (err.message || String(err)); }
+                    
+                    const step = accSteps.find(s => s.tool === toolName && s.status === 'loading');
+                    if (step) {
+                        const isErr = typeof resultStr === 'string' && (resultStr.startsWith("Error:") || resultStr.startsWith("ERROR:") || resultStr.startsWith("FAILED:"));
+                        step.status = isErr ? 'error' : 'success';
+                        step.result = resultStr;
+                    }
+
                     try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result: resultStr })}\n\n`); } catch (e) { }
                     return resultStr;
                 }
@@ -986,8 +1005,6 @@ except Exception as e:
         const maxAttempts = 2;
         let currentClient = client;
         let accThought = "";
-        let accSteps = [];
-
         while (attempt <= maxAttempts) {
             try {
                 if (attempt > 1 && !res.writableEnded) {
@@ -1012,28 +1029,6 @@ except Exception as e:
                     onToken: isDiagramRequest ? undefined : (token) => {
                         if (requestAborted || res.writableEnded) return;
                         try { res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`); } catch (e) { }
-                    },
-                    onToolCall: (toolName, args) => {
-                        accSteps.push({
-                            id: Date.now().toString(),
-                            type: toolName === 'internal_thought' ? 'thought' : 'tool',
-                            tool: toolName,
-                            title: args?.title || 'Thinking',
-                            details: args?.details || '',
-                            args: args,
-                            status: 'loading'
-                        });
-                        if (requestAborted || res.writableEnded) return;
-                        try { res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
-                    },
-                    onToolResult: (toolName, result) => {
-                        const step = accSteps.find(s => s.tool === toolName && s.status === 'loading');
-                        if (step) {
-                            step.status = 'success';
-                            step.result = result;
-                        }
-                        if (requestAborted || res.writableEnded) return;
-                        try { res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result })}\n\n`); } catch (e) { }
                     }
                 });
 
