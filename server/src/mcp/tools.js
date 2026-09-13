@@ -3,8 +3,6 @@ import { getChatSb } from '../config/supabaseClient.js';
 import redis from '../config/redis.js';
 import path from 'path';
 import accessLogger from '../config/logger.js';
-import puppeteer from 'puppeteer';
-import Handlebars from 'handlebars';
 import { exec } from 'child_process';
 import util from 'util';
 import { marked } from 'marked';
