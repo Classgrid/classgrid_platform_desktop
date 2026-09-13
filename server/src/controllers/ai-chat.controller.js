@@ -966,7 +966,7 @@ if path:
                             type: toolName === 'internal_thought' ? 'thought' : 'tool',
                             tool: toolName,
                             title: args?.title || 'Thinking',
-                            details: args?.details || '',
+                            details: args?.details || args?.thought || '',
                             args: args,
                             status: 'loading'
                         });
