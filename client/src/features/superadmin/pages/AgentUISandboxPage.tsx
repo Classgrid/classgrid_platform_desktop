@@ -18,7 +18,6 @@ import { WorkflowAccordion, WorkflowStep } from '@/components/ai/components/step
 import { CdnUploadView } from '@/components/ai/components/stepper/CdnUploadView';
 import { TypewriterAccordion } from '@/components/ai/components/stepper/TypewriterAccordion';
 import AIThinkingBlock from '@/components/ai/components/AIThinkingBlock';
-import { MasterWorkflowWrapper } from '@/components/ai/components/stepper/MasterWorkflowWrapper';
 import { ThinkingShimmer } from '@/components/ai/components/ThinkingShimmer';
 import { CombinedReasoningBlock } from '@/components/ai/components/stepper/CombinedReasoningBlock';
 import { Terminal, Database, UploadCloud, Globe, FileText, Mail, Plane, Network } from 'lucide-react';
@@ -116,12 +115,11 @@ export function AgentUISandboxPage() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 1: Disciplinary Email & Document Generation
           </h2>
-          <MasterWorkflowWrapper totalSteps={6}>
-            <AgentStepper>
-              {/* 1. First Thought */}
-              <CombinedReasoningBlock
-                sentences={["The user wants me to identify the students involved in the cafeteria incident, cross-reference their records, search for the school's disciplinary guidelines, draft an email to their parents, send it, and finally generate an official PDF warning letter."]}
-              />
+          <AgentStepper>
+            {/* 1. First Thought */}
+            <CombinedReasoningBlock
+              sentences={["The user wants me to identify the students involved in the cafeteria incident, cross-reference their records, search for the school's disciplinary guidelines, draft an email to their parents, send it, and finally generate an official PDF warning letter."]}
+            />
 
               {/* 2. Database Query */}
               <AgentStepAccordion
@@ -206,7 +204,6 @@ export function AgentUISandboxPage() {
                 />
               </AgentStepAccordion>
             </AgentStepper>
-          </MasterWorkflowWrapper>
         </div>
 
         {/* --- WORKFLOW 2: PDF OCR --- */}
