@@ -168,8 +168,7 @@ export const handleToolCall = async (name, args, context = {}) => {
                   foreignField: '_id',
                   as: 'organization_details'
                 }
-              },
-              { $project: { _id: 1, name: 1, email: 1, role: 1, phone: 1, organization_id: 1, "organization_details.name": 1 } }
+              }
             ]).toArray();
           } else {
             result = await collection.find(query).limit(1000).toArray();
