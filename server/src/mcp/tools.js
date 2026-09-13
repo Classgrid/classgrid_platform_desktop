@@ -69,7 +69,7 @@ export const getMcpTools = () => [
   },
   {
     name: 'internal_thought',
-    description: 'Use this tool BEFORE taking any action (like running code, uploading a file, or querying the DB) to explain your reasoning to the user. This builds trust and transparency.',
+    description: 'Optional UI progress update. Use it at most once per request and never instead of an action tool. Do not use it before reading an attached file.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -115,7 +115,8 @@ export const handleToolCall = async (name, args, context = {}) => {
           'Exam': 'exams',
           'FeeRecord': 'feerecords',
           'Invoice': 'invoices',
-          'Lead': 'leads'
+          'Lead': 'leads',
+          'NotificationLog': 'notificationlogs'
         };
         // Fallback for models not explicitly mapped: lowercase and add 's' (Mongoose default)
         let actualCollectionName = collectionMap[collectionOrTable];
@@ -131,7 +132,8 @@ export const handleToolCall = async (name, args, context = {}) => {
         const superAdminOnlyCollections = [
           'systemlogs', 'activitylogs', 'organizations', 'users',
           'supporttickets', 'demorequests', 'billingexportjobs',
-          'invoices', 'platformtransactions', 'adminauditlogs'
+          'invoices', 'platformtransactions', 'adminauditlogs',
+          'notificationlogs'
         ];
 
         if (superAdminOnlyCollections.includes(actualCollectionName) && !isSuperAdmin) {
@@ -396,6 +398,11 @@ export const handleToolCall = async (name, args, context = {}) => {
       });
 
       try {
+        // Native send_email reserves an idempotency key before SES. Generated SMTP
+        // scripts would bypass that guard and can create duplicate messages.
+        if (/\b(smtplib|nodemailer|sendMail|send_message|AWS_SES_SMTP_)\b/i.test(code)) {
+          return { content: [{ type: 'text', text: 'EMAIL_ACTION_BLOCKED: Use send_email for external email delivery; it is the only idempotent email path.' }] };
+        }
         const ssh = new NodeSSH();
         const isProd = process.env.NODE_ENV === 'production';
         await ssh.connect({

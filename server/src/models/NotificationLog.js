@@ -40,7 +40,7 @@ const notificationLogSchema = new mongoose.Schema(
         organizationId: { 
             type: mongoose.Schema.Types.ObjectId, 
             ref: "Organization",
-            required: true
+            required: false // AI email deliveries may not belong to an organization
         },
         userId: { 
             type: mongoose.Schema.Types.ObjectId, 

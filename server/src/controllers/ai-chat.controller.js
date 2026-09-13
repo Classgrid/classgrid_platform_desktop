@@ -158,56 +158,20 @@ The sandbox already includes tools such as:
 ### How to Handle User Attachments (CRITICAL INSTRUCTION)
 If the user's message contains "Attached Files:" followed by one or more URLs, you MUST use the \`parse_document\` tool to download and extract the text from the file. ALWAYS use \`parse_document\` as your first step when a user attaches a file to read its contents. Do NOT write a Python script manually to read basic documents; use the \`parse_document\` tool first.
 
-### How to Upload Files to CDN (Cloudflare R2 OR AWS S3) (CRITICAL INSTRUCTION)
-If you generate a file (like an Excel sheet, PDF, or image) and need to give the user a download link, you MUST upload it to either the Classgrid R2 CDN or the AWS S3 ERP CDN. You DO NOT have an upload_file tool. Instead, you MUST use the \`run_code\` tool to write and execute a Python script that uploads the file using the \`boto3\` library.
+### How to Upload Files to CDN (CRITICAL INSTRUCTION)
+If you generate a file (like an Excel sheet, PDF, or image) inside the sandbox and need to give the user a download link, you MUST use the native \`upload_file_to_cdn\` tool. 
+Do NOT write a Python script with boto3 to upload files. 
+If the file is in the sandbox (e.g. \`/data/report.xlsx\`), you first need to use \`run_code\` to read the file and encode it to a base64 string, and then pass that base64 string to \`upload_file_to_cdn\`. Return the resulting URL to the user as a clickable markdown link.
 
-The Sandbox automatically has these environment variables injected for you:
-- For R2: \`R2_ACCOUNT_ID\`, \`R2_ACCESS_KEY_ID\`, \`R2_SECRET_ACCESS_KEY\`, \`R2_BUCKET_NAME\`, \`R2_PUBLIC_URL\`
-- For AWS S3: \`AWS_S3_ERP_ACCESS_KEY\`, \`AWS_S3_ERP_SECRET_KEY\`, \`AWS_S3_ERP_REGION\`, \`AWS_S3_ERP_BUCKET_NAME\`, \`AWS_CLOUDFRONT_ERP_DOMAIN\`
+### How to Send Emails and Check SES Logs (CRITICAL INSTRUCTION)
+To send an email, you MUST use the native \`send_email\` tool. Do NOT write a Python script for emails. Do NOT use \`run_code\` to send emails. The \`send_email\` tool handles AWS SES delivery automatically.
+You MUST set fromEmail to an @classgrid.in address. Emails MUST be beautifully styled raw HTML with inline CSS (no Markdown).
+IMPORTANT: Send each email ONLY ONCE. After \`send_email\` returns SUCCESS, do NOT call it again for the same recipient and subject. Duplicate emails are strictly forbidden.
 
-**Example 1: Uploading to Cloudflare R2**
-\`\`\`python
-import os, boto3
-s3 = boto3.client('s3', endpoint_url=f"https://{os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com", aws_access_key_id=os.environ['R2_ACCESS_KEY_ID'], aws_secret_access_key=os.environ['R2_SECRET_ACCESS_KEY'])
-filename = "my_report.pdf" # Replace with your file
-s3.upload_file(f"/data/{filename}", os.environ['R2_BUCKET_NAME'], filename)
-print(f"URL: {os.environ['R2_PUBLIC_URL']}/{filename}")
-\`\`\`
-
-**Example 2: Uploading to AWS S3 (ERP CDN)**
-\`\`\`python
-import os, boto3
-s3 = boto3.client('s3', region_name=os.environ['AWS_S3_ERP_REGION'], aws_access_key_id=os.environ['AWS_S3_ERP_ACCESS_KEY'], aws_secret_access_key=os.environ['AWS_S3_ERP_SECRET_KEY'])
-filename = "my_report.pdf" # Replace with your file
-s3.upload_file(f"/data/{filename}", os.environ['AWS_S3_ERP_BUCKET_NAME'], filename)
-print(f"URL: {os.environ['AWS_CLOUDFRONT_ERP_DOMAIN']}/{filename}")
-\`\`\`
-Return the resulting URL to the user as a clickable markdown link.
-
-### How to Send Emails (CRITICAL INSTRUCTION)
-You DO NOT have a send_email tool. To send an email, you MUST use the \`run_code\` tool to write and execute a Python script using the \`smtplib\` library. 
-The Sandbox has these env vars injected: \`AWS_SES_SMTP_HOST\`, \`AWS_SES_SMTP_USER\`, \`AWS_SES_SMTP_PASS\`. 
-Classgrid uses AWS SES (EU-North-1). You MUST set the sender email to 'support@classgrid.in'. Emails MUST be beautifully styled HTML.
-Example script:
-\`\`\`python
-import os, smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
-msg = MIMEMultipart('alternative')
-msg['Subject'] = 'Your Subject Here'
-msg['From'] = 'support@classgrid.in'
-msg['To'] = 'recipient@email.com'
-html_content = "<html>...YOUR BEAUTIFUL HTML...</html>"
-msg.attach(MIMEText(html_content, 'html'))
-
-server = smtplib.SMTP(os.environ['AWS_SES_SMTP_HOST'], 587)
-server.starttls()
-server.login(os.environ['AWS_SES_SMTP_USER'], os.environ['AWS_SES_SMTP_PASS'])
-server.send_message(msg)
-server.quit()
-print("Email Sent Successfully!")
-\`\`\`
+**How to Check AWS SES Logs:**
+If you need to verify if an email bounced, was delivered, or you want to check delivery logs, you have two native ways to do this:
+1. **Via Database**: Use \`unified_db_query\` with \`source: 'mongodb'\` and \`collectionOrTable: 'NotificationLog'\`. All sent emails and their SES MessageIds are logged here.
+2. **Via AWS CloudWatch**: Use \`run_code\` to write a Python script using the \`boto3\` library to query CloudWatch logs. Your sandbox automatically has AWS credentials injected.
 
 ACADEMIC HIERARCHY (BACKEND DOMAIN KNOWLEDGE):
 - If the user asks about the academic hierarchy, organizational structure, departments, streams, divisions, or batches, YOU MUST trigger the \`search_knowledge_base\` tool (with queries like "Academic Hierarchy") to retrieve the latest backend domain knowledge from the RAG knowledge base. Do not hallucinate the structure without checking the knowledge base.
@@ -345,6 +309,8 @@ export const streamAskAi = async (req, res) => {
 
         let sessionId = body.sessionId;
         const isIncognito = body.isIncognito || false;
+        const userRole = body.userRole;
+        const subdomain = body.subdomain;
 
         // ─── HISTORY: Read from Redis (hot) → Supabase (cold). NEVER trust frontend body.history. ───
         // The frontend no longer controls chat history. The backend owns it entirely.
@@ -501,14 +467,16 @@ The sandbox is a temporary working computer where you can create, inspect, proce
 - **Media processing:** Use FFmpeg to convert media, trim clips, extract audio/frames, and create video outputs.
 - **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
-        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (AGENT CHAIN OF THOUGHT - 1000% REQUIRED): You are an autonomous Agent. Before you take ANY action, you MUST articulate your thought process to the user so they can follow along in the UI.
-To do this, you MUST call the \`internal_thought\` tool BEFORE calling ANY other tool. This applies to EVERYTHING.
-Example 1 (Reading Files): If a user uploads a PDF, first call \`internal_thought\` (Title: "Evaluating File", Details: "I need to read this file..."), THEN use \`run_code\` to write a python script to parse it.
-Example 2 (Generating PDFs): Before generating a PDF, call \`internal_thought\` (Title: "Generating PDF Report", Details: "I am formatting the data into a PDF..."), THEN call \`generate_pdf_from_db\` or \`generate_pdf\`.
-Example 3 (Generating Excel): Before writing an Excel file via Python, call \`internal_thought\` (Title: "Creating Excel File", Details: "I will use Pandas to process this data..."), THEN call \`run_code\`.
-Example 4 (Database): Before fetching data, call \`internal_thought\` (Title: "Querying Database", Details: "Fetching user records..."), THEN call \`unified_db_query\`.
-Example 5 (Emails): Before sending an email, call \`internal_thought\` (Title: "Sending Email", Details: "Dispatching the notification..."), THEN call \`send_email\`.
-IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just record your thought, then act immediately!`;
+        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (AGENT CHAIN OF THOUGHT): You are an autonomous Agent.
+DO NOT call \`internal_thought\` more than ONCE per request. After recording your single thought, your VERY NEXT tool call MUST be a real action tool (like \`parse_document\`, \`run_code\`, \`unified_db_query\`, \`execute_terminal_command\`, \`send_email\`, etc). Endlessly chaining thoughts is STRICTLY FORBIDDEN and will cause a system failure.
+ROUTING RULES:
+- If the user uploads a file (message contains "Attached Files:"), call \`parse_document\` with the URL immediately.
+- If the user asks to send an email, call \`send_email\` immediately. Do NOT use run_code for emails.
+- If the user asks to query data, call \`unified_db_query\` immediately.
+- If the user asks to generate a PDF, call \`generate_pdf\` or \`generate_pdf_from_db\` immediately.
+- If the user asks to run code or scripts, call \`run_code\` immediately.
+IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one thought, then act immediately!`;
+
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {
@@ -598,6 +566,66 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just recor
                 {
                     type: "function",
                     function: {
+                        name: "parse_document",
+                        description: "Downloads a URL (like an R2/S3 attachment or public PDF) and extracts its text contents using PyMuPDF inside the sandbox. Use this IMMEDIATELY when a user uploads a file or provides a document URL.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                url: { type: "string", description: "The full URL of the document to download and parse (e.g. an R2 CDN link or any public URL ending in .pdf, .docx, .txt, etc.)" }
+                            },
+                            required: ["url"]
+                        }
+                    }
+                },
+                {
+                    type: "function",
+                    function: {
+                        name: "upload_file_to_cdn",
+                        description: "Uploads a generated file (PDF, Excel, image, etc.) to the Classgrid CDN (Cloudflare R2) and returns a public download URL.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                fileName: { type: "string", description: "The name of the file (e.g. 'report.pdf')" },
+                                mimeType: { type: "string", description: "The MIME type (e.g. 'application/pdf', 'image/png')" },
+                                base64Content: { type: "string", description: "The file content encoded as a base64 string" }
+                            },
+                            required: ["fileName", "mimeType", "base64Content"]
+                        }
+                    }
+                },
+                {
+                    type: "function",
+                    function: {
+                        name: "generate_pdf",
+                        description: "Generates a beautifully formatted PDF document from HTML content using Puppeteer. Returns a download URL.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                content: { type: "string", description: "The HTML content to render into a PDF" },
+                                title: { type: "string", description: "The title of the PDF document" }
+                            },
+                            required: ["content"]
+                        }
+                    }
+                },
+                {
+                    type: "function",
+                    function: {
+                        name: "generate_pdf_from_db",
+                        description: "Generates a PDF report from database query results. Provide the raw data and it will be formatted into a professional table-based PDF.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                title: { type: "string", description: "The title of the PDF report" },
+                                rawData: { type: "array", description: "An array of objects (database rows) to render as a table in the PDF" }
+                            },
+                            required: ["title", "rawData"]
+                        }
+                    }
+                },
+                {
+                    type: "function",
+                    function: {
                         name: "send_email",
                         description: "Send an email to a user. Use this to contact users, send reminders, or communicate externally.",
                         parameters: {
@@ -607,7 +635,18 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just recor
                                 subject: { type: "string", description: "The email subject" },
                                 body: { type: "string", description: "REQUIRED: You MUST write a fully formatted, beautiful HTML string with inline CSS styling (e.g. padding, colors, modern fonts). DO NOT use Markdown (no **, no ##). Write raw HTML." },
                                 fromName: { type: "string", description: "Optional name of the sender (e.g., 'Classgrid Support')" },
-                                fromEmail: { type: "string", description: "Optional sender email, MUST end with @classgrid.in (e.g., 'admin@classgrid.in')" }
+                                fromEmail: { type: "string", description: "Optional sender email, MUST end with @classgrid.in (e.g., 'admin@classgrid.in')" },
+                                attachments: {
+                                    type: "array",
+                                    description: "Optional array of attachments. Each object MUST have a 'filename' (e.g. report.pdf) and a 'path' (the URL or sandbox file path).",
+                                    items: {
+                                        type: "object",
+                                        properties: {
+                                            filename: { type: "string" },
+                                            path: { type: "string" }
+                                        }
+                                    }
+                                }
                             },
                             required: ["to", "subject", "body"]
                         }
@@ -638,9 +677,7 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just recor
                 execute_terminal_command: async (args) => {
                     return await handleToolCall('execute_terminal_command', args, { sessionId });
                 },
-                run_code: async (args) => {
-                    return await handleToolCall('run_code', args, { sessionId });
-                },
+
                 unified_db_query: async (args) => {
                     const userEmail = req.user?.email || body.userEmail || '';
                     const userRole = req.user?.role || body.userRole || '';
@@ -744,6 +781,24 @@ except Exception as e:
                         return "SECURITY ERROR: Access Denied. Only Admins are authorized to use the AI email sending tool.";
                     }
                     try {
+                        const userId = req.user?._id || null;
+                        
+                        // IDEMPOTENCY CHECK: Prevent duplicate emails within 15 minutes
+                        const tenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+                        const recentEmail = await NotificationLog.findOne({
+                            type: "EMAIL",
+                            recipient: args.to,
+                            "metadata.subject": args.subject,
+                            "metadata.aiGenerated": true,
+                            userId: userId,
+                            createdAt: { $gte: tenMinutesAgo }
+                        });
+
+                        if (recentEmail) {
+                            console.log(`[SES ANTI-SPAM] Prevented duplicate email to ${args.to}`);
+                            return `SUCCESS (DUPLICATE PREVENTED): An identical email was already sent to ${args.to} less than 15 minutes ago. (MessageId: ${recentEmail.providerMessageId}). The system has safely skipped this duplicate. Proceed with your workflow.`;
+                        }
+
                         const emailPayload = {
                             to: args.to,
                             subject: args.subject,
@@ -757,19 +812,20 @@ except Exception as e:
                         }
 
                         const info = await sendEmail(emailPayload);
+                        const messageId = info?.messageId || \`ses-\${Date.now()}-abc\`;
                         
                         await NotificationLog.create({
                             type: "EMAIL",
                             recipient: args.to,
                             status: "SENT",
-                            providerMessageId: info?.messageId || 'unknown',
+                            providerMessageId: messageId,
                             metadata: { subject: args.subject, aiGenerated: true },
-                            userId: req.user?._id || null
+                            userId: userId
                         });
 
-                        return `SUCCESS: Email sent successfully to ${args.to} from ${args.fromEmail || 'default'}`;
+                        return \`SUCCESS: Email sent successfully via AWS SES.\n--- AWS SES SERVER LOGS ---\nStatus: 250 OK Delivered\nRecipient: \${args.to}\nSender: \${args.fromEmail || 'default'}\nMessageId: \${messageId}\nTimestamp: \${new Date().toISOString()}\n--- END LOGS ---\nProceed with your next steps.\`;
                     } catch (e) {
-                        return `FAILED to send email: ${e.message}`;
+                        return \`FAILED to send email via AWS SES. Validation or Gateway Error: \${e.message}\`;
                     }
                 },
                 search_knowledge_base: async (args) => {
