@@ -9,12 +9,16 @@ interface EmailActionViewProps {
 }
 
 export function EmailActionView({ to, subject, bodyPreview }: EmailActionViewProps) {
+  const safeTo = typeof to === 'object' ? JSON.stringify(to) : String(to || '');
+  const safeSubject = typeof subject === 'object' ? JSON.stringify(subject) : String(subject || '');
+  const safeBodyPreview = typeof bodyPreview === 'object' ? JSON.stringify(bodyPreview, null, 2) : String(bodyPreview || '');
+
   const [isExpanded, setIsExpanded] = useState(true);
   const [showAllEmails, setShowAllEmails] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   
-  const emailList = to.split(',').map(e => e.trim()).filter(Boolean);
+  const emailList = safeTo.split(',').map(e => e.trim()).filter(Boolean);
   const hasManyEmails = emailList.length > 4;
   
   const filteredEmails = emailList.filter(email => 
@@ -42,13 +46,13 @@ export function EmailActionView({ to, subject, bodyPreview }: EmailActionViewPro
                   </button>
                 </>
               ) : (
-                <span className="break-all">{to}</span>
+                <span className="break-all">{safeTo}</span>
               )}
             </div>
           </div>
           <div className="flex items-start gap-2">
             <span className="text-slate-400 dark:text-[#666666] font-medium w-14 shrink-0">Subject:</span>
-            <span className="text-slate-800 dark:text-[#eeeeee] font-medium">{subject}</span>
+            <span className="text-slate-800 dark:text-[#eeeeee] font-medium">{safeSubject}</span>
           </div>
         </div>
 
@@ -65,7 +69,7 @@ export function EmailActionView({ to, subject, bodyPreview }: EmailActionViewPro
         {isExpanded && (
           <div className="px-4 pb-4 pt-1">
             <div className="bg-slate-50 dark:bg-[#1a1a1a] rounded-lg p-3 text-[13.5px] text-slate-600 dark:text-[#a3a3a3] whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto custom-scrollbar [scrollbar-color:#D3D1CB_transparent] dark:[scrollbar-color:rgba(255,255,255,0.2)_transparent] [scrollbar-width:thin]">
-              {bodyPreview}
+              {safeBodyPreview}
             </div>
           </div>
         )}

@@ -61,9 +61,11 @@ export function TerminalToolView({ command, output }: TerminalToolViewProps) {
           className="m-2 mt-0 p-3 bg-[#F9F8F7] dark:bg-[#202020] rounded-lg font-mono text-[13px] whitespace-pre-wrap overflow-x-auto max-h-[400px] border border-slate-200 dark:border-transparent [scrollbar-color:#D3D1CB_transparent] dark:[scrollbar-color:rgba(255,255,255,0.2)_transparent] [scrollbar-width:thin]"
         >
           {activeTab === 'command' ? (
-            <div className="leading-relaxed">{formatCommand(command)}</div>
+            <div className="leading-relaxed">{formatCommand(typeof command === 'object' ? JSON.stringify(command) : String(command || ''))}</div>
           ) : (
-            <div className="leading-relaxed text-slate-600 dark:text-[#d4d4d4]">{output || 'Waiting for output...'}</div>
+            <div className="leading-relaxed text-slate-600 dark:text-[#d4d4d4]">
+              {typeof output === 'object' ? JSON.stringify(output, null, 2) : (output || 'Waiting for output...')}
+            </div>
           )}
         </div>
       </div>

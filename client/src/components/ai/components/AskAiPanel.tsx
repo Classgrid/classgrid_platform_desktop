@@ -18,6 +18,8 @@ import {
   File,
   FileImage,
   FileText,
+  FileSpreadsheet,
+  FileIcon,
   Globe2,
   HelpCircle,
   LayoutDashboard,

@@ -11,10 +11,11 @@ interface DocumentGenerationViewProps {
 }
 
 export function DocumentGenerationView({ fileName, pageCount, size, hideAnimation, onClick }: DocumentGenerationViewProps) {
+  const safeFileName = typeof fileName === 'object' ? JSON.stringify(fileName) : String(fileName || '');
   const [stage, setStage] = useState<'uploading' | 'processing' | 'complete'>(hideAnimation ? 'complete' : 'uploading');
   const [progress, setProgress] = useState(0);
 
-  const extension = fileName.split('.').pop()?.toLowerCase();
+  const extension = safeFileName.split('.').pop()?.toLowerCase();
   
   // Determine icons and colors based on extension
   let Icon = FileText;
@@ -138,7 +139,7 @@ export function DocumentGenerationView({ fileName, pageCount, size, hideAnimatio
           {/* File Info */}
           <div className="flex flex-col overflow-hidden">
             <span className="text-[14px] font-medium text-slate-800 dark:text-[#eeeeee] truncate">
-              {fileName}
+              {safeFileName}
             </span>
             <span className="text-[13px] text-slate-500 dark:text-[#8a8a8a] mt-0.5">
               {pageCount ? `${pageCount} ${pageCount === 1 ? 'page' : 'pages'} • ` : ''}{size} • {fileTypeLabel}

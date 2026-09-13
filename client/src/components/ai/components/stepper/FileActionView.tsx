@@ -16,7 +16,7 @@ export function FileActionView({ fileName }: FileActionViewProps) {
     >
       <div className="p-3">
         <span className="text-[14px] leading-[20px] text-slate-700 dark:text-[#d4d4d4] break-words">
-          Uploaded {fileName} to the computer
+          Uploaded {typeof fileName === 'object' ? JSON.stringify(fileName) : fileName} to the computer
         </span>
       </div>
     </ToolOutputContainer>

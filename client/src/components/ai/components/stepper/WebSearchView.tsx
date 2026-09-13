@@ -17,12 +17,16 @@ interface WebSearchViewProps {
 export function WebSearchView({ query, searchDomain, results = [], error }: WebSearchViewProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
+  const safeError = typeof error === 'object' ? JSON.stringify(error) : String(error || '');
+  const safeQuery = typeof query === 'object' ? JSON.stringify(query) : String(query || '');
+  const safeSearchDomain = typeof searchDomain === 'object' ? JSON.stringify(searchDomain) : String(searchDomain || '');
+
   if (error) {
     return (
       <div className="flex flex-col">
         <div className="bg-white dark:bg-[#151515] rounded-xl border border-slate-200/60 dark:border-white/10 flex flex-col overflow-hidden shadow-sm dark:shadow-none w-full max-w-[550px]">
           <div className="px-4 py-3 flex items-center gap-2 text-[14px]">
-            <span className="text-slate-500 dark:text-[#a3a3a3]">{error}</span>
+            <span className="text-slate-500 dark:text-[#a3a3a3]">{safeError}</span>
             <span className="text-red-700 dark:text-[#ff7b72] font-medium">Failed</span>
           </div>
         </div>
@@ -38,7 +42,7 @@ export function WebSearchView({ query, searchDomain, results = [], error }: WebS
         {/* Top: The Search Query */}
         {query && (
           <div className="px-4 py-3.5 text-[14px] text-slate-500 dark:text-[#9b9b9b] border-b border-slate-200/80 dark:border-white/10 leading-relaxed font-sans">
-            {query}
+            {safeQuery}
           </div>
         )}
 
@@ -47,7 +51,7 @@ export function WebSearchView({ query, searchDomain, results = [], error }: WebS
           onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center gap-1.5 px-4 py-3 text-[14px] text-slate-500 dark:text-[#9b9b9b] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors w-full text-left"
         >
-          Searched the web {searchDomain && <span className="text-slate-900 dark:text-[#e2e2e2]">{searchDomain}</span>}
+          Searched the web {searchDomain && <span className="text-slate-900 dark:text-[#e2e2e2]">{safeSearchDomain}</span>}
           {isExpanded ? <ChevronDown className="h-3.5 w-3.5 opacity-60 ml-0.5" /> : <ChevronRight className="h-3.5 w-3.5 opacity-60 ml-0.5" />}
         </button>
 

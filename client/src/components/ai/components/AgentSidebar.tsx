@@ -631,19 +631,21 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                     sharePreviewMessages
                       .filter((msg: any) => {
                         if (msg.role === 'user') return true;
-                        const textOnly = msg.content.replace(/```[\s\S]*?```/g, "").trim();
+                        const contentStr = typeof msg.content === 'object' && msg.content !== null ? msg.content.content || JSON.stringify(msg.content) : String(msg.content || '');
+                        const textOnly = contentStr.replace(/```[\s\S]*?```/g, "").trim();
                         return textOnly.length > 0;
                       })
                       .slice(0, 4)
                       .map((msg: any, idx: number) => {
                       const isUser = msg.role === 'user';
+                      const safeContent = typeof msg.content === 'object' && msg.content !== null ? msg.content.content || JSON.stringify(msg.content) : String(msg.content || '');
                       return (
                         <div key={idx} className={isUser ? "bg-[#f1f1ef] dark:bg-[#2C2C2C] px-[14px] py-[6px] rounded-[16px] max-w-[85%] self-end" : "text-[15px] leading-[1.6] text-[#2C2C2B] dark:text-[#F0EFED] w-full"}>
                           {isUser ? (
-                            <p className="text-[16px] leading-[24px] text-[#37352f] dark:text-[#F0EFED] break-words whitespace-pre-wrap">{msg.content}</p>
+                            <p className="text-[16px] leading-[24px] text-[#37352f] dark:text-[#F0EFED] break-words whitespace-pre-wrap">{safeContent}</p>
                           ) : (
                             <div className="whitespace-pre-wrap text-[14px]">{
-                              msg.content
+                              safeContent
                                 .replace(/```[\s\S]*?```/g, "")
                                 .trim()
                             }</div>

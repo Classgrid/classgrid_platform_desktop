@@ -66,13 +66,13 @@ export function KnowledgeBaseSearchView({ providerIcon, results = [], error }: K
                   
                   {/* Title */}
                   <span className="flex-1 truncate text-[14px] text-slate-700 dark:text-[#c9c9c9] group-hover:text-slate-900 dark:group-hover:text-[#eeeeee] transition-colors leading-[22px]">
-                    {result.title}
+                    {typeof result.title === 'object' ? JSON.stringify(result.title) : result.title}
                   </span>
 
                   {/* Source / Category */}
                   {result.source && (
                     <span className="shrink-0 text-[12px] text-slate-400 dark:text-[#8a8a8a] truncate max-w-[180px]">
-                      {result.source}
+                      {typeof result.source === 'object' ? JSON.stringify(result.source) : result.source}
                     </span>
                   )}
                 </div>
