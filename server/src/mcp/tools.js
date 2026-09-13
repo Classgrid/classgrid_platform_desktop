@@ -8,6 +8,8 @@ import { exec } from 'child_process';
 import util from 'util';
 import { marked } from 'marked';
 import { NodeSSH } from 'node-ssh';
+import { s3Client, BUCKET_NAME, CDN_BASE_URL } from '../config/s3Client.js';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 const execPromise = util.promisify(exec);
 
@@ -46,7 +48,7 @@ export const getMcpTools = () => [
   },
   {
     name: 'run_code',
-    description: 'Execute Python or JavaScript code securely in the AWS EC2 Docker Sandbox. Use this for calculations, data analysis, or executing scripts.',
+    description: 'Execute Python or JavaScript code securely in the AWS EC2 Docker Sandbox. Use this for calculations, data analysis, or executing scripts. CRITICAL: DO NOT use this tool to generate PDFs (no ReportLab). ALWAYS use the native generate_pdf tool instead.',
     inputSchema: {
       type: 'object',
       properties: {

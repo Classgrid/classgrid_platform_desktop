@@ -204,7 +204,18 @@ Do NOT write a Python script with boto3 to upload files.
 If the file is in the sandbox (e.g. \`/ data / report.xlsx\`), you first need to use \`run_code\` to read the file and encode it to a base64 string, and then pass that base64 string to \`upload_file_to_cdn\`. Return the resulting URL to the user as a clickable markdown link.
 
 ### How to Send Emails (CRITICAL INSTRUCTION)
-Use the native \`send_email\` tool for every external email. It is the only authorized delivery path and provides idempotency protection. Never send email through \`run_code\`, \`execute_terminal_command\`, SMTP, or another script. Use the default Classgrid sender unless a verified Classgrid sender is explicitly required. Send one email once; after a successful tool result, continue with the task and do not call it again.
+Use the native `send_email` tool for every external email. It is the only authorized delivery path and provides idempotency protection. Never send email through `run_code`, `execute_terminal_command`, SMTP, or another script.
+CRITICAL EMAIL RULES:
+1. NEVER write generic, robotic placeholders (e.g., "Your request has been processed. Please find the PDF attached.").
+2. You MUST write a warm, personalized, professional email that actually explains the context. If the user asked you to summarize something, put the actual full summary IN THE EMAIL BODY.
+3. You MUST write fully formatted, beautiful HTML with inline CSS styling (e.g., padding, colors, modern fonts). DO NOT use Markdown. Write raw HTML for the body parameter.
+4. EMAIL STRUCTURE: Every email MUST follow a proper professional structure:
+   - A warm greeting (e.g., "Hello [Name]," or "Dear [Name],"). If no name is provided, use a polite general greeting.
+   - A clear opening sentence explaining why you are emailing.
+   - The main content (bullet points, summaries, links, etc.) clearly formatted.
+   - A professional sign-off (e.g., "Best regards, Classgrid Support").
+5. ATTACHMENTS: If you generated a PDF or file for the user and are sending an email, DO NOT just put a download link in the email body. You MUST use the `attachments` parameter of the `send_email` tool to attach the file properly (using the CDN URL or sandbox path).
+Use the default Classgrid sender unless a verified Classgrid sender is explicitly required. Send one email once; after a successful tool result, continue with the task and do not call it again.
 
 ACADEMIC HIERARCHY (BACKEND DOMAIN KNOWLEDGE):
 - If the user asks about the academic hierarchy, organizational structure, departments, streams, divisions, or batches, YOU MUST trigger the \`search_knowledge_base\` tool (with queries like "Academic Hierarchy") to retrieve the latest backend domain knowledge from the RAG knowledge base. Do not hallucinate the structure without checking the knowledge base.
@@ -706,7 +717,7 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
                             properties: {
                                 to: { type: "string", description: "The recipient's email address" },
                                 subject: { type: "string", description: "The email subject" },
-                                body: { type: "string", description: "REQUIRED: You MUST write a fully formatted, beautiful HTML string with inline CSS styling (e.g. padding, colors, modern fonts). DO NOT use Markdown (no **, no ##). Write raw HTML." },
+                                body: { type: "string", description: "REQUIRED: You MUST write the FULL, actual email content here as a beautifully formatted HTML string. Do NOT write generic placeholders like 'Action successful'. If summarizing, put the full summary here. Use inline CSS. DO NOT use Markdown." },
                                 fromName: { type: "string", description: "Optional name of the sender (e.g., 'Classgrid Support')" },
                                 fromEmail: { type: "string", description: "Optional sender email, MUST end with @classgrid.in (e.g., 'admin@classgrid.in')" },
                                 attachments: {
