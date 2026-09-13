@@ -225,8 +225,9 @@ If you must refuse a request, DO NOT use the default "I'm sorry, I can't help wi
 
 async function generateSessionTitle(sessionId, question) {
     try {
-        providers: [
-            {
+        const client = new LLMCascade({
+            providers: [
+                {
                 name: "mistral",
                 url: "https://api.mistral.ai/v1/chat/completions",
                 apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
