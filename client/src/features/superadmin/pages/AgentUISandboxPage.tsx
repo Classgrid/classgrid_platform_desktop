@@ -81,6 +81,16 @@ const MASSIVE_WORKFLOW_STEPS: WorkflowStep[] = [
 
 export function AgentUISandboxPage() {
   const { theme, setTheme } = useTheme();
+  
+  // State to force all workflows to restart their animations every 20 seconds
+  const [loopKey, setLoopKey] = React.useState(0);
+  
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setLoopKey(prev => prev + 1);
+    }, 20000); // 20 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground relative p-8 transition-colors duration-200">
@@ -108,7 +118,7 @@ export function AgentUISandboxPage() {
       </div>
 
       {/* Container (Wider so text doesn't truncate) */}
-      <div className="max-w-[700px] mx-auto pt-16 space-y-4">
+      <div key={loopKey} className="max-w-[700px] mx-auto pt-16 space-y-4">
 
         {/* --- WORKFLOW 1: DISCIPLINARY EMAIL --- */}
         <div className="mb-12">
