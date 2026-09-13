@@ -309,7 +309,7 @@ If the user asks you to make a file public, or you need to provide a public down
 
 async function generateSessionTitle(sessionId, question) {
     try {
-        const client = new LLMCascade({
+        const client = createLLMClient({
             providers: [
                 {
                     name: "mistral",
@@ -783,40 +783,29 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
                         if (!url) return "ERROR: No url provided in tool arguments.";
                         const safeUrl = url.replace(/"/g, '\\"');
                         const code = `
-import urllib.request, tempfile, sys, os
+import urllib.request, sys, os
 import fitz
 
 url = "${safeUrl}"
 try:
-    path, _ = urllib.request.urlretrieve(url)
+    path = "/data/document.pdf"
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req) as response:
+        with open(path, 'wb') as f:
+            f.write(response.read())
+
     if url.lower().endswith('.pdf') or 'pdf' in url.lower() or 'ai-chat-uploads' in url.lower():
         doc = fitz.open(path)
         text = "\\n".join([page.get_text().strip() for page in doc]).strip()
         
         if not text:
-            print("No text found via standard extraction. Attempting OCR...")
-            try:
-                import pytesseract
-                from PIL import Image
-                import io
-                
-                ocr_text = ""
-                for page_num in range(len(doc)):
-                    page = doc[page_num]
-                    pix = page.get_pixmap(dpi=150)
-                    img = Image.open(io.BytesIO(pix.tobytes("png")))
-                    ocr_text += pytesseract.image_to_string(img) + "\\n"
-                
-                text = ocr_text.strip()
-            except Exception as ocr_e:
-                print("OCR failed: " + str(ocr_e))
-        
-        if text:
-            print("DOCUMENT CONTENTS:\\n" + text)
+            print("No text found via standard extraction. The document appears to be an image.")
+            print("CRITICAL: You MUST use execute_terminal_command to run the following OCR script on the file:")
+            print(f"python3 -c \\\"import fitz, pytesseract, io; from PIL import Image; print(' '.join([pytesseract.image_to_string(Image.open(io.BytesIO(page.get_pixmap(dpi=150).tobytes('png')))) for page in fitz.open('{path}')]))\\\"")
         else:
-            print("DOCUMENT CONTENTS:\\n(The document is completely blank or could not be read)")
+            print("DOCUMENT CONTENTS:\\n" + text)
     else:
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             print("DOCUMENT CONTENTS:\\n" + f.read())
 except Exception as e:
     print("ERROR reading document:", e)
