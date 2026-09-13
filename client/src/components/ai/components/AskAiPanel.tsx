@@ -102,6 +102,7 @@ import { KnowledgeBaseSearchView } from "./stepper/KnowledgeBaseSearchView";
 import { CdnUploadView } from "./stepper/CdnUploadView";
 import { EmailSentView } from "./stepper/EmailSentView";
 import { SimpleLogStepView } from "./stepper/SimpleLogStepView";
+import { CombinedReasoningBlock } from "./stepper/CombinedReasoningBlock";
 
 // â”€â”€â”€ SDK-local type definitions & stubs â”€â”€â”€
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
@@ -2263,7 +2264,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     lastMsg = { id: createMessageId("assistant"), role: "assistant", content: "", createdAt: Date.now() };
                     targetPrev = [...prev, lastMsg];
                   }
-                  const thoughtText = event.thought || event.content || "";
+                  const thoughtText = event.thought || event.content;
+                  if (!thoughtText) return prev; // Skip undefined/null chunks
                   return [
                     ...targetPrev.slice(0, -1),
                     { ...lastMsg, thought: (lastMsg.thought || "") + thoughtText }
@@ -2558,6 +2560,16 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                             </>
                           ) : (
                             <div className="pl-1 w-full max-w-full">
+                              {/* Phase 1 & 2: Thinking shimmer → Typewriter thought text (Nikhil's 4-phase architecture) */}
+                              {/* Show when: has thought text OR is the currently generating message */}
+                              {((message.thought && message.thought.trim().length > 0) || (index === messages.length - 1 && thinking)) && (
+                                <div className="mb-2">
+                                  <CombinedReasoningBlock
+                                    sentences={message.thought && message.thought.trim().length > 0 ? message.thought.trim().split(/(?<=[.!?])\s+/).filter(Boolean) : []}
+                                  />
+                                </div>
+                              )}
+
                               {/* Render Agent Stepper if there are steps */}
                               {message.steps && message.steps.length > 0 && (
                                 <div className="mb-4">
@@ -2821,20 +2833,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 </div>
                               )}
 
-                              {message.thought && message.thought.trim().length > 0 && !(message.steps && message.steps.length > 0) && (
-                                <Accordion type="single" collapsible={true as any} className="mb-4">
-                                  <AccordionItem value="thought" className="border-none">
-                                    <AccordionTrigger className="w-fit flex-none justify-start gap-1.5 h-auto text-[11px] font-medium text-slate-500 hover:text-slate-700 hover:no-underline dark:text-slate-400 dark:hover:text-slate-300 transition-colors cursor-pointer [&>svg]:size-3 [&>svg]:ml-0">
-                                      <span>Thought</span>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="pt-3 pb-1 px-1">
-                                      <div className="border-l-[3px] border-slate-200 dark:border-white/10 pl-3.5 py-0.5 text-[13px] text-slate-500 dark:text-slate-400 font-mono whitespace-pre-wrap leading-relaxed max-h-[400px] overflow-y-auto custom-scrollbar">
-                                        {message.thought.trim()}
-                                      </div>
-                                    </AccordionContent>
-                                  </AccordionItem>
-                                </Accordion>
-                              )}
+                              {/* Old thought accordion removed — CombinedReasoningBlock above stepper handles all thought display now */}
                               <AssistantMessageContent
                                 content={message.content}
                                 isTyping={message.typing}
@@ -2952,28 +2951,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               );
             })}
 
-            <AnimatePresence>
-              {(() => {
-                const lastMsg = messages[messages.length - 1];
-                const hasThought = lastMsg?.role === "assistant" && lastMsg.thought;
-                const shouldShow = thinking || hasThought;
-                if (!shouldShow) return null;
-                return (
-                <motion.div
-                  key="thinking-state"
-                  initial={prefersReducedMotion ? false : { opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
-                >
-                  <AIThinkingBlock
-                    thinkingContent={lastMsg?.role === "assistant" ? (lastMsg.thought || "") : ""}
-                    isFinished={!thinking}
-                  />
-                </motion.div>
-                );
-              })()}
-            </AnimatePresence>
+            {/* Phase 1 gap: Show CombinedReasoningBlock shimmer when thinking but no assistant message exists yet */}
+            {thinking && (!messages.length || messages[messages.length - 1]?.role !== 'assistant') && (
+              <div className="pl-1 mb-2">
+                <CombinedReasoningBlock sentences={[]} />
+              </div>
+            )}
           </>
         )}
       </div>

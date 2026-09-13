@@ -1022,6 +1022,7 @@ except Exception as e:
                         try { res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`); } catch (e) { }
                     },
                     onThought: (thought) => {
+                        if (!thought) return; // Skip undefined/null/empty thought chunks
                         accThought += thought;
                         if (requestAborted || res.writableEnded) return;
                         try { res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`); } catch (e) { }
