@@ -435,21 +435,38 @@ export function AgentUISandboxPage() {
           </div>
         </div>
 
+        {/* --- WORKFLOW 9: AI THINKING BLOCK --- */}
+        <div>
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
+            Workflow 9: AI Thinking Block
+          </h2>
+          <MasterWorkflowWrapper totalTimeMs={22000}>
+            <div className="bg-background rounded-lg border border-border p-4">
+              <AIThinkingBlock
+                thinkingContent="The user, Nikhil Shinde (super_admin), is asking to activate the internal thought tool explicitly. As a Super Admin, they have full access to all tools and functionalities. I need to ensure clarity and correctness in my response while adhering to the strict workflow rules."
+                isFinished={false}
+              />
+            </div>
+          </MasterWorkflowWrapper>
+        </div>
+
         {/* --- WORKFLOW 10: COMBINED REASONING BLOCK --- */}
         <div>
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 10: Combined Reasoning Block
           </h2>
-          <div className="bg-background rounded-lg border border-border p-4">
-            <CombinedReasoningBlock
-              sentences={[
-                "The user, Nikhil Shinde (super_admin), is asking to activate the internal thought tool explicitly.",
-                "As a Super Admin, they have full access to all tools and functionalities.",
-                "I need to ensure clarity and correctness in my response while adhering to the strict workflow rules.",
-                "The user seems frustrated or confused about how to proceed, so I should acknowledge their request, clarify the correct tool name, and confirm my readiness to assist them as their Super Admin assistant."
-              ]}
-            />
-          </div>
+          <MasterWorkflowWrapper totalTimeMs={22000}>
+            <div className="bg-background rounded-lg border border-border p-4">
+              <CombinedReasoningBlock
+                sentences={[
+                  "The user, Nikhil Shinde (super_admin), is asking to activate the internal thought tool explicitly.",
+                  "As a Super Admin, they have full access to all tools and functionalities.",
+                  "I need to ensure clarity and correctness in my response while adhering to the strict workflow rules.",
+                  "The user seems frustrated or confused about how to proceed, so I should acknowledge their request, clarify the correct tool name, and confirm my readiness to assist them as their Super Admin assistant."
+                ]}
+              />
+            </div>
+          </MasterWorkflowWrapper>
         </div>
 
       </div>
