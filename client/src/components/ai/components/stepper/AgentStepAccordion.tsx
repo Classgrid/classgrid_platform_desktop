@@ -82,7 +82,7 @@ export function AgentStepAccordion({
       )}>
         <div className="overflow-hidden">
           <div className="pl-[36px] pr-2 pb-4">
-            {children}
+            {status !== 'loading' && children}
           </div>
         </div>
       </div>

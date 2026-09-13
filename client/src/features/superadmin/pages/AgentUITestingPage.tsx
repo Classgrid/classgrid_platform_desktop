@@ -42,7 +42,7 @@ export function AgentUITestingPage() {
       <div className="max-w-[700px] mx-auto pt-16 space-y-4">
         {/* --- WORKFLOW 1: DISCIPLINARY EMAIL --- */}
         <div className="mb-12">
-          <MasterWorkflowTestingWrapper title="Workflow 1: Disciplinary Email & Document Generation" totalTimeMs={10000}>
+          <MasterWorkflowTestingWrapper totalTimeMs={15000}>
             <AgentStepper>
               {/* 1. First Thought */}
               <CombinedReasoningBlock
