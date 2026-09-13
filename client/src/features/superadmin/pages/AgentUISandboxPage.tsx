@@ -115,7 +115,8 @@ export function AgentUISandboxPage() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 1: Disciplinary Email & Document Generation
           </h2>
-          <AgentStepper>
+          <MasterWorkflowWrapper>
+            <AgentStepper>
             {/* 1. First Thought */}
             <CombinedReasoningBlock
               sentences={["The user wants me to identify the students involved in the cafeteria incident, cross-reference their records, search for the school's disciplinary guidelines, draft an email to their parents, send it, and finally generate an official PDF warning letter."]}
@@ -209,6 +210,7 @@ export function AgentUISandboxPage() {
                 />
               </AgentStepAccordion>
             </AgentStepper>
+          </MasterWorkflowWrapper>
         </div>
 
         {/* --- WORKFLOW 2: PDF OCR --- */}
@@ -216,7 +218,8 @@ export function AgentUISandboxPage() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 2: PDF OCR Analysis
           </h2>
-          <AgentStepper>
+          <MasterWorkflowWrapper>
+            <AgentStepper>
             {/* 1. First Thought */}
             <CombinedReasoningBlock sentences={["I need to read the attached PDF, but it looks like there's no textual content, just an image on the first page. I'll probably need to use a computer to inspect it. The first step is uploading the attachment for analysis. It seems that I might need OCR to extract any possible information. Since the second page is blank, I need to focus on the first. I guess I may also be able to use OCR if necessary."]} />
 
@@ -248,13 +251,15 @@ export function AgentUISandboxPage() {
               />
             </AgentStepAccordion>
           </AgentStepper>
+          </MasterWorkflowWrapper>
         </div>
         {/* --- WORKFLOW 3: STANDALONE PDF GENERATION --- */}
         <div>
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 3: Standalone PDF Generation
           </h2>
-          <AgentStepper>
+          <MasterWorkflowWrapper>
+            <AgentStepper>
             {/* 1. First Thought */}
             <CombinedReasoningBlock
               sentences={["I have all the student details and the disciplinary policy. I'll now generate an official warning letter in markdown format, maintaining a professional and stern tone as per the school's guidelines."]}
@@ -274,6 +279,7 @@ export function AgentUISandboxPage() {
               />
             </AgentStepAccordion>
           </AgentStepper>
+          </MasterWorkflowWrapper>
         </div>
 
         {/* --- WORKFLOW 4: LARGE WEB SEARCH --- */}
@@ -281,7 +287,8 @@ export function AgentUISandboxPage() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 4: Large Web Search
           </h2>
-          <AgentStepper>
+          <MasterWorkflowWrapper>
+            <AgentStepper>
             {/* 1. First Thought */}
             <CombinedReasoningBlock
               sentences={["The user asked for a comprehensive list of all recent AI developments. I will perform a broad web search and gather a large number of sources to cross-reference."]}
@@ -304,6 +311,7 @@ export function AgentUISandboxPage() {
               />
             </AgentStepAccordion>
           </AgentStepper>
+          </MasterWorkflowWrapper>
         </div>
 
         {/* --- WORKFLOW 5: KNOWLEDGE BASE SEARCH --- */}
@@ -311,7 +319,8 @@ export function AgentUISandboxPage() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 5: Internal Knowledge Base Search (RAG)
           </h2>
-          <AgentStepper>
+          <MasterWorkflowWrapper>
+            <AgentStepper>
             {/* 1. First Thought */}
             <CombinedReasoningBlock sentences={["The user asked for the internal vacation policy. I will search our internal knowledge base (RAG) to find the relevant employee handbook and policy documents."]} />
 
@@ -341,6 +350,7 @@ export function AgentUISandboxPage() {
               />
             </AgentStepAccordion>
           </AgentStepper>
+          </MasterWorkflowWrapper>
         </div>
 
         {/* --- WORKFLOW 6: MASSIVE 23-STEP RAG EXECUTION --- */}
@@ -360,7 +370,8 @@ export function AgentUISandboxPage() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 7: Uploading to CDN
           </h2>
-          <AgentStepper>
+          <MasterWorkflowWrapper>
+            <AgentStepper>
             {/* 1. First Thought */}
             <CombinedReasoningBlock
               sentences={["I will upload the finalized PDF to our public CDN so it can be securely shared with the parents."]}
@@ -381,6 +392,7 @@ export function AgentUISandboxPage() {
               />
             </AgentStepAccordion>
           </AgentStepper>
+          </MasterWorkflowWrapper>
         </div>
 
         {/* --- WORKFLOW 8: TYPEWRITER ACCORDION --- */}
@@ -388,7 +400,8 @@ export function AgentUISandboxPage() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 8: Typewriter Accordion
           </h2>
-          <AgentStepper>
+          <MasterWorkflowWrapper>
+            <AgentStepper>
             <AgentStepAccordion
               title="Thought for 5s"
               status="success"
@@ -405,6 +418,7 @@ export function AgentUISandboxPage() {
               />
             </AgentStepAccordion>
           </AgentStepper>
+          </MasterWorkflowWrapper>
         </div>
 
         {/* --- WORKFLOW 9: AI THINKING BLOCK --- */}
