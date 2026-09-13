@@ -10,6 +10,7 @@ import Handlebars from 'handlebars';
 import { exec } from 'child_process';
 import util from 'util';
 import { marked } from 'marked';
+import { NodeSSH } from 'node-ssh';
 
 const execPromise = util.promisify(exec);
 
@@ -124,6 +125,17 @@ export const getMcpTools = () => [
     }
   },
   {
+    name: 'execute_terminal_command',
+    description: 'Executes a native bash/terminal command directly on the host computer. You can use this to run curl, tesseract, Python, or system utilities.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        command: { type: 'string', description: 'The exact bash/terminal command to execute.' }
+      },
+      required: ['command']
+    }
+  },
+  {
     name: 'parse_document',
     description: 'Downloads a file (PDF or Image) from a URL and extracts all text from it. Use this tool IMMEDIATELY to read any attached user files.',
     inputSchema: {
@@ -134,11 +146,23 @@ export const getMcpTools = () => [
       },
       required: ['url', 'mimeType']
     }
+  },
+  {
+    name: 'internal_thought',
+    description: 'Use this tool BEFORE taking any action (like running code, uploading a file, or querying the DB) to explain your reasoning to the user. This builds trust and transparency.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'A short 3-5 word title of what you are doing (e.g. "Evaluating PDF attachment" or "Querying User Database")' },
+        details: { type: 'string', description: 'A 1-2 sentence explanation of your thought process and what you are about to do.' }
+      },
+      required: ['title', 'details']
+    }
   }
 ];
 
 export const handleToolCall = async (name, args, context = {}) => {
-  console.log(`[MCP Tool Called] ${name}`, args, context);
+  const { userEmail = 'unknown@classgrid.in', userRole = '', subdomain = '', sessionId = 'default' } = context;
 
   try {
     if (name === 'unified_db_query') {
@@ -349,43 +373,103 @@ export const handleToolCall = async (name, args, context = {}) => {
       }
     }
 
+    if (name === 'internal_thought') {
+        const { title, details } = args;
+        console.log(`\n🧠 [THOUGHT] ${title}: ${details}`);
+        return {
+            content: [{ type: 'text', text: `Thought recorded successfully. Proceed with your next action.` }]
+        };
+    }
+
     if (name === 'execute_terminal_command') {
         const { command } = args;
-        console.log(`\n⚠️ [TERMINAL ACCESS] AI is executing native command: ${command}`);
+        console.log(`\n⚠️ [TERMINAL ACCESS] AI is spinning up Temporary Computer on AWS Sandbox...`);
         try {
-            const { stdout, stderr } = await execPromise(command);
+            const ssh = new NodeSSH();
+            const isProd = process.env.NODE_ENV === 'production';
+            await ssh.connect({
+                host: isProd ? '172.31.6.98' : '13.63.34.197', // Private IP for prod, Public IP for local testing
+                username: 'ubuntu',
+                ...(process.env.AGENT_SSH_KEY 
+                    ? { privateKey: process.env.AGENT_SSH_KEY.replace(/\\n/g, '\n') } 
+                    : { privateKeyPath: 'C:\\Users\\nikhi\\Downloads\\Nikhil.pem' })
+            });
+
+            console.log(`[Sandbox] Connected! Executing command safely...`);
+            
+            const { sessionId = 'default' } = context;
+            
+            // This is the Notion AI magic: 
+            // 1. Spins up isolated container
+            // 2. Runs the exact command inside
+            // 3. Destroys the container instantly (--rm)
+            // We use -v to mount a shared /data folder specific to this chat session!
+            const scriptPath = `/home/ubuntu/sandbox_data/${sessionId}/script.sh`;
+            
+            const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${command}\nEOF_SCRIPT`;
+            await ssh.execCommand(writeCommand);
+
+            const dockerCommand = `docker run --rm -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox bash /data/script.sh`;
+            const result = await ssh.execCommand(dockerCommand);
+            
+            ssh.dispose();
+            
             return {
-                content: [{ type: 'text', text: `Command executed successfully.\nSTDOUT:\n${stdout}\nSTDERR:\n${stderr}` }]
+                content: [{ type: 'text', text: `Command executed in isolated Sandbox.\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}` }]
             };
         } catch (e) {
             return {
-                content: [{ type: 'text', text: `Command failed!\nError: ${e.message}\nSTDOUT:\n${e.stdout || ''}\nSTDERR:\n${e.stderr || ''}` }]
+                content: [{ type: 'text', text: `Sandbox Error: ${e.message}` }]
             };
         }
     }
 
-    const sandboxUrl = 'https://ai-sandbox-worker.nikhil-shinde-6b9.workers.dev';
-    
     if (name === 'run_code') {
         const { language, code } = args;
         
-        console.log(`\n🚀 [CLOUDFLARE SANDBOX] AI is executing ${language} code on the Edge Network!`);
+        console.log(`\n🚀 [AWS SANDBOX] AI is executing ${language} code securely inside the Temporary Computer!`);
         
         try {
-            const response = await fetch(sandboxUrl, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer classgrid-super-secret-key-2026'
-                },
-                body: JSON.stringify({ action: 'run_code', language, code })
+            const ssh = new NodeSSH();
+            const isProd = process.env.NODE_ENV === 'production';
+            await ssh.connect({
+                host: isProd ? '172.31.6.98' : '13.63.34.197', // Private IP for prod, Public IP for local testing
+                username: 'ubuntu',
+                ...(process.env.AGENT_SSH_KEY 
+                    ? { privateKey: process.env.AGENT_SSH_KEY.replace(/\\n/g, '\n') } 
+                    : { privateKeyPath: 'C:\\Users\\nikhi\\Downloads\\Nikhil.pem' })
             });
-            const result = await response.json();
+
+            const { sessionId = 'default' } = context;
+
+            // Instead of inline execution (which causes newline escape issues),
+            // we will write the code to a file in the shared /data folder and execute it.
+            let ext = '';
+            let execCmd = '';
+            
+            if (language === 'python') { ext = 'py'; execCmd = 'python3'; }
+            else if (language === 'javascript') { ext = 'js'; execCmd = 'node'; }
+            else if (language === 'bash') { ext = 'sh'; execCmd = 'bash'; }
+            else throw new Error("Unsupported language. Use python, javascript, or bash.");
+
+            // Create the directory on the host, write the file from the code string (using a heredoc to preserve exact contents),
+            // and then run the docker container which maps that directory to /data and executes the file.
+            const scriptPath = `/home/ubuntu/sandbox_data/${sessionId}/script.${ext}`;
+            
+            // We use EOF heredoc to safely write the script without quote escaping issues
+            const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${code}\nEOF_SCRIPT`;
+            await ssh.execCommand(writeCommand);
+
+            const dockerCommand = `docker run --rm -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox ${execCmd} /data/script.${ext}`;
+            const result = await ssh.execCommand(dockerCommand);
+            
+            ssh.dispose();
+            
             return {
-                content: [{ type: 'text', text: `[Sandbox Execution Results]\n\n${result.output || result.error}` }],
+                content: [{ type: 'text', text: `[Sandbox Execution Results]\n\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}` }],
             };
         } catch (e) {
-            return { content: [{ type: 'text', text: `Failed to connect to Cloudflare Sandbox Worker: ${e.message}` }] };
+            return { content: [{ type: 'text', text: `Failed to connect to AWS Sandbox: ${e.message}` }] };
         }
     }
 

@@ -318,10 +318,14 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: When outputting data in tables or lists, NEVER wrap single words, names, roles, or email addresses in Markdown code blocks (backticks). Output them as plain text. Only use code blocks for actual programming code, Mermaid charts, or JSON.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (DATA FETCHING & EMAILS): \n1. If the user asks you to fetch or show data (even 500+ or 1000+ items), YOU MUST use 'unified_db_query' and literally type out all the items directly in the chat. DO NOT hallucinate fake text files or fake names.\n2. NEVER generate a PDF or send an email automatically. NEVER even ask the user "Would you like me to make a PDF?".\n3. IF the user explicitly demands a PDF (e.g., "Generate a PDF report"), YOU MUST DO IT using 'generate_pdf_from_db'. Provide the CDN link and STOP. Do NOT email it unless they explicitly said "email it". Once you give the link, close the task.\n4. NEVER use '$ne' to exclude emails you think you already sent. When fetching users, just run a clean '{ role: "org_admin" }' query and list them.\n5. STRICT EMAIL APPROVAL GATE: NEVER execute the 'send_email' tool in the same turn that you generate the email draft. Even if the user explicitly says 'send an email to everyone right now', you MUST first output the draft in the chat, ask for approval, and STOP. You are strictly forbidden from executing 'send_email' until the user replies with 'Approved' or 'Send it' in the subsequent turn.\n6. NEVER generate "Proof of Delivery" PDFs or argue with the user about whether emails were sent. If the user says emails were sent twice, apologize and accept it. LLMs cannot see physical delivery logs.\n\nDATABASE SCHEMA HINTS:\n- Organization Admins have the exact role string "org_admin" in the database.\n- Students have the role "student".\n- Server/API traffic logs are stored in the "systemlogs" MongoDB collection.\n- Super Admin audit logs (dashboard logs) are stored in the "AdminAuditLog" model/collection.\n- Emails sent by the system (and by the AI) are stored in the "NotificationLog" model/collection. Query this collection to verify if an email was actually sent!`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (CLOUDFLARE SANDBOX TERMINAL): You now have access to a secure Cloudflare Edge Sandbox with Interactive Terminal (PTY) capabilities! You can use the 'run_code' tool to execute 'python', 'javascript', AND 'bash' commands safely. If a user asks you to perform complex data analysis, you MUST write a script and use 'run_code'. If you need missing libraries (e.g., pdfplumber, pandas), use 'run_code' with language 'bash' to run 'pip install' or standard terminal commands inside the sandbox first! Combine this with your database tools (SQL/MongoDB) to fetch data.`;
-        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (DOCUMENT PARSING): If the user's message contains "Attached Files:" with URLs, YOU MUST READ AND PARSE THEM IMMEDIATELY!
-IT IS STRICTLY FORBIDDEN to ask the user for permission to parse or read a file. 
-1. YOU MUST USE the 'parse_document' tool to extract the text from the attached file URL. This tool natively handles both PDFs and Images using advanced OCR. Do NOT try to write Python scripts for OCR.
-2. If asked to generate a CSV/Excel file from the extracted text, use the 'run_code' tool (language: python) with 'pandas' to generate the file, base64 encode it, and then use the 'upload_file_to_cdn' tool to get a download link!`;
+        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (AGENT CHAIN OF THOUGHT - 1000% REQUIRED): You are an autonomous Agent. Before you take ANY action, you MUST articulate your thought process to the user so they can follow along in the UI.
+To do this, you MUST call the \`internal_thought\` tool BEFORE calling ANY other tool. This applies to EVERYTHING.
+Example 1 (Reading Files): If a user uploads a PDF, first call \`internal_thought\` (Title: "Evaluating File", Details: "I need to read this file..."), THEN call \`parse_document\`.
+Example 2 (Generating PDFs): Before generating a PDF, call \`internal_thought\` (Title: "Generating PDF Report", Details: "I am formatting the data into a PDF..."), THEN call \`generate_pdf_from_db\` or \`generate_pdf\`.
+Example 3 (Generating Excel): Before writing an Excel file via Python, call \`internal_thought\` (Title: "Creating Excel File", Details: "I will use Pandas to process this data..."), THEN call \`run_code\`.
+Example 4 (Database): Before fetching data, call \`internal_thought\` (Title: "Querying Database", Details: "Fetching user records..."), THEN call \`unified_db_query\`.
+Example 5 (Emails): Before sending an email, call \`internal_thought\` (Title: "Sending Email", Details: "Dispatching the notification..."), THEN call \`send_email\`.
+IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just record your thought, then act immediately!`;
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {
@@ -442,6 +446,14 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to parse or read a file.
                 }
             ],
             toolHandlers: Object.fromEntries(Object.entries({
+                internal_thought: async (args) => {
+                    const { title, details } = args;
+                    // Stream the thought directly to the frontend UI!
+                    res.write(`data: ${JSON.stringify({ type: "thought", thought: `**${title}**\n${details}` })}\n\n`);
+                    
+                    const result = await handleToolCall('internal_thought', args, {});
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
                 unified_db_query: async (args) => {
                     const userEmail = req.user?.email || body.userEmail || '';
                     const userRole = body.userRole || '';
@@ -450,7 +462,7 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to parse or read a file.
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
                 run_code: async (args) => {
-                    const result = await handleToolCall('run_code', args, {});
+                    const result = await handleToolCall('run_code', args, { sessionId });
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
                 generate_pdf: async (args) => {
@@ -532,14 +544,10 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to parse or read a file.
                             })
                         });
                         const searchData = await tavilyRes.json();
-                        if (searchData.answer) {
-                            const sourceUrls = (searchData.results || []).map(r => `- ${r.title}: ${r.url}`).join('\n');
-                            return `${searchData.answer}\n\nSource URLs:\n${sourceUrls}`;
-                        } else if (searchData.results && searchData.results.length > 0) {
-                            return searchData.results.map(r => `${r.title} (${r.url})\n${r.content}`).join('\n\n');
-                        } else {
-                            return "No search results found.";
-                        }
+                        return JSON.stringify({
+                            answer: searchData.answer || null,
+                            results: searchData.results || []
+                        });
                     } catch (e) {
                         return "Web Search failed: " + e;
                     }

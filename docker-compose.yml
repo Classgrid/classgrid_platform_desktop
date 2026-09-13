@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: classgrid_backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./server/.env
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    restart: unless-stopped
+    volumes:
+      # Optional: mount a logs folder for persistence if Winston writes files
+      - backend_logs:/app/logs
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: classgrid_frontend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+volumes:
+  backend_logs:

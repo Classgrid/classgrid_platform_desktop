@@ -38,6 +38,7 @@ import {
   AlertTriangle,
   OctagonAlert,
   Loader2,
+  UploadCloud,
   type LucideIcon,
 } from "lucide-react";
 
@@ -83,6 +84,21 @@ import { MermaidViewer } from "./MermaidViewer";
 import { PdfAttachment } from "@/features/chat/components/PdfAttachment";
 import { CopyBlockClient } from "./CopyBlockClient";
 import { ApprovalCard } from "./ApprovalCard";
+
+// â”€â”€â”€ Agent Stepper Components â”€â”€â”€
+import { AgentStepper } from "./stepper/AgentStepper";
+import { AgentStepAccordion } from "./stepper/AgentStepAccordion";
+import { ThoughtStepView } from "./stepper/ThoughtStepView";
+import { TerminalToolView } from "./stepper/TerminalToolView";
+import { DatabaseQueryView } from "./stepper/DatabaseQueryView";
+import { FileActionView } from "./stepper/FileActionView";
+import { WebSearchView } from "./stepper/WebSearchView";
+import { EmailActionView } from "./stepper/EmailActionView";
+import { DocumentGenerationView } from "./stepper/DocumentGenerationView";
+import { KnowledgeBaseSearchView } from "./stepper/KnowledgeBaseSearchView";
+import { CdnUploadView } from "./stepper/CdnUploadView";
+import { EmailSentView } from "./stepper/EmailSentView";
+import { SimpleLogStepView } from "./stepper/SimpleLogStepView";
 
 // â”€â”€â”€ SDK-local type definitions & stubs â”€â”€â”€
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
@@ -150,12 +166,20 @@ type UIFileAttachment = {
   url?: string;
 };
 
-type ChatMessage = {
+export type AgentStep = 
+  | { id: string, type: "thought", title: string, details: string, status: "loading" | "success" }
+  | { id: string, type: "tool", tool: string, args: any, result?: string, status: "loading" | "success" | "error" };
+
+export type ChatMessage = {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
-  createdAt: number;
+  thought?: string;
+  steps?: AgentStep[];
   typing?: boolean;
+  tocSummary?: string;
+  fileUrls?: string[];
+  createdAt: number;
   contextUrl?: string;
   contextTitle?: string;
   attachments?: AiAttachment[];
@@ -176,62 +200,10 @@ type StructuredBlock =
   | { type: "table"; headers: string[]; rows: string[][] }
   | { type: "code"; code: string; language: string };
 
-const SUGGESTED_QUESTIONS = [
-  "What is Classgrid?",
-  "How can my school use Classgrid?",
-  "Does Classgrid provide websites?",
-  "How do I get started?",
-];
-
-function suggestedQuestionsForPage(pageContext?: PageContext) {
-  const path = pageContext?.path || "";
-
-  if (path === "/pricing") {
-    return [
-      "How does Classgrid pricing work?",
-      "Which modules are included?",
-      "How do I get a quote?",
-      "Is pricing fixed or custom?",
-    ];
-  }
-
-  if (path.startsWith("/product/modules")) {
-    return [
-      "What does this module do?",
-      "Who uses this module?",
-      "How does this module help admins?",
-      "How do I see a demo?",
-    ];
-  }
-
-  if (path.startsWith("/support") || path.startsWith("/help-center")) {
-    return [
-      "How do I raise a support ticket?",
-      "What is Classgrid Talk vs support tickets?",
-      "I'm from an institution â€” how do I get help?",
-      "Can I track my ticket status?",
-    ];
-  }
-
-  if (path.startsWith("/terms") || path.startsWith("/privacy") || path.startsWith("/cookies") || path.startsWith("/acceptable-use")) {
-    return [
-      "Summarize this policy",
-      "What data does Classgrid handle?",
-      "What should institutions know?",
-      "Who do I contact for policy questions?",
-    ];
-  }
-
-  if (path.includes("contact") || path.includes("demo")) {
-    return [
-      "What happens after I submit this form?",
-      "How do I book a demo?",
-      "Who should contact sales?",
-      "What details should I include?",
-    ];
-  }
-
-  return SUGGESTED_QUESTIONS;
+function suggestedQuestionsForPage(pageContext?: PageContext, userRole?: string) {
+  // We have removed all hardcoded suggested questions.
+  // In the future, these can be fetched from the backend dynamically.
+  return [];
 }
 
 const panelTransition = {
@@ -1772,7 +1744,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const isAnyFileUploading = attachedFiles.some(f => f.status === "uploading");
   const canSubmit = (input.trim().length > 0 || hasDocsContext || attachedFiles.length > 0) && !isAnyFileUploading;
   const emptyState = useMemo(() => messages.length === 0, [messages.length]);
-  const suggestedQuestions = useMemo(() => suggestedQuestionsForPage(pageContext), [pageContext]);
+  const suggestedQuestions = useMemo(() => suggestedQuestionsForPage(pageContext, session?.user?.role), [pageContext, session?.user?.role]);
 
   useEffect(() => {
     const onEscape = (event: KeyboardEvent) => {
@@ -2251,6 +2223,51 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     { ...lastMsg, thought: (lastMsg.thought || "") + thoughtText }
                   ];
                 });
+              } else if (event.type === "tool_start") {
+                setMessages((prev) => {
+                  let lastMsg = prev[prev.length - 1];
+                  let targetPrev = prev;
+                  if (!lastMsg || lastMsg.role !== "assistant") {
+                    lastMsg = { id: createMessageId("assistant"), role: "assistant", content: "", createdAt: Date.now() };
+                    targetPrev = [...prev, lastMsg];
+                  }
+                  
+                  const newStep: AgentStep = event.tool === 'internal_thought' 
+                    ? { id: crypto.randomUUID(), type: 'thought', title: event.args?.title || 'Thought', details: event.args?.details || '', status: 'loading' }
+                    : { id: crypto.randomUUID(), type: 'tool', tool: event.tool, args: event.args, status: 'loading' };
+                    
+                  return [
+                    ...targetPrev.slice(0, -1),
+                    { ...lastMsg, steps: [...(lastMsg.steps || []), newStep] }
+                  ];
+                });
+              } else if (event.type === "tool_result") {
+                setMessages((prev) => {
+                  const lastMsg = prev[prev.length - 1];
+                  if (!lastMsg || lastMsg.role !== "assistant" || !lastMsg.steps) return prev;
+                  
+                  const stepIndex = [...lastMsg.steps].reverse().findIndex(s => 
+                    (s.type === 'tool' && s.tool === event.tool && s.status === 'loading') ||
+                    (s.type === 'thought' && event.tool === 'internal_thought' && s.status === 'loading')
+                  );
+                  
+                  if (stepIndex === -1) return prev;
+                  
+                  const actualIndex = lastMsg.steps.length - 1 - stepIndex;
+                  const updatedSteps = [...lastMsg.steps];
+                  
+                  const step = updatedSteps[actualIndex];
+                  if (step.type === 'tool') {
+                    updatedSteps[actualIndex] = { ...step, status: 'success', result: event.result };
+                  } else if (step.type === 'thought') {
+                    updatedSteps[actualIndex] = { ...step, status: 'success' };
+                  }
+                  
+                  return [
+                    ...prev.slice(0, -1),
+                    { ...lastMsg, steps: updatedSteps }
+                  ];
+                });
               } else if (event.type === "error") {
                 streamError = event.error || "Unable to answer right now. Please try again.";
               }
@@ -2489,7 +2506,226 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                           </>
                         ) : (
                           <div className="pl-1 w-full max-w-full">
-                            {message.thought && message.thought.trim().length > 0 && (
+                            {/* Render Agent Stepper if there are steps */}
+                            {message.steps && message.steps.length > 0 && (
+                              <div className="mb-4">
+                                <AgentStepper>
+                                  {message.steps.map((step) => {
+                                    if (step.type === 'thought') {
+                                      return (
+                                        <ThoughtStepView 
+                                          key={step.id}
+                                          title={step.title}
+                                          details={step.details}
+                                        />
+                                      );
+                                    }
+                                    
+                                    if (step.type === 'tool') {
+                                      // Render specific tool views
+                                      if (step.tool === 'run_code' || step.tool === 'execute_terminal_command') {
+                                        return (
+                                          <AgentStepAccordion 
+                                            key={step.id}
+                                            title={step.tool === 'run_code' ? 'Executing Code' : 'Terminal Command'} 
+                                            status={step.status} 
+                                            defaultExpanded={step.status === 'loading'}
+                                          >
+                                            <TerminalToolView 
+                                              command={step.args?.command || step.args?.code || 'Running...'}
+                                              output={step.result || 'Waiting for output...'}
+                                            />
+                                          </AgentStepAccordion>
+                                        );
+                                      }
+                                      
+                                      if (step.tool === 'unified_db_query') {
+                                        let results = [];
+                                        try {
+                                          // unified_db_query returns stringified JSON, or an error string
+                                          if (step.result && step.result.startsWith('[')) {
+                                            results = JSON.parse(step.result.split('\n\n[SYSTEM DIRECTIVE')[0]);
+                                          } else if (step.result && step.result.startsWith('{')) {
+                                            results = [JSON.parse(step.result)];
+                                          }
+                                        } catch(e) {}
+                                        return (
+                                          <AgentStepAccordion 
+                                            key={step.id}
+                                            title="Querying Database" 
+                                            status={step.status} 
+                                            defaultExpanded={step.status === 'loading'}
+                                          >
+                                            <DatabaseQueryView 
+                                              query={JSON.stringify(step.args, null, 2)}
+                                              results={results}
+                                            />
+                                          </AgentStepAccordion>
+                                        );
+                                      }
+                                      
+                                      if (step.tool === 'parse_document') {
+                                        return (
+                                          <AgentStepAccordion 
+                                            key={step.id}
+                                            title="Reading Document" 
+                                            status={step.status} 
+                                            defaultExpanded={step.status === 'loading'}
+                                          >
+                                            <FileActionView fileName={step.args?.url?.split('/').pop() || 'document'} />
+                                          </AgentStepAccordion>
+                                        );
+                                      }
+
+                                      if (step.tool === 'send_email') {
+                                        if (step.status === 'success') {
+                                          let toCount = 1;
+                                          if (step.args?.to && step.args.to.includes(',')) {
+                                            toCount = step.args.to.split(',').length;
+                                          }
+                                          return (
+                                            <div key={step.id} className="mb-2">
+                                              <EmailSentView 
+                                                toCount={toCount}
+                                                subject={step.args?.subject || "No Subject"}
+                                              />
+                                            </div>
+                                          );
+                                        }
+                                        return (
+                                          <AgentStepAccordion 
+                                            key={step.id}
+                                            title="Drafting email" 
+                                            status={step.status} 
+                                            defaultExpanded={step.status === 'loading'}
+                                          >
+                                            <EmailActionView 
+                                              to={step.args?.to || "Unknown Recipient"}
+                                              subject={step.args?.subject || "No Subject"}
+                                              bodyPreview={step.args?.body || "Empty body"}
+                                            />
+                                          </AgentStepAccordion>
+                                        );
+                                      }
+
+                                      if (step.tool === 'search_web') {
+                                        let searchResults = [];
+                                        let searchError;
+                                        if (step.result) {
+                                          if (step.result.startsWith('Web Search failed')) {
+                                            searchError = step.result;
+                                          } else {
+                                            try {
+                                              const parsed = JSON.parse(step.result);
+                                              if (parsed.results && Array.isArray(parsed.results)) {
+                                                searchResults = parsed.results;
+                                              }
+                                            } catch (e) {
+                                              // Fallback if parsing fails
+                                              searchError = "Could not parse search results.";
+                                            }
+                                          }
+                                        }
+                                        return (
+                                          <AgentStepAccordion 
+                                            key={step.id}
+                                            title="Searched the web" 
+                                            status={step.status} 
+                                            defaultExpanded={step.status === 'loading'}
+                                          >
+                                            <WebSearchView 
+                                              query={step.args?.query}
+                                              searchDomain={step.args?.domain}
+                                              results={searchResults}
+                                              error={searchError}
+                                            />
+                                          </AgentStepAccordion>
+                                        );
+                                      }
+                                      
+                                      if (step.tool === 'generate_pdf' || step.tool === 'generate_pdf_from_db') {
+                                        let fileName = "document.pdf";
+                                        let pageCount = 1;
+                                        let size = "Unknown";
+                                        
+                                        if (step.result) {
+                                          if (step.result.includes("SUCCESS")) {
+                                            // The result often has a CDN Download URL.
+                                            // We could parse it, but for the UI we just show it succeeded.
+                                            size = "Available via CDN";
+                                          }
+                                        }
+
+                                        return (
+                                          <AgentStepAccordion 
+                                            key={step.id}
+                                            title={step.tool === 'generate_pdf_from_db' ? "Generating database report" : "Generating PDF document"} 
+                                            status={step.status} 
+                                            defaultExpanded={step.status === 'loading'}
+                                          >
+                                            <DocumentGenerationView 
+                                              fileName={step.args?.title ? `${step.args.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf` : fileName}
+                                              pageCount={pageCount}
+                                              size={size}
+                                            />
+                                          </AgentStepAccordion>
+                                        );
+                                      }
+
+                                      if (step.tool === 'search_knowledge_base') {
+                                        return (
+                                          <AgentStepAccordion 
+                                            key={step.id}
+                                            title="Searched Knowledge Base" 
+                                            status={step.status} 
+                                            defaultExpanded={step.status === 'loading'}
+                                          >
+                                            <KnowledgeBaseSearchView 
+                                              results={[{
+                                                title: step.args?.query || "Search Query",
+                                                source: "Internal Knowledge Base"
+                                              }]}
+                                            />
+                                          </AgentStepAccordion>
+                                        );
+                                      }
+
+                                      if (step.tool === 'upload_file_to_cdn') {
+                                        let cdnUrl = "";
+                                        if (step.result && step.result.includes("Public URL:")) {
+                                          cdnUrl = step.result.split("Public URL:")[1].trim();
+                                        }
+                                        return (
+                                          <AgentStepAccordion 
+                                            key={step.id}
+                                            title="Upload file to CDN" 
+                                            status={step.status} 
+                                            defaultExpanded={step.status === 'loading'}
+                                            icon={<UploadCloud className="h-4 w-4" />}
+                                          >
+                                            <CdnUploadView 
+                                              fileName={step.args?.fileName || "upload.file"}
+                                              url={cdnUrl}
+                                            />
+                                          </AgentStepAccordion>
+                                        );
+                                      }
+
+                                      // Generic fallback
+                                      return (
+                                        <SimpleLogStepView 
+                                          key={step.id}
+                                          text={step.status === 'success' ? `Successfully used ${step.tool.replace(/_/g, ' ')}` : `Using ${step.tool.replace(/_/g, ' ')}...`}
+                                        />
+                                      );
+                                    }
+                                    return null;
+                                  })}
+                                </AgentStepper>
+                              </div>
+                            )}
+
+                            {message.thought && message.thought.trim().length > 0 && !(message.steps && message.steps.length > 0) && (
                               <Accordion type="single" collapsible={true as any} className="mb-4">
                                 <AccordionItem value="thought" className="border-none">
                                   <AccordionTrigger className="w-fit flex-none justify-start gap-1.5 h-auto text-[11px] font-medium text-slate-500 hover:text-slate-700 hover:no-underline dark:text-slate-400 dark:hover:text-slate-300 transition-colors cursor-pointer [&>svg]:size-3 [&>svg]:ml-0">

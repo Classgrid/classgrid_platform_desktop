@@ -108,6 +108,7 @@ import { SharedProfilePage } from "@/features/shared/pages/SharedProfilePage";
 import SandboxProfilePage from "@/features/shared/pages/SandboxProfilePage";
 import DateTimePickerSandbox from "@/features/sandbox/pages/DateTimePickerSandbox";
 import { SandboxPage } from "@/features/superadmin/pages/SandboxPage";
+import { AgentUISandboxPage } from "@/features/superadmin/pages/AgentUISandboxPage";
 import { StorageLayout } from "@/components/layout/StorageLayout";
 import { StorageFilesPage } from "@/features/superadmin/pages/StorageFilesPage";
 import { StorageAnalyticsPage } from "@/features/superadmin/pages/StorageAnalyticsPage";
@@ -221,6 +222,7 @@ export function AppRouter() {
       <Route path="/test-full-login" element={<TestFullScreenLoginPage />} />
       <Route path="/sandbox-profile" element={<SandboxProfilePage />} />
       <Route path="/sandbox/datetime" element={<DateTimePickerSandbox />} />
+      <Route path="/agent-sandbox" element={<AgentUISandboxPage />} />
 
       <Route path="/logout" element={<LogoutPage />} />
       {/* ── DYNAMIC AUTH ROUTES (Based on Subdomain) ── */}
