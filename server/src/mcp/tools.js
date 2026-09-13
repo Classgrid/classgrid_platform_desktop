@@ -1,3 +1,4 @@
+import fs from 'fs';
 import mongoose from 'mongoose';
 import { getChatSb } from '../config/supabaseClient.js';
 import redis from '../config/redis.js';
@@ -321,7 +322,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       console.log(`👤 User: ${userEmail} | 🆔 Session: ${sessionId}`);
       console.log(`💻 Command:\n${command}`);
       console.log(`=================================================\n`);
-      require('fs').appendFileSync('ai_commands.log', `[${new Date().toISOString()}] COMMAND: ${command}\n`);
+      fs.appendFileSync('ai_commands.log', `[${new Date().toISOString()}] COMMAND: ${command}\n`);
 
       accessLogger.info("Sandbox Terminal Action Started", {
         action: "sandbox_terminal_start",
