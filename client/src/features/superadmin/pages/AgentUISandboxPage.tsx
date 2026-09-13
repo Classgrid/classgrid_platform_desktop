@@ -1,4 +1,5 @@
 import React from 'react';
+import { MasterWorkflowWrapper } from '@/components/ai/components/stepper/MasterWorkflowWrapper';
 import { useTheme } from 'next-themes';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/marketing_ui/toggle-group';
