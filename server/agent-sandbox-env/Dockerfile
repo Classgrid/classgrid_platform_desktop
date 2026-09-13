@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install standard data science and PDF libraries for the Agent
 RUN pip install --no-cache-dir \
-    pandas numpy matplotlib seaborn openpyxl reportlab pymupdf pdfplumber pytest \
+    pandas numpy matplotlib seaborn openpyxl reportlab pymupdf pdfplumber pytest fpdf \
     playwright
 
 # Create a non-root user for security (so the Agent isn't running as root inside the container)

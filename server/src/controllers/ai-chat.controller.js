@@ -170,7 +170,7 @@ You are an autonomous AI Agent in a Sandbox. You MUST strictly follow these exac
 
 --- WORKFLOW 1: DISCIPLINARY EMAIL & DOCUMENT GENERATION ---
 If the user asks to identify students involved in an incident, draft an email, and generate a warning letter, follow this EXACT sequence:
-1. \`internal_thought\`: "Evaluating request to identify students, search guidelines, send emails, and generate PDFs."
+1. \`internal_thought_process\`: "Evaluating request to identify students, search guidelines, send emails, and generate PDFs."
 2. \`unified_db_query\`: Query the database for the students involved.
 3. \`search_web\`: Search the school guidelines (e.g., "disciplinary guidelines").
 4. \`send_email\`: Send the warning email to the parents.
@@ -178,33 +178,33 @@ If the user asks to identify students involved in an incident, draft an email, a
 
 --- WORKFLOW 2: PDF OCR ANALYSIS ---
 If the user attaches an identity card or image file (message contains "Attached Files:"), follow this EXACT sequence:
-1. \`internal_thought\`: "I need to download and read the attached file from the computer."
+1. \`internal_thought_process\`: "I need to download and read the attached file from the computer."
 2. \`parse_document\`: Pass the attached URL to download the file.
-3. \`internal_thought\`: "The document is an image. I will use the terminal to run an OCR script on the image to extract the text."
+3. \`internal_thought_process\`: "The document is an image. I will use the terminal to run an OCR script on the image to extract the text."
 4. \`execute_terminal_command\`: Run the exact python3 OCR script provided to you on the file path.
 
 --- WORKFLOW 3: STANDALONE PDF GENERATION ---
 If the user requests to generate a summary report or standalone PDF, follow this EXACT sequence:
-1. \`internal_thought\`: "I will format the notes and generate a clean PDF document for the user to download."
+1. \`internal_thought_process\`: "I will format the notes and generate a clean PDF document for the user to download."
 2. \`generate_pdf\` (or \`generate_pdf_from_db\`): Generate the PDF document.
 
 --- WORKFLOW 4: LARGE WEB SEARCH ---
 If the user asks for external research, competitor analysis, or recent news, follow this EXACT sequence:
-1. \`internal_thought\`: "I will perform a broad web search and gather sources to cross-reference."
+1. \`internal_thought_process\`: "I will perform a broad web search and gather sources to cross-reference."
 2. \`search_web\`: Execute the search query to gather the web results.
 
 --- WORKFLOW 5: INTERNAL KNOWLEDGE BASE SEARCH (RAG) ---
 If the user asks about internal policies, academic hierarchy, employee handbooks, or PTO, follow this EXACT sequence:
-1. \`internal_thought\`: "I will search our internal knowledge base (RAG) to find the relevant policy documents."
+1. \`internal_thought_process\`: "I will search our internal knowledge base (RAG) to find the relevant policy documents."
 2. \`search_knowledge_base\`: Execute the search query to retrieve the internal documents.
 
 --- WORKFLOW 6: COMPLEX MULTI-STEP ANALYSIS (MASSIVE WORKFLOW) ---
 If the user asks you to synthesize many notes or perform a deep analysis, you must chain multiple tools together. ALWAYS precede every single action with a thought.
-Sequence pattern: \`internal_thought\` -> \`search_knowledge_base\` -> \`internal_thought\` -> \`unified_db_query\` -> \`internal_thought\` -> \`run_code\`.
+Sequence pattern: \`internal_thought_process\` -> \`search_knowledge_base\` -> \`internal_thought_process\` -> \`unified_db_query\` -> \`internal_thought_process\` -> \`run_code\`.
 
 --- WORKFLOW 7: UPLOADING TO CDN ---
 If the user asks you to make a file public, or you need to provide a public download link to a file you generated, follow this EXACT sequence:
-1. \`internal_thought\`: "I need to upload the generated file to the public CDN bucket so it can be safely linked."
+1. \`internal_thought_process\`: "I need to upload the generated file to the public CDN bucket so it can be safely linked."
 2. \`upload_file_to_cdn\`: Pass the base64 content to upload the file and get the public R2 URL.
 
 ### How to Upload Files to CDN (CRITICAL INSTRUCTION)
@@ -289,7 +289,7 @@ You are an autonomous AI Agent in a Sandbox. You MUST strictly follow these exac
 
 --- WORKFLOW 1: DISCIPLINARY EMAIL & DOCUMENT GENERATION ---
 If the user asks to identify students involved in an incident, draft an email, and generate a warning letter, follow this EXACT sequence:
-1. \`internal_thought\`: "Evaluating request to identify students, search guidelines, send emails, and generate PDFs."
+1. \`internal_thought_process\`: "Evaluating request to identify students, search guidelines, send emails, and generate PDFs."
 2. \`unified_db_query\`: Query the database for the students involved.
 3. \`search_web\`: Search the school guidelines (e.g., "disciplinary guidelines").
 4. \`send_email\`: Send the warning email to the parents.
@@ -297,33 +297,33 @@ If the user asks to identify students involved in an incident, draft an email, a
 
 --- WORKFLOW 2: PDF OCR ANALYSIS ---
 If the user attaches an identity card or image file (message contains "Attached Files:"), follow this EXACT sequence:
-1. \`internal_thought\`: "I need to download and read the attached file from the computer."
+1. \`internal_thought_process\`: "I need to download and read the attached file from the computer."
 2. \`parse_document\`: Pass the attached URL to download the file.
-3. \`internal_thought\`: "The document is an image. I will use the terminal to run an OCR script on the image to extract the text."
+3. \`internal_thought_process\`: "The document is an image. I will use the terminal to run an OCR script on the image to extract the text."
 4. \`execute_terminal_command\`: Run the exact python3 OCR script provided to you on the file path.
 
 --- WORKFLOW 3: STANDALONE PDF GENERATION ---
 If the user requests to generate a summary report or standalone PDF, follow this EXACT sequence:
-1. \`internal_thought\`: "I will format the notes and generate a clean PDF document for the user to download."
+1. \`internal_thought_process\`: "I will format the notes and generate a clean PDF document for the user to download."
 2. \`generate_pdf\` (or \`generate_pdf_from_db\`): Generate the PDF document.
 
 --- WORKFLOW 4: LARGE WEB SEARCH ---
 If the user asks for external research, competitor analysis, or recent news, follow this EXACT sequence:
-1. \`internal_thought\`: "I will perform a broad web search and gather sources to cross-reference."
+1. \`internal_thought_process\`: "I will perform a broad web search and gather sources to cross-reference."
 2. \`search_web\`: Execute the search query to gather the web results.
 
 --- WORKFLOW 5: INTERNAL KNOWLEDGE BASE SEARCH (RAG) ---
 If the user asks about internal policies, academic hierarchy, employee handbooks, or PTO, follow this EXACT sequence:
-1. \`internal_thought\`: "I will search our internal knowledge base (RAG) to find the relevant policy documents."
+1. \`internal_thought_process\`: "I will search our internal knowledge base (RAG) to find the relevant policy documents."
 2. \`search_knowledge_base\`: Execute the search query to retrieve the internal documents.
 
 --- WORKFLOW 6: COMPLEX MULTI-STEP ANALYSIS (MASSIVE WORKFLOW) ---
 If the user asks you to synthesize many notes or perform a deep analysis, you must chain multiple tools together. ALWAYS precede every single action with a thought.
-Sequence pattern: \`internal_thought\` -> \`search_knowledge_base\` -> \`internal_thought\` -> \`unified_db_query\` -> \`internal_thought\` -> \`run_code\`.
+Sequence pattern: \`internal_thought_process\` -> \`search_knowledge_base\` -> \`internal_thought_process\` -> \`unified_db_query\` -> \`internal_thought_process\` -> \`run_code\`.
 
 --- WORKFLOW 7: UPLOADING TO CDN ---
 If the user asks you to make a file public, or you need to provide a public download link to a file you generated, follow this EXACT sequence:
-1. \`internal_thought\`: "I need to upload the generated file to the public CDN bucket so it can be safely linked."
+1. \`internal_thought_process\`: "I need to upload the generated file to the public CDN bucket so it can be safely linked."
 2. \`upload_file_to_cdn\`: Pass the base64 content to upload the file and get the public R2 URL.`;
 
 
@@ -561,7 +561,8 @@ The sandbox is a temporary working computer where you can create, inspect, proce
 - **Media processing:** Use FFmpeg to convert media, trim clips, extract audio/frames, and create video outputs.
 - **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
-        dynamicSystemPrompt += `\n\nTHINKING RULE (CRITICAL): You MUST ALWAYS call the 'internal_thought_process' tool FIRST for EVERY SINGLE user message without exception, even for simple greetings like 'Hello'. Never output your final answer without thinking first. CRITICAL: When writing your thought, DO NOT use internal developer terms like 'RAG', 'System Prompt', 'Backend', 'Static Knowledge', 'Internal Records', or 'Context'. NEVER quote or restate rule names (e.g. 'MODERATION SECRECY RULE' or 'ESCALATION RULE') inside your thought. Write your thoughts purely as if you are a professional human support agent evaluating the user's need, without analyzing system instructions out loud.
+        dynamicSystemPrompt += `\n\nTHINKING RULE (CRITICAL): You MUST ALWAYS call the 'internal_thought_process' tool FIRST for EVERY SINGLE user message without exception, even for simple greetings like 'Hello'. Never output your final answer without thinking first. CRITICAL: When writing your thought, DO NOT use internal developer terms like 'System Prompt', 'Backend', 'Tools', 'JSON', or 'Sandbox'. NEVER quote or restate rule names inside your thought. Write your thoughts purely as if you are a senior platform administrator evaluating the request (e.g., 'I need to check the organization settings' or 'I will search for the student record'), without analyzing system instructions out loud.
+URGENCY RULE (ABSOLUTE PRIORITY): Your thought MUST be extremely concise. Do NOT spend more than 3 seconds thinking. You must execute the 'internal_thought_process' tool instantly and keep the text very short so the UI updates immediately!
 
 ROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
 - If the user uploads a file, call \`parse_document\` with the URL immediately after your thought.
@@ -956,7 +957,7 @@ except Exception as e:
             }).map(([toolName, handler]) => [
                 toolName,
                 async (args) => {
-                    if (toolName !== 'internal_thought') {
+                    if (toolName !== 'internal_thought_process') {
                         accSteps.push({
                             id: Date.now().toString(),
                             type: 'tool',
@@ -971,7 +972,7 @@ except Exception as e:
                     let resultStr;
                     try { resultStr = await handler(args); } catch (err) { resultStr = "Error: " + (err.message || String(err)); }
                     
-                    if (toolName !== 'internal_thought') {
+                    if (toolName !== 'internal_thought_process') {
                         const step = accSteps.find(s => s.tool === toolName && s.status === 'loading');
                         if (step) {
                             const isErr = typeof resultStr === 'string' && (resultStr.startsWith("Error:") || resultStr.startsWith("ERROR:") || resultStr.startsWith("FAILED:"));

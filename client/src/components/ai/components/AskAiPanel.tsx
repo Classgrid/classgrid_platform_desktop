@@ -1862,8 +1862,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       if (isAutoScrollingRef.current) return;
 
       const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
-      // User scrolled up if they're more than 80px from bottom
-      const isScrolledUp = distanceFromBottom > 80;
+      // Make it highly sensitive: if user scrolls up even slightly (>10px), stop auto-scrolling
+      const isScrolledUp = distanceFromBottom > 10;
       userScrolledUpRef.current = isScrolledUp;
       setShowScrollButton(isScrolledUp);
     };

@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { TypewriterAccordion } from './TypewriterAccordion';
 
 /**
  * CombinedReasoningBlock - Shows AI reasoning LIVE as it streams in.
@@ -86,29 +87,7 @@ export function CombinedReasoningBlock({ sentences, isStreaming = true }: { sent
       >
         <div className="overflow-hidden">
           <div className="pl-[36px] pr-2 pb-4">
-            <div className="flex flex-col w-[360px] max-w-full font-sans">
-              <div
-                ref={viewportRef}
-                className="mt-1.5 overflow-y-auto"
-                style={{
-                  maxHeight: '180px',
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none'
-                }}
-              >
-                <style>{`.overflow-y-auto::-webkit-scrollbar { display: none; }`}</style>
-                <div className="flex flex-col gap-2">
-                  {sentences.map((line, i) => (
-                    <p
-                      key={i}
-                      className="m-0 leading-[20px] text-[13px] font-[425] text-slate-500 dark:text-[#737373] tracking-tight animate-[fadeIn_420ms_cubic-bezier(0.22,1,0.36,1)]"
-                    >
-                      {line}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            </div>
+            {hasSentences && <TypewriterAccordion sentences={sentences} />}
           </div>
         </div>
       </div>

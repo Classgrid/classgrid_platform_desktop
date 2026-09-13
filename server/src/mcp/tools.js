@@ -79,7 +79,7 @@ export const getMcpTools = () => [
     }
   },
   {
-    name: 'internal_thought',
+    name: 'internal_thought_process',
     description: 'REQUIRED UI progress update. You MUST use this tool FIRST on every single message to plan your response, even for simple greetings. DO NOT use it more than once per request.',
     inputSchema: {
       type: 'object',
@@ -310,7 +310,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       }
     }
 
-    if (name === 'internal_thought') {
+    if (name === 'internal_thought_process') {
       const { title, details } = args;
       console.log(`\n🧠 [THOUGHT] ${title}: ${details}`);
       return {
