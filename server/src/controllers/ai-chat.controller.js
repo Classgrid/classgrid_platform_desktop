@@ -478,6 +478,13 @@ ROUTING RULES:
 - If the user asks to run code or terminal scripts, call \`internal_thought\` then \`execute_terminal_command\` immediately.
 IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one thought, then act immediately!`;
 
+        dynamicSystemPrompt += `\n\nCRITICAL ANTI-LOOPING RULE:
+You are strictly forbidden from calling the EXACT SAME tool twice in a row. 
+- You MUST NOT call \`internal_thought\` twice in a row.
+- You MUST NOT call \`parse_document\` twice in a row.
+- You MUST NOT call \`execute_terminal_command\` twice in a row.
+Every single step must progress the workflow to a DIFFERENT tool. If a tool fails or returns a warning, DO NOT repeat the tool. You must immediately move to the next logical step in the sequence.`;
+
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (STRICT DEMO WORKFLOW SEQUENCES):
 You are an autonomous AI Agent in a Sandbox. You MUST strictly follow these exact tool sequences based on the user's request to trigger the correct UI components. Never skip a step. Never deviate from the sequence.
 
