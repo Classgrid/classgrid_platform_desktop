@@ -2249,13 +2249,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     targetPrev = [...prev, lastMsg];
                   }
 
-                  // If thought took less than 4 seconds, clear it so it doesn't render in history
-                  if (!lastMsg.content && lastMsg.thought) {
-                    const duration = Date.now() - requestStartTime;
-                    if (duration < 4000) {
-                      lastMsg = { ...lastMsg, thought: undefined };
-                    }
-                  }
 
                   return [
                     ...targetPrev.slice(0, -1),
@@ -2530,7 +2523,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     <div className={cn("flex flex-col gap-1.5 min-w-0", isUser ? "items-end max-w-[75%]" : "w-full")}>
 
                       {/* â”€â”€ Text Bubble â”€â”€ */}
-                      {message.content && (
+                      {(message.content || (message.steps && message.steps.length > 0)) && (
                         <div
                           id={isUser ? `msg-${message.id}` : undefined}
                           className={cn(
@@ -2959,7 +2952,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             })}
 
             <AnimatePresence>
-              {thinking ? (
+              {(() => {
+                const lastMsg = messages[messages.length - 1];
+                const hasThought = lastMsg?.role === "assistant" && lastMsg.thought;
+                const shouldShow = thinking || hasThought;
+                if (!shouldShow) return null;
+                return (
                 <motion.div
                   key="thinking-state"
                   initial={prefersReducedMotion ? false : { opacity: 0 }}
@@ -2968,13 +2966,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
                 >
                   <AIThinkingBlock
-                    thinkingContent={(() => {
-                      const lastMsg = messages[messages.length - 1];
-                      return lastMsg?.role === "assistant" ? (lastMsg.thought || "") : "";
-                    })()}
+                    thinkingContent={lastMsg?.role === "assistant" ? (lastMsg.thought || "") : ""}
+                    isFinished={!thinking}
                   />
                 </motion.div>
-              ) : null}
+                );
+              })()}
             </AnimatePresence>
           </>
         )}
