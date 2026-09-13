@@ -802,7 +802,9 @@ parsed = urlparse(url)
 filename = os.path.basename(parsed.path)
 if not filename:
     filename = "document.pdf"
-path = os.path.join('/data', filename)try:
+path = os.path.join('/data', filename)
+
+try:
     urllib.request.urlretrieve(url, path)
 except Exception as e:
     print(f"Direct download failed ({e}), attempting secure internal S3 fetch...")
