@@ -150,20 +150,20 @@ export const handleToolCall = async (name, args, context = {}) => {
             result = await collection.aggregate([
               { $match: query },
               { $limit: 1000 },
-                {
-                  $addFields: {
-                    orgObjId: { $convert: { input: "$organization_id", to: "objectId", onError: null, onNull: null } }
-                  }
-                },
-                {
-                  $lookup: {
-                    from: 'organizations',
-                    localField: 'orgObjId',
-                    foreignField: '_id',
-                    as: 'organization_details'
-                  }
-                },
-                { $project: { _id: 1, name: 1, email: 1, role: 1, phone: 1, organization_id: 1, "organization_details.name": 1 } }
+              {
+                $addFields: {
+                  orgObjId: { $convert: { input: "$organization_id", to: "objectId", onError: null, onNull: null } }
+                }
+              },
+              {
+                $lookup: {
+                  from: 'organizations',
+                  localField: 'orgObjId',
+                  foreignField: '_id',
+                  as: 'organization_details'
+                }
+              },
+              { $project: { _id: 1, name: 1, email: 1, role: 1, phone: 1, organization_id: 1, "organization_details.name": 1 } }
             ]).toArray();
           } else {
             result = await collection.find(query).limit(1000).toArray();
@@ -193,11 +193,11 @@ export const handleToolCall = async (name, args, context = {}) => {
         // We use a custom stringify replacer to strip out massive useless fields (like passwords, base64 images, tokens, etc.)
         // across ALL collections. This prevents the LLM from hitting its 2000 token limit and truncating the output to 1-2 items!
         const aiSafetyReplacer = (key, value) => {
-            const forbiddenKeys = ['password', 'profilePicture', 'profileBanner', 'logo', 'favicon', 'signature', 'activationToken', 'resetPasswordToken', 'payroll_config', 'preferences', 'settings'];
-            if (forbiddenKeys.includes(key)) return undefined;
-            // Also truncate any ridiculously long string that might be a base64 image or giant HTML block
-            if (typeof value === 'string' && value.length > 500) return "[TRUNCATED HUGE STRING]";
-            return value;
+          const forbiddenKeys = ['password', 'profilePicture', 'profileBanner', 'logo', 'favicon', 'signature', 'activationToken', 'resetPasswordToken', 'payroll_config', 'preferences', 'settings'];
+          if (forbiddenKeys.includes(key)) return undefined;
+          // Also truncate any ridiculously long string that might be a base64 image or giant HTML block
+          if (typeof value === 'string' && value.length > 500) return "[TRUNCATED HUGE STRING]";
+          return value;
         };
 
         let outputText = JSON.stringify(result, aiSafetyReplacer, 2);
@@ -296,195 +296,195 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'internal_thought') {
-        const { title, details } = args;
-        console.log(`\n🧠 [THOUGHT] ${title}: ${details}`);
-        return {
-            content: [{ type: 'text', text: `Thought recorded successfully. Proceed with your next action.` }]
-        };
+      const { title, details } = args;
+      console.log(`\n🧠 [THOUGHT] ${title}: ${details}`);
+      return {
+        content: [{ type: 'text', text: `Thought recorded successfully. Proceed with your next action.` }]
+      };
     }
 
     if (name === 'execute_terminal_command') {
-        const { command } = args;
-        const { sessionId = 'default', userEmail = 'unknown' } = context;
-        
-        console.log(`\n=================================================`);
-        console.log(`🚀 [SANDBOX TERMINAL ACTION STARTED]`);
-        console.log(`👤 User: ${userEmail} | 🆔 Session: ${sessionId}`);
-        console.log(`💻 Command:\n${command}`);
-        console.log(`=================================================\n`);
-        
-        accessLogger.info("Sandbox Terminal Action Started", {
-            action: "sandbox_terminal_start",
-            sessionId,
-            userEmail,
-            command
+      const { command } = args;
+      const { sessionId = 'default', userEmail = 'unknown' } = context;
+
+      console.log(`\n=================================================`);
+      console.log(`🚀 [SANDBOX TERMINAL ACTION STARTED]`);
+      console.log(`👤 User: ${userEmail} | 🆔 Session: ${sessionId}`);
+      console.log(`💻 Command:\n${command}`);
+      console.log(`=================================================\n`);
+
+      accessLogger.info("Sandbox Terminal Action Started", {
+        action: "sandbox_terminal_start",
+        sessionId,
+        userEmail,
+        command
+      });
+
+      try {
+        const ssh = new NodeSSH();
+        const isProd = process.env.NODE_ENV === 'production';
+        await ssh.connect({
+          host: isProd ? '172.31.6.98' : '13.63.34.197', // Private IP for prod, Public IP for local testing
+          username: 'ubuntu',
+          ...(process.env.AGENT_SSH_KEY
+            ? { privateKey: process.env.AGENT_SSH_KEY.replace(/\\n/g, '\n') }
+            : { privateKeyPath: 'C:\\Users\\nikhi\\Downloads\\Nikhil.pem' })
         });
 
-        try {
-            const ssh = new NodeSSH();
-            const isProd = process.env.NODE_ENV === 'production';
-            await ssh.connect({
-                host: isProd ? '172.31.6.98' : '13.63.34.197', // Private IP for prod, Public IP for local testing
-                username: 'ubuntu',
-                ...(process.env.AGENT_SSH_KEY 
-                    ? { privateKey: process.env.AGENT_SSH_KEY.replace(/\\n/g, '\n') } 
-                    : { privateKeyPath: 'C:\\Users\\nikhi\\Downloads\\Nikhil.pem' })
-            });
+        console.log(`[Sandbox] Connected! Executing command safely...`);
 
-            console.log(`[Sandbox] Connected! Executing command safely...`);
-            
-            const { sessionId = 'default' } = context;
-            
-            // This is the Notion AI magic: 
-            // 1. Spins up isolated container
-            // 2. Runs the exact command inside
-            // 3. Destroys the container instantly (--rm)
-            // We use -v to mount a shared /data folder specific to this chat session!
-            const scriptPath = `/home/ubuntu/sandbox_data/${sessionId}/script.sh`;
-            
-            const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${command}\nEOF_SCRIPT`;
-            await ssh.execCommand(writeCommand);
+        const { sessionId = 'default' } = context;
 
-            const envVars = ` -e AWS_ACCESS_KEY_ID="${process.env.AWS_ACCESS_KEY_ID || ''}" -e AWS_SECRET_ACCESS_KEY="${process.env.AWS_SECRET_ACCESS_KEY || ''}" -e AWS_S3_REGION="${process.env.AWS_S3_REGION || ''}" -e AWS_S3_BUCKET="${process.env.AWS_S3_BUCKET || ''}" -e R2_ACCOUNT_ID="${process.env.R2_ACCOUNT_ID || ''}" -e R2_ACCESS_KEY_ID="${process.env.R2_ACCESS_KEY_ID || ''}" -e R2_SECRET_ACCESS_KEY="${process.env.R2_SECRET_ACCESS_KEY || ''}" -e R2_BUCKET_NAME="${process.env.R2_BUCKET_NAME || 'classgrid-storage'}" -e R2_PUBLIC_URL="${process.env.R2_PUBLIC_URL || 'https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev'}" -e AWS_SES_SMTP_HOST="${process.env.AWS_SES_SMTP_HOST || ''}" -e AWS_SES_SMTP_USER="${process.env.AWS_SES_SMTP_USER || ''}" -e AWS_SES_SMTP_PASS="${process.env.AWS_SES_SMTP_PASS || ''}" `;
+        // This is the Notion AI magic: 
+        // 1. Spins up isolated container
+        // 2. Runs the exact command inside
+        // 3. Destroys the container instantly (--rm)
+        // We use -v to mount a shared /data folder specific to this chat session!
+        const scriptPath = `/home/ubuntu/sandbox_data/${sessionId}/script.sh`;
 
-            console.log(`[Sandbox] Securely injecting credentials and running Docker container for terminal command...`);
-            const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox bash /data/script.sh`;
-            const result = await ssh.execCommand(dockerCommand);
-            
-            console.log(`\n=================================================`);
-            console.log(`✅ [SANDBOX TERMINAL ACTION FINISHED]`);
-            console.log(`🟢 STDOUT:\n${result.stdout}`);
-            if (result.stderr) console.log(`🔴 STDERR:\n${result.stderr}`);
-            console.log(`=================================================\n`);
+        const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${command}\nEOF_SCRIPT`;
+        await ssh.execCommand(writeCommand);
 
-            accessLogger.info("Sandbox Terminal Action Finished", {
-                action: "sandbox_terminal_end",
-                sessionId,
-                userEmail,
-                stdout: result.stdout,
-                stderr: result.stderr,
-                exitCode: result.code
-            });
-            
-            ssh.dispose();
-            
-            return {
-                content: [{ type: 'text', text: `Command executed in isolated Sandbox.\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}` }]
-            };
-        } catch (e) {
-            return {
-                content: [{ type: 'text', text: `Sandbox Error: ${e.message}` }]
-            };
-        }
+        const envVars = ` -e AWS_ACCESS_KEY_ID="${process.env.AWS_ACCESS_KEY_ID || ''}" -e AWS_SECRET_ACCESS_KEY="${process.env.AWS_SECRET_ACCESS_KEY || ''}" -e AWS_S3_REGION="${process.env.AWS_S3_REGION || ''}" -e AWS_S3_BUCKET="${process.env.AWS_S3_BUCKET || ''}" -e R2_ACCOUNT_ID="${process.env.R2_ACCOUNT_ID || ''}" -e R2_ACCESS_KEY_ID="${process.env.R2_ACCESS_KEY_ID || ''}" -e R2_SECRET_ACCESS_KEY="${process.env.R2_SECRET_ACCESS_KEY || ''}" -e R2_BUCKET_NAME="${process.env.R2_BUCKET_NAME || 'classgrid-storage'}" -e R2_PUBLIC_URL="${process.env.R2_PUBLIC_URL || 'https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev'}" -e AWS_SES_SMTP_HOST="${process.env.AWS_SES_SMTP_HOST || ''}" -e AWS_SES_SMTP_USER="${process.env.AWS_SES_SMTP_USER || ''}" -e AWS_SES_SMTP_PASS="${process.env.AWS_SES_SMTP_PASS || ''}" `;
+
+        console.log(`[Sandbox] Securely injecting credentials and running Docker container for terminal command...`);
+        const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox bash /data/script.sh`;
+        const result = await ssh.execCommand(dockerCommand);
+
+        console.log(`\n=================================================`);
+        console.log(`✅ [SANDBOX TERMINAL ACTION FINISHED]`);
+        console.log(`🟢 STDOUT:\n${result.stdout}`);
+        if (result.stderr) console.log(`🔴 STDERR:\n${result.stderr}`);
+        console.log(`=================================================\n`);
+
+        accessLogger.info("Sandbox Terminal Action Finished", {
+          action: "sandbox_terminal_end",
+          sessionId,
+          userEmail,
+          stdout: result.stdout,
+          stderr: result.stderr,
+          exitCode: result.code
+        });
+
+        ssh.dispose();
+
+        return {
+          content: [{ type: 'text', text: `Command executed in isolated Sandbox.\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}` }]
+        };
+      } catch (e) {
+        return {
+          content: [{ type: 'text', text: `Sandbox Error: ${e.message}` }]
+        };
+      }
     }
 
     if (name === 'run_code') {
-        const { language, code } = args;
-        const { sessionId = 'default', userEmail = 'unknown' } = context;
-        
-        console.log(`\n=================================================`);
-        console.log(`🚀 [SANDBOX CODE EXECUTION STARTED]`);
-        console.log(`👤 User: ${userEmail} | 🆔 Session: ${sessionId}`);
-        console.log(`💻 Language: ${language}`);
-        console.log(`📝 Code Payload:\n${code}`);
-        console.log(`=================================================\n`);
-        
-        accessLogger.info("Sandbox Code Execution Started", {
-            action: "sandbox_code_start",
-            sessionId,
-            userEmail,
-            language,
-            codeSnippetPreview: code.substring(0, 500)
+      const { language, code } = args;
+      const { sessionId = 'default', userEmail = 'unknown' } = context;
+
+      console.log(`\n=================================================`);
+      console.log(`🚀 [SANDBOX CODE EXECUTION STARTED]`);
+      console.log(`👤 User: ${userEmail} | 🆔 Session: ${sessionId}`);
+      console.log(`💻 Language: ${language}`);
+      console.log(`📝 Code Payload:\n${code}`);
+      console.log(`=================================================\n`);
+
+      accessLogger.info("Sandbox Code Execution Started", {
+        action: "sandbox_code_start",
+        sessionId,
+        userEmail,
+        language,
+        codeSnippetPreview: code.substring(0, 500)
+      });
+
+      try {
+        const ssh = new NodeSSH();
+        const isProd = process.env.NODE_ENV === 'production';
+        await ssh.connect({
+          host: isProd ? '172.31.6.98' : '13.63.34.197', // Private IP for prod, Public IP for local testing
+          username: 'ubuntu',
+          ...(process.env.AGENT_SSH_KEY
+            ? { privateKey: process.env.AGENT_SSH_KEY.replace(/\\n/g, '\n') }
+            : { privateKeyPath: 'C:\\Users\\nikhi\\Downloads\\Nikhil.pem' })
         });
-        
-        try {
-            const ssh = new NodeSSH();
-            const isProd = process.env.NODE_ENV === 'production';
-            await ssh.connect({
-                host: isProd ? '172.31.6.98' : '13.63.34.197', // Private IP for prod, Public IP for local testing
-                username: 'ubuntu',
-                ...(process.env.AGENT_SSH_KEY 
-                    ? { privateKey: process.env.AGENT_SSH_KEY.replace(/\\n/g, '\n') } 
-                    : { privateKeyPath: 'C:\\Users\\nikhi\\Downloads\\Nikhil.pem' })
-            });
 
-            const { sessionId = 'default' } = context;
+        const { sessionId = 'default' } = context;
 
-            // Instead of inline execution (which causes newline escape issues),
-            // we will write the code to a file in the shared /data folder and execute it.
-            let ext = '';
-            let execCmd = '';
-            
-            if (language === 'python') { ext = 'py'; execCmd = 'python3'; }
-            else if (language === 'javascript') { ext = 'js'; execCmd = 'node'; }
-            else if (language === 'bash') { ext = 'sh'; execCmd = 'bash'; }
-            else throw new Error("Unsupported language. Use python, javascript, or bash.");
+        // Instead of inline execution (which causes newline escape issues),
+        // we will write the code to a file in the shared /data folder and execute it.
+        let ext = '';
+        let execCmd = '';
 
-            // Create the directory on the host, write the file from the code string (using a heredoc to preserve exact contents),
-            // and then run the docker container which maps that directory to /data and executes the file.
-            const scriptPath = `/home/ubuntu/sandbox_data/${sessionId}/script.${ext}`;
-            
-            // We use EOF heredoc to safely write the script without quote escaping issues
-            const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${code}\nEOF_SCRIPT`;
-            await ssh.execCommand(writeCommand);
+        if (language === 'python') { ext = 'py'; execCmd = 'python3'; }
+        else if (language === 'javascript') { ext = 'js'; execCmd = 'node'; }
+        else if (language === 'bash') { ext = 'sh'; execCmd = 'bash'; }
+        else throw new Error("Unsupported language. Use python, javascript, or bash.");
 
-            const envVars = ` -e AWS_ACCESS_KEY_ID="${process.env.AWS_ACCESS_KEY_ID || ''}" -e AWS_SECRET_ACCESS_KEY="${process.env.AWS_SECRET_ACCESS_KEY || ''}" -e AWS_S3_REGION="${process.env.AWS_S3_REGION || ''}" -e AWS_S3_BUCKET="${process.env.AWS_S3_BUCKET || ''}" -e AWS_S3_ERP_ACCESS_KEY="${process.env.AWS_S3_ERP_ACCESS_KEY || ''}" -e AWS_S3_ERP_SECRET_KEY="${process.env.AWS_S3_ERP_SECRET_KEY || ''}" -e AWS_S3_ERP_REGION="${process.env.AWS_S3_ERP_REGION || ''}" -e AWS_S3_ERP_BUCKET_NAME="${process.env.AWS_S3_ERP_BUCKET_NAME || ''}" -e AWS_CLOUDFRONT_ERP_DOMAIN="${process.env.AWS_CLOUDFRONT_ERP_DOMAIN || ''}" -e R2_ACCOUNT_ID="${process.env.R2_ACCOUNT_ID || ''}" -e R2_ACCESS_KEY_ID="${process.env.R2_ACCESS_KEY_ID || ''}" -e R2_SECRET_ACCESS_KEY="${process.env.R2_SECRET_ACCESS_KEY || ''}" -e R2_BUCKET_NAME="${process.env.R2_BUCKET_NAME || 'classgrid-storage'}" -e R2_PUBLIC_URL="${process.env.R2_PUBLIC_URL || 'https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev'}" -e AWS_SES_SMTP_HOST="${process.env.AWS_SES_SMTP_HOST || ''}" -e AWS_SES_SMTP_USER="${process.env.AWS_SES_SMTP_USER || ''}" -e AWS_SES_SMTP_PASS="${process.env.AWS_SES_SMTP_PASS || ''}" `;
+        // Create the directory on the host, write the file from the code string (using a heredoc to preserve exact contents),
+        // and then run the docker container which maps that directory to /data and executes the file.
+        const scriptPath = `/home/ubuntu/sandbox_data/${sessionId}/script.${ext}`;
 
-            console.log(`[Sandbox] Securely injecting credentials and running Docker container for ${language} script...`);
-            const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox ${execCmd} /data/script.${ext}`;
-            const result = await ssh.execCommand(dockerCommand);
-            
-            console.log(`\n=================================================`);
-            console.log(`✅ [SANDBOX CODE EXECUTION FINISHED]`);
-            console.log(`🟢 STDOUT:\n${result.stdout}`);
-            if (result.stderr) console.log(`🔴 STDERR:\n${result.stderr}`);
-            console.log(`=================================================\n`);
+        // We use EOF heredoc to safely write the script without quote escaping issues
+        const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${code}\nEOF_SCRIPT`;
+        await ssh.execCommand(writeCommand);
 
-            accessLogger.info("Sandbox Code Execution Finished", {
-                action: "sandbox_code_end",
-                sessionId,
-                userEmail,
-                language,
-                stdout: result.stdout,
-                stderr: result.stderr,
-                exitCode: result.code
-            });
-            
-            ssh.dispose();
-            
-            return {
-                content: [{ type: 'text', text: `[Sandbox Execution Results]\n\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}` }],
-            };
-        } catch (e) {
-            return { content: [{ type: 'text', text: `Failed to connect to AWS Sandbox: ${e.message}` }] };
-        }
+        const envVars = ` -e AWS_ACCESS_KEY_ID="${process.env.AWS_ACCESS_KEY_ID || ''}" -e AWS_SECRET_ACCESS_KEY="${process.env.AWS_SECRET_ACCESS_KEY || ''}" -e AWS_S3_REGION="${process.env.AWS_S3_REGION || ''}" -e AWS_S3_BUCKET="${process.env.AWS_S3_BUCKET || ''}" -e AWS_S3_ERP_ACCESS_KEY="${process.env.AWS_S3_ERP_ACCESS_KEY || ''}" -e AWS_S3_ERP_SECRET_KEY="${process.env.AWS_S3_ERP_SECRET_KEY || ''}" -e AWS_S3_ERP_REGION="${process.env.AWS_S3_ERP_REGION || ''}" -e AWS_S3_ERP_BUCKET_NAME="${process.env.AWS_S3_ERP_BUCKET_NAME || ''}" -e AWS_CLOUDFRONT_ERP_DOMAIN="${process.env.AWS_CLOUDFRONT_ERP_DOMAIN || ''}" -e R2_ACCOUNT_ID="${process.env.R2_ACCOUNT_ID || ''}" -e R2_ACCESS_KEY_ID="${process.env.R2_ACCESS_KEY_ID || ''}" -e R2_SECRET_ACCESS_KEY="${process.env.R2_SECRET_ACCESS_KEY || ''}" -e R2_BUCKET_NAME="${process.env.R2_BUCKET_NAME || 'classgrid-storage'}" -e R2_PUBLIC_URL="${process.env.R2_PUBLIC_URL || 'https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev'}" -e AWS_SES_SMTP_HOST="${process.env.AWS_SES_SMTP_HOST || ''}" -e AWS_SES_SMTP_USER="${process.env.AWS_SES_SMTP_USER || ''}" -e AWS_SES_SMTP_PASS="${process.env.AWS_SES_SMTP_PASS || ''}" `;
+
+        console.log(`[Sandbox] Securely injecting credentials and running Docker container for ${language} script...`);
+        const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox ${execCmd} /data/script.${ext}`;
+        const result = await ssh.execCommand(dockerCommand);
+
+        console.log(`\n=================================================`);
+        console.log(`✅ [SANDBOX CODE EXECUTION FINISHED]`);
+        console.log(`🟢 STDOUT:\n${result.stdout}`);
+        if (result.stderr) console.log(`🔴 STDERR:\n${result.stderr}`);
+        console.log(`=================================================\n`);
+
+        accessLogger.info("Sandbox Code Execution Finished", {
+          action: "sandbox_code_end",
+          sessionId,
+          userEmail,
+          language,
+          stdout: result.stdout,
+          stderr: result.stderr,
+          exitCode: result.code
+        });
+
+        ssh.dispose();
+
+        return {
+          content: [{ type: 'text', text: `[Sandbox Execution Results]\n\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}` }],
+        };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to connect to AWS Sandbox: ${e.message}` }] };
+      }
     }
 
     if (name === 'generate_pdf') {
-        let { content = '', title, rawData } = args;
-        
-        console.log(`\n📄 [AWS NATIVE] AI is generating a REAL PDF document securely using Puppeteer!`);
-        
-        try {
-            if (rawData && Array.isArray(rawData) && rawData.length > 0) {
-                const keys = Object.keys(rawData[0]).filter(k => typeof rawData[0][k] !== 'object' && k !== '_id' && k !== 'password');
-                let tableHtml = `<table><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr>`;
-                for (const row of rawData) {
-                    tableHtml += `<tr>${keys.map(k => `<td>${row[k] || ''}</td>`).join('')}</tr>`;
-                }
-                tableHtml += `</table>`;
-                content += tableHtml;
-            }
-            
-            // Launch native headless browser to render true PDF
-            const browser = await puppeteer.launch({ 
-                headless: 'new',
-                args: ['--no-sandbox', '--disable-setuid-sandbox'] 
-            });
-            const page = await browser.newPage();
-            
-            // Inject content. Wrap in basic HTML if it doesn't have it.
-            const finalHtml = content.includes('<!DOCTYPE html>') ? content : `
+      let { content = '', title, rawData } = args;
+
+      console.log(`\n📄 [AWS NATIVE] AI is generating a REAL PDF document securely using Puppeteer!`);
+
+      try {
+        if (rawData && Array.isArray(rawData) && rawData.length > 0) {
+          const keys = Object.keys(rawData[0]).filter(k => typeof rawData[0][k] !== 'object' && k !== '_id' && k !== 'password');
+          let tableHtml = `<table><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr>`;
+          for (const row of rawData) {
+            tableHtml += `<tr>${keys.map(k => `<td>${row[k] || ''}</td>`).join('')}</tr>`;
+          }
+          tableHtml += `</table>`;
+          content += tableHtml;
+        }
+
+        // Launch native headless browser to render true PDF
+        const browser = await puppeteer.launch({
+          headless: 'new',
+          args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+        const page = await browser.newPage();
+
+        // Inject content. Wrap in basic HTML if it doesn't have it.
+        const finalHtml = content.includes('<!DOCTYPE html>') ? content : `
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -503,73 +503,73 @@ export const handleToolCall = async (name, args, context = {}) => {
                 </body>
                 </html>
             `;
-            
-            await page.setContent(finalHtml, { waitUntil: 'networkidle0' });
-            
-            // Generate the PDF buffer
-            const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });
-            await browser.close();
-            
-            const fileName = `${title ? title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'generated_' + Date.now()}.pdf`;
-            
-            // Upload directly to AWS S3 so the CDN link works
-            const s3Key = `reports/${fileName}`;
-            await s3Client.send(new PutObjectCommand({
-                Bucket: BUCKET_NAME,
-                Key: s3Key,
-                Body: pdfBuffer,
-                ContentType: 'application/pdf'
-            }));
-            
-            const cdnUrl = `${CDN_BASE_URL}/${s3Key}`;
-            return {
-                content: [{ type: 'text', text: `SUCCESS! PDF generated and uploaded to AWS CDN.\nCDN Download URL: ${cdnUrl}` }],
-            };
-        } catch (e) {
-            return { content: [{ type: 'text', text: `Failed to generate PDF via Puppeteer: ${e.message}` }] };
-        }
+
+        await page.setContent(finalHtml, { waitUntil: 'networkidle0' });
+
+        // Generate the PDF buffer
+        const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });
+        await browser.close();
+
+        const fileName = `${title ? title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'generated_' + Date.now()}.pdf`;
+
+        // Upload directly to AWS S3 so the CDN link works
+        const s3Key = `reports/${fileName}`;
+        await s3Client.send(new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: s3Key,
+          Body: pdfBuffer,
+          ContentType: 'application/pdf'
+        }));
+
+        const cdnUrl = `${CDN_BASE_URL}/${s3Key}`;
+        return {
+          content: [{ type: 'text', text: `SUCCESS! PDF generated and uploaded to AWS CDN.\nCDN Download URL: ${cdnUrl}` }],
+        };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to generate PDF via Puppeteer: ${e.message}` }] };
+      }
     }
 
     if (name === 'generate_pdf_from_db') {
-        const { source, collectionOrTable, query, title, htmlTemplate } = args;
-        try {
-            console.log(`\n📄 [AWS NATIVE] AI is directly fetching data and using Handlebars to bypass token limits!`);
-            let result;
-            if (source === 'mongodb') {
-                const collectionName = collectionOrTable.toLowerCase() === 'user' ? 'users' : collectionOrTable;
-                const collection = mongoose.connection.collection(collectionName);
-                if (collectionName === 'users') {
-                    result = await collection.aggregate([
-                        { $match: query },
-                        { $limit: 1000 },
-                        { $addFields: { orgObjId: { $convert: { input: "$organization_id", to: "objectId", onError: null, onNull: null } } } },
-                        { $lookup: { from: "organizations", localField: "orgObjId", foreignField: "_id", as: "organization_details" } },
-                        { $project: { orgObjId: 0 } }
-                    ]).toArray();
-                } else {
-                    result = await collection.find(query).limit(1000).toArray();
-                }
-            } else {
-                return { content: [{ type: 'text', text: 'generate_pdf_from_db only supports mongodb right now.' }] };
-            }
+      const { source, collectionOrTable, query, title, htmlTemplate } = args;
+      try {
+        console.log(`\n📄 [AWS NATIVE] AI is directly fetching data and using Handlebars to bypass token limits!`);
+        let result;
+        if (source === 'mongodb') {
+          const collectionName = collectionOrTable.toLowerCase() === 'user' ? 'users' : collectionOrTable;
+          const collection = mongoose.connection.collection(collectionName);
+          if (collectionName === 'users') {
+            result = await collection.aggregate([
+              { $match: query },
+              { $limit: 1000 },
+              { $addFields: { orgObjId: { $convert: { input: "$organization_id", to: "objectId", onError: null, onNull: null } } } },
+              { $lookup: { from: "organizations", localField: "orgObjId", foreignField: "_id", as: "organization_details" } },
+              { $project: { orgObjId: 0 } }
+            ]).toArray();
+          } else {
+            result = await collection.find(query).limit(1000).toArray();
+          }
+        } else {
+          return { content: [{ type: 'text', text: 'generate_pdf_from_db only supports mongodb right now.' }] };
+        }
 
-            if (!result || result.length === 0) {
-                return { content: [{ type: 'text', text: 'No data found for the given query.' }] };
-            }
+        if (!result || result.length === 0) {
+          return { content: [{ type: 'text', text: 'No data found for the given query.' }] };
+        }
 
-            let finalHtml;
-            if (htmlTemplate) {
-                const template = Handlebars.compile(htmlTemplate);
-                finalHtml = template({ rows: result, title });
-            } else {
-                const keys = Object.keys(result[0]).filter(k => typeof result[0][k] !== 'object' && k !== '_id' && k !== 'password');
-                let tableHtml = `<table><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr>`;
-                for (const row of result) {
-                    tableHtml += `<tr>${keys.map(k => `<td>${row[k] || ''}</td>`).join('')}</tr>`;
-                }
-                tableHtml += `</table>`;
+        let finalHtml;
+        if (htmlTemplate) {
+          const template = Handlebars.compile(htmlTemplate);
+          finalHtml = template({ rows: result, title });
+        } else {
+          const keys = Object.keys(result[0]).filter(k => typeof result[0][k] !== 'object' && k !== '_id' && k !== 'password');
+          let tableHtml = `<table><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr>`;
+          for (const row of result) {
+            tableHtml += `<tr>${keys.map(k => `<td>${row[k] || ''}</td>`).join('')}</tr>`;
+          }
+          tableHtml += `</table>`;
 
-                const defaultCss = `
+          const defaultCss = `
                     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 30px; color: #1a1a1a; background-color: #f9fafb; }
                     h1 { color: #111827; text-align: center; font-size: 24px; margin-bottom: 20px; font-weight: 600; }
                     table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; font-size: 13px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
@@ -579,7 +579,7 @@ export const handleToolCall = async (name, args, context = {}) => {
                     tr:nth-child(even) { background-color: #f8fafc; }
                 `;
 
-                finalHtml = `
+          finalHtml = `
                     <!DOCTYPE html>
                     <html>
                     <head>
@@ -592,25 +592,25 @@ export const handleToolCall = async (name, args, context = {}) => {
                     </body>
                     </html>
                 `;
-            }
-
-            const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-            const page = await browser.newPage();
-            await page.setContent(finalHtml, { waitUntil: 'networkidle0' });
-            const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });
-            await browser.close();
-
-            const fileName = `${title ? title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'db_report_' + Date.now()}.pdf`;
-            const s3Key = `reports/${fileName}`;
-            await s3Client.send(new PutObjectCommand({ Bucket: BUCKET_NAME, Key: s3Key, Body: pdfBuffer, ContentType: 'application/pdf' }));
-            
-            const cdnUrl = `${CDN_BASE_URL}/${s3Key}`;
-            return {
-                content: [{ type: 'text', text: `SUCCESS! Fetched ${result.length} items directly from DB and generated PDF.\nCDN Download URL: ${cdnUrl}` }],
-            };
-        } catch (e) {
-            return { content: [{ type: 'text', text: `Failed: ${e.message}` }] };
         }
+
+        const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+        const page = await browser.newPage();
+        await page.setContent(finalHtml, { waitUntil: 'networkidle0' });
+        const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });
+        await browser.close();
+
+        const fileName = `${title ? title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'db_report_' + Date.now()}.pdf`;
+        const s3Key = `reports/${fileName}`;
+        await s3Client.send(new PutObjectCommand({ Bucket: BUCKET_NAME, Key: s3Key, Body: pdfBuffer, ContentType: 'application/pdf' }));
+
+        const cdnUrl = `${CDN_BASE_URL}/${s3Key}`;
+        return {
+          content: [{ type: 'text', text: `SUCCESS! Fetched ${result.length} items directly from DB and generated PDF.\nCDN Download URL: ${cdnUrl}` }],
+        };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed: ${e.message}` }] };
+      }
     }
 
 

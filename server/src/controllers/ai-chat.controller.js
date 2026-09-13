@@ -156,15 +156,7 @@ The sandbox already includes tools such as:
 - Long-running commands must be controlled or run in the background so they do not block the task.
 
 ### How to Handle User Attachments (CRITICAL INSTRUCTION)
-If the user's message contains "Attached Files:" followed by one or more URLs (e.g. an S3 link to a PDF, TXT, CSV, or Image), you CANNOT read them natively. You MUST use the \`run_code\` tool to write a Python or Bash script that downloads the file from the URL into the \`/data\` folder in your sandbox, and then reads/processes it.
-Example Python script for reading a file:
-\`\`\`python
-import urllib.request
-import PyPDF2 # or pandas, etc.
-urllib.request.urlretrieve("URL_HERE", "/data/file.pdf")
-# ... process file ...
-\`\`\`
-Do NOT tell the user you cannot read files. You absolutely CAN. Use the sandbox!
+If the user's message contains "Attached Files:" followed by one or more URLs, you MUST use the \`parse_document\` tool to download and extract the text from the file. ALWAYS use \`parse_document\` as your first step when a user attaches a file to read its contents. Do NOT write a Python script manually to read basic documents; use the \`parse_document\` tool first.
 
 ### How to Upload Files to CDN (Cloudflare R2 OR AWS S3) (CRITICAL INSTRUCTION)
 If you generate a file (like an Excel sheet, PDF, or image) and need to give the user a download link, you MUST upload it to either the Classgrid R2 CDN or the AWS S3 ERP CDN. You DO NOT have an upload_file tool. Instead, you MUST use the \`run_code\` tool to write and execute a Python script that uploads the file using the \`boto3\` library.
@@ -675,35 +667,29 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just recor
                 },
                 parse_document: async (args) => {
                     try {
-                        const { url, mimeType } = args;
-                        const fetch = (await import('node-fetch')).default || global.fetch;
-                        const response = await fetch(url);
-                        if (!response.ok) throw new Error(`Failed to fetch file: ${response.statusText}`);
-                        
-                        const arrayBuffer = await response.arrayBuffer();
-                        const buffer = Buffer.from(arrayBuffer);
-                        let text = "";
-                        
-                        if (mimeType === 'application/pdf' || url.toLowerCase().endsWith('.pdf')) {
-                            const pdfMod = await import('pdf-parse');
-                            const pdfParse = pdfMod.default || pdfMod;
-                            const data = await (typeof pdfParse === 'function' ? pdfParse(buffer) : pdfParse.default(buffer));
-                            text = data.text;
-                        } else if (mimeType.startsWith('image/') || url.match(/\.(png|jpg|jpeg)$/i)) {
-                            const tessMod = await import('tesseract.js');
-                            const Tesseract = tessMod.default || tessMod;
-                            const result = await Tesseract.recognize(buffer, 'eng');
-                            text = result.data.text;
-                        } else {
-                            text = buffer.toString('utf-8');
-                        }
-                        
-                        if (!text || text.trim().length === 0) {
-                            return "ERROR: The file was read, but no text could be extracted. It might be a scanned PDF or empty file. Tell the user you couldn't extract the text.";
-                        }
-                        return `DOCUMENT CONTENTS:\n${text}`;
+                        const { url } = args;
+                        const safeUrl = url.replace(/"/g, '\\"');
+                        const code = `
+import urllib.request, tempfile, sys, os
+import pymupdf
+
+url = "${safeUrl}"
+try:
+    path, _ = urllib.request.urlretrieve(url)
+    if url.lower().endswith('.pdf') or 'pdf' in url.lower() or 'ai-chat-uploads' in url.lower():
+        doc = pymupdf.open(path)
+        text = "\\n".join([page.get_text() for page in doc])
+        print("DOCUMENT CONTENTS:\\n" + text)
+    else:
+        with open(path, 'r') as f:
+            print("DOCUMENT CONTENTS:\\n" + f.read())
+except Exception as e:
+    print("ERROR reading document:", e)
+`;
+                        const result = await handleToolCall('run_code', { language: 'python', code }, { sessionId });
+                        return result.isError ? result.content[0].text : result.content[0].text;
                     } catch (e) {
-                        return `FAILED to parse document: ${e.message}`;
+                        return `FAILED to parse document in sandbox: ${e.message}`;
                     }
                 },
                 generate_pdf_from_db: async (args) => {
@@ -1004,8 +990,8 @@ export const uploadChatImage = async (req, res) => {
             return res.status(400).json({ error: "fileName and mimeType required" });
         }
 
-        // Use R2 presigned URL generator for secure direct browser upload
-        const result = await getPresignedUploadUrl(fileName, mimeType, 3600, `ai-chat-uploads/${Date.now()}-${fileName}`);
+        const safeFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const result = await getPresignedUploadUrl(fileName, mimeType, 3600, `ai-chat-uploads/${Date.now()}-${safeFileName}`);
         res.json(result);
     } catch (e) {
         console.error("Error generating presigned URL for AI chat:", e);
