@@ -700,15 +700,37 @@ toolHandlers: Object.fromEntries(Object.entries({
             const safeUrl = url.replace(/"/g, '\\"');
             const code = `
 import urllib.request, tempfile, sys, os
-import pymupdf
+import fitz
 
 url = "${safeUrl}"
 try:
     path, _ = urllib.request.urlretrieve(url)
     if url.lower().endswith('.pdf') or 'pdf' in url.lower() or 'ai-chat-uploads' in url.lower():
-        doc = pymupdf.open(path)
-        text = "\\n".join([page.get_text() for page in doc])
-        print("DOCUMENT CONTENTS:\\n" + text)
+        doc = fitz.open(path)
+        text = "\\n".join([page.get_text().strip() for page in doc]).strip()
+        
+        if not text:
+            print("No text found via standard extraction. Attempting OCR...")
+            try:
+                import pytesseract
+                from PIL import Image
+                import io
+                
+                ocr_text = ""
+                for page_num in range(len(doc)):
+                    page = doc[page_num]
+                    pix = page.get_pixmap(dpi=150)
+                    img = Image.open(io.BytesIO(pix.tobytes("png")))
+                    ocr_text += pytesseract.image_to_string(img) + "\\n"
+                
+                text = ocr_text.strip()
+            except Exception as ocr_e:
+                print("OCR failed: " + str(ocr_e))
+        
+        if text:
+            print("DOCUMENT CONTENTS:\\n" + text)
+        else:
+            print("DOCUMENT CONTENTS:\\n(The document is completely blank or could not be read)")
     else:
         with open(path, 'r') as f:
             print("DOCUMENT CONTENTS:\\n" + f.read())
