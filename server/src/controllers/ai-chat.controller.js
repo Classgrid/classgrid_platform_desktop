@@ -710,41 +710,37 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
                         if (!url) return "ERROR: No url provided in tool arguments.";
                         const safeUrl = url.replace(/"/g, '\\"');
                         const code = `
-import urllib.request, urllib.error, tempfile, sys, os
-from urllib.parse import urlparse
+import os, sys, tempfile, subprocess
+import urllib.request
 import pymupdf
 
 url = "${safeUrl}"
-path = None
-
 try:
     path, _ = urllib.request.urlretrieve(url)
+    doc = pymupdf.open(path)
+    native_text = "\\n".join(page.get_text() for page in doc).strip()
+    ocr_text = ""
+    if len(native_text) < 20:
+        print("OCR_FALLBACK: Native PDF text is empty; rendering pages for OCR.")
+        with tempfile.TemporaryDirectory() as image_dir:
+            for index, page in enumerate(doc, start=1):
+                image_path = os.path.join(image_dir, f"page-{index}.png")
+                page.get_pixmap(matrix=pymupdf.Matrix(3, 3), alpha=False).save(image_path)
+                result = subprocess.run(
+                    ["tesseract", image_path, "stdout", "--psm", "6"],
+                    capture_output=True, text=True, timeout=90
+                )
+                if result.returncode != 0:
+                    print(f"OCR_WARNING page {index}: {result.stderr.strip()}")
+                ocr_text += "\\n" + result.stdout
+    text = native_text if len(native_text) >= 20 else ocr_text.strip()
+    if text:
+        print("DOCUMENT CONTENTS:\\n" + text)
+    else:
+        print("DOCUMENT_NO_TEXT: The file opened successfully, but neither embedded text nor OCR produced readable text.")
 except Exception as e:
-    print(f"Direct download failed ({e}), attempting secure internal S3 fetch...")
-    try:
-        import boto3
-        parsed = urlparse(url)
-        key = parsed.path.lstrip('/')
-        s3 = boto3.client('s3', endpoint_url=f"https://{os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com", aws_access_key_id=os.environ['R2_ACCESS_KEY_ID'], aws_secret_access_key=os.environ['R2_SECRET_ACCESS_KEY'])
-        path = tempfile.mktemp(suffix=".pdf" if ".pdf" in url.lower() else "")
-        s3.download_file(os.environ.get('R2_BUCKET_NAME', 'classgrid-storage'), key, path)
-    except Exception as e2:
-        print("ERROR downloading document via S3:", e2)
-        sys.exit(1)
-
-if path:
-    try:
-        if url.lower().endswith('.pdf') or 'pdf' in url.lower() or 'ai-chat-uploads' in url.lower():
-            doc = pymupdf.open(path)
-            text = "\\n".join([page.get_text() for page in doc])
-            print("DOCUMENT CONTENTS:\\n" + text)
-        else:
-            with open(path, 'r') as f:
-                print("DOCUMENT CONTENTS:\\n" + f.read())
-    except Exception as e:
-        print("ERROR parsing document content:", e)
-`;
-                        const result = await handleToolCall('run_code', { language: 'python', code }, { sessionId });
+    print("DOCUMENT_PARSE_ERROR:", type(e).__name__, str(e))
+`;                        const result = await handleToolCall('run_code', { language: 'python', code }, { sessionId });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     } catch (e) {
                         return `FAILED to parse document in sandbox: ${e.message}`;
