@@ -240,7 +240,7 @@ async function generateSessionTitle(sessionId, question) {
                     name: "groq",
                     url: "https://api.groq.com/openai/v1/chat/completions",
                     apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b"
+                    model: "llama-3.1-70b-versatile"
                 },
                 {
                     name: "mistral",
@@ -557,7 +557,7 @@ If the user asks you to make a file public, or you need to provide a public down
                     name: "groq",
                     url: "https://api.groq.com/openai/v1/chat/completions",
                     apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b"
+                    model: "llama-3.1-70b-versatile"
                 },
                 {
                     name: "mistral",
@@ -575,7 +575,7 @@ If the user asks you to make a file public, or you need to provide a public down
                     model: "gemini-3.5-flash"
                 }
             ],
-            verbose: false,
+            verbose: true,
             maxToolDepth: 25,
             defaultMaxTokens: 2000,
             tools: [
