@@ -668,6 +668,7 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just recor
                 parse_document: async (args) => {
                     try {
                         const { url } = args;
+                        if (!url) return "ERROR: No url provided in tool arguments.";
                         const safeUrl = url.replace(/"/g, '\\"');
                         const code = `
 import urllib.request, tempfile, sys, os
@@ -839,14 +840,16 @@ except Exception as e:
         let attempt = 1;
         const maxAttempts = 2;
         let currentClient = client;
+        let accThought = "";
+        let accSteps = [];
 
         while (attempt <= maxAttempts) {
             try {
                 if (attempt > 1 && !res.writableEnded) {
                     res.write(`data: ${JSON.stringify({ type: "status", label: "auto-correcting syntax with fallback model..." })}\n\n`);
                 }
-                let accThought = "";
-                let accSteps = [];
+                accThought = "";
+                accSteps = [];
 
                 answer = await currentClient.generate({
                     messages,
