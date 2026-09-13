@@ -239,8 +239,8 @@ export function AgentUISandboxPage() {
               defaultExpanded={true}
             >
               <TerminalToolView 
-                command="python3 -c 'import pytesseract; from PIL import Image; print(pytesseract.image_to_string(Image.open(\"/data/id_pages/page-1.png\")))'"
-                output="OCR EXTRACTION RESULTS:\nName: John Doe\nID Number: 987654321\nDOB: 01/01/2005\nSchool: Demo High School"
+                command={`python3 -c 'import pytesseract; from PIL import Image; print(pytesseract.image_to_string(Image.open("/data/id_pages/page-1.png")))'`}
+                output={`OCR EXTRACTION RESULTS:\nName: John Doe\nID Number: 987654321\nDOB: 01/01/2005\nSchool: Demo High School`}
               />
             </AgentStepAccordion>
               </AgentStepper>

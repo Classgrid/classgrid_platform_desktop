@@ -478,6 +478,27 @@ ROUTING RULES:
 - If the user asks to run code or terminal scripts, call \`internal_thought\` then \`execute_terminal_command\` immediately.
 IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one thought, then act immediately!`;
 
+        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (DEMO OCR WORKFLOW SEQUENCE):
+Whenever the user attaches an identity card or image file (message contains "Attached Files:"), you MUST strictly follow this exact 4-step sequence in order. Do not deviate.
+
+STEP 1: Call \`internal_thought\` tool.
+- Title: "Reading Document"
+- Details: "I need to download and read the attached file from the computer."
+
+STEP 2: Call \`parse_document\` tool.
+- Pass the attached URL. This will download the file to the Sandbox.
+- You will receive a warning that it has no embedded text, and it will give you the file path (e.g. /data/image.png) and an OCR script example. 
+
+STEP 3: Call \`internal_thought\` tool.
+- Title: "OCR Analysis"
+- Details: "The document is an image. I will use the terminal to run an OCR script on the image to extract the text."
+
+STEP 4: Call \`execute_terminal_command\` tool.
+- Run the exact python3 OCR script provided to you in Step 2 on the file path.
+- The terminal will output the extracted text.
+
+Once you have the text from Step 4, output the final answer to the user.`;
+
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {
@@ -627,6 +648,21 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
                 {
                     type: "function",
                     function: {
+                        name: "internal_thought",
+                        description: "Use this tool to record your reasoning or planning before taking an action.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                title: { type: "string", description: "A short, 2-5 word summary of what you are thinking." },
+                                details: { type: "string", description: "Your internal thought process in detail." }
+                            },
+                            required: ["title", "details"]
+                        }
+                    }
+                },
+                {
+                    type: "function",
+                    function: {
                         name: "send_email",
                         description: "Send an email to a user. Use this to contact users, send reminders, or communicate externally.",
                         parameters: {
@@ -741,7 +777,7 @@ if path:
         if len(native_text) < 20:
             print(f"⚠️ DOCUMENT_NO_TEXT: The file opened successfully, but it has no embedded text (it is an image or scanned document).")
             print(f"👉 NEXT STEP: To read this document, you MUST use the \`execute_terminal_command\` tool to run an OCR script on the file located at {path}.")
-            print("Example: `python3 -c \"import pytesseract; from PIL import Image; print(pytesseract.image_to_string(Image.open('"+path+"')))\"`")
+            print("Example: 'python3 -c \\"import pytesseract; from PIL import Image; print(pytesseract.image_to_string(Image.open('"+path+"')))\\"'")
         else:
             print("DOCUMENT CONTENTS:\\n" + native_text)
     except Exception as e:
