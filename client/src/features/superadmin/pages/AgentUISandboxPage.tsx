@@ -239,8 +239,8 @@ export function AgentUISandboxPage() {
               defaultExpanded={true}
             >
               <TerminalToolView 
-                command="mkdir -p /data/id_pages && pdftoppm -png /data/e288b93c-17cb-4661-a3f1-8c073016a962.pdf /data/id_pages/page"
-                output="--- /data/id_pages/page-1.png ---\n--- /data/id_pages/page-2.png ---"
+                command="python3 -c 'import pytesseract; from PIL import Image; print(pytesseract.image_to_string(Image.open(\"/data/id_pages/page-1.png\")))'"
+                output="OCR EXTRACTION RESULTS:\nName: John Doe\nID Number: 987654321\nDOB: 01/01/2005\nSchool: Demo High School"
               />
             </AgentStepAccordion>
               </AgentStepper>

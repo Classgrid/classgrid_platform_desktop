@@ -726,7 +726,8 @@ except Exception as e:
         parsed = urlparse(url)
         key = parsed.path.lstrip('/')
         s3 = boto3.client('s3', endpoint_url=f"https://{os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com", aws_access_key_id=os.environ['R2_ACCESS_KEY_ID'], aws_secret_access_key=os.environ['R2_SECRET_ACCESS_KEY'])
-        path = tempfile.mktemp(suffix=".png" if ".png" in url.lower() else ".pdf")
+        filename = key.split('/')[-1] if '/' in key else "downloaded_file.pdf"
+        path = os.path.join('/data', filename)
         s3.download_file(os.environ.get('R2_BUCKET_NAME', 'classgrid-storage'), key, path)
     except Exception as e2:
         print("DOCUMENT_PARSE_ERROR: Failed downloading document via S3:", type(e2).__name__, str(e2))
@@ -736,25 +737,13 @@ if path:
     try:
         doc = pymupdf.open(path)
         native_text = "\\n".join(page.get_text() for page in doc).strip()
-        ocr_text = ""
+        
         if len(native_text) < 20:
-            print("OCR_FALLBACK: Native PDF text is empty; rendering pages for OCR.")
-            with tempfile.TemporaryDirectory() as image_dir:
-                for index, page in enumerate(doc, start=1):
-                    image_path = os.path.join(image_dir, f"page-{index}.png")
-                    page.get_pixmap(matrix=pymupdf.Matrix(3, 3), alpha=False).save(image_path)
-                    result = subprocess.run(
-                        ["tesseract", image_path, "stdout", "--psm", "6"],
-                        capture_output=True, text=True, timeout=90
-                    )
-                    if result.returncode != 0:
-                        print(f"OCR_WARNING page {index}: {result.stderr.strip()}")
-                    ocr_text += "\\n" + result.stdout
-        text = native_text if len(native_text) >= 20 else ocr_text.strip()
-        if text:
-            print("DOCUMENT CONTENTS:\\n" + text)
+            print(f"⚠️ DOCUMENT_NO_TEXT: The file opened successfully, but it has no embedded text (it is an image or scanned document).")
+            print(f"👉 NEXT STEP: To read this document, you MUST use the \`execute_terminal_command\` tool to run an OCR script on the file located at {path}.")
+            print("Example: `python3 -c \"import pytesseract; from PIL import Image; print(pytesseract.image_to_string(Image.open('"+path+"')))\"`")
         else:
-            print("DOCUMENT_NO_TEXT: The file opened successfully, but neither embedded text nor OCR produced readable text.")
+            print("DOCUMENT CONTENTS:\\n" + native_text)
     except Exception as e:
         print("DOCUMENT_PARSE_ERROR:", type(e).__name__, str(e))
 `;
