@@ -146,11 +146,18 @@ export const handleToolCall = async (name, args, context = {}) => {
         const collection = mongoose.connection.db.collection(actualCollectionName);
         
         if (actualCollectionName === 'users' && query) {
-            const queryStr = JSON.stringify(query);
-            if (queryStr.includes('org_admin')) {
-                console.log(`[Auto-Correct] Replacing 'org_admin' with 'school_admin' in DB query.`);
-                query = JSON.parse(queryStr.replace(/org_admin/g, 'school_admin'));
-            }
+            const fixRoles = (obj) => {
+                if (!obj || typeof obj !== 'object') return;
+                for (const key in obj) {
+                    if (obj[key] === 'org_admin' || obj[key] === 'school_admin') {
+                        obj[key] = { $in: ['org_admin', 'school_admin'] };
+                    } else if (typeof obj[key] === 'object') {
+                        fixRoles(obj[key]);
+                    }
+                }
+            };
+            fixRoles(query);
+            console.log(`[Auto-Correct] Fixed DB query for org_admin/school_admin:`, JSON.stringify(query));
         }
         
         let result;
