@@ -6,10 +6,12 @@ interface DocumentGenerationViewProps {
   fileName: string;
   pageCount?: number;
   size: string;
+  hideAnimation?: boolean;
+  onClick?: () => void;
 }
 
-export function DocumentGenerationView({ fileName, pageCount, size }: DocumentGenerationViewProps) {
-  const [stage, setStage] = useState<'uploading' | 'processing' | 'complete'>('uploading');
+export function DocumentGenerationView({ fileName, pageCount, size, hideAnimation, onClick }: DocumentGenerationViewProps) {
+  const [stage, setStage] = useState<'uploading' | 'processing' | 'complete'>(hideAnimation ? 'complete' : 'uploading');
   const [progress, setProgress] = useState(0);
 
   const extension = fileName.split('.').pop()?.toLowerCase();
@@ -39,6 +41,8 @@ export function DocumentGenerationView({ fileName, pageCount, size }: DocumentGe
 
   // Simulate live generation progress pipeline
   useEffect(() => {
+    if (hideAnimation) return;
+    
     setProgress(0);
     setStage('uploading');
     
@@ -118,8 +122,10 @@ export function DocumentGenerationView({ fileName, pageCount, size }: DocumentGe
 
       {/* 3. Final Complete State (Sleek File Card) */}
       <div 
+        onClick={onClick}
         className={cn(
-          "bg-white dark:bg-[#151515] rounded-xl border border-slate-200/80 dark:border-white/10 flex items-center justify-between p-4 shadow-sm dark:shadow-none w-full max-w-[400px] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-all duration-500 ease-in-out group cursor-pointer origin-left",
+          "bg-white dark:bg-[#151515] rounded-xl border border-slate-200/80 dark:border-white/10 flex items-center justify-between p-4 shadow-sm dark:shadow-none w-full max-w-[400px] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-all duration-500 ease-in-out group origin-left",
+          onClick ? "cursor-pointer" : "",
           stage === 'complete' ? "opacity-100 scale-100 translate-x-0 z-10 relative" : "opacity-0 scale-95 pointer-events-none absolute top-0 left-0"
         )}
       >
