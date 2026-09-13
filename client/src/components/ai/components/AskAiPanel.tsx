@@ -2617,7 +2617,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                         }
                                       };
 
-                                      message.steps.forEach((step) => {
+                                      (message.steps || []).forEach((step) => {
                                         if (step.type === 'thought') {
                                           thoughtGroup.push(step);
                                         } else if (step.type === 'tool') {
