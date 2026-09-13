@@ -2560,20 +2560,20 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                             </>
                           ) : (
                             <div className="pl-1 w-full max-w-full">
-                              {/* Phase 1 & 2: Thinking shimmer → Typewriter thought text (Nikhil's 4-phase architecture) */}
-                              {/* Show when: has thought text OR is the currently generating message */}
-                              {((message.thought && message.thought.trim().length > 0) || (index === messages.length - 1 && thinking)) && (
-                                <div className="mb-2">
-                                  <CombinedReasoningBlock
-                                    sentences={message.thought && message.thought.trim().length > 0 ? message.thought.trim().split(/(?<=[.!?])\s+/).filter(Boolean) : []}
-                                  />
-                                </div>
-                              )}
-
-                              {/* Render Agent Stepper if there are steps */}
-                              {message.steps && message.steps.length > 0 && (
+                              {/* Phase 1-3: AgentStepper wraps both the reasoning block AND the steps
+                                  so CombinedReasoningBlock is a DIRECT sibling of the step elements.
+                                  This is required for the CSS .combined-reasoning-block ~ * trick to work! */}
+                              {((message.thought && message.thought.trim().length > 0) || (index === messages.length - 1 && thinking) || (message.steps && message.steps.length > 0)) && (
                                 <div className="mb-4">
                                   <AgentStepper>
+                                    {/* CombinedReasoningBlock MUST be first child - direct sibling of steps */}
+                                    {((message.thought && message.thought.trim().length > 0) || (index === messages.length - 1 && thinking)) && (
+                                      <CombinedReasoningBlock
+                                        sentences={message.thought && message.thought.trim().length > 0 ? message.thought.trim().split(/(?<=[.!?])\s+/).filter(Boolean) : []}
+                                      />
+                                    )}
+
+                                    {/* Steps - CSS sibling hiding hides these during Phase 1 & 2 */}
                                     {(() => {
                                       const elements: React.ReactNode[] = [];
                                       let thoughtGroup: any[] = [];
