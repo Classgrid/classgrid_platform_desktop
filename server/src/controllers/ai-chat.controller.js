@@ -804,23 +804,26 @@ if path:
         
         if len(native_text) < 20:
             print(f"⚠️ DOCUMENT_NO_TEXT: The file opened successfully, but it has no embedded text (it is an image or scanned document).")
-            print(f"👉 NEXT STEP: To read this document, you MUST use the \`execute_terminal_command\` tool to run an OCR script on the file located at {path}.")
-            print("Run this EXACT command in the terminal (copy and paste all lines):")
-            print("cat << 'EOF' > ocr.py")
-            print("import sys, fitz, pytesseract, io")
-            print("from PIL import Image")
-            print("path = sys.argv[1]")
-            print("if path.lower().endswith('.pdf'):")
-            print("    doc = fitz.open(path)")
-            print("    text = ''")
-            print("    for page in doc:")
-            print("        img = Image.open(io.BytesIO(page.get_pixmap().tobytes('png')))")
-            print("        text += pytesseract.image_to_string(img) + chr(10)")
-            print("    print(text)")
-            print("else:")
-            print("    print(pytesseract.image_to_string(Image.open(path)))")
-            print("EOF")
-            print(f"python3 ocr.py \\"{path}\\"")
+            
+            ocr_script = f'''import sys, pymupdf, pytesseract, io
+from PIL import Image
+path = "{path}"
+if path.lower().endswith('.pdf'):
+    doc = pymupdf.open(path)
+    text = ""
+    for page in doc:
+        img = Image.open(io.BytesIO(page.get_pixmap().tobytes("png")))
+        text += pytesseract.image_to_string(img) + chr(10)
+    print(text)
+else:
+    print(pytesseract.image_to_string(Image.open(path)))
+'''
+            with open('/data/ocr.py', 'w') as f:
+                f.write(ocr_script)
+                
+            print(f"👉 NEXT STEP: To read this document, you MUST use the \`execute_terminal_command\` tool to run the OCR script.")
+            print("Run this EXACT command in the terminal:")
+            print("python3 /data/ocr.py")
         else:
             print("DOCUMENT CONTENTS:\\n" + native_text)
     except Exception as e:
