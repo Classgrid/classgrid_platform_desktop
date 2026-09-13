@@ -1515,15 +1515,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             let steps = undefined;
             
             if (m.role === 'assistant') {
-              try {
-                const parsed = JSON.parse(m.content);
-                if (parsed.classgrid_ai_message) {
-                  content = parsed.content;
-                  thought = parsed.thought;
-                  steps = parsed.steps;
+              let parsed = m.content;
+              if (typeof m.content === 'string') {
+                try {
+                  parsed = JSON.parse(m.content);
+                } catch (e) {
+                  // Not JSON, ignore
                 }
-              } catch (e) {
-                // Not JSON, ignore
+              }
+              if (parsed && typeof parsed === 'object' && parsed.classgrid_ai_message) {
+                content = parsed.content;
+                thought = parsed.thought;
+                steps = parsed.steps;
               }
             }
             
@@ -1581,15 +1584,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             let steps = undefined;
             
             if (m.role === 'assistant') {
-              try {
-                const parsed = JSON.parse(m.content);
-                if (parsed.classgrid_ai_message) {
-                  content = parsed.content;
-                  thought = parsed.thought;
-                  steps = parsed.steps;
+              let parsed = m.content;
+              if (typeof m.content === 'string') {
+                try {
+                  parsed = JSON.parse(m.content);
+                } catch (e) {
+                  // Not JSON, ignore
                 }
-              } catch (e) {
-                // Not JSON, ignore
+              }
+              if (parsed && typeof parsed === 'object' && parsed.classgrid_ai_message) {
+                content = parsed.content;
+                thought = parsed.thought;
+                steps = parsed.steps;
               }
             }
             

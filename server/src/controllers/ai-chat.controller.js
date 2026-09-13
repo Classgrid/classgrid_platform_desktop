@@ -958,7 +958,10 @@ except Exception as e:
         }
     } finally {
         if (keepAliveInterval) clearInterval(keepAliveInterval);
-        if (!res.writableEnded) res.end();
+        if (!res.writableEnded) {
+            res.write('data: [DONE]\n\n');
+            res.end();
+        }
     }
 };
 
