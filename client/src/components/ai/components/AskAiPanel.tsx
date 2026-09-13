@@ -2578,6 +2578,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     {((message.thought && message.thought.trim().length > 0) || (index === messages.length - 1 && thinking)) && (
                                       <CombinedReasoningBlock
                                         sentences={message.thought && message.thought.trim().length > 0 ? message.thought.trim().split(/(?<=[.!?])\s+/).filter(Boolean) : []}
+                                        isStreaming={index === messages.length - 1 && (thinking || !message.content)}
                                       />
                                     )}
 
