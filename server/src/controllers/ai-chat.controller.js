@@ -767,8 +767,7 @@ ROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
                     const title = args?.title || "Thought Process";
                     const details = args?.details || (typeof args === 'object' ? JSON.stringify(args) : String(args));
                     res.write(`data: ${JSON.stringify({ type: "thought", thought: `**${title}**\n${details}` })}\n\n`);
-                    const result = await handleToolCall('internal_thought_process', args, { userEmail, userRole, subdomain, sessionId });
-                    return result.isError ? result.content[0].text : result.content[0].text;
+                    return "Thought recorded successfully. You MUST now proceed to your action tools or answer the user.";
                 },
                 execute_terminal_command: async (args) => {
                     const result = await handleToolCall('execute_terminal_command', args, { sessionId });
