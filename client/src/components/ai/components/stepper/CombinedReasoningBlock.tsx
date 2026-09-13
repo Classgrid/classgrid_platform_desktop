@@ -28,14 +28,7 @@ export function CombinedReasoningBlock({ sentences, forceThinkingMode = false }:
 
   return (
     <div className={`relative z-10 flex flex-col group/accordion mb-2 ${!isFinished ? 'is-thinking' : ''} combined-reasoning-block`}>
-      {/* Hide all subsequent steps in the stepper while this block is thinking OR typing */}
-      {(!isFinished || isTyping) && (
-        <style>{`
-          .combined-reasoning-block ~ * {
-            display: none !important;
-          }
-        `}</style>
-      )}
+      {/* Steps visibility is now perfectly handled by AgentStepper CSS */}
       <button
         onClick={() => { if (isFinished) setExpanded((prev) => !prev) }}
         className={`flex items-center gap-3 rounded-lg p-1 pr-3 -ml-1 transition-colors ${
