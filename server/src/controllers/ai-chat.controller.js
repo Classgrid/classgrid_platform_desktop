@@ -769,6 +769,9 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
                 upload_file_to_cdn: async (args) => {
                     try {
                         const buffer = Buffer.from(args.base64Content, 'base64');
+                        if (buffer.length < 100) {
+                            return "FAILED to upload file: The provided base64 string is too short or empty. This usually means your script failed to generate the file correctly. Fix your script and try again.";
+                        }
                         const { uploadBufferToR2 } = await import("../config/r2Client.js");
                         const url = await uploadBufferToR2(buffer, args.fileName, args.mimeType, `ai-generated/${Date.now()}-${args.fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`);
                         return `SUCCESS: File uploaded. Public URL: ${url}`;
