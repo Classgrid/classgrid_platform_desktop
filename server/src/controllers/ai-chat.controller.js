@@ -681,6 +681,14 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just recor
                     onToken: isDiagramRequest ? undefined : (token) => {
                         if (requestAborted || res.writableEnded) return;
                         try { res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`); } catch (e) { }
+                    },
+                    onToolCall: (toolName, args) => {
+                        if (requestAborted || res.writableEnded) return;
+                        try { res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
+                    },
+                    onToolResult: (toolName, result) => {
+                        if (requestAborted || res.writableEnded) return;
+                        try { res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result })}\n\n`); } catch (e) { }
                     }
                 });
 
