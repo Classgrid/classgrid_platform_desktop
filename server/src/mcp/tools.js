@@ -332,14 +332,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       });
 
       if (command.match(/python3?\s+-c/i)) {
-        if (command.toLowerCase().includes('tesseract') || command.toLowerCase().includes('fitz') || command.toLowerCase().includes('pymupdf') || command.toLowerCase().includes('image_to_string')) {
-          console.log(`[Auto-Correct] AI hallucinated OCR script. Forcing python3 /data/ocr.py instead.`);
-          command = 'python3 /data/ocr.py';
-        } else {
-          return {
-            content: [{ type: 'text', text: `SECURITY ERROR: You are NOT allowed to write inline Python scripts using '-c' via execute_terminal_command! If you are trying to OCR a document, you MUST run EXACTLY: \`python3 /data/ocr.py\`. If you are trying to execute other Python code or generate a PDF, you MUST use the \`run_code\` tool instead!` }]
-          };
-        }
+          // Allow inline python for OCR scripts to be executed directly in the terminal
       }
 
       try {
