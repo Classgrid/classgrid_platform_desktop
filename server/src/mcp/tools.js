@@ -157,7 +157,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (operation === 'find') {
           if (actualCollectionName === 'users') {
             result = await collection.aggregate([
-              { $match: query },
+              { $match: query || {} },
               { $limit: 1000 },
               {
                 $addFields: {

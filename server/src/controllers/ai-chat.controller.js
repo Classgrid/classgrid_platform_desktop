@@ -681,10 +681,14 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
                 },
 
                 unified_db_query: async (args) => {
-                    const userEmail = req.user?.email || body.userEmail || '';
-                    const userRole = req.user?.role || body.userRole || '';
-                    const subdomain = req.user?.subdomain || body.subdomain || '';
-                    return await handleToolCall('unified_db_query', args, { userEmail, userRole, subdomain });
+                    try {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userRole = req.user?.role || body.userRole || '';
+                        const subdomain = req.user?.subdomain || body.subdomain || '';
+                        return await handleToolCall('unified_db_query', args, { userEmail, userRole, subdomain });
+                    } catch (e) {
+                        return { content: [{ type: 'text', text: `ERROR querying database: ${e.message}` }] };
+                    }
                 },
                 run_code: async (args) => {
                     const result = await handleToolCall('run_code', args, { sessionId });
