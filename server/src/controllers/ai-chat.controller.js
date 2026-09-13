@@ -805,7 +805,22 @@ if path:
         if len(native_text) < 20:
             print(f"⚠️ DOCUMENT_NO_TEXT: The file opened successfully, but it has no embedded text (it is an image or scanned document).")
             print(f"👉 NEXT STEP: To read this document, you MUST use the \`execute_terminal_command\` tool to run an OCR script on the file located at {path}.")
-            print("Example: 'python3 -c \\"import pytesseract; from PIL import Image; print(pytesseract.image_to_string(Image.open('"+path+"')))\\"'")
+            print("Run this EXACT command in the terminal (copy and paste all lines):")
+            print("cat << 'EOF' > ocr.py")
+            print("import sys, fitz, pytesseract, io")
+            print("from PIL import Image")
+            print("path = sys.argv[1]")
+            print("if path.lower().endswith('.pdf'):")
+            print("    doc = fitz.open(path)")
+            print("    text = ''")
+            print("    for page in doc:")
+            print("        img = Image.open(io.BytesIO(page.get_pixmap().tobytes('png')))")
+            print("        text += pytesseract.image_to_string(img) + '\\n'")
+            print("    print(text)")
+            print("else:")
+            print("    print(pytesseract.image_to_string(Image.open(path)))")
+            print("EOF")
+            print(f"python3 ocr.py \\"{path}\\"")
         else:
             print("DOCUMENT CONTENTS:\\n" + native_text)
     except Exception as e:
