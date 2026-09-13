@@ -29,10 +29,7 @@ const mongoose = require('mongoose');
 async function clearDB() {
   try {
     console.log("Connecting to MongoDB...");
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.MONGO_URI);
     console.log("Connected to MongoDB.");
 
     // Clear EmailConversations (AI Memory)
