@@ -10,19 +10,44 @@ interface AgentStepAccordionProps {
   defaultExpanded?: boolean;
   children: React.ReactNode;
   icon?: React.ReactNode;
+  executionTimeMs?: number;
 }
 
 export function AgentStepAccordion({
   title,
-  status,
+  status: propStatus,
   defaultExpanded = false,
   children,
-  icon
+  icon,
+  executionTimeMs
 }: AgentStepAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const [status, setStatus] = useState<StepStatus>(executionTimeMs ? 'loading' : propStatus);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!executionTimeMs) {
+      setStatus(propStatus);
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        const timeout = setTimeout(() => {
+          setStatus(propStatus);
+        }, executionTimeMs);
+        observer.disconnect();
+      }
+    });
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    return () => observer.disconnect();
+  }, [executionTimeMs, propStatus]);
 
   return (
-    <div className="relative z-10 flex flex-col group/accordion">
+    <div ref={containerRef} className="relative z-10 flex flex-col group/accordion">
       {/* Header */}
       <div 
         className="flex items-center gap-3 cursor-pointer group-hover/accordion:bg-muted/30 rounded-lg p-1 pr-3 -ml-1 transition-colors"

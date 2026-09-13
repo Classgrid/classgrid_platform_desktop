@@ -126,6 +126,7 @@ export function AgentUISandboxPage() {
                 title="Querying database"
                 status="success"
                 defaultExpanded={false}
+                executionTimeMs={1000}
               >
                 <DatabaseQueryView
                   query='db.students.find({ incidents: "cafeteria_fight" })\n  .select({ name: 1, parentsEmail: 1 })'
@@ -149,6 +150,7 @@ export function AgentUISandboxPage() {
                 title="Searched the web"
                 status="success"
                 defaultExpanded={false}
+                executionTimeMs={2000}
               >
                 <WebSearchView
                   query="Classgrid demo school disciplinary guidelines for suspension"
@@ -171,6 +173,7 @@ export function AgentUISandboxPage() {
                 title="Drafted email"
                 status="success"
                 defaultExpanded={false}
+                executionTimeMs={3000}
               >
                 <EmailActionView
                   to={Array.from({ length: 50 }, (_, i) => `student${i + 1}@demo.edu`).join(', ')}
@@ -183,7 +186,8 @@ export function AgentUISandboxPage() {
               <AgentStepAccordion
                 title="Sent email"
                 status="success"
-                defaultExpanded={true}
+                defaultExpanded={false}
+                executionTimeMs={4000}
               >
                 <EmailSentView
                   toCount={50}
@@ -196,6 +200,7 @@ export function AgentUISandboxPage() {
                 title="Generated PDF document"
                 status="success"
                 defaultExpanded={true}
+                executionTimeMs={5000}
               >
                 <DocumentGenerationView
                   fileName="official_warning_letter.pdf"
@@ -220,6 +225,7 @@ export function AgentUISandboxPage() {
               title="Uploaded File"
               status="success"
               defaultExpanded={true}
+              executionTimeMs={1000}
             >
               <FileActionView
                 fileName="e288b93c-17cb-4661-a3f1-8c073016a962.pdf"
@@ -234,6 +240,7 @@ export function AgentUISandboxPage() {
               title="OCR the attached identity card"
               status="success"
               defaultExpanded={true}
+              executionTimeMs={2500}
             >
               <TerminalToolView
                 command={`python3 -c 'import pytesseract; from PIL import Image; print(pytesseract.image_to_string(Image.open("/data/id_pages/page-1.png")))'`}
@@ -258,6 +265,7 @@ export function AgentUISandboxPage() {
               title="Generated PDF document"
               status="success"
               defaultExpanded={true}
+              executionTimeMs={1200}
             >
               <DocumentGenerationView
                 fileName="board_meeting_summary.pdf"
@@ -284,6 +292,7 @@ export function AgentUISandboxPage() {
               title="Searched the web"
               status="success"
               defaultExpanded={true}
+              executionTimeMs={1406}
             >
               <WebSearchView
                 query="Latest breakthroughs in Artificial Intelligence 2026"
@@ -311,6 +320,7 @@ export function AgentUISandboxPage() {
               title="Searched Knowledge Base"
               status="success"
               defaultExpanded={true}
+              executionTimeMs={1417}
             >
               <KnowledgeBaseSearchView
                 query="Employee vacation policy and PTO accrual 2026"
@@ -361,6 +371,7 @@ export function AgentUISandboxPage() {
               title="Upload file to CDN"
               status="success"
               defaultExpanded={true}
+              executionTimeMs={1644}
               icon={<UploadCloud />}
             >
               <CdnUploadView
@@ -382,6 +393,7 @@ export function AgentUISandboxPage() {
               title="Thought for 5s"
               status="success"
               defaultExpanded={true}
+              executionTimeMs={1396}
             >
               <TypewriterAccordion
                 sentences={[
