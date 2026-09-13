@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { TypewriterAccordion } from './TypewriterAccordion';
 
-export function CombinedReasoningBlock({ sentences }: { sentences: string[] }) {
+export function CombinedReasoningBlock({ sentences, forceThinkingMode = false }: { sentences: string[], forceThinkingMode?: boolean }) {
   const [isFinished, setIsFinished] = useState(false);
   const [isTyping, setIsTyping] = useState(true);
   const [timer, setTimer] = useState(0);
@@ -19,11 +19,12 @@ export function CombinedReasoningBlock({ sentences }: { sentences: string[] }) {
 
   // Finish after 5 seconds
   useEffect(() => {
+    if (forceThinkingMode) return;
     const timeout = setTimeout(() => {
       setIsFinished(true);
     }, 5000);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [forceThinkingMode]);
 
   return (
     <div className={`relative z-10 flex flex-col group/accordion mb-2 ${!isFinished ? 'is-thinking' : ''} combined-reasoning-block`}>

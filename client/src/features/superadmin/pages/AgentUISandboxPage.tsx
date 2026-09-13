@@ -425,6 +425,21 @@ export function AgentUISandboxPage() {
           </div>
         </div>
 
+        {/* --- WORKFLOW 11: COMBINED REASONING BLOCK (INFINITE LOOP) --- */}
+        <div>
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
+            Workflow 11: Combined Reasoning Block (Thinking Loop)
+          </h2>
+          <div className="bg-background rounded-lg border border-border p-4">
+            <CombinedReasoningBlock
+              forceThinkingMode={true}
+              sentences={[
+                "This text will never be reached because it is stuck in the thinking loop forever."
+              ]}
+            />
+          </div>
+        </div>
+
       </div>
     </div>
   );
