@@ -15,7 +15,9 @@ export function MasterWorkflowTestingWrapper({
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
+    console.log('MasterBox Mounted! totalTimeMs:', totalTimeMs);
     const timeout = setTimeout(() => {
+      console.log('MasterBox Timeout Fired!');
       setIsFinished(true);
     }, totalTimeMs);
     return () => clearTimeout(timeout);

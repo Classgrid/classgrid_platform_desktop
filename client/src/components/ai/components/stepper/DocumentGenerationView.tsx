@@ -42,31 +42,30 @@ export function DocumentGenerationView({ fileName, pageCount, size, hideAnimatio
 
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  // Simulate live generation progress pipeline
+  // Handle interval for progress
   useEffect(() => {
-    if (hideAnimation) return;
-
-    setProgress(0);
-    setStage('uploading');
+    if (hideAnimation || stage !== 'uploading') return;
     
     const interval = setInterval(() => {
       setProgress(p => {
-        if (p >= 100) {
-          clearInterval(interval);
-          setStage('processing');
-          
-          // Stay in skeleton processing state for ~2.5 seconds
-          setTimeout(() => setStage('complete'), 2500);
-          
-          return 100;
-        }
-        // Increment by random amounts to feel like real generation
+        if (p >= 100) return 100;
         return Math.min(p + Math.floor(Math.random() * 20) + 5, 100);
       });
     }, 400);
 
     return () => clearInterval(interval);
-  }, [fileName, hideAnimation]);
+  }, [stage, hideAnimation]);
+
+  // Handle stage transitions based on progress
+  useEffect(() => {
+    if (progress >= 100 && stage === 'uploading') {
+      setStage('processing');
+      const timeout = setTimeout(() => {
+        setStage('complete');
+      }, 2500);
+      return () => clearTimeout(timeout);
+    }
+  }, [progress, stage]);
 
   return (
     <div ref={containerRef} className="flex flex-col relative min-h-[70px]">
