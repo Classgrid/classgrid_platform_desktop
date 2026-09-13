@@ -40,34 +40,47 @@ export function DocumentGenerationView({ fileName, pageCount, size, hideAnimatio
     fileTypeLabel = "DOCX";
   }
 
-  // Simulate live generation progress pipeline
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Simulate live generation progress pipeline ONLY when visible
   useEffect(() => {
     if (hideAnimation) return;
-    
-    setProgress(0);
-    setStage('uploading');
-    
-    const interval = setInterval(() => {
-      setProgress(p => {
-        if (p >= 100) {
-          clearInterval(interval);
-          setStage('processing');
-          
-          // Stay in skeleton processing state for ~2.5 seconds
-          setTimeout(() => setStage('complete'), 2500);
-          
-          return 100;
-        }
-        // Increment by random amounts to feel like real generation
-        return Math.min(p + Math.floor(Math.random() * 20) + 5, 100);
-      });
-    }, 400);
 
-    return () => clearInterval(interval);
-  }, [fileName]);
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setProgress(0);
+        setStage('uploading');
+        
+        const interval = setInterval(() => {
+          setProgress(p => {
+            if (p >= 100) {
+              clearInterval(interval);
+              setStage('processing');
+              
+              // Stay in skeleton processing state for ~2.5 seconds
+              setTimeout(() => setStage('complete'), 2500);
+              
+              return 100;
+            }
+            // Increment by random amounts to feel like real generation
+            return Math.min(p + Math.floor(Math.random() * 20) + 5, 100);
+          });
+        }, 400);
+
+        // Disconnect once started so it doesn't restart if scrolled out of view
+        observer.disconnect();
+      }
+    });
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [fileName, hideAnimation]);
 
   return (
-    <div className="flex flex-col relative min-h-[70px]">
+    <div ref={containerRef} className="flex flex-col relative min-h-[70px]">
       
       {/* 1. Generating State (Progress Bar Chip) */}
       <div 
