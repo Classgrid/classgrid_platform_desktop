@@ -320,6 +320,12 @@ export const handleToolCall = async (name, args, context = {}) => {
         command
       });
 
+      if (command.match(/python3?\s+-c/i)) {
+        return {
+          content: [{ type: 'text', text: `SECURITY ERROR: You are NOT allowed to write inline Python scripts using '-c' via execute_terminal_command! If you are trying to OCR a document, you MUST run EXACTLY: \`python3 /data/ocr.py\`. If you are trying to execute other Python code or generate a PDF, you MUST use the \`run_code\` tool instead!` }]
+        };
+      }
+
       try {
         const ssh = new NodeSSH();
         const isProd = process.env.NODE_ENV === 'production';
