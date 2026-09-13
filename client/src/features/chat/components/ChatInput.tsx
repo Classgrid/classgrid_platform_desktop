@@ -1,3 +1,11 @@
+/*
+ * =========================================================================================
+ * 🚨 CRITICAL AI & SYSTEM RULE 🚨
+ * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
+ * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
+ * =========================================================================================
+ */
+
 import { useState, useRef, useEffect } from "react";
 import { Send, Paperclip, X, Smile, Film, FileText, Mic, Square, Trash2, BarChart2, Image as ImageIcon, Clock, SlidersHorizontal, BellOff, Bell, Camera, Video, Users, BadgeCheck } from "lucide-react";
 import { Spinner } from "@/components/marketing_ui/spinner";

@@ -1,3 +1,11 @@
+/*
+ * =========================================================================================
+ * 🚨 CRITICAL AI & SYSTEM RULE 🚨
+ * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
+ * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
+ * =========================================================================================
+ */
+
 
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"

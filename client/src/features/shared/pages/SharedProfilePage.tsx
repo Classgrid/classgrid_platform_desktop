@@ -1,5 +1,13 @@
 /*
  * =========================================================================================
+ * 🚨 CRITICAL AI & SYSTEM RULE 🚨
+ * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
+ * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
+ * =========================================================================================
+ */
+
+/*
+ * =========================================================================================
  * STRICT SECURITY POLICY:
  * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
  * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
