@@ -26,5 +26,8 @@ jobs:
             sudo apt-get clean
             echo "Cleaning systemd journal..."
             sudo journalctl --vacuum-time=1d || true
+            echo "Removing heavy frontend node_modules and build files to free disk space..."
+            sudo rm -rf /var/www/classgrid_platform/client/node_modules
+            sudo rm -rf /var/www/classgrid_platform/client/dist
             echo "New disk space:"
             df -h
