@@ -941,6 +941,8 @@ except Exception as e:
                         try { res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`); } catch (e) { }
                     },
                     onToolCall: (toolName, args) => {
+                        console.log(`\n[AI Chat] 🛠️ AI requested tool: ${toolName}`);
+                        console.log(`[AI Chat] 📥 Arguments:`, JSON.stringify(args, null, 2));
                         accSteps.push({
                             id: Date.now().toString(),
                             type: toolName === 'internal_thought' ? 'thought' : 'tool',
@@ -954,6 +956,8 @@ except Exception as e:
                         try { res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
                     },
                     onToolResult: (toolName, result) => {
+                        console.log(`[AI Chat] ✅ Tool finished: ${toolName}`);
+                        console.log(`[AI Chat] 📤 Returned to AI:`, typeof result === 'string' ? result.substring(0, 500) + (result.length > 500 ? '... [TRUNCATED]' : '') : result);
                         const step = accSteps.find(s => s.tool === toolName && s.status === 'loading');
                         if (step) {
                             step.status = 'success';
