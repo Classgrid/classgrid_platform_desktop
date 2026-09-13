@@ -815,7 +815,7 @@ if path:
             print("    text = ''")
             print("    for page in doc:")
             print("        img = Image.open(io.BytesIO(page.get_pixmap().tobytes('png')))")
-            print("        text += pytesseract.image_to_string(img) + '\\n'")
+            print("        text += pytesseract.image_to_string(img) + chr(10)")
             print("    print(text)")
             print("else:")
             print("    print(pytesseract.image_to_string(Image.open(path)))")
