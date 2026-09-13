@@ -47,7 +47,7 @@ export const getMcpTools = () => [
   },
   {
     name: 'run_code',
-    description: 'Execute Python or JavaScript code securely in the Cloudflare AI Sandbox. Use this for calculations, data analysis, or executing scripts.',
+    description: 'Execute Python or JavaScript code securely in the AWS EC2 Docker Sandbox. Use this for calculations, data analysis, or executing scripts.',
     inputSchema: {
       type: 'object',
       properties: {
