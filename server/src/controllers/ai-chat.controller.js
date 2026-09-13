@@ -226,6 +226,10 @@ CRITICAL EMAIL RULES:
 5. ATTACHMENTS: If you generated a PDF or file for the user and are sending an email, DO NOT just put a download link in the email body. You MUST use the 'attachments' parameter of the 'send_email' tool to attach the file properly (using the CDN URL or sandbox path).
 Use the default Classgrid sender unless a verified Classgrid sender is explicitly required. Send one email once; after a successful tool result, continue with the task and do not call it again.
 
+⚠️ EXTERNAL EMAIL SAFETY RULE (HIGHEST PRIORITY — NEVER SKIP THIS):
+When the user asks you to "send an email to me" or "email this to me", you MUST send it to the user's OWN email address (from the User Context below), NOT to any external person mentioned in the conversation. ALWAYS double-check the 'to' field matches EXACTLY what the user asked for. If the user says "send it to me" or "email me", the recipient is THEIR email, not someone else's.
+If the 'to' address is an EXTERNAL address (not ending in @classgrid.in), you MUST first show the user a preview of the email draft and ask for explicit confirmation BEFORE calling the send_email tool. Say something like: "Here is the email draft I will send to [recipient]. Should I go ahead and send it?" Only call send_email AFTER the user confirms with "yes", "send it", "go ahead", or similar.
+
 ACADEMIC HIERARCHY (BACKEND DOMAIN KNOWLEDGE):
 - If the user asks about the academic hierarchy, organizational structure, departments, streams, divisions, or batches, YOU MUST trigger the \`search_knowledge_base\` tool (with queries like "Academic Hierarchy") to retrieve the latest backend domain knowledge from the RAG knowledge base. Do not hallucinate the structure without checking the knowledge base.
 - Write like you are explaining to a friend, not writing documentation.
@@ -249,7 +253,7 @@ FORMATTING TOOLS (use all of these naturally):
 - **Bullet points & numbered lists**: Great for steps, features, tips, and most explanations.
 - **Tables**: Use for comparisons, structured data, schedules, and side-by-side info.
 - **Code blocks**: Use ONLY for actual programming code, terminal commands. Use single backticks (\`) to highlight specific keywords or filenames.
-- **Copyable Messages / Emails**: ANY time you generate an email, message, SMS, birthday wish, social media post, proposal, or ANY text that the user is meant to copy and paste somewhere else, you MUST wrap it in a code block with the language \`copy\` (e.g., \`\`\`copy\nHappy Birthday...\n\`\`\`). Do NOT output copy-paste text as plain text or blockquotes. This gives the user a 1-click copy button.
+- **Copyable Messages / Emails**: When you generate a standalone email draft, SMS, birthday wish, social media post, proposal, or text that the user is meant to copy and paste somewhere else, wrap it in a code block with the language \`copy\` (e.g., \`\`\`copy\nHappy Birthday...\n\`\`\`). This gives the user a 1-click copy button. HOWEVER, if the user asks you to stop using copy blocks or says "don't write inside that", respect their preference and output as plain text for the rest of the conversation.
 - **Links & URLs**: Write links as standard clickable text or standard markdown \`[text](url)\`. Do not wrap links in code blocks.
 - **Math Equations**: Use LaTeX with raw $$ signs. Use inline math (\`$x^2$\`) for short equations and block math (\`$$\\nE=mc^2\\n$$\`) for complex formulas.
 - **Flowcharts / Diagrams**: When explaining workflows or complex relationships, generate a diagram by wrapping it in a markdown code block with the language \`mermaid\`. Mermaid node labels MUST be wrapped in quotes if they contain spaces. CRITICAL: NEVER use the word "Mermaid" in your conversational text. Just say "Here is a flowchart" or "Here is a diagram".
@@ -686,8 +690,7 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
                                 base64Data: { type: "string", description: "The base64 encoded contents of the file." },
                                 fileName: { type: "string", description: "The desired name of the file (e.g. report.pdf)." },
                                 mimeType: { type: "string", description: "The MIME type (e.g. application/pdf, image/png)." }
-                            },
-                            required: ["base64Data", "fileName", "mimeType"]
+                            }
                         }
                     }
                 },
@@ -725,15 +728,13 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
                     type: "function",
                     function: {
                         name: "send_email",
-                        description: "Send an email to a user. Use this to contact users, send reminders, or communicate externally.",
+                        description: "Send an email on behalf of the user using Zoho API.",
                         parameters: {
                             type: "object",
                             properties: {
-                                to: { type: "string", description: "The recipient's email address" },
-                                subject: { type: "string", description: "The email subject" },
-                                body: { type: "string", description: "REQUIRED: You MUST write the FULL, actual email content here as a beautifully formatted HTML string. Do NOT write generic placeholders like 'Action successful'. If summarizing, put the full summary here. Use inline CSS. DO NOT use Markdown." },
-                                fromName: { type: "string", description: "Optional name of the sender (e.g., 'Classgrid Support')" },
-                                fromEmail: { type: "string", description: "Optional sender email, MUST end with @classgrid.in (e.g., 'admin@classgrid.in')" },
+                                to: { type: "string", description: "Recipient email address" },
+                                subject: { type: "string", description: "Email subject" },
+                                htmlBody: { type: "string", description: "The HTML content of the email" },
                                 attachments: {
                                     type: "array",
                                     description: "Optional array of attachments. Each object MUST have a 'filename' (e.g. report.pdf) and a 'path' (the URL or sandbox file path).",
@@ -914,6 +915,32 @@ except Exception as e:
                     if (!isSuperAdmin) {
                         return "SECURITY ERROR: Access Denied. Only Admins are authorized to use the AI email sending tool.";
                     }
+
+                    // ─── EXTERNAL EMAIL SAFETY GATE ───
+                    // Block AI from sending to external (non-classgrid.in) addresses
+                    // without explicit user confirmation. This prevents the AI from
+                    // autonomously emailing real people (e.g. investors, partners)
+                    // with AI-generated content that the user hasn't reviewed.
+                    const recipientEmail = (args.to || '').trim().toLowerCase();
+                    const isExternalRecipient = recipientEmail && !recipientEmail.endsWith('@classgrid.in');
+
+                    if (isExternalRecipient) {
+                        // Check if the user explicitly confirmed sending in their last message
+                        const lastUserMsg = (messages || []).filter(m => m.role === 'user').pop();
+                        const lastUserText = (lastUserMsg?.content || '').trim().toLowerCase();
+                        const confirmPatterns = [
+                            'yes send', 'yes, send', 'go ahead', 'send it', 'confirm send',
+                            'yes go ahead', 'please send', 'do send', 'approved', 'confirmed',
+                            'yes please send', 'send the email', 'yes send it'
+                        ];
+                        const hasConfirmation = confirmPatterns.some(p => lastUserText.includes(p));
+
+                        if (!hasConfirmation) {
+                            console.warn(`[EMAIL SAFETY] BLOCKED: AI tried to send email to external address ${recipientEmail} without user confirmation. Subject: "${args.subject}"`);
+                            return `EMAIL_DRAFT_PENDING: The email to ${recipientEmail} has NOT been sent yet. You MUST show the user a preview of this email and ask for their explicit confirmation before sending. Tell the user: "I've prepared an email draft to ${recipientEmail} with subject '${args.subject}'. Would you like me to send it, or would you like to review/edit it first?" Do NOT call send_email again until the user explicitly confirms.`;
+                        }
+                    }
+
                     try {
                         const emailPayload = {
                             to: args.to,
