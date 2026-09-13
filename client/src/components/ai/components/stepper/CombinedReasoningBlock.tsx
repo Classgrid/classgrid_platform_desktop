@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { TypewriterAccordion } from './TypewriterAccordion';
 
-export function CombinedReasoningBlock({ sentences, forceThinkingMode = false }: { sentences: string[], forceThinkingMode?: boolean }) {
+export function CombinedReasoningBlock({ sentences }: { sentences: string[] }) {
   const [isFinished, setIsFinished] = useState(false);
   const [isTyping, setIsTyping] = useState(true);
   const [timer, setTimer] = useState(0);
@@ -19,16 +19,22 @@ export function CombinedReasoningBlock({ sentences, forceThinkingMode = false }:
 
   // Finish after 5 seconds
   useEffect(() => {
-    if (forceThinkingMode) return;
     const timeout = setTimeout(() => {
       setIsFinished(true);
     }, 5000);
     return () => clearTimeout(timeout);
-  }, [forceThinkingMode]);
+  }, []);
 
   return (
     <div className={`relative z-10 flex flex-col group/accordion mb-2 ${!isFinished ? 'is-thinking' : ''} combined-reasoning-block`}>
-      {/* Steps visibility is now perfectly handled by AgentStepper CSS */}
+      {/* Hide all subsequent steps in the stepper while this block is thinking */}
+      {!isFinished && (
+        <style>{`
+          .combined-reasoning-block ~ * {
+            display: none !important;
+          }
+        `}</style>
+      )}
       <button
         onClick={() => { if (isFinished) setExpanded((prev) => !prev) }}
         className={`flex items-center gap-3 rounded-lg p-1 pr-3 -ml-1 transition-colors ${
