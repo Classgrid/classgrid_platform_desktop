@@ -156,7 +156,9 @@ The sandbox already includes tools such as:
 - Long-running commands must be controlled or run in the background so they do not block the task.
 
 ### How to Handle User Attachments (CRITICAL INSTRUCTION)
-If the user's message contains "Attached Files:" followed by one or more URLs, you MUST use the \`parse_document\` tool to download and extract the text from the file. ALWAYS use \`parse_document\` as your first step when a user attaches a file to read its contents. Do NOT write a Python script manually to read basic documents; use the \`parse_document\` tool first.
+If the user's message contains "Attached Files:" followed by one or more URLs, you MUST use the \`parse_document\` tool to download and extract the text from the file. ALWAYS use \`parse_document\` as your first step when a user attaches a file to read its contents. 
+CRITICAL: Never use execute_terminal_command or curl to download attachments. You MUST use the native parse_document tool because it has secure internal access to private files.
+DO NOT write a Python script manually to read basic documents; use the \`parse_document\` tool first. The \`parse_document\` tool securely bypasses R2 restrictions using internal S3 credentials!
 
 ### How to Upload Files to CDN (CRITICAL INSTRUCTION)
 If you generate a file (like an Excel sheet, PDF, or image) inside the sandbox and need to give the user a download link, you MUST use the native \`upload_file_to_cdn\` tool. 
@@ -236,6 +238,12 @@ async function generateSessionTitle(sessionId, question) {
         const client = createLLMClient({
             providers: [
                 {
+                    name: "groq",
+                    url: "https://api.groq.com/openai/v1/chat/completions",
+                    apiKey: process.env.GROQ_API_KEY || "",
+                    model: "openai/gpt-oss-20b"
+                },
+                {
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
                     apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
@@ -246,12 +254,6 @@ async function generateSessionTitle(sessionId, question) {
                     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                     apiKey: process.env.GEMINI_API_KEY || "",
                     model: "gemini-3.5-flash"
-                },
-                {
-                    name: "groq",
-                    url: "https://api.groq.com/openai/v1/chat/completions",
-                    apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b"
                 }
             ]
         });
@@ -502,16 +504,16 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
         const client = createLLMClient({
             providers: [
                 {
-                    name: "mistral",
-                    url: "https://api.mistral.ai/v1/chat/completions",
-                    apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
-                    model: "open-mistral-nemo"
-                },
-                {
                     name: "groq",
                     url: "https://api.groq.com/openai/v1/chat/completions",
                     apiKey: process.env.GROQ_API_KEY || "",
                     model: "openai/gpt-oss-20b"
+                },
+                {
+                    name: "mistral",
+                    url: "https://api.mistral.ai/v1/chat/completions",
+                    apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
+                    model: "open-mistral-nemo"
                 },
                 {
                     name: "gemini",

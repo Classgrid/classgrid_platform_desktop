@@ -21,7 +21,7 @@ async function rebuildSandbox() {
 
         console.log("✅ Connected! Updating Dockerfile...");
         
-        const updateCmd = `sed -i 's/reportlab/reportlab pymupdf pdfplumber/g' /home/ubuntu/Dockerfile`;
+        const updateCmd = `sed -i 's/pymupdf/pymupdf boto3/g' /home/ubuntu/Dockerfile || echo "boto3 already added"`;
         await ssh.execCommand(updateCmd);
         
         console.log("🐳 Rebuilding Docker image...");
