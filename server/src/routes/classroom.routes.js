@@ -52,7 +52,9 @@ import {
     sendBulkJoinApprovedEmails,
 } from "../services/notification-email.service.js";
 
-import pdfParse from "pdf-parse";
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 import { Groq } from "groq-sdk";
 
 const router = express.Router();

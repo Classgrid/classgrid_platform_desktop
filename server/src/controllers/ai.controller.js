@@ -35,7 +35,9 @@
 
 import { generateEmbedding, chunkText } from "../services/ai/embeddings.service.js";
 import { primarySupabaseClient } from "../config/supabaseClient.js";
-import pdf from "pdf-parse";
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdf = require('pdf-parse');
 import axios from "axios";
 import OpenAI from "openai";
 import { generateStudentPersona } from "../services/ai/persona.service.js";

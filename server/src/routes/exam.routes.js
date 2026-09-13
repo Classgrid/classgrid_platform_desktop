@@ -35,7 +35,9 @@
 
 import express from 'express';
 import multer from 'multer';
-import pdfParse from 'pdf-parse';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 import Groq from 'groq-sdk';
 import { isAuthenticated, requireRole } from '../middleware/auth.middleware.js';
 import { attachInstitutionProfile } from '../middleware/institution-profile.middleware.js';
