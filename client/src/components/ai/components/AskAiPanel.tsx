@@ -2540,7 +2540,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                       >
                         {isUser ? (
                           <>
-                            <p className="text-[16px] leading-[24px] break-words break-all whitespace-pre-wrap text-[#37352f] dark:text-[#F0EFED] cursor-text">{message.content}</p>
+                            <p className="text-[16px] leading-[24px] break-words break-all whitespace-pre-wrap text-[#37352f] dark:text-[#F0EFED] cursor-text">
+                              {(typeof message.content === 'object' && message.content !== null 
+                                ? (message.content as any).content || JSON.stringify(message.content) 
+                                : String(message.content || '')
+                              ).replace(/\[Attached file:.*?\]/g, '').trim()}
+                            </p>
                             {message.contextUrl && (
                               <a
                                 href={message.contextUrl}
@@ -2848,56 +2853,57 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                           />
                         )}
 
-                        {/* Other Documents using FilePreviewModal */}
-                        {isUser && message.attachments && message.attachments.filter(a => !a.mimeType.startsWith("image/") && a.mimeType !== "application/pdf").length > 0 && (
-                          <div className="flex flex-wrap gap-2 justify-end">
-                            {message.attachments.filter(a => !a.mimeType.startsWith("image/") && a.mimeType !== "application/pdf").map((att, i) => {
-                              const Icon = getFileIcon(att.mimeType);
+                        {/* All Non-Image Documents (Unified Sleek Card) */}
+                        {isUser && message.attachments && message.attachments.filter(a => !a.mimeType.startsWith("image/")).length > 0 && (
+                          <div className="flex flex-col gap-2 mt-2 w-full max-w-[400px]">
+                            {message.attachments.filter(a => !a.mimeType.startsWith("image/")).map((att, i) => {
+                              const extension = att.name.split('.').pop()?.toLowerCase();
+                              let Icon = FileText;
+                              let iconBgClass = "bg-slate-100/50 dark:bg-white/5";
+                              let iconColorClass = "text-slate-500 dark:text-slate-400";
+                              let fileTypeLabel = "FILE";
+
+                              if (extension === 'pdf' || att.mimeType === 'application/pdf') {
+                                Icon = FileText;
+                                iconBgClass = "bg-red-100/50 dark:bg-red-900/20";
+                                iconColorClass = "text-red-600 dark:text-red-400";
+                                fileTypeLabel = "PDF";
+                              } else if (extension === 'xlsx' || extension === 'csv' || att.mimeType.includes('spreadsheet') || att.mimeType.includes('csv')) {
+                                Icon = FileSpreadsheet;
+                                iconBgClass = "bg-emerald-100/50 dark:bg-emerald-900/20";
+                                iconColorClass = "text-emerald-600 dark:text-emerald-400";
+                                fileTypeLabel = (extension || "FILE").toUpperCase();
+                              } else if (extension === 'docx' || extension === 'doc' || att.mimeType.includes('document')) {
+                                Icon = FileIcon;
+                                iconBgClass = "bg-blue-100/50 dark:bg-blue-900/20";
+                                iconColorClass = "text-blue-600 dark:text-blue-400";
+                                fileTypeLabel = (extension || "DOCX").toUpperCase();
+                              }
+
                               return (
-                                <button
+                                <div 
                                   key={`${att.name}-${i}`}
-                                  type="button"
                                   onClick={() => setPreviewFile({ name: att.name, src: att.url, mimeType: att.mimeType })}
-                                  title={att.name}
-                                  className="relative group overflow-hidden flex items-center justify-center bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 hover:border-emerald-500/50 transition-all shadow-sm rounded-xl h-20 w-20 sm:h-[88px] sm:w-[88px]"
+                                  className="bg-white dark:bg-[#151515] rounded-xl border border-slate-200/80 dark:border-white/10 flex items-center justify-between p-4 shadow-sm dark:shadow-none w-full hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-all duration-500 ease-in-out cursor-pointer group"
                                 >
-                                  <div className="flex flex-col items-center justify-center gap-1 text-foreground/70 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                                    <Icon className="h-7 w-7" strokeWidth={1.5} />
-                                    <span className="text-[9px] uppercase tracking-wider font-bold">
-                                      {att.name.split('.').pop()?.substring(0, 4)}
-                                    </span>
+                                  <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className={cn("h-10 w-10 shrink-0 rounded-lg flex items-center justify-center", iconBgClass, iconColorClass)}>
+                                      <Icon className="h-5 w-5" />
+                                    </div>
+                                    <div className="flex flex-col overflow-hidden text-left">
+                                      <span className="text-[14px] font-medium text-slate-800 dark:text-[#eeeeee] truncate">
+                                        {att.name}
+                                      </span>
+                                      <span className="text-[13px] text-slate-500 dark:text-[#8a8a8a] mt-0.5">
+                                        Click to preview • {fileTypeLabel}
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 dark:group-hover:bg-white/10 transition-colors" />
-                                </button>
+                                </div>
                               );
                             })}
                           </div>
                         )}
-                      </div>
-                    )}
-                    
-                    {/* PDFs using PdfAttachment */}
-                    {isUser && message.attachments && message.attachments.filter(a => a.mimeType === "application/pdf").length > 0 && (
-                      <div className="flex flex-col gap-2 mt-2">
-                        {message.attachments.filter(a => a.mimeType === "application/pdf").map((att, i) => (
-                          <div 
-                            key={`${att.name}-${i}`}
-                            onClick={() => setPreviewFile({ name: att.name, src: att.url, mimeType: att.mimeType })}
-                            className="flex items-center gap-3 p-4 rounded-xl bg-black/5 dark:bg-[#202C33] border border-black/5 dark:border-white/5 w-[300px] cursor-pointer hover:border-emerald-500/50 transition-colors group"
-                          >
-                            <div className="bg-red-500 text-white rounded-lg shrink-0 w-12 h-12 flex items-center justify-center shadow-sm">
-                              <span className="text-xs font-bold tracking-wider">PDF</span>
-                            </div>
-                            <div className="flex flex-col min-w-0 justify-center">
-                              <span className="text-[14px] font-medium text-foreground truncate block">
-                                {att.name}
-                              </span>
-                              <span className="text-[12px] text-muted-foreground block mt-0.5 group-hover:text-emerald-500 transition-colors">
-                                Click to preview
-                              </span>
-                            </div>
-                          </div>
-                        ))}
                       </div>
                     )}
                   </div>

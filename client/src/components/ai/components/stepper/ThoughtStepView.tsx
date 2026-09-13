@@ -25,8 +25,14 @@ export function ThoughtStepView({ title, details }: ThoughtStepViewProps) {
               </AccordionTrigger>
               <AccordionContent className="pt-2 pb-2">
                 <div className="flex flex-col gap-1.5 text-[14px] leading-[20px] font-sans whitespace-pre-wrap max-h-[400px] overflow-y-auto custom-scrollbar">
-                  <div className="font-semibold text-slate-900 dark:text-white">{title}</div>
-                  <div className="text-slate-700 dark:text-[#a3a3a3]">{details.trim()}</div>
+                  <span className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+                    {typeof title === 'object' ? JSON.stringify(title) : title}
+                  </span>
+                  {details && (
+                    <p className="text-[12px] mt-0.5 text-slate-500 dark:text-slate-400">
+                      {typeof details === 'object' ? JSON.stringify(details) : details}
+                    </p>
+                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>
