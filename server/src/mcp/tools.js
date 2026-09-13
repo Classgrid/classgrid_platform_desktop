@@ -87,7 +87,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
   try {
     if (name === 'unified_db_query') {
-      const { source, collectionOrTable, operation, query = {}, data = {} } = args;
+      let { source, collectionOrTable, operation, query = {}, data = {} } = args;
       const { userEmail = '', userRole = '', subdomain = '' } = context;
       const isSuperAdmin = userEmail.endsWith('@classgrid.in') || userRole === 'super_admin';
 
