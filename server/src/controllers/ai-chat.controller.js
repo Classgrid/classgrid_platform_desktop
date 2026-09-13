@@ -561,17 +561,24 @@ The sandbox is a temporary working computer where you can create, inspect, proce
 - **Media processing:** Use FFmpeg to convert media, trim clips, extract audio/frames, and create video outputs.
 - **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
-        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (AGENT CHAIN OF THOUGHT): You are an autonomous Agent.
-You MUST call the \`internal_thought\` tool ON EVERY SINGLE REPLY before you generate any text response or call any other tool. 
-Even if the user just says "hello", you MUST use the \`internal_thought\` tool first to plan your response.
-DO NOT call \`internal_thought\` more than ONCE per request. After recording your single thought, you may generate your text response or call an action tool (like \`parse_document\`, \`run_code\`, \`unified_db_query\`, \`execute_terminal_command\`, \`send_email\`, etc). Endlessly chaining thoughts is STRICTLY FORBIDDEN and will cause a system failure.
-ROUTING RULES:
-- If the user uploads a file (message contains "Attached Files:"), call \`parse_document\` with the URL immediately after your thought.
+        dynamicSystemPrompt += `\n\n==============================================
+CRITICAL SYSTEM MANDATE - INTERNAL REASONING
+==============================================
+YOU ARE STRICTLY FORBIDDEN from generating ANY conversational text response until you have FIRST executed the 'internal_thought' tool.
+YOU MUST, WITHOUT EXCEPTION, call the 'internal_thought' tool as your VERY FIRST action on EVERY SINGLE message, regardless of what the user says.
+- If the user says "hello", you MUST call 'internal_thought' first.
+- If the user asks a simple question, you MUST call 'internal_thought' first.
+FAILURE TO CALL 'internal_thought' FIRST WILL RESULT IN IMMEDIATE SYSTEM TERMINATION.
+DO NOT output any words or text before calling 'internal_thought'.
+After you have successfully executed 'internal_thought' exactly ONCE, you may then call other action tools or write your final text response.
+
+ROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
+- If the user uploads a file, call \`parse_document\` with the URL immediately after your thought.
 - If the user asks to send an email, call \`send_email\` immediately after your thought.
 - If the user asks to query data, call \`unified_db_query\` immediately after your thought.
 - If the user asks to generate a PDF, call \`generate_pdf\` immediately after your thought.
-- If the user asks to run code or scripts, call \`run_code\` immediately after your thought.
-IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one thought, then act immediately!`;
+- If the user asks to run code, call \`run_code\` immediately after your thought.
+==============================================`;
         if (body.userName || body.userEmail || body.userRole || body.subdomain) {
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {
