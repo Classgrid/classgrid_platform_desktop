@@ -24,24 +24,6 @@ interface AgentStepAccordionProps {
 export function AgentStepAccordion({
   title,
   status: propStatus,
-import React, { useState } from 'react';
-import { ChevronRight, ChevronDown, CheckCircle2, Loader2, XCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-export type StepStatus = 'loading' | 'success' | 'error';
-
-interface AgentStepAccordionProps {
-  title: React.ReactNode;
-  status: StepStatus;
-  defaultExpanded?: boolean;
-  children: React.ReactNode;
-  icon?: React.ReactNode;
-  executionTimeMs?: number;
-}
-
-export function AgentStepAccordion({
-  title,
-  status: propStatus,
   defaultExpanded = false,
   children,
   icon,
