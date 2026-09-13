@@ -24,6 +24,24 @@ interface AgentStepAccordionProps {
 export function AgentStepAccordion({
   title,
   status: propStatus,
+import React, { useState } from 'react';
+import { ChevronRight, ChevronDown, CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+export type StepStatus = 'loading' | 'success' | 'error';
+
+interface AgentStepAccordionProps {
+  title: React.ReactNode;
+  status: StepStatus;
+  defaultExpanded?: boolean;
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  executionTimeMs?: number;
+}
+
+export function AgentStepAccordion({
+  title,
+  status: propStatus,
   defaultExpanded = false,
   children,
   icon,
@@ -32,6 +50,12 @@ export function AgentStepAccordion({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [status, setStatus] = useState<StepStatus>(executionTimeMs ? 'loading' : propStatus);
   const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (propStatus === 'loading') {
+      setIsExpanded(true);
+    }
+  }, [propStatus]);
 
   React.useEffect(() => {
     if (!executionTimeMs) {
@@ -90,7 +114,7 @@ export function AgentStepAccordion({
       )}>
         <div className="overflow-hidden">
           <div className="pl-[36px] pr-2 pb-4">
-            {status !== 'loading' && children}
+            {children}
           </div>
         </div>
       </div>

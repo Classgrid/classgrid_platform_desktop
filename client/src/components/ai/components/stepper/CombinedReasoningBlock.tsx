@@ -12,11 +12,10 @@ import { TypewriterAccordion } from './TypewriterAccordion';
 
 export function CombinedReasoningBlock({ sentences }: { sentences: string[] }) {
   const [isFinished, setIsFinished] = useState(false);
-  const [isTyping, setIsTyping] = useState(true);
   const [timer, setTimer] = useState(0);
   const [expanded, setExpanded] = useState(true);
 
-  // Timer logic
+  // Timer logic for the 'Thinking' label (e.g. 1s, 2s)
   useEffect(() => {
     if (isFinished) return;
     const interval = setInterval(() => {
@@ -25,24 +24,15 @@ export function CombinedReasoningBlock({ sentences }: { sentences: string[] }) {
     return () => clearInterval(interval);
   }, [isFinished]);
 
-  // Finish after 5 seconds
+  // Finish instantly when first live thought chunk arrives
   useEffect(() => {
-    const timeout = setTimeout(() => {
+    if (sentences && sentences.length > 0) {
       setIsFinished(true);
-    }, 5000);
-    return () => clearTimeout(timeout);
-  }, []);
+    }
+  }, [sentences]);
 
   return (
     <div className={`relative z-10 flex flex-col group/accordion mb-2 ${!isFinished ? 'is-thinking' : ''} combined-reasoning-block`}>
-      {/* Hide all subsequent steps in the stepper while this block is thinking OR typing */}
-      {(!isFinished || isTyping) && (
-        <style>{`
-          .combined-reasoning-block ~ * {
-            display: none !important;
-          }
-        `}</style>
-      )}
       <button
         onClick={() => { if (isFinished) setExpanded((prev) => !prev) }}
         className={`flex items-center gap-3 rounded-lg p-1 pr-3 -ml-1 transition-colors ${
@@ -72,7 +62,7 @@ export function CombinedReasoningBlock({ sentences }: { sentences: string[] }) {
           </p>
           {!isFinished && (
             <span className="text-sm text-muted-foreground relative z-20">
-              {timer}s
+               {timer}s
             </span>
           )}
         </div>
@@ -86,7 +76,7 @@ export function CombinedReasoningBlock({ sentences }: { sentences: string[] }) {
       >
         <div className="overflow-hidden">
           <div className="pl-[36px] pr-2 pb-4">
-            {isFinished && <TypewriterAccordion sentences={sentences} onComplete={() => setIsTyping(false)} />}
+            {isFinished && <TypewriterAccordion sentences={sentences} />}
           </div>
         </div>
       </div>

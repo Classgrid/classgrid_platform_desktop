@@ -24,51 +24,14 @@ export function TypewriterAccordion({ sentences, onComplete }: TypewriterAccordi
   const [fade, setFade] = useState({ top: false, bottom: true });
   const viewportRef = useRef<HTMLDivElement>(null);
 
-  // Typewriter states
-  const [displayedSentences, setDisplayedSentences] = useState<string[]>([]);
-  const [currentSentenceIdx, setCurrentSentenceIdx] = useState(0);
-
-  // Typewriter effect (Word-by-Word without Loop)
-  useEffect(() => {
-    if (!sentences || sentences.length === 0) return;
-
-    if (currentSentenceIdx >= sentences.length) {
-      if (onComplete) onComplete();
-      return;
-    }
-
-    const fullSentence = sentences[currentSentenceIdx];
-    const words = fullSentence.split(' ');
-    let wordIndex = 0;
-
-    const typingInterval = setInterval(() => {
-      wordIndex++;
-      
-      setDisplayedSentences((prev) => {
-        const next = [...prev];
-        next[currentSentenceIdx] = words.slice(0, wordIndex).join(' ') + (wordIndex < words.length ? ' ' : '');
-        return next;
-      });
-
-      if (wordIndex >= words.length) {
-        clearInterval(typingInterval);
-        setTimeout(() => {
-          setCurrentSentenceIdx((prev) => prev + 1);
-        }, 100); // slight pause between sentences
-      }
-    }, 30); // 30ms per word is extremely fast
-
-    return () => clearInterval(typingInterval);
-  }, [currentSentenceIdx, sentences]);
-
-  const count = displayedSentences.length;
+  const count = sentences.length;
   
   // Auto-scroll to keep typing cursor in view
   useEffect(() => {
     if (viewportRef.current) {
       viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
     }
-  }, [displayedSentences]);
+  }, [sentences]);
 
   const onScroll = () => {
     const el = viewportRef.current;
@@ -112,7 +75,7 @@ export function TypewriterAccordion({ sentences, onComplete }: TypewriterAccordi
           <style>{`.overflow-y-auto::-webkit-scrollbar { display: none; }`}</style>
           
           <div className="flex flex-col gap-2">
-            {displayedSentences.map((line, i) => (
+            {sentences.map((line, i) => (
               <p 
                 key={i} 
                 className="m-0 leading-[20px] text-[13px] font-[425] text-slate-500 dark:text-[#737373] tracking-tight animate-[fadeIn_420ms_cubic-bezier(0.22,1,0.36,1)]"
