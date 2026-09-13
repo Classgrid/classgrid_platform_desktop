@@ -440,7 +440,7 @@ export function AgentUISandboxPage() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 9: AI Thinking Block
           </h2>
-          <MasterWorkflowWrapper totalTimeMs={6000}>
+          <MasterWorkflowWrapper totalTimeMs={12000}>
             <div className="bg-background rounded-lg border border-border p-4">
               <AIThinkingBlock
                 thinkingContent="The user, Nikhil Shinde (super_admin), is asking to activate the internal thought tool explicitly. As a Super Admin, they have full access to all tools and functionalities. I need to ensure clarity and correctness in my response while adhering to the strict workflow rules."
@@ -455,7 +455,7 @@ export function AgentUISandboxPage() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 10: Combined Reasoning Block
           </h2>
-          <MasterWorkflowWrapper totalTimeMs={6000}>
+          <MasterWorkflowWrapper totalTimeMs={12000}>
             <div className="bg-background rounded-lg border border-border p-4">
               <CombinedReasoningBlock
                 sentences={[
