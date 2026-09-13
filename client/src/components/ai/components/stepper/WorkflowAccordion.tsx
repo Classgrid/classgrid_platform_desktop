@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { AgentStepAccordion } from './AgentStepAccordion';
 import { AgentStepper } from './AgentStepper';
-import { ThoughtStepView } from './ThoughtStepView';
+import { CombinedReasoningBlock } from './CombinedReasoningBlock';
 import { SimpleLogStepView } from './SimpleLogStepView';
 import { KnowledgeBaseSearchView } from './KnowledgeBaseSearchView';
 import { FileText, Plane, Network } from 'lucide-react';
@@ -50,10 +50,9 @@ export function WorkflowAccordion({ title, steps, defaultExpanded = true }: Work
         {steps.map((step) => {
           if (step.type === 'thought') {
             return (
-              <ThoughtStepView 
+              <CombinedReasoningBlock 
                 key={step.id}
-                title={step.title || ""}
-                details={step.details || ""}
+                sentences={[step.details || ""]}
               />
             );
           }

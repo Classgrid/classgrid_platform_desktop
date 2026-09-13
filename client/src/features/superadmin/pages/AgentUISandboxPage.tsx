@@ -16,6 +16,11 @@ import { WebSearchView } from '@/components/ai/components/stepper/WebSearchView'
 import { EmailActionView } from '@/components/ai/components/stepper/EmailActionView';
 import { WorkflowAccordion, WorkflowStep } from '@/components/ai/components/stepper/WorkflowAccordion';
 import { CdnUploadView } from '@/components/ai/components/stepper/CdnUploadView';
+import { TypewriterAccordion } from '@/components/ai/components/stepper/TypewriterAccordion';
+import AIThinkingBlock from '@/components/ai/components/AIThinkingBlock';
+import { MasterWorkflowWrapper } from '@/components/ai/components/stepper/MasterWorkflowWrapper';
+import { ThinkingShimmer } from '@/components/ai/components/ThinkingShimmer';
+import { CombinedReasoningBlock } from '@/components/ai/components/stepper/CombinedReasoningBlock';
 import { Terminal, Database, UploadCloud, Globe, FileText, Mail, Plane, Network } from 'lucide-react';
 
 const MASSIVE_WORKFLOW_STEPS: WorkflowStep[] = [
@@ -80,12 +85,12 @@ export function AgentUISandboxPage() {
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground relative p-8 transition-colors duration-200">
-      
+
       {/* Sleek Segmented Theme Toggle Button (Top Right) */}
       <div className="absolute top-4 right-4 bg-card border border-border rounded-full p-1 shadow-sm">
-        <ToggleGroup 
-          type="single" 
-          value={theme} 
+        <ToggleGroup
+          type="single"
+          value={theme}
           onValueChange={(val) => {
             if (val) setTheme(val);
           }}
@@ -105,102 +110,103 @@ export function AgentUISandboxPage() {
 
       {/* Container (Wider so text doesn't truncate) */}
       <div className="max-w-[700px] mx-auto pt-16 space-y-4">
-        
+
         {/* --- WORKFLOW 1: DISCIPLINARY EMAIL --- */}
         <div className="mb-12">
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 1: Disciplinary Email & Document Generation
           </h2>
-          <AgentStepper>
-            {/* 1. First Thought */}
-            <ThoughtStepView 
-              title="Evaluating request"
-              details="The user wants me to identify the students involved in the cafeteria incident, cross-reference their records, search for the school's disciplinary guidelines, draft an email to their parents, send it, and finally generate an official PDF warning letter."
-            />
-            
-            {/* 2. Database Query */}
-            <AgentStepAccordion 
-              title="Querying database" 
-              status="success" 
-              defaultExpanded={false}
-            >
-              <DatabaseQueryView 
-                query='db.students.find({ incidents: "cafeteria_fight" })\n  .select({ name: 1, parentsEmail: 1 })'
-                results={[
-                  {
-                    _id: "stu_1",
-                    name: "Student 1",
-                    parentsEmail: "student1@demo.edu"
-                  },
-                  {
-                    _id: "stu_2",
-                    name: "Student 2",
-                    parentsEmail: "student2@demo.edu"
-                  }
-                ]}
+          <MasterWorkflowWrapper totalSteps={6}>
+            <AgentStepper>
+              {/* 1. First Thought */}
+              <CombinedReasoningBlock
+                sentences={["The user wants me to identify the students involved in the cafeteria incident, cross-reference their records, search for the school's disciplinary guidelines, draft an email to their parents, send it, and finally generate an official PDF warning letter."]}
               />
-            </AgentStepAccordion>
 
-            {/* 3. Web Search */}
-            <AgentStepAccordion 
-              title="Searched the web" 
-              status="success" 
-              defaultExpanded={false}
-            >
-              <WebSearchView 
-                query="Classgrid demo school disciplinary guidelines for suspension"
-                searchDomain="classgrid.in"
-                results={[
-                  {
-                    title: "Student Code of Conduct & Disciplinary Guidelines",
-                    url: "https://demo.classgrid.in/guidelines/conduct"
-                  },
-                  {
-                    title: "Temporary Suspension Policy | Parent Handbook",
-                    url: "https://demo.classgrid.in/parents/suspension-policy"
-                  }
-                ]}
-              />
-            </AgentStepAccordion>
+              {/* 2. Database Query */}
+              <AgentStepAccordion
+                title="Querying database"
+                status="success"
+                defaultExpanded={false}
+              >
+                <DatabaseQueryView
+                  query='db.students.find({ incidents: "cafeteria_fight" })\n  .select({ name: 1, parentsEmail: 1 })'
+                  results={[
+                    {
+                      _id: "stu_1",
+                      name: "Student 1",
+                      parentsEmail: "student1@demo.edu"
+                    },
+                    {
+                      _id: "stu_2",
+                      name: "Student 2",
+                      parentsEmail: "student2@demo.edu"
+                    }
+                  ]}
+                />
+              </AgentStepAccordion>
 
-            {/* 4. Drafted Email */}
-            <AgentStepAccordion 
-              title="Drafted email" 
-              status="success" 
-              defaultExpanded={false}
-            >
-              <EmailActionView 
-                to={Array.from({ length: 50 }, (_, i) => `student${i + 1}@demo.edu`).join(', ')}
-                subject="URGENT: Regarding the latest disciplinary action"
-                bodyPreview={`Dear Principal and Parents,\n\nI am writing to inform you that following the recent incident in the cafeteria, we have decided to implement a temporary suspension for the student involved.\n\nPlease refer to the attached documentation for full details on the incident report and the school board's disciplinary guidelines.\n\nBest regards,\nClassgrid AI Assistant`}
-              />
-            </AgentStepAccordion>
+              {/* 3. Web Search */}
+              <AgentStepAccordion
+                title="Searched the web"
+                status="success"
+                defaultExpanded={false}
+              >
+                <WebSearchView
+                  query="Classgrid demo school disciplinary guidelines for suspension"
+                  searchDomain="classgrid.in"
+                  results={[
+                    {
+                      title: "Student Code of Conduct & Disciplinary Guidelines",
+                      url: "https://demo.classgrid.in/guidelines/conduct"
+                    },
+                    {
+                      title: "Temporary Suspension Policy | Parent Handbook",
+                      url: "https://demo.classgrid.in/parents/suspension-policy"
+                    }
+                  ]}
+                />
+              </AgentStepAccordion>
 
-            {/* 5. Sent Email */}
-            <AgentStepAccordion 
-              title="Sent email" 
-              status="success" 
-              defaultExpanded={true}
-            >
-              <EmailSentView 
-                toCount={50}
-                subject="URGENT: Regarding the latest disciplinary action"
-              />
-            </AgentStepAccordion>
+              {/* 4. Drafted Email */}
+              <AgentStepAccordion
+                title="Drafted email"
+                status="success"
+                defaultExpanded={false}
+              >
+                <EmailActionView
+                  to={Array.from({ length: 50 }, (_, i) => `student${i + 1}@demo.edu`).join(', ')}
+                  subject="URGENT: Regarding the latest disciplinary action"
+                  bodyPreview={`Dear Principal and Parents,\n\nI am writing to inform you that following the recent incident in the cafeteria, we have decided to implement a temporary suspension for the student involved.\n\nPlease refer to the attached documentation for full details on the incident report and the school board's disciplinary guidelines.\n\nBest regards,\nClassgrid AI Assistant`}
+                />
+              </AgentStepAccordion>
 
-            {/* 6. Generated PDF */}
-            <AgentStepAccordion 
-              title="Generated PDF document" 
-              status="success" 
-              defaultExpanded={true}
-            >
-              <DocumentGenerationView 
-                fileName="official_warning_letter.pdf"
-                pageCount={3}
-                size="1.2 MB"
-              />
-            </AgentStepAccordion>
-          </AgentStepper>
+              {/* 5. Sent Email */}
+              <AgentStepAccordion
+                title="Sent email"
+                status="success"
+                defaultExpanded={true}
+              >
+                <EmailSentView
+                  toCount={50}
+                  subject="URGENT: Regarding the latest disciplinary action"
+                />
+              </AgentStepAccordion>
+
+              {/* 6. Generated PDF */}
+              <AgentStepAccordion
+                title="Generated PDF document"
+                status="success"
+                defaultExpanded={true}
+              >
+                <DocumentGenerationView
+                  fileName="official_warning_letter.pdf"
+                  pageCount={3}
+                  size="1.2 MB"
+                />
+              </AgentStepAccordion>
+            </AgentStepper>
+          </MasterWorkflowWrapper>
         </div>
 
         {/* --- WORKFLOW 2: PDF OCR --- */}
@@ -210,60 +216,53 @@ export function AgentUISandboxPage() {
           </h2>
           <AgentStepper>
             {/* 1. First Thought */}
-            <ThoughtStepView 
-              title="Evaluating PDF attachment"
-              details="I need to read the attached PDF, but it looks like there's no textual content, just an image on the first page. I'll probably need to use a computer to inspect it. The first step is uploading the attachment for analysis. It seems that I might need OCR to extract any possible information. Since the second page is blank, I need to focus on the first. I guess I may also be able to use OCR if necessary."
-            />
+            <CombinedReasoningBlock sentences={["I need to read the attached PDF, but it looks like there's no textual content, just an image on the first page. I'll probably need to use a computer to inspect it. The first step is uploading the attachment for analysis. It seems that I might need OCR to extract any possible information. Since the second page is blank, I need to focus on the first. I guess I may also be able to use OCR if necessary."]} />
 
             {/* 2. Read Document */}
-            <AgentStepAccordion 
-              title="Uploaded File" 
-              status="success" 
+            <AgentStepAccordion
+              title="Uploaded File"
+              status="success"
               defaultExpanded={true}
             >
-              <FileActionView 
+              <FileActionView
                 fileName="e288b93c-17cb-4661-a3f1-8c073016a962.pdf"
               />
             </AgentStepAccordion>
-            
+
             {/* 3. Second Thought (OCR) */}
-            <ThoughtStepView 
-              title="Continuing with OCR process"
-              details="I want to keep going with the terminal OCR now. There's no need to read any documentation since I've already indexed it earlier. So, I'm just going to call the terminal. It's straightforward from here. I'll make sure to execute the right commands to get the OCR process moving. Let's see how it goes!"
-            />
+            <CombinedReasoningBlock sentences={["I want to keep going with the terminal OCR now. There's no need to read any documentation since I've already indexed it earlier. So, I'm just going to call the terminal. It's straightforward from here. I'll make sure to execute the right commands to get the OCR process moving. Let's see how it goes!"]} />
 
             {/* 4. Terminal Command */}
-            <AgentStepAccordion 
-              title="OCR the attached identity card" 
-              status="success" 
+            <AgentStepAccordion
+              title="OCR the attached identity card"
+              status="success"
               defaultExpanded={true}
             >
-              <TerminalToolView 
+              <TerminalToolView
                 command={`python3 -c 'import pytesseract; from PIL import Image; print(pytesseract.image_to_string(Image.open("/data/id_pages/page-1.png")))'`}
                 output={`OCR EXTRACTION RESULTS:\nName: John Doe\nID Number: 987654321\nDOB: 01/01/2005\nSchool: Demo High School`}
               />
             </AgentStepAccordion>
-              </AgentStepper>
-            </div>
-          {/* --- WORKFLOW 3: STANDALONE PDF GENERATION --- */}
+          </AgentStepper>
+        </div>
+        {/* --- WORKFLOW 3: STANDALONE PDF GENERATION --- */}
         <div>
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 3: Standalone PDF Generation
           </h2>
           <AgentStepper>
             {/* 1. First Thought */}
-            <ThoughtStepView 
-              title="Processing request"
-              details="The user requested to generate a summary report of the recent school board meeting. I will format the notes and generate a clean PDF document for them to download."
+            <CombinedReasoningBlock
+              sentences={["I have all the student details and the disciplinary policy. I'll now generate an official warning letter in markdown format, maintaining a professional and stern tone as per the school's guidelines."]}
             />
 
             {/* 2. Generated PDF */}
-            <AgentStepAccordion 
-              title="Generated PDF document" 
-              status="success" 
+            <AgentStepAccordion
+              title="Generated PDF document"
+              status="success"
               defaultExpanded={true}
             >
-              <DocumentGenerationView 
+              <DocumentGenerationView
                 fileName="board_meeting_summary.pdf"
                 pageCount={5}
                 size="2.4 MB"
@@ -279,18 +278,17 @@ export function AgentUISandboxPage() {
           </h2>
           <AgentStepper>
             {/* 1. First Thought */}
-            <ThoughtStepView 
-              title="Broad research query"
-              details="The user asked for a comprehensive list of all recent AI developments. I will perform a broad web search and gather a large number of sources to cross-reference."
+            <CombinedReasoningBlock
+              sentences={["The user asked for a comprehensive list of all recent AI developments. I will perform a broad web search and gather a large number of sources to cross-reference."]}
             />
 
             {/* 2. Web Search (15 Results) */}
-            <AgentStepAccordion 
-              title="Searched the web" 
-              status="success" 
+            <AgentStepAccordion
+              title="Searched the web"
+              status="success"
               defaultExpanded={true}
             >
-              <WebSearchView 
+              <WebSearchView
                 query="Latest breakthroughs in Artificial Intelligence 2026"
                 searchDomain="news"
                 results={Array.from({ length: 15 }, (_, i) => ({
@@ -309,18 +307,15 @@ export function AgentUISandboxPage() {
           </h2>
           <AgentStepper>
             {/* 1. First Thought */}
-            <ThoughtStepView 
-              title="Searching internal docs"
-              details="The user asked for the internal vacation policy. I will search our internal knowledge base (RAG) to find the relevant employee handbook and policy documents."
-            />
+            <CombinedReasoningBlock sentences={["The user asked for the internal vacation policy. I will search our internal knowledge base (RAG) to find the relevant employee handbook and policy documents."]} />
 
             {/* 2. Knowledge Base Search */}
-            <AgentStepAccordion 
-              title="Searched Knowledge Base" 
-              status="success" 
+            <AgentStepAccordion
+              title="Searched Knowledge Base"
+              status="success"
               defaultExpanded={true}
             >
-              <KnowledgeBaseSearchView 
+              <KnowledgeBaseSearchView
                 query="Employee vacation policy and PTO accrual 2026"
                 results={[
                   {
@@ -346,10 +341,10 @@ export function AgentUISandboxPage() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
             Workflow 6: Massive 23-Step Execution
           </h2>
-          <WorkflowAccordion 
-            title="Massive 23-step RAG Workflow" 
-            steps={MASSIVE_WORKFLOW_STEPS} 
-            defaultExpanded={true} 
+          <WorkflowAccordion
+            title="Massive 23-step RAG Workflow"
+            steps={MASSIVE_WORKFLOW_STEPS}
+            defaultExpanded={true}
           />
         </div>
 
@@ -360,25 +355,77 @@ export function AgentUISandboxPage() {
           </h2>
           <AgentStepper>
             {/* 1. First Thought */}
-            <ThoughtStepView 
-              title="Preparing file for external storage"
-              details="I need to upload the generated meeting notes to the public CDN bucket so it can be safely linked in the external email we send out."
+            <CombinedReasoningBlock
+              sentences={["I will upload the finalized PDF to our public CDN so it can be securely shared with the parents."]}
             />
 
             {/* 2. CDN Upload */}
-            <AgentStepAccordion 
-              title="Upload file to CDN" 
-              status="success" 
+            <AgentStepAccordion
+              title="Upload file to CDN"
+              status="success"
               defaultExpanded={true}
               icon={<UploadCloud />}
             >
-              <CdnUploadView 
-                fileName="meeting_notes_august.pdf" 
-                fileSize="1.2 MB" 
-                url="https://cdn.classgrid.com/files/meeting_notes_august.pdf" 
+              <CdnUploadView
+                fileName="meeting_notes_august.pdf"
+                fileSize="1.2 MB"
+                url="https://cdn.classgrid.com/files/meeting_notes_august.pdf"
               />
             </AgentStepAccordion>
           </AgentStepper>
+        </div>
+
+        {/* --- WORKFLOW 8: TYPEWRITER ACCORDION --- */}
+        <div>
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
+            Workflow 8: Typewriter Accordion
+          </h2>
+          <AgentStepper>
+            <AgentStepAccordion
+              title="Thought for 5s"
+              status="success"
+              defaultExpanded={true}
+            >
+              <TypewriterAccordion
+                sentences={[
+                  "The user, Nikhil Shinde (super_admin), is asking to activate the internal thought tool explicitly.",
+                  "As a Super Admin, they have full access to all tools and functionalities.",
+                  "I need to ensure clarity and correctness in my response while adhering to the strict workflow rules.",
+                  "The user seems frustrated or confused about how to proceed, so I should acknowledge their request, clarify the correct tool name, and confirm my readiness to assist them as their Super Admin assistant."
+                ]}
+              />
+            </AgentStepAccordion>
+          </AgentStepper>
+        </div>
+
+        {/* --- WORKFLOW 9: AI THINKING BLOCK --- */}
+        <div>
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
+            Workflow 9: AI Thinking Block
+          </h2>
+          <div className="bg-background rounded-lg border border-border p-4">
+            <AIThinkingBlock
+              thinkingContent="The user, Nikhil Shinde (super_admin), is asking to activate the internal thought tool explicitly. As a Super Admin, they have full access to all tools and functionalities. I need to ensure clarity and correctness in my response while adhering to the strict workflow rules."
+              isFinished={false}
+            />
+          </div>
+        </div>
+
+        {/* --- WORKFLOW 10: COMBINED REASONING BLOCK --- */}
+        <div>
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-[#eeeeee] mb-6 border-b border-border pb-2">
+            Workflow 10: Combined Reasoning Block
+          </h2>
+          <div className="bg-background rounded-lg border border-border p-4">
+            <CombinedReasoningBlock
+              sentences={[
+                "The user, Nikhil Shinde (super_admin), is asking to activate the internal thought tool explicitly.",
+                "As a Super Admin, they have full access to all tools and functionalities.",
+                "I need to ensure clarity and correctness in my response while adhering to the strict workflow rules.",
+                "The user seems frustrated or confused about how to proceed, so I should acknowledge their request, clarify the correct tool name, and confirm my readiness to assist them as their Super Admin assistant."
+              ]}
+            />
+          </div>
         </div>
 
       </div>
