@@ -388,6 +388,13 @@ Sequence pattern: `internal_thought` -> `search_knowledge_base` -> `internal_tho
 1. `internal_thought`: "I need to upload the generated file to the public CDN bucket so it can be safely linked."
 2. `upload_file_to_cdn`: Pass the base64 content to upload the file and get the public R2 URL.
 
+CRITICAL ANTI-LOOPING RULE:
+You are strictly forbidden from calling the EXACT SAME tool twice in a row. 
+- You MUST NOT call `internal_thought` twice in a row.
+- You MUST NOT call `parse_document` twice in a row.
+- You MUST NOT call `execute_terminal_command` twice in a row.
+Every single step must progress the workflow to a DIFFERENT tool. If a tool fails or returns a warning, DO NOT repeat the tool. You must immediately move to the next logical step in the sequence.`;
+
 async function generateSessionTitle(sessionId, question) {
     try {
         const client = new LLMCascade({
