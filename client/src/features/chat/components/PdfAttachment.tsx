@@ -49,9 +49,10 @@ interface PdfAttachmentProps {
   size: number;
   isSending?: boolean;
   uploadProgress?: number;
+  onOpen?: () => void;
 }
 
-export function PdfAttachment({ url, filename, size, isSending, uploadProgress }: PdfAttachmentProps) {
+export function PdfAttachment({ url, filename, size, isSending, uploadProgress, onOpen }: PdfAttachmentProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [error, setError] = useState<boolean>(false);
 
@@ -117,14 +118,24 @@ export function PdfAttachment({ url, filename, size, isSending, uploadProgress }
 
       {/* Actions */}
       <div className="flex items-center justify-between px-6 py-3 border-t border-black/5 dark:border-white/10 bg-transparent">
-        <a 
-          href={url} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="text-emerald-500 hover:text-emerald-400 text-[14px] font-medium transition-colors"
-        >
-          Open
-        </a>
+        {onOpen ? (
+          <button 
+            type="button"
+            onClick={onOpen}
+            className="text-emerald-500 hover:text-emerald-400 text-[14px] font-medium transition-colors"
+          >
+            Open
+          </button>
+        ) : (
+          <a 
+            href={url} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-emerald-500 hover:text-emerald-400 text-[14px] font-medium transition-colors"
+          >
+            Open
+          </a>
+        )}
         <a 
           href={url} 
           download={filename}

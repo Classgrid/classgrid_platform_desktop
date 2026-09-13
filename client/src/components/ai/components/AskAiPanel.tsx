@@ -1509,11 +1509,39 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         const res = await fetch(`${endpointPrefix}/api/ai/sessions/${id}/messages`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
-          const loadedMessages = data.messages.map((m: any) => ({
-            role: m.role,
-            content: m.content,
-            createdAt: m.created_at ? new Date(m.created_at).getTime() : Date.now()
-          }));
+          const loadedMessages = data.messages.map((m: any) => {
+            let content = m.content;
+            let thought = undefined;
+            let steps = undefined;
+            
+            if (m.role === 'assistant') {
+              try {
+                const parsed = JSON.parse(m.content);
+                if (parsed.classgrid_ai_message) {
+                  content = parsed.content;
+                  thought = parsed.thought;
+                  steps = parsed.steps;
+                }
+              } catch (e) {
+                // Not JSON, ignore
+              }
+            }
+            
+            return {
+              role: m.role,
+              content: content,
+              thought: thought,
+              steps: steps,
+              fileUrls: m.file_urls || undefined,
+              attachments: m.file_urls && m.file_urls.length > 0 ? m.file_urls.map((url: string) => ({
+                url: url,
+                name: url.split('/').pop() || "attachment",
+                mimeType: url.match(/\\.(jpeg|jpg|gif|png|webp)$/i) ? "image/jpeg" : url.match(/\\.pdf$/i) ? "application/pdf" : "application/octet-stream",
+                size: 0
+              })) : undefined,
+              createdAt: m.created_at ? new Date(m.created_at).getTime() : Date.now()
+            };
+          });
           setMessages(loadedMessages);
         }
       } catch (err) {
@@ -1547,13 +1575,40 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         const res = await fetch(`${endpointPrefix}/api/ai/sessions/${routeSessionId}/messages`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
-          const loadedMessages = data.messages.map((m: any) => ({
-            id: m.id || crypto.randomUUID(),
-            role: m.role,
-            content: m.content,
-            fileUrls: m.file_urls || undefined,
-            createdAt: m.created_at ? new Date(m.created_at).getTime() : Date.now()
-          }));
+          const loadedMessages = data.messages.map((m: any) => {
+            let content = m.content;
+            let thought = undefined;
+            let steps = undefined;
+            
+            if (m.role === 'assistant') {
+              try {
+                const parsed = JSON.parse(m.content);
+                if (parsed.classgrid_ai_message) {
+                  content = parsed.content;
+                  thought = parsed.thought;
+                  steps = parsed.steps;
+                }
+              } catch (e) {
+                // Not JSON, ignore
+              }
+            }
+            
+            return {
+              id: m.id || crypto.randomUUID(),
+              role: m.role,
+              content: content,
+              thought: thought,
+              steps: steps,
+              fileUrls: m.file_urls || undefined,
+              attachments: m.file_urls && m.file_urls.length > 0 ? m.file_urls.map((url: string) => ({
+                url: url,
+                name: url.split('/').pop() || "attachment",
+                mimeType: url.match(/\\.(jpeg|jpg|gif|png|webp)$/i) ? "image/jpeg" : url.match(/\\.pdf$/i) ? "application/pdf" : "application/octet-stream",
+                size: 0
+              })) : undefined,
+              createdAt: m.created_at ? new Date(m.created_at).getTime() : Date.now()
+            };
+          });
           setMessages(loadedMessages);
         }
       } catch (err) {
@@ -2834,6 +2889,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                             url={att.url}
                             filename={att.name}
                             size={att.size || 0}
+                            onOpen={() => setPreviewFile({ name: att.name, src: att.url, mimeType: att.mimeType })}
                           />
                         ))}
                       </div>

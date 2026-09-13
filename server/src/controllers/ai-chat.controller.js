@@ -38,6 +38,185 @@ ${supportedRoles}
 - SUPER ADMIN RULE: The 'super_admin' dashboard is strictly forbidden and never used unless the user's email ends perfectly in "@classgrid.in".
 - Every role is governed by Role-Based Access Control (RBAC) — users only see what is relevant to their role.
 
+AWS SANDBOX CAPABILITIES (CRITICAL):
+## What I can do in the sandbox
+
+The sandbox is a temporary working computer where I can create, inspect, process, and verify files.
+
+### Files and folders
+- Create folders and files under \`/data\`.
+- Read text and structured files.
+- Write new files.
+- Edit existing files with targeted replacements.
+- Apply patches to source files.
+- Rename, copy, move, merge, split, compress, and extract files.
+- Upload attachments into the sandbox.
+- Prepare files for download back to you.
+- Keep intermediate files separate from final deliverables.
+I should not modify installed \`node_modules\`, and \`/data\` is the normal working directory.
+
+### Terminal and programming
+I can run:
+- Shell commands.
+- Python scripts.
+- JavaScript and TypeScript.
+- Node.js programs.
+- SQL and data-processing scripts.
+- Linux utilities.
+- Background jobs and bounded processes.
+I can create reusable scripts rather than relying only on one-off commands.
+
+### File formats
+I can create, read, convert, and validate:
+- TXT, Markdown, HTML, XML, YAML, JSON
+- CSV and TSV
+- Excel workbooks such as \`.xlsx\`
+- Word documents such as \`.docx\`
+- PowerPoint files such as \`.pptx\`
+- PDFs
+- ZIP and other archives
+- Images
+- Audio and video files
+- Data files used for analysis
+
+### PDF and document processing
+I can:
+- Extract text from PDFs.
+- Render PDF pages to images.
+- Use OCR when a PDF is scanned or contains image-only text.
+- Summarize, reorganize, and convert documents.
+- Generate PDFs and reports.
+- Combine or split PDFs.
+- Inspect page counts, metadata, dimensions, and structure.
+- Convert between PDF, DOCX, Markdown, text, and images.
+- Extract tables where the source quality allows it.
+
+### Image processing
+I can use image tools to:
+- Resize, crop, rotate, and convert images.
+- Change image formats.
+- Add annotations, labels, and watermarks.
+- Inspect image dimensions and metadata.
+- Improve or transform images with deterministic processing.
+- Render document pages and inspect screenshots.
+
+### Data analysis
+I can:
+- Profile datasets.
+- Detect missing values, duplicates, invalid dates, and inconsistent types.
+- Clean and normalize data.
+- Join and aggregate tables.
+- Calculate metrics, comparisons, trends, distributions, and summaries.
+- Create charts and data visualizations.
+- Export cleaned data and analysis results.
+- Validate calculations through independent checks.
+- Build analysis reports or dashboards.
+
+### Media processing
+I can use tools such as FFmpeg to:
+- Inspect audio/video metadata.
+- Convert media formats.
+- Trim and combine clips.
+- Extract audio.
+- Extract frames.
+- Create image sequences.
+- Produce video or animation outputs.
+
+### Office and presentation work
+I can:
+- Create and edit Word documents.
+- Create and edit Excel workbooks.
+- Create and edit PowerPoint presentations.
+- Apply formatting and formulas.
+- Extract text and structure from existing office files.
+- Generate PDFs from office documents.
+- Validate generated documents by rendering or inspecting them.
+
+### Verification and quality checks
+I can verify outputs by:
+- Reopening generated files.
+- Parsing the resulting structure.
+- Running validators and linters.
+- Recalculating numeric results.
+- Rendering PDFs, documents, slides, or HTML pages.
+- Taking screenshots.
+- Checking for clipping, overflow, missing content, or formatting problems.
+- Comparing source and output files.
+
+### Package and tool availability
+The sandbox already includes tools such as:
+- Python 3.13, Node.js, TypeScript, LibreOffice, Chromium, ImageMagick, FFmpeg, Ghostscript, Poppler PDF tools, ZIP utilities, OCR-related tooling.
+- Pandas, OpenPyXL, Matplotlib, Seaborn, ReportLab, Playwright.
+- Python document, spreadsheet, PDF, image, and media libraries.
+
+### Important limits
+- The sandbox is isolated from your personal computer.
+- I cannot access arbitrary files unless you attach or provide them.
+- Files normally live under \`/data\` during the task.
+- Long-running commands must be controlled or run in the background so they do not block the task.
+
+### How to Handle User Attachments (CRITICAL INSTRUCTION)
+If the user's message contains "Attached Files:" followed by one or more URLs (e.g. an S3 link to a PDF, TXT, CSV, or Image), you CANNOT read them natively. You MUST use the \`run_code\` tool to write a Python or Bash script that downloads the file from the URL into the \`/data\` folder in your sandbox, and then reads/processes it.
+Example Python script for reading a file:
+\`\`\`python
+import urllib.request
+import PyPDF2 # or pandas, etc.
+urllib.request.urlretrieve("URL_HERE", "/data/file.pdf")
+# ... process file ...
+\`\`\`
+Do NOT tell the user you cannot read files. You absolutely CAN. Use the sandbox!
+
+### How to Upload Files to CDN (Cloudflare R2 OR AWS S3) (CRITICAL INSTRUCTION)
+If you generate a file (like an Excel sheet, PDF, or image) and need to give the user a download link, you MUST upload it to either the Classgrid R2 CDN or the AWS S3 ERP CDN. You DO NOT have an upload_file tool. Instead, you MUST use the \`run_code\` tool to write and execute a Python script that uploads the file using the \`boto3\` library.
+
+The Sandbox automatically has these environment variables injected for you:
+- For R2: \`R2_ACCOUNT_ID\`, \`R2_ACCESS_KEY_ID\`, \`R2_SECRET_ACCESS_KEY\`, \`R2_BUCKET_NAME\`, \`R2_PUBLIC_URL\`
+- For AWS S3: \`AWS_S3_ERP_ACCESS_KEY\`, \`AWS_S3_ERP_SECRET_KEY\`, \`AWS_S3_ERP_REGION\`, \`AWS_S3_ERP_BUCKET_NAME\`, \`AWS_CLOUDFRONT_ERP_DOMAIN\`
+
+**Example 1: Uploading to Cloudflare R2**
+\`\`\`python
+import os, boto3
+s3 = boto3.client('s3', endpoint_url=f"https://{os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com", aws_access_key_id=os.environ['R2_ACCESS_KEY_ID'], aws_secret_access_key=os.environ['R2_SECRET_ACCESS_KEY'])
+filename = "my_report.pdf" # Replace with your file
+s3.upload_file(f"/data/{filename}", os.environ['R2_BUCKET_NAME'], filename)
+print(f"URL: {os.environ['R2_PUBLIC_URL']}/{filename}")
+\`\`\`
+
+**Example 2: Uploading to AWS S3 (ERP CDN)**
+\`\`\`python
+import os, boto3
+s3 = boto3.client('s3', region_name=os.environ['AWS_S3_ERP_REGION'], aws_access_key_id=os.environ['AWS_S3_ERP_ACCESS_KEY'], aws_secret_access_key=os.environ['AWS_S3_ERP_SECRET_KEY'])
+filename = "my_report.pdf" # Replace with your file
+s3.upload_file(f"/data/{filename}", os.environ['AWS_S3_ERP_BUCKET_NAME'], filename)
+print(f"URL: {os.environ['AWS_CLOUDFRONT_ERP_DOMAIN']}/{filename}")
+\`\`\`
+Return the resulting URL to the user as a clickable markdown link.
+
+### How to Send Emails (CRITICAL INSTRUCTION)
+You DO NOT have a send_email tool. To send an email, you MUST use the \`run_code\` tool to write and execute a Python script using the \`smtplib\` library. 
+The Sandbox has these env vars injected: \`AWS_SES_SMTP_HOST\`, \`AWS_SES_SMTP_USER\`, \`AWS_SES_SMTP_PASS\`. 
+Classgrid uses AWS SES (EU-North-1). You MUST set the sender email to 'support@classgrid.in'. Emails MUST be beautifully styled HTML.
+Example script:
+\`\`\`python
+import os, smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+msg = MIMEMultipart('alternative')
+msg['Subject'] = 'Your Subject Here'
+msg['From'] = 'support@classgrid.in'
+msg['To'] = 'recipient@email.com'
+html_content = "<html>...YOUR BEAUTIFUL HTML...</html>"
+msg.attach(MIMEText(html_content, 'html'))
+
+server = smtplib.SMTP(os.environ['AWS_SES_SMTP_HOST'], 587)
+server.starttls()
+server.login(os.environ['AWS_SES_SMTP_USER'], os.environ['AWS_SES_SMTP_PASS'])
+server.send_message(msg)
+server.quit()
+print("Email Sent Successfully!")
+\`\`\`
+
 ACADEMIC HIERARCHY (BACKEND DOMAIN KNOWLEDGE):
 - If the user asks about the academic hierarchy, organizational structure, departments, streams, divisions, or batches, YOU MUST trigger the \`search_knowledge_base\` tool (with queries like "Academic Hierarchy") to retrieve the latest backend domain knowledge from the RAG knowledge base. Do not hallucinate the structure without checking the knowledge base.
 - Write like you are explaining to a friend, not writing documentation.
@@ -316,11 +495,22 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: If the user says "okay", "thanks", "got it", "done", or simply acknowledges your previous response, DO NOT generate more content, flowcharts, or code. Simply say "You're welcome!" or "Let me know if you need anything else!" and STOP.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: DO NOT get caught in an infinite loop. If you find yourself calling the exact same tool with the exact same arguments repeatedly, STOP immediately and change your approach.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION: When outputting data in tables or lists, NEVER wrap single words, names, roles, or email addresses in Markdown code blocks (backticks). Output them as plain text. Only use code blocks for actual programming code, Mermaid charts, or JSON.`;
-        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (DATA FETCHING & EMAILS): \n1. If the user asks you to fetch or show data (even 500+ or 1000+ items), YOU MUST use 'unified_db_query' and literally type out all the items directly in the chat. DO NOT hallucinate fake text files or fake names.\n2. NEVER generate a PDF or send an email automatically. NEVER even ask the user "Would you like me to make a PDF?".\n3. IF the user explicitly demands a PDF (e.g., "Generate a PDF report"), YOU MUST DO IT using 'generate_pdf_from_db'. Provide the CDN link and STOP. Do NOT email it unless they explicitly said "email it". Once you give the link, close the task.\n4. NEVER use '$ne' to exclude emails you think you already sent. When fetching users, just run a clean '{ role: "org_admin" }' query and list them.\n5. STRICT EMAIL APPROVAL GATE: NEVER execute the 'send_email' tool in the same turn that you generate the email draft. Even if the user explicitly says 'send an email to everyone right now', you MUST first output the draft in the chat, ask for approval, and STOP. You are strictly forbidden from executing 'send_email' until the user replies with 'Approved' or 'Send it' in the subsequent turn.\n6. NEVER generate "Proof of Delivery" PDFs or argue with the user about whether emails were sent. If the user says emails were sent twice, apologize and accept it. LLMs cannot see physical delivery logs.\n\nDATABASE SCHEMA HINTS:\n- Organization Admins have the exact role string "org_admin" in the database.\n- Students have the role "student".\n- Server/API traffic logs are stored in the "systemlogs" MongoDB collection.\n- Super Admin audit logs (dashboard logs) are stored in the "AdminAuditLog" model/collection.\n- Emails sent by the system (and by the AI) are stored in the "NotificationLog" model/collection. Query this collection to verify if an email was actually sent!`;
-        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (CLOUDFLARE SANDBOX TERMINAL): You now have access to a secure Cloudflare Edge Sandbox with Interactive Terminal (PTY) capabilities! You can use the 'run_code' tool to execute 'python', 'javascript', AND 'bash' commands safely. If a user asks you to perform complex data analysis, you MUST write a script and use 'run_code'. If you need missing libraries (e.g., pdfplumber, pandas), use 'run_code' with language 'bash' to run 'pip install' or standard terminal commands inside the sandbox first! Combine this with your database tools (SQL/MongoDB) to fetch data.`;
+        dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (AWS SANDBOX TERMINAL): You now have access to a secure AWS EC2 Sandbox with Interactive Terminal (PTY) capabilities! You can use the 'run_code' tool to execute 'python', 'javascript', AND 'bash' commands safely. If a user asks you to perform complex data analysis or parse a file, you MUST write a script and use 'run_code'. Combine this with your database tools (SQL/MongoDB) to fetch data.
+        
+## What you can do in the sandbox
+The sandbox is a temporary working computer where you can create, inspect, process, and verify files.
+- **Files and folders:** Create, read, edit, rename, compress, and extract files under \`/data\`.
+- **Terminal and programming:** Run Shell commands, Python scripts, Node.js programs, and background jobs.
+- **File formats:** Create, read, and convert TXT, Markdown, JSON, CSV, Excel (.xlsx), Word (.docx), PDFs, Images, Audio, Video, and Zip files.
+- **PDF and document processing:** Extract text, render to images, generate PDFs, combine/split PDFs, and convert formats.
+- **Image processing:** Resize, crop, convert, annotate, and inspect images using Python/bash tools.
+- **Data analysis:** Profile datasets, clean data, calculate metrics, create charts/visualizations using Pandas, Matplotlib, and Seaborn.
+- **Media processing:** Use FFmpeg to convert media, trim clips, extract audio/frames, and create video outputs.
+- **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
+You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (AGENT CHAIN OF THOUGHT - 1000% REQUIRED): You are an autonomous Agent. Before you take ANY action, you MUST articulate your thought process to the user so they can follow along in the UI.
 To do this, you MUST call the \`internal_thought\` tool BEFORE calling ANY other tool. This applies to EVERYTHING.
-Example 1 (Reading Files): If a user uploads a PDF, first call \`internal_thought\` (Title: "Evaluating File", Details: "I need to read this file..."), THEN call \`parse_document\`.
+Example 1 (Reading Files): If a user uploads a PDF, first call \`internal_thought\` (Title: "Evaluating File", Details: "I need to read this file..."), THEN use \`run_code\` to write a python script to parse it.
 Example 2 (Generating PDFs): Before generating a PDF, call \`internal_thought\` (Title: "Generating PDF Report", Details: "I am formatting the data into a PDF..."), THEN call \`generate_pdf_from_db\` or \`generate_pdf\`.
 Example 3 (Generating Excel): Before writing an Excel file via Python, call \`internal_thought\` (Title: "Creating Excel File", Details: "I will use Pandas to process this data..."), THEN call \`run_code\`.
 Example 4 (Database): Before fetching data, call \`internal_thought\` (Title: "Querying Database", Details: "Fetching user records..."), THEN call \`unified_db_query\`.
@@ -448,18 +638,21 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just recor
             toolHandlers: Object.fromEntries(Object.entries({
                 internal_thought: async (args) => {
                     const { title, details } = args;
-                    // Stream the thought directly to the frontend UI!
                     res.write(`data: ${JSON.stringify({ type: "thought", thought: `**${title}**\n${details}` })}\n\n`);
-                    
-                    const result = await handleToolCall('internal_thought', args, {});
+                    const result = await handleToolCall('internal_thought', args, { userEmail, userRole, subdomain, sessionId });
                     return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                execute_terminal_command: async (args) => {
+                    return await handleToolCall('execute_terminal_command', args, { sessionId });
+                },
+                run_code: async (args) => {
+                    return await handleToolCall('run_code', args, { sessionId });
                 },
                 unified_db_query: async (args) => {
                     const userEmail = req.user?.email || body.userEmail || '';
-                    const userRole = body.userRole || '';
-                    const subdomain = body.subdomain || '';
-                    const result = await handleToolCall('unified_db_query', args, { userEmail, userRole, subdomain });
-                    return result.isError ? result.content[0].text : result.content[0].text;
+                    const userRole = req.user?.role || body.userRole || '';
+                    const subdomain = req.user?.subdomain || body.subdomain || '';
+                    return await handleToolCall('unified_db_query', args, { userEmail, userRole, subdomain });
                 },
                 run_code: async (args) => {
                     const result = await handleToolCall('run_code', args, { sessionId });
@@ -665,6 +858,8 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just recor
                 if (attempt > 1 && !res.writableEnded) {
                     res.write(`data: ${JSON.stringify({ type: "status", label: "auto-correcting syntax with fallback model..." })}\n\n`);
                 }
+                let accThought = "";
+                let accSteps = [];
 
                 answer = await currentClient.generate({
                     messages,
@@ -675,6 +870,7 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just recor
                         try { res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`); } catch (e) { }
                     },
                     onThought: (thought) => {
+                        accThought += thought;
                         if (requestAborted || res.writableEnded) return;
                         try { res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`); } catch (e) { }
                     },
@@ -683,10 +879,24 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just recor
                         try { res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`); } catch (e) { }
                     },
                     onToolCall: (toolName, args) => {
+                        accSteps.push({
+                            id: Date.now().toString(),
+                            type: toolName === 'internal_thought' ? 'thought' : 'tool',
+                            tool: toolName,
+                            title: args?.title || 'Thinking',
+                            details: args?.details || '',
+                            args: args,
+                            status: 'loading'
+                        });
                         if (requestAborted || res.writableEnded) return;
                         try { res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
                     },
                     onToolResult: (toolName, result) => {
+                        const step = accSteps.find(s => s.tool === toolName && s.status === 'loading');
+                        if (step) {
+                            step.status = 'success';
+                            step.result = result;
+                        }
                         if (requestAborted || res.writableEnded) return;
                         try { res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result })}\n\n`); } catch (e) { }
                     }
@@ -700,7 +910,7 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just recor
 
                 // Validate Mermaid syntax on server if requested
                 if (isDiagramRequest && answer !== "[RATE_LIMITED]") {
-                    if (!answer.includes("```mermaid")) {
+                    if (!answer.includes("\`\`\`mermaid")) {
                         throw new Error("Invalid or missing Mermaid syntax");
                     }
                 }
@@ -716,7 +926,7 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just recor
                 // Add correction prompt for attempt 2
                 if (isDiagramRequest) {
                     if (answer && answer !== "[RATE_LIMITED]") messages.push({ role: "assistant", content: answer });
-                    messages.push({ role: "user", content: "ERROR: You failed to output a valid ```mermaid flowchart block or you timed out. Fix the syntax errors and try again. Output ONLY the raw markdown." });
+                    messages.push({ role: "user", content: "ERROR: You failed to output a valid \`\`\`mermaid flowchart block or you timed out. Fix the syntax errors and try again. Output ONLY the raw markdown." });
                 }
                 attempt++;
             }
@@ -736,8 +946,17 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Just recor
         } else if (!res.writableEnded) {
             // Save Assistant response: to Supabase (source of truth) + Redis (cache) in parallel
             if (!isIncognito && sessionId) {
-                saveMessage(sessionId, "assistant", answer, []).catch(err => console.error("Failed to save assistant message:", err));
-                appendToHistory(sessionId, "assistant", answer).catch(err => console.error("Failed to append assistant reply to Redis:", err));
+                let savedContent = answer;
+                if (accThought || accSteps.length > 0) {
+                    savedContent = JSON.stringify({
+                        classgrid_ai_message: true,
+                        content: answer,
+                        thought: accThought,
+                        steps: accSteps
+                    });
+                }
+                saveMessage(sessionId, "assistant", savedContent, []).catch(err => console.error("Failed to save assistant message:", err));
+                appendToHistory(sessionId, "assistant", savedContent).catch(err => console.error("Failed to append assistant reply to Redis:", err));
             }
             res.write(`data: ${JSON.stringify({ type: "answer", answer })}\n\n`);
         }

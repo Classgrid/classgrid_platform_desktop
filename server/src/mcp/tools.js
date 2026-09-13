@@ -2,9 +2,7 @@ import mongoose from 'mongoose';
 import { getChatSb } from '../config/supabaseClient.js';
 import redis from '../config/redis.js';
 import path from 'path';
-import { sendEmail } from '../services/aws-ses.service.js';
-import { s3Client, BUCKET_NAME, CDN_BASE_URL } from '../config/s3Client.js';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import accessLogger from '../config/logger.js';
 import puppeteer from 'puppeteer';
 import Handlebars from 'handlebars';
 import { exec } from 'child_process';
@@ -59,71 +57,7 @@ export const getMcpTools = () => [
       required: ['language', 'code']
     }
   },
-  {
-    name: 'generate_pdf',
-    description: 'Generates a PDF document from HTML or raw data. If you have a large list of data, pass the JSON array into `rawData` instead of writing a giant HTML table, and the backend will format it for you.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        content: { type: 'string', description: 'Optional HTML or Markdown content.' },
-        title: { type: 'string', description: 'The title of the PDF document.' },
-        rawData: { type: 'array', items: { type: 'object' }, description: 'Optional JSON array of data. Use this for large lists instead of formatting HTML manually.' }
-      }
-    }
-  },
-  {
-    name: 'generate_pdf_from_db',
-    description: 'Generates a PDF document by directly querying the database and formatting the results. Use this tool for HUGE data dumps (e.g. "Fetch all 600 students") to completely bypass your token memory limits. You just provide the query, and the backend does everything.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        source: { type: 'string', enum: ['mongodb', 'supabase'], description: 'The database source' },
-        collectionOrTable: { type: 'string', description: 'The collection or table name' },
-        query: { type: 'object', description: 'The database query (e.g. { role: "student" })' },
-        title: { type: 'string', description: 'The title of the PDF document.' },
-        htmlTemplate: { type: 'string', description: 'Optional Handlebars HTML template. Use {{#each rows}} ... {{/each}} to loop over the data. You have 100% control over the CSS and HTML structure.' }
-      },
-      required: ['source', 'collectionOrTable', 'query', 'title']
-    }
-  },
-  {
-    name: 'send_email',
-    description: 'Sends an email to a specified recipient using AWS SES. Use this to send reports, PDFs, or notifications directly from the chat.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        to: { type: 'string', description: 'The recipient email address.' },
-        subject: { type: 'string', description: 'The subject of the email.' },
-        body: { type: 'string', description: 'REQUIRED: A fully formed, beautiful HTML string containing the email body. You MUST write raw HTML with inline CSS for styling (e.g., modern fonts, padding, colors). DO NOT use Markdown.' },
-        attachments: {
-          type: 'array',
-          description: 'Optional. A list of files to attach to the email. Each item MUST have a "filename" and EITHER "path" (a valid URL) OR "content" (base64 string).',
-          items: {
-            type: 'object',
-            properties: {
-              filename: { type: 'string', description: 'Name of the attached file (e.g. report.pdf)' },
-              path: { type: 'string', description: 'Direct public URL to the file to attach (e.g. a CDN link).' },
-              content: { type: 'string', description: 'Raw base64 string of the file content.' }
-            }
-          }
-        }
-      },
-      required: ['to', 'subject', 'body']
-    }
-  },
-  {
-    name: 'upload_file_to_cdn',
-    description: 'Uploads a base64 encoded file to the Classgrid R2 CDN and returns a public URL. Use this to share files you generated (like Excel, CSV, PDF) with the user in the chat.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        fileName: { type: 'string', description: 'The name of the file, including extension (e.g. data.csv, report.xlsx)' },
-        base64Content: { type: 'string', description: 'The raw base64 encoded string of the file content (WITHOUT the data prefix).' },
-        mimeType: { type: 'string', description: 'The MIME type of the file (e.g. text/csv, application/pdf)' }
-      },
-      required: ['fileName', 'base64Content', 'mimeType']
-    }
-  },
+
   {
     name: 'execute_terminal_command',
     description: 'Executes a native bash/terminal command directly on the host computer. You can use this to run curl, tesseract, Python, or system utilities.',
@@ -133,18 +67,6 @@ export const getMcpTools = () => [
         command: { type: 'string', description: 'The exact bash/terminal command to execute.' }
       },
       required: ['command']
-    }
-  },
-  {
-    name: 'parse_document',
-    description: 'Downloads a file (PDF or Image) from a URL and extracts all text from it. Use this tool IMMEDIATELY to read any attached user files.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        url: { type: 'string', description: 'The direct URL of the file to parse' },
-        mimeType: { type: 'string', description: 'The MIME type (e.g. application/pdf, image/png, image/jpeg)' }
-      },
-      required: ['url', 'mimeType']
     }
   },
   {
@@ -383,7 +305,21 @@ export const handleToolCall = async (name, args, context = {}) => {
 
     if (name === 'execute_terminal_command') {
         const { command } = args;
-        console.log(`\n⚠️ [TERMINAL ACCESS] AI is spinning up Temporary Computer on AWS Sandbox...`);
+        const { sessionId = 'default', userEmail = 'unknown' } = context;
+        
+        console.log(`\n=================================================`);
+        console.log(`🚀 [SANDBOX TERMINAL ACTION STARTED]`);
+        console.log(`👤 User: ${userEmail} | 🆔 Session: ${sessionId}`);
+        console.log(`💻 Command:\n${command}`);
+        console.log(`=================================================\n`);
+        
+        accessLogger.info("Sandbox Terminal Action Started", {
+            action: "sandbox_terminal_start",
+            sessionId,
+            userEmail,
+            command
+        });
+
         try {
             const ssh = new NodeSSH();
             const isProd = process.env.NODE_ENV === 'production';
@@ -409,8 +345,26 @@ export const handleToolCall = async (name, args, context = {}) => {
             const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${command}\nEOF_SCRIPT`;
             await ssh.execCommand(writeCommand);
 
-            const dockerCommand = `docker run --rm -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox bash /data/script.sh`;
+            const envVars = ` -e AWS_ACCESS_KEY_ID="${process.env.AWS_ACCESS_KEY_ID || ''}" -e AWS_SECRET_ACCESS_KEY="${process.env.AWS_SECRET_ACCESS_KEY || ''}" -e AWS_S3_REGION="${process.env.AWS_S3_REGION || ''}" -e AWS_S3_BUCKET="${process.env.AWS_S3_BUCKET || ''}" -e R2_ACCOUNT_ID="${process.env.R2_ACCOUNT_ID || ''}" -e R2_ACCESS_KEY_ID="${process.env.R2_ACCESS_KEY_ID || ''}" -e R2_SECRET_ACCESS_KEY="${process.env.R2_SECRET_ACCESS_KEY || ''}" -e R2_BUCKET_NAME="${process.env.R2_BUCKET_NAME || 'classgrid-storage'}" -e R2_PUBLIC_URL="${process.env.R2_PUBLIC_URL || 'https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev'}" -e AWS_SES_SMTP_HOST="${process.env.AWS_SES_SMTP_HOST || ''}" -e AWS_SES_SMTP_USER="${process.env.AWS_SES_SMTP_USER || ''}" -e AWS_SES_SMTP_PASS="${process.env.AWS_SES_SMTP_PASS || ''}" `;
+
+            console.log(`[Sandbox] Securely injecting credentials and running Docker container for terminal command...`);
+            const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox bash /data/script.sh`;
             const result = await ssh.execCommand(dockerCommand);
+            
+            console.log(`\n=================================================`);
+            console.log(`✅ [SANDBOX TERMINAL ACTION FINISHED]`);
+            console.log(`🟢 STDOUT:\n${result.stdout}`);
+            if (result.stderr) console.log(`🔴 STDERR:\n${result.stderr}`);
+            console.log(`=================================================\n`);
+
+            accessLogger.info("Sandbox Terminal Action Finished", {
+                action: "sandbox_terminal_end",
+                sessionId,
+                userEmail,
+                stdout: result.stdout,
+                stderr: result.stderr,
+                exitCode: result.code
+            });
             
             ssh.dispose();
             
@@ -426,8 +380,22 @@ export const handleToolCall = async (name, args, context = {}) => {
 
     if (name === 'run_code') {
         const { language, code } = args;
+        const { sessionId = 'default', userEmail = 'unknown' } = context;
         
-        console.log(`\n🚀 [AWS SANDBOX] AI is executing ${language} code securely inside the Temporary Computer!`);
+        console.log(`\n=================================================`);
+        console.log(`🚀 [SANDBOX CODE EXECUTION STARTED]`);
+        console.log(`👤 User: ${userEmail} | 🆔 Session: ${sessionId}`);
+        console.log(`💻 Language: ${language}`);
+        console.log(`📝 Code Payload:\n${code}`);
+        console.log(`=================================================\n`);
+        
+        accessLogger.info("Sandbox Code Execution Started", {
+            action: "sandbox_code_start",
+            sessionId,
+            userEmail,
+            language,
+            codeSnippetPreview: code.substring(0, 500)
+        });
         
         try {
             const ssh = new NodeSSH();
@@ -460,8 +428,27 @@ export const handleToolCall = async (name, args, context = {}) => {
             const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${code}\nEOF_SCRIPT`;
             await ssh.execCommand(writeCommand);
 
-            const dockerCommand = `docker run --rm -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox ${execCmd} /data/script.${ext}`;
+            const envVars = ` -e AWS_ACCESS_KEY_ID="${process.env.AWS_ACCESS_KEY_ID || ''}" -e AWS_SECRET_ACCESS_KEY="${process.env.AWS_SECRET_ACCESS_KEY || ''}" -e AWS_S3_REGION="${process.env.AWS_S3_REGION || ''}" -e AWS_S3_BUCKET="${process.env.AWS_S3_BUCKET || ''}" -e AWS_S3_ERP_ACCESS_KEY="${process.env.AWS_S3_ERP_ACCESS_KEY || ''}" -e AWS_S3_ERP_SECRET_KEY="${process.env.AWS_S3_ERP_SECRET_KEY || ''}" -e AWS_S3_ERP_REGION="${process.env.AWS_S3_ERP_REGION || ''}" -e AWS_S3_ERP_BUCKET_NAME="${process.env.AWS_S3_ERP_BUCKET_NAME || ''}" -e AWS_CLOUDFRONT_ERP_DOMAIN="${process.env.AWS_CLOUDFRONT_ERP_DOMAIN || ''}" -e R2_ACCOUNT_ID="${process.env.R2_ACCOUNT_ID || ''}" -e R2_ACCESS_KEY_ID="${process.env.R2_ACCESS_KEY_ID || ''}" -e R2_SECRET_ACCESS_KEY="${process.env.R2_SECRET_ACCESS_KEY || ''}" -e R2_BUCKET_NAME="${process.env.R2_BUCKET_NAME || 'classgrid-storage'}" -e R2_PUBLIC_URL="${process.env.R2_PUBLIC_URL || 'https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev'}" -e AWS_SES_SMTP_HOST="${process.env.AWS_SES_SMTP_HOST || ''}" -e AWS_SES_SMTP_USER="${process.env.AWS_SES_SMTP_USER || ''}" -e AWS_SES_SMTP_PASS="${process.env.AWS_SES_SMTP_PASS || ''}" `;
+
+            console.log(`[Sandbox] Securely injecting credentials and running Docker container for ${language} script...`);
+            const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox ${execCmd} /data/script.${ext}`;
             const result = await ssh.execCommand(dockerCommand);
+            
+            console.log(`\n=================================================`);
+            console.log(`✅ [SANDBOX CODE EXECUTION FINISHED]`);
+            console.log(`🟢 STDOUT:\n${result.stdout}`);
+            if (result.stderr) console.log(`🔴 STDERR:\n${result.stderr}`);
+            console.log(`=================================================\n`);
+
+            accessLogger.info("Sandbox Code Execution Finished", {
+                action: "sandbox_code_end",
+                sessionId,
+                userEmail,
+                language,
+                stdout: result.stdout,
+                stderr: result.stderr,
+                exitCode: result.code
+            });
             
             ssh.dispose();
             
@@ -626,24 +613,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
     }
 
-    if (name === 'send_email') {
-        const { to, subject, body } = args;
-        console.log(`\n📧 [AWS SES] AI is sending an email to ${to}`);
-        try {
-            await sendEmail({
-                to,
-                subject,
-                html: body,
-                text: body.replace(/<[^>]*>?/gm, ''), // fallback plain text
-                fromName: 'Classgrid Team'
-            });
-            return {
-                content: [{ type: 'text', text: `SUCCESS! Email successfully sent to ${to}.` }]
-            };
-        } catch (e) {
-            return { content: [{ type: 'text', text: `Failed to send email via AWS SES: ${e.message}` }] };
-        }
-    }
+
 
     throw new Error(`Unknown tool: ${name}`);
   } catch (error) {
