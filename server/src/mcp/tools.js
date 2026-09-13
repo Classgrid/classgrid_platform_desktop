@@ -146,18 +146,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         const collection = mongoose.connection.db.collection(actualCollectionName);
         
         if (actualCollectionName === 'users' && query) {
-            const fixRoles = (obj) => {
-                if (!obj || typeof obj !== 'object') return;
-                for (const key in obj) {
-                    if (obj[key] === 'org_admin' || obj[key] === 'school_admin') {
-                        obj[key] = { $in: ['org_admin', 'school_admin'] };
-                    } else if (typeof obj[key] === 'object') {
-                        fixRoles(obj[key]);
-                    }
-                }
-            };
-            fixRoles(query);
-            console.log(`[Auto-Correct] Fixed DB query for org_admin/school_admin:`, JSON.stringify(query));
+            // No auto-correction for org_admin needed; the schema strictly uses org_admin.
         }
         
         let result;
