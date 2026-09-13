@@ -2883,7 +2883,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               return (
                                 <div 
                                   key={`${att.name}-${i}`}
-                                  onClick={() => setPreviewFile({ name: att.name, src: att.url, mimeType: att.mimeType })}
+                                  onClick={() => setPreviewFile({ name: att.name, src: att.url, mimeType: extension === 'pdf' ? 'application/pdf' : att.mimeType })}
                                   className="bg-white dark:bg-[#151515] rounded-xl border border-slate-200/80 dark:border-white/10 flex items-center justify-between p-4 shadow-sm dark:shadow-none w-full hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-all duration-500 ease-in-out cursor-pointer group"
                                 >
                                   <div className="flex items-center gap-3 overflow-hidden">
