@@ -155,7 +155,48 @@ The sandbox already includes tools such as:
 - Long-running commands must be controlled or run in the background so they do not block the task.
 
 ### How to Handle User Attachments (CRITICAL INSTRUCTION)
-If the user's message contains "Attached Files:" followed by one or more URLs, you MUST use the \`parse_document\` tool to download and extract the text from the file. ALWAYS use \`parse_document\` as your first step when a user attaches a file to read its contents. Do NOT write a Python script manually to read basic documents; use the \`parse_document\` tool first.
+If the user's message contains "Attached Files:" followed by one or more URLs, you MUST use the \`parse_document\` tool to download and extract the text from the file. ALWAYS use \`parse_document\` as your first step when a user attaches a file to read its contents. Do NOT write a Python script manually to read basic documents; use the \`parse_document\` tool first. CRITICAL: Never use execute_terminal_command or curl to download attachments. You MUST use the native parse_document tool because it has secure internal access to private files.
+CRITICAL INSTRUCTION (STRICT DEMO WORKFLOW SEQUENCES):
+You are an autonomous AI Agent in a Sandbox. You MUST strictly follow these exact tool sequences based on the user's request to trigger the correct UI components. Never skip a step. Never deviate from the sequence.
+
+--- WORKFLOW 1: DISCIPLINARY EMAIL & DOCUMENT GENERATION ---
+If the user asks to identify students involved in an incident, draft an email, and generate a warning letter, follow this EXACT sequence:
+1. `internal_thought`: "Evaluating request to identify students, search guidelines, send emails, and generate PDFs."
+2. `unified_db_query`: Query the database for the students involved.
+3. `search_web`: Search the school guidelines (e.g., "disciplinary guidelines").
+4. `send_email`: Send the warning email to the parents.
+5. `generate_pdf`: Generate the official PDF warning letter.
+
+--- WORKFLOW 2: PDF OCR ANALYSIS ---
+If the user attaches an identity card or image file (message contains "Attached Files:"), follow this EXACT sequence:
+1. `internal_thought`: "I need to download and read the attached file from the computer."
+2. `parse_document`: Pass the attached URL to download the file.
+3. `internal_thought`: "The document is an image. I will use the terminal to run an OCR script on the image to extract the text."
+4. `execute_terminal_command`: Run the exact python3 OCR script provided to you on the file path.
+
+--- WORKFLOW 3: STANDALONE PDF GENERATION ---
+If the user requests to generate a summary report or standalone PDF, follow this EXACT sequence:
+1. `internal_thought`: "I will format the notes and generate a clean PDF document for the user to download."
+2. `generate_pdf` (or `generate_pdf_from_db`): Generate the PDF document.
+
+--- WORKFLOW 4: LARGE WEB SEARCH ---
+If the user asks for external research, competitor analysis, or recent news, follow this EXACT sequence:
+1. `internal_thought`: "I will perform a broad web search and gather sources to cross-reference."
+2. `search_web`: Execute the search query to gather the web results.
+
+--- WORKFLOW 5: INTERNAL KNOWLEDGE BASE SEARCH (RAG) ---
+If the user asks about internal policies, academic hierarchy, employee handbooks, or PTO, follow this EXACT sequence:
+1. `internal_thought`: "I will search our internal knowledge base (RAG) to find the relevant policy documents."
+2. `search_knowledge_base`: Execute the search query to retrieve the internal documents.
+
+--- WORKFLOW 6: COMPLEX MULTI-STEP ANALYSIS (MASSIVE WORKFLOW) ---
+If the user asks you to synthesize many notes or perform a deep analysis, you must chain multiple tools together. ALWAYS precede every single action with a thought.
+Sequence pattern: `internal_thought` -> `search_knowledge_base` -> `internal_thought` -> `unified_db_query` -> `internal_thought` -> `run_code`.
+
+--- WORKFLOW 7: UPLOADING TO CDN ---
+If the user asks you to make a file public, or you need to provide a public download link to a file you generated, follow this EXACT sequence:
+1. `internal_thought`: "I need to upload the generated file to the public CDN bucket so it can be safely linked."
+2. `upload_file_to_cdn`: Pass the base64 content to upload the file and get the public R2 URL.
 
 ### How to Upload Files to CDN (CRITICAL INSTRUCTION)
 If you generate a file (like an Excel sheet, PDF, or image) inside the sandbox and need to give the user a download link, you MUST use the native \`upload_file_to_cdn\` tool.
@@ -221,59 +262,183 @@ If the user asks about "history" or "summary", look at the previous messages pro
 Always analyze the last 5 messages to understand the ongoing context.
 
 SAFETY OVERRIDE:
-If you must refuse a request, DO NOT use the default "I'm sorry, I can't help with that". Politely explain why in your own words.`;
+If you must refuse a request, DO NOT use the default "I'm sorry, I can't help with that". Politely explain why in your own words.
+
+CRITICAL INSTRUCTION (STRICT DEMO WORKFLOW SEQUENCES):
+You are an autonomous AI Agent in a Sandbox. You MUST strictly follow these exact tool sequences based on the user's request to trigger the correct UI components. Never skip a step. Never deviate from the sequence.
+
+--- WORKFLOW 1: DISCIPLINARY EMAIL & DOCUMENT GENERATION ---
+If the user asks to identify students involved in an incident, draft an email, and generate a warning letter, follow this EXACT sequence:
+1. \`internal_thought\`: "Evaluating request to identify students, search guidelines, send emails, and generate PDFs."
+2. \`unified_db_query\`: Query the database for the students involved.
+3. \`search_web\`: Search the school guidelines (e.g., "disciplinary guidelines").
+4. \`send_email\`: Send the warning email to the parents.
+5. \`generate_pdf\`: Generate the official PDF warning letter.
+
+--- WORKFLOW 2: PDF OCR ANALYSIS ---
+If the user attaches an identity card or image file (message contains "Attached Files:"), follow this EXACT sequence:
+1. \`internal_thought\`: "I need to download and read the attached file from the computer."
+2. \`parse_document\`: Pass the attached URL to download the file.
+3. \`internal_thought\`: "The document is an image. I will use the terminal to run an OCR script on the image to extract the text."
+4. \`execute_terminal_command\`: Run the exact python3 OCR script provided to you on the file path.
+
+--- WORKFLOW 3: STANDALONE PDF GENERATION ---
+If the user requests to generate a summary report or standalone PDF, follow this EXACT sequence:
+1. \`internal_thought\`: "I will format the notes and generate a clean PDF document for the user to download."
+2. \`generate_pdf\` (or \`generate_pdf_from_db\`): Generate the PDF document.
+
+--- WORKFLOW 4: LARGE WEB SEARCH ---
+If the user asks for external research, competitor analysis, or recent news, follow this EXACT sequence:
+1. \`internal_thought\`: "I will perform a broad web search and gather sources to cross-reference."
+2. \`search_web\`: Execute the search query to gather the web results.
+
+--- WORKFLOW 5: INTERNAL KNOWLEDGE BASE SEARCH (RAG) ---
+If the user asks about internal policies, academic hierarchy, employee handbooks, or PTO, follow this EXACT sequence:
+1. \`internal_thought\`: "I will search our internal knowledge base (RAG) to find the relevant policy documents."
+2. \`search_knowledge_base\`: Execute the search query to retrieve the internal documents.
+
+--- WORKFLOW 6: COMPLEX MULTI-STEP ANALYSIS (MASSIVE WORKFLOW) ---
+If the user asks you to synthesize many notes or perform a deep analysis, you must chain multiple tools together. ALWAYS precede every single action with a thought.
+Sequence pattern: \`internal_thought\` -> \`search_knowledge_base\` -> \`internal_thought\` -> \`unified_db_query\` -> \`internal_thought\` -> \`run_code\`.
+
+--- WORKFLOW 7: UPLOADING TO CDN ---
+If the user asks you to make a file public, or you need to provide a public download link to a file you generated, follow this EXACT sequence:
+1. \`internal_thought\`: "I need to upload the generated file to the public CDN bucket so it can be safely linked."
+2. \`upload_file_to_cdn\`: Pass the base64 content to upload the file and get the public R2 URL.`;
+CRITICAL INSTRUCTION(STRICT DEMO WORKFLOW SEQUENCES):
+You are an autonomous AI Agent in a Sandbox.You MUST strictly follow these exact tool sequences based on the user's request to trigger the correct UI components. Never skip a step. Never deviate from the sequence.
+
+--- WORKFLOW 1: DISCIPLINARY EMAIL & DOCUMENT GENERATION-- -
+    If the user asks to identify students involved in an incident, draft an email, and generate a warning letter, follow this EXACT sequence:
+1. `internal_thought`: "Evaluating request to identify students, search guidelines, send emails, and generate PDFs."
+2. `unified_db_query`: Query the database for the students involved.
+3. `search_web`: Search the school guidelines(e.g., "disciplinary guidelines").
+4. `send_email`: Send the warning email to the parents.
+5. `generate_pdf`: Generate the official PDF warning letter.
+
+--- WORKFLOW 2: PDF OCR ANALYSIS-- -
+    If the user attaches an identity card or image file(message contains "Attached Files:"), follow this EXACT sequence:
+1. `internal_thought`: "I need to download and read the attached file from the computer."
+2. `parse_document`: Pass the attached URL to download the file.
+3. `internal_thought`: "The document is an image. I will use the terminal to run an OCR script on the image to extract the text."
+4. `execute_terminal_command`: Run the exact python3 OCR script provided to you on the file path.
+
+--- WORKFLOW 3: STANDALONE PDF GENERATION-- -
+    If the user requests to generate a summary report or standalone PDF, follow this EXACT sequence:
+1. `internal_thought`: "I will format the notes and generate a clean PDF document for the user to download."
+2. `generate_pdf`(or`generate_pdf_from_db`): Generate the PDF document.
+
+--- WORKFLOW 4: LARGE WEB SEARCH-- -
+    If the user asks for external research, competitor analysis, or recent news, follow this EXACT sequence:
+1. `internal_thought`: "I will perform a broad web search and gather sources to cross-reference."
+2. `search_web`: Execute the search query to gather the web results.
+
+--- WORKFLOW 5: INTERNAL KNOWLEDGE BASE SEARCH(RAG)-- -
+    If the user asks about internal policies, academic hierarchy, employee handbooks, or PTO, follow this EXACT sequence:
+1. `internal_thought`: "I will search our internal knowledge base (RAG) to find the relevant policy documents."
+2. `search_knowledge_base`: Execute the search query to retrieve the internal documents.
+
+--- WORKFLOW 6: COMPLEX MULTI - STEP ANALYSIS(MASSIVE WORKFLOW)-- -
+    If the user asks you to synthesize many notes or perform a deep analysis, you must chain multiple tools together.ALWAYS precede every single action with a thought.
+Sequence pattern: `internal_thought` -> `search_knowledge_base` -> `internal_thought` -> `unified_db_query` -> `internal_thought` -> `run_code`.
+
+--- WORKFLOW 7: UPLOADING TO CDN-- -
+    If the user asks you to make a file public, or you need to provide a public download link to a file you generated, follow this EXACT sequence:
+1. `internal_thought`: "I need to upload the generated file to the public CDN bucket so it can be safely linked."
+2. `upload_file_to_cdn`: Pass the base64 content to upload the file and get the public R2 URL.
+CRITICAL INSTRUCTION(STRICT DEMO WORKFLOW SEQUENCES):
+You are an autonomous AI Agent in a Sandbox.You MUST strictly follow these exact tool sequences based on the user's request to trigger the correct UI components. Never skip a step. Never deviate from the sequence.
+
+--- WORKFLOW 1: DISCIPLINARY EMAIL & DOCUMENT GENERATION-- -
+    If the user asks to identify students involved in an incident, draft an email, and generate a warning letter, follow this EXACT sequence:
+1. `internal_thought`: "Evaluating request to identify students, search guidelines, send emails, and generate PDFs."
+2. `unified_db_query`: Query the database for the students involved.
+3. `search_web`: Search the school guidelines(e.g., "disciplinary guidelines").
+4. `send_email`: Send the warning email to the parents.
+5. `generate_pdf`: Generate the official PDF warning letter.
+
+--- WORKFLOW 2: PDF OCR ANALYSIS-- -
+    If the user attaches an identity card or image file(message contains "Attached Files:"), follow this EXACT sequence:
+1. `internal_thought`: "I need to download and read the attached file from the computer."
+2. `parse_document`: Pass the attached URL to download the file.
+3. `internal_thought`: "The document is an image. I will use the terminal to run an OCR script on the image to extract the text."
+4. `execute_terminal_command`: Run the exact python3 OCR script provided to you on the file path.
+
+--- WORKFLOW 3: STANDALONE PDF GENERATION-- -
+    If the user requests to generate a summary report or standalone PDF, follow this EXACT sequence:
+1. `internal_thought`: "I will format the notes and generate a clean PDF document for the user to download."
+2. `generate_pdf`(or`generate_pdf_from_db`): Generate the PDF document.
+
+--- WORKFLOW 4: LARGE WEB SEARCH-- -
+    If the user asks for external research, competitor analysis, or recent news, follow this EXACT sequence:
+1. `internal_thought`: "I will perform a broad web search and gather sources to cross-reference."
+2. `search_web`: Execute the search query to gather the web results.
+
+--- WORKFLOW 5: INTERNAL KNOWLEDGE BASE SEARCH(RAG)-- -
+    If the user asks about internal policies, academic hierarchy, employee handbooks, or PTO, follow this EXACT sequence:
+1. `internal_thought`: "I will search our internal knowledge base (RAG) to find the relevant policy documents."
+2. `search_knowledge_base`: Execute the search query to retrieve the internal documents.
+
+--- WORKFLOW 6: COMPLEX MULTI - STEP ANALYSIS(MASSIVE WORKFLOW)-- -
+    If the user asks you to synthesize many notes or perform a deep analysis, you must chain multiple tools together.ALWAYS precede every single action with a thought.
+Sequence pattern: `internal_thought` -> `search_knowledge_base` -> `internal_thought` -> `unified_db_query` -> `internal_thought` -> `run_code`.
+
+--- WORKFLOW 7: UPLOADING TO CDN-- -
+    If the user asks you to make a file public, or you need to provide a public download link to a file you generated, follow this EXACT sequence:
+1. `internal_thought`: "I need to upload the generated file to the public CDN bucket so it can be safely linked."
+2. `upload_file_to_cdn`: Pass the base64 content to upload the file and get the public R2 URL.
 
 async function generateSessionTitle(sessionId, question) {
     try {
         const client = new LLMCascade({
             providers: [
                 {
-                name: "mistral",
-                url: "https://api.mistral.ai/v1/chat/completions",
-                apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
-                model: "open-mistral-nemo"
-            },
-            {
-                name: "gemini",
-                url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-                apiKey: process.env.GEMINI_API_KEY || "",
-                model: "gemini-3.5-flash"
-            },
-            {
-                name: "groq",
-                url: "https://api.groq.com/openai/v1/chat/completions",
-                apiKey: process.env.GROQ_API_KEY || "",
-                model: "openai/gpt-oss-20b"
+                    name: "mistral",
+                    url: "https://api.mistral.ai/v1/chat/completions",
+                    apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
+                    model: "open-mistral-nemo"
+                },
+                {
+                    name: "gemini",
+                    url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+                    apiKey: process.env.GEMINI_API_KEY || "",
+                    model: "gemini-3.5-flash"
+                },
+                {
+                    name: "groq",
+                    url: "https://api.groq.com/openai/v1/chat/completions",
+                    apiKey: process.env.GROQ_API_KEY || "",
+                    model: "openai/gpt-oss-20b"
+                }
+            ]
+        });
+        const answer = await client.generate({
+            messages: [
+                { role: "system", content: "You are a title generator. Generate a VERY SHORT 2-3 word title for the user's message. Output ONLY the raw words. DO NOT output '**Title:**'. DO NOT use quotes." },
+                { role: "user", content: question }
+            ],
+            maxToolDepth: 0
+        });
+        if (answer && !answer.includes("[RATE_LIMITED]")) {
+            let cleanTitle = answer.trim().replace(/^["']|["']$/g, '');
+            // Strip common AI prefixes anywhere in the string
+            cleanTitle = cleanTitle.replace(/\*\*Title:\*\*/gi, '')
+                .replace(/Title:/gi, '')
+                .replace(/["']/g, '')
+                .trim();
+
+            // Hard limit to 28 characters so it never overflows the sidebar, no manual dots
+            if (cleanTitle.length > 28) {
+                cleanTitle = cleanTitle.substring(0, 28).trim();
             }
-        ]
-    });
-    const answer = await client.generate({
-        messages: [
-            { role: "system", content: "You are a title generator. Generate a VERY SHORT 2-3 word title for the user's message. Output ONLY the raw words. DO NOT output '**Title:**'. DO NOT use quotes." },
-            { role: "user", content: question }
-        ],
-        maxToolDepth: 0
-    });
-    if (answer && !answer.includes("[RATE_LIMITED]")) {
-        let cleanTitle = answer.trim().replace(/^["']|["']$/g, '');
-        // Strip common AI prefixes anywhere in the string
-        cleanTitle = cleanTitle.replace(/\*\*Title:\*\*/gi, '')
-            .replace(/Title:/gi, '')
-            .replace(/["']/g, '')
-            .trim();
 
-        // Hard limit to 28 characters so it never overflows the sidebar, no manual dots
-        if (cleanTitle.length > 28) {
-            cleanTitle = cleanTitle.substring(0, 28).trim();
+            if (cleanTitle.length > 0) {
+                await updateSessionTitle(sessionId, cleanTitle);
+            }
         }
-
-        if (cleanTitle.length > 0) {
-            await updateSessionTitle(sessionId, cleanTitle);
-        }
+    } catch (err) {
+        console.error("Error generating session title:", err);
     }
-} catch (err) {
-    console.error("Error generating session title:", err);
-}
 }
 
 export const streamAskAi = async (req, res) => {
@@ -656,49 +821,49 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
                     }
                 }
             ],
-toolHandlers: Object.fromEntries(Object.entries({
-    internal_thought: async (args) => {
-        const { title, details } = args;
-        res.write(`data: ${JSON.stringify({ type: "thought", thought: `**${title}**\n${details}` })}\n\n`);
-        const result = await handleToolCall('internal_thought', args, { userEmail, userRole, subdomain, sessionId });
-        return result.isError ? result.content[0].text : result.content[0].text;
-    },
-    execute_terminal_command: async (args) => {
-        return await handleToolCall('execute_terminal_command', args, { sessionId });
-    },
-    run_code: async (args) => {
-        return await handleToolCall('run_code', args, { sessionId });
-    },
-    unified_db_query: async (args) => {
-        const userEmail = req.user?.email || body.userEmail || '';
-        const userRole = req.user?.role || body.userRole || '';
-        const subdomain = req.user?.subdomain || body.subdomain || '';
-        return await handleToolCall('unified_db_query', args, { userEmail, userRole, subdomain });
-    },
-    run_code: async (args) => {
-        const result = await handleToolCall('run_code', args, { sessionId });
-        return result.isError ? result.content[0].text : result.content[0].text;
-    },
-    generate_pdf: async (args) => {
-        const result = await handleToolCall('generate_pdf', args, {});
-        return result.isError ? result.content[0].text : result.content[0].text;
-    },
-    upload_file_to_cdn: async (args) => {
-        try {
-            const buffer = Buffer.from(args.base64Content, 'base64');
-            const { uploadBufferToR2 } = await import("../config/r2Client.js");
-            const url = await uploadBufferToR2(buffer, args.fileName, args.mimeType, `ai-generated/${Date.now()}-${args.fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`);
-            return `SUCCESS: File uploaded. Public URL: ${url}`;
-        } catch (e) {
-            return `FAILED to upload file: ${e.message}`;
-        }
-    },
-    parse_document: async (args) => {
-        try {
-            const { url } = args;
-            if (!url) return "ERROR: No url provided in tool arguments.";
-            const safeUrl = url.replace(/"/g, '\\"');
-            const code = `
+            toolHandlers: Object.fromEntries(Object.entries({
+                internal_thought: async (args) => {
+                    const { title, details } = args;
+                    res.write(`data: ${JSON.stringify({ type: "thought", thought: `**${title}**\n${details}` })}\n\n`);
+                    const result = await handleToolCall('internal_thought', args, { userEmail, userRole, subdomain, sessionId });
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                execute_terminal_command: async (args) => {
+                    return await handleToolCall('execute_terminal_command', args, { sessionId });
+                },
+                run_code: async (args) => {
+                    return await handleToolCall('run_code', args, { sessionId });
+                },
+                unified_db_query: async (args) => {
+                    const userEmail = req.user?.email || body.userEmail || '';
+                    const userRole = req.user?.role || body.userRole || '';
+                    const subdomain = req.user?.subdomain || body.subdomain || '';
+                    return await handleToolCall('unified_db_query', args, { userEmail, userRole, subdomain });
+                },
+                run_code: async (args) => {
+                    const result = await handleToolCall('run_code', args, { sessionId });
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                generate_pdf: async (args) => {
+                    const result = await handleToolCall('generate_pdf', args, {});
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                upload_file_to_cdn: async (args) => {
+                    try {
+                        const buffer = Buffer.from(args.base64Content, 'base64');
+                        const { uploadBufferToR2 } = await import("../config/r2Client.js");
+                        const url = await uploadBufferToR2(buffer, args.fileName, args.mimeType, `ai-generated/${Date.now()}-${args.fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`);
+                        return `SUCCESS: File uploaded. Public URL: ${url}`;
+                    } catch (e) {
+                        return `FAILED to upload file: ${e.message}`;
+                    }
+                },
+                parse_document: async (args) => {
+                    try {
+                        const { url } = args;
+                        if (!url) return "ERROR: No url provided in tool arguments.";
+                        const safeUrl = url.replace(/"/g, '\\"');
+                        const code = `
 import urllib.request, tempfile, sys, os
 import fitz
 
@@ -737,282 +902,282 @@ try:
 except Exception as e:
     print("ERROR reading document:", e)
 `;
-            const result = await handleToolCall('run_code', { language: 'python', code }, { sessionId });
-            return result.isError ? result.content[0].text : result.content[0].text;
-        } catch (e) {
-            return `FAILED to parse document in sandbox: ${e.message}`;
-        }
-    },
-    generate_pdf_from_db: async (args) => {
-        const result = await handleToolCall('generate_pdf_from_db', args, {});
-        return result.isError ? result.content[0].text : result.content[0].text;
-    },
+                        const result = await handleToolCall('run_code', { language: 'python', code }, { sessionId });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    } catch (e) {
+                        return `FAILED to parse document in sandbox: ${e.message}`;
+                    }
+                },
+                generate_pdf_from_db: async (args) => {
+                    const result = await handleToolCall('generate_pdf_from_db', args, {});
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
 
-    get_timezone_time: async (args) => {
-        try {
-            const tz = args.timeZone || 'UTC';
-            const now = new Date();
-            const date = now.toLocaleDateString('en-US', { timeZone: tz, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            const time = now.toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
-            return `SUCCESS: The exact current time in ${tz} is ${time} on ${date}. Return this exact time to the user without doing any math.`;
-        } catch (e) {
-            return `Error getting time for ${args.timeZone}. Please ensure it is a valid IANA timezone string like 'Europe/London'.`;
-        }
-    },
-    search_web: async (args) => {
-        const tavilyKey = process.env.TAVILY_API_KEY?.trim();
-        if (!tavilyKey) return "Search failed because TAVILY_API_KEY is missing.";
-        try {
-            const tavilyRes = await fetch("https://api.tavily.com/search", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    api_key: tavilyKey,
-                    query: args.query,
-                    search_depth: "basic",
-                    include_answer: true,
-                    max_results: 5
-                })
-            });
-            const searchData = await tavilyRes.json();
-            return JSON.stringify({
-                answer: searchData.answer || null,
-                results: searchData.results || []
-            });
-        } catch (e) {
-            return "Web Search failed: " + e;
-        }
-    },
-    send_email: async (args) => {
-        // Check if they tried to spoof another domain
-        if (args.fromEmail && !args.fromEmail.endsWith('@classgrid.in')) {
-            return "ERROR: You can only send emails from an @classgrid.in address.";
-        }
+                get_timezone_time: async (args) => {
+                    try {
+                        const tz = args.timeZone || 'UTC';
+                        const now = new Date();
+                        const date = now.toLocaleDateString('en-US', { timeZone: tz, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                        const time = now.toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+                        return `SUCCESS: The exact current time in ${tz} is ${time} on ${date}. Return this exact time to the user without doing any math.`;
+                    } catch (e) {
+                        return `Error getting time for ${args.timeZone}. Please ensure it is a valid IANA timezone string like 'Europe/London'.`;
+                    }
+                },
+                search_web: async (args) => {
+                    const tavilyKey = process.env.TAVILY_API_KEY?.trim();
+                    if (!tavilyKey) return "Search failed because TAVILY_API_KEY is missing.";
+                    try {
+                        const tavilyRes = await fetch("https://api.tavily.com/search", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                api_key: tavilyKey,
+                                query: args.query,
+                                search_depth: "basic",
+                                include_answer: true,
+                                max_results: 5
+                            })
+                        });
+                        const searchData = await tavilyRes.json();
+                        return JSON.stringify({
+                            answer: searchData.answer || null,
+                            results: searchData.results || []
+                        });
+                    } catch (e) {
+                        return "Web Search failed: " + e;
+                    }
+                },
+                send_email: async (args) => {
+                    // Check if they tried to spoof another domain
+                    if (args.fromEmail && !args.fromEmail.endsWith('@classgrid.in')) {
+                        return "ERROR: You can only send emails from an @classgrid.in address.";
+                    }
 
-        const isSuperAdmin = req.user?.email?.endsWith('@classgrid.in') || body.userRole === 'super_admin' || body.userRole === 'org_admin';
-        if (!isSuperAdmin) {
-            return "SECURITY ERROR: Access Denied. Only Admins are authorized to use the AI email sending tool.";
-        }
-        try {
-            const emailPayload = {
-                to: args.to,
-                subject: args.subject,
-                html: args.body,
-                fromName: args.fromName,
-                fromEmail: args.fromEmail
-            };
+                    const isSuperAdmin = req.user?.email?.endsWith('@classgrid.in') || body.userRole === 'super_admin' || body.userRole === 'org_admin';
+                    if (!isSuperAdmin) {
+                        return "SECURITY ERROR: Access Denied. Only Admins are authorized to use the AI email sending tool.";
+                    }
+                    try {
+                        const emailPayload = {
+                            to: args.to,
+                            subject: args.subject,
+                            html: args.body,
+                            fromName: args.fromName,
+                            fromEmail: args.fromEmail
+                        };
 
-            if (args.attachments && Array.isArray(args.attachments) && args.attachments.length > 0) {
-                emailPayload.attachments = args.attachments;
-            }
+                        if (args.attachments && Array.isArray(args.attachments) && args.attachments.length > 0) {
+                            emailPayload.attachments = args.attachments;
+                        }
 
-            const info = await sendEmail(emailPayload);
+                        const info = await sendEmail(emailPayload);
 
-            await NotificationLog.create({
-                type: "EMAIL",
-                recipient: args.to,
-                status: "SENT",
-                providerMessageId: info?.messageId || 'unknown',
-                metadata: { subject: args.subject, aiGenerated: true },
-                userId: req.user?._id || null
-            });
+                        await NotificationLog.create({
+                            type: "EMAIL",
+                            recipient: args.to,
+                            status: "SENT",
+                            providerMessageId: info?.messageId || 'unknown',
+                            metadata: { subject: args.subject, aiGenerated: true },
+                            userId: req.user?._id || null
+                        });
 
-            return `SUCCESS: Email sent successfully to ${args.to} from ${args.fromEmail || 'default'}`;
-        } catch (e) {
-            return `FAILED to send email: ${e.message}`;
-        }
-    },
-    search_knowledge_base: async (args) => {
-        try {
-            const voyageKey = process.env.VOYAGE_API_KEY?.trim();
-            if (!voyageKey) return "RAG Search failed: VOYAGE_API_KEY is missing from environment variables.";
+                        return `SUCCESS: Email sent successfully to ${args.to} from ${args.fromEmail || 'default'}`;
+                    } catch (e) {
+                        return `FAILED to send email: ${e.message}`;
+                    }
+                },
+                search_knowledge_base: async (args) => {
+                    try {
+                        const voyageKey = process.env.VOYAGE_API_KEY?.trim();
+                        if (!voyageKey) return "RAG Search failed: VOYAGE_API_KEY is missing from environment variables.";
 
-            let PlatformRagChunk;
-            try {
-                PlatformRagChunk = mongoose.model('PlatformRagChunk');
-            } catch {
-                PlatformRagChunk = mongoose.model('PlatformRagChunk', new mongoose.Schema({}, { strict: false }), 'platform_rag_chunks');
-            }
+                        let PlatformRagChunk;
+                        try {
+                            PlatformRagChunk = mongoose.model('PlatformRagChunk');
+                        } catch {
+                            PlatformRagChunk = mongoose.model('PlatformRagChunk', new mongoose.Schema({}, { strict: false }), 'platform_rag_chunks');
+                        }
 
-            const embedder = new VoyageEmbedder({ apiKey: voyageKey, provider: 'voyage' });
-            const vectorStore = new MongoVectorStore(PlatformRagChunk, "vector_index", "embedding");
-            const pipeline = new RagPipeline({ embedder, vectorStore });
+                        const embedder = new VoyageEmbedder({ apiKey: voyageKey, provider: 'voyage' });
+                        const vectorStore = new MongoVectorStore(PlatformRagChunk, "vector_index", "embedding");
+                        const pipeline = new RagPipeline({ embedder, vectorStore });
 
-            const result = await pipeline.retrieve(args.query, { topK: 3 });
-            if (result.chunks.length === 0) {
-                return "RAG Search found no relevant documents in the 'platform_rag_chunks' collection.";
-            }
-            return `RAG Search Results:\n\n${result.contextText}`;
-        } catch (e) {
-            return `RAG Search failed: ${e.message}. Note: If this fails with a MongoServerError about '$vectorSearch', it means the Atlas Vector Index hasn't been created yet.`;
-        }
-    }
-}).map(([toolName, handler]) => [
-    toolName,
-    async (args) => {
-        try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
-        let resultStr;
-        try { resultStr = await handler(args); } catch (err) { resultStr = "Error: " + (err.message || String(err)); }
-        try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result: resultStr })}\n\n`); } catch (e) { }
-        return resultStr;
-    }
-]))
-        });
-
-let requestAborted = false;
-
-req.on('close', () => {
-    requestAborted = true;
-    if (!res.writableEnded) res.end();
-});
-
-// --- KEEP ALIVE PING FOR NGINX / PROXIES ---
-keepAliveInterval = setInterval(() => {
-    if (requestAborted || res.writableEnded) {
-        clearInterval(keepAliveInterval);
-        return;
-    }
-    try {
-        // Send a real event rather than a comment to guarantee it bypasses proxy buffers
-        res.write(`data: ${JSON.stringify({ type: "ping" })}\n\n`);
-    } catch (err) {
-        console.error("Failed to send keep-alive ping:", err);
-        requestAborted = true;
-        clearInterval(keepAliveInterval);
-    }
-}, 15000);
-
-// 4. Run the Client with Auto-Correction & Fallback Loop
-const questionText = body.question || "";
-const isDiagramRequest = questionText.toLowerCase().includes("flowchart") || questionText.toLowerCase().includes("diagram") || questionText.toLowerCase().includes("graph") || questionText.toLowerCase().includes("mermaid");
-
-let answer = null;
-let attempt = 1;
-const maxAttempts = 2;
-let currentClient = client;
-let accThought = "";
-let accSteps = [];
-
-while (attempt <= maxAttempts) {
-    try {
-        if (attempt > 1 && !res.writableEnded) {
-            res.write(`data: ${JSON.stringify({ type: "status", label: "auto-correcting syntax with fallback model..." })}\n\n`);
-        }
-        accThought = "";
-        accSteps = [];
-
-        answer = await currentClient.generate({
-            messages,
-            timeoutMs: isDiagramRequest && attempt === 1 ? 5000 : 300000,
-            onStatus: (status) => {
-                if (requestAborted || res.writableEnded) return;
-                const mappedLabel = status === "search web" ? "searching" : status;
-                try { res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`); } catch (e) { }
-            },
-            onThought: (thought) => {
-                accThought += thought;
-                if (requestAborted || res.writableEnded) return;
-                try { res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`); } catch (e) { }
-            },
-            onToken: isDiagramRequest ? undefined : (token) => {
-                if (requestAborted || res.writableEnded) return;
-                try { res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`); } catch (e) { }
-            },
-            onToolCall: (toolName, args) => {
-                accSteps.push({
-                    id: Date.now().toString(),
-                    type: toolName === 'internal_thought' ? 'thought' : 'tool',
-                    tool: toolName,
-                    title: args?.title || 'Thinking',
-                    details: args?.details || '',
-                    args: args,
-                    status: 'loading'
-                });
-                if (requestAborted || res.writableEnded) return;
-                try { res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
-            },
-            onToolResult: (toolName, result) => {
-                const step = accSteps.find(s => s.tool === toolName && s.status === 'loading');
-                if (step) {
-                    step.status = 'success';
-                    step.result = result;
+                        const result = await pipeline.retrieve(args.query, { topK: 3 });
+                        if (result.chunks.length === 0) {
+                            return "RAG Search found no relevant documents in the 'platform_rag_chunks' collection.";
+                        }
+                        return `RAG Search Results:\n\n${result.contextText}`;
+                    } catch (e) {
+                        return `RAG Search failed: ${e.message}. Note: If this fails with a MongoServerError about '$vectorSearch', it means the Atlas Vector Index hasn't been created yet.`;
+                    }
                 }
-                if (requestAborted || res.writableEnded) return;
-                try { res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result })}\n\n`); } catch (e) { }
-            }
+            }).map(([toolName, handler]) => [
+                toolName,
+                async (args) => {
+                    try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
+                    let resultStr;
+                    try { resultStr = await handler(args); } catch (err) { resultStr = "Error: " + (err.message || String(err)); }
+                    try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result: resultStr })}\n\n`); } catch (e) { }
+                    return resultStr;
+                }
+            ]))
         });
+
+        let requestAborted = false;
+
+        req.on('close', () => {
+            requestAborted = true;
+            if (!res.writableEnded) res.end();
+        });
+
+        // --- KEEP ALIVE PING FOR NGINX / PROXIES ---
+        keepAliveInterval = setInterval(() => {
+            if (requestAborted || res.writableEnded) {
+                clearInterval(keepAliveInterval);
+                return;
+            }
+            try {
+                // Send a real event rather than a comment to guarantee it bypasses proxy buffers
+                res.write(`data: ${JSON.stringify({ type: "ping" })}\n\n`);
+            } catch (err) {
+                console.error("Failed to send keep-alive ping:", err);
+                requestAborted = true;
+                clearInterval(keepAliveInterval);
+            }
+        }, 15000);
+
+        // 4. Run the Client with Auto-Correction & Fallback Loop
+        const questionText = body.question || "";
+        const isDiagramRequest = questionText.toLowerCase().includes("flowchart") || questionText.toLowerCase().includes("diagram") || questionText.toLowerCase().includes("graph") || questionText.toLowerCase().includes("mermaid");
+
+        let answer = null;
+        let attempt = 1;
+        const maxAttempts = 2;
+        let currentClient = client;
+        let accThought = "";
+        let accSteps = [];
+
+        while (attempt <= maxAttempts) {
+            try {
+                if (attempt > 1 && !res.writableEnded) {
+                    res.write(`data: ${JSON.stringify({ type: "status", label: "auto-correcting syntax with fallback model..." })}\n\n`);
+                }
+                accThought = "";
+                accSteps = [];
+
+                answer = await currentClient.generate({
+                    messages,
+                    timeoutMs: isDiagramRequest && attempt === 1 ? 5000 : 300000,
+                    onStatus: (status) => {
+                        if (requestAborted || res.writableEnded) return;
+                        const mappedLabel = status === "search web" ? "searching" : status;
+                        try { res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`); } catch (e) { }
+                    },
+                    onThought: (thought) => {
+                        accThought += thought;
+                        if (requestAborted || res.writableEnded) return;
+                        try { res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`); } catch (e) { }
+                    },
+                    onToken: isDiagramRequest ? undefined : (token) => {
+                        if (requestAborted || res.writableEnded) return;
+                        try { res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`); } catch (e) { }
+                    },
+                    onToolCall: (toolName, args) => {
+                        accSteps.push({
+                            id: Date.now().toString(),
+                            type: toolName === 'internal_thought' ? 'thought' : 'tool',
+                            tool: toolName,
+                            title: args?.title || 'Thinking',
+                            details: args?.details || '',
+                            args: args,
+                            status: 'loading'
+                        });
+                        if (requestAborted || res.writableEnded) return;
+                        try { res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
+                    },
+                    onToolResult: (toolName, result) => {
+                        const step = accSteps.find(s => s.tool === toolName && s.status === 'loading');
+                        if (step) {
+                            step.status = 'success';
+                            step.result = result;
+                        }
+                        if (requestAborted || res.writableEnded) return;
+                        try { res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result })}\n\n`); } catch (e) { }
+                    }
+                });
+
+                if (requestAborted) return;
+
+                if (!answer) {
+                    throw new Error("AI generation returned null. All providers timed out or failed.");
+                }
+
+                // Validate Mermaid syntax on server if requested
+                if (isDiagramRequest && answer !== "[RATE_LIMITED]") {
+                    if (!answer.includes("\`\`\`mermaid")) {
+                        throw new Error("Invalid or missing Mermaid syntax");
+                    }
+                }
+
+                break; // Success
+            } catch (err) {
+                console.warn(`[AI Chat] Attempt ${attempt} failed:`, err.message);
+                if (attempt === maxAttempts) {
+                    if (!answer && isDiagramRequest) answer = "Failed to generate a valid diagram. Please try rephrasing your request.";
+                    break;
+                }
+
+                // Add correction prompt for attempt 2
+                if (isDiagramRequest) {
+                    if (answer && answer !== "[RATE_LIMITED]") messages.push({ role: "assistant", content: answer });
+                    messages.push({ role: "user", content: "ERROR: You failed to output a valid \`\`\`mermaid flowchart block or you timed out. Fix the syntax errors and try again. Output ONLY the raw markdown." });
+                }
+                attempt++;
+            }
+        }
 
         if (requestAborted) return;
 
-        if (!answer) {
-            throw new Error("AI generation returned null. All providers timed out or failed.");
+        // 5. Send back the sessionId if it was provided by the client, just in case
+        if (sessionId && !res.writableEnded) {
+            res.write(`data: ${JSON.stringify({ type: "session_info", sessionId })}\n\n`);
         }
 
-        // Validate Mermaid syntax on server if requested
-        if (isDiagramRequest && answer !== "[RATE_LIMITED]") {
-            if (!answer.includes("\`\`\`mermaid")) {
-                throw new Error("Invalid or missing Mermaid syntax");
+        if (!answer && !res.writableEnded) {
+            res.write(`data: ${JSON.stringify({ type: "answer", answer: "Failed to get an answer from the AI." })}\n\n`);
+        } else if (answer === "[RATE_LIMITED]" && !res.writableEnded) {
+            res.write(`data: ${JSON.stringify({ type: "answer", answer: "I'm currently experiencing high traffic and cannot process your request right now." })}\n\n`);
+        } else if (!res.writableEnded) {
+            // Save Assistant response: to Supabase (source of truth) + Redis (cache) in parallel
+            if (!isIncognito && sessionId) {
+                let savedContent = answer;
+                if (accThought || accSteps.length > 0) {
+                    savedContent = JSON.stringify({
+                        classgrid_ai_message: true,
+                        content: answer,
+                        thought: accThought,
+                        steps: accSteps
+                    });
+                }
+                saveMessage(sessionId, "assistant", savedContent, []).catch(err => console.error("Failed to save assistant message:", err));
+                appendToHistory(sessionId, "assistant", savedContent).catch(err => console.error("Failed to append assistant reply to Redis:", err));
             }
+            res.write(`data: ${JSON.stringify({ type: "answer", answer })}\n\n`);
         }
-
-        break; // Success
-    } catch (err) {
-        console.warn(`[AI Chat] Attempt ${attempt} failed:`, err.message);
-        if (attempt === maxAttempts) {
-            if (!answer && isDiagramRequest) answer = "Failed to generate a valid diagram. Please try rephrasing your request.";
-            break;
-        }
-
-        // Add correction prompt for attempt 2
-        if (isDiagramRequest) {
-            if (answer && answer !== "[RATE_LIMITED]") messages.push({ role: "assistant", content: answer });
-            messages.push({ role: "user", content: "ERROR: You failed to output a valid \`\`\`mermaid flowchart block or you timed out. Fix the syntax errors and try again. Output ONLY the raw markdown." });
-        }
-        attempt++;
-    }
-}
-
-if (requestAborted) return;
-
-// 5. Send back the sessionId if it was provided by the client, just in case
-if (sessionId && !res.writableEnded) {
-    res.write(`data: ${JSON.stringify({ type: "session_info", sessionId })}\n\n`);
-}
-
-if (!answer && !res.writableEnded) {
-    res.write(`data: ${JSON.stringify({ type: "answer", answer: "Failed to get an answer from the AI." })}\n\n`);
-} else if (answer === "[RATE_LIMITED]" && !res.writableEnded) {
-    res.write(`data: ${JSON.stringify({ type: "answer", answer: "I'm currently experiencing high traffic and cannot process your request right now." })}\n\n`);
-} else if (!res.writableEnded) {
-    // Save Assistant response: to Supabase (source of truth) + Redis (cache) in parallel
-    if (!isIncognito && sessionId) {
-        let savedContent = answer;
-        if (accThought || accSteps.length > 0) {
-            savedContent = JSON.stringify({
-                classgrid_ai_message: true,
-                content: answer,
-                thought: accThought,
-                steps: accSteps
-            });
-        }
-        saveMessage(sessionId, "assistant", savedContent, []).catch(err => console.error("Failed to save assistant message:", err));
-        appendToHistory(sessionId, "assistant", savedContent).catch(err => console.error("Failed to append assistant reply to Redis:", err));
-    }
-    res.write(`data: ${JSON.stringify({ type: "answer", answer })}\n\n`);
-}
 
     } catch (err) {
-    console.error("API Route Error:", err);
-    if (!res.writableEnded) {
-        res.write(`data: ${JSON.stringify({ type: "error", error: "The AI took too long to respond or encountered an error. Please try again." })}\n\n`);
+        console.error("API Route Error:", err);
+        if (!res.writableEnded) {
+            res.write(`data: ${JSON.stringify({ type: "error", error: "The AI took too long to respond or encountered an error. Please try again." })}\n\n`);
+        }
+    } finally {
+        if (keepAliveInterval) clearInterval(keepAliveInterval);
+        if (!res.writableEnded) {
+            res.write('data: [DONE]\n\n');
+            res.end();
+        }
     }
-} finally {
-    if (keepAliveInterval) clearInterval(keepAliveInterval);
-    if (!res.writableEnded) {
-        res.write('data: [DONE]\n\n');
-        res.end();
-    }
-}
 };
 
 export const getChatSessions = async (req, res) => {

@@ -168,7 +168,7 @@ type UIFileAttachment = {
   url?: string;
 };
 
-export type AgentStep = 
+export type AgentStep =
   | { id: string, type: "thought", title: string, details: string, status: "loading" | "success" }
   | { id: string, type: "tool", tool: string, args: any, result?: string, status: "loading" | "success" | "error" };
 
@@ -756,7 +756,7 @@ const MarkdownComponents = {
       const type = className.replace("markdown-alert", "").trim().replace("markdown-alert-", "");
       let icon = null;
       let colorClass = "border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-600 dark:bg-slate-800/50 dark:text-slate-300";
-      
+
       if (type === "note") {
         icon = <Info className="w-5 h-5 text-blue-500" />;
         colorClass = "border-blue-500 bg-blue-50/50 text-blue-900 dark:border-blue-500/50 dark:bg-blue-900/20 dark:text-blue-200";
@@ -822,7 +822,7 @@ const MarkdownComponents = {
   },
   code({ node, inline, className, children, ...props }: any, isTyping?: boolean, onRetry?: (errorMsg: string) => void) {
     const codeString = String(children).replace(/\n$/, "");
-    
+
     // 🚨 Intercept Emails that the AI hallucinates into code blocks (e.g. inside tables) 🚨
     const isJustAnEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(codeString.trim());
     if (isJustAnEmail) {
@@ -851,15 +851,15 @@ const MarkdownComponents = {
     // If the AI wraps an entire normal sentence in backticks, un-wrap it so the user doesn't see a random grey box.
     const isProse = !language && codeString.length > 15 && codeString.includes(" ") && !/[{}();=<>\[\]\/\\]/.test(codeString) && !/const|let|var|function|import|export|if|for|while/.test(codeString);
     if (isProse) {
-       return <span className={!inline ? "block mb-4" : ""}>{codeString}</span>;
+      return <span className={!inline ? "block mb-4" : ""}>{codeString}</span>;
     }
-    
+
     // 🚨 Intercept Hallucinated Single Words (like `teacher` or emails inside tables) 🚨
     const isSingleWordHallucination = !language && !codeString.includes('\n') && codeString.length < 50 && !/[{}();=<>\[\]\/\\]/.test(codeString) && !/const|let|var|function|import|export|if|for|while/.test(codeString);
     if (isSingleWordHallucination) {
-       return <span className={!inline ? "block mb-4" : ""}>{codeString}</span>;
+      return <span className={!inline ? "block mb-4" : ""}>{codeString}</span>;
     }
-    
+
     const isMermaid = language === "mermaid" || codeString.trim().startsWith("graph ") || codeString.trim().startsWith("sequenceDiagram") || codeString.trim().startsWith("pie") || codeString.trim().startsWith("gantt") || codeString.trim().startsWith("stateDiagram") || codeString.trim().startsWith("classDiagram");
 
     if (!inline && isMermaid) {
@@ -882,11 +882,10 @@ const MarkdownComponents = {
           <CodeBlockClient
             language={language}
             rawCode={String(children).replace(/\n$/, "")}
-            html={`<pre class="text-[13px] py-4 px-4 !m-0 flex flex-col"><code class="font-mono hljs">${
-              !isTyping && language && hljs.getLanguage(language)
+            html={`<pre class="text-[13px] py-4 px-4 !m-0 flex flex-col"><code class="font-mono hljs">${!isTyping && language && hljs.getLanguage(language)
                 ? hljs.highlight(String(children).replace(/\n$/, ""), { language }).value
                 : String(children).replace(/\n$/, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-            }</code></pre>`}
+              }</code></pre>`}
           />
         </div>
       );
@@ -939,7 +938,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
   const onApprovalActionRef = React.useRef(onApprovalAction);
   const isTypingRef = React.useRef(isTyping);
   const onRetryRef = React.useRef(onRetry);
-  
+
   React.useEffect(() => {
     onApprovalActionRef.current = onApprovalAction;
     isTypingRef.current = isTyping;
@@ -961,7 +960,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
         const match = /language-(\w+)/.exec(className || "");
         const language = match ? match[1] : "";
         const isApprovalLang = !inline && language && "approval".startsWith(language.toLowerCase());
-        
+
         if (isApprovalLang) {
           try {
             let parsedProps = JSON5.parse(String(children));
@@ -990,8 +989,8 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 className="w-full"
               >
-                <ApprovalCard 
-                  {...parsedProps} 
+                <ApprovalCard
+                  {...parsedProps}
                   isHistorical={isHistorical}
                   onApprove={(payload) => {
                     if (parsedProps.questions && Array.isArray(parsedProps.questions)) {
@@ -1020,12 +1019,12 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
             if (isTypingRef.current) {
               return <CraftingBlock />;
             }
-            
+
             // If it finishes typing but fails to parse, trigger a silent background retry!
             if (onRetryRef.current) {
               onRetryRef.current(e?.message || "Invalid JSON syntax in interactive card");
             }
-            
+
             return (
               <div className="p-4 my-4 bg-slate-50 dark:bg-[#222] rounded-xl border border-slate-200 dark:border-white/5 flex flex-col items-center justify-center min-h-[120px]">
                 <Spinner className="w-5 h-5 text-indigo-500 mb-2" />
@@ -1202,7 +1201,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [thinkingLabel, setThinkingLabel] = useState("Thinking");
   const { sessionId: routeSessionId } = useParams<{ sessionId?: string }>();
   const [localSessionId, setLocalSessionId] = useState<string | null>(null);
-  
+
   // Use route parameter if present (dashboard mode), otherwise fallback to local state (website floating mode)
   const sessionId = routeSessionId || localSessionId;
   const setSessionId = setLocalSessionId; // Keep existing setSessionId calls pointing to local state for backward compatibility
@@ -1469,8 +1468,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     setInput("");
     setAttachedFiles([]);
     setLastSentDocsPath(null);
-    
-    
+
+
     localStorage.removeItem("askAiDraftContext");
     if (currentEmail) {
       localStorage.setItem("classgrid_ai_user_email", currentEmail);
@@ -1485,8 +1484,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setInput("");
       setAttachedFiles([]);
       setLastSentDocsPath(null);
-      
-      
+
+
       localStorage.removeItem("askAiDraftContext");
 
       // Focus input
@@ -1515,7 +1514,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             let content = m.content;
             let thought = undefined;
             let steps = undefined;
-            
+
             if (m.role === 'assistant') {
               let parsed = m.content;
               if (typeof m.content === 'string') {
@@ -1531,7 +1530,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 steps = parsed.steps;
               }
             }
-            
+
             return {
               role: m.role,
               content: content,
@@ -1568,7 +1567,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   // Sync chat when routeSessionId changes
   useEffect(() => {
     if (!routeSessionId) return;
-    
+
     const loadRouteSession = async () => {
       setMessages([]);
       setSessionId(routeSessionId);
@@ -1584,7 +1583,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             let content = m.content;
             let thought = undefined;
             let steps = undefined;
-            
+
             if (m.role === 'assistant') {
               let parsed = m.content;
               if (typeof m.content === 'string') {
@@ -1600,7 +1599,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 steps = parsed.steps;
               }
             }
-            
+
             return {
               id: m.id || crypto.randomUUID(),
               role: m.role,
@@ -1631,13 +1630,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   // Save chat history and session ID to local storage whenever they update
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("agent:active-session-changed", { detail: { sessionId } }));
-    
+
     // Sync URL so refreshing doesn't lose the active session
     if (variant === "full-page" && typeof window !== "undefined") {
       const currentPath = window.location.pathname;
       const pathParts = currentPath.split('/');
       const agentIndex = pathParts.indexOf('agent');
-      
+
       if (agentIndex !== -1) {
         const baseAgentPath = pathParts.slice(0, agentIndex + 1).join('/');
         if (sessionId) {
@@ -1749,8 +1748,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     setSessionId(null);
     setAttachedFiles([]);
     setLastSentDocsPath(null);
-    
-    
+
+
     localStorage.removeItem("askAiDraftContext");
   }
 
@@ -2284,11 +2283,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     lastMsg = { id: createMessageId("assistant"), role: "assistant", content: "", createdAt: Date.now() };
                     targetPrev = [...prev, lastMsg];
                   }
-                  
+
                   const newStep: AgentStep = (event.tool === 'internal_thought' || event.tool === 'internal_thought_process')
                     ? { id: crypto.randomUUID(), type: 'thought', title: event.args?.title || 'Thought', details: event.args?.details || '', status: 'loading' }
                     : { id: crypto.randomUUID(), type: 'tool', tool: event.tool, args: event.args, status: 'loading' };
-                    
+
                   return [
                     ...targetPrev.slice(0, -1),
                     { ...lastMsg, steps: [...(lastMsg.steps || []), newStep] }
@@ -2298,24 +2297,24 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 setMessages((prev) => {
                   const lastMsg = prev[prev.length - 1];
                   if (!lastMsg || lastMsg.role !== "assistant" || !lastMsg.steps) return prev;
-                  
-                  const stepIndex = [...lastMsg.steps].reverse().findIndex(s => 
+
+                  const stepIndex = [...lastMsg.steps].reverse().findIndex(s =>
                     (s.type === 'tool' && s.tool === event.tool && s.status === 'loading') ||
                     (s.type === 'thought' && (event.tool === 'internal_thought' || event.tool === 'internal_thought_process') && s.status === 'loading')
                   );
-                  
+
                   if (stepIndex === -1) return prev;
-                  
+
                   const actualIndex = lastMsg.steps.length - 1 - stepIndex;
                   const updatedSteps = [...lastMsg.steps];
-                  
+
                   const step = updatedSteps[actualIndex];
                   if (step.type === 'tool') {
                     updatedSteps[actualIndex] = { ...step, status: 'success', result: event.result };
                   } else if (step.type === 'thought') {
                     updatedSteps[actualIndex] = { ...step, status: 'success' };
                   }
-                  
+
                   return [
                     ...prev.slice(0, -1),
                     { ...lastMsg, steps: updatedSteps }
@@ -2337,7 +2336,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         if (finalPayload) {
           if (finalPayload.sessionId) {
             setSessionId(finalPayload.sessionId);
-            
+
           }
 
           const answer =
@@ -2348,7 +2347,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 : "I can help you with Classgrid features, pricing, or setup. What would you like to explore?";
 
           setThinking(false);
-          
+
           if (hasReceivedTokens) {
             // Already streamed in real-time, just ensure final state is exactly correct
             setMessages((prev) => {
@@ -2373,7 +2372,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
         if (payload?.sessionId) {
           setSessionId(payload.sessionId);
-          
+
         }
 
         const answer =
@@ -2494,7 +2493,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           <>
             {messages.map((message, index) => {
               if (message.hidden) return null;
-              
+
               const isUser = message.role === "user";
 
               let showDateHeader = false;
@@ -2510,7 +2509,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 }
               }
 
-              const formattedDate = message.createdAt 
+              const formattedDate = message.createdAt
                 ? new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' }).format(new Date(message.createdAt))
                 : "";
 
@@ -2523,393 +2522,393 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   )}
                   <motion.div
                     initial={prefersReducedMotion ? false : { opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.16 }}
-                  className={cn("flex w-full mb-6", isUser ? "justify-end" : "justify-start")}
-                >
-                  <div className={cn("flex flex-col gap-1.5 min-w-0", isUser ? "items-end max-w-[75%]" : "w-full")}>
+                    animate={{ opacity: 1 }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.16 }}
+                    className={cn("flex w-full mb-6", isUser ? "justify-end" : "justify-start")}
+                  >
+                    <div className={cn("flex flex-col gap-1.5 min-w-0", isUser ? "items-end max-w-[75%]" : "w-full")}>
 
-                    {/* â”€â”€ Text Bubble â”€â”€ */}
-                    {message.content && (
-                      <div
-                        id={isUser ? `msg-${message.id}` : undefined}
-                        className={cn(
-                          "relative min-w-0 transition-all duration-700 msg-target-glow scroll-mt-12",
-                          isUser
-                            ? "rounded-[16px] px-[14px] py-[6px] bg-[#f1f1ef] dark:bg-[#2C2C2C]"
-                            : "w-full max-w-full bg-transparent text-foreground"
-                        )}
-                      >
-                        {isUser ? (
-                          <>
-                            <p className="text-[16px] leading-[24px] break-words break-all whitespace-pre-wrap text-[#37352f] dark:text-[#F0EFED] cursor-text">
-                              {(typeof message.content === 'object' && message.content !== null 
-                                ? (message.content as any).content || JSON.stringify(message.content) 
-                                : String(message.content || '')
-                              ).replace(/\[Attached file:.*?\]/g, '').trim()}
-                            </p>
-                            {message.contextUrl && (
-                              <a
-                                href={message.contextUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="mt-1.5 flex items-center gap-1.5 text-[11px] text-sky-300 dark:text-sky-300 hover:text-sky-200 transition-opacity relative z-10"
-                              >
-                                <FileText className="h-3 w-3" />
-                                <span className="underline underline-offset-2 truncate max-w-[200px]">
-                                  {message.contextTitle || message.contextUrl}
-                                </span>
-                              </a>
-                            )}
-                          </>
-                        ) : (
-                          <div className="pl-1 w-full max-w-full">
-                            {/* Render Agent Stepper if there are steps */}
-                            {message.steps && message.steps.length > 0 && (
-                              <div className="mb-4">
-                                <AgentStepper>
-                                  {message.steps.map((step) => {
-                                    if (step.type === 'thought') {
-                                      return (
-                                        <ThoughtStepView 
-                                          key={step.id}
-                                          title={step.title}
-                                          details={step.details}
-                                        />
-                                      );
-                                    }
-                                    
-                                    if (step.type === 'tool') {
-                                      // Render specific tool views
-                                      if (step.tool === 'run_code' || step.tool === 'execute_terminal_command') {
+                      {/* â”€â”€ Text Bubble â”€â”€ */}
+                      {message.content && (
+                        <div
+                          id={isUser ? `msg-${message.id}` : undefined}
+                          className={cn(
+                            "relative min-w-0 transition-all duration-700 msg-target-glow scroll-mt-12",
+                            isUser
+                              ? "rounded-[16px] px-[14px] py-[6px] bg-[#f1f1ef] dark:bg-[#2C2C2C]"
+                              : "w-full max-w-full bg-transparent text-foreground"
+                          )}
+                        >
+                          {isUser ? (
+                            <>
+                              <p className="text-[16px] leading-[24px] break-words break-all whitespace-pre-wrap text-[#37352f] dark:text-[#F0EFED] cursor-text">
+                                {(typeof message.content === 'object' && message.content !== null
+                                  ? (message.content as any).content || JSON.stringify(message.content)
+                                  : String(message.content || '')
+                                ).replace(/\[Attached file:.*?\]/g, '').trim()}
+                              </p>
+                              {message.contextUrl && (
+                                <a
+                                  href={message.contextUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-1.5 flex items-center gap-1.5 text-[11px] text-sky-300 dark:text-sky-300 hover:text-sky-200 transition-opacity relative z-10"
+                                >
+                                  <FileText className="h-3 w-3" />
+                                  <span className="underline underline-offset-2 truncate max-w-[200px]">
+                                    {message.contextTitle || message.contextUrl}
+                                  </span>
+                                </a>
+                              )}
+                            </>
+                          ) : (
+                            <div className="pl-1 w-full max-w-full">
+                              {/* Render Agent Stepper if there are steps */}
+                              {message.steps && message.steps.length > 0 && (
+                                <div className="mb-4">
+                                  <AgentStepper>
+                                    {message.steps.map((step) => {
+                                      if (step.type === 'thought') {
                                         return (
-                                          <AgentStepAccordion 
+                                          <ThoughtStepView
                                             key={step.id}
-                                            title={step.tool === 'run_code' ? 'Executing Code' : 'Terminal Command'} 
-                                            status={step.status} 
-                                            defaultExpanded={step.status === 'loading'}
-                                          >
-                                            <TerminalToolView 
-                                              command={step.args?.command || step.args?.code || 'Running...'}
-                                              output={step.result || 'Waiting for output...'}
-                                            />
-                                          </AgentStepAccordion>
-                                        );
-                                      }
-                                      
-                                      if (step.tool === 'unified_db_query') {
-                                        let results = [];
-                                        try {
-                                          // unified_db_query returns stringified JSON, or an error string
-                                          if (step.result && step.result.startsWith('[')) {
-                                            results = JSON.parse(step.result.split('\n\n[SYSTEM DIRECTIVE')[0]);
-                                          } else if (step.result && step.result.startsWith('{')) {
-                                            results = [JSON.parse(step.result)];
-                                          }
-                                        } catch(e) {}
-                                        return (
-                                          <AgentStepAccordion 
-                                            key={step.id}
-                                            title="Querying Database" 
-                                            status={step.status} 
-                                            defaultExpanded={step.status === 'loading'}
-                                          >
-                                            <DatabaseQueryView 
-                                              query={JSON.stringify(step.args, null, 2)}
-                                              results={results}
-                                            />
-                                          </AgentStepAccordion>
-                                        );
-                                      }
-                                      
-                                      if (step.tool === 'parse_document') {
-                                        return (
-                                          <AgentStepAccordion 
-                                            key={step.id}
-                                            title="Uploaded File" 
-                                            status={step.status} 
-                                            defaultExpanded={step.status === 'loading'}
-                                          >
-                                            <FileActionView fileName={step.args?.url?.split('/').pop() || 'document'} />
-                                          </AgentStepAccordion>
+                                            title={step.title}
+                                            details={step.details}
+                                          />
                                         );
                                       }
 
-                                      if (step.tool === 'send_email') {
-                                        if (step.status === 'success') {
-                                          let toCount = 1;
-                                          if (step.args?.to && step.args.to.includes(',')) {
-                                            toCount = step.args.to.split(',').length;
-                                          }
+                                      if (step.type === 'tool') {
+                                        // Render specific tool views
+                                        if (step.tool === 'run_code' || step.tool === 'execute_terminal_command') {
                                           return (
-                                            <div key={step.id} className="mb-2">
-                                              <EmailSentView 
-                                                toCount={toCount}
-                                                subject={step.args?.subject || "No Subject"}
+                                            <AgentStepAccordion
+                                              key={step.id}
+                                              title={step.tool === 'run_code' ? 'Executing Code' : 'OCR the attached identity card'}
+                                              status={step.status}
+                                              defaultExpanded={step.status === 'loading'}
+                                            >
+                                              <TerminalToolView
+                                                command={step.args?.command || step.args?.code || 'Running...'}
+                                                output={step.result || 'Waiting for output...'}
                                               />
-                                            </div>
+                                            </AgentStepAccordion>
                                           );
                                         }
-                                        return (
-                                          <AgentStepAccordion 
-                                            key={step.id}
-                                            title="Drafting email" 
-                                            status={step.status} 
-                                            defaultExpanded={step.status === 'loading'}
-                                          >
-                                            <EmailActionView 
-                                              to={step.args?.to || "Unknown Recipient"}
-                                              subject={step.args?.subject || "No Subject"}
-                                              bodyPreview={step.args?.body || "Empty body"}
-                                            />
-                                          </AgentStepAccordion>
-                                        );
-                                      }
 
-                                      if (step.tool === 'search_web') {
-                                        let searchResults = [];
-                                        let searchError;
-                                        if (step.result) {
-                                          if (step.result.startsWith('Web Search failed')) {
-                                            searchError = step.result;
-                                          } else {
-                                            try {
-                                              const parsed = JSON.parse(step.result);
-                                              if (parsed.results && Array.isArray(parsed.results)) {
-                                                searchResults = parsed.results;
+                                        if (step.tool === 'unified_db_query') {
+                                          let results = [];
+                                          try {
+                                            // unified_db_query returns stringified JSON, or an error string
+                                            if (step.result && step.result.startsWith('[')) {
+                                              results = JSON.parse(step.result.split('\n\n[SYSTEM DIRECTIVE')[0]);
+                                            } else if (step.result && step.result.startsWith('{')) {
+                                              results = [JSON.parse(step.result)];
+                                            }
+                                          } catch (e) { }
+                                          return (
+                                            <AgentStepAccordion
+                                              key={step.id}
+                                              title="Querying Database"
+                                              status={step.status}
+                                              defaultExpanded={step.status === 'loading'}
+                                            >
+                                              <DatabaseQueryView
+                                                query={JSON.stringify(step.args, null, 2)}
+                                                results={results}
+                                              />
+                                            </AgentStepAccordion>
+                                          );
+                                        }
+
+                                        if (step.tool === 'parse_document') {
+                                          return (
+                                            <AgentStepAccordion
+                                              key={step.id}
+                                              title="Uploaded File"
+                                              status={step.status}
+                                              defaultExpanded={step.status === 'loading'}
+                                            >
+                                              <FileActionView fileName={step.args?.url?.split('/').pop() || 'document'} />
+                                            </AgentStepAccordion>
+                                          );
+                                        }
+
+                                        if (step.tool === 'send_email') {
+                                          if (step.status === 'success') {
+                                            let toCount = 1;
+                                            if (step.args?.to && step.args.to.includes(',')) {
+                                              toCount = step.args.to.split(',').length;
+                                            }
+                                            return (
+                                              <div key={step.id} className="mb-2">
+                                                <EmailSentView
+                                                  toCount={toCount}
+                                                  subject={step.args?.subject || "No Subject"}
+                                                />
+                                              </div>
+                                            );
+                                          }
+                                          return (
+                                            <AgentStepAccordion
+                                              key={step.id}
+                                              title="Drafting email"
+                                              status={step.status}
+                                              defaultExpanded={step.status === 'loading'}
+                                            >
+                                              <EmailActionView
+                                                to={step.args?.to || "Unknown Recipient"}
+                                                subject={step.args?.subject || "No Subject"}
+                                                bodyPreview={step.args?.body || "Empty body"}
+                                              />
+                                            </AgentStepAccordion>
+                                          );
+                                        }
+
+                                        if (step.tool === 'search_web') {
+                                          let searchResults = [];
+                                          let searchError;
+                                          if (step.result) {
+                                            if (step.result.startsWith('Web Search failed')) {
+                                              searchError = step.result;
+                                            } else {
+                                              try {
+                                                const parsed = JSON.parse(step.result);
+                                                if (parsed.results && Array.isArray(parsed.results)) {
+                                                  searchResults = parsed.results;
+                                                }
+                                              } catch (e) {
+                                                // Fallback if parsing fails
+                                                searchError = "Could not parse search results.";
                                               }
-                                            } catch (e) {
-                                              // Fallback if parsing fails
-                                              searchError = "Could not parse search results.";
                                             }
                                           }
+                                          return (
+                                            <AgentStepAccordion
+                                              key={step.id}
+                                              title="Searched the web"
+                                              status={step.status}
+                                              defaultExpanded={step.status === 'loading'}
+                                            >
+                                              <WebSearchView
+                                                query={step.args?.query}
+                                                searchDomain={step.args?.domain}
+                                                results={searchResults}
+                                                error={searchError}
+                                              />
+                                            </AgentStepAccordion>
+                                          );
                                         }
-                                        return (
-                                          <AgentStepAccordion 
-                                            key={step.id}
-                                            title="Searched the web" 
-                                            status={step.status} 
-                                            defaultExpanded={step.status === 'loading'}
-                                          >
-                                            <WebSearchView 
-                                              query={step.args?.query}
-                                              searchDomain={step.args?.domain}
-                                              results={searchResults}
-                                              error={searchError}
-                                            />
-                                          </AgentStepAccordion>
-                                        );
-                                      }
-                                      
-                                      if (step.tool === 'generate_pdf' || step.tool === 'generate_pdf_from_db') {
-                                        let fileName = "document.pdf";
-                                        let pageCount = 1;
-                                        let size = "Unknown";
-                                        
-                                        if (step.result) {
-                                          if (step.result.includes("SUCCESS")) {
-                                            // The result often has a CDN Download URL.
-                                            // We could parse it, but for the UI we just show it succeeded.
-                                            size = "Available via CDN";
+
+                                        if (step.tool === 'generate_pdf' || step.tool === 'generate_pdf_from_db') {
+                                          let fileName = "document.pdf";
+                                          let pageCount = 1;
+                                          let size = "Unknown";
+
+                                          if (step.result) {
+                                            if (step.result.includes("SUCCESS")) {
+                                              // The result often has a CDN Download URL.
+                                              // We could parse it, but for the UI we just show it succeeded.
+                                              size = "Available via CDN";
+                                            }
                                           }
+
+                                          return (
+                                            <AgentStepAccordion
+                                              key={step.id}
+                                              title={step.tool === 'generate_pdf_from_db' ? "Generating database report" : "Generating PDF document"}
+                                              status={step.status}
+                                              defaultExpanded={step.status === 'loading'}
+                                            >
+                                              <DocumentGenerationView
+                                                fileName={step.args?.title ? `${step.args.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf` : fileName}
+                                                pageCount={pageCount}
+                                                size={size}
+                                              />
+                                            </AgentStepAccordion>
+                                          );
                                         }
 
-                                        return (
-                                          <AgentStepAccordion 
-                                            key={step.id}
-                                            title={step.tool === 'generate_pdf_from_db' ? "Generating database report" : "Generating PDF document"} 
-                                            status={step.status} 
-                                            defaultExpanded={step.status === 'loading'}
-                                          >
-                                            <DocumentGenerationView 
-                                              fileName={step.args?.title ? `${step.args.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf` : fileName}
-                                              pageCount={pageCount}
-                                              size={size}
-                                            />
-                                          </AgentStepAccordion>
-                                        );
-                                      }
-
-                                      if (step.tool === 'search_knowledge_base') {
-                                        return (
-                                          <AgentStepAccordion 
-                                            key={step.id}
-                                            title="Searched Knowledge Base" 
-                                            status={step.status} 
-                                            defaultExpanded={step.status === 'loading'}
-                                          >
-                                            <KnowledgeBaseSearchView 
-                                              results={[{
-                                                title: step.args?.query || "Search Query",
-                                                source: "Internal Knowledge Base"
-                                              }]}
-                                            />
-                                          </AgentStepAccordion>
-                                        );
-                                      }
-
-                                      if (step.tool === 'upload_file_to_cdn') {
-                                        let cdnUrl = "";
-                                        if (step.result && step.result.includes("Public URL:")) {
-                                          cdnUrl = step.result.split("Public URL:")[1].trim();
+                                        if (step.tool === 'search_knowledge_base') {
+                                          return (
+                                            <AgentStepAccordion
+                                              key={step.id}
+                                              title="Searched Knowledge Base"
+                                              status={step.status}
+                                              defaultExpanded={step.status === 'loading'}
+                                            >
+                                              <KnowledgeBaseSearchView
+                                                results={[{
+                                                  title: step.args?.query || "Search Query",
+                                                  source: "Internal Knowledge Base"
+                                                }]}
+                                              />
+                                            </AgentStepAccordion>
+                                          );
                                         }
+
+                                        if (step.tool === 'upload_file_to_cdn') {
+                                          let cdnUrl = "";
+                                          if (step.result && step.result.includes("Public URL:")) {
+                                            cdnUrl = step.result.split("Public URL:")[1].trim();
+                                          }
+                                          return (
+                                            <AgentStepAccordion
+                                              key={step.id}
+                                              title="Upload file to CDN"
+                                              status={step.status}
+                                              defaultExpanded={step.status === 'loading'}
+                                              icon={<UploadCloud className="h-4 w-4" />}
+                                            >
+                                              <CdnUploadView
+                                                fileName={step.args?.fileName || "upload.file"}
+                                                url={cdnUrl}
+                                              />
+                                            </AgentStepAccordion>
+                                          );
+                                        }
+
+                                        // Generic fallback
                                         return (
-                                          <AgentStepAccordion 
+                                          <SimpleLogStepView
                                             key={step.id}
-                                            title="Upload file to CDN" 
-                                            status={step.status} 
-                                            defaultExpanded={step.status === 'loading'}
-                                            icon={<UploadCloud className="h-4 w-4" />}
-                                          >
-                                            <CdnUploadView 
-                                              fileName={step.args?.fileName || "upload.file"}
-                                              url={cdnUrl}
-                                            />
-                                          </AgentStepAccordion>
+                                            text={step.status === 'success' ? `Successfully used ${step.tool.replace(/_/g, ' ')}` : `Using ${step.tool.replace(/_/g, ' ')}...`}
+                                          />
                                         );
                                       }
+                                      return null;
+                                    })}
+                                  </AgentStepper>
+                                </div>
+                              )}
 
-                                      // Generic fallback
-                                      return (
-                                        <SimpleLogStepView 
-                                          key={step.id}
-                                          text={step.status === 'success' ? `Successfully used ${step.tool.replace(/_/g, ' ')}` : `Using ${step.tool.replace(/_/g, ' ')}...`}
-                                        />
-                                      );
-                                    }
-                                    return null;
-                                  })}
-                                </AgentStepper>
-                              </div>
-                            )}
+                              {message.thought && message.thought.trim().length > 0 && !(message.steps && message.steps.length > 0) && (
+                                <Accordion type="single" collapsible={true as any} className="mb-4">
+                                  <AccordionItem value="thought" className="border-none">
+                                    <AccordionTrigger className="w-fit flex-none justify-start gap-1.5 h-auto text-[11px] font-medium text-slate-500 hover:text-slate-700 hover:no-underline dark:text-slate-400 dark:hover:text-slate-300 transition-colors cursor-pointer [&>svg]:size-3 [&>svg]:ml-0">
+                                      <span>Thought</span>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pt-3 pb-1 px-1">
+                                      <div className="border-l-[3px] border-slate-200 dark:border-white/10 pl-3.5 py-0.5 text-[13px] text-slate-500 dark:text-slate-400 font-mono whitespace-pre-wrap leading-relaxed max-h-[400px] overflow-y-auto custom-scrollbar">
+                                        {message.thought.trim()}
+                                      </div>
+                                    </AccordionContent>
+                                  </AccordionItem>
+                                </Accordion>
+                              )}
+                              <AssistantMessageContent
+                                content={message.content}
+                                isTyping={message.typing}
+                                isHistorical={index < messages.length - 1}
+                                onRetry={undefined}
+                                onApprovalAction={(text) => {
+                                  if (!submitting) void askQuestion(text);
+                                }}
+                              />
+                            </div>
+                          )}
+                          {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && (
+                            <div className="pl-1 mt-3">
+                              <MessageActions content={message.content} messageId={message.id} />
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-                            {message.thought && message.thought.trim().length > 0 && !(message.steps && message.steps.length > 0) && (
-                              <Accordion type="single" collapsible={true as any} className="mb-4">
-                                <AccordionItem value="thought" className="border-none">
-                                  <AccordionTrigger className="w-fit flex-none justify-start gap-1.5 h-auto text-[11px] font-medium text-slate-500 hover:text-slate-700 hover:no-underline dark:text-slate-400 dark:hover:text-slate-300 transition-colors cursor-pointer [&>svg]:size-3 [&>svg]:ml-0">
-                                    <span>Thought</span>
-                                  </AccordionTrigger>
-                                  <AccordionContent className="pt-3 pb-1 px-1">
-                                    <div className="border-l-[3px] border-slate-200 dark:border-white/10 pl-3.5 py-0.5 text-[13px] text-slate-500 dark:text-slate-400 font-mono whitespace-pre-wrap leading-relaxed max-h-[400px] overflow-y-auto custom-scrollbar">
-                                      {message.thought.trim()}
-                                    </div>
-                                  </AccordionContent>
-                                </AccordionItem>
-                              </Accordion>
-                            )}
-                            <AssistantMessageContent 
-                              content={message.content} 
-                              isTyping={message.typing} 
-                              isHistorical={index < messages.length - 1}
-                              onRetry={undefined}
-                              onApprovalAction={(text) => {
-                                if (!submitting) void askQuestion(text);
-                              }}
+                      {/* â”€â”€ Attachments (Outside Bubble) â”€â”€ */}
+                      {isUser && message.attachments && message.attachments.length > 0 && (
+                        <div className="flex flex-col gap-2 items-end">
+
+                          {/* Images using DocsImageViewer */}
+                          {message.attachments.filter(a => a.mimeType.startsWith("image/")).length > 0 && (
+                            <DocsImageViewer
+                              images={message.attachments.filter(a => a.mimeType.startsWith("image/")).map((a, idx) => ({
+                                id: `${a.name}-${idx}-${message.id}`,
+                                src: a.url,
+                                alt: a.name
+                              }))}
+                              renderThumbnails={(images, openImage) => (
+                                <div className="flex flex-wrap gap-2 justify-end">
+                                  {images.map((img) => (
+                                    <button
+                                      key={img.id}
+                                      type="button"
+                                      onClick={(e) => openImage(img, e)}
+                                      title={img.alt}
+                                      className={cn(
+                                        "relative group overflow-hidden flex items-center justify-center bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 hover:border-emerald-500/50 transition-all shadow-sm cursor-pointer",
+                                        images.length === 1 && !message.content ? "rounded-2xl rounded-tr-none h-auto w-[180px] sm:w-[220px]" : "rounded-xl h-20 w-20 sm:h-[88px] sm:w-[88px]"
+                                      )}
+                                    >
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={img.src}
+                                        alt={img.alt}
+                                        className={cn("absolute inset-0 h-full w-full transition-transform duration-300 group-hover:scale-105", images.length === 1 && !message.content ? "relative object-contain" : "object-cover")}
+                                      />
+                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 dark:group-hover:bg-white/10 transition-colors" />
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                             />
-                          </div>
-                        )}
-                        {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && (
-                          <div className="pl-1 mt-3">
-                            <MessageActions content={message.content} messageId={message.id} />
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          )}
 
-                    {/* â”€â”€ Attachments (Outside Bubble) â”€â”€ */}
-                    {isUser && message.attachments && message.attachments.length > 0 && (
-                      <div className="flex flex-col gap-2 items-end">
+                          {/* All Non-Image Documents (Unified Sleek Card) */}
+                          {isUser && message.attachments && message.attachments.filter(a => !a.mimeType.startsWith("image/")).length > 0 && (
+                            <div className="flex flex-col gap-2 mt-2 w-full max-w-[400px]">
+                              {message.attachments.filter(a => !a.mimeType.startsWith("image/")).map((att, i) => {
+                                const extension = att.name.split('.').pop()?.toLowerCase();
+                                let Icon = FileText;
+                                let iconBgClass = "bg-slate-100/50 dark:bg-white/5";
+                                let iconColorClass = "text-slate-500 dark:text-slate-400";
+                                let fileTypeLabel = "FILE";
 
-                        {/* Images using DocsImageViewer */}
-                        {message.attachments.filter(a => a.mimeType.startsWith("image/")).length > 0 && (
-                          <DocsImageViewer
-                            images={message.attachments.filter(a => a.mimeType.startsWith("image/")).map((a, idx) => ({
-                              id: `${a.name}-${idx}-${message.id}`,
-                              src: a.url,
-                              alt: a.name
-                            }))}
-                            renderThumbnails={(images, openImage) => (
-                              <div className="flex flex-wrap gap-2 justify-end">
-                                {images.map((img) => (
-                                  <button
-                                    key={img.id}
-                                    type="button"
-                                    onClick={(e) => openImage(img, e)}
-                                    title={img.alt}
-                                    className={cn(
-                                      "relative group overflow-hidden flex items-center justify-center bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 hover:border-emerald-500/50 transition-all shadow-sm cursor-pointer",
-                                      images.length === 1 && !message.content ? "rounded-2xl rounded-tr-none h-auto w-[180px] sm:w-[220px]" : "rounded-xl h-20 w-20 sm:h-[88px] sm:w-[88px]"
-                                    )}
+                                if (extension === 'pdf' || att.mimeType === 'application/pdf') {
+                                  Icon = FileText;
+                                  iconBgClass = "bg-red-100/50 dark:bg-red-900/20";
+                                  iconColorClass = "text-red-600 dark:text-red-400";
+                                  fileTypeLabel = "PDF";
+                                } else if (extension === 'xlsx' || extension === 'csv' || att.mimeType.includes('spreadsheet') || att.mimeType.includes('csv')) {
+                                  Icon = FileSpreadsheet;
+                                  iconBgClass = "bg-emerald-100/50 dark:bg-emerald-900/20";
+                                  iconColorClass = "text-emerald-600 dark:text-emerald-400";
+                                  fileTypeLabel = (extension || "FILE").toUpperCase();
+                                } else if (extension === 'docx' || extension === 'doc' || att.mimeType.includes('document')) {
+                                  Icon = FileIcon;
+                                  iconBgClass = "bg-blue-100/50 dark:bg-blue-900/20";
+                                  iconColorClass = "text-blue-600 dark:text-blue-400";
+                                  fileTypeLabel = (extension || "DOCX").toUpperCase();
+                                }
+
+                                return (
+                                  <div
+                                    key={`${att.name}-${i}`}
+                                    onClick={() => setPreviewFile({ name: att.name, src: att.url, mimeType: extension === 'pdf' ? 'application/pdf' : att.mimeType })}
+                                    className="bg-white dark:bg-[#151515] rounded-xl border border-slate-200/80 dark:border-white/10 flex items-center justify-between p-4 shadow-sm dark:shadow-none w-full hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-all duration-500 ease-in-out cursor-pointer group"
                                   >
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                      src={img.src}
-                                      alt={img.alt}
-                                      className={cn("absolute inset-0 h-full w-full transition-transform duration-300 group-hover:scale-105", images.length === 1 && !message.content ? "relative object-contain" : "object-cover")}
-                                    />
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 dark:group-hover:bg-white/10 transition-colors" />
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          />
-                        )}
-
-                        {/* All Non-Image Documents (Unified Sleek Card) */}
-                        {isUser && message.attachments && message.attachments.filter(a => !a.mimeType.startsWith("image/")).length > 0 && (
-                          <div className="flex flex-col gap-2 mt-2 w-full max-w-[400px]">
-                            {message.attachments.filter(a => !a.mimeType.startsWith("image/")).map((att, i) => {
-                              const extension = att.name.split('.').pop()?.toLowerCase();
-                              let Icon = FileText;
-                              let iconBgClass = "bg-slate-100/50 dark:bg-white/5";
-                              let iconColorClass = "text-slate-500 dark:text-slate-400";
-                              let fileTypeLabel = "FILE";
-
-                              if (extension === 'pdf' || att.mimeType === 'application/pdf') {
-                                Icon = FileText;
-                                iconBgClass = "bg-red-100/50 dark:bg-red-900/20";
-                                iconColorClass = "text-red-600 dark:text-red-400";
-                                fileTypeLabel = "PDF";
-                              } else if (extension === 'xlsx' || extension === 'csv' || att.mimeType.includes('spreadsheet') || att.mimeType.includes('csv')) {
-                                Icon = FileSpreadsheet;
-                                iconBgClass = "bg-emerald-100/50 dark:bg-emerald-900/20";
-                                iconColorClass = "text-emerald-600 dark:text-emerald-400";
-                                fileTypeLabel = (extension || "FILE").toUpperCase();
-                              } else if (extension === 'docx' || extension === 'doc' || att.mimeType.includes('document')) {
-                                Icon = FileIcon;
-                                iconBgClass = "bg-blue-100/50 dark:bg-blue-900/20";
-                                iconColorClass = "text-blue-600 dark:text-blue-400";
-                                fileTypeLabel = (extension || "DOCX").toUpperCase();
-                              }
-
-                              return (
-                                <div 
-                                  key={`${att.name}-${i}`}
-                                  onClick={() => setPreviewFile({ name: att.name, src: att.url, mimeType: extension === 'pdf' ? 'application/pdf' : att.mimeType })}
-                                  className="bg-white dark:bg-[#151515] rounded-xl border border-slate-200/80 dark:border-white/10 flex items-center justify-between p-4 shadow-sm dark:shadow-none w-full hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-all duration-500 ease-in-out cursor-pointer group"
-                                >
-                                  <div className="flex items-center gap-3 overflow-hidden">
-                                    <div className={cn("h-10 w-10 shrink-0 rounded-lg flex items-center justify-center", iconBgClass, iconColorClass)}>
-                                      <Icon className="h-5 w-5" />
-                                    </div>
-                                    <div className="flex flex-col overflow-hidden text-left">
-                                      <span className="text-[14px] font-medium text-slate-800 dark:text-[#eeeeee] truncate">
-                                        {att.name}
-                                      </span>
-                                      <span className="text-[13px] text-slate-500 dark:text-[#8a8a8a] mt-0.5">
-                                        Click to preview • {fileTypeLabel}
-                                      </span>
+                                    <div className="flex items-center gap-3 overflow-hidden">
+                                      <div className={cn("h-10 w-10 shrink-0 rounded-lg flex items-center justify-center", iconBgClass, iconColorClass)}>
+                                        <Icon className="h-5 w-5" />
+                                      </div>
+                                      <div className="flex flex-col overflow-hidden text-left">
+                                        <span className="text-[14px] font-medium text-slate-800 dark:text-[#eeeeee] truncate">
+                                          {att.name}
+                                        </span>
+                                        <span className="text-[13px] text-slate-500 dark:text-[#8a8a8a] mt-0.5">
+                                          Click to preview • {fileTypeLabel}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
                 </React.Fragment>
               );
             })}
@@ -3257,15 +3256,15 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               variant="ghost"
                               size="icon"
                               disabled={!canSubmit}
-                            className="h-8 w-8 shrink-0 rounded-full bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 transition-all shadow-sm"
-                          >
-                            <ArrowUp className="h-4 w-4" />
-                            <span className="sr-only">Send question</span>
-                          </Button>
+                              className="h-8 w-8 shrink-0 rounded-full bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 transition-all shadow-sm"
+                            >
+                              <ArrowUp className="h-4 w-4" />
+                              <span className="sr-only">Send question</span>
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    </form>
-                  )}
+                      </form>
+                    )}
                   </div>
 
                   {/* Suggestion chips */}
