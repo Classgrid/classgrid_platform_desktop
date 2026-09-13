@@ -27,8 +27,8 @@ export function CombinedReasoningBlock({ sentences }: { sentences: string[] }) {
 
   return (
     <div className={`relative z-10 flex flex-col group/accordion mb-2 ${!isFinished ? 'is-thinking' : ''} combined-reasoning-block`}>
-      {/* Hide all subsequent steps in the stepper while this block is thinking */}
-      {!isFinished && (
+      {/* Hide all subsequent steps in the stepper while this block is thinking OR typing */}
+      {(!isFinished || isTyping) && (
         <style>{`
           .combined-reasoning-block ~ * {
             display: none !important;

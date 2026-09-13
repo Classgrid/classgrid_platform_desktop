@@ -46,9 +46,9 @@ export function TypewriterAccordion({ sentences, onComplete }: TypewriterAccordi
         clearInterval(typingInterval);
         setTimeout(() => {
           setCurrentSentenceIdx((prev) => prev + 1);
-        }, 400); // slight pause between sentences
+        }, 100); // slight pause between sentences
       }
-    }, 120); // 120ms per word is a medium/readable speed
+    }, 30); // 30ms per word is extremely fast
 
     return () => clearInterval(typingInterval);
   }, [currentSentenceIdx, sentences]);
