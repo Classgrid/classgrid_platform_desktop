@@ -956,27 +956,31 @@ except Exception as e:
             }).map(([toolName, handler]) => [
                 toolName,
                 async (args) => {
-                    accSteps.push({
-                        id: Date.now().toString(),
-                        type: toolName === 'internal_thought' ? 'thought' : 'tool',
-                        tool: toolName,
-                        title: args?.title || 'Thinking',
-                        details: args?.details || '',
-                        args: args,
-                        status: 'loading'
-                    });
-                    try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
+                    if (toolName !== 'internal_thought') {
+                        accSteps.push({
+                            id: Date.now().toString(),
+                            type: 'tool',
+                            tool: toolName,
+                            title: args?.title || 'Thinking',
+                            details: args?.details || '',
+                            args: args,
+                            status: 'loading'
+                        });
+                        try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
+                    }
                     let resultStr;
                     try { resultStr = await handler(args); } catch (err) { resultStr = "Error: " + (err.message || String(err)); }
                     
-                    const step = accSteps.find(s => s.tool === toolName && s.status === 'loading');
-                    if (step) {
-                        const isErr = typeof resultStr === 'string' && (resultStr.startsWith("Error:") || resultStr.startsWith("ERROR:") || resultStr.startsWith("FAILED:"));
-                        step.status = isErr ? 'error' : 'success';
-                        step.result = resultStr;
-                    }
+                    if (toolName !== 'internal_thought') {
+                        const step = accSteps.find(s => s.tool === toolName && s.status === 'loading');
+                        if (step) {
+                            const isErr = typeof resultStr === 'string' && (resultStr.startsWith("Error:") || resultStr.startsWith("ERROR:") || resultStr.startsWith("FAILED:"));
+                            step.status = isErr ? 'error' : 'success';
+                            step.result = resultStr;
+                        }
 
-                    try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result: resultStr })}\n\n`); } catch (e) { }
+                        try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result: resultStr })}\n\n`); } catch (e) { }
+                    }
                     return resultStr;
                 }
             ]))
