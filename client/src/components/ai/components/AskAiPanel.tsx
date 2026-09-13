@@ -2232,7 +2232,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     targetPrev = [...prev, lastMsg];
                   }
                   
-                  const newStep: AgentStep = event.tool === 'internal_thought' 
+                  const newStep: AgentStep = (event.tool === 'internal_thought' || event.tool === 'internal_thought_process')
                     ? { id: crypto.randomUUID(), type: 'thought', title: event.args?.title || 'Thought', details: event.args?.details || '', status: 'loading' }
                     : { id: crypto.randomUUID(), type: 'tool', tool: event.tool, args: event.args, status: 'loading' };
                     
@@ -2248,7 +2248,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   
                   const stepIndex = [...lastMsg.steps].reverse().findIndex(s => 
                     (s.type === 'tool' && s.tool === event.tool && s.status === 'loading') ||
-                    (s.type === 'thought' && event.tool === 'internal_thought' && s.status === 'loading')
+                    (s.type === 'thought' && (event.tool === 'internal_thought' || event.tool === 'internal_thought_process') && s.status === 'loading')
                   );
                   
                   if (stepIndex === -1) return prev;
