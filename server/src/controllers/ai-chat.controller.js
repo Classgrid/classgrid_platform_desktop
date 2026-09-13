@@ -708,21 +708,39 @@ IT IS STRICTLY FORBIDDEN to ask the user for permission to use tools. Record one
                         if (!url) return "ERROR: No url provided in tool arguments.";
                         const safeUrl = url.replace(/"/g, '\\"');
                         const code = `
-import urllib.request, tempfile, sys, os
+import urllib.request, urllib.error, tempfile, sys, os
+from urllib.parse import urlparse
 import pymupdf
 
 url = "${safeUrl}"
+path = None
+
 try:
     path, _ = urllib.request.urlretrieve(url)
-    if url.lower().endswith('.pdf') or 'pdf' in url.lower() or 'ai-chat-uploads' in url.lower():
-        doc = pymupdf.open(path)
-        text = "\\n".join([page.get_text() for page in doc])
-        print("DOCUMENT CONTENTS:\\n" + text)
-    else:
-        with open(path, 'r') as f:
-            print("DOCUMENT CONTENTS:\\n" + f.read())
 except Exception as e:
-    print("ERROR reading document:", e)
+    print(f"Direct download failed ({e}), attempting secure internal S3 fetch...")
+    try:
+        import boto3
+        parsed = urlparse(url)
+        key = parsed.path.lstrip('/')
+        s3 = boto3.client('s3', endpoint_url=f"https://{os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com", aws_access_key_id=os.environ['R2_ACCESS_KEY_ID'], aws_secret_access_key=os.environ['R2_SECRET_ACCESS_KEY'])
+        path = tempfile.mktemp(suffix=".pdf" if ".pdf" in url.lower() else "")
+        s3.download_file(os.environ.get('R2_BUCKET_NAME', 'classgrid-storage'), key, path)
+    except Exception as e2:
+        print("ERROR downloading document via S3:", e2)
+        sys.exit(1)
+
+if path:
+    try:
+        if url.lower().endswith('.pdf') or 'pdf' in url.lower() or 'ai-chat-uploads' in url.lower():
+            doc = pymupdf.open(path)
+            text = "\\n".join([page.get_text() for page in doc])
+            print("DOCUMENT CONTENTS:\\n" + text)
+        else:
+            with open(path, 'r') as f:
+                print("DOCUMENT CONTENTS:\\n" + f.read())
+    except Exception as e:
+        print("ERROR parsing document content:", e)
 `;
                         const result = await handleToolCall('run_code', { language: 'python', code }, { sessionId });
                         return result.isError ? result.content[0].text : result.content[0].text;
