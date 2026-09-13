@@ -2019,9 +2019,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
     // If user only attached files with no text, set a default question
     if (!displayQuestion && filesToUpload.length > 0) {
-      const fileNames = filesToUpload.map(f => f.name).join(", ");
       displayQuestion = ""; // Leave UI blank so only the image renders
-      apiQuestion = `[User attached file(s): ${fileNames}] Please analyze or read the attached content.`;
+      apiQuestion = "Please analyze the attached file(s).";
     }
 
     setError("");
@@ -2043,17 +2042,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       recordAiFilesSent(uploadedAttachments.length).catch(console.error);
     }
 
-    if (uploadedAttachments.length > 0) {
-      const fileContextLines = uploadedAttachments.map((a, i) => {
-        let cleanName = a.name;
-        if (/^whatsapp image/i.test(cleanName)) cleanName = "Uploaded Image";
-        else if (/^screenshot/i.test(cleanName)) cleanName = "Screenshot";
-        else if (/^img_/i.test(cleanName)) cleanName = "Uploaded Image";
-
-        return `[Attached file: ${cleanName} (${a.mimeType}) â€” URL: ${a.url}]`;
-      }).join("\n");
-      apiQuestion = `${apiQuestion}\n\n${fileContextLines}`;
-    }
+    // We no longer append [Attached file: ...] to apiQuestion here,
+    // the backend automatically parses body.fileUrls and handles it!
 
     const sentContextUrl = isDocsContextActive && pageContext?.path
       ? `https://classgrid.in${pageContext.path}`
@@ -2884,13 +2874,23 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     {isUser && message.attachments && message.attachments.filter(a => a.mimeType === "application/pdf").length > 0 && (
                       <div className="flex flex-col gap-2 mt-2">
                         {message.attachments.filter(a => a.mimeType === "application/pdf").map((att, i) => (
-                          <PdfAttachment 
+                          <div 
                             key={`${att.name}-${i}`}
-                            url={att.url}
-                            filename={att.name}
-                            size={att.size || 0}
-                            onOpen={() => setPreviewFile({ name: att.name, src: att.url, mimeType: att.mimeType })}
-                          />
+                            onClick={() => setPreviewFile({ name: att.name, src: att.url, mimeType: att.mimeType })}
+                            className="flex items-center gap-3 p-4 rounded-xl bg-black/5 dark:bg-[#202C33] border border-black/5 dark:border-white/5 w-[300px] cursor-pointer hover:border-emerald-500/50 transition-colors group"
+                          >
+                            <div className="bg-red-500 text-white rounded-lg shrink-0 w-12 h-12 flex items-center justify-center shadow-sm">
+                              <span className="text-xs font-bold tracking-wider">PDF</span>
+                            </div>
+                            <div className="flex flex-col min-w-0 justify-center">
+                              <span className="text-[14px] font-medium text-foreground truncate block">
+                                {att.name}
+                              </span>
+                              <span className="text-[12px] text-muted-foreground block mt-0.5 group-hover:text-emerald-500 transition-colors">
+                                Click to preview
+                              </span>
+                            </div>
+                          </div>
                         ))}
                       </div>
                     )}
