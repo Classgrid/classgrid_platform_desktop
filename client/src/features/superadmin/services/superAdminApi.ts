@@ -1007,3 +1007,30 @@ export const orgDetailApi = {
     return data;
   }
 };
+
+
+// --- AI Agent Reviews API ----------------------------------------------------
+
+export type AgentReview = {
+  id: string;
+  message_id: string;
+  user_email: string;
+  type: 'up' | 'down';
+  feedback_text: string | null;
+  file_url: string | null;
+  created_at: string;
+  user_details: {
+    id: string;
+    name: string;
+    profilePicture?: string;
+    orgName: string;
+  } | null;
+};
+
+export const aiAgentReviewsApi = {
+  getAll: () =>
+    apiClient
+      .get<{ reviews: AgentReview[] }>('/api/ai/agent-reviews')
+      .then((r) => r.data),
+};
+

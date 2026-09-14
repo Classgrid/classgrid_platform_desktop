@@ -121,7 +121,7 @@
     --danger-foreground: hsl(0 0% 100%);
     --border: #d4d4d8;
     --input: #d4d4d8;
-    --ring: #34d399;
+    --ring: #d4d4d8;
     --chart-1: oklch(0.68 0.18 255);
     --chart-2: oklch(0.74 0.13 220);
     --chart-3: oklch(0.78 0.14 180);
@@ -178,7 +178,7 @@
     --danger-foreground: hsl(0 0% 100%);
     --border: rgba(255, 255, 255, 0.14);
     --input: rgba(255, 255, 255, 0.16);
-    --ring: #34d399;
+    --ring: rgba(255, 255, 255, 0.14);
     --chart-1: oklch(0.62 0.19 255);
     --chart-2: oklch(0.66 0.15 220);
     --chart-3: oklch(0.72 0.12 180);
@@ -219,11 +219,11 @@
     border-color: var(--border);
   }
 
-  /* Global rule to force emerald green focus rings on all inputs/elements */
+  /* Global rule to force focus rings on all inputs/elements */
   *:focus-visible {
     outline: none !important;
-    box-shadow: 0 0 0 1px #10b981 !important;
-    border-color: #10b981 !important;
+    box-shadow: 0 0 0 1px var(--ring) !important;
+    border-color: var(--ring) !important;
   }
 
   /* Opt-out: elements with data-no-ring skip the global focus ring */

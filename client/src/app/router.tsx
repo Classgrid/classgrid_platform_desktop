@@ -191,6 +191,7 @@ import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
 import { OrgAdminLayout } from "@/components/layout/OrgAdminLayout";
 import { DynamicRoleLayout } from "@/components/layout/DynamicRoleLayout";
 import { ComingSoonPage } from "@/features/system/pages/ComingSoonPage";
+import { AgentReviewsPage } from "@/features/superadmin/pages/AgentReviewsPage";
 import { PlatformHubPage } from "@/features/system/pages/PlatformHubPage";
 
 
@@ -286,6 +287,7 @@ export function AppRouter() {
           <Route path="/superadmin/dashboard" element={<Navigate to="/superadmin/agent" replace />} />
           <Route path="/superadmin/agent" element={<DashboardHomePage />} />
           <Route path="/superadmin/agent/:sessionId" element={<DashboardHomePage />} />
+          <Route path="/superadmin/agent-reviews" element={<AgentReviewsPage />} />
           <Route path="/superadmin/analytics" element={<AnalyticsPage />} />
           <Route path="/superadmin/audit-logs" element={<AuditLogsPage />} />
 

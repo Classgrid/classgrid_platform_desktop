@@ -48,7 +48,7 @@ import {
     chatWithSyllabus, 
     getMyPersona 
 } from "../controllers/ai.controller.js";
-import { streamAskAi, getChatSessions, getChatSession, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession, createPublicShare, getPublicShare } from "../controllers/ai-chat.controller.js";
+import { streamAskAi, getChatSessions, getChatSession, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession, createPublicShare, getPublicShare, submitAiFeedback, getAgentReviews } from "../controllers/ai-chat.controller.js";
 
 const router = express.Router();
 
@@ -69,6 +69,8 @@ router.get("/my-persona", isAuthenticated, getMyPersona);
 
 // Global AI Panel SSE Chat
 router.post("/ask", isAuthenticated, streamAskAi);
+router.post("/feedback", isAuthenticated, submitAiFeedback);
+router.get("/agent-reviews", isAuthenticated, getAgentReviews);
 
 // Chat History & Sessions
 router.get("/sessions", isAuthenticated, getChatSessions);

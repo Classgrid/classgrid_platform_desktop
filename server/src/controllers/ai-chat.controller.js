@@ -9,6 +9,7 @@
 // Triggering test deployment for GitHub Actions (Backend) and Vercel (Frontend)
 import { createLLMClient } from "@classgrid/ai/core";
 import { getPresignedUploadUrl } from "../config/r2Client.js";
+import { supabase } from "../config/supabaseClient.js";
 import {
     createSession,
     saveMessage,
@@ -1501,3 +1502,351 @@ export const getPublicShare = async (req, res) => {
     }
 };
 
+                    }
+                    formattedText += '\n';
+                });
+                return formattedText.trim();
+            } else if (data.variant === 'poll' && data.question) {
+                let formattedText = `**Poll: ${data.question}**\n\n`;
+                if (Array.isArray(data.options)) {
+                    data.options.forEach((opt) => {
+                        formattedText += `- ${opt}\n`;
+                    });
+                }
+                return formattedText.trim();
+            } else {
+                return "";
+            }
+        } catch (e) {
+            return "";
+        }
+    };
+
+    let processed = content.replace(/\[APPR_CARD\]([\s\S]*?)\[\/APPR_CARD\]/gi, replacer);
+    processed = processed.replace(/```(?:appr|approval|APPR|APPROVAL)\s*\n([\s\S]*?)```/gi, replacer);
+    return processed.trim();
+};
+
+export const shareChatSession = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const session = await getSessionById(id);
+
+        if (!session || session.user_email !== req.user.email) {
+            return res.status(403).json({ error: "Forbidden" });
+        }
+
+        const messages = await getSessionMessages(id);
+
+        let transcript = `Chat Transcript: ${session.title}\n\n`;
+        transcript += `Exported on ${new Date().toLocaleString()}\n\n---\n\n`;
+        messages.forEach((msg) => {
+            const cleanContent = formatApprovalCard(msg.content || "");
+            if (cleanContent) {
+                transcript += `${msg.role === 'user' ? 'You' : 'Classgrid AI'}:\n${cleanContent}\n\n`;
+            }
+        });
+
+        const htmlBody = `
+            <!DOCTYPE html>
+            <html>
+            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                <p>Hi,</p>
+                <p>Here is the chat transcript you requested for: <strong>${session.title}</strong>.</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                <pre style="font-family: inherit; white-space: pre-wrap; font-size: 14px; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eaeaea;">${transcript}</pre>
+                <p style="color: #888; font-size: 12px; margin-top: 30px;">Sent securely from Classgrid.</p>
+            </body>
+            </html>
+        `;
+
+        // sendEmail from aws-ses.service.js takes a named object
+        await sendEmail({
+            fromName: "Classgrid",
+            fromEmail: "hello@classgrid.in",
+            replyTo: "support@classgrid.in",
+            to: req.user.email,
+            subject: `Chat Transcript: ${session.title}`,
+            text: `Hi,\n\nHere is the chat transcript you requested for: ${session.title}.\n\n---\n\n${transcript}`,
+            html: htmlBody,
+        });
+
+        console.info(`[Chat API] ✅ Chat transcript emailed to ${req.user.email} for session ${id}`);
+        res.json({ success: true, message: "Email sent successfully" });
+    } catch (e) {
+        console.error(`[Chat API] ❌ Failed to email chat transcript:`, e);
+        res.status(500).json({ error: "Failed to share session" });
+    }
+};
+
+// ─────────────────────────────────────────────────
+// PUBLIC CHAT SHARING
+// ─────────────────────────────────────────────────
+
+const SHARE_BASE_URL = process.env.SHARE_BASE_URL || "https://share.classgrid.in";
+
+/**
+ * Creates a public share link for a chat session.
+ * Authenticated — only the session owner can share.
+ */
+import crypto from 'crypto';
+
+export const createPublicShare = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // INSTANT RESPONSE: Pre-generate the share ID and URL
+        const shareId = crypto.randomBytes(8).toString('base64url').slice(0, 10);
+        const shareUrl = `${SHARE_BASE_URL}/shared/${shareId}`;
+
+        // Return immediately to frontend so it feels incredibly fast
+        res.json({ success: true, shareId, shareUrl });
+
+        // Extract variables synchronously before the request ends
+        const userEmail = req.user?.email;
+        const userName = req.user?.name || (userEmail ? userEmail.split('@')[0] : "User");
+
+        // BACKGROUND PROCESSING: Do the heavy database work asynchronously
+        (async () => {
+            try {
+                if (!userEmail) return;
+
+                const session = await getSessionById(id);
+                if (!session || session.user_email !== userEmail) return;
+
+                const messages = await getSessionMessages(id) || [];
+
+                await createSharedSnapshot(
+                    id,
+                    userEmail,
+                    userName,
+                    session.title || "Classgrid AI Chat",
+                    messages.map(m => ({
+                        role: m.role,
+                        content: formatApprovalCard(m.content || ""),
+                        created_at: m.created_at
+                    })).filter(m => m.content),
+                    shareId // Pass the pre-generated ID
+                );
+                console.info(`[Chat API] ✅ Public share created in background: ${shareUrl} for session ${id}`);
+            } catch (err) {
+                console.error(`[Chat API] ❌ Background share creation failed:`, err);
+            }
+        })();
+    } catch (e) {
+        console.error(`[Chat API] ❌ Failed to start public share creation:`, e);
+        if (!res.headersSent) {
+            res.status(500).json({ error: "Failed to create public share link" });
+        }
+    }
+};
+
+/**
+ * Retrieves a shared chat snapshot by share ID.
+wai * PUBLIC — no authentication required.
+ */
+export const getPublicShare = async (req, res) => {
+    try {
+        const { shareId } = req.params;
+
+        let snapshot = null;
+        let attempts = 0;
+
+        // Retry loop to handle the race condition where the user visits the link 
+        // before the background save has finished (up to ~1.5 seconds)
+        while (attempts < 5) {
+            snapshot = await getSharedSnapshot(shareId);
+            if (snapshot) break;
+
+            // Wait 300ms before checking again
+            await new Promise(resolve => setTimeout(resolve, 300));
+            attempts++;
+        }
+
+        if (!snapshot) {
+            return res.status(404).json({ error: "Shared chat not found" });
+        }
+
+        // Parse messages if stored as a string
+        const messages = typeof snapshot.messages === 'string'
+            ? JSON.parse(snapshot.messages)
+            : snapshot.messages;
+
+        let sharedByAvatar = null;
+        try {
+            const User = (await import('../models/User.js')).default;
+            const realUser = await User.findOne({ email: snapshot.user_email }).select('profilePicture');
+            if (realUser && realUser.profilePicture) {
+                sharedByAvatar = realUser.profilePicture;
+            }
+        } catch (err) {
+            console.error("Error fetching real user for share:", err);
+        }
+
+        res.json({
+            title: snapshot.title,
+            sharedBy: snapshot.user_name,
+            sharedByEmail: snapshot.user_email,
+            sharedByAvatar: sharedByAvatar,
+            messages,
+            createdAt: snapshot.created_at,
+        });
+    } catch (e) {
+        console.error(`[Chat API] ❌ Failed to retrieve public share:`, e);
+        res.status(500).json({ error: "Failed to load shared chat" });
+    }
+};
+
+export const submitAiFeedback = async (req, res) => {
+    try {
+        const { messageId, type, text, fileUrl } = req.body;
+        const userEmail = req.user?.email || "Unknown User";
+
+        // Save to Supabase (Option 1 Database Save Logic)
+        const { data: dbData, error: dbError } = await supabase
+            .from('ai_agent_reviews')
+            .insert([{
+                message_id: messageId,
+                user_email: userEmail,
+                type,
+                feedback_text: text || null,
+                file_url: fileUrl || null
+            }])
+            .select('*');
+
+        if (dbError) {
+            console.error("Failed to save AI feedback to Supabase:", dbError);
+        } else if (dbData && dbData.length > 0) {
+            const newReview = dbData[0];
+            try {
+                const User = (await import('../models/User.js')).default;
+                const realUser = await User.findOne({ email: userEmail }).populate('organization_id', 'name').lean();
+                if (realUser) {
+                    newReview.user_details = {
+                        id: realUser._id.toString(),
+                        name: realUser.name,
+                        profilePicture: realUser.profilePicture,
+                        orgName: realUser.organization_id?.name || "No Organization"
+                    };
+                }
+                const io = req.app.get("io");
+                if (io) {
+                    io.emit("new_agent_review", newReview);
+                }
+            } catch (err) {
+                console.error("Error emitting new agent review:", err);
+            }
+        }
+
+        // Option 3: Send to Slack Webhook (if configured)
+        if (process.env.SLACK_WEBHOOK_URL) {
+            const axios = (await import("axios")).default;
+            
+            const emoji = type === "positive" ? "👍" : type === "negative" ? "👎" : "💬";
+            const color = type === "positive" ? "#36a64f" : type === "negative" ? "#e01e5a" : "#439fe0";
+            
+            const blocks = [
+                {
+                    type: "header",
+                    text: {
+                        type: "plain_text",
+                        text: `${emoji} New AI Feedback Received`,
+                        emoji: true
+                    }
+                },
+                {
+                    type: "section",
+                    fields: [
+                        { type: "mrkdwn", text: `*User:*\n${userEmail}` },
+                        { type: "mrkdwn", text: `*Type:*\n${type}` },
+                        { type: "mrkdwn", text: `*Message ID:*\n\`${messageId}\`` }
+                    ]
+                }
+            ];
+
+            if (text) {
+                blocks.push({
+                    type: "section",
+                    text: { type: "mrkdwn", text: `*Feedback Text:*\n> ${text.replace(/\n/g, "\n> ")}` }
+                });
+            }
+
+            if (fileUrl) {
+                const urls = fileUrl.split(",");
+                if (urls.length === 1) {
+                    blocks.push({
+                        type: "section",
+                        text: { type: "mrkdwn", text: `*Attached File:*\n<${urls[0]}|View Attachment>` }
+                    });
+                } else {
+                    blocks.push({
+                        type: "section",
+                        text: { type: "mrkdwn", text: `*Attached Files:*` }
+                    });
+                    urls.forEach((url, index) => {
+                        blocks.push({
+                            type: "section",
+                            text: { type: "mrkdwn", text: `• <${url}|View Attachment ${index + 1}>` }
+                        });
+                    });
+                }
+            }
+
+            const payload = {
+                attachments: [
+                    {
+                        color,
+                        blocks
+                    }
+                ]
+            };
+
+            // Fire and forget so we don't block the response
+            axios.post(process.env.SLACK_WEBHOOK_URL, payload).catch(err => {
+                console.error("Failed to send Slack webhook:", err.message);
+            });
+        }
+
+        res.json({ success: true, message: "Feedback submitted successfully" });
+    } catch (e) {
+        console.error("Error submitting AI feedback:", e);
+        res.status(500).json({ error: "Failed to submit feedback" });
+    }
+};
+
+export const getAgentReviews = async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('ai_agent_reviews')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            throw error;
+        }
+
+        const User = (await import('../models/User.js')).default;
+        const emails = [...new Set(data.map(r => r.user_email))];
+        const users = await User.find({ email: { $in: emails } }).populate('organization_id', 'name').lean();
+
+        const userMap = {};
+        users.forEach(u => {
+            userMap[u.email] = {
+                id: u._id.toString(),
+                name: u.name,
+                profilePicture: u.profilePicture,
+                orgName: u.organization_id?.name || "No Organization"
+            };
+        });
+
+        const enrichedData = data.map(r => ({
+            ...r,
+            user_details: userMap[r.user_email] || null
+        }));
+
+        res.json({ reviews: enrichedData });
+    } catch (e) {
+        console.error("Error fetching AI agent reviews:", e);
+        res.status(500).json({ error: "Failed to fetch reviews" });
+    }
+};

@@ -121,6 +121,7 @@ import { CdnUploadView } from "./stepper/CdnUploadView";
 import { EmailSentView } from "./stepper/EmailSentView";
 import { SimpleLogStepView } from "./stepper/SimpleLogStepView";
 import { CombinedReasoningBlock } from "./stepper/CombinedReasoningBlock";
+import { AiFeedbackModal } from "./AiFeedbackModal";
 
 // â”€â”€â”€ SDK-local type definitions & stubs â”€â”€â”€
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
@@ -596,6 +597,8 @@ function renderInlineText(rawText: string) {
 function MessageActions({ content, messageId }: { content: string; messageId: string }) {
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const posthog = usePostHog();
 
   useEffect(() => {
@@ -641,6 +644,11 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
   }
 
   function handleFeedback(type: "up" | "down") {
+    if (type === "down") {
+      setIsFeedbackModalOpen(true);
+      return;
+    }
+
     const newFeedback = type === feedback ? null : type;
     setFeedback(newFeedback);
 
@@ -652,61 +660,155 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
       }
     } catch (e) { }
 
-    if (newFeedback === "down") {
-      posthog?.capture("ai_message_thumbs_down", {
-        message_id: messageId,
-        content_preview: content.substring(0, 100)
-      });
-    } else if (newFeedback === "up") {
+    if (newFeedback === "up") {
       posthog?.capture("ai_message_thumbs_up", {
         message_id: messageId,
         content_preview: content.substring(0, 100)
       });
     }
+
+    if (newFeedback) {
+      const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
+        ? import.meta.env.VITE_API_URL || "https://api.classgrid.in"
+        : "";
+      
+      const token = localStorage.getItem("token");
+      fetch(`${endpointPrefix}/api/ai/feedback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          messageId,
+          type: "positive",
+          text: "" // No text input implemented for positive right now
+        })
+      }).catch(console.error);
+    }
   }
 
+  const submitDetailedFeedback = async (text: string, files: File[]) => {
+    setIsSubmittingFeedback(true);
+    try {
+      let fileUrls: string[] = [];
+      
+      // Upload files if any
+      if (files.length > 0) {
+        for (const file of files) {
+          const result = await getPresignedUrlForAskAiFile(file.name, file.type, file.size);
+          if (result.error) {
+            toast.error(`Failed to get upload URL for ${file.name}`);
+            continue;
+          }
+          if (result.uploadUrl === "mock") {
+            await new Promise(r => setTimeout(r, 1000));
+            fileUrls.push(result.fileUrl);
+          } else {
+            const uploadRes = await fetch(result.uploadUrl, {
+              method: "PUT",
+              body: file,
+              headers: { "Content-Type": file.type }
+            });
+            if (!uploadRes.ok) throw new Error("Upload to R2 failed");
+            fileUrls.push(result.fileUrl);
+          }
+        }
+      }
+
+      setFeedback("down");
+      try {
+        localStorage.setItem(`classgrid:ai-feedback:${messageId}`, JSON.stringify({ feedback: "down" }));
+      } catch (e) { }
+
+      posthog?.capture("ai_message_thumbs_down", {
+        message_id: messageId,
+        content_preview: content.substring(0, 100),
+        has_text: !!text,
+        num_attachments: files.length
+      });
+
+      const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
+        ? import.meta.env.VITE_API_URL || "https://api.classgrid.in"
+        : "";
+      
+      const token = localStorage.getItem("token");
+      await fetch(`${endpointPrefix}/api/ai/feedback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          messageId,
+          type: "negative",
+          text,
+          fileUrl: fileUrls.length > 0 ? fileUrls.join(",") : null
+        })
+      });
+
+      toast.success("Feedback submitted. Thank you!");
+      setIsFeedbackModalOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit feedback");
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
   return (
-    <div className="mt-2 flex items-center gap-1">
-      <button
-        type="button"
-        onClick={handleCopy}
-        className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 cursor-pointer",
-          copied
-            ? "bg-emerald-500/15 text-emerald-500"
-            : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-        )}
-        title={copied ? "Copied!" : "Copy response"}
-      >
-        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-      </button>
-      <button
-        type="button"
-        onClick={() => handleFeedback("up")}
-        className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 cursor-pointer",
-          feedback === "up"
-            ? "bg-emerald-500/15 text-emerald-500"
-            : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-        )}
-        title="Helpful"
-      >
-        <ThumbsUp className="h-3.5 w-3.5" />
-      </button>
-      <button
-        type="button"
-        onClick={() => handleFeedback("down")}
-        className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 cursor-pointer",
-          feedback === "down"
-            ? "bg-red-500/15 text-red-400"
-            : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-        )}
-        title="Not helpful"
-      >
-        <ThumbsDown className="h-3.5 w-3.5" />
-      </button>
-    </div>
+    <>
+      <div className="mt-2 flex items-center gap-1">
+        <button
+          type="button"
+          onClick={handleCopy}
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 cursor-pointer",
+            copied
+              ? "bg-emerald-500/15 text-emerald-500"
+              : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+          )}
+          title={copied ? "Copied!" : "Copy response"}
+        >
+          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+        </button>
+        <button
+          type="button"
+          onClick={() => handleFeedback("up")}
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 cursor-pointer",
+            feedback === "up"
+              ? "bg-emerald-500/15 text-emerald-500"
+              : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+          )}
+          title="Helpful"
+        >
+          <ThumbsUp className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => handleFeedback("down")}
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 cursor-pointer",
+            feedback === "down"
+              ? "bg-red-500/15 text-red-400"
+              : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+          )}
+          title="Not helpful"
+        >
+          <ThumbsDown className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {isFeedbackModalOpen && (
+        <AiFeedbackModal
+          isOpen={isFeedbackModalOpen}
+          onClose={() => setIsFeedbackModalOpen(false)}
+          onSubmit={submitDetailedFeedback}
+          isSubmitting={isSubmittingFeedback}
+        />
+      )}
+    </>
   );
 }
 

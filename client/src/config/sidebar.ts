@@ -169,6 +169,7 @@ export const dashboardConfigs: DashboardConfig[] = [
         items: [
           { label: "Subscribers", to: "/superadmin/subscribers", icon: Mail, restrictedToEmail: "support@classgrid.in" },
           { label: "Chat", to: "/superadmin/chat", icon: MessageSquare },
+          { label: "Agent Reviews", to: "/superadmin/agent-reviews", icon: MessageSquare },
           { label: "Requests", to: "/join-requests", icon: Users },
           { label: "Classgrid Talk", to: "/superadmin/talk", icon: MessageSquare },
           { label: "Support Tickets", to: "/superadmin/support", icon: Ticket }
