@@ -575,7 +575,8 @@ export const handleToolCall = async (name, args, context = {}) => {
           Bucket: BUCKET_NAME,
           Key: s3Key,
           Body: pdfBuffer,
-          ContentType: 'application/pdf'
+          ContentType: 'application/pdf',
+          ACL: 'public-read'
         }));
 
         const cdnUrl = `${CDN_BASE_URL}/${s3Key}`;
@@ -659,7 +660,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         const fileName = `${title ? title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'db_report_' + Date.now()}.pdf`;
         const s3Key = `reports/${fileName}`;
-        await s3Client.send(new PutObjectCommand({ Bucket: BUCKET_NAME, Key: s3Key, Body: pdfBuffer, ContentType: 'application/pdf' }));
+        await s3Client.send(new PutObjectCommand({ Bucket: BUCKET_NAME, Key: s3Key, Body: pdfBuffer, ContentType: 'application/pdf', ACL: 'public-read' }));
 
         const cdnUrl = `${CDN_BASE_URL}/${s3Key}`;
         return {
