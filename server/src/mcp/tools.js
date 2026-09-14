@@ -179,7 +179,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           if (actualCollectionName === 'users') {
             result = await collection.aggregate([
               { $match: query || {} },
-              { $limit: 1000 },
+              { $limit: 50 },
               {
                 $addFields: {
                   orgObjId: { $convert: { input: "$organization_id", to: "objectId", onError: null, onNull: null } }
@@ -195,7 +195,7 @@ export const handleToolCall = async (name, args, context = {}) => {
               }
             ]).toArray();
           } else {
-            result = await collection.find(query).limit(1000).toArray();
+            result = await collection.find(query).limit(50).toArray();
           }
         } else if (operation === 'findOne') {
           result = await collection.findOne(query);
@@ -251,7 +251,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         if (operation === 'find' || operation === 'findOne') {
-          let sbQuery = sb.from(collectionOrTable).select('*').match(query).limit(operation === 'findOne' ? 1 : 1000);
+          let sbQuery = sb.from(collectionOrTable).select('*').match(query).limit(operation === 'findOne' ? 1 : 50);
           const { data: sbData, error } = await sbQuery;
           if (error) throw error;
           result = operation === 'findOne' ? (sbData[0] || null) : sbData;
