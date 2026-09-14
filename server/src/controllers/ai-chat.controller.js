@@ -689,7 +689,7 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
                     type: "function",
                     function: {
                         name: "upload_file_to_cdn",
-                        description: "Uploads a generated file (PDF, Excel, image, etc.) to the Classgrid CDN (Cloudflare R2) and returns a public download URL.",
+                        description: "Uploads a generated file (PDF, Excel, image, etc.) to the Classgrid CDN (AWS S3) and returns a real, public cdn.classgrid.in download URL. You MUST provide this real URL to the user, NEVER simulate it.",
                         parameters: {
                             type: "object",
                             properties: {
