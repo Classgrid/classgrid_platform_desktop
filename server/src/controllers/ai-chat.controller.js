@@ -1741,11 +1741,9 @@ export const processAgentReviewsCron = async (req, res) => {
 
 We wanted to reach out and say thank you for the feedback you recently submitted regarding our AI agent. 
 
-We are so sorry about the frustrating experience you had. You were completely right—it was our mistake, and the AI should not have responded to you that way. 
+Our engineering team has reviewed your feedback and we have updated our AI models to ensure it provides better and more accurate responses moving forward. 
 
-Our engineering team has reviewed your report and we have successfully resolved the underlying issue. We have updated the system, and you can rest assured that our AI agent will not make that same mistake or respond in that way again. 
-
-Your feedback is incredibly valuable to us and directly helps us build a better platform. Thank you for taking the time to report this to us!
+Your feedback is incredibly valuable to us and directly helps us build a smarter AI for everyone on the platform. Thank you for taking the time to share your thoughts with us!
 
 Best regards,
 
@@ -1754,7 +1752,7 @@ The Classgrid Team`;
                 try {
                     await sendEmail({
                         to: review.user_email,
-                        subject: "Update on your AI Feedback - Issue Resolved!",
+                        subject: "Update on your AI Feedback",
                         text: emailText,
                         fromName: "Classgrid Team",
                         fromEmail: "support@classgrid.in"
