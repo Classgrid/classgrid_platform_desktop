@@ -257,7 +257,6 @@ export const dashboardConfigs: DashboardConfig[] = [
       {
         label: "AI & TOOLS",
         items: [
-          { label: "Classgrid AI", to: "/org/ai", icon: Bot },
           { label: "Analytics", to: "/org/analytics", icon: FileBarChart },
           { label: "College Website", to: "/org/website", icon: Globe },
           { label: "Certificates", to: "/org/certificates", icon: FileText }
@@ -655,7 +654,6 @@ export const dashboardConfigs: DashboardConfig[] = [
       {
         label: "TOOLS",
         items: [
-          { label: "Classgrid AI", to: "/classgrid-ai", icon: Bot },
           { label: "Google Drive", to: "/drive", icon: Briefcase },
           { label: "Virtual ID", to: "/virtual-id", icon: User },
           { label: "Website CMS", to: "/faculty/website", icon: Globe }
@@ -706,7 +704,6 @@ export const dashboardConfigs: DashboardConfig[] = [
       {
         label: "TOOLS",
         items: [
-          { label: "Classgrid AI", to: "/classgrid-ai", icon: Bot },
           { label: "Virtual ID", to: "/virtual-id", icon: User },
           { label: "Marketplace", to: "/marketplace", icon: CreditCard }
         ]
