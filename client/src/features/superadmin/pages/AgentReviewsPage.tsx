@@ -293,7 +293,7 @@ export function AgentReviewsPage() {
                       <img 
                         src={trimmedUrl} 
                         alt="Feedback attachment" 
-                        onClick={() => setPreviewFile({ name: `Attachment ${i+1}`, src: trimmedUrl, mimeType: 'image/png' })}
+                        onClick={() => window.open(trimmedUrl, '_blank')}
                         className="max-w-xs max-h-48 rounded-md border border-border object-cover hover:opacity-80 transition-opacity cursor-pointer" 
                       />
                     ) : (
