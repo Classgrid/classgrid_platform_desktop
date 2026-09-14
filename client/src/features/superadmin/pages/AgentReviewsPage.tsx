@@ -162,6 +162,7 @@ export function AgentReviewsPage() {
     <Card key={review.id} className="overflow-hidden mb-4 relative group">
       <div className="absolute top-4 left-4 z-10">
         <Checkbox 
+          className="cursor-pointer border-border bg-card shadow-sm"
           checked={selectedIds.includes(review.id)}
           onCheckedChange={(checked) => {
             if (checked) {
@@ -469,6 +470,7 @@ export function AgentReviewsPage() {
             <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-md border border-border">
               <Checkbox 
                 id="select-all"
+                className="cursor-pointer"
                 checked={selectedIds.length > 0 && selectedIds.length === dateNode.reviews.length}
                 onCheckedChange={(checked) => {
                   if (checked) {
