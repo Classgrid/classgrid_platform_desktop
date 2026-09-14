@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
-import { ThumbsDown, MessageSquare, ExternalLink, Calendar, Search, Filter, Building, ChevronDown, ChevronUp, ChevronRight, Home, ArrowLeft } from "lucide-react";
+import { ThumbsDown, MessageSquare, ExternalLink, Calendar, Search, Filter, Building, ChevronDown, ChevronUp, ChevronRight, Home, ArrowLeft, AlertCircle } from "lucide-react";
 import { useAgentReviews, useUpdateAgentReviewStatus } from "../queries/useAgentReviews";
 import { formatDistanceToNow, format } from "date-fns";
 import { Badge } from "@/components/marketing_ui/badge";
@@ -83,8 +83,8 @@ export function AgentReviewsPage() {
   }, [queryClient]);
 
   const reviews = data?.reviews || [];
-  const downvotesCount = reviews.filter((r) => r.type === "down").length;
-  const withFeedbackCount = reviews.filter((r) => r.feedback_text).length;
+  const totalFeedbackCount = reviews.length;
+  const totalPendingCount = reviews.filter((r) => !r.status || r.status === "pending").length;
 
   const filteredReviews = useMemo(() => {
     return reviews.filter((review) => {
@@ -433,34 +433,24 @@ export function AgentReviewsPage() {
       ]} />
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Negative Feedback</CardTitle>
-            <ThumbsDown className="h-4 w-4 text-rose-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-rose-600">{downvotesCount}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">With Written Feedback</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Feedback</CardTitle>
             <MessageSquare className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{withFeedbackCount}</div>
+            <div className="text-2xl font-bold text-blue-600">{totalFeedbackCount}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">With Attachments</CardTitle>
-            <ExternalLink className="h-4 w-4 text-amber-500" />
+            <CardTitle className="text-sm font-medium">Total Pending</CardTitle>
+            <AlertCircle className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{reviews.filter(r => r.file_url).length}</div>
+            <div className="text-2xl font-bold text-yellow-600">{totalPendingCount}</div>
           </CardContent>
         </Card>
       </div>
