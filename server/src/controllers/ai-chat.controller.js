@@ -1214,6 +1214,26 @@ export const getChatSessions = async (req, res) => {
     }
 };
 
+export const getChatSession = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const session = await getSessionById(id);
+        
+        if (!session) {
+            return res.status(404).json({ error: "Session not found" });
+        }
+        
+        if (session.user_email !== req.user?.email) {
+            return res.status(403).json({ error: "Forbidden" });
+        }
+
+        res.json({ session });
+    } catch (e) {
+        console.error("Error getting session:", e);
+        res.status(500).json({ error: "Failed to load session" });
+    }
+};
+
 export const getChatSessionMessages = async (req, res) => {
     try {
         const { id } = req.params;

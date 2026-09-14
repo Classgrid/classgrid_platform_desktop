@@ -48,7 +48,7 @@ import {
     chatWithSyllabus, 
     getMyPersona 
 } from "../controllers/ai.controller.js";
-import { streamAskAi, getChatSessions, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession, createPublicShare, getPublicShare } from "../controllers/ai-chat.controller.js";
+import { streamAskAi, getChatSessions, getChatSession, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession, createPublicShare, getPublicShare } from "../controllers/ai-chat.controller.js";
 
 const router = express.Router();
 
@@ -72,6 +72,7 @@ router.post("/ask", isAuthenticated, streamAskAi);
 
 // Chat History & Sessions
 router.get("/sessions", isAuthenticated, getChatSessions);
+router.get("/sessions/:id", isAuthenticated, getChatSession);
 router.get("/sessions/:id/messages", isAuthenticated, getChatSessionMessages);
 router.put("/sessions/:id", isAuthenticated, updateChatSession);
 router.delete("/sessions/:id", isAuthenticated, deleteChatSession);

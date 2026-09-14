@@ -26,6 +26,11 @@ const sanitizeMermaid = (chart: string): string => {
     .replace(/\[([^\]]*?)\\n([^\]]*?)\]/g, (_: string, a: string, b: string) => `[${a} ${b}]`)
     // Strip emojis from the entire chart (they break the parser)
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+    // Aggressively strip parentheses inside square brackets (e.g. A[Text (text)] -> A[Text text])
+    // This is the #1 cause of Mermaid render crashes that trigger the slow LLM retry loop.
+    .replace(/\[([^\]]+)\]/g, (match, inner) => `[${inner.replace(/[\(\)]/g, '')}]`)
+    // Aggressively strip parentheses inside edge labels (e.g. -->|Text (yes)|)
+    .replace(/\|([^\|]+)\|/g, (match, inner) => `|${inner.replace(/[\(\)]/g, '')}|`)
     .trim();
 };
 
@@ -140,7 +145,6 @@ export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onR
           const orphanedSvg = document.getElementById(`d${id}`);
           if (orphanedSvg) orphanedSvg.remove();
 
-          // Mermaid sometimes leaves a generic error element with id="dmermaid" or similar
           const genericOrphan = document.getElementById('d' + id);
           if (genericOrphan) genericOrphan.remove();
 
@@ -148,12 +152,20 @@ export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onR
           document.querySelectorAll('svg[id^="dmermaid"]').forEach(el => el.remove());
           document.querySelectorAll('.error-icon').forEach(el => el.remove());
           
-          // Fallback: remove any SVG at the end of the body that contains "Syntax error in text"
-          document.querySelectorAll('body > svg').forEach(svg => {
-             if (svg.textContent?.includes('Syntax error') || svg.textContent?.includes('version 11.17.')) {
-                 svg.remove();
-             }
-          });
+          // Fallback: remove any SVG globally that contains the Mermaid error text
+          // Run immediately and also delayed to catch async injections
+          const removeErrorSvgs = () => {
+             document.querySelectorAll('svg').forEach(svg => {
+                const text = svg.textContent || '';
+                if (text.includes('Syntax error') || text.includes('version 11.17.')) {
+                    svg.remove();
+                }
+             });
+          };
+          
+          removeErrorSvgs();
+          setTimeout(removeErrorSvgs, 50);
+          setTimeout(removeErrorSvgs, 300);
         }
       });
 
