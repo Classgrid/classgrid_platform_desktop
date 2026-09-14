@@ -1018,6 +1018,7 @@ export type AgentReview = {
   type: 'down';
   feedback_text: string | null;
   file_url: string | null;
+  status: 'pending' | 'actioned' | 'acknowledged' | 'no_action';
   created_at: string;
   user_details: {
     id: string;
@@ -1032,6 +1033,10 @@ export const aiAgentReviewsApi = {
   getAll: () =>
     apiClient
       .get<{ reviews: AgentReview[] }>('/api/ai/agent-reviews')
+      .then((r) => r.data),
+  updateStatus: (id: string, status: AgentReview['status']) =>
+    apiClient
+      .put<{ success: boolean; review: AgentReview }>(`/api/ai/agent-reviews/${id}/status`, { status })
       .then((r) => r.data),
 };
 

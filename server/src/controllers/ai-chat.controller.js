@@ -1669,3 +1669,109 @@ export const getAgentReviews = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch reviews" });
     }
 };
+
+export const updateAgentReviewStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!['pending', 'actioned', 'acknowledged', 'no_action'].includes(status)) {
+            return res.status(400).json({ error: "Invalid status" });
+        }
+
+        // Import supabase if not available in this scope (it is declared globally at the top in this file usually)
+        const { data, error } = await supabase
+            .from('ai_agent_reviews')
+            .update({ status })
+            .eq('id', id)
+            .select('*');
+
+        if (error) {
+            throw error;
+        }
+
+        res.json({ success: true, review: data[0] });
+    } catch (e) {
+        console.error("Error updating AI agent review status:", e);
+        res.status(500).json({ error: "Failed to update review status" });
+    }
+};
+
+export const processAgentReviewsCron = async (req, res) => {
+    try {
+        // Fetch all reviews that are NOT pending
+        const { data: reviewsToProcess, error: fetchError } = await supabase
+            .from('ai_agent_reviews')
+            .select('*')
+            .neq('status', 'pending');
+
+        if (fetchError) {
+            throw fetchError;
+        }
+
+        if (!reviewsToProcess || reviewsToProcess.length === 0) {
+            return res.json({ success: true, message: "No reviews to process" });
+        }
+
+        // Process Actioned emails
+        const actionedReviews = reviewsToProcess.filter(r => r.status === 'actioned');
+        if (actionedReviews.length > 0) {
+            const User = (await import('../models/User.js')).default;
+            const emails = [...new Set(actionedReviews.map(r => r.user_email))];
+            const users = await User.find({ email: { $in: emails } }).select('name email').lean();
+            
+            const userMap = {};
+            users.forEach(u => userMap[u.email] = u);
+
+            const { sendEmail } = await import('../services/aws-ses.service.js');
+
+            for (const review of actionedReviews) {
+                const user = userMap[review.user_email];
+                const userName = user?.name ? user.name.split(' ')[0] : 'there';
+                
+                const emailText = `Hi ${userName},
+
+We wanted to reach out and say thank you for the feedback you recently submitted regarding our AI agent. 
+
+We are so sorry about the frustrating experience you had. You were completely right—it was our mistake, and the AI should not have responded to you that way. 
+
+Our engineering team has reviewed your report and we have successfully resolved the underlying issue. We have updated the system, and you can rest assured that our AI agent will not make that same mistake or respond in that way again. 
+
+Your feedback is incredibly valuable to us and directly helps us build a better platform. Thank you for taking the time to report this to us!
+
+Best regards,
+
+The Classgrid Team`;
+
+                try {
+                    await sendEmail({
+                        to: review.user_email,
+                        subject: "Update on your AI Feedback - Issue Resolved!",
+                        text: emailText,
+                        fromName: "Classgrid Team",
+                        fromEmail: "support@classgrid.in"
+                    });
+                    console.log(`[Cron] Sent actioned email to ${review.user_email}`);
+                } catch (emailErr) {
+                    console.error(`[Cron] Failed to send email to ${review.user_email}:`, emailErr);
+                }
+            }
+        }
+
+        // Delete all processed reviews
+        const idsToDelete = reviewsToProcess.map(r => r.id);
+        const { error: deleteError } = await supabase
+            .from('ai_agent_reviews')
+            .delete()
+            .in('id', idsToDelete);
+
+        if (deleteError) {
+            throw deleteError;
+        }
+
+        res.json({ success: true, message: `Processed and deleted ${idsToDelete.length} reviews` });
+    } catch (e) {
+        console.error("Error processing AI agent reviews cron:", e);
+        res.status(500).json({ error: "Failed to process reviews cron" });
+    }
+};

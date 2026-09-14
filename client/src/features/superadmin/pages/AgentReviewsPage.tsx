@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
 import { ThumbsDown, MessageSquare, ExternalLink, Calendar, Search, Filter, Building, ChevronDown, ChevronUp, ChevronRight, Home, ArrowLeft } from "lucide-react";
-import { useAgentReviews } from "../queries/useAgentReviews";
+import { useAgentReviews, useUpdateAgentReviewStatus } from "../queries/useAgentReviews";
 import { formatDistanceToNow, format } from "date-fns";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Input } from "@/components/marketing_ui/input";
@@ -46,6 +46,7 @@ const FolderIcon = ({ label, subtitle, onClick, badge }: { label: string, subtit
 
 export function AgentReviewsPage() {
   const { data, isLoading, error } = useAgentReviews();
+  const updateStatusMutation = useUpdateAgentReviewStatus();
   const queryClient = useQueryClient();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -239,6 +240,37 @@ export function AgentReviewsPage() {
               })}
             </div>
           )}
+
+          {/* Action Buttons */}
+          <div className="mt-4 pt-4 border-t border-border/50 flex gap-2 flex-wrap">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+              onClick={() => updateStatusMutation.mutate({ id: review.id, status: 'actioned' })}
+              disabled={updateStatusMutation.isPending}
+            >
+              Actioned (Auto-Email)
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200"
+              onClick={() => updateStatusMutation.mutate({ id: review.id, status: 'acknowledged' })}
+              disabled={updateStatusMutation.isPending}
+            >
+              Acknowledged (Manual Email)
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+              onClick={() => updateStatusMutation.mutate({ id: review.id, status: 'no_action' })}
+              disabled={updateStatusMutation.isPending}
+            >
+              No Action (Spam)
+            </Button>
+          </div>
         </div>
       </div>
     </Card>

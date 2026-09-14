@@ -226,6 +226,13 @@ export function AiFeedbackModal({ isOpen, onClose, onSubmit, isSubmitting }: AiF
             </DialogDescription>
           </DialogHeader>
 
+          <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs">
+            <span className="mt-0.5">💡</span>
+            <span>
+              <strong>Tip:</strong> Please attach a screenshot, paste a public link of the chat, or copy the AI response text so our team can see exactly what went wrong and fix it faster.
+            </span>
+          </div>
+
           <div className="grid gap-4 py-2">
             {/* Unified Input Box */}
             <div
