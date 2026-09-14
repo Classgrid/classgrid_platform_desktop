@@ -118,6 +118,7 @@ import DateTimePickerSandbox from "@/features/sandbox/pages/DateTimePickerSandbo
 import { SandboxPage } from "@/features/superadmin/pages/SandboxPage";
 import { AgentUISandboxPage } from "@/features/superadmin/pages/AgentUISandboxPage";
 import { AgentUITestingPage } from "@/features/superadmin/pages/AgentUITestingPage";
+import { SimulatedAgentDemoPage } from "@/features/superadmin/pages/SimulatedAgentDemoPage";
 import { StorageLayout } from "@/components/layout/StorageLayout";
 import { StorageFilesPage } from "@/features/superadmin/pages/StorageFilesPage";
 import { StorageAnalyticsPage } from "@/features/superadmin/pages/StorageAnalyticsPage";
@@ -233,6 +234,7 @@ export function AppRouter() {
       <Route path="/sandbox/datetime" element={<DateTimePickerSandbox />} />
       <Route path="/agent-sandbox" element={<AgentUISandboxPage />} />
       <Route path="/agent-sandbox-testing" element={<AgentUITestingPage />} />
+      <Route path="/agent-simulation-demo" element={<SimulatedAgentDemoPage />} />
 
       <Route path="/logout" element={<LogoutPage />} />
       {/* ── DYNAMIC AUTH ROUTES (Based on Subdomain) ── */}

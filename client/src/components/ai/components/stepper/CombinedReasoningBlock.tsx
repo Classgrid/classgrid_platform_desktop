@@ -16,14 +16,30 @@ import { ChevronRight } from 'lucide-react';
  * Phase 2: Live typing - sentences stream in from SSE, displayed immediately
  * Phase 3: Finished - collapsible accordion
  */
-export function CombinedReasoningBlock({ sentences, isStreaming = true }: { sentences: string[]; isStreaming?: boolean }) {
+export function CombinedReasoningBlock({ sentences, isStreaming = true, autoFinishMs }: { sentences: string[]; isStreaming?: boolean; autoFinishMs?: number }) {
   const [timer, setTimer] = useState(0);
   const [expanded, setExpanded] = useState(true);
+  const [localIsStreaming, setLocalIsStreaming] = useState(isStreaming);
   const viewportRef = useRef<HTMLDivElement>(null);
+
+  // Sync with prop if it changes
+  useEffect(() => {
+    setLocalIsStreaming(isStreaming);
+  }, [isStreaming]);
+
+  // Auto-finish after a delay (useful for static testing pages)
+  useEffect(() => {
+    if (autoFinishMs && autoFinishMs > 0 && localIsStreaming) {
+      const timeout = setTimeout(() => {
+        setLocalIsStreaming(false);
+      }, autoFinishMs);
+      return () => clearTimeout(timeout);
+    }
+  }, [autoFinishMs, localIsStreaming]);
 
   const hasSentences = sentences && sentences.length > 0;
   // We're "finished" only when streaming stops AND we have content
-  const isFinished = hasSentences && !isStreaming;
+  const isFinished = hasSentences && !localIsStreaming;
 
   // Timer logic for the 'Thinking' label (e.g. 1s, 2s)
   useEffect(() => {
@@ -44,9 +60,9 @@ export function CombinedReasoningBlock({ sentences, isStreaming = true }: { sent
   return (
     <div className={`relative z-10 flex flex-col group/accordion mb-2 combined-reasoning-block`}>
       <button
-        onClick={() => { if (!isStreaming) setExpanded((prev) => !prev) }}
+        onClick={() => { if (!localIsStreaming) setExpanded((prev) => !prev) }}
         className={`flex items-center gap-3 rounded-lg p-1 pr-3 -ml-1 transition-colors ${
-          !isStreaming ? 'cursor-pointer hover:bg-muted/30' : 'cursor-default'
+          !localIsStreaming ? 'cursor-pointer hover:bg-muted/30' : 'cursor-default'
         }`}
       >
         {/* Stepper Dot Area */}
@@ -57,7 +73,7 @@ export function CombinedReasoningBlock({ sentences, isStreaming = true }: { sent
         </div>
 
         <div className="flex items-center gap-1.5">
-          {!isStreaming && hasSentences && (
+          {!localIsStreaming && hasSentences && (
             <ChevronRight
               className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}
             />
@@ -81,7 +97,7 @@ export function CombinedReasoningBlock({ sentences, isStreaming = true }: { sent
       {/* Live Streaming Content - ALWAYS visible while streaming or expanded */}
       <div
         className={`grid transition-all duration-200 ease-in-out ${
-          (isStreaming && hasSentences) || (expanded && hasSentences) ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+          (localIsStreaming && hasSentences) || (expanded && hasSentences) ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
         }`}
       >
         <div className="overflow-hidden">

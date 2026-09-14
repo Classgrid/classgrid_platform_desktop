@@ -8,7 +8,7 @@ CREATE TABLE syllabus_vectors (
   org_id TEXT NOT NULL,
   content TEXT NOT NULL, -- The text chunk
   metadata JSONB, -- Classroom ID, User ID, Date, etc
-  embedding VECTOR(1536) -- For OpenAI text-embedding-3-small (1536 dims)
+  embedding VECTOR(1024) -- For Voyage AI voyage-3-large (1024 dims) via MongoDB Atlas
 );
 
 -- 3. Create an index for fast cosine similarity search
@@ -17,7 +17,7 @@ WITH (lists = 100);
 
 -- 4. RPC function for matching chunks (called from JS)
 CREATE OR REPLACE FUNCTION match_syllabus_chunks (
-  query_embedding VECTOR(1536),
+  query_embedding VECTOR(1024),
   match_threshold FLOAT,
   match_count INT,
   p_org_id TEXT

@@ -210,7 +210,9 @@ If the user asks you to make a file public, or you need to provide a public down
 ### How to Upload Files to CDN (CRITICAL INSTRUCTION)
 If you generate a file (like an Excel sheet, PDF, or image) inside the sandbox and need to give the user a download link, you MUST use the native \`upload_file_to_cdn\` tool.
 Do NOT write a Python script with boto3 to upload files.
-If the file is in the sandbox (e.g. \`/ data / report.xlsx\`), you first need to use \`run_code\` to read the file and encode it to a base64 string, and then pass that base64 string to \`upload_file_to_cdn\`. Return the resulting URL to the user as a clickable markdown link.
+If the file is in the sandbox (e.g. \`/data/report.xlsx\`), you first need to use \`run_code\` to read the file and encode it to a base64 string, and then pass that base64 string to \`upload_file_to_cdn\`. Return the resulting \`cdn.classgrid.in\` URL to the user as a clickable markdown link.
+
+NEVER generate or print fake "simulated" download links (like example.com) inside your python scripts. You must actually upload it to the CDN using the tool and give the user the real \`cdn.classgrid.in\` link.
 
 ### How to Send Emails (CRITICAL INSTRUCTION)
 Use the native 'send_email' tool for every external email. It is the only authorized delivery path and provides idempotency protection. Never send email through 'run_code', 'execute_terminal_command', SMTP, or another script.
@@ -232,6 +234,10 @@ If the 'to' address is an EXTERNAL address (not ending in @classgrid.in), you MU
 
 ACADEMIC HIERARCHY (BACKEND DOMAIN KNOWLEDGE):
 - If the user asks about the academic hierarchy, organizational structure, departments, streams, divisions, or batches, YOU MUST trigger the \`search_knowledge_base\` tool (with queries like "Academic Hierarchy") to retrieve the latest backend domain knowledge from the RAG knowledge base. Do not hallucinate the structure without checking the knowledge base.
+
+SYLLABUS & MATERIAL SEARCH:
+- If the user asks you to search through study materials, notes, or syllabus content, YOU MUST trigger the \`search_syllabus_vectors\` tool to perform a similarity search in the Supabase pgvector database. You must provide the \`org_id\` if it's available in the user context.
+
 - Write like you are explaining to a friend, not writing documentation.
 - Use simple, easy-to-understand language. Avoid jargon, technical terms, and developer lingo.
 - Keep sentences SHORT (4-6 sentences per paragraph max). Break up long explanations into bite-sized pieces.
@@ -558,7 +564,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
 The sandbox is a temporary working computer where you can create, inspect, process, and verify files.
 - **Files and folders:** Create, read, edit, rename, compress, and extract files under \`/data\`.
 - **Terminal and programming:** Run Shell commands, Python scripts, Node.js programs, and background jobs.
-- **File formats:** Create, read, and convert TXT, Markdown, JSON, CSV, Excel (.xlsx), Word (.docx), PDFs, Images, Audio, Video, and Zip files.
+- **File formats:** Create, read, and convert TXT, Markdown, JSON, CSV, Excel (.xlsx), Word (.docx), PDFs, Images, Audio, Video, and Zip files. (PRE-INSTALLED LIBRARIES: python: fpdf, openpyxl, xlsxwriter, pandas, reportlab. node: pdfkit, xlsx).
 - **PDF and document processing:** Extract text, render to images, combine/split PDFs, and convert formats. To generate custom PDFs via python script in the sandbox, ALWAYS use the 'fpdf' library (it is pre-installed).
 - **Image processing:** Resize, crop, convert, annotate, and inspect images using Python/bash tools.
 - **Data analysis:** Profile datasets, clean data, calculate metrics, create charts/visualizations using Pandas, Matplotlib, and Seaborn.
@@ -810,17 +816,24 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
                         if (buffer.length < 100) {
                             return "FAILED to upload file: The provided base64 string is too short or empty. This usually means your script failed to generate the file correctly. Fix your script and try again.";
                         }
-                        const { s3Client, BUCKET_NAME, CDN_BASE_URL } = await import("../config/s3Client.js");
-                        const { PutObjectCommand } = await import("@aws-sdk/client-s3");
+                        const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
+                        const s3Client = new S3Client({
+                            region: process.env.AWS_S3_ERP_REGION || 'eu-north-1',
+                            credentials: {
+                                accessKeyId: process.env.AWS_S3_ERP_ACCESS_KEY,
+                                secretAccessKey: process.env.AWS_S3_ERP_SECRET_KEY,
+                            }
+                        });
                         const safeFileName = args.fileName.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
                         const s3Key = `ai-generated/${Date.now()}-${safeFileName}`;
                         await s3Client.send(new PutObjectCommand({
-                          Bucket: BUCKET_NAME,
+                          Bucket: process.env.AWS_S3_ERP_BUCKET_NAME || 'erp-classgrid',
                           Key: s3Key,
                           Body: buffer,
                           ContentType: args.mimeType
                         }));
-                        const url = `${CDN_BASE_URL}/${s3Key}`;
+                        const cdnDomain = process.env.AWS_CLOUDFRONT_ERP_DOMAIN || 'https://cdn.classgrid.in';
+                        const url = `${cdnDomain}/${s3Key}`;
                         return `SUCCESS: File uploaded. Public URL: ${url}`;
                     } catch (e) {
                         return `FAILED to upload file: ${e.message}`;

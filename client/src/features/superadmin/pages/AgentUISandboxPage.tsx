@@ -230,7 +230,7 @@ export function AgentUISandboxPage() {
           <MasterWorkflowWrapper totalTimeMs={22000}>
             <AgentStepper>
             {/* 1. First Thought */}
-            <CombinedReasoningBlock sentences={["I need to read the attached PDF, but it looks like there's no textual content, just an image on the first page. I'll probably need to use a computer to inspect it. The first step is uploading the attachment for analysis. It seems that I might need OCR to extract any possible information. Since the second page is blank, I need to focus on the first. I guess I may also be able to use OCR if necessary."]} />
+            <CombinedReasoningBlock autoFinishMs={5000} sentences={["I need to read the attached PDF, but it looks like there's no textual content, just an image on the first page. I'll probably need to use a computer to inspect it. The first step is uploading the attachment for analysis. It seems that I might need OCR to extract any possible information. Since the second page is blank, I need to focus on the first. I guess I may also be able to use OCR if necessary."]} />
 
             {/* 2. Read Document */}
             <AgentStepAccordion
@@ -245,7 +245,7 @@ export function AgentUISandboxPage() {
             </AgentStepAccordion>
 
             {/* 3. Second Thought (OCR) */}
-            <CombinedReasoningBlock sentences={["I want to keep going with the terminal OCR now. There's no need to read any documentation since I've already indexed it earlier. So, I'm just going to call the terminal. It's straightforward from here. I'll make sure to execute the right commands to get the OCR process moving. Let's see how it goes!"]} />
+            <CombinedReasoningBlock autoFinishMs={5000} sentences={["I want to keep going with the terminal OCR now. There's no need to read any documentation since I've already indexed it earlier. So, I'm just going to call the terminal. It's straightforward from here. I'll make sure to execute the right commands to get the OCR process moving. Let's see how it goes!"]} />
 
             {/* 4. Terminal Command */}
             <AgentStepAccordion
@@ -331,7 +331,7 @@ export function AgentUISandboxPage() {
           <MasterWorkflowWrapper totalTimeMs={22000}>
             <AgentStepper>
             {/* 1. First Thought */}
-            <CombinedReasoningBlock sentences={["The user asked for the internal vacation policy. I will search our internal knowledge base (RAG) to find the relevant employee handbook and policy documents."]} />
+            <CombinedReasoningBlock autoFinishMs={5000} sentences={["The user asked for the internal vacation policy. I will search our internal knowledge base (RAG) to find the relevant employee handbook and policy documents."]} />
 
             {/* 2. Knowledge Base Search */}
             <AgentStepAccordion

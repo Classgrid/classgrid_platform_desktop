@@ -89,6 +89,20 @@ export const getMcpTools = () => [
       },
       required: ['title', 'details']
     }
+  },
+  {
+    name: 'search_syllabus_vectors',
+    description: 'Perform similarity search on the syllabus/material pgvector database in Supabase Postgres.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'The search query.' },
+        org_id: { type: 'string', description: 'The organization ID to filter by.' },
+        match_threshold: { type: 'number', description: 'Minimum similarity threshold (0.0 to 1.0).' },
+        match_count: { type: 'number', description: 'Number of results to return.' }
+      },
+      required: ['query', 'org_id']
+    }
   }
 ];
 
@@ -639,6 +653,63 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
 
+    if (name === 'search_syllabus_vectors') {
+      try {
+        const { query, org_id, match_threshold = 0.7, match_count = 5 } = args;
+        
+        if (!process.env.VOYAGE_API_KEY) {
+          return { content: [{ type: 'text', text: 'Error: VOYAGE_API_KEY is not set in environment variables.' }] };
+        }
+
+        // Using MongoDB's unified Atlas AI API to bypass the legacy Voyage 3 RPM rate limit 
+        // and utilize the Startup Credits directly!
+        const voyageRes = await fetch("https://ai.mongodb.com/v1/embeddings", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json", 
+            "Authorization": `Bearer ${process.env.VOYAGE_API_KEY.trim()}` 
+          },
+          body: JSON.stringify({
+            input: query,
+            model: "voyage-3-large" 
+          })
+        });
+
+        if (!voyageRes.ok) {
+           const errText = await voyageRes.text();
+           throw new Error(`Voyage AI (Atlas) error: ${errText}`);
+        }
+
+        const embeddingResponse = await voyageRes.json();
+        const query_embedding = embeddingResponse.data[0].embedding;
+
+        const sb = getChatSb();
+        const { data, error } = await sb.rpc('match_syllabus_chunks', {
+          query_embedding,
+          match_threshold,
+          match_count,
+          p_org_id: org_id
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (!data || data.length === 0) {
+          return { content: [{ type: 'text', text: 'No relevant syllabus matches found for this query.' }] };
+        }
+
+        const formattedResults = data.map((chunk, index) => 
+          `[Match ${index + 1}] (Similarity: ${chunk.similarity.toFixed(2)})\n${chunk.content}`
+        ).join('\n\n---\n\n');
+
+        return {
+          content: [{ type: 'text', text: `Found ${data.length} matches:\n\n${formattedResults}` }]
+        };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to search syllabus vectors: ${e.message}` }] };
+      }
+    }
 
     throw new Error(`Unknown tool: ${name}`);
   } catch (error) {

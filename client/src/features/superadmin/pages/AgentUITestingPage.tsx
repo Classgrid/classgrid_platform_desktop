@@ -22,6 +22,45 @@ import { MasterWorkflowTestingWrapper } from '@/components/ai/components/stepper
 
 export function AgentUITestingPage() {
   const { theme, setTheme } = useTheme();
+  const [visibleSteps, setVisibleSteps] = React.useState(0);
+  const [typedText, setTypedText] = React.useState("");
+
+  const fullText = "The user wants me to identify the students involved in the cafeteria incident, cross-reference their records, search for the school's disciplinary guidelines, draft an email to their parents, send it, and finally generate an official PDF warning letter.";
+
+  // Progressive reveal simulation
+  React.useEffect(() => {
+    const intervals = [
+      0,      
+      5000,   
+      7000,   
+      9000,   
+      11000,  
+      13000   
+    ];
+    
+    intervals.forEach((delay, index) => {
+      setTimeout(() => {
+        setVisibleSteps(index + 1);
+      }, delay);
+    });
+
+    // Simulate typing effect starting at 0s and ending at 4.5s
+    let words = fullText.split(" ");
+    let currentWords = [];
+    let wordIndex = 0;
+    
+    const typingInterval = setInterval(() => {
+      if (wordIndex < words.length) {
+        currentWords.push(words[wordIndex]);
+        setTypedText(currentWords.join(" "));
+        wordIndex++;
+      } else {
+        clearInterval(typingInterval);
+      }
+    }, 4500 / words.length);
+
+    return () => clearInterval(typingInterval);
+  }, []);
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground relative p-8 transition-colors duration-200">
@@ -50,100 +89,114 @@ export function AgentUITestingPage() {
       <div className="max-w-[700px] mx-auto pt-16 space-y-4">
         {/* --- WORKFLOW 1: DISCIPLINARY EMAIL --- */}
         <div className="mb-12">
-          <MasterWorkflowTestingWrapper totalTimeMs={15000}>
+          <MasterWorkflowTestingWrapper totalTimeMs={30000}>
             <AgentStepper>
               {/* 1. First Thought */}
-              <CombinedReasoningBlock
-                sentences={["The user wants me to identify the students involved in the cafeteria incident, cross-reference their records, search for the school's disciplinary guidelines, draft an email to their parents, send it, and finally generate an official PDF warning letter."]}
-              />
+              {visibleSteps >= 1 && (
+                <CombinedReasoningBlock
+                  sentences={typedText ? [typedText] : []}
+                  isStreaming={visibleSteps < 2}
+                  autoFinishMs={5000}
+                />
+              )}
 
               {/* 2. Database Query */}
-            <AgentStepAccordion
-              title="Querying database"
-              status="success"
-              defaultExpanded={false}
-              executionTimeMs={1000}
-            >
-              <DatabaseQueryView
-                query='db.students.find({ incidents: "cafeteria_fight" })\n  .select({ name: 1, parentsEmail: 1 })'
-                results={[
-                  {
-                    _id: "stu_1",
-                    name: "Student 1",
-                    parentsEmail: "student1@demo.edu"
-                  },
-                  {
-                    _id: "stu_2",
-                    name: "Student 2",
-                    parentsEmail: "student2@demo.edu"
-                  }
-                ]}
-              />
-            </AgentStepAccordion>
+              {visibleSteps >= 2 && (
+                <AgentStepAccordion
+                  title="Querying database"
+                  status="success"
+                  defaultExpanded={false}
+                  executionTimeMs={1000}
+                >
+                  <DatabaseQueryView
+                    query='db.students.find({ incidents: "cafeteria_fight" })\n  .select({ name: 1, parentsEmail: 1 })'
+                    results={[
+                      {
+                        _id: "stu_1",
+                        name: "Student 1",
+                        parentsEmail: "student1@demo.edu"
+                      },
+                      {
+                        _id: "stu_2",
+                        name: "Student 2",
+                        parentsEmail: "student2@demo.edu"
+                      }
+                    ]}
+                  />
+                </AgentStepAccordion>
+              )}
 
-            {/* 3. Web Search */}
-            <AgentStepAccordion
-              title="Searched the web"
-              status="success"
-              defaultExpanded={false}
-              executionTimeMs={2000}
-            >
-              <WebSearchView
-                query="Classgrid demo school disciplinary guidelines for suspension"
-                searchDomain="classgrid.in"
-                results={[
-                  {
-                    title: "Student Code of Conduct & Disciplinary Guidelines",
-                    url: "https://demo.classgrid.in/guidelines/conduct"
-                  },
-                  {
-                    title: "Temporary Suspension Policy | Parent Handbook",
-                    url: "https://demo.classgrid.in/parents/suspension-policy"
-                  }
-                ]}
-              />
-            </AgentStepAccordion>
+              {/* 3. Web Search */}
+              {visibleSteps >= 3 && (
+                <AgentStepAccordion
+                  title="Searched the web"
+                  status="success"
+                  defaultExpanded={false}
+                  executionTimeMs={2000}
+                >
+                  <WebSearchView
+                    query="Classgrid demo school disciplinary guidelines for suspension"
+                    searchDomain="classgrid.in"
+                    results={[
+                      {
+                        title: "Student Code of Conduct & Disciplinary Guidelines",
+                        url: "https://demo.classgrid.in/guidelines/conduct"
+                      },
+                      {
+                        title: "Temporary Suspension Policy | Parent Handbook",
+                        url: "https://demo.classgrid.in/parents/suspension-policy"
+                      }
+                    ]}
+                  />
+                </AgentStepAccordion>
+              )}
 
-            {/* 4. Drafted Email */}
-            <AgentStepAccordion
-              title="Drafted email"
-              status="success"
-              defaultExpanded={false}
-              executionTimeMs={3000}
-            >
-              <EmailActionView
-                to={Array.from({ length: 50 }, (_, i) => `student${i + 1}@demo.edu`).join(', ')}
-                subject="URGENT: Regarding the latest disciplinary action"
-                bodyPreview={`Dear Principal and Parents,\n\nI am writing to inform you that following the recent incident in the cafeteria, we have decided to implement a temporary suspension for the student involved.\n\nPlease refer to the attached documentation for full details on the incident report and the school board's disciplinary guidelines.\n\nBest regards,\nClassgrid AI Assistant`}
-              />
-            </AgentStepAccordion>
+              {/* 4. Drafted Email */}
+              {visibleSteps >= 4 && (
+                <AgentStepAccordion
+                  title="Drafted email"
+                  status="success"
+                  defaultExpanded={false}
+                  executionTimeMs={3000}
+                >
+                  <EmailActionView
+                    to={Array.from({ length: 50 }, (_, i) => `student${i + 1}@demo.edu`).join(', ')}
+                    subject="URGENT: Regarding the latest disciplinary action"
+                    bodyPreview={`Dear Principal and Parents,\n\nI am writing to inform you that following the recent incident in the cafeteria, we have decided to implement a temporary suspension for the student involved.\n\nPlease refer to the attached documentation for full details on the incident report and the school board's disciplinary guidelines.\n\nBest regards,\nClassgrid AI Assistant`}
+                  />
+                </AgentStepAccordion>
+              )}
 
-            {/* 5. Sent Email */}
-            <AgentStepAccordion
-              title="Sent email"
-              status="success"
-              defaultExpanded={false}
-              executionTimeMs={4000}
-            >
-              <EmailSentView
-                toCount={50}
-                subject="URGENT: Regarding the latest disciplinary action"
-              />
-            </AgentStepAccordion>
+              {/* 5. Sent Email */}
+              {visibleSteps >= 5 && (
+                <AgentStepAccordion
+                  title="Sent email"
+                  status="success"
+                  defaultExpanded={false}
+                  executionTimeMs={4000}
+                >
+                  <EmailSentView
+                    toCount={50}
+                    subject="URGENT: Regarding the latest disciplinary action"
+                  />
+                </AgentStepAccordion>
+              )}
 
-            {/* 6. Generated PDF */}
-            <AgentStepAccordion
-              title="Generated PDF document"
-              status="success"
-              defaultExpanded={true}
-              executionTimeMs={5000}
-            >
-              <DocumentGenerationView
-                fileName="official_warning_letter.pdf"
-                pageCount={3}
-                size="1.2 MB"
-              />
-            </AgentStepAccordion>
+              {/* 6. Generated PDF */}
+              {visibleSteps >= 6 && (
+                <AgentStepAccordion
+                  title="Generated PDF document"
+                  status="success"
+                  defaultExpanded={true}
+                  executionTimeMs={5000}
+                >
+                  <DocumentGenerationView
+                    fileName="official_warning_letter.pdf"
+                    pageCount={3}
+                    size="1.2 MB"
+                  />
+                </AgentStepAccordion>
+              )}
             </AgentStepper>
           </MasterWorkflowTestingWrapper>
         </div>
