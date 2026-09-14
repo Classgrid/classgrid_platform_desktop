@@ -219,13 +219,21 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         // 🚨 AI TOKEN OVERFLOW PROTECTION 🚨
-        // We use a custom stringify replacer to strip out massive useless fields (like passwords, base64 images, tokens, etc.)
-        // across ALL collections. This prevents the LLM from hitting its 2000 token limit and truncating the output to 1-2 items!
         const aiSafetyReplacer = (key, value) => {
-          const forbiddenKeys = ['password', 'profilePicture', 'profileBanner', 'logo', 'favicon', 'signature', 'activationToken', 'resetPasswordToken', 'payroll_config', 'preferences', 'settings'];
+          const forbiddenKeys = [
+            'password', 'profilePicture', 'profileBanner', 'logo', 'favicon', 'signature', 
+            'activationToken', 'resetPasswordToken', 'payroll_config', 'preferences', 'settings',
+            'fee_structures', 'modules', 'theme', 'audit_logs', 'history', 'metadata', 'permissions'
+          ];
           if (forbiddenKeys.includes(key)) return undefined;
-          // Also truncate any ridiculously long string that might be a base64 image or giant HTML block
+          
           if (typeof value === 'string' && value.length > 500) return "[TRUNCATED HUGE STRING]";
+          
+          // Aggressive list protection: If we are returning a list of documents, strip out any nested arrays to prevent context overflow!
+          if (key !== "" && Array.isArray(value) && value.length > 3 && Array.isArray(result) && result.length > 2) {
+             return `[Array of ${value.length} items TRUNCATED to save context]`;
+          }
+          
           return value;
         };
 
@@ -271,7 +279,17 @@ export const handleToolCall = async (name, args, context = {}) => {
           throw new Error(`Unsupported Supabase operation: ${operation}`);
         }
 
-        let outputText = JSON.stringify(result, null, 2);
+        const aiSafetyReplacer = (key, value) => {
+          const forbiddenKeys = ['password', 'profilePicture', 'profileBanner', 'logo', 'favicon', 'signature', 'activationToken', 'resetPasswordToken', 'payroll_config', 'preferences', 'settings', 'fee_structures', 'modules', 'theme', 'audit_logs', 'history', 'metadata', 'permissions'];
+          if (forbiddenKeys.includes(key)) return undefined;
+          if (typeof value === 'string' && value.length > 500) return "[TRUNCATED HUGE STRING]";
+          if (key !== "" && Array.isArray(value) && value.length > 3 && Array.isArray(result) && result.length > 2) {
+             return `[Array of ${value.length} items TRUNCATED to save context]`;
+          }
+          return value;
+        };
+
+        let outputText = JSON.stringify(result, aiSafetyReplacer, 2);
         if (Array.isArray(result) && result.length > 2) {
           outputText += `\n\n[SYSTEM DIRECTIVE TO AI: The database returned EXACTLY ${result.length} items. YOU ARE STRICTLY FORBIDDEN from truncating this list in your response to the user. You MUST transcribe ALL ${result.length} items. Do not stop early. Do not summarize.]`;
         }
