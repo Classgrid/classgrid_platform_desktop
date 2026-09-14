@@ -203,7 +203,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
   // Auto-open menus based on route changes
   useEffect(() => {
     setShowStorageMenu(location.pathname.includes("/storage"));
-    setShowAgentMenu(location.pathname.includes("/agent"));
+    setShowAgentMenu(location.pathname.includes("/agent") && !location.pathname.includes("/agent-reviews"));
   }, [location.pathname, agentItem]);
 
   // Auto-open Agent menu when first question is sent
@@ -305,7 +305,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                                   e.preventDefault();
                                   setShowAgentMenu(true);
                                   // Only navigate to home if we are NOT already somewhere in the agent section
-                                  if (item.to && !location.pathname.includes("/agent")) {
+                                  if (item.to && !(location.pathname.includes("/agent") && !location.pathname.includes("/agent-reviews"))) {
                                     navigate(item.to);
                                   }
                                 }
@@ -336,7 +336,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                                         e.preventDefault();
                                         setShowAgentMenu(true);
                                         // Only navigate to home if we are NOT already somewhere in the agent section
-                                        if (item.to && !location.pathname.includes("/agent")) {
+                                        if (item.to && !(location.pathname.includes("/agent") && !location.pathname.includes("/agent-reviews"))) {
                                           navigate(item.to);
                                         }
                                       } else if (item.hasNestedNav) {

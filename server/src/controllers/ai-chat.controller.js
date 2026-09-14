@@ -1508,13 +1508,14 @@ export const submitAiFeedback = async (req, res) => {
         const { messageId, type, text, fileUrl } = req.body;
         const userEmail = req.user?.email || "Unknown User";
 
+        const dbType = (type === "positive" || type === "up") ? "up" : "down";
         // Save to Supabase (Option 1 Database Save Logic)
         const { data: dbData, error: dbError } = await supabase
             .from('ai_agent_reviews')
             .insert([{
                 message_id: messageId,
                 user_email: userEmail,
-                type,
+                type: dbType,
                 feedback_text: text || null,
                 file_url: fileUrl || null
             }])
