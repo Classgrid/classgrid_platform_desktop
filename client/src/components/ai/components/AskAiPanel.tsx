@@ -703,7 +703,7 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
           }
           if (result.uploadUrl === "mock") {
             await new Promise(r => setTimeout(r, 1000));
-            fileUrls.push(result.fileUrl);
+            fileUrls.push(result.publicUrl);
           } else {
             const uploadRes = await fetch(result.uploadUrl, {
               method: "PUT",
@@ -711,7 +711,7 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
               headers: { "Content-Type": file.type }
             });
             if (!uploadRes.ok) throw new Error("Upload to R2 failed");
-            fileUrls.push(result.fileUrl);
+            fileUrls.push(result.publicUrl);
           }
         }
       }
