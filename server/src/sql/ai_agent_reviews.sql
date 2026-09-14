@@ -3,7 +3,7 @@ CREATE TABLE public.ai_agent_reviews (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     message_id text NOT NULL,
     user_email text NOT NULL,
-    type text NOT NULL CHECK (type IN ('up', 'down')),
+    type text NOT NULL DEFAULT 'down' CHECK (type IN ('down')),
     feedback_text text,
     file_url text,
     created_at timestamp with time zone DEFAULT now() NOT NULL
