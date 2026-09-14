@@ -1019,7 +1019,8 @@ except Exception as e:
                             PlatformRagChunk = mongoose.model('PlatformRagChunk', new mongoose.Schema({}, { strict: false }), 'platform_rag_chunks');
                         }
 
-                        const embedder = new VoyageEmbedder({ apiKey: voyageKey, provider: 'voyage' });
+                        const apiUrl = voyageKey.startsWith('al-') ? 'https://ai.mongodb.com/v1/embeddings' : 'https://api.voyageai.com/v1/embeddings';
+                        const embedder = new VoyageEmbedder({ apiKey: voyageKey, provider: 'voyage', apiUrl });
                         const vectorStore = new MongoVectorStore(PlatformRagChunk, "vector_index", "embedding");
                         const pipeline = new RagPipeline({ embedder, vectorStore });
 
