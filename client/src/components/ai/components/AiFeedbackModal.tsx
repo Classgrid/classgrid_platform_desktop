@@ -342,7 +342,7 @@ export function AiFeedbackModal({ isOpen, onClose, onSubmit, isSubmitting }: AiF
               <input
                 type="file"
                 multiple
-                accept="image/*,application/pdf"
+                accept="image/*,application/pdf,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 ref={fileInputRef}
                 className="hidden"
                 onChange={handleFileChange}

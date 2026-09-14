@@ -294,7 +294,7 @@ export function AgentReviewsPage() {
                         src={trimmedUrl} 
                         alt="Feedback attachment" 
                         onClick={() => setPreviewFile({ name: 'Attachment', src: trimmedUrl, mimeType: isImage ? 'image/png' : 'application/pdf' })}
-                        className="max-w-xs max-h-48 rounded-md border border-border object-cover hover:opacity-80 transition-opacity cursor-pointer" 
+                        className="max-w-xs max-h-48 rounded-md border border-border object-cover hover:opacity-80 transition-opacity cursor-pointer bg-white" 
                       />
                     ) : (
                       <Button 
