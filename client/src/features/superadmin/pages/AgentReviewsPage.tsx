@@ -293,14 +293,14 @@ export function AgentReviewsPage() {
                       <img 
                         src={trimmedUrl} 
                         alt="Feedback attachment" 
-                        onClick={() => window.open(trimmedUrl, '_blank')}
+                        onClick={() => setPreviewFile({ name: 'Attachment', src: trimmedUrl, mimeType: isImage ? 'image/png' : 'application/pdf' })}
                         className="max-w-xs max-h-48 rounded-md border border-border object-cover hover:opacity-80 transition-opacity cursor-pointer" 
                       />
                     ) : (
                       <Button 
                         variant="link" 
                         className="p-0 h-auto text-blue-600 hover:text-blue-800 flex items-center cursor-pointer" 
-                        onClick={() => window.open(trimmedUrl, '_blank')}
+                        onClick={() => setPreviewFile({ name: 'Attachment', src: trimmedUrl, mimeType: isImage ? 'image/png' : 'application/pdf' })}
                       >
                         <ExternalLink className="h-4 w-4 mr-1.5" />
                         View Attached File {review.file_url!.split(',').length > 1 ? `(${i + 1})` : ''}
