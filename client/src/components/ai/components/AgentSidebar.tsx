@@ -484,6 +484,10 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
             <SidebarMenuItem>
               <SidebarMenuButton 
                 tooltip="Search"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.dispatchEvent(new Event("agent:open-search-palette"));
+                }}
                 render={
                   <div className="flex items-center gap-3 w-full cursor-pointer">
                     <Search size={20} />
@@ -536,7 +540,15 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 <PopoverContent side="right" align="start" sideOffset={10} className="w-[280px] p-2 bg-white dark:bg-[#202123] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl max-h-[70vh] overflow-y-auto">
                   <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-2">Today</div>
                   <SidebarMenu className="mb-4">
-                    {loading && <div className="px-2 text-sm text-slate-400">Loading...</div>}
+                    {loading && (
+                      <>
+                        <div className="px-2 py-1.5 space-y-3">
+                          <div className="h-4 w-[85%] rounded-md bg-muted animate-pulse" />
+                          <div className="h-4 w-[65%] rounded-md bg-muted animate-pulse" />
+                          <div className="h-4 w-[75%] rounded-md bg-muted animate-pulse" />
+                        </div>
+                      </>
+                    )}
                     {!loading && todaySessions.length === 0 && <div className="px-2 text-sm text-slate-400">No chats today</div>}
                     {todaySessions.map(renderSessionItem)}
                   </SidebarMenu>
@@ -584,7 +596,13 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
               </AccordionTrigger>
               <AccordionContent className="pb-0 pt-1 px-0">
                 <SidebarMenu>
-                  {loading && <div className="px-2 text-xs text-muted-foreground py-2">Loading...</div>}
+                  {loading && (
+                    <div className="px-2 py-1.5 space-y-3">
+                      <div className="h-4 w-[80%] rounded-md bg-muted animate-pulse" />
+                      <div className="h-4 w-[60%] rounded-md bg-muted animate-pulse" />
+                      <div className="h-4 w-[70%] rounded-md bg-muted animate-pulse" />
+                    </div>
+                  )}
                   {!loading && todaySessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">No chats today</div>}
                   {todaySessions.map(renderSessionItem)}
                 </SidebarMenu>

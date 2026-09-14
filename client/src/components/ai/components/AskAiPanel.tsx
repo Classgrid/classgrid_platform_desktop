@@ -42,6 +42,9 @@ import {
   Trash2,
   UserRound,
   X,
+  Share,
+  MoreHorizontal,
+  Pin,
   Info,
   Lightbulb,
   MessageSquareWarning,
@@ -63,6 +66,13 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/marketing_ui/dropdown-menu";
 import {
   Accordion,
   AccordionContent,
@@ -893,8 +903,8 @@ const MarkdownComponents = {
             language={language}
             rawCode={String(children).replace(/\n$/, "")}
             html={`<pre class="text-[13px] py-4 px-4 !m-0 flex flex-col"><code class="font-mono hljs">${!isTyping && language && hljs.getLanguage(language)
-                ? hljs.highlight(String(children).replace(/\n$/, ""), { language }).value
-                : String(children).replace(/\n$/, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+              ? hljs.highlight(String(children).replace(/\n$/, ""), { language }).value
+              : String(children).replace(/\n$/, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
               }</code></pre>`}
           />
         </div>
@@ -1174,6 +1184,90 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [isLoadingChat, setIsLoadingChat] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [showFilesPanel, setShowFilesPanel] = useState(false);
+
+  // ─── Header Action Handlers ───
+  const handleDirectShare = async () => {
+    if (!sessionId) return;
+    const loadingToast = toast.loading("Generating share link...");
+    try {
+      const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
+        ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
+        : "";
+      const res = await fetch(`${endpointPrefix}/api/ai/sessions/${sessionId}/public-share`, {
+        method: "POST",
+        credentials: "include"
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.shareUrl) {
+          await navigator.clipboard.writeText(data.shareUrl);
+          toast.success("Link copied to clipboard!");
+        }
+      } else {
+        toast.error("Failed to generate link");
+      }
+    } catch (e) {
+      toast.error("Error creating share link");
+    } finally {
+      toast.dismiss(loadingToast);
+    }
+  };
+
+  const handlePinToggle = async () => {
+    if (!sessionId) return;
+    try {
+      const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
+        ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
+        : "";
+      const res = await fetch(`${endpointPrefix}/api/ai/sessions/${sessionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pinned: !isPinned }),
+        credentials: "include"
+      });
+      if (res.ok) {
+        setIsPinned(!isPinned);
+        toast.success(!isPinned ? "Chat pinned" : "Chat unpinned");
+        window.dispatchEvent(new CustomEvent("agent:refresh-sidebar"));
+      } else {
+        toast.error("Failed to update pin status");
+      }
+    } catch (err) {
+      toast.error("An error occurred");
+    }
+  };
+
+  const handleDeleteChat = async () => {
+    if (!sessionId) return;
+    if (!confirm("Are you sure you want to delete this chat?")) return;
+    try {
+      const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
+        ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
+        : "";
+      const res = await fetch(`${endpointPrefix}/api/ai/sessions/${sessionId}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      if (res.ok) {
+        toast.success("Chat deleted");
+        window.dispatchEvent(new CustomEvent("agent:refresh-sidebar"));
+        
+        // Go back to the base agent path to clear the chat view
+        const currentPath = window.location.pathname;
+        const pathParts = currentPath.split('/');
+        const agentIndex = pathParts.indexOf('agent');
+        if (agentIndex !== -1) {
+          const baseAgentPath = pathParts.slice(0, agentIndex + 1).join('/');
+          window.history.pushState(null, "", baseAgentPath);
+        }
+      } else {
+        toast.error("Failed to delete chat");
+      }
+    } catch (err) {
+      toast.error("An error occurred");
+    }
+  };
+  // ──────────────────────────────
 
   const chatFiles = useMemo(() => {
     const files: { url: string; name: string; mimeType: string }[] = [];
@@ -2483,23 +2577,23 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             <div className="mx-1 h-4 w-[1px] bg-border" />
           </>
         )}
-        
+
         {/* NEW TOP RIGHT HEADER ACTIONS */}
         {variant === "full-page" && messages.length > 0 && sessionId && (
           <div className="flex items-center gap-1 mr-2 text-muted-foreground">
             {/* Direct Share Button */}
             <button
               onClick={handleDirectShare}
-              className="flex items-center gap-1.5 h-8 px-2.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-[13px] font-medium transition-colors"
+              className="flex items-center gap-1.5 h-8 px-2.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-[13px] font-medium transition-colors cursor-pointer"
             >
               <Share className="h-4 w-4" />
               Share
             </button>
-            
+
             {/* Three Dot Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                <button className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer">
                   <MoreHorizontal className="h-4 w-4" />
                 </button>
               </DropdownMenuTrigger>
@@ -2536,44 +2630,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   );
 
   const panelChat = (
-    <div ref={variant !== "full-page" ? chatScrollRef : undefined} className={cn("relative overscroll-contain [scrollbar-gutter:stable]", variant === "full-page" ? "w-full overflow-y-auto" : "flex-1 min-h-0 overflow-y-auto")}>
-      
-      {/* FILES SIDE PANEL (Opens from left) */}
-      {showFilesPanel && (
-        <div className="absolute top-0 left-0 bottom-0 w-[300px] bg-background border-r border-border/50 shadow-xl z-20 flex flex-col transition-transform animate-in slide-in-from-left">
-          <div className="flex items-center justify-between p-4 border-b border-border/50">
-            <h3 className="font-semibold text-sm">Files in chat</h3>
-            <button onClick={() => setShowFilesPanel(false)} className="text-muted-foreground hover:text-foreground">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            {chatFiles.length === 0 ? (
-              <div className="text-sm text-muted-foreground text-center mt-10">
-                No files referenced yet
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {chatFiles.map((f, i) => (
-                  <button 
-                    key={i} 
-                    onClick={() => setPreviewFile({ url: f.url, name: f.name, mimeType: f.mimeType })}
-                    className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-muted transition-colors text-left"
-                  >
-                    <div className="h-10 w-10 shrink-0 bg-primary/10 rounded flex items-center justify-center">
-                      <FileText className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium truncate">{f.name}</div>
-                      <div className="text-[11px] text-muted-foreground uppercase">{f.mimeType.split('/').pop()?.replace('vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'excel').replace('jpeg', 'jpg')}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+    <div ref={variant !== "full-page" ? chatScrollRef : undefined} className={cn("relative overscroll-contain chat-scrollbar [scrollbar-gutter:stable]", variant === "full-page" ? "w-full" : "flex-1 min-h-0 overflow-y-auto")}>
+
 
       <div className={cn("flex flex-col gap-4 px-4 py-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]", variant === "full-page" && "max-w-[48rem] mx-auto w-full pb-48")}>
         {isLoadingChat ? (
@@ -2757,7 +2815,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                           thoughtGroup.push(step);
                                         } else if (step.type === 'tool') {
                                           flushThoughts();
-                                          
+
                                           // Render specific tool views
                                           if (step.tool === 'run_code' || step.tool === 'execute_terminal_command') {
                                             elements.push(
@@ -2969,7 +3027,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                           );
                                         }
                                       });
-                                      
+
                                       flushThoughts();
                                       return elements;
                                     })()}
@@ -3342,26 +3400,26 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           ────────────────────────────────────────────────────────────────────────── */}
       {variant === "full-page" ? (
         <div className="w-full h-full bg-background flex flex-row">
-          <div className="flex-1 relative flex flex-col h-full">
+          <div className="flex-1 min-w-0 relative flex flex-col h-full">
             {/* Sidebar toggle and Top Right Header Actions */}
             <div className="shrink-0 flex items-center justify-between px-6 pt-3 h-14">
               <SidebarTrigger />
-              
+
               {messages.length > 0 && sessionId && (
                 <div className="flex items-center gap-1 text-muted-foreground">
                   {/* Direct Share Button */}
                   <button
                     onClick={handleDirectShare}
-                    className="flex items-center gap-1.5 h-8 px-2.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-[13px] font-medium transition-colors"
+                    className="flex items-center gap-1.5 h-8 px-2.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-[13px] font-medium transition-colors cursor-pointer"
                   >
                     <Share className="h-4 w-4" />
                     Share
                   </button>
-                  
+
                   {/* Three Dot Menu */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                      <button className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer">
                         <MoreHorizontal className="h-4 w-4" />
                       </button>
                     </DropdownMenuTrigger>
@@ -3384,46 +3442,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 </div>
               )}
             </div>
-            {/* FILES SIDE PANEL (Opens from right to avoid overlapping left sidebar) */}
-            {showFilesPanel && (
-              <div className="absolute top-0 right-0 bottom-0 w-[300px] bg-background border-l border-border/50 shadow-2xl z-20 flex flex-col transition-transform animate-in slide-in-from-right">
-                <div className="flex items-center justify-between p-4 border-b border-border/50">
-                  <h3 className="font-semibold text-sm">Files in chat</h3>
-                  <button onClick={() => setShowFilesPanel(false)} className="text-muted-foreground hover:text-foreground">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4">
-                  {chatFiles.length === 0 ? (
-                    <div className="text-sm text-muted-foreground text-center mt-10">
-                      No files referenced yet
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      {chatFiles.map((f, i) => (
-                        <button 
-                          key={i} 
-                          onClick={() => setPreviewFile({ url: f.url, name: f.name, mimeType: f.mimeType })}
-                          className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-muted transition-colors text-left"
-                        >
-                          <div className="h-10 w-10 shrink-0 bg-primary/10 rounded flex items-center justify-center">
-                            <FileText className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium truncate">{f.name}</div>
-                            <div className="text-[11px] text-muted-foreground uppercase">{f.mimeType.split('/').pop()?.replace('vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'excel').replace('jpeg', 'jpg')}</div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {isLoadingChat ? (
               <>
-                <div className="flex-1 overflow-y-auto overscroll-contain scroll-smooth [scrollbar-gutter:stable]">
+                <div className="flex-1 overflow-y-auto overscroll-contain scroll-smooth chat-scrollbar [scrollbar-gutter:stable]">
                   <div className="max-w-[48rem] mx-auto w-full px-4 py-8">
                     <div className="flex flex-col gap-6 animate-in fade-in duration-300">
                       <div className="flex justify-end">
@@ -3669,7 +3691,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               <>
                 <div
                   ref={chatScrollRef}
-                  className="flex-1 overflow-y-auto overscroll-contain scroll-smooth [scrollbar-gutter:stable]"
+                  className="flex-1 overflow-y-auto overscroll-contain scroll-smooth chat-scrollbar [scrollbar-gutter:stable]"
                 >
                   {panelChat}
                 </div>
@@ -3679,8 +3701,52 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               </>
             )}
           </div>
+          {/* Files Panel integrated into page layout */}
+          <AnimatePresence>
+            {showFilesPanel && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 350, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                className="shrink-0 h-full bg-background border-l border-border/50 flex flex-col overflow-hidden"
+              >
+                <div className="shrink-0 flex items-center justify-between px-4 pt-3 h-14">
+                  <h3 className="font-semibold text-sm">Files in chat</h3>
+                  <Button variant="ghost" size="icon" onClick={() => setShowFilesPanel(false)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 w-[350px]">
+                {chatFiles.length === 0 ? (
+                  <div className="text-sm text-muted-foreground text-center mt-10">
+                    No files referenced yet
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {chatFiles.map((f, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setPreviewFile({ src: f.url, name: f.name, mimeType: f.mimeType })}
+                        className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-muted transition-colors text-left cursor-pointer"
+                      >
+                        <div className="h-10 w-10 shrink-0 bg-primary/10 rounded flex items-center justify-center">
+                          <FileText className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium truncate">{f.name}</div>
+                          <div className="text-[11px] text-muted-foreground uppercase">{f.mimeType.split('/').pop()?.replace('vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'excel').replace('jpeg', 'jpg')}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+          </AnimatePresence>
           {/* Right-side TOC showing user questions */}
-          {tocItems.length > 0 && <ScrollSpyTOC tocItems={tocItems} activeSection={activeSection} />}
+          {tocItems.length > 0 && !showFilesPanel && <ScrollSpyTOC tocItems={tocItems} activeSection={activeSection} />}
         </div>
       ) : null}
 

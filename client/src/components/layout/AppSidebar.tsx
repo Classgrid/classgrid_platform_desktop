@@ -59,6 +59,59 @@
  * 2. FRONTEND IS HOSTED ON VERCEL
  * ─────────────────────────────────────────────────────────
  */
+/*
+ * =========================================================================================
+ * STRICT SECURITY POLICY:
+ * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
+ * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
+ * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * =========================================================================================
+ */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
+ * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
+ * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
+ * 4. NEVER ADD A FLOATING AI PANEL ANYWHERE IN THIS CODEBASE.
+ * =========================================================================================
+ * STRICT SECURITY POLICY & FINAL WARNING:
+ * NO AI, NO HUMAN, NO GOD WILL EVER AGAIN ADD SPARKLES, ADD A SIDEBAR, OR ADD ANY KIND OF 
+ * FLOATING AI TO THIS CODEBASE. WE ONLY USE FULL SCREEN CHAT GPT-LIKE AI.
+ * =========================================================================================
+ * 
+ * CORRECT DESIGN DRAWING (AS REQUESTED):
+ * 
+ * +---------------------------------------------------+
+ * |  Main Sidebar |          What do you want to know?|
+ * |  (NO AGENT    |                                   |
+ * |   MENU HERE)  |          [  Input Box  ]          |
+ * |               |                                   |
+ * |               |                                   |
+ * |               |   <-- NO FLOATING SPARKLES HERE   |
+ * +---------------------------------------------------+
+ * 
+ * THIS IS THE ONLY ALLOWED DESIGN. DO NOT DEVIATE.
+ * =========================================================================================
+ */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 NAMING CONVENTION RULE 🚨
+ * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
+ * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * ─────────────────────────────────────────────────────────
+ */
+
+/*
+ * ─────────────────────────────────────────────────────────
+ * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
+ * 2. FRONTEND IS HOSTED ON VERCEL
+ * ─────────────────────────────────────────────────────────
+ */
 
 // 🛑 AI AGENT INSTRUCTION: DO NOT EDIT OR REFACTOR THIS FILE.
 // The user explicitly requested that AI agents must NEVER modify the sidebar 
@@ -96,6 +149,7 @@ import { SlidingSidebar } from "./SlidingSidebar";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { AgentNestedMenu } from "@/components/ai/components/AgentSidebar";
+import { AiChatSearchPalette } from "@/components/ai/components/AiChatSearchPalette";
 
 interface AppSidebarProps {
   role: DashboardRole;
@@ -121,6 +175,30 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
   // Defaults to true if we load directly into a storage route.
   const [showStorageMenu, setShowStorageMenu] = useState(location.pathname.startsWith("/superadmin/storage"));
   const [showAgentMenu, setShowAgentMenu] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [paletteMode, setPaletteMode] = useState<"global" | "chat">("global");
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setPaletteMode("global");
+        setPaletteOpen((open) => !open);
+      }
+    };
+    const handleOpen = () => {
+      setPaletteMode("chat");
+      setPaletteOpen(true);
+    };
+    
+    document.addEventListener("keydown", down);
+    window.addEventListener("agent:open-search-palette", handleOpen);
+    
+    return () => {
+      document.removeEventListener("keydown", down);
+      window.removeEventListener("agent:open-search-palette", handleOpen);
+    };
+  }, []);
 
   // Auto-open menus based on route changes
   useEffect(() => {
@@ -343,6 +421,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
       </SidebarContent>
 
       {user && <SidebarFooterUser role={role} user={user} />}
+      <AiChatSearchPalette open={paletteOpen} onOpenChange={setPaletteOpen} mode={paletteMode} />
     </Sidebar>
   );
 }

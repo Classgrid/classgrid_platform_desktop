@@ -68,13 +68,12 @@ function getMimeType(file: FilePreviewSource): string {
 
 function isImage(mime: string) { return mime.startsWith("image/"); }
 function isPDF(mime: string) { return mime === "application/pdf"; }
-function isText(mime: string) { return mime.startsWith("text/") && mime !== "text/csv"; }
+function isText(mime: string) { return mime.startsWith("text/"); }
 function isOfficeDoc(mime: string) {
   return [
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "text/csv"
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   ].includes(mime);
 }
 

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, FileText, ArrowRight, Command, Loader2, MessageSquare, LayoutDashboard } from "lucide-react";
+import { Spinner } from "@/components/marketing_ui/spinner";
 import { cn } from "@/lib/utils";
 import { useLocation } from "react-router-dom";
 import { resolveDashboardConfig } from "@/config/sidebar";
@@ -239,7 +240,7 @@ export function AiChatSearchPalette({
                   spellCheck={false}
                 />
                 {loading && (
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-slate-900 dark:text-white/30" />
+                  <Spinner className="h-4 w-4 shrink-0 text-slate-900 dark:text-white/30" />
                 )}
                 <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded-md border border-slate-200 dark:border-white/[0.1] bg-slate-100 dark:bg-white/[0.04] px-1.5 py-0.5 text-[11px] font-medium text-slate-500 dark:text-white/40">
                   Esc
