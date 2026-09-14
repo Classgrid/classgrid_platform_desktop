@@ -210,8 +210,8 @@ export function AiFeedbackModal({ isOpen, onClose, onSubmit, isSubmitting }: AiF
   const otherFiles = files.map((f, i) => ({ file: f, index: i })).filter(x => !x.file.type.startsWith("image/"));
 
   const docsViewerImages: DocsViewerImage[] = imageFiles.map(x => ({
-    id: (x.file as any)._previewKey || x.file.name,
-    src: imageUrls[(x.file as any)._previewKey] || "",
+    id: x.file.name,
+    src: imageUrls[x.file.name] || "",
     alt: x.file.name
   }));
 
