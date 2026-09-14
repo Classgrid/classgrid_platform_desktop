@@ -367,6 +367,9 @@ export function AgentReviewsPage() {
           })
         )}
       </div>
+
+      <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
     </div>
   );
 }
+
