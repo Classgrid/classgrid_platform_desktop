@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
-import { ThumbsDown, MessageSquare, ExternalLink, Calendar, Search, Filter, Building, ChevronDown, ChevronUp, ChevronRight, Home, ArrowLeft, AlertCircle, Trash2 } from "lucide-react";
+import { ThumbsDown, MessageSquare, ExternalLink, Calendar, Search, Filter, Building, ChevronDown, ChevronUp, ChevronRight, Home, ArrowLeft, AlertCircle, Trash2, FileText, ExternalLink as ExtLinkIcon } from "lucide-react";
 import { useAgentReviews, useUpdateAgentReviewStatus, useDeleteAgentReview, useBulkDeleteAgentReviews } from "../queries/useAgentReviews";
 import { formatDistanceToNow, format } from "date-fns";
 import { Badge } from "@/components/marketing_ui/badge";
@@ -25,6 +25,32 @@ interface PathState {
   org?: string;
   email?: string;
   date?: string;
+}
+
+function PdfAttachmentChip({ filename = "document.pdf", onClick }: { filename?: string, onClick?: () => void }) {
+  return (
+    <div
+      onClick={onClick}
+      className="bg-white dark:bg-[#151515] rounded-xl border border-slate-200/80 dark:border-white/10 flex items-center justify-between p-4 shadow-sm dark:shadow-none w-full max-w-sm hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-all duration-500 ease-in-out cursor-pointer group"
+    >
+      <div className="flex items-center gap-3 overflow-hidden">
+        {/* Red Icon Box */}
+        <div className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center bg-red-100/50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
+          <FileText className="h-5 w-5" />
+        </div>
+        
+        {/* Text Container */}
+        <div className="flex flex-col overflow-hidden text-left">
+          <span className="text-[14px] font-medium text-slate-800 dark:text-[#eeeeee] truncate">
+            {filename}
+          </span>
+          <span className="text-[13px] text-slate-500 dark:text-[#8a8a8a] mt-0.5">
+            Click to preview
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const formatRoleName = (role: string) => {
@@ -202,7 +228,6 @@ export function AgentReviewsPage() {
               setSelectedIds(prev => prev.filter(id => id !== review.id));
             }
           }}
-          className="border-border bg-card shadow-sm"
         />
       </div>
       <div className={`flex flex-col md:flex-row border-l-4 bg-card hover:bg-muted/10 transition-colors pl-10`} style={{
@@ -298,23 +323,29 @@ export function AgentReviewsPage() {
                 };
 
                 return (
-                  <div key={i}>
+                  <div key={i} className="flex items-start gap-4">
                     {isImage ? (
-                      <img 
-                        src={trimmedUrl} 
-                        alt="Feedback attachment" 
-                        onClick={() => setPreviewFile({ name: 'Attachment', src: trimmedUrl, mimeType: getMime() })}
-                        className="max-w-xs max-h-48 rounded-md border border-border object-cover hover:opacity-80 transition-opacity cursor-pointer bg-white" 
-                      />
+                      <div className="flex flex-col gap-2 items-start">
+                        <img 
+                          src={trimmedUrl} 
+                          alt="Feedback attachment" 
+                          onClick={() => setPreviewFile({ name: 'Attachment', src: trimmedUrl, mimeType: getMime() })}
+                          className="max-w-xs max-h-48 rounded-md border border-border object-cover hover:opacity-80 transition-opacity cursor-pointer bg-white" 
+                        />
+                        <a href={trimmedUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1">
+                          <ExtLinkIcon className="h-3 w-3" /> Open raw link
+                        </a>
+                      </div>
                     ) : (
-                      <Button 
-                        variant="link" 
-                        className="p-0 h-auto text-blue-600 hover:text-blue-800 flex items-center cursor-pointer" 
-                        onClick={() => setPreviewFile({ name: 'Attachment', src: trimmedUrl, mimeType: getMime() })}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-1.5" />
-                        View Attached File {review.file_url!.split(',').length > 1 ? `(${i + 1})` : ''}
-                      </Button>
+                      <div className="flex flex-col gap-2 items-start w-full max-w-sm">
+                        <PdfAttachmentChip 
+                          filename={`Attached File ${review.file_url!.split(',').length > 1 ? `(${i + 1})` : ''}`}
+                          onClick={() => setPreviewFile({ name: 'Attachment', src: trimmedUrl, mimeType: getMime() })}
+                        />
+                        <a href={trimmedUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1 ml-1">
+                          <ExtLinkIcon className="h-3 w-3" /> Open raw link
+                        </a>
+                      </div>
                     )}
                   </div>
                 );
