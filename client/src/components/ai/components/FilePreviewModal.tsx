@@ -266,7 +266,7 @@ export default function FilePreviewModal({ file, onClose, onDelete }: FilePrevie
           {/* PDF viewer */}
           {isPDF(mime) && srcUrl && (
             <iframe
-              src={srcUrl}
+              src={srcUrl.startsWith("blob:") ? srcUrl : `https://docs.google.com/viewer?url=${encodeURIComponent(srcUrl)}&embedded=true`}
               title={file.name}
               className="w-full max-w-4xl h-[80vh] rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white"
             />

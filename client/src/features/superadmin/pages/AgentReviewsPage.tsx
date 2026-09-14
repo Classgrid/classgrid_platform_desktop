@@ -245,7 +245,7 @@ export function AgentReviewsPage() {
                     ) : (
                       <Button 
                         variant="link" 
-                        className="p-0 h-auto text-blue-600 hover:text-blue-800 flex items-center" 
+                        className="p-0 h-auto text-blue-600 hover:text-blue-800 flex items-center cursor-pointer" 
                         onClick={() => setPreviewFile({ name: `Attachment ${i+1}`, src: trimmedUrl, mimeType: 'application/pdf' })}
                       >
                         <ExternalLink className="h-4 w-4 mr-1.5" />
