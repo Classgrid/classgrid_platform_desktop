@@ -37,9 +37,9 @@ const FolderIcon = ({ label, subtitle, onClick, badge }: { label: string, subtit
         {badge}
       </div>
     </div>
-    <div className="flex flex-col w-full justify-center mt-1">
-      <span className="text-sm font-medium text-foreground whitespace-normal break-words line-clamp-2 w-full text-center leading-tight px-1">{label}</span>
-      {subtitle && <span className="text-xs text-muted-foreground whitespace-normal break-words line-clamp-2 w-full text-center mt-1 px-1">{subtitle}</span>}
+    <div className="flex flex-col w-full justify-center mt-2">
+      <span className="text-sm font-medium text-foreground whitespace-normal break-words w-full text-center leading-tight px-1">{label}</span>
+      {subtitle && <span className="text-xs text-muted-foreground whitespace-normal break-all w-full text-center mt-1 px-1">{subtitle}</span>}
     </div>
   </button>
 );
