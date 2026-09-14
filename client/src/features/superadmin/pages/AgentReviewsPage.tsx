@@ -12,6 +12,8 @@ import { getSocket } from "@/lib/socketClient";
 import { useQueryClient } from "@tanstack/react-query";
 import { AgentReview } from "../services/superAdminApi";
 import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
+import { Skeleton } from "@/components/marketing_ui/skeleton";
+import FilePreviewModal, { FilePreviewSource } from "@/components/ai/components/FilePreviewModal";
 
 export function AgentReviewsPage() {
   const { data, isLoading, error } = useAgentReviews();
@@ -19,6 +21,7 @@ export function AgentReviewsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "down">("all");
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [previewFile, setPreviewFile] = useState<FilePreviewSource | null>(null);
 
   useEffect(() => {
     const socket = getSocket();
@@ -182,18 +185,17 @@ export function AgentReviewsPage() {
               return (
                 <div key={i}>
                   {isImage ? (
-                    <a href={trimmedUrl} target="_blank" rel="noopener noreferrer">
-                      <img 
-                        src={trimmedUrl} 
-                        alt="Feedback attachment" 
-                        className="max-w-xs max-h-48 rounded-md border border-border object-cover hover:opacity-80 transition-opacity cursor-pointer" 
-                      />
-                    </a>
+                    <img 
+                      src={trimmedUrl} 
+                      alt="Feedback attachment" 
+                      onClick={() => setPreviewFile({ name: `Attachment ${i+1}`, src: trimmedUrl })}
+                      className="max-w-xs max-h-48 rounded-md border border-border object-cover hover:opacity-80 transition-opacity cursor-pointer" 
+                    />
                   ) : (
                     <Button 
                       variant="link" 
                       className="p-0 h-auto text-blue-600 hover:text-blue-800 flex items-center" 
-                      onClick={() => window.open(trimmedUrl, "_blank")}
+                      onClick={() => setPreviewFile({ name: `Attachment ${i+1}`, src: trimmedUrl })}
                     >
                       <ExternalLink className="h-4 w-4 mr-1.5" />
                       View Attached File {review.file_url!.split(',').length > 1 ? `(${i + 1})` : ''}
@@ -285,7 +287,36 @@ export function AgentReviewsPage() {
       {/* Reviews List */}
       <div className="grid grid-cols-1 gap-4">
         {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading reviews...</div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="overflow-hidden">
+                <div className="flex flex-col md:flex-row">
+                  <div className="md:w-1/3 bg-muted/20 p-4 border-b md:border-b-0 md:border-r border-border/50 flex flex-col h-full space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="flex flex-col space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-3 w-28" />
+                      </div>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      <Skeleton className="h-3 w-16" />
+                      <Skeleton className="h-6 w-full" />
+                    </div>
+                  </div>
+                  <div className="md:w-2/3 p-4 flex flex-col space-y-4">
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-20 w-full rounded-md" />
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
         ) : error ? (
           <div className="text-center py-12 text-rose-500">Failed to load reviews.</div>
         ) : sortedGroups.length === 0 ? (
