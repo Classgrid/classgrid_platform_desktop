@@ -1539,9 +1539,14 @@ export const submitAiFeedback = async (req, res) => {
                     };
                     newReview.user_details = userDetails;
                 }
-                const io = req.app.get("io");
-                if (io) {
-                    io.emit("new_agent_review", newReview);
+                const { getIO } = await import('../services/socket.service.js');
+                try {
+                    const io = getIO();
+                    if (io) {
+                        io.emit("new_agent_review", newReview);
+                    }
+                } catch (socketErr) {
+                    console.warn("Socket.io not initialized yet, skipping live emit");
                 }
             } catch (err) {
                 console.error("Error emitting new agent review:", err);
