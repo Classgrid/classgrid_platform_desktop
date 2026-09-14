@@ -1172,6 +1172,20 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   }, [messages]);
   const [activeSection, setActiveSection] = useState("");
   const [isLoadingChat, setIsLoadingChat] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const [showFilesPanel, setShowFilesPanel] = useState(false);
+
+  const chatFiles = useMemo(() => {
+    const files: { url: string; name: string; mimeType: string }[] = [];
+    messages.forEach(m => {
+      if (m.attachments) {
+        m.attachments.forEach(a => {
+          files.push(a);
+        });
+      }
+    });
+    return files;
+  }, [messages]);
 
   useEffect(() => {
     if (tocItems.length === 0) return;
@@ -1512,11 +1526,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setMessages([]);
       setSessionId(id);
       setIsLoadingChat(true);
+      setIsPinned(false);
 
       try {
         const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
           ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
           : "";
+        const sessionRes = await fetch(`${endpointPrefix}/api/ai/sessions/${id}`, { credentials: "include" });
+        if (sessionRes.ok) {
+          const sData = await sessionRes.json();
+          if (sData.session) setIsPinned(!!sData.session.pinned);
+        }
+
         const res = await fetch(`${endpointPrefix}/api/ai/sessions/${id}/messages`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
@@ -1582,10 +1603,17 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setMessages([]);
       setSessionId(routeSessionId);
       setIsLoadingChat(true);
+      setIsPinned(false);
       try {
         const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
           ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
           : "";
+        const sessionRes = await fetch(`${endpointPrefix}/api/ai/sessions/${routeSessionId}`, { credentials: "include" });
+        if (sessionRes.ok) {
+          const sData = await sessionRes.json();
+          if (sData.session) setIsPinned(!!sData.session.pinned);
+        }
+
         const res = await fetch(`${endpointPrefix}/api/ai/sessions/${routeSessionId}/messages`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
@@ -1649,15 +1677,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
       if (agentIndex !== -1) {
         const baseAgentPath = pathParts.slice(0, agentIndex + 1).join('/');
-        if (sessionId) {
-          const newPath = `${baseAgentPath}/${sessionId}`;
-          if (currentPath !== newPath) {
-            window.history.replaceState(null, "", newPath);
-          }
-        } else {
-          if (currentPath !== baseAgentPath) {
-            window.history.replaceState(null, "", baseAgentPath);
-          }
+        const expectedPath = sessionId ? `${baseAgentPath}/${sessionId}` : baseAgentPath;
+        if (currentPath !== expectedPath) {
+          window.history.replaceState(null, "", expectedPath);
         }
       }
     }
@@ -2461,6 +2483,46 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             <div className="mx-1 h-4 w-[1px] bg-border" />
           </>
         )}
+        
+        {/* NEW TOP RIGHT HEADER ACTIONS */}
+        {variant === "full-page" && messages.length > 0 && sessionId && (
+          <div className="flex items-center gap-1 mr-2 text-muted-foreground">
+            {/* Direct Share Button */}
+            <button
+              onClick={handleDirectShare}
+              className="flex items-center gap-1.5 h-8 px-2.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-[13px] font-medium transition-colors"
+            >
+              <Share className="h-4 w-4" />
+              Share
+            </button>
+            
+            {/* Three Dot Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[180px] z-[100] bg-white dark:bg-[#202123] border border-slate-200 dark:border-white/10 shadow-xl rounded-xl">
+                <DropdownMenuItem onClick={() => setShowFilesPanel(true)} className="gap-2 cursor-pointer">
+                  <FileText className="h-4 w-4" />
+                  Files in chat
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePinToggle} className="gap-2 cursor-pointer">
+                  <Pin className="h-4 w-4" />
+                  {isPinned ? "Unpin chat" : "Pin chat"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/10" />
+                <DropdownMenuItem onClick={handleDeleteChat} className="gap-2 cursor-pointer text-[#ef4444] focus:text-[#ef4444] focus:bg-red-50 dark:focus:bg-red-500/10">
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <div className="mx-1 h-4 w-[1px] bg-border" />
+          </div>
+        )}
+
         <button
           type="button"
           className="flex h-8 w-8 items-center justify-center rounded-md text-foreground cursor-pointer"
@@ -2474,11 +2536,78 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   );
 
   const panelChat = (
-    <div ref={variant !== "full-page" ? chatScrollRef : undefined} className={cn("overscroll-contain [scrollbar-width:thin] [scrollbar-gutter:stable]", variant === "full-page" ? "w-full" : "flex-1 min-h-0 overflow-y-auto")}>
-      <div className={cn("flex flex-col gap-4 px-4 py-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]", variant === "full-page" && "max-w-[48rem] mx-auto w-full pb-52")}>
+    <div ref={variant !== "full-page" ? chatScrollRef : undefined} className={cn("relative overscroll-contain [scrollbar-gutter:stable]", variant === "full-page" ? "w-full overflow-y-auto" : "flex-1 min-h-0 overflow-y-auto")}>
+      
+      {/* FILES SIDE PANEL (Opens from left) */}
+      {showFilesPanel && (
+        <div className="absolute top-0 left-0 bottom-0 w-[300px] bg-background border-r border-border/50 shadow-xl z-20 flex flex-col transition-transform animate-in slide-in-from-left">
+          <div className="flex items-center justify-between p-4 border-b border-border/50">
+            <h3 className="font-semibold text-sm">Files in chat</h3>
+            <button onClick={() => setShowFilesPanel(false)} className="text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            {chatFiles.length === 0 ? (
+              <div className="text-sm text-muted-foreground text-center mt-10">
+                No files referenced yet
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {chatFiles.map((f, i) => (
+                  <button 
+                    key={i} 
+                    onClick={() => setPreviewFile({ url: f.url, name: f.name, mimeType: f.mimeType })}
+                    className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-muted transition-colors text-left"
+                  >
+                    <div className="h-10 w-10 shrink-0 bg-primary/10 rounded flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium truncate">{f.name}</div>
+                      <div className="text-[11px] text-muted-foreground uppercase">{f.mimeType.split('/').pop()?.replace('vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'excel').replace('jpeg', 'jpg')}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className={cn("flex flex-col gap-4 px-4 py-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]", variant === "full-page" && "max-w-[48rem] mx-auto w-full pb-48")}>
         {isLoadingChat ? (
-          <div className="flex-1 flex items-center justify-center py-16 h-full">
-            <Spinner className="w-8 h-8 text-muted-foreground" />
+          <div className="flex flex-col gap-6 py-8 px-2 animate-in fade-in duration-300">
+            {/* Skeleton message 1 - user */}
+            <div className="flex justify-end">
+              <div className="w-[65%] space-y-2">
+                <div className="h-4 w-full rounded-lg bg-muted animate-pulse" />
+                <div className="h-4 w-[40%] rounded-lg bg-muted animate-pulse ml-auto" />
+              </div>
+            </div>
+            {/* Skeleton message 2 - assistant */}
+            <div className="flex justify-start">
+              <div className="w-[80%] space-y-2.5">
+                <div className="h-4 w-full rounded-lg bg-muted animate-pulse" />
+                <div className="h-4 w-[90%] rounded-lg bg-muted animate-pulse" />
+                <div className="h-4 w-[70%] rounded-lg bg-muted animate-pulse" />
+              </div>
+            </div>
+            {/* Skeleton message 3 - user */}
+            <div className="flex justify-end">
+              <div className="w-[50%] space-y-2">
+                <div className="h-4 w-full rounded-lg bg-muted animate-pulse" />
+              </div>
+            </div>
+            {/* Skeleton message 4 - assistant */}
+            <div className="flex justify-start">
+              <div className="w-[85%] space-y-2.5">
+                <div className="h-4 w-full rounded-lg bg-muted animate-pulse" />
+                <div className="h-4 w-[95%] rounded-lg bg-muted animate-pulse" />
+                <div className="h-4 w-[60%] rounded-lg bg-muted animate-pulse" />
+                <div className="h-4 w-[80%] rounded-lg bg-muted animate-pulse" />
+              </div>
+            </div>
           </div>
         ) : emptyState ? (
           <>
@@ -3214,14 +3343,122 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       {variant === "full-page" ? (
         <div className="w-full h-full bg-background flex flex-row">
           <div className="flex-1 relative flex flex-col h-full">
-            {/* Sidebar toggle — inside chat content, not at edge */}
-            <div className="shrink-0 flex items-center px-6 pt-3">
+            {/* Sidebar toggle and Top Right Header Actions */}
+            <div className="shrink-0 flex items-center justify-between px-6 pt-3 h-14">
               <SidebarTrigger />
+              
+              {messages.length > 0 && sessionId && (
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  {/* Direct Share Button */}
+                  <button
+                    onClick={handleDirectShare}
+                    className="flex items-center gap-1.5 h-8 px-2.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-[13px] font-medium transition-colors"
+                  >
+                    <Share className="h-4 w-4" />
+                    Share
+                  </button>
+                  
+                  {/* Three Dot Menu */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-[180px] z-[100] bg-white dark:bg-[#202123] border border-slate-200 dark:border-white/10 shadow-xl rounded-xl">
+                      <DropdownMenuItem onClick={() => setShowFilesPanel(true)} className="gap-2 cursor-pointer">
+                        <FileText className="h-4 w-4" />
+                        Files in chat
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handlePinToggle} className="gap-2 cursor-pointer">
+                        <Pin className="h-4 w-4" />
+                        {isPinned ? "Unpin chat" : "Pin chat"}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/10" />
+                      <DropdownMenuItem onClick={handleDeleteChat} className="gap-2 cursor-pointer text-[#ef4444] focus:text-[#ef4444] focus:bg-red-50 dark:focus:bg-red-500/10">
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
             </div>
-            {isLoadingChat ? (
-              <div className="flex-1 flex flex-col items-center justify-center h-full w-full">
-                <Spinner className="w-8 h-8 text-muted-foreground" />
+            {/* FILES SIDE PANEL (Opens from right to avoid overlapping left sidebar) */}
+            {showFilesPanel && (
+              <div className="absolute top-0 right-0 bottom-0 w-[300px] bg-background border-l border-border/50 shadow-2xl z-20 flex flex-col transition-transform animate-in slide-in-from-right">
+                <div className="flex items-center justify-between p-4 border-b border-border/50">
+                  <h3 className="font-semibold text-sm">Files in chat</h3>
+                  <button onClick={() => setShowFilesPanel(false)} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4">
+                  {chatFiles.length === 0 ? (
+                    <div className="text-sm text-muted-foreground text-center mt-10">
+                      No files referenced yet
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {chatFiles.map((f, i) => (
+                        <button 
+                          key={i} 
+                          onClick={() => setPreviewFile({ url: f.url, name: f.name, mimeType: f.mimeType })}
+                          className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-muted transition-colors text-left"
+                        >
+                          <div className="h-10 w-10 shrink-0 bg-primary/10 rounded flex items-center justify-center">
+                            <FileText className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium truncate">{f.name}</div>
+                            <div className="text-[11px] text-muted-foreground uppercase">{f.mimeType.split('/').pop()?.replace('vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'excel').replace('jpeg', 'jpg')}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
+            )}
+
+            {isLoadingChat ? (
+              <>
+                <div className="flex-1 overflow-y-auto overscroll-contain scroll-smooth [scrollbar-gutter:stable]">
+                  <div className="max-w-[48rem] mx-auto w-full px-4 py-8">
+                    <div className="flex flex-col gap-6 animate-in fade-in duration-300">
+                      <div className="flex justify-end">
+                        <div className="w-[55%] space-y-2">
+                          <div className="h-4 w-full rounded-lg bg-muted animate-pulse" />
+                          <div className="h-4 w-[35%] rounded-lg bg-muted animate-pulse ml-auto" />
+                        </div>
+                      </div>
+                      <div className="flex justify-start">
+                        <div className="w-[75%] space-y-2.5">
+                          <div className="h-4 w-full rounded-lg bg-muted animate-pulse" />
+                          <div className="h-4 w-[90%] rounded-lg bg-muted animate-pulse" />
+                          <div className="h-4 w-[65%] rounded-lg bg-muted animate-pulse" />
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <div className="w-[45%] space-y-2">
+                          <div className="h-4 w-full rounded-lg bg-muted animate-pulse" />
+                        </div>
+                      </div>
+                      <div className="flex justify-start">
+                        <div className="w-[80%] space-y-2.5">
+                          <div className="h-4 w-full rounded-lg bg-muted animate-pulse" />
+                          <div className="h-4 w-[95%] rounded-lg bg-muted animate-pulse" />
+                          <div className="h-4 w-[55%] rounded-lg bg-muted animate-pulse" />
+                          <div className="h-4 w-[75%] rounded-lg bg-muted animate-pulse" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="shrink-0 bg-background pt-2 pb-6 px-4 md:px-8 max-w-4xl w-full mx-auto">
+                  {panelInput}
+                </div>
+              </>
             ) : emptyState ? (
               /* â”€â”€ PostHog-style: everything in one centered block â”€â”€ */
               <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-8">
