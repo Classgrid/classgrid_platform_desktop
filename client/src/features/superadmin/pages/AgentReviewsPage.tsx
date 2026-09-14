@@ -300,7 +300,17 @@ export function AgentReviewsPage() {
                       <Button 
                         variant="link" 
                         className="p-0 h-auto text-blue-600 hover:text-blue-800 flex items-center cursor-pointer" 
-                        onClick={() => setPreviewFile({ name: `Attachment ${i+1}`, src: trimmedUrl, mimeType: 'application/pdf' })}
+                        onClick={() => {
+                          const ext = trimmedUrl.split('.').pop()?.toLowerCase() || '';
+                          let mimeType = 'application/octet-stream';
+                          if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) mimeType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+                          else if (ext === 'pdf') mimeType = 'application/pdf';
+                          else if (['mp4', 'webm', 'ogg'].includes(ext)) mimeType = `video/${ext}`;
+                          else if (['mp3', 'wav'].includes(ext)) mimeType = `audio/${ext}`;
+                          else mimeType = 'application/pdf'; // fallback
+                          
+                          setPreviewFile({ name: `Attachment ${i+1}`, src: trimmedUrl, mimeType });
+                        }}
                       >
                         <ExternalLink className="h-4 w-4 mr-1.5" />
                         View Attached File {review.file_url!.split(',').length > 1 ? `(${i + 1})` : ''}
