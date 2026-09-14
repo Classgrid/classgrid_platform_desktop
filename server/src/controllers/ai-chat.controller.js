@@ -1699,6 +1699,14 @@ export const updateAgentReviewStatus = async (req, res) => {
 
 export const processAgentReviewsCron = async (req, res) => {
     try {
+        const cronSecret = process.env.CRON_SECRET;
+        const querySecret = req.query.secret;
+        const authHeader = req.headers["authorization"];
+
+        if (cronSecret && querySecret !== cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
         // Fetch all reviews that are NOT pending
         const { data: reviewsToProcess, error: fetchError } = await supabase
             .from('ai_agent_reviews')
