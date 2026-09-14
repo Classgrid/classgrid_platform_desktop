@@ -217,7 +217,7 @@ export function AgentReviewsPage() {
             <div className="flex items-center text-muted-foreground text-xs font-medium">
               <Calendar className="h-3 w-3 mr-1" />
               <span title={format(new Date(review.created_at), 'PPpp')}>
-                {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
+                {format(new Date(review.created_at), 'h:mm a')} IST
               </span>
             </div>
           </div>
