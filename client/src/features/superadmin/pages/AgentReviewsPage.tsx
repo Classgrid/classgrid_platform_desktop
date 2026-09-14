@@ -16,12 +16,21 @@ import { Skeleton } from "@/components/marketing_ui/skeleton";
 import FilePreviewModal, { FilePreviewSource } from "@/components/ai/components/FilePreviewModal";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 
+import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
+
 interface PathState {
   role?: string;
   org?: string;
   email?: string;
   date?: string;
 }
+
+const REVIEW_STATUS_OPTIONS = [
+  { value: "pending", label: "Pending", color: "bg-yellow-500" },
+  { value: "actioned", label: "Actioned (Auto-Email)", color: "bg-green-500" },
+  { value: "acknowledged", label: "Acknowledged (Manual)", color: "bg-blue-500" },
+  { value: "no_action", label: "No Action (Spam)", color: "bg-red-500" },
+];
 
 const FolderIcon = ({ label, subtitle, onClick, badge }: { label: string, subtitle?: string, onClick: () => void, badge: number }) => (
   <button 
@@ -241,35 +250,28 @@ export function AgentReviewsPage() {
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="mt-4 pt-4 border-t border-border/50 flex gap-2 flex-wrap">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 cursor-pointer"
-              onClick={() => updateStatusMutation.mutate({ id: review.id, status: 'actioned' })}
-              disabled={updateStatusMutation.isPending}
-            >
-              Actioned (Auto-Email)
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 cursor-pointer"
-              onClick={() => updateStatusMutation.mutate({ id: review.id, status: 'acknowledged' })}
-              disabled={updateStatusMutation.isPending}
-            >
-              Acknowledged (Manual Email)
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200 cursor-pointer"
-              onClick={() => updateStatusMutation.mutate({ id: review.id, status: 'no_action' })}
-              disabled={updateStatusMutation.isPending}
-            >
-              No Action (Spam)
-            </Button>
+          {/* Status Dropdown */}
+          <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Status</span>
+            <div className="w-[220px]">
+              <ResponsiveSelect
+                className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm font-medium"
+                value={review.status || 'pending'}
+                onChange={(e) => {
+                  const newStatus = e.target.value as 'actioned' | 'acknowledged' | 'no_action' | 'pending';
+                  if (newStatus !== review.status) {
+                    updateStatusMutation.mutate({ id: review.id, status: newStatus });
+                  }
+                }}
+                disabled={updateStatusMutation.isPending}
+              >
+                {REVIEW_STATUS_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value} data-color={o.color}>
+                    {o.label}
+                  </option>
+                ))}
+              </ResponsiveSelect>
+            </div>
           </div>
         </div>
       </div>
