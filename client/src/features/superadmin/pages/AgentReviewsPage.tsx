@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
-import { ThumbsUp, ThumbsDown, MessageSquare, ExternalLink, Calendar, Search, Filter, Building, ChevronDown, ChevronUp } from "lucide-react";
+import { ThumbsDown, MessageSquare, ExternalLink, Calendar, Search, Filter, Building, ChevronDown, ChevronUp } from "lucide-react";
 import { useAgentReviews } from "../queries/useAgentReviews";
 import { formatDistanceToNow, format } from "date-fns";
 import { Badge } from "@/components/marketing_ui/badge";
@@ -17,7 +17,7 @@ export function AgentReviewsPage() {
   const { data, isLoading, error } = useAgentReviews();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "up" | "down">("all");
+  const [filterType, setFilterType] = useState<"all" | "down">("all");
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -64,7 +64,7 @@ export function AgentReviewsPage() {
     return matchesSearch && matchesFilter;
   });
 
-  const upvotesCount = reviews.filter((r) => r.type === "up").length;
+
   const downvotesCount = reviews.filter((r) => r.type === "down").length;
   const withFeedbackCount = reviews.filter((r) => r.feedback_text).length;
 
@@ -98,20 +98,14 @@ export function AgentReviewsPage() {
 
   const renderReviewContent = (review: AgentReview, isGroupChild = false) => (
     <div key={review.id} className={`flex flex-col md:flex-row border-l-4 ${isGroupChild ? 'border-t border-border/50 bg-background/50' : 'bg-card'} hover:bg-muted/10 transition-colors`} style={{ 
-      borderLeftColor: review.type === 'up' ? '#10b981' : '#f43f5e' 
+      borderLeftColor: '#f43f5e' 
     }}>
       {/* Left Side: Meta info & User Profile */}
       <div className={`md:w-1/3 p-4 bg-muted/20 border-b md:border-b-0 md:border-r border-border flex flex-col gap-4`}>
         <div className="flex items-center justify-between">
-          {review.type === "up" ? (
-            <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-0">
-              <ThumbsUp className="h-3 w-3 mr-1" /> Positive
-            </Badge>
-          ) : (
-            <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-200 border-0">
-              <ThumbsDown className="h-3 w-3 mr-1" /> Negative
-            </Badge>
-          )}
+          <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-200 border-0">
+            <ThumbsDown className="h-3 w-3 mr-1" /> Negative Feedback
+          </Badge>
           <div className="flex items-center text-muted-foreground text-xs font-medium">
             <Calendar className="h-3 w-3 mr-1" />
             <span title={format(new Date(review.created_at), 'PPpp')}>
@@ -201,36 +195,12 @@ export function AgentReviewsPage() {
       <PageBreadcrumbs items={[
         { label: "Agent Reviews" }
       ]} />
-      <PageHeader 
-        title="Agent Reviews" 
-        description="Monitor live user feedback and ratings for the Classgrid AI Assistant."
-      />
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Reviews</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{reviews.length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Positive (Upvotes)</CardTitle>
-            <ThumbsUp className="h-4 w-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">{upvotesCount}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Negative (Downvotes)</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Negative Feedback</CardTitle>
             <ThumbsDown className="h-4 w-4 text-rose-500" />
           </CardHeader>
           <CardContent>
@@ -240,11 +210,21 @@ export function AgentReviewsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Written Feedback</CardTitle>
+            <CardTitle className="text-sm font-medium">With Written Feedback</CardTitle>
             <MessageSquare className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{withFeedbackCount}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">With Attachments</CardTitle>
+            <ExternalLink className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-600">{reviews.filter(r => r.file_url).length}</div>
           </CardContent>
         </Card>
       </div>
@@ -270,15 +250,6 @@ export function AgentReviewsPage() {
               onClick={() => setFilterType("all")}
             >
               All
-            </Button>
-            <Button 
-              variant={filterType === "up" ? "default" : "outline"} 
-              size="sm"
-              className={filterType === "up" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}
-              onClick={() => setFilterType("up")}
-            >
-              <ThumbsUp className="h-3.5 w-3.5 mr-1.5" />
-              Positive
             </Button>
             <Button 
               variant={filterType === "down" ? "default" : "outline"} 
