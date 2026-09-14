@@ -300,13 +300,7 @@ export function AgentReviewsPage() {
                       <Button 
                         variant="link" 
                         className="p-0 h-auto text-blue-600 hover:text-blue-800 flex items-center cursor-pointer" 
-                        onClick={() => {
-                          const ext = trimmedUrl.split('.').pop()?.toLowerCase() || '';
-                          let mimeType = 'application/pdf';
-                          if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) mimeType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
-                          
-                          setPreviewFile({ name: `Attachment ${i+1}`, src: trimmedUrl, mimeType });
-                        }}
+                        onClick={() => window.open(trimmedUrl, '_blank')}
                       >
                         <ExternalLink className="h-4 w-4 mr-1.5" />
                         View Attached File {review.file_url!.split(',').length > 1 ? `(${i + 1})` : ''}
