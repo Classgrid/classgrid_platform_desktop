@@ -1521,6 +1521,8 @@ export const submitAiFeedback = async (req, res) => {
             }])
             .select('*');
 
+        let userDetails = null;
+
         if (dbError) {
             console.error("Failed to save AI feedback to Supabase:", dbError);
         } else if (dbData && dbData.length > 0) {
@@ -1529,12 +1531,13 @@ export const submitAiFeedback = async (req, res) => {
                 const User = (await import('../models/User.js')).default;
                 const realUser = await User.findOne({ email: userEmail }).populate('organization_id', 'name').lean();
                 if (realUser) {
-                    newReview.user_details = {
+                    userDetails = {
                         id: realUser._id.toString(),
                         name: realUser.name,
                         profilePicture: realUser.profilePicture,
                         orgName: realUser.organization_id?.name || "No Organization"
                     };
+                    newReview.user_details = userDetails;
                 }
                 const io = req.app.get("io");
                 if (io) {
@@ -1564,8 +1567,11 @@ export const submitAiFeedback = async (req, res) => {
                 {
                     type: "section",
                     fields: [
-                        { type: "mrkdwn", text: `*User:*\n${userEmail}` },
-                        { type: "mrkdwn", text: `*Type:*\n${type}` },
+                        { type: "mrkdwn", text: `*Name:*\n${userDetails?.name || "Unknown"}` },
+                        { type: "mrkdwn", text: `*Email:*\n${userEmail}` },
+                        { type: "mrkdwn", text: `*Organization:*\n${userDetails?.orgName || "Unknown"}` },
+                        { type: "mrkdwn", text: `*User ID:*\n\`${userDetails?.id || "Unknown"}\`` },
+                        { type: "mrkdwn", text: `*Time:*\n<!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>` },
                         { type: "mrkdwn", text: `*Message ID:*\n\`${messageId}\`` }
                     ]
                 }
