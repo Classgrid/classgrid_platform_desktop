@@ -1691,7 +1691,20 @@ export const updateAgentReviewStatus = async (req, res) => {
             throw error;
         }
 
-        res.json({ success: true, review: data[0] });
+        const { getIO } = await import('../services/socket.service.js');
+        try {
+            const io = getIO();
+            if (io) {
+                io.emit("agent_review_updated", data[0]);
+            }
+        } catch (err) {
+            console.error("Error emitting agent review update:", err);
+        }
+
+        return res.status(200).json({
+            success: true,
+            review: data[0]
+        });
     } catch (e) {
         console.error("Error updating AI agent review status:", e);
         res.status(500).json({ error: "Failed to update review status" });
@@ -1775,7 +1788,17 @@ The Classgrid Team`;
             .in('id', idsToDelete);
 
         if (deleteError) {
-            throw deleteError;
+            console.error("[Cron] Failed to delete reviews:", deleteError);
+        } else {
+            const { getIO } = await import('../services/socket.service.js');
+            try {
+                const io = getIO();
+                if (io && idsToDelete.length > 0) {
+                    io.emit("agent_reviews_bulk_deleted", { ids: idsToDelete });
+                }
+            } catch (err) {
+                console.error("Error emitting agent reviews bulk delete:", err);
+            }
         }
 
         res.json({ success: true, message: `Processed and deleted ${idsToDelete.length} reviews` });
@@ -1797,7 +1820,20 @@ export const deleteAgentReview = async (req, res) => {
 
         if (error) throw error;
 
-        res.json({ success: true, message: "Review deleted successfully" });
+        const { getIO } = await import('../services/socket.service.js');
+        try {
+            const io = getIO();
+            if (io) {
+                io.emit("agent_review_deleted", { id });
+            }
+        } catch (err) {
+            console.error("Error emitting agent review delete:", err);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Agent review deleted successfully"
+        });
     } catch (e) {
         console.error("Error deleting agent review:", e);
         res.status(500).json({ error: "Failed to delete review" });
@@ -1820,7 +1856,20 @@ export const bulkDeleteAgentReviews = async (req, res) => {
 
         if (error) throw error;
 
-        res.json({ success: true, message: `Successfully deleted ${ids.length} reviews` });
+        const { getIO } = await import('../services/socket.service.js');
+        try {
+            const io = getIO();
+            if (io) {
+                io.emit("agent_reviews_bulk_deleted", { ids });
+            }
+        } catch (err) {
+            console.error("Error emitting agent reviews bulk delete:", err);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Successfully deleted ${ids.length} reviews`
+        });
     } catch (e) {
         console.error("Error bulk deleting agent reviews:", e);
         res.status(500).json({ error: "Failed to bulk delete reviews" });

@@ -95,9 +95,40 @@ export function AgentReviewsPage() {
         return { reviews: [newReview, ...old.reviews] };
       });
     };
+    
+    const handleReviewUpdated = (updatedReview: AgentReview) => {
+      queryClient.setQueryData<{ reviews: AgentReview[] }>(["ai-agent-reviews"], (old) => {
+        if (!old) return { reviews: [] };
+        return { reviews: old.reviews.map(r => r.id === updatedReview.id ? updatedReview : r) };
+      });
+    };
+    
+    const handleReviewDeleted = ({ id }: { id: string }) => {
+      queryClient.setQueryData<{ reviews: AgentReview[] }>(["ai-agent-reviews"], (old) => {
+        if (!old) return { reviews: [] };
+        return { reviews: old.reviews.filter(r => r.id !== id) };
+      });
+      setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+    };
+
+    const handleReviewsBulkDeleted = ({ ids }: { ids: string[] }) => {
+      queryClient.setQueryData<{ reviews: AgentReview[] }>(["ai-agent-reviews"], (old) => {
+        if (!old) return { reviews: [] };
+        return { reviews: old.reviews.filter(r => !ids.includes(r.id)) };
+      });
+      setSelectedIds(prev => prev.filter(selectedId => !ids.includes(selectedId)));
+    };
+
     socket.on("new_agent_review", handleNewReview);
+    socket.on("agent_review_updated", handleReviewUpdated);
+    socket.on("agent_review_deleted", handleReviewDeleted);
+    socket.on("agent_reviews_bulk_deleted", handleReviewsBulkDeleted);
+
     return () => {
       socket.off("new_agent_review", handleNewReview);
+      socket.off("agent_review_updated", handleReviewUpdated);
+      socket.off("agent_review_deleted", handleReviewDeleted);
+      socket.off("agent_reviews_bulk_deleted", handleReviewsBulkDeleted);
     };
   }, [queryClient]);
 
