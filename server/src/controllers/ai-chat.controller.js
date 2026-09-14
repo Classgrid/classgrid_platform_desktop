@@ -1507,6 +1507,7 @@ export const submitAiFeedback = async (req, res) => {
     try {
         const { messageId, text, fileUrl } = req.body;
         const userEmail = req.user?.email || "Unknown User";
+        const type = "negative";
 
         // Save to Supabase — this endpoint only handles negative (thumbs-down) feedback.
         // Thumbs-up is tracked in PostHog only and never hits this endpoint.
@@ -1515,7 +1516,7 @@ export const submitAiFeedback = async (req, res) => {
             .insert([{
                 message_id: messageId,
                 user_email: userEmail,
-                type: "down",
+                type: type,
                 feedback_text: text || null,
                 file_url: fileUrl || null
             }])
