@@ -25,6 +25,17 @@ interface PathState {
   date?: string;
 }
 
+const formatRoleName = (role: string) => {
+  const overrides: Record<string, string> = {
+    'org_admin': 'Organization Admin',
+    'super_admin': 'Super Admin',
+    'student': 'Student',
+    'faculty': 'Faculty',
+    'teacher': 'Teacher'
+  };
+  return overrides[role] || (role.charAt(0).toUpperCase() + role.slice(1).replace(/_/g, ' '));
+};
+
 const REVIEW_STATUS_OPTIONS = [
   { value: "pending", label: "Pending", color: "bg-yellow-500" },
   { value: "actioned", label: "Actioned (Auto-Email)", color: "bg-green-500" },
@@ -59,8 +70,7 @@ export function AgentReviewsPage() {
   const queryClient = useQueryClient();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "down">("all");
-  const [selectedDateFilter, setSelectedDateFilter] = useState<Date | undefined>();
+    const [selectedDateFilter, setSelectedDateFilter] = useState<Date | undefined>();
   const [previewFile, setPreviewFile] = useState<FilePreviewSource | null>(null);
 
   // Navigation State
@@ -88,8 +98,6 @@ export function AgentReviewsPage() {
 
   const filteredReviews = useMemo(() => {
     return reviews.filter((review) => {
-      if (filterType !== "all" && review.type !== filterType) return false;
-      
       if (selectedDateFilter) {
         const reviewDate = new Date(review.created_at);
         if (
@@ -111,7 +119,7 @@ export function AgentReviewsPage() {
       }
       return true;
     });
-  }, [reviews, filterType, searchTerm, selectedDateFilter]);
+  }, [reviews, searchTerm, selectedDateFilter]);
 
   // Build the deeply nested structure based on filtered results
   const tree = useMemo(() => {
@@ -288,7 +296,7 @@ export function AgentReviewsPage() {
           <>
             <ChevronRight className="h-4 w-4 opacity-50" />
             <button onClick={() => setPath({ role: path.role })} className="hover:text-foreground cursor-pointer">
-              {path.role.charAt(0).toUpperCase() + path.role.slice(1)}
+              {formatRoleName(path.role)}
             </button>
           </>
         )}
@@ -337,7 +345,7 @@ export function AgentReviewsPage() {
           {roles.map(role => (
             <FolderIcon 
               key={role} 
-              label={role.charAt(0).toUpperCase() + role.slice(1)} 
+              label={formatRoleName(role)} 
               badge={tree[role].count} 
               onClick={() => setPath({ role })} 
             />
@@ -478,24 +486,7 @@ export function AgentReviewsPage() {
               />
             </div>
             
-            <div className="flex items-center gap-2">
-              <Button
-                variant={filterType === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilterType("all")}
-              >
-                All
-              </Button>
-              <Button
-                variant={filterType === "down" ? "default" : "outline"}
-                size="sm"
-                className={filterType === "down" ? "bg-rose-600 hover:bg-rose-700 text-white" : ""}
-                onClick={() => setFilterType("down")}
-              >
-                <ThumbsDown className="h-3.5 w-3.5 mr-1.5" />
-                Negative
-              </Button>
-            </div>
+            
           </div>
         </CardContent>
       </Card>
