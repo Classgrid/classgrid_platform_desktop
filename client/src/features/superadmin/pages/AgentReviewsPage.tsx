@@ -265,6 +265,7 @@ export function AgentReviewsPage() {
               <ResponsiveSelect
                 className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm font-medium"
                 value={review.status || 'pending'}
+                popDirection="up"
                 onChange={(e) => {
                   const newStatus = e.target.value as 'actioned' | 'acknowledged' | 'no_action' | 'pending';
                   if (newStatus !== review.status) {

@@ -54,6 +54,7 @@ export interface ResponsiveSelectProps
   extends Omit<React.ComponentProps<"select">, "size"> {
   size?: "sm" | "default"
   placeholder?: string
+  popDirection?: "up" | "down"
 }
 
 export function ResponsiveSelect({
@@ -64,6 +65,7 @@ export function ResponsiveSelect({
   onChange,
   disabled,
   placeholder,
+  popDirection = "down",
   ...props
 }: ResponsiveSelectProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)")
@@ -171,7 +173,10 @@ export function ResponsiveSelect({
         {open && (
           <div
             ref={dropdownRef}
-            className="absolute left-0 top-full z-[1050] mt-1 min-w-full w-max max-w-[320px] rounded-lg border border-border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 duration-100"
+            className={cn(
+              "absolute left-0 z-[1050] min-w-full w-max max-w-[320px] rounded-lg border border-border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 duration-100",
+              popDirection === "up" ? "bottom-full mb-1 origin-bottom" : "top-full mt-1 origin-top"
+            )}
           >
             {/* Search input */}
             {showSearch && (
