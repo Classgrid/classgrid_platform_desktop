@@ -1024,6 +1024,7 @@ export type AgentReview = {
     name: string;
     profilePicture?: string;
     orgName: string;
+    role: string;
   } | null;
 };
 
