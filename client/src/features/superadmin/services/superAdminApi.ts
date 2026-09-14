@@ -1038,5 +1038,13 @@ export const aiAgentReviewsApi = {
     apiClient
       .put<{ success: boolean; review: AgentReview }>(`/api/ai/agent-reviews/${id}/status`, { status })
       .then((r) => r.data),
+  delete: (id: string) =>
+    apiClient
+      .delete<{ success: boolean; message: string }>(`/api/ai/agent-reviews/${id}`)
+      .then((r) => r.data),
+  bulkDelete: (ids: string[]) =>
+    apiClient
+      .post<{ success: boolean; message: string }>('/api/ai/agent-reviews/bulk-delete', { ids })
+      .then((r) => r.data),
 };
 

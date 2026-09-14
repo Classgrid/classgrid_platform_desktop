@@ -23,3 +23,31 @@ export const useUpdateAgentReviewStatus = () => {
     }
   });
 };
+
+export const useDeleteAgentReview = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => aiAgentReviewsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ai-agent-reviews"] });
+      toast.success("Review deleted successfully");
+    },
+    onError: () => {
+      toast.error("Failed to delete review");
+    }
+  });
+};
+
+export const useBulkDeleteAgentReviews = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => aiAgentReviewsApi.bulkDelete(ids),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["ai-agent-reviews"] });
+      toast.success(`Successfully deleted ${variables.length} reviews`);
+    },
+    onError: () => {
+      toast.error("Failed to bulk delete reviews");
+    }
+  });
+};

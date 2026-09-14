@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
-import { ThumbsDown, MessageSquare, ExternalLink, Calendar, Search, Filter, Building, ChevronDown, ChevronUp, ChevronRight, Home, ArrowLeft, AlertCircle } from "lucide-react";
-import { useAgentReviews, useUpdateAgentReviewStatus } from "../queries/useAgentReviews";
+import { ThumbsDown, MessageSquare, ExternalLink, Calendar, Search, Filter, Building, ChevronDown, ChevronUp, ChevronRight, Home, ArrowLeft, AlertCircle, Trash2 } from "lucide-react";
+import { useAgentReviews, useUpdateAgentReviewStatus, useDeleteAgentReview, useBulkDeleteAgentReviews } from "../queries/useAgentReviews";
 import { formatDistanceToNow, format } from "date-fns";
 import { Badge } from "@/components/marketing_ui/badge";
 import { Input } from "@/components/marketing_ui/input";
@@ -15,6 +15,8 @@ import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import FilePreviewModal, { FilePreviewSource } from "@/components/ai/components/FilePreviewModal";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
+import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
+import { Checkbox } from "@/components/marketing_ui/checkbox";
 
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
 
@@ -58,8 +60,8 @@ const FolderIcon = ({ label, subtitle, onClick, badge }: { label: string, subtit
       </div>
     </div>
     <div className="flex flex-col w-full justify-center mt-2">
-      <span className="text-sm font-medium text-foreground whitespace-normal break-words w-full text-center leading-tight px-1">{label}</span>
-      {subtitle && <span className="text-xs text-muted-foreground whitespace-normal break-all w-full text-center mt-1 px-1">{subtitle}</span>}
+      <span className="text-sm font-medium text-foreground whitespace-normal break-normal w-full text-center leading-tight px-1 text-balance">{label}</span>
+      {subtitle && <span className="text-xs text-muted-foreground whitespace-normal break-words w-full text-center mt-1 px-1 text-balance">{subtitle}</span>}
     </div>
   </button>
 );
@@ -67,11 +69,18 @@ const FolderIcon = ({ label, subtitle, onClick, badge }: { label: string, subtit
 export function AgentReviewsPage() {
   const { data, isLoading, error } = useAgentReviews();
   const updateStatusMutation = useUpdateAgentReviewStatus();
+  const deleteReviewMutation = useDeleteAgentReview();
+  const bulkDeleteMutation = useBulkDeleteAgentReviews();
   const queryClient = useQueryClient();
 
   const [searchTerm, setSearchTerm] = useState("");
-    const [selectedDateFilter, setSelectedDateFilter] = useState<Date | undefined>();
+  const [selectedDateFilter, setSelectedDateFilter] = useState<Date | undefined>();
   const [previewFile, setPreviewFile] = useState<FilePreviewSource | null>(null);
+
+  // Selection and Delete State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Navigation State
   const [path, setPath] = useState<PathState>({});
@@ -150,14 +159,27 @@ export function AgentReviewsPage() {
   }, [filteredReviews]);
 
   const renderReviewContent = (review: AgentReview) => (
-    <Card key={review.id} className="overflow-hidden mb-4">
-      <div className={`flex flex-col md:flex-row border-l-4 bg-card hover:bg-muted/10 transition-colors`} style={{
+    <Card key={review.id} className="overflow-hidden mb-4 relative group">
+      <div className="absolute top-4 left-4 z-10">
+        <Checkbox 
+          checked={selectedIds.includes(review.id)}
+          onCheckedChange={(checked) => {
+            if (checked) {
+              setSelectedIds(prev => [...prev, review.id]);
+            } else {
+              setSelectedIds(prev => prev.filter(id => id !== review.id));
+            }
+          }}
+          className="border-border bg-card shadow-sm"
+        />
+      </div>
+      <div className={`flex flex-col md:flex-row border-l-4 bg-card hover:bg-muted/10 transition-colors pl-10`} style={{
         borderLeftColor: '#f43f5e'
       }}>
         {/* Left Side: Meta info & User Profile */}
         <div className={`md:w-1/3 p-4 bg-muted/20 border-b md:border-b-0 md:border-r border-border flex flex-col gap-4`}>
           <div className="flex items-center justify-between">
-            <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-200 border-0">
+            <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-200 border-0 ml-2">
               <ThumbsDown className="h-3 w-3 mr-1" /> Negative Feedback
             </Badge>
             <div className="flex items-center text-muted-foreground text-xs font-medium">
@@ -258,9 +280,22 @@ export function AgentReviewsPage() {
             </div>
           )}
 
-          {/* Status Dropdown */}
+          {/* Status Dropdown and Actions */}
           <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Status</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider mr-2">Status</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+                onClick={() => {
+                  setDeletingId(review.id);
+                  setShowDeleteConfirm(true);
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
             <div className="w-[220px]">
               <ResponsiveSelect
                 className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm font-medium"
@@ -422,12 +457,29 @@ export function AgentReviewsPage() {
       if (!dateNode) return null;
       
       return (
-        <div className="w-full space-y-4">
-          <div className="flex items-center gap-4 mb-4">
-            <Button variant="outline" size="sm" onClick={() => setPath({ role: path.role, org: path.org, email: path.email })}>
-              <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dates
-            </Button>
-            <h3 className="text-lg font-semibold">{path.date} - {dateNode.reviews.length} Reviews</h3>
+        <div className="w-full space-y-4 relative">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" size="sm" onClick={() => setPath({ role: path.role, org: path.org, email: path.email })}>
+                <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dates
+              </Button>
+              <h3 className="text-lg font-semibold">{path.date} - {dateNode.reviews.length} Reviews</h3>
+            </div>
+            
+            <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-md border border-border">
+              <Checkbox 
+                id="select-all"
+                checked={selectedIds.length > 0 && selectedIds.length === dateNode.reviews.length}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setSelectedIds(dateNode.reviews.map(r => r.id));
+                  } else {
+                    setSelectedIds([]);
+                  }
+                }}
+              />
+              <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">Select All in View</label>
+            </div>
           </div>
           {dateNode.reviews.map(review => renderReviewContent(review))}
         </div>
@@ -493,12 +545,84 @@ export function AgentReviewsPage() {
       </Card>
 
       {/* Folders Area */}
-      <div className="w-full">
+      <div className="w-full pb-20">
         {renderBreadcrumbs()}
         {renderFolders()}
       </div>
 
       <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
+
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-card border border-border p-4 rounded-xl shadow-xl animate-in slide-in-from-bottom-5">
+          <div className="flex items-center gap-2">
+            <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+              {selectedIds.length}
+            </span>
+            <span className="text-sm font-medium">Selected</span>
+          </div>
+          <div className="h-6 w-[1px] bg-border mx-2"></div>
+          <Button 
+            variant="destructive" 
+            size="sm"
+            onClick={() => {
+              setDeletingId(null);
+              setShowDeleteConfirm(true);
+            }}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Bulk Delete
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setSelectedIds([])}
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
+
+      {/* Danger Confirm Dialog for Delete (Single & Bulk) */}
+      <DangerConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title={deletingId ? "Delete Agent Review" : `Bulk Delete ${selectedIds.length} Reviews`}
+        description={
+          <>
+            Permanently delete {deletingId ? "this selected agent review" : `these ${selectedIds.length} selected agent reviews`}.
+          </>
+        }
+        warningMessage="This action is irreversible. All details associated with this review data will be permanently lost."
+        confirmationSteps={[
+          {
+            label: "To confirm, type",
+            value: "delete",
+          },
+        ]}
+        actionLabel={deletingId ? "Delete Review" : "Bulk Delete Reviews"}
+        cancelLabel="Cancel"
+        isLoading={deletingId ? deleteReviewMutation.isPending : bulkDeleteMutation.isPending}
+        onConfirm={() => {
+          if (deletingId) {
+            deleteReviewMutation.mutate(deletingId, {
+              onSuccess: () => {
+                setShowDeleteConfirm(false);
+                setDeletingId(null);
+                setSelectedIds(prev => prev.filter(id => id !== deletingId));
+              }
+            });
+          } else {
+            bulkDeleteMutation.mutate(selectedIds, {
+              onSuccess: () => {
+                setShowDeleteConfirm(false);
+                setSelectedIds([]);
+              }
+            });
+          }
+        }}
+        variant="danger"
+      />
     </div>
   );
 }

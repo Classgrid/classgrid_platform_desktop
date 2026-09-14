@@ -1783,3 +1783,45 @@ The Classgrid Team`;
         res.status(500).json({ error: "Failed to process reviews cron" });
     }
 };
+
+// Delete a single agent review
+export const deleteAgentReview = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const { error } = await supabase
+            .from('ai_agent_reviews')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        res.json({ success: true, message: "Review deleted successfully" });
+    } catch (e) {
+        console.error("Error deleting agent review:", e);
+        res.status(500).json({ error: "Failed to delete review" });
+    }
+};
+
+// Bulk delete multiple agent reviews
+export const bulkDeleteAgentReviews = async (req, res) => {
+    try {
+        const { ids } = req.body;
+        
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ error: "Invalid array of IDs" });
+        }
+        
+        const { error } = await supabase
+            .from('ai_agent_reviews')
+            .delete()
+            .in('id', ids);
+
+        if (error) throw error;
+
+        res.json({ success: true, message: `Successfully deleted ${ids.length} reviews` });
+    } catch (e) {
+        console.error("Error bulk deleting agent reviews:", e);
+        res.status(500).json({ error: "Failed to bulk delete reviews" });
+    }
+};
