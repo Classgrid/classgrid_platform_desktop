@@ -1106,7 +1106,7 @@ except Exception as e:
 
                 answer = await currentClient.generate({
                     messages,
-                    timeoutMs: isDiagramRequest && attempt === 1 ? 5000 : 300000,
+                    timeoutMs: isDiagramRequest && attempt === 1 ? 15000 : 300000,
                     onStatus: (status) => {
                         if (requestAborted || res.writableEnded) return;
                         const mappedLabel = status === "search web" ? "searching" : status;

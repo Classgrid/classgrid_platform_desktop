@@ -44,17 +44,32 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import posthog from "posthog-js";
+import { PostHogProvider } from "posthog-js/react";
 
 import { App } from "@/app/App";
 import { AppProviders } from "@/app/providers";
 import "@/styles/global.css";
 
+// Initialize PostHog if key is available
+if (typeof window !== 'undefined' && import.meta.env.VITE_POSTHOG_KEY) {
+  posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+    api_host: import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com',
+    loaded: (posthog) => {
+      // Keep desktop events separate from marketing site
+      posthog.register({ app_source: 'desktop_app' });
+    }
+  });
+}
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AppProviders>
-        <App />
-      </AppProviders>
+      <PostHogProvider client={posthog}>
+        <AppProviders>
+          <App />
+        </AppProviders>
+      </PostHogProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

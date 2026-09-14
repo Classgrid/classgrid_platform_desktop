@@ -134,10 +134,7 @@ type PageContext = {
 
 
 
-// Stub: usePostHog (SDK consumers may not have posthog)
-function usePostHog(): any {
-  return { capture: () => { } };
-}
+import { usePostHog } from 'posthog-js/react';
 
 // Fetch real presigned URL for R2 uploads
 async function getPresignedUrlForAskAiFile(name: string, type: string, size: number): Promise<any> {
@@ -631,6 +628,11 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
         .replace(/\n{3,}/g, "\n\n")             // collapse blank lines
         .trim();
       await navigator.clipboard.writeText(plainText);
+      toast.success("Message copied to clipboard!");
+      posthog?.capture("ai_message_copied", {
+        message_id: messageId,
+        content_preview: content.substring(0, 100)
+      });
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (_) {
@@ -669,7 +671,7 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
         type="button"
         onClick={handleCopy}
         className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200",
+          "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 cursor-pointer",
           copied
             ? "bg-emerald-500/15 text-emerald-500"
             : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
@@ -682,7 +684,7 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
         type="button"
         onClick={() => handleFeedback("up")}
         className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200",
+          "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 cursor-pointer",
           feedback === "up"
             ? "bg-emerald-500/15 text-emerald-500"
             : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
@@ -695,7 +697,7 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
         type="button"
         onClick={() => handleFeedback("down")}
         className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200",
+          "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 cursor-pointer",
           feedback === "down"
             ? "bg-red-500/15 text-red-400"
             : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
