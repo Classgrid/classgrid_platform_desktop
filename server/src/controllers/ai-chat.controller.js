@@ -942,16 +942,34 @@ except Exception as e:
                     }
 
                     try {
+                        let processedAttachments = [];
+                        if (args.attachments && Array.isArray(args.attachments) && args.attachments.length > 0) {
+                            for (const att of args.attachments) {
+                                if (att.path && att.path.startsWith('/data/')) {
+                                    const result = await handleToolCall('execute_terminal_command', { command: `cat ${att.path} | base64 -w 0` }, { sessionId });
+                                    if (result && result.content && result.content[0] && result.content[0].text && !result.isError) {
+                                        processedAttachments.push({
+                                            filename: att.filename,
+                                            content: result.content[0].text.trim(),
+                                            encoding: 'base64'
+                                        });
+                                    }
+                                } else if (att.content) {
+                                    processedAttachments.push(att);
+                                }
+                            }
+                        }
+
                         const emailPayload = {
                             to: args.to,
                             subject: args.subject,
-                            html: args.body,
+                            html: args.htmlBody || args.body,
                             fromName: args.fromName,
                             fromEmail: args.fromEmail
                         };
 
-                        if (args.attachments && Array.isArray(args.attachments) && args.attachments.length > 0) {
-                            emailPayload.attachments = args.attachments;
+                        if (processedAttachments.length > 0) {
+                            emailPayload.attachments = processedAttachments;
                         }
 
                         const info = await sendEmail(emailPayload);
@@ -1091,7 +1109,11 @@ except Exception as e:
                 if (requestAborted) return;
 
                 if (!answer) {
-                    throw new Error("AI generation returned null. All providers timed out or failed.");
+                    if (accSteps.length > 0) {
+                        answer = "I have completed the requested actions.";
+                    } else {
+                        throw new Error("AI generation returned null. All providers timed out or failed.");
+                    }
                 }
 
                 // Validate Mermaid syntax on server if requested
