@@ -287,20 +287,30 @@ export function AgentReviewsPage() {
               {review.file_url.split(',').map((url, i) => {
                 const trimmedUrl = url.trim();
                 const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp)/i.test(trimmedUrl) || trimmedUrl.includes('firebasestorage.googleapis.com');
+                
+                const getMime = () => {
+                  if (isImage) return 'image/png';
+                  if (/\.pdf/i.test(trimmedUrl)) return 'application/pdf';
+                  if (/\.xlsx/i.test(trimmedUrl)) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                  if (/\.xls/i.test(trimmedUrl)) return 'application/vnd.ms-excel';
+                  if (/\.csv/i.test(trimmedUrl)) return 'text/csv';
+                  return 'application/octet-stream';
+                };
+
                 return (
                   <div key={i}>
                     {isImage ? (
                       <img 
                         src={trimmedUrl} 
                         alt="Feedback attachment" 
-                        onClick={() => setPreviewFile({ name: 'Attachment', src: trimmedUrl, mimeType: isImage ? 'image/png' : 'application/pdf' })}
+                        onClick={() => setPreviewFile({ name: 'Attachment', src: trimmedUrl, mimeType: getMime() })}
                         className="max-w-xs max-h-48 rounded-md border border-border object-cover hover:opacity-80 transition-opacity cursor-pointer bg-white" 
                       />
                     ) : (
                       <Button 
                         variant="link" 
                         className="p-0 h-auto text-blue-600 hover:text-blue-800 flex items-center cursor-pointer" 
-                        onClick={() => setPreviewFile({ name: 'Attachment', src: trimmedUrl, mimeType: isImage ? 'image/png' : 'application/pdf' })}
+                        onClick={() => setPreviewFile({ name: 'Attachment', src: trimmedUrl, mimeType: getMime() })}
                       >
                         <ExternalLink className="h-4 w-4 mr-1.5" />
                         View Attached File {review.file_url!.split(',').length > 1 ? `(${i + 1})` : ''}
