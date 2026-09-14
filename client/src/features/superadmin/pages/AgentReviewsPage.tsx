@@ -53,12 +53,12 @@ export function AgentReviewsPage() {
 
     const searchStr = searchTerm.toLowerCase();
 
-    const matchesSearch = 
+    const matchesSearch =
       email.toLowerCase().includes(searchStr) ||
       name.toLowerCase().includes(searchStr) ||
       org.toLowerCase().includes(searchStr) ||
       text.toLowerCase().includes(searchStr);
-    
+
     const matchesFilter = filterType === "all" || review.type === filterType;
 
     return matchesSearch && matchesFilter;
@@ -70,12 +70,12 @@ export function AgentReviewsPage() {
 
   // Group similar feedback
   const groupedReviews: Record<string, AgentReview[]> = {};
-  
+
   filteredReviews.forEach((review) => {
     // Group by exact lowercase text, or by type if no text
     const textKey = review.feedback_text?.trim().toLowerCase();
     const groupKey = textKey ? `text_${textKey}` : `empty_${review.type}`;
-    
+
     if (!groupedReviews[groupKey]) {
       groupedReviews[groupKey] = [];
     }
@@ -97,8 +97,8 @@ export function AgentReviewsPage() {
   };
 
   const renderReviewContent = (review: AgentReview, isGroupChild = false) => (
-    <div key={review.id} className={`flex flex-col md:flex-row border-l-4 ${isGroupChild ? 'border-t border-border/50 bg-background/50' : 'bg-card'} hover:bg-muted/10 transition-colors`} style={{ 
-      borderLeftColor: '#f43f5e' 
+    <div key={review.id} className={`flex flex-col md:flex-row border-l-4 ${isGroupChild ? 'border-t border-border/50 bg-background/50' : 'bg-card'} hover:bg-muted/10 transition-colors`} style={{
+      borderLeftColor: '#f43f5e'
     }}>
       {/* Left Side: Meta info & User Profile */}
       <div className={`md:w-1/3 p-4 bg-muted/20 border-b md:border-b-0 md:border-r border-border flex flex-col gap-4`}>
@@ -147,7 +147,7 @@ export function AgentReviewsPage() {
             </code>
           </div>
         )}
-        
+
         <div className="pt-2">
           <span className="text-muted-foreground block text-[10px] uppercase tracking-wider font-semibold">Message ID</span>
           <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded break-all">
@@ -175,15 +175,33 @@ export function AgentReviewsPage() {
         )}
 
         {review.file_url && (
-          <div className="mt-4 pt-4 border-t border-border/50">
-            <Button 
-              variant="link" 
-              className="p-0 h-auto text-blue-600 hover:text-blue-800 flex items-center" 
-              onClick={() => window.open(review.file_url, "_blank")}
-            >
-              <ExternalLink className="h-4 w-4 mr-1.5" />
-              View Attached File
-            </Button>
+          <div className="mt-4 pt-4 border-t border-border/50 space-y-2">
+            {review.file_url.split(',').map((url, i) => {
+              const trimmedUrl = url.trim();
+              const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp)/i.test(trimmedUrl) || trimmedUrl.includes('firebasestorage.googleapis.com');
+              return (
+                <div key={i}>
+                  {isImage ? (
+                    <a href={trimmedUrl} target="_blank" rel="noopener noreferrer">
+                      <img 
+                        src={trimmedUrl} 
+                        alt="Feedback attachment" 
+                        className="max-w-xs max-h-48 rounded-md border border-border object-cover hover:opacity-80 transition-opacity cursor-pointer" 
+                      />
+                    </a>
+                  ) : (
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-blue-600 hover:text-blue-800 flex items-center" 
+                      onClick={() => window.open(trimmedUrl, "_blank")}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-1.5" />
+                      View Attached File {review.file_url!.split(',').length > 1 ? `(${i + 1})` : ''}
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -244,15 +262,15 @@ export function AgentReviewsPage() {
           </div>
           <div className="flex items-center gap-2 w-full md:w-auto">
             <Filter className="h-4 w-4 text-muted-foreground mr-2" />
-            <Button 
-              variant={filterType === "all" ? "default" : "outline"} 
+            <Button
+              variant={filterType === "all" ? "default" : "outline"}
               size="sm"
               onClick={() => setFilterType("all")}
             >
               All
             </Button>
-            <Button 
-              variant={filterType === "down" ? "default" : "outline"} 
+            <Button
+              variant={filterType === "down" ? "default" : "outline"}
               size="sm"
               className={filterType === "down" ? "bg-rose-600 hover:bg-rose-700 text-white" : ""}
               onClick={() => setFilterType("down")}
@@ -280,15 +298,15 @@ export function AgentReviewsPage() {
 
             return (
               <Card key={groupKey} className="overflow-hidden hover:shadow-md transition-shadow">
-                
+
                 {/* Main Visible Item */}
                 {renderReviewContent(primaryReview)}
 
                 {/* Group Expansion Toggle */}
                 {isGroup && (
                   <div className="border-t border-border bg-muted/20">
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       className="w-full rounded-none h-12 text-muted-foreground hover:text-foreground flex items-center justify-center gap-2"
                       onClick={() => toggleGroup(groupKey)}
                     >
@@ -304,7 +322,7 @@ export function AgentReviewsPage() {
                         </>
                       )}
                     </Button>
-                    
+
                     {/* Expanded Children */}
                     {isExpanded && (
                       <div className="flex flex-col bg-muted/10 border-t border-border">

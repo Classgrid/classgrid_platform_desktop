@@ -1015,7 +1015,7 @@ export type AgentReview = {
   id: string;
   message_id: string;
   user_email: string;
-  type: 'up' | 'down';
+  type: 'down';
   feedback_text: string | null;
   file_url: string | null;
   created_at: string;
