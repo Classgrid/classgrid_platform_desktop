@@ -222,14 +222,14 @@ export function AgentReviewsPage() {
                       <img 
                         src={trimmedUrl} 
                         alt="Feedback attachment" 
-                        onClick={() => setPreviewFile({ name: `Attachment ${i+1}`, src: trimmedUrl })}
+                        onClick={() => setPreviewFile({ name: `Attachment ${i+1}`, src: trimmedUrl, mimeType: 'image/png' })}
                         className="max-w-xs max-h-48 rounded-md border border-border object-cover hover:opacity-80 transition-opacity cursor-pointer" 
                       />
                     ) : (
                       <Button 
                         variant="link" 
                         className="p-0 h-auto text-blue-600 hover:text-blue-800 flex items-center" 
-                        onClick={() => setPreviewFile({ name: `Attachment ${i+1}`, src: trimmedUrl })}
+                        onClick={() => setPreviewFile({ name: `Attachment ${i+1}`, src: trimmedUrl, mimeType: 'application/pdf' })}
                       >
                         <ExternalLink className="h-4 w-4 mr-1.5" />
                         View Attached File {review.file_url!.split(',').length > 1 ? `(${i + 1})` : ''}
@@ -279,13 +279,13 @@ export function AgentReviewsPage() {
   const renderBreadcrumbs = () => {
     return (
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-6 bg-muted/20 p-3 rounded-lg border border-border">
-        <button onClick={() => setPath({})} className="hover:text-foreground flex items-center font-medium">
+        <button onClick={() => setPath({})} className="hover:text-foreground flex items-center font-medium cursor-pointer">
           <Home className="h-4 w-4 mr-1.5 text-amber-500" /> Root
         </button>
         {path.role && (
           <>
             <ChevronRight className="h-4 w-4 opacity-50" />
-            <button onClick={() => setPath({ role: path.role })} className="hover:text-foreground">
+            <button onClick={() => setPath({ role: path.role })} className="hover:text-foreground cursor-pointer">
               {path.role.charAt(0).toUpperCase() + path.role.slice(1)}
             </button>
           </>
@@ -293,7 +293,7 @@ export function AgentReviewsPage() {
         {path.org && (
           <>
             <ChevronRight className="h-4 w-4 opacity-50" />
-            <button onClick={() => setPath({ role: path.role, org: path.org })} className="hover:text-foreground">
+            <button onClick={() => setPath({ role: path.role, org: path.org })} className="hover:text-foreground cursor-pointer">
               {path.org}
             </button>
           </>
@@ -301,7 +301,7 @@ export function AgentReviewsPage() {
         {path.email && (
           <>
             <ChevronRight className="h-4 w-4 opacity-50" />
-            <button onClick={() => setPath({ role: path.role, org: path.org, email: path.email })} className="hover:text-foreground truncate max-w-[200px]">
+            <button onClick={() => setPath({ role: path.role, org: path.org, email: path.email })} className="hover:text-foreground truncate max-w-[200px] cursor-pointer">
               {tree[path.role!]?.orgs[path.org!]?.users[path.email!]?.name || path.email}
             </button>
           </>
