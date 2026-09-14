@@ -246,7 +246,7 @@ export function AgentReviewsPage() {
             <Button 
               size="sm" 
               variant="outline" 
-              className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+              className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 cursor-pointer"
               onClick={() => updateStatusMutation.mutate({ id: review.id, status: 'actioned' })}
               disabled={updateStatusMutation.isPending}
             >
@@ -255,7 +255,7 @@ export function AgentReviewsPage() {
             <Button 
               size="sm" 
               variant="outline" 
-              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200"
+              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 cursor-pointer"
               onClick={() => updateStatusMutation.mutate({ id: review.id, status: 'acknowledged' })}
               disabled={updateStatusMutation.isPending}
             >
@@ -264,7 +264,7 @@ export function AgentReviewsPage() {
             <Button 
               size="sm" 
               variant="outline" 
-              className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+              className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200 cursor-pointer"
               onClick={() => updateStatusMutation.mutate({ id: review.id, status: 'no_action' })}
               disabled={updateStatusMutation.isPending}
             >
