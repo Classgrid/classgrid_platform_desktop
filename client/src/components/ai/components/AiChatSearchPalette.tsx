@@ -105,8 +105,8 @@ export function AiChatSearchPalette({
           if (q.trim()) {
             filtered = filtered.filter((s: any) => (s.title || "").toLowerCase().includes(q.toLowerCase()));
           } else {
-            // If query is empty, only show top 5 recent chats
-            filtered = filtered.slice(0, 5);
+            // If query is empty, only show top 3 recent chats
+            filtered = filtered.slice(0, 3);
           }
           
           chatResults = filtered.map((s: any) => ({
