@@ -1645,7 +1645,7 @@ export const getAgentReviews = async (req, res) => {
 
         const User = (await import('../models/User.js')).default;
         const emails = [...new Set(data.map(r => r.user_email))];
-        const users = await User.find({ email: { $in: emails } }).populate('organization_id', 'name').lean();
+        const users = await User.find({ email: { $in: emails } }).select('name email profilePicture organization_id role').populate('organization_id', 'name').lean();
 
         const userMap = {};
         users.forEach(u => {
@@ -1653,7 +1653,8 @@ export const getAgentReviews = async (req, res) => {
                 id: u._id.toString(),
                 name: u.name,
                 profilePicture: u.profilePicture,
-                orgName: u.organization_id?.name || "No Organization"
+                orgName: u.organization_id?.name || "No Organization",
+                role: u.role || "unknown"
             };
         });
 

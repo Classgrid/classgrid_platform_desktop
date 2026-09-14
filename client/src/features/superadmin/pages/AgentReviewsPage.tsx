@@ -72,13 +72,18 @@ export function AgentReviewsPage() {
   const withFeedbackCount = reviews.filter((r) => r.feedback_text).length;
 
   // Group similar feedback
+  // Grouping logic: Group by exact text OR by user_email
   const groupedReviews: Record<string, AgentReview[]> = {};
-
   filteredReviews.forEach((review) => {
-    // Group by exact lowercase text, or by type if no text
+    // We group by user email to keep all feedback from one user together
+    const emailKey = review.user_email?.trim().toLowerCase() || "unknown";
     const textKey = review.feedback_text?.trim().toLowerCase();
-    const groupKey = textKey ? `text_${textKey}` : `empty_${review.type}`;
-
+    
+    // We'll create a composite key. If they submit the exact same text, it's grouped.
+    // If they submit multiple things, they are grouped under their email.
+    // Let's just group by email primarily for now to satisfy the user's request.
+    const groupKey = `user_${emailKey}`;
+    
     if (!groupedReviews[groupKey]) {
       groupedReviews[groupKey] = [];
     }
@@ -344,12 +349,12 @@ export function AgentReviewsPage() {
                       {isExpanded ? (
                         <>
                           <ChevronUp className="h-4 w-4" />
-                          Hide {groupReviews.length - 1} identical {groupReviews.length - 1 === 1 ? 'review' : 'reviews'}
+                          Hide {groupReviews.length - 1} other {groupReviews.length - 1 === 1 ? 'review' : 'reviews'} from this user
                         </>
                       ) : (
                         <>
                           <ChevronDown className="h-4 w-4" />
-                          Show {groupReviews.length - 1} more identical {groupReviews.length - 1 === 1 ? 'review' : 'reviews'} from other users
+                          Show {groupReviews.length - 1} more {groupReviews.length - 1 === 1 ? 'review' : 'reviews'} from this user
                         </>
                       )}
                     </Button>
