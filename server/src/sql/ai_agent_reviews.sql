@@ -6,6 +6,7 @@ CREATE TABLE public.ai_agent_reviews (
     type text NOT NULL DEFAULT 'down' CHECK (type IN ('down')),
     feedback_text text,
     file_url text,
+    status text DEFAULT 'pending' CHECK (status IN ('pending', 'actioned', 'acknowledged', 'no_action')),
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 

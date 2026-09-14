@@ -26,9 +26,9 @@ interface PathState {
 const FolderIcon = ({ label, subtitle, onClick, badge }: { label: string, subtitle?: string, onClick: () => void, badge: number }) => (
   <button 
     onClick={onClick}
-    className="flex flex-col items-center justify-start p-4 rounded-xl hover:bg-accent/50 transition-colors border border-transparent hover:border-border group h-36 relative"
+    className="flex flex-col items-center justify-start p-4 rounded-xl hover:bg-accent/50 transition-colors border border-transparent hover:border-border group h-40 relative cursor-pointer"
   >
-    <div className="relative mb-3">
+    <div className="relative mb-2">
       {/* Windows-style folder icon SVG */}
       <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400 group-hover:text-amber-500 transition-colors drop-shadow-sm">
         <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
@@ -37,8 +37,10 @@ const FolderIcon = ({ label, subtitle, onClick, badge }: { label: string, subtit
         {badge}
       </div>
     </div>
-    <span className="text-sm font-medium text-foreground line-clamp-2 w-full text-center leading-tight px-1">{label}</span>
-    {subtitle && <span className="text-xs text-muted-foreground truncate w-full text-center mt-1 px-1">{subtitle}</span>}
+    <div className="flex flex-col w-full justify-center">
+      <span className="text-sm font-medium text-foreground truncate w-full text-center leading-tight px-1">{label}</span>
+      {subtitle && <span className="text-xs text-muted-foreground truncate w-full text-center mt-1 px-1">{subtitle}</span>}
+    </div>
   </button>
 );
 
