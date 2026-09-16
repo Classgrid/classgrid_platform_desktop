@@ -157,12 +157,16 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
         credentials: "include"
       });
       if (res.ok) {
+        toast.success("Chat deleted");
         setDeleteSessionId(null);
         if (activeSessionId === id) window.dispatchEvent(new Event("agent:new-chat"));
         fetchSessions();
+      } else {
+        toast.error("Failed to delete chat");
       }
     } catch (e) {
       console.error("Failed to delete session", e);
+      toast.error("Failed to delete chat");
     } finally {
       setIsDeletingSession(false);
     }
