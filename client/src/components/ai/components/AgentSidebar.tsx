@@ -10,10 +10,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { MessageSquare, Plus, Search, Pin, MoreHorizontal, Pencil, Trash2, Share, Copy, Mail, Check, Link2, FileText, ExternalLink, X, Loader2, SquarePen } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import React from "react";
-import { createPortal } from "react-dom";
-import { MessageSquare, Plus, Search, Pin, MoreHorizontal, Pencil, Trash2, Share, Copy, Mail, Check, Link2, FileText, ExternalLink, X, Loader2, SquarePen } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from "@/components/marketing_ui/sidebar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/marketing_ui/popover";
 import { Input } from "@/components/marketing_ui/input";
