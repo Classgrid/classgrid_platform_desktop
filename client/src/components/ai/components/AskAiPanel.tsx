@@ -1335,7 +1335,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       if (res.ok) {
         setIsPinned(!isPinned);
         toast.success(!isPinned ? "Chat pinned" : "Chat unpinned");
-        window.dispatchEvent(new CustomEvent("agent:refresh-sidebar"));
+        window.dispatchEvent(new Event("agent:refresh-sessions"));
       } else {
         toast.error("Failed to update pin status");
       }
@@ -1361,7 +1361,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       if (res.ok) {
         toast.success("Chat deleted");
         setShowDeleteConfirm(false);
-        window.dispatchEvent(new CustomEvent("agent:refresh-sidebar"));
+        window.dispatchEvent(new Event("agent:refresh-sessions"));
 
         // Clear local state instantly
         setMessages([]);
