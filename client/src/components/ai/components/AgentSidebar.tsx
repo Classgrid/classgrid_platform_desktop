@@ -10,6 +10,10 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { MessageSquare, Plus, Search, Pin, MoreHorizontal, Pencil, Trash2, Share, Copy, Mail, Check, Link2, FileText, ExternalLink, X, Loader2, SquarePen } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import React from "react";
+import { createPortal } from "react-dom";
+import { MessageSquare, Plus, Search, Pin, MoreHorizontal, Pencil, Trash2, Share, Copy, Mail, Check, Link2, FileText, ExternalLink, X, Loader2, SquarePen } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from "@/components/marketing_ui/sidebar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/marketing_ui/popover";
 import { Input } from "@/components/marketing_ui/input";
@@ -17,6 +21,7 @@ import { Button } from "@/components/marketing_ui/button";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/marketing_ui/accordion";
 
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/marketing_ui/dropdown-menu";
+import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { toast } from "sonner";
 
 interface ChatSession {
@@ -56,6 +61,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   const [linkCopied, setLinkCopied] = React.useState(false);
   const [sharePreviewMessages, setSharePreviewMessages] = React.useState<any[]>([]);
   const [isLoadingPreview, setIsLoadingPreview] = React.useState(false);
+  const [deleteSessionId, setDeleteSessionId] = React.useState<string | null>(null);
+  const [isDeletingSession, setIsDeletingSession] = React.useState(false);
 
   React.useEffect(() => {
     const handleActiveSessionChanged = (e: any) => {
@@ -146,18 +153,21 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   };
 
   const handleDeleteSession = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this chat?")) return;
+    setIsDeletingSession(true);
     try {
       const res = await fetch(`${endpointPrefix}/api/ai/sessions/${id}`, {
         method: "DELETE",
         credentials: "include"
       });
       if (res.ok) {
+        setDeleteSessionId(null);
         if (activeSessionId === id) window.dispatchEvent(new Event("agent:new-chat"));
         fetchSessions();
       }
     } catch (e) {
       console.error("Failed to delete session", e);
+    } finally {
+      setIsDeletingSession(false);
     }
   };
 
@@ -448,7 +458,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                   onClick={() => {
                     setPinnedOpen(false);
                     setRecentOpen(false);
-                    handleDeleteSession(session.id);
+                    setDeleteSessionId(session.id);
                   }}
                 >
                   <Trash2 className="w-4 h-4 text-[#ef4444]" strokeWidth={2} />
@@ -759,6 +769,16 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
         </div>,
         document.body
       )}
+      <DangerConfirmDialog
+        open={deleteSessionId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteSessionId(null); }}
+        title="Delete chat"
+        description="This will permanently delete this chat and all its messages. This action cannot be undone."
+        warningMessage="This chat will be permanently deleted."
+        actionLabel="Delete chat"
+        isLoading={isDeletingSession}
+        onConfirm={() => { if (deleteSessionId) handleDeleteSession(deleteSessionId); }}
+      />
     </>
   );
 }

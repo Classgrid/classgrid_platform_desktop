@@ -12,6 +12,7 @@ import { SidebarContext, SidebarTrigger } from "@/components/marketing_ui/sideba
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import { ExpandedInputModal } from './ExpandedInputModal';
+import { DangerConfirmDialog } from '@/components/marketing_ui/danger-confirm-dialog';
 import JSON5 from 'json5';
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
@@ -1326,7 +1327,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
         : "";
       const res = await fetch(`${endpointPrefix}/api/ai/sessions/${sessionId}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pinned: !isPinned }),
         credentials: "include"
@@ -1343,9 +1344,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     }
   };
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [isDeletingChat, setIsDeletingChat] = React.useState(false);
+
   const handleDeleteChat = async () => {
     if (!sessionId) return;
-    if (!confirm("Are you sure you want to delete this chat?")) return;
+    setIsDeletingChat(true);
     try {
       const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
         ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
@@ -1356,7 +1360,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       });
       if (res.ok) {
         toast.success("Chat deleted");
+        setShowDeleteConfirm(false);
         window.dispatchEvent(new CustomEvent("agent:refresh-sidebar"));
+
+        // Clear local state instantly
+        setMessages([]);
+        if (typeof setLocalSessionId === "function") setLocalSessionId(null);
+
 
         // Go back to the base agent path to clear the chat view
         const currentPath = window.location.pathname;
@@ -1364,13 +1374,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         const agentIndex = pathParts.indexOf('agent');
         if (agentIndex !== -1) {
           const baseAgentPath = pathParts.slice(0, agentIndex + 1).join('/');
-          window.history.pushState(null, "", baseAgentPath);
+          if (currentPath !== baseAgentPath) {
+            window.history.pushState(null, "", baseAgentPath);
+            window.dispatchEvent(new PopStateEvent('popstate'));
+          }
         }
       } else {
         toast.error("Failed to delete chat");
       }
     } catch (err) {
       toast.error("An error occurred");
+    } finally {
+      setIsDeletingChat(false);
     }
   };
   // ──────────────────────────────
@@ -2764,7 +2779,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   {isPinned ? "Unpin chat" : "Pin chat"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/10" />
-                <DropdownMenuItem onClick={handleDeleteChat} className="gap-2 cursor-pointer text-[#ef4444] focus:text-[#ef4444] focus:bg-red-50 dark:focus:bg-red-500/10">
+                <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)} className="gap-2 cursor-pointer text-[#ef4444] focus:text-[#ef4444] focus:bg-red-50 dark:focus:bg-red-500/10">
                   <Trash2 className="h-4 w-4" />
                   Delete
                 </DropdownMenuItem>
@@ -3725,7 +3740,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         {isPinned ? "Unpin chat" : "Pin chat"}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/10" />
-                      <DropdownMenuItem onClick={handleDeleteChat} className="gap-2 cursor-pointer text-[#ef4444] focus:text-[#ef4444] focus:bg-red-50 dark:focus:bg-red-500/10">
+                      <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)} className="gap-2 cursor-pointer text-[#ef4444] focus:text-[#ef4444] focus:bg-red-50 dark:focus:bg-red-500/10">
                         <Trash2 className="h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
@@ -4312,6 +4327,16 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         value={viewingPastedText?.content || ""}
         title={viewingPastedText?.title || "Pasted text"}
         readOnly={true}
+      />
+      <DangerConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete chat"
+        description="This will permanently delete this chat and all its messages. This action cannot be undone."
+        warningMessage="This chat will be permanently deleted."
+        actionLabel="Delete chat"
+        isLoading={isDeletingChat}
+        onConfirm={handleDeleteChat}
       />
     </>
   );
