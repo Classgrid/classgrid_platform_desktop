@@ -1667,7 +1667,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     if (pastedText && wordCount > 2000) {
       e.preventDefault();
       setPastedTexts(prev => {
-        if (prev.length >= 2) return prev; // max 2 large pasted texts
+        if (prev.length >= 2) {
+          setTimeout(() => toast.error("You can only attach up to 2 long texts per message."), 0);
+          return prev;
+        }
         return [...prev, pastedText];
       });
       return;
