@@ -3420,7 +3420,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 suppressHydrationWarning
                 ref={inputRef as any}
                 value={input}
-                onChange={(event) => setInput(event.target.value)}
+                onChange={(event) => {
+                  setInput(event.target.value);
+                  event.target.style.height = 'auto';
+                  event.target.style.height = `${Math.min(event.target.scrollHeight, 240)}px`;
+                }}
                 onPaste={handlePaste}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -3431,8 +3435,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 placeholder={attachedFiles.length > 0 ? "Add a message or send files..." : "Ask a question..."}
                 autoComplete="off"
                 className={cn(
-                  "min-h-[90px] max-h-[240px] w-full resize-none bg-transparent pb-12 pr-14 text-sm text-foreground focus:outline-none overflow-y-auto [scrollbar-width:thin] leading-relaxed transition-colors",
-                  (pageContext?.path?.startsWith("/docs") && !isGenerating) ? "pl-14" : "pl-4",
+                  "min-h-[90px] max-h-[240px] w-full resize-none bg-transparent pb-12 pr-14 pl-14 text-sm text-foreground focus:outline-none overflow-y-auto [scrollbar-width:thin] leading-relaxed transition-colors",
                   (pageContext?.path?.startsWith("/docs") || attachedFiles.length > 0) ? "pt-3" : "pt-4 rounded-2xl"
                 )}
               />
@@ -3627,7 +3630,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                             suppressHydrationWarning
                             ref={inputRef as any}
                             value={input}
-                            onChange={(event) => setInput(event.target.value)}
+                            onChange={(event) => {
+                              setInput(event.target.value);
+                              event.target.style.height = 'auto';
+                              event.target.style.height = `${Math.min(event.target.scrollHeight, 240)}px`;
+                            }}
                             onPaste={handlePaste}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && !e.shiftKey) {
@@ -3637,7 +3644,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                             }}
                             placeholder="Ask a question..."
                             autoComplete="off"
-                            className="min-h-[90px] max-h-[240px] w-full resize-none bg-transparent pb-12 pr-14 pl-4 pt-4 rounded-2xl text-sm text-foreground focus:outline-none overflow-y-auto [scrollbar-width:thin] leading-relaxed transition-colors"
+                            className="min-h-[90px] max-h-[240px] w-full resize-none bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl text-sm text-foreground focus:outline-none overflow-y-auto [scrollbar-width:thin] leading-relaxed transition-colors"
                           />
 
                           {/* Bottom left: paperclip */}
