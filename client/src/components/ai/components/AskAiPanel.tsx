@@ -11,6 +11,7 @@ import { useParams } from "react-router-dom";
 import { SidebarContext, SidebarTrigger } from "@/components/marketing_ui/sidebar";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
+import { ExpandedInputModal } from './ExpandedInputModal';
 import JSON5 from 'json5';
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
@@ -174,6 +175,7 @@ type AiAttachment = {
   url: string;
   mimeType: string;
   size: number;
+  content?: string;
 };
 
 type UIFileAttachment = {
@@ -671,7 +673,7 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
       const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
         ? import.meta.env.VITE_API_URL || "https://api.classgrid.in"
         : "";
-      
+
       const token = localStorage.getItem("token");
       fetch(`${endpointPrefix}/api/ai/feedback`, {
         method: "POST",
@@ -692,7 +694,7 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
     setIsSubmittingFeedback(true);
     try {
       let fileUrls: string[] = [];
-      
+
       // Upload files if any
       if (files.length > 0) {
         for (const file of files) {
@@ -731,7 +733,7 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
       const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
         ? import.meta.env.VITE_API_URL || "https://api.classgrid.in"
         : "";
-      
+
       const token = localStorage.getItem("token");
       await fetch(`${endpointPrefix}/api/ai/feedback`, {
         method: "POST",
@@ -1355,7 +1357,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       if (res.ok) {
         toast.success("Chat deleted");
         window.dispatchEvent(new CustomEvent("agent:refresh-sidebar"));
-        
+
         // Go back to the base agent path to clear the chat view
         const currentPath = window.location.pathname;
         const pathParts = currentPath.split('/');
@@ -1423,6 +1425,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [thinkingLabel, setThinkingLabel] = useState("Thinking");
   const { sessionId: routeSessionId } = useParams<{ sessionId?: string }>();
   const [localSessionId, setLocalSessionId] = useState<string | null>(null);
+  const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
+  const [viewingPastedText, setViewingPastedText] = useState<{title: string, content: string} | null>(null);
+  const [isExpandedBox, setIsExpandedBox] = useState(false);
 
   // Use route parameter if present (dashboard mode), otherwise fallback to local state (website floating mode)
   const sessionId = routeSessionId || localSessionId;
@@ -1454,6 +1459,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   // â”€â”€ File attachment state â”€â”€
   const [attachedFiles, setAttachedFiles] = useState<UIFileAttachment[]>([]);
+  const [pastedTexts, setPastedTexts] = useState<string[]>([]);
+  const [editingMode, setEditingMode] = useState<'input' | number | null>(null);
   const [previewFile, setPreviewFile] = useState<FilePreviewSource | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -1638,6 +1645,19 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   }, [processFiles]);
 
   const handlePaste = useCallback(async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pastedText = e.clipboardData?.getData("text/plain");
+    const wordCount = pastedText ? pastedText.trim().split(/\s+/).length : 0;
+
+    // Create chip only if the pasted text has more than 2000 WORDS
+    if (pastedText && wordCount > 2000) {
+      e.preventDefault();
+      setPastedTexts(prev => {
+        if (prev.length >= 2) return prev; // max 2 large pasted texts
+        return [...prev, pastedText];
+      });
+      return;
+    }
+
     const items = e.clipboardData?.items;
     if (!items) return;
 
@@ -1652,8 +1672,25 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     if (pastedFiles.length > 0) {
       e.preventDefault();
       await processFiles(pastedFiles);
+
+      // If they copied both an image AND text (e.g., from a website), make sure the text isn't lost!
+      if (pastedText && pastedText.trim() && wordCount <= 2000) {
+        setInput(prev => {
+          if (!prev) return pastedText;
+          return prev + (prev.endsWith(" ") || prev.endsWith("\n") ? "" : " ") + pastedText;
+        });
+
+        // Auto-adjust height after programmatic text insertion
+        setTimeout(() => {
+          const els = document.querySelectorAll("textarea[name='askAiQuestion']") as NodeListOf<HTMLTextAreaElement>;
+          els.forEach(el => {
+            el.style.height = 'auto';
+            el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
+          });
+        }, 10);
+      }
     }
-  }, [processFiles]);
+  }, [processFiles, setInput]);
 
   const removeAttachedFile = useCallback((id: string) => {
     setAttachedFiles(prev => prev.filter(f => f.id !== id));
@@ -2034,7 +2071,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   const hasDocsContext = pageContext?.path?.startsWith("/docs") && pageContext.path !== lastSentDocsPath;
   const isAnyFileUploading = attachedFiles.some(f => f.status === "uploading");
-  const canSubmit = (input.trim().length > 0 || hasDocsContext || attachedFiles.length > 0) && !isAnyFileUploading;
+  const canSubmit = (input.trim().length > 0 || hasDocsContext || attachedFiles.length > 0 || pastedTexts.length > 0) && !isAnyFileUploading;
   const emptyState = useMemo(() => messages.length === 0, [messages.length]);
   const suggestedQuestions = useMemo(() => suggestedQuestionsForPage(pageContext, session?.user?.role), [pageContext, session?.user?.role]);
 
@@ -2241,7 +2278,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         size: f.size,
       }));
 
-    if (!apiQuestion && !isDocsContextActive && filesToUpload.length === 0) return;
+    if (!apiQuestion && !isDocsContextActive && filesToUpload.length === 0 && pastedTexts.length === 0) return;
+
+    if (pastedTexts.length > 0) {
+      apiQuestion = `${apiQuestion}\n\n${pastedTexts.map((pt, i) => `[PASTED TEXT ${i + 1}]:\n${pt}`).join("\n\n")}`;
+    }
 
     if (isDocsContextActive && pageContext?.path && filesToUpload.length === 0) {
       const docsUrl = `https://classgrid.in${pageContext.path}`;
@@ -2263,6 +2304,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     setError("");
     setInput("");
     setAttachedFiles([]);
+    setPastedTexts([]);
     localStorage.removeItem("askAiDraftInput");
     localStorage.removeItem("askAiDraftFiles");
     localStorage.removeItem("askAiDraftContext");
@@ -2271,8 +2313,19 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     setThinkingLabel("Thinking");
     const requestStartTime = Date.now(); // Track when we start thinking
     userScrolledUpRef.current = false; // Reset scroll lock for new question
+    setIsExpandedBox(false); // Close expanded box on submit
 
     const uploadedAttachments: AiAttachment[] = filesToUpload;
+
+    const pastedTextAttachments: AiAttachment[] = pastedTexts.map((pt, i) => ({
+      name: pastedTexts.length > 1 ? `Pasted text ${i + 1}.txt` : `Pasted text.txt`,
+      url: "",
+      mimeType: "text/plain",
+      size: new Blob([pt]).size,
+      content: pt
+    }));
+
+    const allAttachments = [...uploadedAttachments, ...pastedTextAttachments];
 
     // Record file sends for rate limiting (only counts when actually sent, not uploaded)
     if (uploadedAttachments.length > 0) {
@@ -2299,7 +2352,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         createdAt: Date.now(),
         contextUrl: sentContextUrl,
         contextTitle: sentContextTitle,
-        attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
+        attachments: allAttachments.length > 0 ? allAttachments : undefined,
         hidden: options?.hidden,
       },
       {
@@ -2793,8 +2846,45 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           </>
         ) : (
           <>
-            {messages.map((message, index) => {
-              if (message.hidden) return null;
+            {messages.map((rawMessage, index) => {
+              if (rawMessage.hidden) return null;
+
+              // Parse pasted text out of the content dynamically to reconstruct chips on page refresh
+              const message = { ...rawMessage };
+              let displayContent = typeof message.content === 'object' && message.content !== null
+                ? (message.content as any).content || JSON.stringify(message.content)
+                : String(message.content || '');
+              
+              if (message.role === "user" && displayContent.includes("[PASTED TEXT")) {
+                const extractedPastedTexts: string[] = [];
+                const pastedTextRegex = /\[PASTED TEXT \d+\]:\n([\s\S]*?)(?=\n\n\[PASTED TEXT \d+\]:|$)/g;
+                let match;
+                while ((match = pastedTextRegex.exec(displayContent)) !== null) {
+                  extractedPastedTexts.push(match[1]);
+                }
+                displayContent = displayContent.replace(/\[PASTED TEXT \d+\]:\n[\s\S]*?(?=\n\n\[PASTED TEXT \d+\]:|$)/g, "").trim();
+                message.content = displayContent;
+                
+                if (extractedPastedTexts.length > 0) {
+                  const newAttachments = [...(message.attachments || [])];
+                  extractedPastedTexts.forEach((text, i) => {
+                    const expectedName = extractedPastedTexts.length > 1 ? `Pasted text ${i + 1}.txt` : `Pasted text.txt`;
+                    const existing = newAttachments.find(a => a.name === expectedName);
+                    if (existing) {
+                      existing.content = text;
+                    } else {
+                      newAttachments.push({
+                        name: expectedName,
+                        url: "",
+                        mimeType: "text/plain",
+                        size: new Blob([text]).size,
+                        content: text
+                      });
+                    }
+                  });
+                  message.attachments = newAttachments;
+                }
+              }
 
               const isUser = message.role === "user";
 
@@ -2831,7 +2921,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     <div className={cn("flex flex-col gap-1.5 min-w-0", isUser ? "items-end max-w-[75%]" : "w-full")}>
 
                       {/* â”€â”€ Text Bubble â”€â”€ */}
-                      {(message.content || (message.steps && message.steps.length > 0) || (message.thought && message.thought.trim().length > 0) || (!isUser && index === messages.length - 1 && thinking)) && (
+                      {(message.content || (message.steps && message.steps.length > 0) || (message.thought && message.thought.trim().length > 0) || (message.attachments && message.attachments.length > 0) || (!isUser && index === messages.length - 1 && thinking)) && (
                         <div
                           id={isUser ? `msg-${message.id}` : undefined}
                           className={cn(
@@ -2843,12 +2933,14 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         >
                           {isUser ? (
                             <>
-                              <p className="text-[16px] leading-[24px] break-words break-all whitespace-pre-wrap text-[#37352f] dark:text-[#F0EFED] cursor-text">
-                                {(typeof message.content === 'object' && message.content !== null
-                                  ? (message.content as any).content || JSON.stringify(message.content)
-                                  : String(message.content || '')
-                                ).replace(/\[Attached file:.*?\]/g, '').trim()}
-                              </p>
+                              {message.content && message.content.trim().length > 0 && (
+                                <p className="text-[16px] leading-[24px] break-words break-all whitespace-pre-wrap text-[#37352f] dark:text-[#F0EFED] cursor-text">
+                                  {(typeof message.content === 'object' && message.content !== null
+                                    ? (message.content as any).content || JSON.stringify(message.content)
+                                    : String(message.content || '')
+                                  ).replace(/\[Attached file:.*?\]/g, '').trim()}
+                                </p>
+                              )}
                               {message.contextUrl && (
                                 <a
                                   href={message.contextUrl}
@@ -3225,6 +3317,28 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   fileTypeLabel = (extension || "DOCX").toUpperCase();
                                 }
 
+                                if (att.name.startsWith("Pasted text")) {
+                                  return (
+                                    <div
+                                      key={`${att.name}-${i}`}
+                                      className="group relative inline-flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3 py-2.5 shadow-sm min-w-[250px] max-w-[400px] transition-all cursor-pointer hover:bg-muted/60"
+                                      onClick={() => att.content && setViewingPastedText({ title: att.name.replace(".txt", ""), content: att.content })}
+                                    >
+                                      <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                                        <FileText className="h-4 w-4 text-blue-500" />
+                                      </div>
+                                      <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0.5">
+                                        <span className="text-[13px] font-medium text-foreground truncate leading-tight">
+                                          {att.name}
+                                        </span>
+                                        <span className="text-[12px] text-muted-foreground truncate leading-tight">
+                                          Document
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+
                                 return (
                                   <div
                                     key={`${att.name}-${i}`}
@@ -3308,7 +3422,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-2">
-            <div className="relative w-[80%] mx-auto shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-colors">
+            <div className={cn(
+              "group relative w-[80%] mx-auto shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
+            )}>
               {/* Hidden file input */}
               <input
                 ref={fileInputRef}
@@ -3344,9 +3460,40 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 </div>
               )}
 
-              {/* Attached file chips */}
-              {attachedFiles.length > 0 && (
+              {/* Attached file chips and Pasted Text Chip */}
+              {(attachedFiles.length > 0 || pastedTexts.length > 0) && (
                 <div className="px-3 pt-3 pb-0 flex flex-wrap gap-1.5">
+                  {pastedTexts.map((pt, idx) => (
+                    <div
+                      key={`pasted-${idx}`}
+                      className="group relative inline-flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3 py-2.5 shadow-sm max-w-[220px] transition-all cursor-pointer hover:bg-muted/60"
+                      title="Too long to show in text field"
+                      onClick={() => setEditingMode(idx)}
+                    >
+                      <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                        <FileText className="h-4 w-4 text-blue-500" />
+                      </div>
+                      <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0.5">
+                        <span className="text-[13px] font-medium text-foreground truncate leading-tight">
+                          Pasted text {pastedTexts.length > 1 ? idx + 1 : ""}
+                        </span>
+                        <span className="text-[12px] text-muted-foreground truncate leading-tight">
+                          Pasted text
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPastedTexts(prev => prev.filter((_, i) => i !== idx));
+                        }}
+                        className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground shadow-sm transition-colors z-10 cursor-pointer"
+                        title="Remove pasted text"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
                   {attachedFiles.map((att) => {
                     const Icon = getFileIcon(att.type);
                     const isImage = att.type.startsWith("image/");
@@ -3394,7 +3541,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                           <button
                             type="button"
                             onClick={() => setPreviewFile({ name: att.name, src: att.url!, mimeType: att.type })}
-                            className="absolute inset-0 w-full h-full cursor-pointer z-0"
+                            className="absolute inset-0 w-full h-full cursor-pointer z-10"
                             title="Preview file"
                           />
                         )}
@@ -3402,7 +3549,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         <button
                           type="button"
                           onClick={() => removeAttachedFile(att.id)}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors z-10 cursor-pointer"
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors z-20 cursor-pointer"
                           title={`Remove ${att.name}`}
                         >
                           <X className="h-3 w-3" />
@@ -3413,6 +3560,31 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 </div>
               )}
 
+              <div className="absolute top-3 right-3 z-10">
+                {input.trim().split(/\s+/).filter(w => w.length > 0).length >= 90 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsExpandedBox(!isExpandedBox)}
+                    className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer opacity-0 focus-within:opacity-100 group-hover:opacity-100"
+                    title={isExpandedBox ? "Collapse input" : "Expand input"}
+                  >
+                    {isExpandedBox ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 14h6v6" />
+                        <path d="M20 10h-6V4" />
+                        <path d="M14 10l7-7" />
+                        <path d="M3 21l7-7" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 10h-6V4" />
+                        <path d="M4 14h6v6" />
+                      </svg>
+                    )}
+                  </button>
+                )}
+              </div>
+
               <textarea
                 id="ask-ai-input"
                 name="askAiQuestion"
@@ -3421,21 +3593,34 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 ref={inputRef as any}
                 value={input}
                 onChange={(event) => {
-                  setInput(event.target.value);
-                  event.target.style.height = 'auto';
-                  event.target.style.height = `${Math.min(event.target.scrollHeight, 240)}px`;
+                  const val = event.target.value;
+                  setInput(val);
+                  const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
+                  if (isExpandedBox && wordCount < 90) {
+                    setIsExpandedBox(false);
+                  }
+                  if (val.length === 0) {
+                    event.target.style.height = '';
+                  } else if (!isExpandedBox || wordCount < 90) {
+                    event.target.style.height = 'auto';
+                    event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
+                  }
                 }}
                 onPaste={handlePaste}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    if (canSubmit) void askQuestion(input);
+                    if (canSubmit) {
+                      void askQuestion(input);
+                      setIsExpandedBox(false);
+                    }
                   }
                 }}
                 placeholder={attachedFiles.length > 0 ? "Add a message or send files..." : "Ask a question..."}
                 autoComplete="off"
                 className={cn(
-                  "min-h-[90px] max-h-[240px] w-full resize-none bg-transparent pb-12 pr-14 pl-14 text-sm text-foreground focus:outline-none overflow-y-auto [scrollbar-width:thin] leading-relaxed transition-colors",
+                  "w-full resize-none bg-transparent pb-12 pr-14 pl-14 text-sm text-foreground focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                  isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]",
                   (pageContext?.path?.startsWith("/docs") || attachedFiles.length > 0) ? "pt-3" : "pt-4 rounded-2xl"
                 )}
               />
@@ -3614,7 +3799,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                       </div>
                     ) : (
                       <form onSubmit={handleSubmit} className="space-y-2">
-                        <div className="relative w-full shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-colors">
+                        <div className={cn(
+                          "group relative w-full shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
+                        )}>
                           <input
                             ref={fileInputRef}
                             type="file"
@@ -3623,6 +3810,128 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                             onChange={handleFileSelect}
                             className="hidden"
                           />
+                          {(attachedFiles.length > 0 || pastedTexts.length > 0) && (
+                            <div className="px-3 pt-3 pb-0 flex flex-wrap gap-1.5">
+                              {pastedTexts.map((pt, idx) => (
+                                <div
+                                  key={`pasted-inline-${idx}`}
+                                  className="group relative inline-flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3 py-2.5 shadow-sm max-w-[220px] transition-all cursor-pointer hover:bg-muted/60"
+                                  title="Too long to show in text field"
+                                  onClick={() => setEditingMode(idx)}
+                                >
+                                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                                    <FileText className="h-4 w-4 text-blue-500" />
+                                  </div>
+                                  <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0.5">
+                                    <span className="text-[13px] font-medium text-foreground truncate leading-tight">
+                                      Pasted text {pastedTexts.length > 1 ? idx + 1 : ""}
+                                    </span>
+                                    <span className="text-[12px] text-muted-foreground truncate leading-tight">
+                                      Pasted text
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPastedTexts(prev => prev.filter((_, i) => i !== idx));
+                                    }}
+                                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground shadow-sm transition-colors z-10 cursor-pointer"
+                                    title="Remove pasted text"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                              {attachedFiles.map((att) => {
+                                const Icon = getFileIcon(att.type);
+                                const isImage = att.type.startsWith("image/");
+                                return (
+                                  <div
+                                    key={att.id}
+                                    className={cn(
+                                      "group relative inline-flex items-center gap-2 rounded-[10px] border px-3 py-2 pr-8 shadow-sm max-w-[200px] transition-all",
+                                      att.status === "error" ? "border-red-500/50 bg-red-500/10" : "border-border/80 bg-muted/40",
+                                      att.status === "uploading" ? "opacity-70 animate-pulse" : "opacity-100"
+                                    )}
+                                  >
+                                    {isImage ? (
+                                      /* eslint-disable-next-line @next/next/no-img-element */
+                                      <img
+                                        src={att.url || (att.file ? URL.createObjectURL(att.file) : "")}
+                                        alt={att.name}
+                                        className="h-6 w-6 rounded object-cover shrink-0"
+                                      />
+                                    ) : (
+                                      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                    )}
+                                    <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0">
+                                      <span className="text-[11px] font-medium text-foreground truncate leading-tight">
+                                        {att.name}
+                                      </span>
+                                      {att.status === "uploading" ? (
+                                        <div className="h-1.5 w-full max-w-[80px] bg-muted-foreground/20 rounded-full overflow-hidden mt-1 mb-0.5">
+                                          <motion.div
+                                            initial={{ width: "0%" }}
+                                            animate={{ width: "85%" }}
+                                            transition={{ duration: 2.5, ease: "easeOut" }}
+                                            className="h-full bg-emerald-500 rounded-full"
+                                          />
+                                        </div>
+                                      ) : (
+                                        <span className="text-[10px] text-muted-foreground/70 leading-tight">
+                                          {att.status === "error" ? "Failed" : formatFileSize(att.size)}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {/* Allow previewing the file immediately after successful upload */}
+                                    {att.status === "done" && att.url && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setPreviewFile({ name: att.name, src: att.url!, mimeType: att.type })}
+                                        className="absolute inset-0 w-full h-full cursor-pointer z-10"
+                                        title="Preview file"
+                                      />
+                                    )}
+
+                                    <button
+                                      type="button"
+                                      onClick={() => removeAttachedFile(att.id)}
+                                      className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors z-20 cursor-pointer"
+                                      title={`Remove ${att.name}`}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                          <div className="absolute top-3 right-3 z-10">
+                            {input.trim().split(/\s+/).filter(w => w.length > 0).length >= 90 && (
+                              <button
+                                type="button"
+                                onClick={() => setIsExpandedBox(!isExpandedBox)}
+                                className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer opacity-0 focus-within:opacity-100 group-hover:opacity-100"
+                                title={isExpandedBox ? "Collapse input" : "Expand input"}
+                              >
+                                {isExpandedBox ? (
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M4 14h6v6" />
+                                    <path d="M20 10h-6V4" />
+                                    <path d="M14 10l7-7" />
+                                    <path d="M3 21l7-7" />
+                                  </svg>
+                                ) : (
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M20 10h-6V4" />
+                                    <path d="M4 14h6v6" />
+                                  </svg>
+                                )}
+                              </button>
+                            )}
+                          </div>
                           <textarea
                             id="ask-ai-input"
                             name="askAiQuestion"
@@ -3631,20 +3940,35 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                             ref={inputRef as any}
                             value={input}
                             onChange={(event) => {
-                              setInput(event.target.value);
-                              event.target.style.height = 'auto';
-                              event.target.style.height = `${Math.min(event.target.scrollHeight, 240)}px`;
+                              const val = event.target.value;
+                              setInput(val);
+                              const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
+                              if (isExpandedBox && wordCount < 90) {
+                                setIsExpandedBox(false);
+                              }
+                              if (val.length === 0) {
+                                event.target.style.height = '';
+                              } else if (!isExpandedBox || wordCount < 90) {
+                                event.target.style.height = 'auto';
+                                event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
+                              }
                             }}
                             onPaste={handlePaste}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault();
-                                if (canSubmit) void askQuestion(input);
+                                if (canSubmit) {
+                                  void askQuestion(input);
+                                  setIsExpandedBox(false);
+                                }
                               }
                             }}
                             placeholder="Ask a question..."
                             autoComplete="off"
-                            className="min-h-[90px] max-h-[240px] w-full resize-none bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl text-sm text-foreground focus:outline-none overflow-y-auto [scrollbar-width:thin] leading-relaxed transition-colors"
+                            className={cn(
+                              "w-full resize-none bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl text-sm text-foreground focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                              isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]"
+                            )}
                           />
 
                           {/* Bottom left: paperclip */}
@@ -3679,7 +4003,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   </div>
 
                   {/* Suggestion chips */}
-                  <div className="flex flex-col items-center gap-3 mt-2">
+                  {!isExpandedBox && (
+                    <div className="flex flex-col items-center gap-3 mt-2">
                     <p className="text-xs text-muted-foreground font-medium tracking-wide">
                       Try Classgrid AI for...
                     </p>
@@ -3793,7 +4118,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         ));
                       })()}
                     </div>
-                  </div>
+                    </div>
+                  )}
 
                 </div>
               </div>
@@ -3829,32 +4155,32 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   </Button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 w-[350px]">
-                {chatFiles.length === 0 ? (
-                  <div className="text-sm text-muted-foreground text-center mt-10">
-                    No files referenced yet
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-3">
-                    {chatFiles.map((f, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setPreviewFile({ src: f.url, name: f.name, mimeType: f.mimeType })}
-                        className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-muted transition-colors text-left cursor-pointer"
-                      >
-                        <div className="h-10 w-10 shrink-0 bg-primary/10 rounded flex items-center justify-center">
-                          <FileText className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium truncate">{f.name}</div>
-                          <div className="text-[11px] text-muted-foreground uppercase">{f.mimeType.split('/').pop()?.replace('vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'excel').replace('jpeg', 'jpg')}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
+                  {chatFiles.length === 0 ? (
+                    <div className="text-sm text-muted-foreground text-center mt-10">
+                      No files referenced yet
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {chatFiles.map((f, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setPreviewFile({ src: f.url, name: f.name, mimeType: f.mimeType })}
+                          className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-muted transition-colors text-left cursor-pointer"
+                        >
+                          <div className="h-10 w-10 shrink-0 bg-primary/10 rounded flex items-center justify-center">
+                            <FileText className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium truncate">{f.name}</div>
+                            <div className="text-[11px] text-muted-foreground uppercase">{f.mimeType.split('/').pop()?.replace('vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'excel').replace('jpeg', 'jpg')}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
           {/* Right-side TOC showing user questions */}
           {tocItems.length > 0 && !showFilesPanel && <ScrollSpyTOC tocItems={tocItems} activeSection={activeSection} />}
@@ -3965,6 +4291,28 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           onClose={() => setPreviewFile(null)}
         />
       )}
+      <ExpandedInputModal
+        isOpen={editingMode !== null}
+        onClose={() => setEditingMode(null)}
+        title={typeof editingMode === 'number' ? `Pasted text ${pastedTexts.length > 1 ? editingMode + 1 : ''}.txt` : 'Edit input'}
+        value={typeof editingMode === 'number' ? (pastedTexts[editingMode] || "") : input}
+        onChange={(val) => {
+          if (typeof editingMode === 'number') {
+            setPastedTexts(prev => prev.map((pt, i) => i === editingMode ? val : pt));
+          } else {
+            setInput(val);
+          }
+        }}
+        onSave={() => setEditingMode(null)}
+      />
+      <ExpandedInputModal
+        isOpen={viewingPastedText !== null}
+        onClose={() => setViewingPastedText(null)}
+        onSave={() => {}}
+        value={viewingPastedText?.content || ""}
+        title={viewingPastedText?.title || "Pasted text"}
+        readOnly={true}
+      />
     </>
   );
 }
