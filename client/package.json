@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aicss/react": "^0.1.3",
     "@base-ui/react": "^1.3.0",
     "@fontsource-variable/geist": "^5.2.8",
     "@hookform/resolvers": "^5.2.2",

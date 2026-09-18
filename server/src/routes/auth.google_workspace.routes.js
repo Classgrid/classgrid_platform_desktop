@@ -56,7 +56,7 @@ const getOAuth2Client = () => {
     return new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,
-        `${process.env.BACKEND_URL}/api/calendar/callback`
+        `${process.env.BACKEND_URL}/api/google-workspace/callback`
     );
 };
 
@@ -65,17 +65,29 @@ const getOAuth2Client = () => {
 // ─────────────────────────────────────────────
 router.get("/connect", isAuthenticated, (req, res) => {
     const oauth2Client = getOAuth2Client();
+    const service = req.query.service || 'all';
     
-    // Scopes needed for Calendar, Meet, and Classroom
-    const scopes = [
-        'https://www.googleapis.com/auth/calendar',
-        'https://www.googleapis.com/auth/calendar.events',
-        'https://www.googleapis.com/auth/classroom.courses.readonly',
-        'https://www.googleapis.com/auth/classroom.coursework.me.readonly',
-        'https://www.googleapis.com/auth/classroom.coursework.students',
-        'https://www.googleapis.com/auth/drive.readonly',
-        'https://www.googleapis.com/auth/drive.file'
-    ];
+    let scopes = [];
+    
+    if (service === 'calendar' || service === 'meet' || service === 'all') {
+        scopes.push('https://www.googleapis.com/auth/calendar');
+        scopes.push('https://www.googleapis.com/auth/calendar.events');
+    }
+    
+    if (service === 'classroom' || service === 'all') {
+        scopes.push('https://www.googleapis.com/auth/classroom.courses.readonly');
+        scopes.push('https://www.googleapis.com/auth/classroom.coursework.me.readonly');
+        scopes.push('https://www.googleapis.com/auth/classroom.coursework.students');
+    }
+    
+    if (service === 'drive' || service === 'all') {
+        scopes.push('https://www.googleapis.com/auth/drive.readonly');
+        scopes.push('https://www.googleapis.com/auth/drive.file');
+    }
+
+    if (service === 'gmail' || service === 'all') {
+        scopes.push('https://www.googleapis.com/auth/gmail.readonly');
+    }
 
     const url = oauth2Client.generateAuthUrl({
         access_type: 'offline', // Required to get a refresh token
@@ -96,7 +108,7 @@ router.get("/callback", async (req, res) => {
         const { code, state: userId } = req.query;
 
         if (!code || !userId) {
-            return res.redirect(`${process.env.FRONTEND_URL}/settings?error=calendar_sync_failed`);
+            return res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=google_sync_failed`);
         }
 
         const oauth2Client = getOAuth2Client();
@@ -105,7 +117,7 @@ router.get("/callback", async (req, res) => {
         // Update the user with the tokens
         const user = await User.findById(userId);
         if (!user) {
-            return res.redirect(`${process.env.FRONTEND_URL}/settings?error=user_not_found`);
+            return res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=user_not_found`);
         }
 
         user.google_access_token = tokens.access_token;
@@ -119,10 +131,10 @@ router.get("/callback", async (req, res) => {
         await user.save();
 
         // Redirect back to frontend
-        res.redirect(`${process.env.FRONTEND_URL}/assignments?google_connected=true`);
+        res.redirect(`${process.env.FRONTEND_URL}/tools?integration_success=google`);
     } catch (err) {
-        console.error("Calendar Callback Error:", err);
-        res.redirect(`${process.env.FRONTEND_URL}/assignments?google_error=true`);
+        console.error("Google Workspace Callback Error:", err);
+        res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=google`);
     }
 });
 
@@ -142,10 +154,11 @@ router.post("/disconnect", isAuthenticated, async (req, res) => {
 
         res.json({ success: true, message: "Google account disconnected" });
     } catch (err) {
-        console.error("Calendar Disconnect Error:", err);
+        console.error("Google Disconnect Error:", err);
         res.status(500).json({ message: "Failed to disconnect Google account" });
     }
 });
+
 // 3. SCHEDULE GOOGLE MEET (Teacher Only)
 // ─────────────────────────────────────────────
 router.post("/meet", isAuthenticated, requireRole("faculty", "org_admin"), async (req, res) => {
@@ -347,27 +360,6 @@ router.delete("/meet/:id", isAuthenticated, requireRole("faculty", "org_admin"),
     } catch (err) {
         console.error("Cancel meet error:", err);
         res.status(500).json({ message: "Failed to cancel Google Meet", error: err.message });
-    }
-});
-
-// ─────────────────────────────────────────────
-// 5. DISCONNECT GOOGLE CALENDAR
-// ─────────────────────────────────────────────
-router.post("/disconnect", isAuthenticated, async (req, res) => {
-    try {
-        await connectDB();
-        const user = await User.findById(req.user._id);
-        if (!user) return res.status(404).json({ message: "User not found" });
-
-        user.google_access_token = null;
-        user.google_refresh_token = null;
-        user.google_token_expiry = null;
-        await user.save();
-
-        res.json({ message: "Google Calendar disconnected" });
-    } catch (err) {
-        console.error("Disconnect error:", err);
-        res.status(500).json({ message: "Server error" });
     }
 });
 

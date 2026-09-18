@@ -38,6 +38,7 @@ import connectDB from "../config/db.js";
 import passportConfig from "../src/services/passport.service.js";
 
 import authRoutes from "../src/routes/auth.routes.js";
+import vercelAuthRoutes from "../src/routes/auth.vercel.routes.js";
 import userRoutes from "../src/routes/user.routes.js";
 import chatRoutes from "../src/routes/chat.routes.js";
 import notesRoutes from "../src/routes/notes.routes.js";
@@ -61,7 +62,9 @@ import marksRoutes from "../src/routes/marks.routes.js";
 import assignmentRoutes from "../src/routes/assignment.routes.js";
 import leaveRoutes from "../src/routes/leave.routes.js";
 import meetRoutes from "../src/routes/meet.routes.js";
-import calendarRoutes from "../src/routes/calendar.routes.js";
+import googleWorkspaceRoutes from "../src/routes/auth.google_workspace.routes.js";
+import microsoftRoutes from "../src/routes/auth.microsoft.routes.js";
+import oauthProviderRoutes from "../src/routes/oauth.provider.routes.js";
 import zoomRoutes from "../src/routes/zoom.routes.js";
 import reviewRoutes from "../src/routes/review.routes.js";
 import timetableRoutes from "../src/routes/timetable.routes.js";
@@ -123,6 +126,7 @@ import dropdownRoutes from "../src/routes/dropdown.routes.js";
 import billingHandoffRoutes from "../src/routes/billing-handoff.routes.js";
 import billingDemoRoutes from "../src/routes/billing-demo.routes.js";
 import billingCheckoutRoutes from "../src/routes/billing-checkout.routes.js";
+import aiIntegrationsRoutes from "../src/routes/ai-integrations.routes.js";
 import { publicTenantRouter, orgWebsiteRouter, superAdminWebsiteRouter } from "../src/routes/org-website.routes.js";
 import extractSubdomain, { resolveTenant, getPublicTenantInfo } from "../src/middleware/subdomain-router.middleware.js";
 import { createMcpRouter } from "../src/mcp/index.js";
@@ -298,6 +302,7 @@ app.use(enforceFeatureFlags);
 
 /* ---------- API ROUTES ---------- */
 app.use("/api/auth", authRoutes);
+app.use("/api/auth", vercelAuthRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/notifications", notificationRoutes);
@@ -328,8 +333,10 @@ app.use("/api/feedback", feedbackRoutes);
 app.use("/api/platform-feedback", feedbackRoutes); // Added for frontend consistency
 app.use("/api/courses", courseRoutes);
 app.use("/api/meet", meetRoutes);
+app.use("/api/google-workspace", googleWorkspaceRoutes);
+app.use("/api/auth/microsoft", microsoftRoutes);
+app.use("/oauth", oauthProviderRoutes);
 app.use("/api/system", systemRoutes);
-app.use("/api/calendar", calendarRoutes);
 app.use("/api/zoom", zoomRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/timetable", timetableRoutes);
@@ -373,6 +380,7 @@ app.use("/api/video", videoRoutes);
 app.use("/api/live", liveRoutes);
 app.use("/api/call", callRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/ai-integrations", aiIntegrationsRoutes);
 app.use("/api/voice", voiceRoutes);
 app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/audit", auditRoutes);
@@ -396,6 +404,19 @@ app.use("/api/super-admin", superAdminWebsiteRouter);// Super admin: list all we
 
 // 🤖 Mount MCP Server
 app.use(createMcpRouter(express.Router()));
+
+// 🔑 DCR Discovery for Claude MCP
+app.get("/.well-known/oauth-authorization-server", (req, res) => {
+  res.json({
+    issuer: "https://api.classgrid.in",
+    authorization_endpoint: "https://api.classgrid.in/oauth/authorize",
+    token_endpoint: "https://api.classgrid.in/oauth/token",
+    registration_endpoint: "https://api.classgrid.in/oauth/register",
+    scopes_supported: ["offline_access", "read", "write"],
+    response_types_supported: ["code"],
+    grant_types_supported: ["authorization_code", "refresh_token"]
+  });
+});
 
 // 🌐 MODULE 22: Public Tenant Info (Subdomain Resolution)
 app.get("/api/tenant/info", getPublicTenantInfo);

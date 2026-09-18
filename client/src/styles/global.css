@@ -155,6 +155,9 @@
     --sidebar-accent-foreground: #000000;
     --sidebar-border: #e5e7eb;
     --sidebar-ring: #34d399;
+
+    --icon-invert: none;
+    --icon-invert-light: invert(1);
   }
 
   .dark {
@@ -207,6 +210,9 @@
     --sidebar-accent-foreground: #ffffff;
     --sidebar-border: rgba(255, 255, 255, 0.14);
     --sidebar-ring: #34d399;
+    
+    --icon-invert: invert(1) brightness(2);
+    --icon-invert-light: none;
   }
 }
 

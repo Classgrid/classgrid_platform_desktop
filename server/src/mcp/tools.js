@@ -103,6 +103,67 @@ export const getMcpTools = () => [
       },
       required: ['query', 'org_id']
     }
+  },
+  {
+    name: 'vercel_connector',
+    description: 'Interact with Vercel API to list projects, deployments, or fetch deployment details.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['list_projects', 'list_deployments', 'get_deployment'], description: 'The Vercel operation to perform.' },
+        projectId: { type: 'string', description: 'The Vercel Project ID (required for list_deployments).' },
+        limit: { type: 'number', description: 'Max number of results to return (default 10).' },
+        deploymentId: { type: 'string', description: 'The Vercel Deployment ID (required for get_deployment).' }
+      },
+      required: ['operation']
+    }
+  },
+  {
+    name: 'google_workspace_connector',
+    description: 'Interact with Google Workspace APIs (Calendar, Drive, Classroom, Gmail) using the connected user token.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails'], description: 'The operation to perform.' },
+        limit: { type: 'number', description: 'Max results to return.' }
+      },
+      required: ['operation']
+    }
+  },
+  {
+    name: 'zoom_connector',
+    description: 'Interact with Zoom API to list or create meetings using the connected user token.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['list_meetings'], description: 'The operation to perform.' }
+      },
+      required: ['operation']
+    }
+  },
+  {
+    name: 'microsoft_workspace_connector',
+    description: 'Interact with Microsoft Workspace APIs (Outlook, Teams) using the connected user token.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['list_emails', 'list_meetings'], description: 'The operation to perform.' },
+        limit: { type: 'number', description: 'Max results to return.' }
+      },
+      required: ['operation']
+    }
+  },
+  {
+    name: 'whatsapp_business_connector',
+    description: 'Send WhatsApp messages using the official WhatsApp Business API.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        toPhoneNumber: { type: 'string', description: 'The recipient phone number with country code (e.g. 919876543210).' },
+        messageText: { type: 'string', description: 'The text message to send.' }
+      },
+      required: ['toPhoneNumber', 'messageText']
+    }
   }
 ];
 
@@ -727,6 +788,269 @@ export const handleToolCall = async (name, args, context = {}) => {
         };
       } catch (e) {
         return { content: [{ type: 'text', text: `Failed to search syllabus vectors: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'vercel_connector') {
+      const { operation, projectId, limit = 10, deploymentId } = args;
+      const { userEmail = '', userRole = '' } = context;
+      const isSuperAdmin = userEmail.endsWith('@classgrid.in') || userRole === 'super_admin';
+
+      if (!isSuperAdmin) {
+        return {
+          content: [{ type: 'text', text: `SECURITY ERROR: Access Denied. Only super_admins can access the Vercel API.` }]
+        };
+      }
+
+      // Fetch the OAuth token from the database
+      const user = await mongoose.models.User.findOne({ email: userEmail });
+      if (!user || !user.vercel_access_token) {
+        return {
+          content: [{ type: 'text', text: `Error: No Vercel OAuth token found. Please connect your Vercel account from the settings page first.` }]
+        };
+      }
+      const vercelToken = user.vercel_access_token;
+
+      try {
+        let endpoint = '';
+        if (operation === 'list_projects') {
+          endpoint = `/v9/projects?limit=${limit}`;
+        } else if (operation === 'list_deployments') {
+          if (!projectId) throw new Error("projectId is required for list_deployments");
+          endpoint = `/v6/deployments?projectId=${projectId}&limit=${limit}`;
+        } else if (operation === 'get_deployment') {
+          if (!deploymentId) throw new Error("deploymentId is required for get_deployment");
+          endpoint = `/v13/deployments/${deploymentId}`;
+        } else {
+          throw new Error(`Unsupported Vercel operation: ${operation}`);
+        }
+
+        const response = await fetch(`https://api.vercel.com${endpoint}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${vercelToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`Vercel API error (${response.status}): ${errText}`);
+        }
+
+        const data = await response.json();
+
+        // 🚨 AI TOKEN OVERFLOW PROTECTION 🚨
+        const aiSafetyReplacer = (key, value) => {
+          const forbiddenKeys = ['source', 'env', 'builds', 'routes', 'meta'];
+          if (forbiddenKeys.includes(key)) return undefined;
+          if (typeof value === 'string' && value.length > 500) return "[TRUNCATED HUGE STRING]";
+          return value;
+        };
+
+        const outputText = JSON.stringify(data, aiSafetyReplacer, 2);
+
+        return {
+          content: [{ type: 'text', text: outputText }]
+        };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to execute Vercel API call: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'google_workspace_connector') {
+      const { operation, limit = 10 } = args;
+      const { userEmail = '' } = context;
+
+      const user = await mongoose.models.User.findOne({ email: userEmail });
+      if (!user || (!user.google_access_token && !user.google_refresh_token)) {
+        return { content: [{ type: 'text', text: `Error: No Google Workspace connection found. Please connect your Google account first.` }] };
+      }
+
+      try {
+        const { google } = await import('googleapis');
+        const oauth2Client = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            `${process.env.BACKEND_URL}/api/google-workspace/callback`
+        );
+        oauth2Client.setCredentials({
+            access_token: user.google_access_token,
+            refresh_token: user.google_refresh_token,
+            expiry_date: user.google_token_expiry ? user.google_token_expiry.getTime() : null
+        });
+
+        let data = {};
+        if (operation === 'list_events') {
+          const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+          const res = await calendar.events.list({
+            calendarId: 'primary',
+            timeMin: (new Date()).toISOString(),
+            maxResults: limit,
+            singleEvents: true,
+            orderBy: 'startTime',
+          });
+          data = res.data.items;
+        } else if (operation === 'list_drive_files') {
+          const drive = google.drive({ version: 'v3', auth: oauth2Client });
+          const res = await drive.files.list({
+            pageSize: limit,
+            fields: 'nextPageToken, files(id, name, mimeType, webViewLink)',
+          });
+          data = res.data.files;
+        } else if (operation === 'list_emails') {
+          const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+          const res = await gmail.users.messages.list({
+            userId: 'me',
+            maxResults: limit,
+            q: 'is:unread'
+          });
+          const messages = res.data.messages || [];
+          data = [];
+          for (let m of messages) {
+            const msg = await gmail.users.messages.get({ userId: 'me', id: m.id });
+            const headers = msg.data.payload.headers;
+            const subject = headers.find(h => h.name === 'Subject')?.value;
+            const from = headers.find(h => h.name === 'From')?.value;
+            data.push({ id: msg.data.id, snippet: msg.data.snippet, subject, from });
+          }
+        } else {
+          throw new Error(`Unsupported operation: ${operation}`);
+        }
+
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to execute Google API call: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'zoom_connector') {
+      const { operation } = args;
+      const { userEmail = '' } = context;
+
+      const user = await mongoose.models.User.findOne({ email: userEmail });
+      if (!user || (!user.zoom_access_token && !user.zoom_refresh_token)) {
+        return { content: [{ type: 'text', text: `Error: No Zoom connection found. Please connect your Zoom account first.` }] };
+      }
+
+      try {
+        let accessToken = user.zoom_access_token;
+        if (user.zoom_token_expiry && new Date(user.zoom_token_expiry.getTime() - 5 * 60000) < new Date()) {
+          const tokenResponse = await fetch("https://zoom.us/oauth/token", {
+              method: "POST",
+              headers: {
+                  "Authorization": `Basic ${Buffer.from(process.env.ZOOM_CLIENT_ID + ':' + process.env.ZOOM_CLIENT_SECRET).toString('base64')}`,
+                  "Content-Type": "application/x-www-form-urlencoded"
+              },
+              body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: user.zoom_refresh_token })
+          });
+          const tokenData = await tokenResponse.json();
+          if (tokenData.error) throw new Error("Zoom token expired");
+          user.zoom_access_token = tokenData.access_token;
+          user.zoom_refresh_token = tokenData.refresh_token; 
+          user.zoom_token_expiry = new Date(Date.now() + tokenData.expires_in * 1000);
+          await user.save();
+          accessToken = user.zoom_access_token;
+        }
+
+        if (operation === 'list_meetings') {
+          const res = await fetch("https://api.zoom.us/v2/users/me/meetings", {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data.meetings, null, 2) }] };
+        } else {
+          throw new Error(`Unsupported operation: ${operation}`);
+        }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to execute Zoom API call: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'microsoft_workspace_connector') {
+      const { operation, limit = 10 } = args;
+      const { userEmail = '' } = context;
+
+      const user = await mongoose.models.User.findOne({ email: userEmail });
+      if (!user || (!user.microsoft_access_token && !user.microsoft_refresh_token)) {
+        return { content: [{ type: 'text', text: `Error: No Microsoft connection found. Please connect your Microsoft account first.` }] };
+      }
+
+      try {
+        let accessToken = user.microsoft_access_token;
+        if (user.microsoft_token_expiry && new Date(user.microsoft_token_expiry.getTime() - 5 * 60000) < new Date()) {
+          const tokenResponse = await fetch(`https://login.microsoftonline.com/common/oauth2/v2.0/token`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: new URLSearchParams({
+                  client_id: process.env.MICROSOFT_CLIENT_ID,
+                  client_secret: process.env.MICROSOFT_CLIENT_SECRET,
+                  refresh_token: user.microsoft_refresh_token,
+                  grant_type: 'refresh_token'
+              })
+          });
+          const tokenData = await tokenResponse.json();
+          if (tokenData.error) throw new Error("Microsoft token expired");
+          user.microsoft_access_token = tokenData.access_token;
+          if (tokenData.refresh_token) user.microsoft_refresh_token = tokenData.refresh_token; 
+          user.microsoft_token_expiry = new Date(Date.now() + tokenData.expires_in * 1000);
+          await user.save();
+          accessToken = user.microsoft_access_token;
+        }
+
+        if (operation === 'list_emails') {
+          const res = await fetch(`https://graph.microsoft.com/v1.0/me/messages?$top=${limit}&$filter=isRead eq false`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data.value, null, 2) }] };
+        } else if (operation === 'list_meetings') {
+          const res = await fetch(`https://graph.microsoft.com/v1.0/me/onlineMeetings?$top=${limit}`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data.value, null, 2) }] };
+        } else {
+          throw new Error(`Unsupported operation: ${operation}`);
+        }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to execute Microsoft API call: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'whatsapp_business_connector') {
+      const { toPhoneNumber, messageText } = args;
+      try {
+        if (!process.env.WHATSAPP_PHONE_ID || !process.env.WHATSAPP_ACCESS_TOKEN) {
+          throw new Error("WhatsApp Business API keys are not configured in the backend environment.");
+        }
+
+        const res = await fetch(`https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_ID}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            recipient_type: "individual",
+            to: toPhoneNumber,
+            type: "text",
+            text: {
+              preview_url: false,
+              body: messageText
+            }
+          })
+        });
+
+        const data = await res.json();
+        if (data.error) {
+          throw new Error(data.error.message);
+        }
+
+        return { content: [{ type: 'text', text: `WhatsApp message sent successfully to ${toPhoneNumber}. Message ID: ${data.messages[0].id}` }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to send WhatsApp message: ${e.message}` }] };
       }
     }
 

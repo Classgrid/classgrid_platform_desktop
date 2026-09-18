@@ -524,6 +524,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    vercel_access_token: {
+      type: String,
+      default: null,
+    },
     zoom_access_token: {
       type: String,
       default: null,
@@ -533,6 +537,18 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
     zoom_token_expiry: {
+      type: Date,
+      default: null,
+    },
+    microsoft_access_token: {
+      type: String,
+      default: null,
+    },
+    microsoft_refresh_token: {
+      type: String,
+      default: null,
+    },
+    microsoft_token_expiry: {
       type: Date,
       default: null,
     },

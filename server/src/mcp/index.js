@@ -50,6 +50,15 @@ export const createMcpRouter = (expressRouter) => {
 
   // The primary endpoint where the AI establishes the SSE connection
   expressRouter.get('/mcp/sse', async (req, res) => {
+    try {
+      if (transport) {
+        await transport.close();
+      }
+      await mcpServer.close();
+    } catch (e) {
+      // Ignore close errors
+    }
+    
     transport = new SSEServerTransport('/mcp/messages', res);
     await mcpServer.connect(transport);
   });

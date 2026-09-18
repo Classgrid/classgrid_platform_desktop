@@ -12,6 +12,8 @@ import { SidebarContext, SidebarTrigger } from "@/components/marketing_ui/sideba
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import { ExpandedInputModal } from './ExpandedInputModal';
+import { AiHubModal } from "./AiHubModal";
+import { ImageGeneration, type ImageGenerationStatus } from "./ImageGeneration";
 import { DangerConfirmDialog } from '@/components/marketing_ui/danger-confirm-dialog';
 import JSON5 from 'json5';
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -44,6 +46,7 @@ import {
   Trash2,
   UserRound,
   X,
+  Plus,
   Share,
   MoreHorizontal,
   Pin,
@@ -54,8 +57,34 @@ import {
   OctagonAlert,
   Loader2,
   UploadCloud,
+  Server,
+  Mail,
+  Calendar,
+  HardDrive,
+  Users,
+  Video,
   type LucideIcon,
 } from "lucide-react";
+
+const CustomSlidersIcon = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M3 8h11" />
+    <circle cx="16" cy="8" r="2" />
+    <path d="M18 8h3" />
+    <path d="M3 16h3" />
+    <circle cx="8" cy="16" r="2" />
+    <path d="M10 16h11" />
+  </svg>
+);
 
 import { Button } from "./ui/button";
 import { Spinner } from "@/components/marketing_ui/spinner";
@@ -1256,6 +1285,26 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
   );
 });
 
+export const INTEGRATIONS_LIST: any[] = [
+  { id: "image", name: "Create image", description: "Visualize anything", icon: FileImage, type: "action" },
+  { id: "web", name: "Web search", description: "Find real-time news and info", icon: Globe2, type: "action" },
+  { id: "mcp-cursor", name: "Cursor", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/cursor.svg", invertInLightMode: true },
+  { id: "mcp-chatgpt", name: "ChatGPT", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/chatgpt-light_(1).svg", invertInLightMode: true },
+  { id: "mcp-claude", name: "Claude", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/claude-ai-icon.svg" },
+  { id: "mcp-notion", name: "Notion", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Notion-logo.svg" },
+  { id: "gmail", name: "Gmail", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Gmail_icon_(2026).svg" },
+  { id: "gcal", name: "Google Calendar", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Google_Calendar_icon_(2026).svg" },
+  { id: "gdrive", name: "Google Drive", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Google_Drive_icon_(2026).svg" },
+  { id: "gclass", name: "Google Classroom", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Google_Classroom_Logo.svg" },
+  { id: "gmeet", name: "Google Meet", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Google_Meet_icon_(2026).svg" },
+  { id: "outlook", name: "Microsoft Outlook", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Microsoft_Outlook_Icon_(2025%C3%A2%C2%80%C2%93present).svg" },
+  { id: "teams", name: "Microsoft Teams", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/microsoft-teams-svgrepo-com.svg" },
+  { id: "zoom", name: "Zoom", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/zoom-communications-icon_(1).svg" },
+  { id: "whatsapp", name: "WhatsApp Business", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/whatsapp-svgrepo-com_(1).svg" },
+  { id: "vercel", name: "Vercel", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/vercel-icon-svgrepo-com.svg", invertInDarkMode: true },
+];
+
+
 export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow", initialMessages, autoFocus = true, readOnly = false }: AskAiPanelProps) {
   const { data: user } = useCurrentUser();
   const session = user ? { user } : null;
@@ -1291,6 +1340,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [isLoadingChat, setIsLoadingChat] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [showFilesPanel, setShowFilesPanel] = useState(false);
+  const [isAiHubOpen, setIsAiHubOpen] = useState(false);
+
+  // @ mention state
+  const [atMenuOpen, setAtMenuOpen] = useState(false);
+  const [atMenuQuery, setAtMenuQuery] = useState("");
+  const [atMenuSelectedIndex, setAtMenuSelectedIndex] = useState(0);
 
   // ─── Header Action Handlers ───
   const handleDirectShare = async () => {
@@ -2451,6 +2506,58 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
+    // --- INTERCEPT @Create image ---
+    if (apiQuestion.trim().startsWith("@Create image")) {
+      const prompt = apiQuestion.replace("@Create image", "").trim() || "A beautiful image";
+      
+      // Update assistant message to QUEUED state
+      setMessages(prev => {
+        const lastMsg = prev[prev.length - 1];
+        if (!lastMsg || lastMsg.role !== "assistant") return prev;
+        return [
+          ...prev.slice(0, -1),
+          { ...lastMsg, content: `[IMAGE_GENERATION_QUEUED: ${prompt}]` }
+        ];
+      });
+
+      try {
+        const endpoint = typeof import.meta !== "undefined" && import.meta.env
+          ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in") + "/api/ai/generate-image"
+          : "/api/ai/generate-image";
+          
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ prompt })
+        });
+        
+        if (!res.ok) throw new Error("Failed to generate image");
+        
+        const data = await res.json();
+        
+        setMessages(prev => {
+          const lastMsg = prev[prev.length - 1];
+          return [
+            ...prev.slice(0, -1),
+            { ...lastMsg, content: `[IMAGE_GENERATION_COMPLETE: ${prompt} : ${data.imageUrl}]` }
+          ];
+        });
+      } catch (err) {
+        setMessages(prev => {
+          const lastMsg = prev[prev.length - 1];
+          return [
+            ...prev.slice(0, -1),
+            { ...lastMsg, content: `[IMAGE_GENERATION_ERROR: ${prompt}]` }
+          ];
+        });
+      } finally {
+        setSubmitting(false);
+        setThinking(false);
+      }
+      return; // Exit early!
+    }
+
     try {
       const endpoint = typeof import.meta !== "undefined" && import.meta.env
         ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in") + "/api/ai/ask"
@@ -3250,15 +3357,47 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               )}
 
                               {/* Old thought accordion removed — CombinedReasoningBlock above stepper handles all thought display now */}
-                              <AssistantMessageContent
-                                content={message.content}
-                                isTyping={message.typing}
-                                isHistorical={index < messages.length - 1}
-                                onRetry={undefined}
-                                onApprovalAction={(text) => {
-                                  if (!submitting) void askQuestion(text);
-                                }}
-                              />
+                              {message.content.startsWith("[IMAGE_GENERATION") ? (() => {
+                                const isQueued = message.content.startsWith("[IMAGE_GENERATION_QUEUED");
+                                const isError = message.content.startsWith("[IMAGE_GENERATION_ERROR");
+                                const isComplete = message.content.startsWith("[IMAGE_GENERATION_COMPLETE");
+                                
+                                let prompt = "Image generation";
+                                let url = "";
+                                
+                                if (isQueued || isError) {
+                                  prompt = message.content.match(/\[IMAGE_GENERATION(?:_QUEUED|_ERROR):\s*(.*?)\]/)?.[1] || prompt;
+                                } else if (isComplete) {
+                                  const match = message.content.match(/\[IMAGE_GENERATION_COMPLETE:\s*(.*?)\s*:\s*(.*?)\]/);
+                                  if (match) {
+                                    prompt = match[1];
+                                    url = match[2];
+                                  }
+                                }
+                                
+                                return (
+                                  <div className="mb-4 mt-2 w-full max-w-[600px]">
+                                    <ImageGeneration
+                                      status={isError ? "error" : isComplete ? "complete" : "generating"}
+                                      prompt={prompt}
+                                    >
+                                      {isComplete && url && (
+                                        <img src={url} alt={prompt} className="w-full h-full object-cover rounded-xl" />
+                                      )}
+                                    </ImageGeneration>
+                                  </div>
+                                );
+                              })() : (
+                                <AssistantMessageContent
+                                  content={message.content}
+                                  isTyping={message.typing}
+                                  isHistorical={index < messages.length - 1}
+                                  onRetry={undefined}
+                                  onApprovalAction={(text) => {
+                                    if (!submitting) void askQuestion(text);
+                                  }}
+                                />
+                              )}
                             </div>
                           )}
                           {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && (
@@ -3603,6 +3742,92 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 )}
               </div>
 
+              {/* @ mention popover */}
+              <AnimatePresence>
+                {atMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute bottom-[100%] mb-2 left-0 w-full max-h-[350px] overflow-y-auto bg-popover rounded-2xl border border-border shadow-2xl z-50 flex flex-col p-1.5"
+                  >
+                    {(() => {
+                      const filteredIntegrations = INTEGRATIONS_LIST.filter(item => 
+                        item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) || 
+                        (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
+                      );
+                      const baseItems = [
+                        { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
+                        { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
+                        { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
+                        { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
+                        { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
+                        { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
+                      ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
+                      const menuItems = [...baseItems, ...filteredIntegrations];
+
+                      return (
+                        <>
+                          {menuItems.map((item, index) => {
+                            const isSelected = index === atMenuSelectedIndex;
+                            const IconComponent = item.icon;
+                            return (
+                              <button
+                                type="button"
+                                key={item.id}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  if (item.action) {
+                                    item.action();
+                                  } else {
+                                    const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
+                                    const textBeforeCursor = input.slice(0, cursorPosition);
+                                    const textAfterCursor = input.slice(cursorPosition);
+                                    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+                                    const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + item.name + ' ' + textAfterCursor;
+                                    setInput(newInput);
+                                    setTimeout(() => (inputRef.current as any)?.focus(), 0);
+                                  }
+                                  setAtMenuOpen(false);
+                                }}
+                                className={cn(
+                                  "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors",
+                                  isSelected ? "bg-accent" : "hover:bg-accent/50"
+                                )}
+                                onMouseEnter={() => setAtMenuSelectedIndex(index)}
+                              >
+                                {item.imgUrl ? (
+                                  <img 
+                                    src={item.imgUrl} 
+                                    alt={item.name} 
+                                    className="w-5 h-5 object-contain" 
+                                    style={{ filter: item.invertInDarkMode ? 'var(--icon-invert, none)' : item.invertInLightMode ? 'var(--icon-invert-light, none)' : 'none' }}
+                                  />
+                                ) : IconComponent ? (
+                                  <IconComponent className="w-5 h-5 text-popover-foreground/70 shrink-0" />
+                                ) : (
+                                  <div className="w-5 h-5 shrink-0" />
+                                )}
+                                <div className="flex items-center gap-2 truncate">
+                                  <span className="text-[14px] text-popover-foreground font-medium whitespace-nowrap">{item.name}</span>
+                                  {item.description && (
+                                    <span className="text-[14px] text-muted-foreground truncate">{item.description}</span>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                          {menuItems.length === 0 && (
+                            <div className="px-4 py-3 text-sm text-muted-foreground text-center">No results found</div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <textarea
                 id="ask-ai-input"
                 name="askAiQuestion"
@@ -3623,14 +3848,77 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     event.target.style.height = 'auto';
                     event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
                   }
+
+                  // @ mention logic
+                  const cursorPosition = event.target.selectionStart;
+                  const textBeforeCursor = val.slice(0, cursorPosition);
+                  const atMatch = textBeforeCursor.match(/(?:^|\s)@(\S*)$/);
+                  if (atMatch) {
+                    setAtMenuOpen(true);
+                    setAtMenuQuery(atMatch[1]);
+                    setAtMenuSelectedIndex(0);
+                  } else {
+                    setAtMenuOpen(false);
+                  }
                 }}
                 onPaste={handlePaste}
                 onKeyDown={(e) => {
+                  if (atMenuOpen) {
+                    const filteredIntegrations = INTEGRATIONS_LIST.filter(item => 
+                      item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) || 
+                      (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
+                    );
+                    const baseItems = [
+                      { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
+                      { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
+                      { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
+                      { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
+                      { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
+                      { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
+                    ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
+                    const menuItems = [...baseItems, ...filteredIntegrations];
+
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      setAtMenuSelectedIndex(prev => (prev + 1) % menuItems.length);
+                      return;
+                    }
+                    if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      setAtMenuSelectedIndex(prev => (prev - 1 + menuItems.length) % menuItems.length);
+                      return;
+                    }
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const selectedItem = menuItems[atMenuSelectedIndex];
+                      if (selectedItem) {
+                        if (selectedItem.action) {
+                          selectedItem.action();
+                        } else {
+                          const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
+                          const textBeforeCursor = input.slice(0, cursorPosition);
+                          const textAfterCursor = input.slice(cursorPosition);
+                          const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+                          const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + selectedItem.name + ' ' + textAfterCursor;
+                          setInput(newInput);
+                          setTimeout(() => (inputRef.current as any)?.focus(), 0);
+                        }
+                      }
+                      setAtMenuOpen(false);
+                      return;
+                    }
+                    if (e.key === 'Escape') {
+                      setAtMenuOpen(false);
+                      return;
+                    }
+                  }
+
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     if (canSubmit) {
                       void askQuestion(input);
                       setIsExpandedBox(false);
+                      setAtMenuOpen(false);
                     }
                   }
                 }}
@@ -3645,7 +3933,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
               {/* Bottom Left action bar: paperclip */}
               {!isGenerating && (
-                <div className="absolute bottom-3 left-4">
+                <div className="absolute bottom-3 left-4 flex items-center gap-1">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -3654,6 +3942,14 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     title={attachedFiles.length >= 6 ? "Max 6 files" : "Attach file (max 35MB)"}
                   >
                     <Paperclip className={cn("h-4 w-4 -rotate-45", isAnyFileUploading && "opacity-50")} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsAiHubOpen(true)}
+                    className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer"
+                    title="AI Hub"
+                  >
+                    <CustomSlidersIcon className="h-4 w-4" />
                   </button>
                 </div>
               )}
@@ -3950,6 +4246,93 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               </button>
                             )}
                           </div>
+
+                          {/* @ mention popover */}
+                          <AnimatePresence>
+                            {atMenuOpen && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.15 }}
+                                className="absolute top-[100%] mt-2 left-0 w-full max-h-[160px] overflow-y-auto bg-popover rounded-2xl border border-border shadow-2xl z-50 flex flex-col p-1.5 custom-scrollbar"
+                              >
+                                {(() => {
+                                  const filteredIntegrations = INTEGRATIONS_LIST.filter(item => 
+                                    item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) || 
+                                    (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
+                                  );
+                                  const baseItems = [
+                                    { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
+                                    { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
+                                    { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
+                                    { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
+                                    { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
+                                    { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
+                                  ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
+                                  const menuItems = [...baseItems, ...filteredIntegrations];
+
+                                  return (
+                                    <>
+                                      {menuItems.map((item, index) => {
+                                        const isSelected = index === atMenuSelectedIndex;
+                                        const IconComponent = item.icon;
+                                        return (
+                                          <button
+                                            type="button"
+                                            key={item.id}
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              if (item.action) {
+                                                item.action();
+                                              } else {
+                                                const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
+                                                const textBeforeCursor = input.slice(0, cursorPosition);
+                                                const textAfterCursor = input.slice(cursorPosition);
+                                                const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+                                                const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + item.name + ' ' + textAfterCursor;
+                                                setInput(newInput);
+                                                setTimeout(() => (inputRef.current as any)?.focus(), 0);
+                                              }
+                                              setAtMenuOpen(false);
+                                            }}
+                                            className={cn(
+                                              "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors",
+                                              isSelected ? "bg-accent" : "hover:bg-accent/50"
+                                            )}
+                                            onMouseEnter={() => setAtMenuSelectedIndex(index)}
+                                          >
+                                            {item.imgUrl ? (
+                                              <img 
+                                                src={item.imgUrl} 
+                                                alt={item.name} 
+                                                className="w-5 h-5 object-contain"
+                                                style={{ filter: item.invertInDarkMode ? 'var(--icon-invert, none)' : item.invertInLightMode ? 'var(--icon-invert-light, none)' : 'none' }}
+                                              />
+                                            ) : IconComponent ? (
+                                              <IconComponent className="w-5 h-5 text-popover-foreground/70 shrink-0" />
+                                            ) : (
+                                              <div className="w-5 h-5 shrink-0" />
+                                            )}
+                                            <div className="flex items-center gap-2 truncate">
+                                              <span className="text-[14px] text-popover-foreground font-medium whitespace-nowrap">{item.name}</span>
+                                              {item.description && (
+                                                <span className="text-[14px] text-muted-foreground truncate">{item.description}</span>
+                                              )}
+                                            </div>
+                                          </button>
+                                        );
+                                      })}
+                                      {menuItems.length === 0 && (
+                                        <div className="px-4 py-3 text-sm text-muted-foreground text-center">No results found</div>
+                                      )}
+                                    </>
+                                  );
+                                })()}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+
                           <textarea
                             id="ask-ai-input"
                             name="askAiQuestion"
@@ -3970,14 +4353,77 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 event.target.style.height = 'auto';
                                 event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
                               }
+
+                              // @ mention logic
+                              const cursorPosition = event.target.selectionStart;
+                              const textBeforeCursor = val.slice(0, cursorPosition);
+                              const atMatch = textBeforeCursor.match(/(?:^|\s)@(\S*)$/);
+                              if (atMatch) {
+                                setAtMenuOpen(true);
+                                setAtMenuQuery(atMatch[1]);
+                                setAtMenuSelectedIndex(0);
+                              } else {
+                                setAtMenuOpen(false);
+                              }
                             }}
                             onPaste={handlePaste}
                             onKeyDown={(e) => {
+                              if (atMenuOpen) {
+                                const filteredIntegrations = INTEGRATIONS_LIST.filter(item => 
+                                  item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) || 
+                                  (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
+                                );
+                                const baseItems = [
+                                  { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
+                                  { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
+                                  { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
+                                  { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
+                                  { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
+                                  { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
+                                ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
+                                const menuItems = [...baseItems, ...filteredIntegrations];
+
+                                if (e.key === 'ArrowDown') {
+                                  e.preventDefault();
+                                  setAtMenuSelectedIndex(prev => (prev + 1) % menuItems.length);
+                                  return;
+                                }
+                                if (e.key === 'ArrowUp') {
+                                  e.preventDefault();
+                                  setAtMenuSelectedIndex(prev => (prev - 1 + menuItems.length) % menuItems.length);
+                                  return;
+                                }
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const selectedItem = menuItems[atMenuSelectedIndex];
+                                  if (selectedItem) {
+                                    if (selectedItem.action) {
+                                      selectedItem.action();
+                                    } else {
+                                      const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
+                                      const textBeforeCursor = input.slice(0, cursorPosition);
+                                      const textAfterCursor = input.slice(cursorPosition);
+                                      const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+                                      const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + selectedItem.name + ' ' + textAfterCursor;
+                                      setInput(newInput);
+                                      setTimeout(() => (inputRef.current as any)?.focus(), 0);
+                                    }
+                                  }
+                                  setAtMenuOpen(false);
+                                  return;
+                                }
+                                if (e.key === 'Escape') {
+                                  setAtMenuOpen(false);
+                                  return;
+                                }
+                              }
+
                               if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault();
                                 if (canSubmit) {
                                   void askQuestion(input);
                                   setIsExpandedBox(false);
+                                  setAtMenuOpen(false);
                                 }
                               }
                             }}
@@ -3990,7 +4436,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                           />
 
                           {/* Bottom left: paperclip */}
-                          <div className="absolute bottom-3 left-4">
+                          <div className="absolute bottom-3 left-4 flex items-center gap-1">
                             <button
                               type="button"
                               onClick={() => fileInputRef.current?.click()}
@@ -3999,6 +4445,14 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               title={attachedFiles.length >= 6 ? "Max 6 files" : "Attach file (max 35MB)"}
                             >
                               <Paperclip className="h-4 w-4 -rotate-45" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setIsAiHubOpen(true)}
+                              className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer"
+                              title="AI Hub"
+                            >
+                              <CustomSlidersIcon className="h-4 w-4" />
                             </button>
                           </div>
 
@@ -4340,6 +4794,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         actionLabel="Delete chat"
         isLoading={isDeletingChat}
         onConfirm={handleDeleteChat}
+      />
+      <AiHubModal 
+        isOpen={isAiHubOpen} 
+        onClose={() => setIsAiHubOpen(false)} 
       />
     </>
   );
