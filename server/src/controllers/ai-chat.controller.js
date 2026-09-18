@@ -1883,8 +1883,9 @@ export const generateImage = async (req, res) => {
         if (!prompt) {
             return res.status(400).json({ error: "Prompt is required" });
         }
-
-        const encodedPrompt = encodeURIComponent(prompt);
+        // Truncate the prompt to prevent 414 URI Too Long errors from Pollinations GET request
+        const safePrompt = prompt.length > 800 ? prompt.substring(0, 800) : prompt;
+        const encodedPrompt = encodeURIComponent(safePrompt);
         // Call Pollinations AI (Flux)
         // We removed the seed parameter to perfectly match the WhatsApp repo logic.
         const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
