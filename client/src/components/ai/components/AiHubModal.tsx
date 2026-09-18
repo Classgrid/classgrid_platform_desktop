@@ -173,7 +173,7 @@ export function AiHubModal({ isOpen, onClose }: AiHubModalProps) {
                          </div>
                       </div>
 
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 964 295" className="w-full h-auto rounded-2xl border border-border shadow-sm mb-8 bg-muted/30 shrink-0" role="img" aria-label={`${selectedPlugin.name} connected to Classgrid`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 964 295" className="w-full h-auto mb-8 shrink-0" role="img" aria-label={`${selectedPlugin.name} connected to Classgrid`}>
                         <defs>
                           <clipPath id="cardClip">
                             <rect x="28" y="15" width="875" height="270" rx="18"/>
