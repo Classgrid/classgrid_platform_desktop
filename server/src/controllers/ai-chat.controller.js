@@ -1879,14 +1879,15 @@ export const bulkDeleteAgentReviews = async (req, res) => {
 
 export const generateImage = async (req, res) => {
     try {
-        const { prompt } = req.body;
+        const { prompt, sessionId, userEmail, isIncognito } = req.body;
         if (!prompt) {
             return res.status(400).json({ error: "Prompt is required" });
         }
 
         const encodedPrompt = encodeURIComponent(prompt);
         // Call Pollinations AI (Flux)
-        const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
+        const seed = Math.floor(Math.random() * 1000000);
+        const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&logo=false&seed=${seed}`;
         
         const imageRes = await fetch(pollinationsUrl);
         if (!imageRes.ok) throw new Error(`Image API failed: ${imageRes.status}`);
@@ -1901,7 +1902,25 @@ export const generateImage = async (req, res) => {
             `ai-generated/image-${Date.now()}.jpg`
         );
 
-        res.json({ imageUrl: r2Url });
+        let activeSessionId = sessionId;
+
+        if (!isIncognito) {
+            if (!activeSessionId && userEmail) {
+                const newSession = await createSession(userEmail, prompt.substring(0, 50));
+                if (newSession) {
+                    activeSessionId = newSession.id;
+                }
+            }
+
+            if (activeSessionId) {
+                // Save user prompt
+                await saveMessage(activeSessionId, 'user', `@Create image ${prompt}`);
+                // Save assistant image response
+                await saveMessage(activeSessionId, 'assistant', `[IMAGE_GENERATION_COMPLETE: ${prompt} : ${r2Url}]`);
+            }
+        }
+
+        res.json({ imageUrl: r2Url, sessionId: activeSessionId });
     } catch (e) {
         console.error("Error generating image:", e);
         res.status(500).json({ error: "Failed to generate image" });

@@ -2529,12 +2529,23 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ prompt })
+          body: JSON.stringify({ 
+            prompt,
+            sessionId: sessionId ?? undefined,
+            userEmail: session?.user?.email ?? undefined,
+            isIncognito: isIncognito
+          })
         });
         
         if (!res.ok) throw new Error("Failed to generate image");
         
         const data = await res.json();
+        
+        if (data.sessionId && !sessionId) {
+          setSessionId(data.sessionId);
+          window.history.pushState({}, "", `/superadmin/agent?session=${data.sessionId}`);
+          window.dispatchEvent(new Event("agent:refresh-sessions"));
+        }
         
         setMessages(prev => {
           const lastMsg = prev[prev.length - 1];
