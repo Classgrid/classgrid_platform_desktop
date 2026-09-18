@@ -1672,6 +1672,7 @@ export const getAgentReviews = async (req, res) => {
     }
 };
 
+export const updateAgentReviewStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
