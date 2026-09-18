@@ -49,13 +49,17 @@ export function AiHubModal({ isOpen, onClose }: AiHubModalProps) {
       let endpoint = '';
       if (isGoogle) {
         const service = id === 'gcal' ? 'calendar' : id === 'gdrive' ? 'drive' : id === 'gclass' ? 'classroom' : id === 'gmeet' ? 'meet' : 'gmail';
-        endpoint = `/api/google-workspace/connect?service=${service}`;
+        endpoint = `/api/google-workspace/connect?service=${service}&returnTo=${encodeURIComponent(window.location.href)}`;
       } else if (isMicrosoft) {
-        endpoint = `/api/auth/microsoft/connect`;
+        endpoint = `/api/auth/microsoft/connect?returnTo=${encodeURIComponent(window.location.href)}`;
+      } else if (id === 'mcp-notion') {
+        endpoint = `/api/auth/notion/connect?returnTo=${encodeURIComponent(window.location.href)}`;
+      } else if (id === 'vercel') {
+        endpoint = `/api/auth/vercel/connect?returnTo=${encodeURIComponent(window.location.href)}`;
       } else if (id === 'zoom') {
-        endpoint = `/api/zoom/connect`;
+        endpoint = `/api/zoom/connect?returnTo=${encodeURIComponent(window.location.href)}`;
       } else {
-        endpoint = `/api/ai-integrations/connect/${id}`;
+        endpoint = `/api/ai-integrations/connect/${id}?returnTo=${encodeURIComponent(window.location.href)}`;
       }
 
       const backendUrl = typeof import.meta !== "undefined" && import.meta.env
