@@ -3423,7 +3423,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               )}
                             </div>
                           )}
-                          {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && (
+                          {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && !message.content.startsWith("[IMAGE_GENERATION") && (
                             <div className="pl-1 mt-3">
                               <MessageActions content={message.content} messageId={message.id} />
                             </div>
