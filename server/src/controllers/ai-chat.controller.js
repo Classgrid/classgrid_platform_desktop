@@ -1886,10 +1886,8 @@ export const generateImage = async (req, res) => {
 
         const encodedPrompt = encodeURIComponent(prompt);
         // Call Pollinations AI (Flux)
-        const seed = Math.floor(Math.random() * 1000000);
-        // The logo=false parameter caused Pollinations to return a 400 Bad Request, crashing the backend.
-        // We revert to a known working URL structure.
-        const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${seed}`;
+        // We removed the seed parameter to perfectly match the WhatsApp repo logic.
+        const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
         
         const imageRes = await fetch(pollinationsUrl);
         if (!imageRes.ok) throw new Error(`Image API failed: ${imageRes.status}`);
