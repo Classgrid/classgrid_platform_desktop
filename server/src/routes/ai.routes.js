@@ -48,7 +48,7 @@ import {
     chatWithSyllabus, 
     getMyPersona 
 } from "../controllers/ai.controller.js";
-import { streamAskAi, getChatSessions, getChatSession, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession, createPublicShare, getPublicShare, submitAiFeedback, getAgentReviews, updateAgentReviewStatus, processAgentReviewsCron, deleteAgentReview, bulkDeleteAgentReviews } from "../controllers/ai-chat.controller.js";
+import { streamAskAi, getChatSessions, getChatSession, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession, createPublicShare, getPublicShare, submitAiFeedback, getAgentReviews, updateAgentReviewStatus, processAgentReviewsCron, deleteAgentReview, bulkDeleteAgentReviews, generateImage } from "../controllers/ai-chat.controller.js";
 
 const router = express.Router();
 
@@ -75,6 +75,9 @@ router.put("/agent-reviews/:id/status", isAuthenticated, updateAgentReviewStatus
 router.delete("/agent-reviews/:id", isAuthenticated, deleteAgentReview);
 router.post("/agent-reviews/bulk-delete", isAuthenticated, bulkDeleteAgentReviews);
 router.get("/cron-process-reviews", processAgentReviewsCron);
+
+// Image Generation
+router.post("/generate-image", isAuthenticated, generateImage);
 
 // Chat History & Sessions
 router.get("/sessions", isAuthenticated, getChatSessions);
