@@ -3376,13 +3376,25 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 }
                                 
                                 return (
-                                  <div className="mb-4 mt-2 w-full max-w-[600px]">
+                                  <div className="mb-2 mt-1 w-full max-w-[320px]">
                                     <ImageGeneration
                                       status={isError ? "error" : isComplete ? "complete" : "generating"}
-                                      prompt={prompt}
+                                      size="fluid"
+                                      showStatus={false}
+                                      resolution=""
                                     >
                                       {isComplete && url && (
-                                        <img src={url} alt={prompt} className="w-full h-full object-cover rounded-xl" />
+                                        <DocsImageViewer
+                                          images={[{ id: `gen-${message.id}`, src: url, alt: prompt }]}
+                                          renderThumbnails={(images, openImage) => (
+                                            <img 
+                                              src={images[0].src} 
+                                              alt={images[0].alt} 
+                                              className="w-full h-full object-cover rounded-xl cursor-zoom-in hover:opacity-95 transition-opacity" 
+                                              onClick={(e) => openImage(images[0], e)}
+                                            />
+                                          )}
+                                        />
                                       )}
                                     </ImageGeneration>
                                   </div>

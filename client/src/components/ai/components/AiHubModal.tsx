@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { INTEGRATIONS_LIST } from "./AskAiPanel";
+import { Button } from "@/components/marketing_ui/button";
 
 interface AiHubModalProps {
   isOpen: boolean;
@@ -84,12 +85,30 @@ export function AiHubModal({ isOpen, onClose }: AiHubModalProps) {
     }
   };
 
-  const getPluginFeatures = (name: string) => {
-    return [
-      `Allow Classgrid AI to access your ${name} workspace`,
-      `Search and sync data automatically`,
-      `Take actions directly from the chat interface`
-    ];
+  const getPluginFeatures = (name: string, id?: string) => {
+    switch (id) {
+      case "image": return ["Generate custom images from text prompts", "High-quality, photorealistic renders", "Visualize ideas instantly"];
+      case "web": return ["Search the web in real-time", "Fetch up-to-date news and articles", "Fact-check information automatically"];
+      case "mcp-cursor": return ["Allow Classgrid AI to access your Cursor workspace", "Sync code context and files seamlessly", "Generate and apply code snippets directly"];
+      case "mcp-chatgpt": return ["Connect ChatGPT memory and context", "Use specialized GPTs inside Classgrid", "Streamlined AI conversations"];
+      case "mcp-claude": return ["Integrate Claude's large context window", "Access Anthropic's advanced reasoning capabilities", "Analyze complex documents natively"];
+      case "mcp-notion": return ["Search through Notion pages and databases", "Auto-draft content and sync to Notion", "Organize knowledge automatically"];
+      case "gmail": return ["Draft, read, and reply to emails", "Summarize long email threads", "Automate inbox organization"];
+      case "gcal": return ["Schedule meetings directly from chat", "View upcoming events and reminders", "Manage calendar conflicts intelligently"];
+      case "gdrive": return ["Search documents, sheets, and presentations", "Summarize Drive files on demand", "Generate content based on existing files"];
+      case "gclass": return ["Access course materials and assignments", "Draft student feedback and grading rubrics", "Sync class announcements automatically"];
+      case "gmeet": return ["Generate Google Meet links instantly", "Summarize meeting transcripts", "Share meeting context with attendees"];
+      case "outlook": return ["Manage Outlook emails seamlessly", "Summarize corporate communications", "Sync calendar and inbox data"];
+      case "teams": return ["Send and read Microsoft Teams messages", "Summarize channel discussions", "Schedule Teams meetings automatically"];
+      case "zoom": return ["Create Zoom meetings directly", "Retrieve recording summaries", "Invite participants effortlessly"];
+      case "whatsapp": return ["Send WhatsApp messages to students/parents", "Automate customer support replies", "Broadcast important announcements"];
+      case "vercel": return ["Trigger Vercel deployments", "Monitor project build status", "Manage environment variables seamlessly"];
+      default: return [
+        `Allow Classgrid AI to access your ${name} workspace`,
+        `Search and sync data automatically`,
+        `Take actions directly from the chat interface`
+      ];
+    }
   };
 
   return (
@@ -232,11 +251,11 @@ export function AiHubModal({ isOpen, onClose }: AiHubModalProps) {
                         </g>
                       </svg>
 
-                      <div className="space-y-6 flex-1">
+                      <div className="space-y-6">
                         <div>
                           <h3 className="text-lg font-semibold text-foreground mb-3">Features available</h3>
                           <ul className="space-y-3">
-                            {getPluginFeatures(selectedPlugin.name).map((feature, idx) => (
+                            {getPluginFeatures(selectedPlugin.name, selectedPlugin.id).map((feature, idx) => (
                               <li key={idx} className="flex items-start gap-3 text-muted-foreground text-sm">
                                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                                 <span>{feature}</span>
@@ -246,20 +265,21 @@ export function AiHubModal({ isOpen, onClose }: AiHubModalProps) {
                         </div>
                       </div>
 
-                      <div className="pt-8 mt-auto border-t border-border">
+                      <div className="pt-6 pb-2">
                         {connectedPlugins.includes(selectedPlugin.id) ? (
-                          <div className="flex items-center gap-2 text-emerald-500 font-medium px-6 py-2.5 rounded-full bg-emerald-500/10 w-fit">
+                          <div className="flex items-center gap-2 text-emerald-500 font-medium px-4 py-2 rounded-lg bg-emerald-500/10 w-fit">
                             <CheckCircle2 className="w-5 h-5" />
                             Connected
                           </div>
                         ) : (
-                          <button 
+                          <Button 
+                            variant="outline"
                             onClick={() => handleConnect(selectedPlugin.id, selectedPlugin.name)}
                             disabled={isConnecting}
-                            className="bg-emerald-500 text-white px-8 py-2.5 rounded-full font-medium shadow-sm hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                            className="relative h-10 rounded-lg border-border bg-accent px-4 md:px-6 text-sm font-medium tracking-tight text-foreground/90 transition-all duration-200 hover:bg-slate-200 dark:hover:bg-accent/80 hover:border-border hover:text-foreground cursor-pointer"
                           >
                             {isConnecting ? "Connecting..." : "Connect"}
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </div>
