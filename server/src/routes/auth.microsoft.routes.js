@@ -17,7 +17,7 @@ const getMicrosoftAuthUrl = (userId) => {
     authUrl.searchParams.append('redirect_uri', redirectUri);
     authUrl.searchParams.append('response_mode', 'query');
     authUrl.searchParams.append('scope', scopes.join(' '));
-    authUrl.searchParams.append('state', userId);
+    authUrl.searchParams.append('state', statePayload);
     
     return authUrl.toString();
 };
@@ -27,7 +27,14 @@ router.get("/connect", isAuthenticated, (req, res) => {
     if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
         return res.status(500).json({ message: "Microsoft OAuth keys not configured in backend" });
     }
-    const url = getMicrosoftAuthUrl(req.user._id.toString());
+
+    const returnTo = req.query.returnTo || req.headers.referer || req.headers.origin || process.env.FRONTEND_URL;
+    const statePayload = Buffer.from(JSON.stringify({ 
+        userId: req.user._id.toString(),
+        returnTo 
+    })).toString('base64');
+
+    const url = getMicrosoftAuthUrl(statePayload);
     res.json({ url });
 });
 
@@ -35,15 +42,26 @@ router.get("/connect", isAuthenticated, (req, res) => {
 router.get("/callback", async (req, res) => {
     try {
         await connectDB();
-        const { code, state: userId, error, error_description } = req.query;
+        const { code, state, error, error_description } = req.query;
+
+        let userId, returnTo = process.env.FRONTEND_URL;
+        if (state) {
+            try {
+                const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
+                userId = decodedState.userId;
+                if (decodedState.returnTo) returnTo = decodedState.returnTo;
+            } catch (e) {
+                userId = state;
+            }
+        }
 
         if (error) {
             console.error("Microsoft OAuth Error:", error, error_description);
-            return res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=microsoft`);
+            return res.redirect(`${returnTo}?integration_error=microsoft`);
         }
 
         if (!code || !userId) {
-            return res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=missing_params`);
+            return res.redirect(`${returnTo}?integration_error=missing_params`);
         }
 
         // Exchange code for token
@@ -63,12 +81,12 @@ router.get("/callback", async (req, res) => {
 
         if (tokenData.error) {
             console.error("Token Exchange Error:", tokenData);
-            return res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=microsoft_token`);
+            return res.redirect(`${returnTo}?integration_error=microsoft_token`);
         }
 
         const user = await User.findById(userId);
         if (!user) {
-            return res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=user_not_found`);
+            return res.redirect(`${returnTo}?integration_error=user_not_found`);
         }
 
         user.microsoft_access_token = tokenData.access_token;
@@ -81,9 +99,12 @@ router.get("/callback", async (req, res) => {
 
         await user.save();
 
-        res.redirect(`${process.env.FRONTEND_URL}/tools?integration_success=microsoft`);
+        const redirectUrl = new URL(returnTo);
+        redirectUrl.searchParams.set('integration_success', 'microsoft');
+        res.redirect(redirectUrl.toString());
     } catch (err) {
         console.error("Microsoft Callback Error:", err);
+        // Fallback since returnTo might not be fully initialized in scope if an error happens early
         res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=microsoft_fatal`);
     }
 });

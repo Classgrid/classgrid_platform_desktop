@@ -64,6 +64,7 @@ import leaveRoutes from "../src/routes/leave.routes.js";
 import meetRoutes from "../src/routes/meet.routes.js";
 import googleWorkspaceRoutes from "../src/routes/auth.google_workspace.routes.js";
 import microsoftRoutes from "../src/routes/auth.microsoft.routes.js";
+import notionRoutes from "../src/routes/auth.notion.routes.js";
 import oauthProviderRoutes from "../src/routes/oauth.provider.routes.js";
 import zoomRoutes from "../src/routes/zoom.routes.js";
 import reviewRoutes from "../src/routes/review.routes.js";
@@ -302,7 +303,7 @@ app.use(enforceFeatureFlags);
 
 /* ---------- API ROUTES ---------- */
 app.use("/api/auth", authRoutes);
-app.use("/api/auth", vercelAuthRoutes);
+app.use("/api/auth/vercel", vercelAuthRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/notifications", notificationRoutes);
@@ -335,6 +336,7 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/meet", meetRoutes);
 app.use("/api/google-workspace", googleWorkspaceRoutes);
 app.use("/api/auth/microsoft", microsoftRoutes);
+app.use("/api/auth/notion", notionRoutes);
 app.use("/oauth", oauthProviderRoutes);
 app.use("/api/system", systemRoutes);
 app.use("/api/zoom", zoomRoutes);

@@ -89,11 +89,17 @@ router.get("/connect", isAuthenticated, (req, res) => {
         scopes.push('https://www.googleapis.com/auth/gmail.readonly');
     }
 
+    const returnTo = req.query.returnTo || req.headers.referer || req.headers.origin || process.env.FRONTEND_URL;
+    const statePayload = Buffer.from(JSON.stringify({ 
+        userId: req.user._id.toString(),
+        returnTo 
+    })).toString('base64');
+
     const url = oauth2Client.generateAuthUrl({
         access_type: 'offline', // Required to get a refresh token
         prompt: 'consent',      // Force consent screen to guarantee refresh token is provided
         scope: scopes,
-        state: req.user._id.toString() // Pass user ID through state param to know who this is when they return
+        state: statePayload
     });
 
     res.json({ url });
@@ -105,10 +111,25 @@ router.get("/connect", isAuthenticated, (req, res) => {
 router.get("/callback", async (req, res) => {
     try {
         await connectDB();
-        const { code, state: userId } = req.query;
+        const { code, state } = req.query;
 
-        if (!code || !userId) {
+        if (!code || !state) {
             return res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=google_sync_failed`);
+        }
+
+        let userId, returnTo;
+        try {
+            const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
+            userId = decodedState.userId;
+            returnTo = decodedState.returnTo;
+        } catch (e) {
+            // Fallback for old state format (just userId)
+            userId = state;
+            returnTo = `${process.env.FRONTEND_URL}/tools`;
+        }
+
+        if (!userId) {
+            return res.redirect(`${returnTo}?integration_error=user_not_found`);
         }
 
         const oauth2Client = getOAuth2Client();
@@ -117,7 +138,7 @@ router.get("/callback", async (req, res) => {
         // Update the user with the tokens
         const user = await User.findById(userId);
         if (!user) {
-            return res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=user_not_found`);
+            return res.redirect(`${returnTo}?integration_error=user_not_found`);
         }
 
         user.google_access_token = tokens.access_token;
@@ -131,9 +152,12 @@ router.get("/callback", async (req, res) => {
         await user.save();
 
         // Redirect back to frontend
-        res.redirect(`${process.env.FRONTEND_URL}/tools?integration_success=google`);
+        const redirectUrl = new URL(returnTo);
+        redirectUrl.searchParams.set('integration_success', 'google');
+        res.redirect(redirectUrl.toString());
     } catch (err) {
         console.error("Google Workspace Callback Error:", err);
+        // Fallback to marketing site if we don't have returnTo
         res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=google`);
     }
 });
