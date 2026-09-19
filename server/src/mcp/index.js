@@ -58,7 +58,7 @@ export const createMcpRouter = (expressRouter) => {
     } catch (e) {
       // Ignore close errors
     }
-    
+
     transport = new SSEServerTransport('/mcp/messages', res);
     await mcpServer.connect(transport);
   });

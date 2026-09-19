@@ -96,8 +96,43 @@ router.get("/callback", async (req, res) => {
                 ? res.redirect(`${returnTo}?integration_error=notion_missing_params`)
                 : res.status(400).json({ error: "Missing code or state" });
         }
+        // Exchange code for token
+        const credentials = Buffer.from(`${process.env.NOTION_CLIENT_ID}:${process.env.NOTION_CLIENT_SECRET}`).toString('base64');
+        const tokenResponse = await fetch(`https://api.notion.com/v1/oauth/token`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Basic ${credentials}`,
+                'Content-Type': 'application/json',
+                'Notion-Version': '2022-06-28'
+            },
+            body: JSON.stringify({
+                grant_type: 'authorization_code',
+                code: code,
+                redirect_uri: `${process.env.BACKEND_URL}/api/auth/notion/callback`
+            })
+        });
 
-        const tokenData = await exchangeNotionCodeForTokens(code, returnTo);
+        const tokenData = await tokenResponse.json();
+
+        if (tokenData.error) {
+            console.error("Notion Token Exchange Error:", tokenData);
+            if (isPopup) {
+                return res.send(`
+                    <!DOCTYPE html>
+                    <html><head><title>Error</title></head>
+                    <body style="background:#0a0a0a; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                      <h2>Error exchanging token.</h2>
+                      <script>
+                        const payload = { type: 'integration_error', provider: 'notion' };
+                        if (window.opener) { window.opener.postMessage(payload, '*'); }
+                        localStorage.setItem('integration_callback', JSON.stringify({ ...payload, timestamp: Date.now() }));
+                        window.close();
+                      </script>
+                    </body></html>
+                `);
+            }
+            return res.redirect(`${returnTo}?integration_error=notion_token`);
+        }
         
         const user = await User.findById(userId);
         if (!user) {
