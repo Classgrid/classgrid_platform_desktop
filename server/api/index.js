@@ -170,6 +170,7 @@ app.use(helmet({
     },
   },
   crossOriginEmbedderPolicy: false, // Prevents blocking external images/iframes generically
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // ALLOWS OAuth popups to communicate back to the main window
 }));
 
 app.use(
