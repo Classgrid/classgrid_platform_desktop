@@ -11,8 +11,10 @@ const getVercelAuthUrl = (state) => {
     const authUrl = new URL(`https://vercel.com/oauth/authorize`);
     authUrl.searchParams.append('client_id', clientId);
     authUrl.searchParams.append('redirect_uri', redirectUri);
+    authUrl.searchParams.append('response_type', 'code');
     authUrl.searchParams.append('state', state);
     
+    console.log(`[Vercel OAuth] Auth URL generated with client_id=${clientId}, redirect_uri=${redirectUri}`);
     return authUrl.toString();
 };
 

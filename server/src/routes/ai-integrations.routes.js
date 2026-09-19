@@ -23,38 +23,32 @@ router.get("/status", isAuthenticated, async (req, res) => {
 
         // Helper to check if a token is valid (exists, not empty, not "null")
         const isValidToken = (token) => {
-            return typeof token === 'string' && token.trim().length > 5 && token !== "null" && token !== "undefined";
+            return token != null && typeof token === 'string' && token.trim().length > 5 && token !== "null" && token !== "undefined";
         };
 
-        // Google Workspace
+        // Google Workspace — ONLY if real OAuth tokens exist
         if (isValidToken(user.google_access_token) || isValidToken(user.google_refresh_token)) {
             connected.push("gmail", "gcal", "gdrive", "gclass", "gmeet", "gforms");
         }
 
-        // Microsoft
+        // Microsoft — ONLY if real OAuth tokens exist
         if (isValidToken(user.microsoft_access_token) || isValidToken(user.microsoft_refresh_token)) {
             connected.push("outlook", "teams");
         }
 
-        // Zoom
+        // Zoom — ONLY if real OAuth tokens exist
         if (isValidToken(user.zoom_access_token) || isValidToken(user.zoom_refresh_token)) {
             connected.push("zoom");
         }
 
-        // Vercel
+        // Vercel — ONLY if real OAuth token exists
         if (isValidToken(user.vercel_access_token)) connected.push("vercel");
 
-        // Notion
+        // Notion — ONLY if real OAuth tokens exist
         if (isValidToken(user.notion_access_token) || isValidToken(user.notion_refresh_token)) connected.push("mcp-notion");
 
-        // WhatsApp Business — stored in metadata
-        if (user.metadata?.whatsapp_connected) connected.push("whatsapp");
-
-        // MCP integrations (Cursor, ChatGPT, Claude) — stored in metadata
-        const mcpConnected = user.metadata?.connected_integrations || [];
-        for (const id of mcpConnected) {
-            if (!connected.includes(id)) connected.push(id);
-        }
+        // Log what we found for debugging
+        console.log(`[Integration Status] User ${req.user._id}: connected=[${connected.join(',')}], google_token=${!!user.google_access_token}, ms_token=${!!user.microsoft_access_token}, zoom_token=${!!user.zoom_access_token}, vercel_token=${!!user.vercel_access_token}, notion_token=${!!user.notion_access_token}`);
 
         res.json({ connected });
     } catch (err) {

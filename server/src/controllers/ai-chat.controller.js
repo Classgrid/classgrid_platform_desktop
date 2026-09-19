@@ -784,10 +784,7 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     pluginPrompt = `\n\n--- 🔌 ACTIVE INTEGRATIONS ---`;
                     
                     if (activeDescriptions.length > 0) {
-                        pluginPrompt += `\nYou have FULL ACCESS to the following connected plugins. Use your tools to interact with them:\n` + activeDescriptions.join('\n');
-                    }
-                    if (activeDescriptions.length === 0) {
-                        pluginPrompt += `\nCurrently, NO third-party integrations are connected. If the user requests an action requiring an integration, use the \`open_integration_panel\` tool.`;
+                        pluginPrompt += `\nThese integrations are configured, but you MUST still use \`check_integration_status\` to verify their live connection before using them:\n` + activeDescriptions.join('\n');
                     }
 
                     pluginPrompt += `\n\nWhen a tool returns data, present it in a clean, friendly format (not raw JSON).\n--- END INTEGRATIONS ---`;
