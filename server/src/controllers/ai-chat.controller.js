@@ -790,12 +790,12 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     }
 
                     if (notionConnected) {
-                        activeDescriptions.push(`- **Notion**: ✅ CONNECTED. Use 'notion_connector' tool to search, get_page, create_page, update_page, add_comment, read_comments.`);
+                        activeDescriptions.push(`- **Notion**: ✅ CONNECTED. Use 'notion_connector' tool to search, get_page, create_page, update_page, add_comment, read_comments. \n  *WHAT YOU CAN DO*: Read pages, search workspace, create notes, append content to pages, and read/write comments.\n  *WHAT YOU CANNOT DO*: You CANNOT delete pages, you CANNOT read entire databases, and you CANNOT manage workspace permissions.`);
                         allowedConnectorNames.add('notion_connector');
                     }
                     
                     if (vercelConnected) {
-                        activeDescriptions.push(`- **Vercel**: ✅ CONNECTED. Use 'vercel_connector' tool to list_projects, list_deployments, get_deployment.`);
+                        activeDescriptions.push(`- **Vercel**: ✅ CONNECTED. Use 'vercel_connector' tool to list_projects, list_deployments, get_deployment. \n  *WHAT YOU CAN DO*: List projects, check deployment history, and view the status/details of a specific deployment.\n  *WHAT YOU CANNOT DO*: You CANNOT trigger new deployments, you CANNOT read server logs, you CANNOT delete projects, and you CANNOT manage environment variables.`);
                     } else {
                         disconnectedLinks.push(`[Vercel](/api/auth/vercel/connect)`);
                     }
