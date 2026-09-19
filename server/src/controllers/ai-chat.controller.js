@@ -752,7 +752,7 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                             ? verifyWithPing('Notion', 'https://api.notion.com/v1/users/me', latestUser.notion_access_token, null, { 'Notion-Version': '2022-06-28' }) 
                             : Promise.resolve(false),
                         latestUser.vercel_access_token 
-                            ? verifyWithPing('Vercel', 'https://api.vercel.com/v2/user', latestUser.vercel_access_token) 
+                            ? verifyWithPing('Vercel', 'https://api.vercel.com/v9/projects?limit=1', latestUser.vercel_access_token) 
                             : Promise.resolve(false),
                     ]);
 
