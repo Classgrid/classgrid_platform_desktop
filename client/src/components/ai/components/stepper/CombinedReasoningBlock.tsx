@@ -78,7 +78,14 @@ export function CombinedReasoningBlock({ sentences, isStreaming = true, autoFini
               className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}
             />
           )}
-          <p className="text-[14px] font-medium text-muted-foreground">
+          <p
+            className={
+              isFinished
+                ? "text-[14px] font-medium text-muted-foreground"
+                : "bg-[linear-gradient(110deg,#404040,35%,#fff,50%,#404040,75%,#404040)] bg-[length:200%_100%] bg-clip-text text-[14px] font-medium text-transparent"
+            }
+            style={isFinished ? {} : { animation: "shimmer 2.5s linear infinite" }}
+          >
             {isFinished ? "Thought" : "Thinking"}
           </p>
           {!isFinished && (
@@ -126,6 +133,10 @@ export function CombinedReasoningBlock({ sentences, isStreaming = true, autoFini
 
       {!isFinished && (
         <style>{`
+          @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
           @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
