@@ -181,12 +181,12 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['search', 'get_page', 'create_page'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['search', 'get_page', 'create_page', 'update_page', 'add_comment', 'read_comments'], description: 'The operation to perform.' },
         query: { type: 'string', description: 'The search term (required for search).' },
         limit: { type: 'number', description: 'Max results to return (for search).' },
-        pageId: { type: 'string', description: 'The ID of the page or database (required for get_page or create_page parent).' },
+        pageId: { type: 'string', description: 'The ID of the page, database, or block (required for get_page, create_page parent, update_page, add_comment, read_comments).' },
         title: { type: 'string', description: 'The title of the new page (required for create_page).' },
-        content: { type: 'string', description: 'The markdown-like content to insert into the new page (for create_page).' }
+        content: { type: 'string', description: 'The markdown-like content to insert into the new page, block, or comment (for create_page, update_page, add_comment).' }
       },
       required: ['operation']
     }
@@ -1251,6 +1251,75 @@ export const handleToolCall = async (name, args, context = {}) => {
           if (data.error) throw new Error(data.message || 'Notion API error');
 
           return { content: [{ type: 'text', text: `Success! Created Notion page with ID: ${data.id} and URL: ${data.url}` }] };
+        } else if (operation === 'update_page') {
+          if (!args.pageId) throw new Error("pageId is required for update_page");
+          if (!args.content) throw new Error("content is required for update_page");
+          
+          const payload = {
+            children: [
+              {
+                object: 'block',
+                type: 'paragraph',
+                paragraph: {
+                  rich_text: [
+                    {
+                      type: 'text',
+                      text: { content: args.content }
+                    }
+                  ]
+                }
+              }
+            ]
+          };
+
+          const res = await fetch(`https://api.notion.com/v1/blocks/${args.pageId}/children`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.message || 'Notion API error');
+
+          return { content: [{ type: 'text', text: `Success! Appended content to page/block ID: ${args.pageId}` }] };
+        } else if (operation === 'add_comment') {
+          if (!args.pageId) throw new Error("pageId is required for add_comment");
+          if (!args.content) throw new Error("content is required for add_comment");
+          
+          const payload = {
+            parent: { page_id: args.pageId },
+            rich_text: [
+              {
+                type: 'text',
+                text: { content: args.content }
+              }
+            ]
+          };
+
+          const res = await fetch(`https://api.notion.com/v1/comments`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.message || 'Notion API error');
+
+          return { content: [{ type: 'text', text: `Success! Added comment to page ID: ${args.pageId}` }] };
+        } else if (operation === 'read_comments') {
+          if (!args.pageId) throw new Error("pageId is required for read_comments");
+
+          const res = await fetch(`https://api.notion.com/v1/comments?block_id=${args.pageId}`, {
+            method: 'GET',
+            headers
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.message || 'Notion API error');
+
+          const comments = (data.results || []).map(c => {
+            const text = c.rich_text.map(t => t.plain_text).join('');
+            return `[${new Date(c.created_time).toLocaleString()}] Comment: ${text}`;
+          });
+
+          return { content: [{ type: 'text', text: comments.length > 0 ? comments.join('\n') : "No comments found." }] };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }
