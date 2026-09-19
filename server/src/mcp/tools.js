@@ -179,8 +179,14 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_emails', 'list_meetings'], description: 'The operation to perform.' },
-        limit: { type: 'number', description: 'Max results to return.' }
+        operation: { type: 'string', enum: ['list_emails', 'list_meetings', 'create_meeting', 'send_email', 'mark_email_read'], description: 'The operation to perform.' },
+        limit: { type: 'number', description: 'Max results to return.' },
+        to: { type: 'string', description: 'Recipient email address (for send_email).' },
+        subject: { type: 'string', description: 'Subject of the email or meeting (for send_email, create_meeting).' },
+        body: { type: 'string', description: 'Body content (for send_email).' },
+        startTime: { type: 'string', description: 'Start time in UTC ISO format (for create_meeting).' },
+        endTime: { type: 'string', description: 'End time in UTC ISO format (for create_meeting).' },
+        messageId: { type: 'string', description: 'ID of the email message (for mark_email_read).' }
       },
       required: ['operation']
     }
@@ -1207,7 +1213,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'microsoft_workspace_connector') {
-      const { operation, limit = 10 } = args;
+      const { operation, limit = 10, to, subject, body, startTime, endTime, messageId } = args;
       const { userEmail = '' } = context;
 
       const user = await mongoose.models.User.findOne({ email: userEmail });
@@ -1249,6 +1255,51 @@ export const handleToolCall = async (name, args, context = {}) => {
           });
           const data = await res.json();
           return { content: [{ type: 'text', text: JSON.stringify(data.value, null, 2) }] };
+        } else if (operation === 'create_meeting') {
+          if (!subject || !startTime || !endTime) throw new Error("subject, startTime, and endTime are required for create_meeting");
+          const res = await fetch(`https://graph.microsoft.com/v1.0/me/onlineMeetings`, {
+            method: 'POST',
+            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              startDateTime: startTime,
+              endDateTime: endTime,
+              subject: subject
+            })
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message || "Failed to create meeting");
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        } else if (operation === 'send_email') {
+          if (!to || !subject || !body) throw new Error("to, subject, and body are required for send_email");
+          const res = await fetch(`https://graph.microsoft.com/v1.0/me/sendMail`, {
+            method: 'POST',
+            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: {
+                subject: subject,
+                body: { contentType: "Text", content: body },
+                toRecipients: [{ emailAddress: { address: to } }]
+              },
+              saveToSentItems: "true"
+            })
+          });
+          if (!res.ok) {
+              const errorData = await res.json().catch(() => ({}));
+              throw new Error(errorData?.error?.message || `Failed to send email: ${res.statusText}`);
+          }
+          return { content: [{ type: 'text', text: "Email sent successfully." }] };
+        } else if (operation === 'mark_email_read') {
+          if (!messageId) throw new Error("messageId is required for mark_email_read");
+          const res = await fetch(`https://graph.microsoft.com/v1.0/me/messages/${messageId}`, {
+            method: 'PATCH',
+            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ isRead: true })
+          });
+          if (!res.ok) {
+              const errorData = await res.json().catch(() => ({}));
+              throw new Error(errorData?.error?.message || `Failed to mark email as read: ${res.statusText}`);
+          }
+          return { content: [{ type: 'text', text: "Email marked as read successfully." }] };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }

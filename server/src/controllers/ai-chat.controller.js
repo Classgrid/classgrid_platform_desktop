@@ -790,7 +790,7 @@ If the connector tool IS NOT available, it means the user has NOT connected thei
                     }
 
                     if (msConnected) {
-                        activeDescriptions.push(`- **Microsoft 365 (Outlook, Teams)**: ✅ CONNECTED. Use 'microsoft_workspace_connector' tool to list_emails, list_meetings. CRITICAL: You CANNOT create or schedule Teams meetings (the API only supports listing). If asked to schedule a Teams meeting, you must explicitly inform the user that it is not supported.`);
+                        activeDescriptions.push(`- **Microsoft 365 (Outlook, Teams)**: ✅ CONNECTED. Use 'microsoft_workspace_connector' tool to list_emails, mark_email_read, send_email, list_meetings, create_meeting.`);
                     }
 
                     if (zoomConnected) {
