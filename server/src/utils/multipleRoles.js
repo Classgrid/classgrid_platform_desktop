@@ -57,7 +57,100 @@
  * 
  * HOW DASHBOARDS WORK:
  * ---------------------
+ * HOW DASHBOARDS WORK:
+ * ---------------------
  * - user.role → determines which dashboard they see on login
+ * - If additional_roles[] has a role from a DIFFERENT dashboard → header switcher appears
+ * - If additional_roles[] has a role from the SAME dashboard group → no switcher (just more access)
+ * - To access a dashboard, you MUST hold a role that maps to it. No shortcut.
+ * 
+ * THE 10 DASHBOARDS:
+ * -------------------
+ * 1. student          → /student/agent
+ * 2. faculty          → /faculty/agent               (faculty, counselor)
+ * 3. org_admin        → /org/admin/agent             (org_admin, principal, vice_principal, hod, coordinator, tpo_officer)
+ * 4. admissions       → /dept/admissions/agent       (admission_head, admission_counselor, admission_verifier, admission_clerk)
+ * 5. examination      → /dept/exams/agent            (exam_controller)
+ * 6. fees             → /dept/fees/agent             (fee_manager)
+ * 7. library          → /dept/library/agent          (library_manager, library_admin)
+ * 8. hostel_transport → /dept/transport/agent        (transport_manager, hostel_manager)
+ * 9. hr_payroll       → /dept/hr/agent               (hr_admin)
+ * 10. attendance      → /dept/attendance/agent       (attendance_admin)
+ * 
+ * RULES ENFORCED BY THIS FILE:
+ * -----------------------------
+ * 1. Max 2 roles: user.role (1) + user.additional_roles[] max length 1
+ * 2. No duplicate roles: cannot request a role already held
+ * 3. student/org_admin/super_admin cannot be requested (system roles)
+ * 4. Requested role must exist in org's ORG_ROLE_MAPPING
+ * 5. Tenant ID must match user's organization
+ * 
+ * FILE USED BY:
+ * - server/src/routes/org.routes.js → /request-role, /accept-role-request
+ * - server/src/controllers/auth.controller.js → getFrontendDashboardTarget
+ */
+
+import { ORG_ROLE_MAPPING, ROLE_DEFINITIONS } from './roles.js';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Maximum number of roles a single user can hold (main + additional) */
+export const MAX_ROLES_PER_USER = 2;
+
+/**
+ * Roles that are SYSTEM roles — cannot be requested via self-serve or invite.
+ * org_admin is created during org setup.
+ * super_admin is platform-level only.
+ * student joins differently (PRN-based or admin CSV upload).
+ */
+export const SYSTEM_ROLES = ['org_admin', 'super_admin', 'co_super_admin', 'student'];
+
+/**
+ * Maps every role key to its dashboard key.
+ * This is the single source of truth for backend dashboard routing.
+ * Frontend copy: client/src/lib/dashboardRoleMap.ts
+ */
+export const ROLE_TO_DASHBOARD = {
+    student:              'student',
+    faculty:              'faculty',
+    teacher:              'faculty',
+    counselor:            'faculty',
+    org_admin:            'org_admin',
+    principal:            'org_admin',
+    vice_principal:       'org_admin',
+    hod:                  'org_admin',
+    coordinator:          'org_admin',
+    tpo_officer:          'org_admin',
+    exam_controller:      'examination',
+    fee_manager:          'fees',
+    library_manager:      'library',
+    library_admin:        'library',
+    admission_head:       'admissions',
+    admission_counselor:  'admissions',
+    admission_verifier:   'admissions',
+    admission_clerk:      'admissions',
+    transport_manager:    'hostel_transport',
+    hostel_manager:       'hostel_transport',
+    hr_admin:             'hr_payroll',
+    attendance_admin:     'attendance',
+    super_admin:          'super_admin',
+    co_super_admin:       'super_admin',
+};
+
+/**
+ * Maps each dashboard key to its frontend path.
+ */
+export const DASHBOARD_PATHS = {
+    student:          '/student/agent',
+    faculty:          '/faculty/agent',
+    org_admin:        '/org/admin/dashboard',
+    admissions:       '/dept/admissions/dashboard',
+    examination:      '/dept/exams/dashboard',
+    fees:             '/dept/fees/dashboard',
+    library:          '/dept/library/dashboard',
+    hostel_transport: '/dept/transport/dashboard',
     hr_payroll:       '/dept/hr/dashboard',
     attendance:       '/dept/attendance/dashboard',
     super_admin:      '/superadmin/dashboard',

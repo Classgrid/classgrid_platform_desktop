@@ -106,9 +106,9 @@ const ERP_DASHBOARD_PATHS = {
     transport_manager: "/dept/transport/dashboard",
     counselor: "/org/admin/dashboard",
     coordinator: "/org/admin/dashboard",
-    faculty: "/faculty/work",
-    teacher: "/faculty/work",
-    student: "/student/work",
+    faculty: "/faculty/agent",
+    teacher: "/faculty/agent",
+    student: "/student/agent",
 };
 
 function getOrgFrontendUrl(req, org) {

@@ -134,9 +134,9 @@ const ROLE_LABELS = {
 };
 
 const DASHBOARD_TARGETS = {
-    student: "/student/work",
-    teacher: "/faculty/work",
-    faculty: "/faculty/work",
+    student: "/student/agent",
+    teacher: "/faculty/agent",
+    faculty: "/faculty/agent",
     org_admin: "/org/admin/dashboard",
     library_manager: "/dept/library/dashboard",
     hod: "/org/admin/dashboard",
