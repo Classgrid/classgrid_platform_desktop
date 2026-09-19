@@ -238,7 +238,7 @@ ACADEMIC HIERARCHY (BACKEND DOMAIN KNOWLEDGE):
 
 DATABASE ARCHITECTURE (CRITICAL GROUND TRUTH):
 Classgrid uses a hybrid dual-database architecture. When using \`unified_db_query\`, you MUST set the correct 'source' parameter based on this mapping:
-- MONGODB (source='mongodb'): Users, UserProfiles, Organizations, SystemLogs, ActivityLogs, SupportTickets, SupportConversations, DemoRequests, Classrooms (Legacy), Assignments, Notes, Attendances, Exams, Timetables, FeeRecords, Invoices, PaymentTransactions, TaxRules, SystemSettings.
+- MONGODB (source='mongodb'): Users, UserProfiles, Organizations, SystemLogs, ActivityLogs, SupportTickets, SupportConversations, DemoRequests, Notes, Attendances, Exams, Timetables, FeeRecords, Invoices, PaymentTransactions, TaxRules, SystemSettings.
 - SUPABASE POSTGRES (source='supabase'): messages, threads, classroom_messages, email_notification_queue, device_tokens, syllabus_vectors, material_summaries, events, holidays, leaves, PLUS all V2 Migrated tables (Advanced Quiz, Certificates, Alumni, Library, Result Engine).
 
 SYLLABUS & MATERIAL SEARCH:
@@ -538,8 +538,6 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
 - Users / Accounts: \`User\` (To filter by role, use exact lowercase strings: "org_admin", "super_admin", "student", "faculty". Do NOT use capitalized "Org Admin" or guess other names)
 - Student Profiles: \`UserProfile\`
 - Organizations: \`Organization\`
-- Classrooms: \`Classroom\`
-- Assignments: \`Assignment\`
 - Notes / Study Material: \`Note\`
 - Attendance: \`Attendance\` or \`AttendanceRecord\`
 - Exams: \`Exam\`
