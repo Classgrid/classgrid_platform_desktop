@@ -57,6 +57,7 @@ import { markOnboardingStep, syncDerivedOnboardingProgress } from "../services/o
 import mongoose from "mongoose";
 import redis from "../config/redis.js";
 import { uploadBufferToR2, deleteFromR2, getPresignedUploadUrl } from "../config/r2Client.js";
+import { getEffectivePlan, getMaxFaculty } from "../config/plan.config.js";
 import {
     deleteMongoAnnouncementBySupabaseId,
     deliverPublishedOrganizationAnnouncement,
