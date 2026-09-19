@@ -179,14 +179,21 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_emails', 'list_meetings', 'create_meeting', 'send_email', 'mark_email_read'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_emails', 'list_meetings', 'create_meeting', 'send_email', 'mark_email_read', 'list_teams', 'list_channels', 'read_channel_messages', 'send_channel_message', 'create_channel', 'list_chats', 'read_chat_messages', 'send_direct_message', 'read_meeting_transcript'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
         to: { type: 'string', description: 'Recipient email address (for send_email).' },
         subject: { type: 'string', description: 'Subject of the email or meeting (for send_email, create_meeting).' },
-        body: { type: 'string', description: 'Body content (for send_email).' },
+        body: { type: 'string', description: 'Body content (for send_email, send_channel_message, send_direct_message).' },
         startTime: { type: 'string', description: 'Start time in UTC ISO format (for create_meeting).' },
         endTime: { type: 'string', description: 'End time in UTC ISO format (for create_meeting).' },
-        messageId: { type: 'string', description: 'ID of the email message (for mark_email_read).' }
+        messageId: { type: 'string', description: 'ID of the email message (for mark_email_read).' },
+        teamId: { type: 'string', description: 'ID of the Microsoft Team (for list_channels, read_channel_messages, send_channel_message, create_channel).' },
+        channelId: { type: 'string', description: 'ID of the Microsoft Teams Channel (for read_channel_messages, send_channel_message).' },
+        chatId: { type: 'string', description: 'ID of the Microsoft Teams Chat (for read_chat_messages, send_direct_message).' },
+        userId: { type: 'string', description: 'Target user ID or email (for list_chats, send_direct_message to new user).' },
+        channelName: { type: 'string', description: 'Name of the new channel (for create_channel).' },
+        channelDescription: { type: 'string', description: 'Description of the new channel (for create_channel).' },
+        meetingId: { type: 'string', description: 'ID of the online meeting (for read_meeting_transcript).' }
       },
       required: ['operation']
     }
@@ -1293,8 +1300,8 @@ export const handleToolCall = async (name, args, context = {}) => {
             })
           });
           if (!res.ok) {
-              const errorData = await res.json().catch(() => ({}));
-              throw new Error(errorData?.error?.message || `Failed to send email: ${res.statusText}`);
+            const errData = await res.json().catch(() => null);
+            throw new Error(`Failed to send email: ${errData?.error?.message || res.statusText}`);
           }
           return { content: [{ type: 'text', text: "Email sent successfully." }] };
         } else if (operation === 'mark_email_read') {
@@ -1305,10 +1312,117 @@ export const handleToolCall = async (name, args, context = {}) => {
             body: JSON.stringify({ isRead: true })
           });
           if (!res.ok) {
-              const errorData = await res.json().catch(() => ({}));
-              throw new Error(errorData?.error?.message || `Failed to mark email as read: ${res.statusText}`);
+            const errData = await res.json().catch(() => null);
+            throw new Error(`Failed to mark email as read: ${errData?.error?.message || res.statusText}`);
           }
           return { content: [{ type: 'text', text: "Email marked as read successfully." }] };
+        } else if (operation === 'list_teams') {
+          const res = await fetch(`https://graph.microsoft.com/v1.0/me/joinedTeams`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message || "Failed to list teams");
+          return { content: [{ type: 'text', text: JSON.stringify(data.value, null, 2) }] };
+        } else if (operation === 'list_channels') {
+          if (!args.teamId) throw new Error("teamId is required for list_channels");
+          const res = await fetch(`https://graph.microsoft.com/v1.0/teams/${args.teamId}/channels`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message || "Failed to list channels");
+          return { content: [{ type: 'text', text: JSON.stringify(data.value, null, 2) }] };
+        } else if (operation === 'create_channel') {
+          if (!args.teamId || !args.channelName) throw new Error("teamId and channelName are required for create_channel");
+          const res = await fetch(`https://graph.microsoft.com/v1.0/teams/${args.teamId}/channels`, {
+            method: 'POST',
+            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              displayName: args.channelName,
+              description: args.channelDescription || "",
+              membershipType: "standard"
+            })
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message || "Failed to create channel");
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        } else if (operation === 'read_channel_messages') {
+          if (!args.teamId || !args.channelId) throw new Error("teamId and channelId are required for read_channel_messages");
+          const res = await fetch(`https://graph.microsoft.com/v1.0/teams/${args.teamId}/channels/${args.channelId}/messages?$top=${limit}`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message || "Failed to read channel messages");
+          return { content: [{ type: 'text', text: JSON.stringify(data.value, null, 2) }] };
+        } else if (operation === 'send_channel_message') {
+          if (!args.teamId || !args.channelId || !body) throw new Error("teamId, channelId, and body are required for send_channel_message");
+          const res = await fetch(`https://graph.microsoft.com/v1.0/teams/${args.teamId}/channels/${args.channelId}/messages`, {
+            method: 'POST',
+            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              body: { content: body }
+            })
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message || "Failed to send channel message");
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        } else if (operation === 'list_chats') {
+          const res = await fetch(`https://graph.microsoft.com/v1.0/me/chats?$top=${limit}`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message || "Failed to list chats");
+          return { content: [{ type: 'text', text: JSON.stringify(data.value, null, 2) }] };
+        } else if (operation === 'read_chat_messages') {
+          if (!args.chatId) throw new Error("chatId is required for read_chat_messages");
+          const res = await fetch(`https://graph.microsoft.com/v1.0/chats/${args.chatId}/messages?$top=${limit}`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message || "Failed to read chat messages");
+          return { content: [{ type: 'text', text: JSON.stringify(data.value, null, 2) }] };
+        } else if (operation === 'send_direct_message') {
+          let targetChatId = args.chatId;
+          if (!targetChatId) {
+            if (!args.userId) throw new Error("Either chatId or userId must be provided to send a direct message.");
+            const chatRes = await fetch(`https://graph.microsoft.com/v1.0/chats`, {
+              method: 'POST',
+              headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                chatType: 'oneOnOne',
+                members: [
+                  { "@odata.type": "#microsoft.graph.aadUserConversationMember", roles: ["owner"], "user@odata.bind": "https://graph.microsoft.com/v1.0/me" },
+                  { "@odata.type": "#microsoft.graph.aadUserConversationMember", roles: ["owner"], "user@odata.bind": `https://graph.microsoft.com/v1.0/users('${args.userId}')` }
+                ]
+              })
+            });
+            const chatData = await chatRes.json();
+            if (chatData.error) throw new Error(chatData.error.message || "Failed to create or get chat with user");
+            targetChatId = chatData.id;
+          }
+          if (!body) throw new Error("body is required to send direct message");
+          const res = await fetch(`https://graph.microsoft.com/v1.0/chats/${targetChatId}/messages`, {
+            method: 'POST',
+            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ body: { content: body } })
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message || "Failed to send direct message");
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        } else if (operation === 'read_meeting_transcript') {
+          if (!args.meetingId) throw new Error("meetingId is required for read_meeting_transcript");
+          const res = await fetch(`https://graph.microsoft.com/v1.0/me/onlineMeetings/${args.meetingId}/transcripts`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message || "Failed to list transcripts");
+          if (!data.value || data.value.length === 0) return { content: [{ type: 'text', text: "No transcripts found for this meeting." }] };
+          const transcriptId = data.value[0].id;
+          const contentRes = await fetch(`https://graph.microsoft.com/v1.0/me/onlineMeetings/${args.meetingId}/transcripts/${transcriptId}/content?$format=text/vtt`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          if (!contentRes.ok) throw new Error("Failed to download transcript content");
+          const contentText = await contentRes.text();
+          return { content: [{ type: 'text', text: contentText.substring(0, 50000) }] };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }

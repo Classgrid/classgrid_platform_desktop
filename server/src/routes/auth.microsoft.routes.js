@@ -9,7 +9,7 @@ const getMicrosoftAuthUrl = (statePayload) => {
     const tenant = 'common';
     const clientId = process.env.MICROSOFT_CLIENT_ID;
     const redirectUri = `${process.env.BACKEND_URL}/api/auth/microsoft/callback`;
-    const scopes = ['offline_access', 'User.Read', 'Mail.Read', 'Mail.ReadWrite', 'Mail.Send', 'Calendars.ReadWrite', 'OnlineMeetings.ReadWrite'];
+    const scopes = ['offline_access', 'User.Read', 'Mail.Read', 'Mail.ReadWrite', 'Mail.Send', 'Calendars.ReadWrite', 'OnlineMeetings.ReadWrite', 'Chat.ReadWrite', 'ChannelMessage.ReadWrite', 'Team.ReadBasic.All', 'Channel.ReadWrite.All', 'OnlineMeetingTranscript.Read.All'];
     
     const authUrl = new URL(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize`);
     authUrl.searchParams.append('client_id', clientId);
