@@ -2,6 +2,7 @@ FROM python:3.13-slim
 
 # Set the working directory in the container
 WORKDIR /data
+ENV NODE_PATH=/usr/lib/node_modules
 
 # Install system dependencies: FFmpeg, Ghostscript, Poppler (for PDFs), ImageMagick, OCR, LibreOffice, Chromium
 RUN apt-get update && apt-get install -y \
@@ -19,7 +20,7 @@ RUN apt-get update && apt-get install -y \
     chromium \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
-    && npm install -g typescript playwright \
+    && npm install -g typescript playwright googleapis \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
