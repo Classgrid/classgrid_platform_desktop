@@ -21,26 +21,31 @@ router.get("/status", isAuthenticated, async (req, res) => {
 
         const connected = [];
 
-        // Google Workspace — single OAuth token covers all Google services
-        if (user.google_access_token || user.google_refresh_token) {
+        // Helper to check if a token is valid (exists, not empty, not "null")
+        const isValidToken = (token) => {
+            return typeof token === 'string' && token.trim().length > 5 && token !== "null" && token !== "undefined";
+        };
+
+        // Google Workspace
+        if (isValidToken(user.google_access_token) || isValidToken(user.google_refresh_token)) {
             connected.push("gmail", "gcal", "gdrive", "gclass", "gmeet", "gforms");
         }
 
-        // Microsoft (Outlook + Teams share the same token)
-        if (user.microsoft_access_token || user.microsoft_refresh_token) {
+        // Microsoft
+        if (isValidToken(user.microsoft_access_token) || isValidToken(user.microsoft_refresh_token)) {
             connected.push("outlook", "teams");
         }
 
         // Zoom
-        if (user.zoom_access_token || user.zoom_refresh_token) {
+        if (isValidToken(user.zoom_access_token) || isValidToken(user.zoom_refresh_token)) {
             connected.push("zoom");
         }
 
         // Vercel
-        if (user.vercel_access_token) connected.push("vercel");
+        if (isValidToken(user.vercel_access_token)) connected.push("vercel");
 
         // Notion
-        if (user.notion_access_token || user.notion_refresh_token) connected.push("mcp-notion");
+        if (isValidToken(user.notion_access_token) || isValidToken(user.notion_refresh_token)) connected.push("mcp-notion");
 
         // WhatsApp Business — stored in metadata
         if (user.metadata?.whatsapp_connected) connected.push("whatsapp");

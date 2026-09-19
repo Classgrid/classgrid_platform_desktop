@@ -753,30 +753,21 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     if (whatsappConnected) allowedConnectorNames.add('whatsapp_business_connector');
 
                     let activeDescriptions = [];
-                    let disconnectedLinks = [];
 
                     if (googleConnected) {
                         activeDescriptions.push(`- **Google Workspace (Gmail, Calendar, Drive, Meet, Forms)**: ✅ CONNECTED. Use 'google_workspace_connector' tool to list_emails, list_events, create_event, list_drive_files, create_form, get_form.`);
-                    } else {
-                        disconnectedLinks.push(`[Google Workspace](/api/google-workspace/connect?service=all)`);
                     }
 
                     if (msConnected) {
                         activeDescriptions.push(`- **Microsoft 365 (Outlook, Teams)**: ✅ CONNECTED. Use 'microsoft_workspace_connector' tool to list_emails, list_meetings.`);
-                    } else {
-                        disconnectedLinks.push(`[Microsoft 365](/api/auth/microsoft/connect)`);
                     }
 
                     if (zoomConnected) {
                         activeDescriptions.push(`- **Zoom**: ✅ CONNECTED. Use 'zoom_connector' tool to list_meetings, create_meeting.`);
-                    } else {
-                        disconnectedLinks.push(`[Zoom](/api/zoom/connect)`);
                     }
 
                     if (notionConnected) {
                         activeDescriptions.push(`- **Notion**: ✅ CONNECTED. You can search pages and databases (via backend routes).`);
-                    } else {
-                        disconnectedLinks.push(`[Notion](/api/auth/notion/connect)`);
                     }
                     
                     if (vercelConnected) {
@@ -794,12 +785,9 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     
                     if (activeDescriptions.length > 0) {
                         pluginPrompt += `\nYou have FULL ACCESS to the following connected plugins. Use your tools to interact with them:\n` + activeDescriptions.join('\n');
-                    } else {
-                        pluginPrompt += `\nCurrently, NO third-party integrations are connected.`;
                     }
-
-                    if (disconnectedLinks.length > 0) {
-                        pluginPrompt += `\n\nIf the user asks you to use a disconnected plugin, politely tell them they need to connect it first, and give them the markdown link to do so:\nDisconnected plugins available: ${disconnectedLinks.join(', ')}`;
+                    if (activeDescriptions.length === 0) {
+                        pluginPrompt += `\nCurrently, NO third-party integrations are connected. If the user requests an action requiring an integration, use the \`open_integration_panel\` tool.`;
                     }
 
                     pluginPrompt += `\n\nWhen a tool returns data, present it in a clean, friendly format (not raw JSON).\n--- END INTEGRATIONS ---`;
