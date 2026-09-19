@@ -512,6 +512,7 @@ export const streamAskAi = async (req, res) => {
         const timeUTC = now.toLocaleTimeString('en-US', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit' });
 
         dynamicSystemPrompt += `\n\n--- CURRENT SYSTEM TIME ---\nThe current time in IST (India) is ${timeIST} on ${dateIST}. The current time in UTC is ${timeUTC} on ${dateUTC}. If the user asks for the time in ANY other timezone or city (like London or Tokyo), you MUST use the \`get_timezone_time\` tool to find the exact time. DO NOT attempt to calculate timezone math yourself, you will get it wrong. NEVER output placeholders like "[Your local time here]".`;
+        dynamicSystemPrompt += `\nCRITICAL TIMEZONE RULE FOR MEETINGS: When scheduling a Zoom meeting or Google Calendar event, the APIs EXPECT the 'startTime' parameter to be in UTC format (with a 'Z' at the end). IF the user asks for a time in IST (e.g. "5 PM tomorrow"), you MUST convert IST to UTC by subtracting 5 hours and 30 minutes BEFORE sending the time to the connector tool! For example, 5:00 PM IST is 11:30 AM UTC.`;
 
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (HIGHEST PRIORITY): If a user asks you to perform ANY task (e.g. "make a flowchart", "write an email", "create a plan") BUT they do not provide the necessary data, topic, or context, your ONLY ALLOWED RESPONSE is a question asking for that information. Under NO circumstances should you generate placeholder content, guess the topic, or attempt to fulfill the request without the context.`;
 
