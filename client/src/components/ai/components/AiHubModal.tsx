@@ -458,10 +458,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
                           <div 
                             key={integration.id} 
                             onClick={() => setSelectedPlugin(integration)}
-                            className={cn(
-                              "group relative bg-background border rounded-xl p-5 hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer flex items-center justify-between shadow-sm",
-                              connectedPlugins.includes(integration.id) ? "border-emerald-500/40" : "border-border"
-                            )}
+                            className="group relative bg-background border border-border rounded-xl p-5 hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer flex items-center justify-between shadow-sm"
                           >
                             <div className="flex items-center gap-4 min-w-0 pr-4">
                               <div className="w-12 h-12 rounded-xl border border-border flex items-center justify-center shrink-0 bg-background overflow-hidden shadow-sm relative">
@@ -475,16 +472,11 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
                                   ) : integration.icon ? (
                                     <integration.icon className="w-6 h-6 text-muted-foreground" />
                                   ) : null}
-                                  {connectedPlugins.includes(integration.id) && (
-                                    <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-background" />
-                                  )}
                               </div>
                               <div className="flex flex-col min-w-0">
                                 <span className="text-sm font-semibold text-foreground truncate">{integration.name}</span>
                                 <span className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                                  {connectedPlugins.includes(integration.id) 
-                                    ? "✓ Connected" 
-                                    : (integration.description || "Connect your workspace")}
+                                  {integration.description || "Connect your workspace"}
                                 </span>
                               </div>
                             </div>
