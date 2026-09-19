@@ -41,6 +41,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
   const [selectedPlugin, setSelectedPlugin] = useState<any>(null);
   const [connectedPlugins, setConnectedPlugins] = useState<string[]>([]);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState(true);
 
   const backendUrl = typeof import.meta !== "undefined" && import.meta.env
@@ -193,6 +194,43 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
       console.error(err);
       toast.error(`Error connecting to ${name}`);
       setIsConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async (id: string, name: string) => {
+    setIsDisconnecting(true);
+    try {
+      const isGoogle = ['gmail', 'gcal', 'gdrive', 'gclass', 'gmeet', 'gforms'].includes(id);
+      const isMicrosoft = id === 'outlook' || id === 'teams';
+      
+      let endpoint = '';
+      if (isGoogle) {
+        endpoint = `/api/google-workspace/disconnect`;
+      } else if (isMicrosoft) {
+        endpoint = `/api/auth/microsoft/disconnect`;
+      } else if (id === 'mcp-notion') {
+        endpoint = `/api/auth/notion/disconnect`;
+      } else if (id === 'vercel') {
+        endpoint = `/api/auth/vercel/disconnect`;
+      } else if (id === 'zoom') {
+        endpoint = `/api/zoom/disconnect`;
+      }
+
+      if (endpoint) {
+        const res = await fetch(backendUrl + endpoint, { method: 'POST', credentials: 'include' });
+        if (res.ok) {
+          toast.success(`${name} disconnected successfully`);
+          await fetchStatus();
+        } else {
+          toast.error(`Failed to disconnect ${name}`);
+        }
+      } else {
+        toast.error(`Cannot disconnect ${name} from here`);
+      }
+    } catch (err) {
+      toast.error(`Error disconnecting from ${name}`);
+    } finally {
+      setIsDisconnecting(false);
     }
   };
 
@@ -400,9 +438,20 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
                       <div className="pt-6 pb-2">
                         {connectedPlugins.includes(selectedPlugin.id) ? (
                           <div className="space-y-6">
-                            <div className="flex items-center gap-2 text-emerald-500 font-medium px-4 py-2 rounded-lg bg-emerald-500/10 w-fit">
-                              <CheckCircle2 className="w-5 h-5" />
-                              Connected
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-emerald-500 font-medium px-4 py-2 rounded-lg bg-emerald-500/10 w-fit">
+                                <CheckCircle2 className="w-5 h-5" />
+                                Connected
+                              </div>
+                              <Button
+                                variant="outline"
+                                onClick={() => handleDisconnect(selectedPlugin.id, selectedPlugin.name)}
+                                disabled={isDisconnecting}
+                                className="h-9 px-3 text-sm text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                              >
+                                {isDisconnecting ? <Spinner className="w-4 h-4 mr-2" /> : null}
+                                Disconnect
+                              </Button>
                             </div>
                             
                             <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">

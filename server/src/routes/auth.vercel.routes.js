@@ -206,6 +206,7 @@ router.post("/disconnect", isAuthenticated, async (req, res) => {
         if (!user) return res.status(404).json({ message: "User not found" });
 
         user.vercel_access_token = undefined;
+        user.vercel_team_id = undefined;
         await user.save();
 
         res.json({ success: true, message: "Vercel account disconnected" });
