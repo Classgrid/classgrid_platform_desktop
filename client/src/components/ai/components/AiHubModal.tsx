@@ -7,12 +7,18 @@ import {
   ChevronRight,
   ChevronLeft,
   CheckCircle2,
+  Settings2,
+  Sparkles,
+  CreditCard,
+  MessageSquare,
+  Wand2,
   Image as ImageIcon
 } from "lucide-react";
+import { Spinner } from "@/components/marketing_ui/spinner";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { INTEGRATIONS_LIST } from "./AskAiPanel";
-import { Button } from "@/components/marketing_ui/button";
+import { Button } from "@/components/ui/button";
 
 interface AiHubModalProps {
   isOpen: boolean;
@@ -23,10 +29,10 @@ interface AiHubModalProps {
 const TABS = [
   { id: "plugins", label: "Plugins", icon: Plug },
   { id: "skills", label: "Skills", icon: Zap },
-  { id: "prompts", label: "Prompts", icon: TerminalSquare },
-  { id: "settings", label: "Settings", icon: Settings },
+  { id: "prompts", label: "Prompts", icon: MessageSquare },
+  { id: "settings", label: "Settings", icon: Settings2 },
   { id: "usage", label: "Usage", icon: Activity },
-  { id: "credits", label: "AI Credits", icon: Coins },
+  { id: "credits", label: "AI Credits", icon: CreditCard },
   { id: "upgrade", label: "Upgrade", icon: ArrowUpCircle },
 ];
 
@@ -35,63 +41,44 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
   const [selectedPlugin, setSelectedPlugin] = useState<any>(null);
   const [connectedPlugins, setConnectedPlugins] = useState<string[]>([]);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState(true);
+
+  const backendUrl = typeof import.meta !== "undefined" && import.meta.env
+    ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
+    : "";
 
   // Reset selected plugin if tab changes
   React.useEffect(() => {
      setSelectedPlugin(null);
   }, [activeTab]);
 
-  React.useEffect(() => {
-    const handleSuccess = (provider: string) => {
-      toast.success(`Integration connected successfully!`);
-      setConnectedPlugins(prev => {
-        const newPlugins = [...prev];
-        if (provider === 'google') {
-           newPlugins.push('gmail', 'gcal', 'gdrive', 'gclass', 'gmeet');
-        } else {
-           newPlugins.push(provider);
-        }
-        return newPlugins;
+  // ── REAL backend status check on mount ──
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch(backendUrl + "/api/ai-integrations/status", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include"
       });
-      setIsConnecting(false);
-    };
-
-    const handleError = (provider: string) => {
-      toast.error(`Integration failed: ${provider}`);
-      setIsConnecting(false);
-    };
-
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'integration_success') {
-         handleSuccess(event.data.provider);
-      } else if (event.data?.type === 'integration_error') {
-         handleError(event.data.provider);
-      }
-    };
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === 'integration_callback' && event.newValue) {
-        try {
-          const data = JSON.parse(event.newValue);
-          // Only process recent events (within last 10 seconds)
-          if (Date.now() - data.timestamp < 10000) {
-            if (data.type === 'integration_success') handleSuccess(data.provider);
-            else if (data.type === 'integration_error') handleError(data.provider);
-            localStorage.removeItem('integration_callback');
-          }
-        } catch (e) {
-          console.error(e);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.connected && Array.isArray(data.connected)) {
+          setConnectedPlugins(data.connected);
         }
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch integration status:", err);
+    } finally {
+      setLoadingStatus(false);
+    }
+  };
 
-    window.addEventListener('message', handleMessage);
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      window.removeEventListener('message', handleMessage);
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, []);
+  React.useEffect(() => {
+    if (isOpen) {
+      setLoadingStatus(true);
+      fetchStatus();
+    }
+  }, [isOpen]);
 
   const handleConnect = async (id: string, name: string) => {
     setIsConnecting(true);
@@ -115,18 +102,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
         endpoint = `/api/ai-integrations/connect/${id}?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       }
 
-      const backendUrl = typeof import.meta !== "undefined" && import.meta.env
-        ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
-        : "";
-
-      let fetchEndpoint = endpoint;
-      if (fetchEndpoint.includes('?')) {
-        fetchEndpoint += '&popup=true';
-      } else {
-        fetchEndpoint += '?popup=true';
-      }
-
-      const res = await fetch(backendUrl + fetchEndpoint, {
+      const res = await fetch(backendUrl + endpoint, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         credentials: "include"
@@ -145,22 +121,69 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
           `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
         );
         
-        if (popup) {
-          // Poll to see if the user closed the popup manually
-          const pollTimer = setInterval(() => {
-            if (popup.closed) {
-              clearInterval(pollTimer);
-              setIsConnecting(false);
-            }
-          }, 500);
-        } else {
-          // Popup blocker prevented it
+        if (!popup) {
           setIsConnecting(false);
           toast.error("Popup blocked. Please allow popups for this site.");
+          return;
         }
+
+        // Poll backend every 2 seconds to check if token was saved
+        const pollInterval = setInterval(async () => {
+          try {
+            const statusRes = await fetch(backendUrl + "/api/ai-integrations/status", {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include"
+            });
+            if (statusRes.ok) {
+              const statusData = await statusRes.json();
+              if (statusData.connected && statusData.connected.includes(id)) {
+                // REAL connection confirmed by backend!
+                clearInterval(pollInterval);
+                setConnectedPlugins(statusData.connected);
+                setIsConnecting(false);
+                toast.success(`${name} connected successfully!`);
+                if (popup && !popup.closed) popup.close();
+              }
+            }
+          } catch (e) {
+            // Ignore polling errors
+          }
+
+          // If user closed the popup manually, stop polling after a grace period
+          if (popup.closed) {
+            // Give 3 more seconds for the backend to finalize the token
+            setTimeout(async () => {
+              try {
+                const finalRes = await fetch(backendUrl + "/api/ai-integrations/status", {
+                  method: "GET",
+                  headers: { "Content-Type": "application/json" },
+                  credentials: "include"
+                });
+                if (finalRes.ok) {
+                  const finalData = await finalRes.json();
+                  if (finalData.connected && finalData.connected.includes(id)) {
+                    setConnectedPlugins(finalData.connected);
+                    toast.success(`${name} connected successfully!`);
+                  }
+                }
+              } catch (e) { /* ignore */ }
+              clearInterval(pollInterval);
+              setIsConnecting(false);
+            }, 3000);
+          }
+        }, 2000);
+
+        // Safety timeout — stop polling after 2 minutes max
+        setTimeout(() => {
+          clearInterval(pollInterval);
+          setIsConnecting(false);
+        }, 120000);
+
       } else if (data.success) {
+        // Direct connection (no OAuth popup needed, e.g. MCP plugins)
         toast.success(`${name} connected successfully!`);
-        setConnectedPlugins(prev => [...prev, id]);
+        await fetchStatus(); // Refresh from backend
         setIsConnecting(false);
       } else {
         toast.error(data.message || `Failed to connect ${name}`);
@@ -171,7 +194,6 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
       toast.error(`Error connecting to ${name}`);
       setIsConnecting(false);
     }
-    // Removed the finally block because we want isConnecting=true to persist while popup is open.
   };
 
   const getPluginFeatures = (name: string, id?: string) => {
@@ -414,7 +436,12 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
                             disabled={isConnecting}
                             className="relative h-10 rounded-lg border-border bg-accent px-4 md:px-6 text-sm font-medium tracking-tight text-foreground/90 transition-all duration-200 hover:bg-slate-200 dark:hover:bg-accent/80 hover:border-border hover:text-foreground cursor-pointer"
                           >
-                            {isConnecting ? "Connecting..." : "Connect"}
+                            {isConnecting ? (
+                              <div className="flex items-center gap-2">
+                                <Spinner className="w-4 h-4" />
+                                Connecting...
+                              </div>
+                            ) : "Connect"}
                           </Button>
                         )}
                       </div>
@@ -431,10 +458,13 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
                           <div 
                             key={integration.id} 
                             onClick={() => setSelectedPlugin(integration)}
-                            className="group relative bg-background border border-border rounded-xl p-5 hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer flex items-center justify-between shadow-sm"
+                            className={cn(
+                              "group relative bg-background border rounded-xl p-5 hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer flex items-center justify-between shadow-sm",
+                              connectedPlugins.includes(integration.id) ? "border-emerald-500/40" : "border-border"
+                            )}
                           >
                             <div className="flex items-center gap-4 min-w-0 pr-4">
-                              <div className="w-12 h-12 rounded-xl border border-border flex items-center justify-center shrink-0 bg-background overflow-hidden shadow-sm">
+                              <div className="w-12 h-12 rounded-xl border border-border flex items-center justify-center shrink-0 bg-background overflow-hidden shadow-sm relative">
                                   {integration.imgUrl ? (
                                     <img 
                                       src={integration.imgUrl} 
@@ -445,11 +475,16 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
                                   ) : integration.icon ? (
                                     <integration.icon className="w-6 h-6 text-muted-foreground" />
                                   ) : null}
+                                  {connectedPlugins.includes(integration.id) && (
+                                    <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-background" />
+                                  )}
                               </div>
                               <div className="flex flex-col min-w-0">
                                 <span className="text-sm font-semibold text-foreground truncate">{integration.name}</span>
                                 <span className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                                  {integration.description || "Connect your workspace"}
+                                  {connectedPlugins.includes(integration.id) 
+                                    ? "✓ Connected" 
+                                    : (integration.description || "Connect your workspace")}
                                 </span>
                               </div>
                             </div>
