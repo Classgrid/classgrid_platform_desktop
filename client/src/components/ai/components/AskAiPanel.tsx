@@ -3355,10 +3355,29 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                           }
 
                                           // Generic fallback
+                                          let dynamicText = `Successfully used ${step.tool.replace(/_/g, ' ')}`;
+                                          let loadingText = `Using ${step.tool.replace(/_/g, ' ')}...`;
+
+                                          if (step.tool === 'notion_connector' && step.args?.operation) {
+                                              if (step.args.operation === 'search' && step.args.query) {
+                                                  dynamicText = `Searched Notion for "${step.args.query}"`;
+                                                  loadingText = `Searching Notion for "${step.args.query}"...`;
+                                              } else {
+                                                  dynamicText = `Successfully used Notion to ${step.args.operation.replace(/_/g, ' ')}`;
+                                                  loadingText = `Using Notion to ${step.args.operation.replace(/_/g, ' ')}...`;
+                                              }
+                                          } else if (step.tool === 'google_workspace_connector' && step.args?.operation) {
+                                              dynamicText = `Successfully used Google Workspace to ${step.args.operation.replace(/_/g, ' ')}`;
+                                              loadingText = `Using Google Workspace to ${step.args.operation.replace(/_/g, ' ')}...`;
+                                          } else if (step.tool === 'zoom_connector' && step.args?.operation) {
+                                              dynamicText = `Successfully used Zoom to ${step.args.operation.replace(/_/g, ' ')}`;
+                                              loadingText = `Using Zoom to ${step.args.operation.replace(/_/g, ' ')}...`;
+                                          }
+
                                           elements.push(
                                             <SimpleLogStepView
                                               key={step.id}
-                                              text={step.status === 'success' ? `Successfully used ${step.tool.replace(/_/g, ' ')}` : `Using ${step.tool.replace(/_/g, ' ')}...`}
+                                              text={step.status === 'success' ? dynamicText : loadingText}
                                             />
                                           );
                                         }
