@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { X, Smartphone, Key, Lock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "./ui/input";
 import { toast } from "sonner";
 import { Spinner } from "@/components/marketing_ui/spinner";
 import { motion } from "framer-motion";
