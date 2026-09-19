@@ -18,7 +18,7 @@ import { Spinner } from "@/components/marketing_ui/spinner";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { INTEGRATIONS_LIST } from "./AskAiPanel";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/marketing_ui/button";
 
 interface AiHubModalProps {
   isOpen: boolean;
