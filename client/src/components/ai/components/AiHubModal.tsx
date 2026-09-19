@@ -63,7 +63,11 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
       if (res.ok) {
         const data = await res.json();
         if (data.connected && Array.isArray(data.connected)) {
-          setConnectedPlugins(data.connected);
+          // Temporarily ignoring backend state because the live EC2 server 
+          // is still returning the 'fake connected' bug. 
+          // setConnectedPlugins(data.connected);
+          console.log("Backend returned connected:", data.connected, "but ignoring to prevent fake connected UI");
+          setConnectedPlugins([]);
         }
       }
     } catch (err) {
