@@ -18,6 +18,7 @@ const getMicrosoftAuthUrl = (statePayload) => {
     authUrl.searchParams.append('response_mode', 'query');
     authUrl.searchParams.append('scope', scopes.join(' '));
     authUrl.searchParams.append('state', statePayload);
+    authUrl.searchParams.append('prompt', 'consent');
     
     return authUrl.toString();
 };

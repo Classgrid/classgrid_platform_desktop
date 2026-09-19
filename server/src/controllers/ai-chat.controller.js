@@ -790,7 +790,7 @@ If the connector tool IS NOT available, it means the user has NOT connected thei
                     }
 
                     if (msConnected) {
-                        activeDescriptions.push(`- **Microsoft 365 (Outlook, Teams)**: ✅ CONNECTED. Use 'microsoft_workspace_connector' tool to list_emails, mark_email_read, send_email, list_meetings, create_meeting. CRITICAL: When listing emails, you MUST ALWAYS explicitly state the exact sender email address (e.g. sender@gmail.com) and the exact time the email was received.`);
+                        activeDescriptions.push(`- **Microsoft 365 (Outlook, Teams)**: ✅ CONNECTED. Use 'microsoft_workspace_connector' tool to list_emails, mark_email_read, send_email, list_meetings, create_meeting. CRITICAL: When listing emails, you MUST ALWAYS explicitly state the exact sender email address (e.g. sender@gmail.com) and the exact time the email was received. CRITICAL: When creating a meeting, you MUST ALWAYS output the exact Teams joinUrl (Join Link) to the user.`);
                     }
 
                     if (zoomConnected) {
