@@ -552,7 +552,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
 - Classroom Chat: \`classroom_messages\`
 - Attachments: \`attachments\`
 - Holidays: \`holidays\`
-- Email Queue: \`email_notification_queue\`
+- Email Queue: \`email_notification_queue\` (CRITICAL: This is ONLY for internal system transactional emails. If the user asks to read their personal inbox, unread emails, or Gmail, you MUST use the 'google_workspace_connector' tool instead!)
 
 3. Redis (source="redis", collectionOrTable="key_pattern"):
 - Use operation="find" to list keys (e.g. collectionOrTable="user:profile:*")
