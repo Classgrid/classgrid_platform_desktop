@@ -584,8 +584,8 @@ URGENCY RULE: Your thought MUST be extremely concise. Keep it under 2 sentences 
 IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly ONCE at the very beginning. After it finishes, you are FREE to chain multiple action tools (like run_code, search_web), and you are FREE to write your final conversational response to the user without calling the thought tool again.
 
 CRITICAL INTEGRATION RULE:
-Before you attempt to use any integration tool (e.g. zoom_connector, google_workspace_connector), you MUST first use the \`check_integration_status\` tool to manually cross-check if it is actually connected and verified. 
-If the check returns NO, you must NOT attempt to use the connector tool. DO NOT give the user manual instructions on how to use the 3rd-party service (like going to zoom.com). INSTEAD, you MUST immediately call the \`open_integration_panel\` tool so the UI opens the AI Hub for them, and tell the user: "I've opened the AI Hub for you. Please connect your account so I can automate this."`;
+If you are asked to interact with a 3rd party service (like Zoom, Google Workspace, Notion, etc.), check your available tools. If the connector tool (e.g. google_workspace_connector) IS available in your tool list, it means the integration is ALREADY VERIFIED AND CONNECTED by the backend. You MUST use it immediately without asking the user or checking status.
+If the connector tool IS NOT available, it means the user has NOT connected their account or lacks permissions. You MUST immediately call the \`open_integration_panel\` tool and tell the user: "I've opened the AI Hub for you. Please connect your account so I can automate this."`;
 
         if (!isIncognito) {
             dynamicSystemPrompt += `\n\nROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
@@ -662,7 +662,7 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     // to verify the connection is real and working. All pings run in parallel
                     // so the total wait is max ~5s, not 25s.
 
-                    const verifyWithPing = async (label, url, token, refreshFn, headers = {}) => {
+                    const verifyWithPing = async (label, url, token, refreshFn, headers = {}, requiredScopes = []) => {
                         if (!token) return false;
                         try {
                             const reqUrl = url.includes('tokeninfo') ? `${url}?access_token=${token}` : url;
@@ -673,14 +673,27 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                             if (res.status === 401 && refreshFn) {
                                 const newToken = await refreshFn();
                                 if (!newToken) { console.log(`[integration-verify] ${label}: ❌ FAILED (token refresh failed)`); return false; }
-                                res = await fetch(url, { 
+                                const retryUrl = url.includes('tokeninfo') ? `${url}?access_token=${newToken}` : url;
+                                res = await fetch(retryUrl, { 
                                     headers: { 'Authorization': `Bearer ${newToken}`, ...headers },
                                     signal: AbortSignal.timeout(5000)
                                 });
                             }
-                            const ok = res.ok;
-                            console.log(`[integration-verify] ${label}: ${ok ? '✅ VERIFIED' : `❌ FAILED (HTTP ${res.status})`}`);
-                            return ok;
+                            if (res.ok) {
+                                if (requiredScopes.length > 0 && url.includes('tokeninfo')) {
+                                    const data = await res.json();
+                                    const grantedScopes = (data.scope || "").toLowerCase();
+                                    const missingScopes = requiredScopes.filter(s => !grantedScopes.includes(s.toLowerCase()));
+                                    if (missingScopes.length > 0) {
+                                        console.log(`[integration-verify] ${label}: ❌ FAILED (missing scopes: ${missingScopes.join(', ')})`);
+                                        return false;
+                                    }
+                                }
+                                console.log(`[integration-verify] ${label}: ✅ VERIFIED`);
+                                return true;
+                            }
+                            console.log(`[integration-verify] ${label}: ❌ FAILED (HTTP ${res.status})`);
+                            return false;
                         } catch (e) {
                             console.log(`[integration-verify] ${label}: ❌ FAILED (${e.message})`);
                             return false;
@@ -743,7 +756,7 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     // Using array destructuring on the outer variables (requires parentheses for assignment)
                     ;[googleConnected, msConnected, zoomConnected, notionConnected, vercelConnected] = await Promise.all([
                         latestUser.google_access_token 
-                            ? verifyWithPing('Google', 'https://www.googleapis.com/oauth2/v3/userinfo', latestUser.google_access_token, refreshGoogle) 
+                            ? verifyWithPing('Google', 'https://oauth2.googleapis.com/tokeninfo', latestUser.google_access_token, refreshGoogle, {}, ['classroom.courses.readonly', 'classroom.coursework.students', 'drive.readonly']) 
                             : Promise.resolve(false),
                         latestUser.microsoft_access_token 
                             ? verifyWithPing('Microsoft', 'https://graph.microsoft.com/v1.0/me', latestUser.microsoft_access_token, refreshMs) 
@@ -806,7 +819,7 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     pluginPrompt = `\n\n--- 🔌 ACTIVE INTEGRATIONS ---`;
                     
                     if (activeDescriptions.length > 0) {
-                        pluginPrompt += `\nThese integrations are configured, but you MUST still use \`check_integration_status\` to verify their live connection before using them:\n` + activeDescriptions.join('\n');
+                        pluginPrompt += `\nThese integrations are ACTIVE AND CONNECTED. You can use their tools immediately without checking any status:\n` + activeDescriptions.join('\n');
                     }
 
                     pluginPrompt += `\n\nWhen a tool returns data, present it in a clean, friendly format (not raw JSON).\n--- END INTEGRATIONS ---`;
@@ -870,22 +883,8 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                 {
                     type: "function",
                     function: {
-                        name: "check_integration_status",
-                        description: "CRITICAL: Call this tool to check if a specific integration (e.g. Zoom, Google Workspace, Microsoft) is actually connected and verified BEFORE you try to use its connector tool.",
-                        parameters: {
-                            type: "object",
-                            properties: {
-                                providerName: { type: "string", description: "The name of the provider (e.g. 'zoom', 'google', 'microsoft', 'notion', 'vercel', 'whatsapp')." }
-                            },
-                            required: ["providerName"]
-                        }
-                    }
-                },
-                {
-                    type: "function",
-                    function: {
                         name: "open_integration_panel",
-                        description: "Opens the AI Hub integration panel for the user in their UI. Use this IMMEDIATELY when the check_integration_status tool returns NO, so the user can easily connect the required integration.",
+                        description: "Opens the AI Hub integration panel for the user in their UI. Use this IMMEDIATELY when the user asks for a service (like Zoom/Google) but you DO NOT have the required connector tool in your list.",
                         parameters: {
                             type: "object",
                             properties: {
@@ -1319,18 +1318,6 @@ except Exception as e:
                 open_integration_panel: async () => {
                     return "UI action emitted. The integration panel has been opened for the user.";
                 },
-                check_integration_status: async (args) => {
-                    const provider = args.providerName?.toLowerCase();
-                    const googleVariations = ['google', 'google_workspace', 'gcal', 'google_calendar', 'gmail', 'gdrive', 'google_drive', 'gclass', 'google_classroom', 'gmeet', 'google_meet', 'gforms', 'google_forms'];
-                    if (googleVariations.includes(provider)) return googleConnected ? "YES: Verified and Connected." : "NO: Not connected.";
-                    if (provider === 'microsoft' || provider === 'ms' || provider === 'outlook' || provider === 'teams') return msConnected ? "YES: Verified and Connected." : "NO: Not connected.";
-                    if (provider === 'zoom') return zoomConnected ? "YES: Verified and Connected." : "NO: Not connected.";
-                    if (provider === 'notion' || provider === 'mcp-notion') return notionConnected ? "YES: Verified and Connected." : "NO: Not connected.";
-                    if (provider === 'vercel') return vercelConnected ? "YES: Verified and Connected." : "NO: Not connected.";
-                    if (provider === 'whatsapp') return whatsappConnected ? "YES: Verified and Connected." : "NO: Not connected.";
-                    
-                    return `Unknown provider '${provider}'. Please check the user's dashboard manually.`;
-                }
             }).map(([toolName, handler]) => [
                 toolName,
                 async (args) => {
