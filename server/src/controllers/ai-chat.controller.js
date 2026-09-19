@@ -673,64 +673,57 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
                     if (vercelConnected) allowedConnectorNames.add('vercel_connector');
                     if (whatsappConnected) allowedConnectorNames.add('whatsapp_business_connector');
 
-                    pluginPrompt = `
+                    let activeDescriptions = [];
+                    let disconnectedLinks = [];
 
---- 🔌 INTEGRATION & PLUGIN STATUS DASHBOARD (CRITICAL — READ EVERY LINE) ---
-You are equipped with 14 external integration plugins. Below is the REAL-TIME connection status for this user, fetched directly from the database. This is NOT fake or placeholder data — these are actual OAuth token checks.
+                    if (googleConnected) {
+                        activeDescriptions.push(`- **Google Workspace (Gmail, Calendar, Drive, Meet, Forms)**: ✅ CONNECTED. Use 'google_workspace_connector' tool to list_emails, list_events, create_event, list_drive_files, create_form, get_form.`);
+                    } else {
+                        disconnectedLinks.push(`[Google Workspace](/api/google-workspace/connect?service=all)`);
+                    }
 
-## INTEGRATION STATUS TABLE
-| #  | Plugin               | Status                          | Tool Name                        | Available Operations                                                       |
-|----|----------------------|---------------------------------|----------------------------------|----------------------------------------------------------------------------|
-| 1  | Gmail                | ${googleStatus}                 | google_workspace_connector       | list_emails (read unread inbox)                                            |
-| 2  | Google Calendar      | ${googleStatus}                 | google_workspace_connector       | list_events, create_event (upcoming events, create events)                  |
-| 3  | Google Drive         | ${googleStatus}                 | google_workspace_connector       | list_drive_files (search/browse files)                                     |
-| 4  | Google Classroom     | ${googleStatus}                 | google_workspace_connector       | (via dedicated /api/google/ routes)                                        |
-| 5  | Google Meet          | ${googleStatus}                 | google_workspace_connector       | create_event (with addMeetLink=true)                                       |
-| 6  | Google Forms         | ${googleStatus}                 | google_workspace_connector       | get_form, list_form_responses, create_form                                 |
-| 7  | Microsoft Outlook    | ${msStatus}                     | microsoft_workspace_connector    | list_emails (unread Outlook emails)                                        |
-| 8  | Microsoft Teams      | ${msStatus}                     | microsoft_workspace_connector    | list_meetings (Teams meetings)                                             |
-| 9  | Zoom                 | ${zoomStatus}                   | zoom_connector                   | list_meetings, create_meeting (Zoom meetings list, create meetings)        |
-| 10 | Notion               | ${notionStatus}                 | (via Notion API routes)          | Search pages, databases, create content                                    |
-| 11 | Vercel               | ${vercelStatus}                 | vercel_connector                 | list_projects, list_deployments, get_deployment                            |
-| 12 | WhatsApp Business    | ${whatsappConnected ? '✅ CONFIGURED (server-level)' : '❌ NOT CONFIGURED'} | whatsapp_business_connector | Send text messages to any phone number                                     |
-| 13 | Cursor IDE (MCP)     | ${cursorConnected ? '✅ CONNECTED' : '❌ NOT CONNECTED'} | (MCP bridge)              | Code workspace access, file analysis                                       |
-| 14 | ChatGPT (MCP)        | ${chatgptConnected ? '✅ CONNECTED' : '❌ NOT CONNECTED'} | (MCP bridge)             | GPT conversations, memory access                                           |
-| 15 | Claude (MCP)         | ${claudeConnected ? '✅ CONNECTED' : '❌ NOT CONNECTED'} | (MCP bridge)              | Large context analysis, document reasoning                                 |
+                    if (msConnected) {
+                        activeDescriptions.push(`- **Microsoft 365 (Outlook, Teams)**: ✅ CONNECTED. Use 'microsoft_workspace_connector' tool to list_emails, list_meetings.`);
+                    } else {
+                        disconnectedLinks.push(`[Microsoft 365](/api/auth/microsoft/connect)`);
+                    }
 
-## YOUR ACCESS RULES (STRICT)
-1. For plugins marked ✅ CONNECTED: You HAVE FULL ACCESS. Use the corresponding tool name to interact with the API. NEVER say "I don't have access" or "I can't do that" — you CAN and you MUST.
-2. For plugins marked ⚠️ TOKEN EXPIRED: The system will automatically attempt to refresh the token. Try the tool call anyway — if it fails, tell the user their session expired and they need to reconnect.
-3. For plugins marked ❌ NOT CONNECTED: You do NOT have access. If the user asks you to use a disconnected plugin, tell them it is not connected and IMMEDIATELY provide them with the direct OAuth connection link so they can log in. Use the following markdown links:
-   - **Google Workspace** (Gmail, Calendar, Drive, Classroom, Meet, Forms): \`[Connect Google Workspace](/api/google-workspace/connect?service=all)\` (or append \`?service=forms\` for a specific app)
-   - **Microsoft** (Outlook, Teams): \`[Connect Microsoft](/api/auth/microsoft/connect)\`
-   - **Zoom**: \`[Connect Zoom](/api/zoom/connect)\`
-   - **Notion**: \`[Connect Notion](/api/auth/notion/connect)\`
-   - **Vercel**: \`[Connect Vercel](/api/auth/vercel/connect)\`
+                    if (zoomConnected) {
+                        activeDescriptions.push(`- **Zoom**: ✅ CONNECTED. Use 'zoom_connector' tool to list_meetings, create_meeting.`);
+                    } else {
+                        disconnectedLinks.push(`[Zoom](/api/zoom/connect)`);
+                    }
 
-## WHAT YOU CAN DO WITH CONNECTED PLUGINS
-- **Gmail**: Read unread emails, search inbox, summarize email threads. Tool: google_workspace_connector with operation='list_emails'.
-- **Google Calendar**: List upcoming events, check availability, find scheduling conflicts. Tool: google_workspace_connector with operation='list_events'.
-- **Google Drive**: Search and browse files, list recent documents, find specific spreadsheets or presentations. Tool: google_workspace_connector with operation='list_drive_files'.
-- **Google Classroom**: List active courses, view assignments, check student submissions. (Uses dedicated backend routes, not the connector tool.)
-- **Google Meet**: Create meeting links, schedule live classes with automatic student invites. Tool: google_workspace_connector with operation='create_event' and addMeetLink=true.
-- **Google Forms**: Fetch form structure, read responses, and CREATE new forms with questions. Tool: google_workspace_connector with operation='get_form', 'list_form_responses', or 'create_form'.
-- **Microsoft Outlook**: Read unread emails, search corporate inbox. Tool: microsoft_workspace_connector with operation='list_emails'.
-- **Microsoft Teams**: List scheduled Teams meetings. Tool: microsoft_workspace_connector with operation='list_meetings'.
-- **Zoom**: List scheduled Zoom meetings and CREATE new Zoom calls. Tool: zoom_connector with operation='list_meetings' or 'create_meeting'.
-- **Notion**: Search through Notion pages and databases, create new pages. (Uses dedicated backend Notion API routes.)
-- **Vercel**: List all Vercel projects, view deployments, check build status, inspect deployment details. Tool: vercel_connector with operation='list_projects'/'list_deployments'/'get_deployment'. IMPORTANT: Vercel access is restricted to super_admin users only.
-- **WhatsApp Business**: Send text messages to any phone number with country code. Tool: whatsapp_business_connector with toPhoneNumber and messageText.
-- **Cursor IDE**: Access the user's code workspace, analyze files, generate code snippets. (MCP bridge integration.)
-- **ChatGPT**: Access ChatGPT conversations and memory. (MCP bridge integration.)
-- **Claude**: Leverage Claude's large context window for document analysis. (MCP bridge integration.)
+                    if (notionConnected) {
+                        activeDescriptions.push(`- **Notion**: ✅ CONNECTED. You can search pages and databases (via backend routes).`);
+                    } else {
+                        disconnectedLinks.push(`[Notion](/api/auth/notion/connect)`);
+                    }
+                    
+                    if (vercelConnected) {
+                        activeDescriptions.push(`- **Vercel**: ✅ CONNECTED. Use 'vercel_connector' tool to list_projects, list_deployments, get_deployment.`);
+                    } else {
+                        disconnectedLinks.push(`[Vercel](/api/auth/vercel/connect)`);
+                    }
 
-## CRITICAL BEHAVIORAL RULES
-- You are NOT blind. You can see the full integration dashboard above. If someone asks "what plugins do I have?" or "what's connected?", show them the status table above in a clean, friendly format.
-- If the user asks "do you support [X] plugin?", check the table. If it exists, tell them the status. If it doesn't exist, say it's not available yet.
-- When you successfully use a tool (e.g., list_emails returns data), present the results in a clean, human-readable format — NOT raw JSON.
-- If a tool call fails with an auth error, do NOT silently fail. Tell the user their token may have expired and suggest they reconnect via the AI Hub.
-- You can also check system logs and server logs using the unified_db_query tool (source='mongodb', collectionOrTable='SystemLog' or 'ActivityLog'). This gives you visibility into what the user and their organization have been doing on the platform.
---- END INTEGRATION DASHBOARD ---`;
+                    if (whatsappConnected) activeDescriptions.push(`- **WhatsApp Business**: ✅ CONFIGURED (Server). Use 'whatsapp_business_connector' to send texts.`);
+                    if (cursorConnected) activeDescriptions.push(`- **Cursor IDE**: ✅ CONNECTED.`);
+                    if (chatgptConnected) activeDescriptions.push(`- **ChatGPT**: ✅ CONNECTED.`);
+                    if (claudeConnected) activeDescriptions.push(`- **Claude**: ✅ CONNECTED.`);
+
+                    pluginPrompt = `\n\n--- 🔌 ACTIVE INTEGRATIONS ---`;
+                    
+                    if (activeDescriptions.length > 0) {
+                        pluginPrompt += `\nYou have FULL ACCESS to the following connected plugins. Use your tools to interact with them:\n` + activeDescriptions.join('\n');
+                    } else {
+                        pluginPrompt += `\nCurrently, NO third-party integrations are connected.`;
+                    }
+
+                    if (disconnectedLinks.length > 0) {
+                        pluginPrompt += `\n\nIf the user asks you to use a disconnected plugin, politely tell them they need to connect it first, and give them the markdown link to do so:\nDisconnected plugins available: ${disconnectedLinks.join(', ')}`;
+                    }
+
+                    pluginPrompt += `\n\nWhen a tool returns data, present it in a clean, friendly format (not raw JSON).\n--- END INTEGRATIONS ---`;
                 }
             } catch (err) {
                 console.error('Error building plugin status for system prompt:', err);
