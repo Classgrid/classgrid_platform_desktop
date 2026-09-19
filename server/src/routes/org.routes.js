@@ -100,6 +100,19 @@ const ERP_DASHBOARD_PATHS = {
     fee_manager: "/dept/fees/dashboard",
     admission_head: "/dept/admissions/dashboard",
     admission_verifier: "/dept/admissions/dashboard",
+    admission_counselor: "/dept/admissions/dashboard",
+    admission_clerk: "/dept/admissions/dashboard",
+    tpo_officer: "/org/admin/dashboard",
+    transport_manager: "/dept/transport/dashboard",
+    counselor: "/org/admin/dashboard",
+    coordinator: "/org/admin/dashboard",
+    faculty: "/faculty/work",
+    teacher: "/faculty/work",
+    student: "/student/work",
+};
+
+function getOrgFrontendUrl(req, org) {
+    return req.get('origin')
         || (org?.custom_domain ? `https://${org.custom_domain}` : null)
         || (org?.subdomain ? `https://${org.subdomain}.classgrid.in` : null)
         || process.env.FRONTEND_URL?.trim()

@@ -128,6 +128,20 @@ const ROLE_LABELS = {
     admission_clerk: "Admissions Clerk",
     tpo_officer: "Placement Officer",
     transport_manager: "Transport Manager",
+    counselor: "Counselor",
+    coordinator: "Coordinator",
+    super_admin: "Super Admin",
+};
+
+const DASHBOARD_TARGETS = {
+    student: "/student/work",
+    teacher: "/faculty/work",
+    faculty: "/faculty/work",
+    org_admin: "/org/admin/dashboard",
+    library_manager: "/dept/library/dashboard",
+    hod: "/org/admin/dashboard",
+    principal: "/org/admin/dashboard",
+    vice_principal: "/org/admin/dashboard",
     exam_controller: "/dept/exams/dashboard",
     fee_manager: "/dept/fees/dashboard",
     admission_head: "/dept/admissions/dashboard",
