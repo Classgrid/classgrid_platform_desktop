@@ -124,10 +124,11 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'get_form', 'list_form_responses', 'create_form', 'create_event'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
         formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
         formTitle: { type: 'string', description: 'The title of the new form (required for create_form).' },
+        folderName: { type: 'string', description: 'The name of the new folder to create in Drive (required for create_folder).' },
         questions: { 
           type: 'array', 
           description: 'An array of questions to add to the new form (only for create_form).',
@@ -895,7 +896,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'google_workspace_connector') {
-      const { operation, limit = 10 } = args;
+      const { operation, limit = 10, formId, formTitle, folderName, eventTitle, eventStartTime, eventEndTime, questions } = args;
       const { userEmail = '' } = context;
 
       const user = await mongoose.models.User.findOne({ email: userEmail });
@@ -934,6 +935,17 @@ export const handleToolCall = async (name, args, context = {}) => {
             fields: 'nextPageToken, files(id, name, mimeType, webViewLink)',
           });
           data = res.data.files;
+        } else if (operation === 'create_folder') {
+          const drive = google.drive({ version: 'v3', auth: oauth2Client });
+          const fileMetadata = {
+            name: folderName || 'New Folder',
+            mimeType: 'application/vnd.google-apps.folder',
+          };
+          const res = await drive.files.create({
+            resource: fileMetadata,
+            fields: 'id, name, webViewLink',
+          });
+          data = res.data;
         } else if (operation === 'list_emails') {
           const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
           const res = await gmail.users.messages.list({

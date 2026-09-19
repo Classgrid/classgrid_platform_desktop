@@ -744,7 +744,7 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     // Using array destructuring on the outer variables (requires parentheses for assignment)
                     ;[googleConnected, msConnected, zoomConnected, notionConnected, vercelConnected] = await Promise.all([
                         latestUser.google_access_token 
-                            ? verifyWithPing('Google', 'https://oauth2.googleapis.com/tokeninfo', latestUser.google_access_token, refreshGoogle) 
+                            ? verifyWithPing('Google', 'https://www.googleapis.com/oauth2/v3/userinfo', latestUser.google_access_token, refreshGoogle) 
                             : Promise.resolve(false),
                         latestUser.microsoft_access_token 
                             ? verifyWithPing('Microsoft', 'https://graph.microsoft.com/v1.0/me', latestUser.microsoft_access_token, refreshMs) 
@@ -777,7 +777,7 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     let disconnectedLinks = [];
 
                     if (googleConnected) {
-                        activeDescriptions.push(`- **Google Workspace (Gmail, Calendar, Drive, Meet, Forms)**: ✅ CONNECTED. Use 'google_workspace_connector' tool to list_emails, list_events, create_event, list_drive_files, create_form, get_form. IMPORTANT: When a creation tool succeeds (like create_event or create_form), DO NOT generate "Add to Calendar" or similar manual fallback links in your response. The tool directly adds the item to the user's account automatically.`);
+                        activeDescriptions.push(`- **Google Workspace (Gmail, Calendar, Drive, Meet, Forms)**: ✅ CONNECTED. Use 'google_workspace_connector' tool to list_emails, list_events, create_event, list_drive_files, create_folder, create_form, get_form. IMPORTANT: When a creation tool succeeds (like create_event or create_form), DO NOT generate "Add to Calendar" or similar manual fallback links in your response. The tool directly adds the item to the user's account automatically.`);
                     }
 
                     if (msConnected) {
