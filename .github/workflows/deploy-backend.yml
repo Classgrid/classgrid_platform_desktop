@@ -53,8 +53,11 @@ jobs:
             # Fix permissions in case root owns any files
             sudo chown -R ubuntu:ubuntu . || true
             
+            # Stop PM2 gracefully to release file locks on node_modules
+            pm2 stop all || true
+
             # Force wipe node_modules to fix recent Mongoose corruption
-            sudo rm -rf node_modules
+            sudo rm -rf node_modules || true
             
             # Run npm install. If it fails due to corruption (like ENOTEMPTY), wipe node_modules using sudo and retry.
             npm install --omit=dev --no-audit --no-fund --legacy-peer-deps || (sudo rm -rf node_modules && npm install --omit=dev --no-audit --no-fund --legacy-peer-deps)
@@ -69,5 +72,5 @@ jobs:
             sudo systemctl enable redis-server || true
             sudo systemctl start redis-server || sudo service redis start || true
             
-            # ZERO-DOWNTIME RELOAD (Fallback to restart if reload fails)
-            pm2 reload all --update-env || pm2 restart all --update-env
+            # Since PM2 was stopped, use restart instead of reload
+            pm2 restart all --update-env
