@@ -5,8 +5,12 @@ import connectDB from "../../config/db.js";
 
 const router = express.Router();
 
+// Hardcoded Vercel Keys (as requested)
+const VERCEL_CLIENT_ID = "oac_3hVOxjqQqi7I3jGi19sKQl7r";
+const VERCEL_CLIENT_SECRET = "5ZXJiWYrsT4iRwuQbont7H0M";
+
 const getVercelAuthUrl = (state) => {
-    const clientId = process.env.VERCEL_CLIENT_ID;
+    const clientId = VERCEL_CLIENT_ID;
     const redirectUri = `${process.env.BACKEND_URL}/api/auth/vercel/callback`;
     const authUrl = new URL(`https://vercel.com/oauth/authorize`);
     authUrl.searchParams.append('client_id', clientId);
@@ -20,10 +24,8 @@ const getVercelAuthUrl = (state) => {
 
 // 1. GENERATE OAUTH URL
 router.get("/connect", isAuthenticated, (req, res) => {
-    if (!process.env.VERCEL_CLIENT_ID || !process.env.VERCEL_CLIENT_SECRET) {
-        return res.status(500).json({ message: "Vercel OAuth keys not configured in backend" });
-    }
-
+    // Keys are hardcoded now, no need to check process.env
+    
     const returnTo = req.query.returnTo || req.headers.referer || req.headers.origin || process.env.FRONTEND_URL;
     const isPopup = req.query.popup === 'true';
     const statePayload = Buffer.from(JSON.stringify({ 
@@ -102,8 +104,8 @@ router.get("/callback", async (req, res) => {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
             body: new URLSearchParams({
-                client_id: process.env.VERCEL_CLIENT_ID,
-                client_secret: process.env.VERCEL_CLIENT_SECRET,
+                client_id: VERCEL_CLIENT_ID,
+                client_secret: VERCEL_CLIENT_SECRET,
                 code: code,
                 redirect_uri: `${process.env.BACKEND_URL}/api/auth/vercel/callback`
             })
