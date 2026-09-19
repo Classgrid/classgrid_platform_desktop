@@ -1189,11 +1189,13 @@ except Exception as e:
                         const lastUserMsg = (messages || []).filter(m => m.role === 'user').pop();
                         const lastUserText = (lastUserMsg?.content || '').trim().toLowerCase();
                         const confirmPatterns = [
-                            'yes send', 'yes, send', 'go ahead', 'send it', 'confirm send',
-                            'yes go ahead', 'please send', 'do send', 'approved', 'confirmed',
-                            'yes please send', 'send the email', 'yes send it'
+                            'yes', 'sure', 'send', 'go ahead', 'send it', 'confirm send',
+                            'approved', 'confirmed', 'please send', 'do send'
                         ];
-                        const hasConfirmation = confirmPatterns.some(p => lastUserText.includes(p));
+                        const hasConfirmation = confirmPatterns.some(p => {
+                            const regex = new RegExp(`\\b${p}\\b`, 'i');
+                            return regex.test(lastUserText);
+                        });
 
                         if (!hasConfirmation) {
                             console.warn(`[EMAIL SAFETY] BLOCKED: AI tried to send email to external address ${recipientEmail} without user confirmation. Subject: "${args.subject}"`);

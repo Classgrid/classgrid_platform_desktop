@@ -68,9 +68,10 @@ export function EmailActionView({ to, subject, bodyPreview }: EmailActionViewPro
 
         {/* Bottom: Email Body */}
         <div className="px-4 pb-4 pt-4">
-          <div className="bg-slate-50 dark:bg-[#1a1a1a] rounded-lg p-3 text-[13.5px] text-slate-600 dark:text-[#a3a3a3] whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto custom-scrollbar [scrollbar-color:#D3D1CB_transparent] dark:[scrollbar-color:rgba(255,255,255,0.2)_transparent] [scrollbar-width:thin]">
-            {safeBodyPreview}
-          </div>
+          <div 
+            className="bg-slate-50 dark:bg-[#1a1a1a] rounded-lg p-3 text-[13.5px] text-slate-600 dark:text-[#a3a3a3] whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto custom-scrollbar [scrollbar-color:#D3D1CB_transparent] dark:[scrollbar-color:rgba(255,255,255,0.2)_transparent] [scrollbar-width:thin] email-preview-content"
+            dangerouslySetInnerHTML={{ __html: safeBodyPreview }}
+          />
         </div>
       </div>
 

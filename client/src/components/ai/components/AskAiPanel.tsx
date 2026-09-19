@@ -3220,7 +3220,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                                 <EmailActionView
                                                   to={step.args?.to || "Unknown Recipient"}
                                                   subject={step.args?.subject || "No Subject"}
-                                                  bodyPreview={step.args?.body || "Empty body"}
+                                                  bodyPreview={step.args?.htmlBody || step.args?.body || "Empty body"}
                                                 />
                                               </AgentStepAccordion>
                                             );
