@@ -832,6 +832,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         };
       }
       const vercelToken = user.vercel_access_token;
+      const vercelTeamId = user.vercel_team_id;
 
       try {
         let endpoint = '';
@@ -845,6 +846,10 @@ export const handleToolCall = async (name, args, context = {}) => {
           endpoint = `/v13/deployments/${deploymentId}`;
         } else {
           throw new Error(`Unsupported Vercel operation: ${operation}`);
+        }
+
+        if (vercelTeamId) {
+          endpoint += (endpoint.includes('?') ? '&' : '?') + `teamId=${vercelTeamId}`;
         }
 
         const response = await fetch(`https://api.vercel.com${endpoint}`, {

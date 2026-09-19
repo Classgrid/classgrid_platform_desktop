@@ -152,6 +152,9 @@ router.get("/callback", async (req, res) => {
         }
 
         user.vercel_access_token = tokenData.access_token;
+        if (tokenData.team_id) {
+            user.vercel_team_id = tokenData.team_id;
+        }
         await user.save();
 
         if (isPopup) {

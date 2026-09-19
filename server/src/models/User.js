@@ -528,6 +528,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    vercel_team_id: {
+      type: String,
+      default: null,
+    },
     notion_access_token: {
       type: String,
       default: null,
