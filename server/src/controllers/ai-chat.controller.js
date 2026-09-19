@@ -774,6 +774,7 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     if (whatsappConnected) allowedConnectorNames.add('whatsapp_business_connector');
 
                     let activeDescriptions = [];
+                    let disconnectedLinks = [];
 
                     if (googleConnected) {
                         activeDescriptions.push(`- **Google Workspace (Gmail, Calendar, Drive, Meet, Forms)**: ✅ CONNECTED. Use 'google_workspace_connector' tool to list_emails, list_events, create_event, list_drive_files, create_form, get_form. IMPORTANT: When a creation tool succeeds (like create_event or create_form), DO NOT generate "Add to Calendar" or similar manual fallback links in your response. The tool directly adds the item to the user's account automatically.`);
