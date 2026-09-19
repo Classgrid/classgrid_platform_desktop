@@ -678,7 +678,7 @@ You are equipped with 14 external integration plugins. Below is the REAL-TIME co
 | 3  | Google Drive         | ${googleStatus}                 | google_workspace_connector       | list_drive_files (search/browse files)                                     |
 | 4  | Google Classroom     | ${googleStatus}                 | google_workspace_connector       | (via dedicated /api/google/ routes)                                        |
 | 5  | Google Meet          | ${googleStatus}                 | google_workspace_connector       | (via dedicated /api/google-workspace/meet route)                           |
-| 6  | Google Forms         | ${googleStatus}                 | google_workspace_connector       | get_form, list_form_responses                                              |
+| 6  | Google Forms         | ${googleStatus}                 | google_workspace_connector       | get_form, list_form_responses, create_form                                 |
 | 7  | Microsoft Outlook    | ${msStatus}                     | microsoft_workspace_connector    | list_emails (unread Outlook emails)                                        |
 | 8  | Microsoft Teams      | ${msStatus}                     | microsoft_workspace_connector    | list_meetings (Teams meetings)                                             |
 | 9  | Zoom                 | ${zoomStatus}                   | zoom_connector                   | list_meetings (Zoom meetings list)                                         |
@@ -705,7 +705,7 @@ You are equipped with 14 external integration plugins. Below is the REAL-TIME co
 - **Google Drive**: Search and browse files, list recent documents, find specific spreadsheets or presentations. Tool: google_workspace_connector with operation='list_drive_files'.
 - **Google Classroom**: List active courses, view assignments, check student submissions. (Uses dedicated backend routes, not the connector tool.)
 - **Google Meet**: Create meeting links, schedule live classes with automatic student invites. (Uses dedicated backend routes.)
-- **Google Forms**: Fetch form structure and read form responses/survey answers. Tool: google_workspace_connector with operation='get_form' or 'list_form_responses'.
+- **Google Forms**: Fetch form structure, read responses, and CREATE new forms with questions. Tool: google_workspace_connector with operation='get_form', 'list_form_responses', or 'create_form'.
 - **Microsoft Outlook**: Read unread emails, search corporate inbox. Tool: microsoft_workspace_connector with operation='list_emails'.
 - **Microsoft Teams**: List scheduled Teams meetings. Tool: microsoft_workspace_connector with operation='list_meetings'.
 - **Zoom**: List all scheduled Zoom meetings, check upcoming calls. Tool: zoom_connector with operation='list_meetings'.

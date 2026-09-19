@@ -124,9 +124,23 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'get_form', 'list_form_responses'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'get_form', 'list_form_responses', 'create_form'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
-        formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' }
+        formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
+        formTitle: { type: 'string', description: 'The title of the new form (required for create_form).' },
+        questions: { 
+          type: 'array', 
+          description: 'An array of questions to add to the new form (only for create_form).',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string' },
+              type: { type: 'string', enum: ['text', 'multiple_choice'], description: 'Type of question.' },
+              options: { type: 'array', items: { type: 'string' }, description: 'Options for multiple_choice questions.' }
+            },
+            required: ['title', 'type']
+          }
+        }
       },
       required: ['operation']
     }
@@ -925,6 +939,53 @@ export const handleToolCall = async (name, args, context = {}) => {
           const forms = google.forms({ version: 'v1', auth: oauth2Client });
           const res = await forms.forms.responses.list({ formId: args.formId });
           data = res.data.responses || [];
+        } else if (operation === 'create_form') {
+          if (!args.formTitle) throw new Error("formTitle is required for create_form");
+          const forms = google.forms({ version: 'v1', auth: oauth2Client });
+          const res = await forms.forms.create({
+            requestBody: {
+              info: { title: args.formTitle }
+            }
+          });
+          
+          let formId = res.data.formId;
+          
+          if (args.questions && args.questions.length > 0) {
+            let requests = [];
+            let index = 0;
+            for (let q of args.questions) {
+              let item = {
+                title: q.title,
+                questionItem: {
+                  question: { required: true }
+                }
+              };
+              if (q.type === 'text') {
+                item.questionItem.question.textQuestion = { paragraph: false };
+              } else if (q.type === 'multiple_choice') {
+                item.questionItem.question.choiceQuestion = {
+                  type: 'RADIO',
+                  options: (q.options || []).map(o => ({ value: o }))
+                };
+              } else {
+                item.questionItem.question.textQuestion = { paragraph: false };
+              }
+              requests.push({
+                createItem: {
+                  item: item,
+                  location: { index: index }
+                }
+              });
+              index++;
+            }
+            
+            await forms.forms.batchUpdate({
+              formId: formId,
+              requestBody: { requests }
+            });
+          }
+          
+          data = { formId, formUrl: res.data.responderUri || `https://docs.google.com/forms/d/${formId}/edit` };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }
