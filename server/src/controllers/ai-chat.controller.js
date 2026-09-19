@@ -674,14 +674,14 @@ You are equipped with 14 external integration plugins. Below is the REAL-TIME co
 | #  | Plugin               | Status                          | Tool Name                        | Available Operations                                                       |
 |----|----------------------|---------------------------------|----------------------------------|----------------------------------------------------------------------------|
 | 1  | Gmail                | ${googleStatus}                 | google_workspace_connector       | list_emails (read unread inbox)                                            |
-| 2  | Google Calendar      | ${googleStatus}                 | google_workspace_connector       | list_events (upcoming events)                                              |
+| 2  | Google Calendar      | ${googleStatus}                 | google_workspace_connector       | list_events, create_event (upcoming events, create events)                  |
 | 3  | Google Drive         | ${googleStatus}                 | google_workspace_connector       | list_drive_files (search/browse files)                                     |
 | 4  | Google Classroom     | ${googleStatus}                 | google_workspace_connector       | (via dedicated /api/google/ routes)                                        |
-| 5  | Google Meet          | ${googleStatus}                 | google_workspace_connector       | (via dedicated /api/google-workspace/meet route)                           |
+| 5  | Google Meet          | ${googleStatus}                 | google_workspace_connector       | create_event (with addMeetLink=true)                                       |
 | 6  | Google Forms         | ${googleStatus}                 | google_workspace_connector       | get_form, list_form_responses, create_form                                 |
 | 7  | Microsoft Outlook    | ${msStatus}                     | microsoft_workspace_connector    | list_emails (unread Outlook emails)                                        |
 | 8  | Microsoft Teams      | ${msStatus}                     | microsoft_workspace_connector    | list_meetings (Teams meetings)                                             |
-| 9  | Zoom                 | ${zoomStatus}                   | zoom_connector                   | list_meetings (Zoom meetings list)                                         |
+| 9  | Zoom                 | ${zoomStatus}                   | zoom_connector                   | list_meetings, create_meeting (Zoom meetings list, create meetings)        |
 | 10 | Notion               | ${notionStatus}                 | (via Notion API routes)          | Search pages, databases, create content                                    |
 | 11 | Vercel               | ${vercelStatus}                 | vercel_connector                 | list_projects, list_deployments, get_deployment                            |
 | 12 | WhatsApp Business    | ${whatsappConnected ? '✅ CONFIGURED (server-level)' : '❌ NOT CONFIGURED'} | whatsapp_business_connector | Send text messages to any phone number                                     |
@@ -704,11 +704,11 @@ You are equipped with 14 external integration plugins. Below is the REAL-TIME co
 - **Google Calendar**: List upcoming events, check availability, find scheduling conflicts. Tool: google_workspace_connector with operation='list_events'.
 - **Google Drive**: Search and browse files, list recent documents, find specific spreadsheets or presentations. Tool: google_workspace_connector with operation='list_drive_files'.
 - **Google Classroom**: List active courses, view assignments, check student submissions. (Uses dedicated backend routes, not the connector tool.)
-- **Google Meet**: Create meeting links, schedule live classes with automatic student invites. (Uses dedicated backend routes.)
+- **Google Meet**: Create meeting links, schedule live classes with automatic student invites. Tool: google_workspace_connector with operation='create_event' and addMeetLink=true.
 - **Google Forms**: Fetch form structure, read responses, and CREATE new forms with questions. Tool: google_workspace_connector with operation='get_form', 'list_form_responses', or 'create_form'.
 - **Microsoft Outlook**: Read unread emails, search corporate inbox. Tool: microsoft_workspace_connector with operation='list_emails'.
 - **Microsoft Teams**: List scheduled Teams meetings. Tool: microsoft_workspace_connector with operation='list_meetings'.
-- **Zoom**: List all scheduled Zoom meetings, check upcoming calls. Tool: zoom_connector with operation='list_meetings'.
+- **Zoom**: List scheduled Zoom meetings and CREATE new Zoom calls. Tool: zoom_connector with operation='list_meetings' or 'create_meeting'.
 - **Notion**: Search through Notion pages and databases, create new pages. (Uses dedicated backend Notion API routes.)
 - **Vercel**: List all Vercel projects, view deployments, check build status, inspect deployment details. Tool: vercel_connector with operation='list_projects'/'list_deployments'/'get_deployment'. IMPORTANT: Vercel access is restricted to super_admin users only.
 - **WhatsApp Business**: Send text messages to any phone number with country code. Tool: whatsapp_business_connector with toPhoneNumber and messageText.

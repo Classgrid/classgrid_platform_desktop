@@ -124,7 +124,7 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'get_form', 'list_form_responses', 'create_form'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'get_form', 'list_form_responses', 'create_form', 'create_event'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
         formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
         formTitle: { type: 'string', description: 'The title of the new form (required for create_form).' },
@@ -140,7 +140,11 @@ export const getMcpTools = () => [
             },
             required: ['title', 'type']
           }
-        }
+        },
+        topic: { type: 'string', description: 'The topic/title (for create_event).' },
+        startTime: { type: 'string', description: 'Start time in ISO format (for create_event).' },
+        endTime: { type: 'string', description: 'End time in ISO format (for create_event).' },
+        addMeetLink: { type: 'boolean', description: 'Whether to attach a Google Meet link (for create_event).' }
       },
       required: ['operation']
     }
@@ -151,7 +155,10 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_meetings'], description: 'The operation to perform.' }
+        operation: { type: 'string', enum: ['list_meetings', 'create_meeting'], description: 'The operation to perform.' },
+        topic: { type: 'string', description: 'The topic or title of the meeting (required for create_meeting).' },
+        startTime: { type: 'string', description: 'The start time of the meeting in ISO format (required for create_meeting).' },
+        duration: { type: 'number', description: 'The duration of the meeting in minutes (optional for create_meeting).' }
       },
       required: ['operation']
     }
@@ -986,6 +993,28 @@ export const handleToolCall = async (name, args, context = {}) => {
           }
           
           data = { formId, formUrl: res.data.responderUri || `https://docs.google.com/forms/d/${formId}/edit` };
+        } else if (operation === 'create_event') {
+          if (!args.topic || !args.startTime || !args.endTime) throw new Error("topic, startTime, and endTime are required for create_event");
+          const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+          let eventParams = {
+            calendarId: 'primary',
+            requestBody: {
+              summary: args.topic,
+              start: { dateTime: args.startTime },
+              end: { dateTime: args.endTime }
+            }
+          };
+          if (args.addMeetLink) {
+            eventParams.conferenceDataVersion = 1;
+            eventParams.requestBody.conferenceData = {
+              createRequest: {
+                requestId: Math.random().toString(36).substring(2, 12),
+                conferenceSolutionKey: { type: "hangoutsMeet" }
+              }
+            };
+          }
+          const res = await calendar.events.insert(eventParams);
+          data = res.data;
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }
@@ -1031,6 +1060,25 @@ export const handleToolCall = async (name, args, context = {}) => {
           });
           const data = await res.json();
           return { content: [{ type: 'text', text: JSON.stringify(data.meetings, null, 2) }] };
+        } else if (operation === 'create_meeting') {
+          if (!args.topic || !args.startTime) throw new Error("topic and startTime are required for create_meeting");
+          const res = await fetch("https://api.zoom.us/v2/users/me/meetings", {
+            method: "POST",
+            headers: { 
+              "Authorization": `Bearer ${accessToken}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              topic: args.topic,
+              type: 2, 
+              start_time: args.startTime,
+              duration: args.duration || 60,
+              settings: { host_video: true, participant_video: true, join_before_host: false }
+            })
+          });
+          const data = await res.json();
+          if (data.code) throw new Error(`Zoom API error: ${data.message}`);
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }
