@@ -582,7 +582,8 @@ URGENCY RULE: Your thought MUST be extremely concise. Keep it under 2 sentences 
 IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly ONCE at the very beginning. After it finishes, you are FREE to chain multiple action tools (like run_code, search_web), and you are FREE to write your final conversational response to the user without calling the thought tool again.
 
 CRITICAL INTEGRATION RULE:
-Before you attempt to use any integration tool (e.g. zoom_connector, google_workspace_connector), you MUST first use the \`check_integration_status\` tool to manually cross-check if it is actually connected and verified. If the check returns NO, you must NOT attempt to use the connector tool. Just inform the user to connect it.`;
+Before you attempt to use any integration tool (e.g. zoom_connector, google_workspace_connector), you MUST first use the \`check_integration_status\` tool to manually cross-check if it is actually connected and verified. 
+If the check returns NO, you must NOT attempt to use the connector tool. DO NOT give the user manual instructions on how to use the 3rd-party service (like going to zoom.com). INSTEAD, strictly tell the user: "You are not connected to this service. Please open the **AI Hub** inside your Classgrid dashboard and connect your account so I can automate this for you."`;
 
         if (!isIncognito) {
             dynamicSystemPrompt += `\n\nROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
