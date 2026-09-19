@@ -10,15 +10,13 @@ const VERCEL_CLIENT_ID = "oac_3hVOxjqQqi7I3jGi19sKQl7r";
 const VERCEL_CLIENT_SECRET = "5ZXJiWYrsT4iRwuQbont7H0M";
 
 const getVercelAuthUrl = (state) => {
-    const clientId = VERCEL_CLIENT_ID;
-    const redirectUri = `${process.env.BACKEND_URL}/api/auth/vercel/callback`;
-    const authUrl = new URL(`https://vercel.com/oauth/authorize`);
-    authUrl.searchParams.append('client_id', clientId);
-    authUrl.searchParams.append('redirect_uri', redirectUri);
-    authUrl.searchParams.append('response_type', 'code');
+    // Since this is a full Vercel Integration (classgrid-mcp) and not just a simple OAuth app,
+    // it MUST use the Vercel Integration installation URL. 
+    // Client ID and Redirect URI are automatically handled by Vercel's dashboard config.
+    const authUrl = new URL(`https://vercel.com/integrations/classgrid-mcp/new`);
     authUrl.searchParams.append('state', state);
     
-    console.log(`[Vercel OAuth] Auth URL generated with client_id=${clientId}, redirect_uri=${redirectUri}`);
+    console.log(`[Vercel OAuth] Auth URL generated for Integration: ${authUrl.toString()}`);
     return authUrl.toString();
 };
 
