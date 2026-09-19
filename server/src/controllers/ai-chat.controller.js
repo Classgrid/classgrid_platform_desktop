@@ -663,7 +663,8 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     const verifyWithPing = async (label, url, token, refreshFn, headers = {}) => {
                         if (!token) return false;
                         try {
-                            let res = await fetch(url, { 
+                            const reqUrl = url.includes('tokeninfo') ? `${url}?access_token=${token}` : url;
+                            let res = await fetch(reqUrl, { 
                                 headers: { 'Authorization': `Bearer ${token}`, ...headers },
                                 signal: AbortSignal.timeout(5000)
                             });
@@ -740,7 +741,7 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     // Using array destructuring on the outer variables (requires parentheses for assignment)
                     ;[googleConnected, msConnected, zoomConnected, notionConnected, vercelConnected] = await Promise.all([
                         latestUser.google_access_token 
-                            ? verifyWithPing('Google', 'https://www.googleapis.com/oauth2/v1/userinfo', latestUser.google_access_token, refreshGoogle) 
+                            ? verifyWithPing('Google', 'https://oauth2.googleapis.com/tokeninfo', latestUser.google_access_token, refreshGoogle) 
                             : Promise.resolve(false),
                         latestUser.microsoft_access_token 
                             ? verifyWithPing('Microsoft', 'https://graph.microsoft.com/v1.0/me', latestUser.microsoft_access_token, refreshMs) 
