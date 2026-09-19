@@ -131,8 +131,8 @@ export const getMcpTools = () => [
         formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
         formTitle: { type: 'string', description: 'The title of the new form (required for create_form).' },
         folderName: { type: 'string', description: 'The name of the new folder to create in Drive (required for create_folder).' },
-        questions: { 
-          type: 'array', 
+        questions: {
+          type: 'array',
           description: 'An array of questions to add to the new form (only for create_form).',
           items: {
             type: 'object',
@@ -150,6 +150,7 @@ export const getMcpTools = () => [
         addMeetLink: { type: 'boolean', description: 'Whether to attach a Google Meet link (for create_event).' },
         fileId: { type: 'string', description: 'The ID of the file in Google Drive or Classroom.' },
         fileUrl: { type: 'string', description: 'The public URL of the file to download and upload into Drive (for upload_drive_file).' },
+        folderId: { type: 'string', description: 'Optional. The ID of the Drive folder to upload the file into (for upload_drive_file).' },
         mimeType: { type: 'string', description: 'Optional. The MIME type to export as, if exporting a Google Doc (e.g. application/pdf).' },
         courseId: { type: 'string', description: 'The Classroom course ID.' },
         courseworkId: { type: 'string', description: 'The Classroom coursework/assignment ID.' },
@@ -276,11 +277,11 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         const collection = mongoose.connection.db.collection(actualCollectionName);
-        
+
         if (actualCollectionName === 'users' && query) {
-            // No auto-correction for org_admin needed; the schema strictly uses org_admin.
+          // No auto-correction for org_admin needed; the schema strictly uses org_admin.
         }
-        
+
         let result;
 
         if (operation === 'find') {
@@ -329,19 +330,19 @@ export const handleToolCall = async (name, args, context = {}) => {
         // 🚨 AI TOKEN OVERFLOW PROTECTION 🚨
         const aiSafetyReplacer = (key, value) => {
           const forbiddenKeys = [
-            'password', 'profilePicture', 'profileBanner', 'logo', 'favicon', 'signature', 
+            'password', 'profilePicture', 'profileBanner', 'logo', 'favicon', 'signature',
             'activationToken', 'resetPasswordToken', 'payroll_config', 'preferences', 'settings',
             'fee_structures', 'modules', 'theme', 'audit_logs', 'history', 'metadata', 'permissions'
           ];
           if (forbiddenKeys.includes(key)) return undefined;
-          
+
           if (typeof value === 'string' && value.length > 500) return "[TRUNCATED HUGE STRING]";
-          
+
           // Aggressive list protection: If we are returning a list of documents, strip out any nested arrays to prevent context overflow!
           if (key !== "" && Array.isArray(value) && value.length > 3 && Array.isArray(result) && result.length > 2) {
-             return `[Array of ${value.length} items TRUNCATED to save context]`;
+            return `[Array of ${value.length} items TRUNCATED to save context]`;
           }
-          
+
           return value;
         };
 
@@ -392,7 +393,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           if (forbiddenKeys.includes(key)) return undefined;
           if (typeof value === 'string' && value.length > 500) return "[TRUNCATED HUGE STRING]";
           if (key !== "" && Array.isArray(value) && value.length > 3 && Array.isArray(result) && result.length > 2) {
-             return `[Array of ${value.length} items TRUNCATED to save context]`;
+            return `[Array of ${value.length} items TRUNCATED to save context]`;
           }
           return value;
         };
@@ -477,7 +478,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       });
 
       if (command.match(/python3?\s+-c/i)) {
-          // Allow inline python for OCR scripts to be executed directly in the terminal
+        // Allow inline python for OCR scripts to be executed directly in the terminal
       }
 
       try {
@@ -783,7 +784,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'search_syllabus_vectors') {
       try {
         const { query, org_id, match_threshold = 0.7, match_count = 5 } = args;
-        
+
         if (!process.env.VOYAGE_API_KEY) {
           return { content: [{ type: 'text', text: 'Error: VOYAGE_API_KEY is not set in environment variables.' }] };
         }
@@ -792,19 +793,19 @@ export const handleToolCall = async (name, args, context = {}) => {
         // and utilize the Startup Credits directly!
         const voyageRes = await fetch("https://ai.mongodb.com/v1/embeddings", {
           method: "POST",
-          headers: { 
-            "Content-Type": "application/json", 
-            "Authorization": `Bearer ${process.env.VOYAGE_API_KEY.trim()}` 
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${process.env.VOYAGE_API_KEY.trim()}`
           },
           body: JSON.stringify({
             input: query,
-            model: "voyage-3-large" 
+            model: "voyage-3-large"
           })
         });
 
         if (!voyageRes.ok) {
-           const errText = await voyageRes.text();
-           throw new Error(`Voyage AI (Atlas) error: ${errText}`);
+          const errText = await voyageRes.text();
+          throw new Error(`Voyage AI (Atlas) error: ${errText}`);
         }
 
         const embeddingResponse = await voyageRes.json();
@@ -826,7 +827,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           return { content: [{ type: 'text', text: 'No relevant syllabus matches found for this query.' }] };
         }
 
-        const formattedResults = data.map((chunk, index) => 
+        const formattedResults = data.map((chunk, index) =>
           `[Match ${index + 1}] (Similarity: ${chunk.similarity.toFixed(2)})\n${chunk.content}`
         ).join('\n\n---\n\n');
 
@@ -915,14 +916,14 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const { google } = await import('googleapis');
         const oauth2Client = new google.auth.OAuth2(
-            process.env.GOOGLE_CLIENT_ID,
-            process.env.GOOGLE_CLIENT_SECRET,
-            `${process.env.BACKEND_URL}/api/google-workspace/callback`
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_CLIENT_SECRET,
+          `${process.env.BACKEND_URL}/api/google-workspace/callback`
         );
         oauth2Client.setCredentials({
-            access_token: user.google_access_token,
-            refresh_token: user.google_refresh_token,
-            expiry_date: user.google_token_expiry ? user.google_token_expiry.getTime() : null
+          access_token: user.google_access_token,
+          refresh_token: user.google_refresh_token,
+          expiry_date: user.google_token_expiry ? user.google_token_expiry.getTime() : null
         });
 
         let data = {};
@@ -959,27 +960,27 @@ export const handleToolCall = async (name, args, context = {}) => {
           const drive = google.drive({ version: 'v3', auth: oauth2Client });
           const fileMeta = await drive.files.get({ fileId: args.fileId, fields: 'name, mimeType' });
           const isGoogleWorkspaceType = fileMeta.data.mimeType.startsWith('application/vnd.google-apps.');
-          
+
           let buffer;
           let mime = fileMeta.data.mimeType;
           if (isGoogleWorkspaceType) {
-              const exportMime = args.mimeType || 'application/pdf';
-              if (fileMeta.data.mimeType === 'application/vnd.google-apps.folder') throw new Error("Cannot read a folder as a file.");
-              const file = await drive.files.export({ fileId: args.fileId, mimeType: exportMime }, { responseType: 'arraybuffer' });
-              buffer = Buffer.from(file.data);
-              mime = exportMime;
-              if (exportMime === 'application/pdf' && !fileMeta.data.name.endsWith('.pdf')) fileMeta.data.name += '.pdf';
+            const exportMime = args.mimeType || 'application/pdf';
+            if (fileMeta.data.mimeType === 'application/vnd.google-apps.folder') throw new Error("Cannot read a folder as a file.");
+            const file = await drive.files.export({ fileId: args.fileId, mimeType: exportMime }, { responseType: 'arraybuffer' });
+            buffer = Buffer.from(file.data);
+            mime = exportMime;
+            if (exportMime === 'application/pdf' && !fileMeta.data.name.endsWith('.pdf')) fileMeta.data.name += '.pdf';
           } else {
-              const file = await drive.files.get({ fileId: args.fileId, alt: 'media' }, { responseType: 'arraybuffer' });
-              buffer = Buffer.from(file.data);
+            const file = await drive.files.get({ fileId: args.fileId, alt: 'media' }, { responseType: 'arraybuffer' });
+            buffer = Buffer.from(file.data);
           }
-          
+
           if (buffer.length > 10 * 1024 * 1024) throw new Error("File exceeds 10MB limit. OCR/Parsing rejected.");
           const url = await uploadBufferToR2(buffer, fileMeta.data.name, mime, `ai-temp-cache/${Date.now()}-${fileMeta.data.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`);
           data = { message: "File downloaded and securely staged in R2 temp cache.", url, name: fileMeta.data.name, mimeType: mime, sizeBytes: buffer.length };
         } else if (operation === 'upload_drive_file') {
           if (!args.fileUrl) throw new Error("fileUrl is required for upload_drive_file");
-          
+
           // Download file from URL
           const fetchRes = await fetch(args.fileUrl);
           if (!fetchRes.ok) throw new Error(`Failed to download file from URL: ${fetchRes.statusText}`);
@@ -987,11 +988,15 @@ export const handleToolCall = async (name, args, context = {}) => {
           const buffer = Buffer.from(arrBuffer);
           const mime = fetchRes.headers.get('content-type') || 'application/octet-stream';
           const fileName = args.fileUrl.split('/').pop()?.split('?')[0] || `uploaded_${Date.now()}`;
-          
+
           // Upload to Drive
           const drive = google.drive({ version: 'v3', auth: oauth2Client });
+          const resource = { name: fileName };
+          if (args.folderId) {
+            resource.parents = [args.folderId];
+          }
           const res = await drive.files.create({
-            resource: { name: fileName },
+            resource: resource,
             media: { mimeType: mime, body: Readable.from(buffer) },
             fields: 'id, name, webViewLink'
           });
@@ -1030,9 +1035,9 @@ export const handleToolCall = async (name, args, context = {}) => {
               info: { title: args.formTitle }
             }
           });
-          
+
           let formId = res.data.formId;
-          
+
           if (args.questions && args.questions.length > 0) {
             let requests = [];
             let index = 0;
@@ -1061,13 +1066,13 @@ export const handleToolCall = async (name, args, context = {}) => {
               });
               index++;
             }
-            
+
             await forms.forms.batchUpdate({
               formId: formId,
               requestBody: { requests }
             });
           }
-          
+
           data = { formId, formUrl: res.data.responderUri || `https://docs.google.com/forms/d/${formId}/edit` };
         } else if (operation === 'create_event') {
           if (!args.topic || !args.startTime || !args.endTime) throw new Error("topic, startTime, and endTime are required for create_event");
@@ -1111,21 +1116,21 @@ export const handleToolCall = async (name, args, context = {}) => {
           const drive = google.drive({ version: 'v3', auth: oauth2Client });
           const fileMeta = await drive.files.get({ fileId: args.fileId, fields: 'name, mimeType' });
           const isGoogleWorkspaceType = fileMeta.data.mimeType.startsWith('application/vnd.google-apps.');
-          
+
           let buffer;
           let mime = fileMeta.data.mimeType;
           if (isGoogleWorkspaceType) {
-              const exportMime = args.mimeType || 'application/pdf';
-              if (fileMeta.data.mimeType === 'application/vnd.google-apps.folder') throw new Error("Cannot read a folder as a file.");
-              const file = await drive.files.export({ fileId: args.fileId, mimeType: exportMime }, { responseType: 'arraybuffer' });
-              buffer = Buffer.from(file.data);
-              mime = exportMime;
-              if (exportMime === 'application/pdf' && !fileMeta.data.name.endsWith('.pdf')) fileMeta.data.name += '.pdf';
+            const exportMime = args.mimeType || 'application/pdf';
+            if (fileMeta.data.mimeType === 'application/vnd.google-apps.folder') throw new Error("Cannot read a folder as a file.");
+            const file = await drive.files.export({ fileId: args.fileId, mimeType: exportMime }, { responseType: 'arraybuffer' });
+            buffer = Buffer.from(file.data);
+            mime = exportMime;
+            if (exportMime === 'application/pdf' && !fileMeta.data.name.endsWith('.pdf')) fileMeta.data.name += '.pdf';
           } else {
-              const file = await drive.files.get({ fileId: args.fileId, alt: 'media' }, { responseType: 'arraybuffer' });
-              buffer = Buffer.from(file.data);
+            const file = await drive.files.get({ fileId: args.fileId, alt: 'media' }, { responseType: 'arraybuffer' });
+            buffer = Buffer.from(file.data);
           }
-          
+
           if (buffer.length > 10 * 1024 * 1024) throw new Error("File exceeds 10MB limit. OCR/Parsing rejected.");
           const url = await uploadBufferToR2(buffer, fileMeta.data.name, mime, `ai-temp-cache/${Date.now()}-${fileMeta.data.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`);
           data = { message: "Classroom file downloaded and securely staged in R2 temp cache.", url, name: fileMeta.data.name, mimeType: mime, sizeBytes: buffer.length };
@@ -1152,17 +1157,17 @@ export const handleToolCall = async (name, args, context = {}) => {
         let accessToken = user.zoom_access_token;
         if (user.zoom_token_expiry && new Date(user.zoom_token_expiry.getTime() - 5 * 60000) < new Date()) {
           const tokenResponse = await fetch("https://zoom.us/oauth/token", {
-              method: "POST",
-              headers: {
-                  "Authorization": `Basic ${Buffer.from(process.env.ZOOM_CLIENT_ID + ':' + process.env.ZOOM_CLIENT_SECRET).toString('base64')}`,
-                  "Content-Type": "application/x-www-form-urlencoded"
-              },
-              body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: user.zoom_refresh_token })
+            method: "POST",
+            headers: {
+              "Authorization": `Basic ${Buffer.from(process.env.ZOOM_CLIENT_ID + ':' + process.env.ZOOM_CLIENT_SECRET).toString('base64')}`,
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: user.zoom_refresh_token })
           });
           const tokenData = await tokenResponse.json();
           if (tokenData.error) throw new Error("Zoom token expired");
           user.zoom_access_token = tokenData.access_token;
-          user.zoom_refresh_token = tokenData.refresh_token; 
+          user.zoom_refresh_token = tokenData.refresh_token;
           user.zoom_token_expiry = new Date(Date.now() + tokenData.expires_in * 1000);
           await user.save();
           accessToken = user.zoom_access_token;
@@ -1178,13 +1183,13 @@ export const handleToolCall = async (name, args, context = {}) => {
           if (!args.topic || !args.startTime) throw new Error("topic and startTime are required for create_meeting");
           const res = await fetch("https://api.zoom.us/v2/users/me/meetings", {
             method: "POST",
-            headers: { 
+            headers: {
               "Authorization": `Bearer ${accessToken}`,
               "Content-Type": "application/json"
             },
             body: JSON.stringify({
               topic: args.topic,
-              type: 2, 
+              type: 2,
               start_time: args.startTime,
               duration: args.duration || 60,
               settings: { host_video: true, participant_video: true, join_before_host: false }
@@ -1214,19 +1219,19 @@ export const handleToolCall = async (name, args, context = {}) => {
         let accessToken = user.microsoft_access_token;
         if (user.microsoft_token_expiry && new Date(user.microsoft_token_expiry.getTime() - 5 * 60000) < new Date()) {
           const tokenResponse = await fetch(`https://login.microsoftonline.com/common/oauth2/v2.0/token`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: new URLSearchParams({
-                  client_id: process.env.MICROSOFT_CLIENT_ID,
-                  client_secret: process.env.MICROSOFT_CLIENT_SECRET,
-                  refresh_token: user.microsoft_refresh_token,
-                  grant_type: 'refresh_token'
-              })
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              client_id: process.env.MICROSOFT_CLIENT_ID,
+              client_secret: process.env.MICROSOFT_CLIENT_SECRET,
+              refresh_token: user.microsoft_refresh_token,
+              grant_type: 'refresh_token'
+            })
           });
           const tokenData = await tokenResponse.json();
           if (tokenData.error) throw new Error("Microsoft token expired");
           user.microsoft_access_token = tokenData.access_token;
-          if (tokenData.refresh_token) user.microsoft_refresh_token = tokenData.refresh_token; 
+          if (tokenData.refresh_token) user.microsoft_refresh_token = tokenData.refresh_token;
           user.microsoft_token_expiry = new Date(Date.now() + tokenData.expires_in * 1000);
           await user.save();
           accessToken = user.microsoft_access_token;
@@ -1309,7 +1314,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         } else if (operation === 'create_page') {
           if (!args.pageId) throw new Error("pageId (parent page ID) is required for create_page");
           if (!args.title) throw new Error("title is required for create_page");
-          
+
           const payload = {
             parent: { page_id: args.pageId },
             properties: {
@@ -1347,7 +1352,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         } else if (operation === 'update_page') {
           if (!args.pageId) throw new Error("pageId is required for update_page");
           if (!args.content) throw new Error("content is required for update_page");
-          
+
           const payload = {
             children: [
               {
@@ -1377,7 +1382,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         } else if (operation === 'add_comment') {
           if (!args.pageId) throw new Error("pageId is required for add_comment");
           if (!args.content) throw new Error("content is required for add_comment");
-          
+
           const payload = {
             parent: { page_id: args.pageId },
             rich_text: [
