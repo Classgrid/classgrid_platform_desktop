@@ -1288,9 +1288,9 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
 export const INTEGRATIONS_LIST: any[] = [
   { id: "image", name: "Create image", description: "Visualize anything", icon: FileImage, type: "action" },
   { id: "web", name: "Web search", description: "Find real-time news and info", icon: Globe2, type: "action" },
-  { id: "mcp-cursor", name: "Cursor", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/cursor.svg", invertInLightMode: true },
-  { id: "mcp-chatgpt", name: "ChatGPT", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/chatgpt-light_(1).svg", invertInLightMode: true },
-  { id: "mcp-claude", name: "Claude", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/claude-ai-icon.svg" },
+  // { id: "mcp-cursor", name: "Cursor", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/cursor.svg", invertInLightMode: true },
+  // { id: "mcp-chatgpt", name: "ChatGPT", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/chatgpt-light_(1).svg", invertInLightMode: true },
+  // { id: "mcp-claude", name: "Claude", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/claude-ai-icon.svg" },
   { id: "mcp-notion", name: "Notion", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Notion-logo.svg" },
   { id: "gmail", name: "Gmail", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Gmail_icon_(2026).svg" },
   { id: "gcal", name: "Google Calendar", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Google_Calendar_icon_(2026).svg" },
