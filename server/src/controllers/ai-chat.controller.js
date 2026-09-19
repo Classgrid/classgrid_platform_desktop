@@ -788,7 +788,8 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     }
 
                     if (notionConnected) {
-                        activeDescriptions.push(`- **Notion**: ✅ CONNECTED. You can search pages and databases (via backend routes).`);
+                        activeDescriptions.push(`- **Notion**: ✅ CONNECTED. Use 'notion_connector' tool to search, get_page.`);
+                        allowedConnectorNames.add('notion_connector');
                     }
                     
                     if (vercelConnected) {

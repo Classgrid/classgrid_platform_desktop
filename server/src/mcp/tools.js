@@ -176,6 +176,20 @@ export const getMcpTools = () => [
     }
   },
   {
+    name: 'notion_connector',
+    description: 'Interact with Notion API to search pages, databases, and read content using the connected user token.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['search', 'get_page'], description: 'The operation to perform.' },
+        query: { type: 'string', description: 'The search term (required for search).' },
+        limit: { type: 'number', description: 'Max results to return (for search).' },
+        pageId: { type: 'string', description: 'The ID of the page to retrieve (required for get_page).' }
+      },
+      required: ['operation']
+    }
+  },
+  {
     name: 'whatsapp_business_connector',
     description: 'Send WhatsApp messages using the official WhatsApp Business API.',
     inputSchema: {
@@ -1140,6 +1154,68 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
       } catch (e) {
         return { content: [{ type: 'text', text: `Failed to execute Microsoft API call: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'notion_connector') {
+      const { operation, query, limit = 10, pageId } = args;
+      const { userEmail = '' } = context;
+
+      const user = await mongoose.models.User.findOne({ email: userEmail });
+      if (!user || (!user.notion_access_token && !user.notion_refresh_token)) {
+        return { content: [{ type: 'text', text: `Error: No Notion connection found. Please connect your Notion account first.` }] };
+      }
+
+      try {
+        let accessToken = user.notion_access_token;
+        const headers = {
+          'Authorization': `Bearer ${accessToken}`,
+          'Notion-Version': '2022-06-28',
+          'Content-Type': 'application/json'
+        };
+
+        if (operation === 'search') {
+          const res = await fetch('https://api.notion.com/v1/search', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ query: query || "", page_size: limit })
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.message || 'Notion API error');
+
+          // Clean up response for AI token size
+          const safeResults = (data.results || []).map(r => ({
+            id: r.id,
+            object: r.object,
+            url: r.url,
+            title: r.properties?.title?.title?.[0]?.plain_text || r.properties?.Name?.title?.[0]?.plain_text || 'Untitled'
+          }));
+          return { content: [{ type: 'text', text: JSON.stringify(safeResults, null, 2) }] };
+
+        } else if (operation === 'get_page') {
+          if (!pageId) throw new Error("pageId is required for get_page");
+          const res = await fetch(`https://api.notion.com/v1/blocks/${pageId}/children`, {
+            headers
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.message || 'Notion API error');
+
+          // Extract text from blocks
+          const textBlocks = (data.results || []).map(b => {
+            const type = b.type;
+            const richText = b[type]?.rich_text || [];
+            return richText.map(t => t.plain_text).join('');
+          }).filter(t => t.trim() !== '');
+
+          let outputText = textBlocks.join('\n');
+          if (outputText.length > 3000) outputText = outputText.substring(0, 3000) + "\n[TRUNCATED TO SAVE CONTEXT]";
+
+          return { content: [{ type: 'text', text: outputText || 'No readable text on this page.' }] };
+        } else {
+          throw new Error(`Unsupported operation: ${operation}`);
+        }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to execute Notion API call: ${e.message}` }] };
       }
     }
 
