@@ -1113,15 +1113,9 @@ try:
         text = "\\n".join([page.get_text().strip() for page in doc]).strip()
         
         if not text:
-            import pytesseract, io
-            from PIL import Image
-            print("Running OCR on image document...")
-            ocr_text = []
-            for page in doc:
-                pix = page.get_pixmap(dpi=150)
-                img = Image.open(io.BytesIO(pix.tobytes('png')))
-                ocr_text.append(pytesseract.image_to_string(img))
-            print("DOCUMENT CONTENTS:\\n" + "\\n".join(ocr_text))
+            print("No text found via standard extraction. The document appears to be an image.")
+            print("CRITICAL: You MUST use execute_terminal_command to run the following OCR script on the file:")
+            print(f"python3 -c \\\"import fitz, pytesseract, io; from PIL import Image; print(' '.join([pytesseract.image_to_string(Image.open(io.BytesIO(page.get_pixmap(dpi=150).tobytes('png')))) for page in fitz.open('{path}')]))\\\"")
         else:
             print("DOCUMENT CONTENTS:\\n" + text)
     else:
