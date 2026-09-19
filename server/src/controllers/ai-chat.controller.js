@@ -555,7 +555,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
 - Holidays: \`holidays\`
 - Email Queue: \`email_notification_queue\` (CRITICAL: This is ONLY for internal system transactional emails. If the user asks to read their personal inbox, unread emails, or Gmail, you MUST use the 'google_workspace_connector' tool instead!)
 
-CRITICAL INSTRUCTION FOR EMAILS: If the user asks to read, send, or check "emails", "inbox", or "my emails", YOU MUST NEVER USE \`unified_db_query\`. YOU MUST ALWAYS USE \`google_workspace_connector\` with operation 'list_emails'. The Supabase and MongoDB tables are NEVER used for storing the user's personal inbox!
+CRITICAL INSTRUCTION FOR GOOGLE WORKSPACE: If the user asks about "emails", "inbox", "Google Drive files", "Drive folders", "Google Classroom", "Classroom courses", "assignments", or "student submissions" (e.g. "active assignments in my Biology class"), YOU MUST NEVER USE \`unified_db_query\`. YOU MUST ALWAYS USE \`google_workspace_connector\`. The internal Supabase and MongoDB tables are NEVER used for storing the user's personal Google Drive, Google Classroom, or Gmail data!
 
 3. Redis (source="redis", collectionOrTable="key_pattern"):
 - Use operation="find" to list keys (e.g. collectionOrTable="user:profile:*")
@@ -593,7 +593,7 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
             dynamicSystemPrompt += `\n\nROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
 - If the user uploads a file, call \`parse_document\` with the URL immediately after your thought.
 - If the user asks to send an email, call \`send_email\` immediately after your thought.
-- If the user asks to query data, call \`unified_db_query\` immediately after your thought.
+- If the user asks to query internal platform data (users, fees, attendance), call \`unified_db_query\` immediately after your thought. DO NOT use this for Google Classroom or Drive queries.
 - If the user asks to generate a PDF, call \`generate_pdf\` immediately after your thought.
 - If the user asks to run code, call \`run_code\` immediately after your thought.`;
         }
