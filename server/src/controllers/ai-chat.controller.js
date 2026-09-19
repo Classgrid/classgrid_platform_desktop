@@ -769,7 +769,7 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
                     timeoutMs: 60000
                 }
             ],
-            verbose: true, // TEMP: enabled to debug provider failures
+            verbose: false,
             maxToolDepth: 25,
             defaultMaxTokens: 2000,
             tools: [
@@ -1164,6 +1164,36 @@ except Exception as e:
                     } catch (e) {
                         return `RAG Search failed: ${e.message}. Note: If this fails with a MongoServerError about '$vectorSearch', it means the Atlas Vector Index hasn't been created yet.`;
                     }
+                },
+
+                // ── MCP Integration Connectors ──
+                // These handlers wire up the integration tool schemas to the actual
+                // MCP handleToolCall function. Without these, the AI can "see" the tools
+                // but can't execute them — causing "All providers failed" errors.
+                google_workspace_connector: async (args) => {
+                    const userEmail = req.user?.email || body.userEmail || '';
+                    const result = await handleToolCall('google_workspace_connector', args, { userEmail });
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                microsoft_workspace_connector: async (args) => {
+                    const userEmail = req.user?.email || body.userEmail || '';
+                    const result = await handleToolCall('microsoft_workspace_connector', args, { userEmail });
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                zoom_connector: async (args) => {
+                    const userEmail = req.user?.email || body.userEmail || '';
+                    const result = await handleToolCall('zoom_connector', args, { userEmail });
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                vercel_connector: async (args) => {
+                    const userEmail = req.user?.email || body.userEmail || '';
+                    const result = await handleToolCall('vercel_connector', args, { userEmail });
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                whatsapp_business_connector: async (args) => {
+                    const userEmail = req.user?.email || body.userEmail || '';
+                    const result = await handleToolCall('whatsapp_business_connector', args, { userEmail });
+                    return result.isError ? result.content[0].text : result.content[0].text;
                 }
             }).map(([toolName, handler]) => [
                 toolName,
