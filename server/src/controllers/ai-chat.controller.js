@@ -670,7 +670,7 @@ If the connector tool IS NOT available, it means the user has NOT connected thei
                                 headers: { 'Authorization': `Bearer ${token}`, ...headers },
                                 signal: AbortSignal.timeout(5000)
                             });
-                            if (res.status === 401 && refreshFn) {
+                            if ((res.status === 401 || res.status === 400) && refreshFn) {
                                 const newToken = await refreshFn();
                                 if (!newToken) { console.log(`[integration-verify] ${label}: ❌ FAILED (token refresh failed)`); return false; }
                                 const retryUrl = url.includes('tokeninfo') ? `${url}?access_token=${newToken}` : url;
