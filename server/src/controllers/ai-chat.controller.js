@@ -579,7 +579,10 @@ The sandbox is a temporary working computer where you can create, inspect, proce
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
         dynamicSystemPrompt += `\n\nTHINKING RULE (CRITICAL): You MUST ALWAYS call the 'internal_thought_process' tool FIRST for EVERY SINGLE user message to plan your response.
 URGENCY RULE: Your thought MUST be extremely concise. Keep it under 2 sentences so the UI updates immediately!
-IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly ONCE at the very beginning. After it finishes, you are FREE to chain multiple action tools (like run_code, search_web), and you are FREE to write your final conversational response to the user without calling the thought tool again.`;
+IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly ONCE at the very beginning. After it finishes, you are FREE to chain multiple action tools (like run_code, search_web), and you are FREE to write your final conversational response to the user without calling the thought tool again.
+
+CRITICAL INTEGRATION RULE:
+Before you attempt to use any integration tool (e.g. zoom_connector, google_workspace_connector), you MUST first use the \`check_integration_status\` tool to manually cross-check if it is actually connected and verified. If the check returns NO, you must NOT attempt to use the connector tool. Just inform the user to connect it.`;
 
         if (!isIncognito) {
             dynamicSystemPrompt += `\n\nROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
@@ -856,6 +859,20 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
                         parameters: t.inputSchema
                     }
                 })),
+                {
+                    type: "function",
+                    function: {
+                        name: "check_integration_status",
+                        description: "CRITICAL: Call this tool to check if a specific integration (e.g. Zoom, Google Workspace, Microsoft) is actually connected and verified BEFORE you try to use its connector tool.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                providerName: { type: "string", description: "The name of the provider (e.g. 'zoom', 'google', 'microsoft', 'notion', 'vercel', 'whatsapp')." }
+                            },
+                            required: ["providerName"]
+                        }
+                    }
+                },
                 {
                     type: "function",
                     function: {
@@ -1269,6 +1286,17 @@ except Exception as e:
                     const userEmail = req.user?.email || body.userEmail || '';
                     const result = await handleToolCall('whatsapp_business_connector', args, { userEmail });
                     return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                check_integration_status: async (args) => {
+                    const provider = args.providerName?.toLowerCase();
+                    if (provider === 'google' || provider === 'google_workspace') return googleConnected ? "YES: Verified and Connected." : "NO: Not connected.";
+                    if (provider === 'microsoft' || provider === 'ms') return msConnected ? "YES: Verified and Connected." : "NO: Not connected.";
+                    if (provider === 'zoom') return zoomConnected ? "YES: Verified and Connected." : "NO: Not connected.";
+                    if (provider === 'notion') return notionConnected ? "YES: Verified and Connected." : "NO: Not connected.";
+                    if (provider === 'vercel') return vercelConnected ? "YES: Verified and Connected." : "NO: Not connected.";
+                    if (provider === 'whatsapp') return whatsappConnected ? "YES: Verified and Connected." : "NO: Not connected.";
+                    
+                    return `Unknown provider '${provider}'. Please check the user's dashboard manually.`;
                 }
             }).map(([toolName, handler]) => [
                 toolName,
