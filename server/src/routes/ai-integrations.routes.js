@@ -26,9 +26,11 @@ router.get("/status", isAuthenticated, async (req, res) => {
             return token != null && typeof token === 'string' && token.trim().length > 5 && token !== "null" && token !== "undefined";
         };
 
-        // Google Workspace — ONLY if real OAuth tokens exist
+        // Google Workspace — ONLY if real OAuth tokens exist AND they specifically connected that service
         if (isValidToken(user.google_access_token) || isValidToken(user.google_refresh_token)) {
-            connected.push("gmail", "gcal", "gdrive", "gclass", "gmeet", "gforms");
+            if (user.metadata && Array.isArray(user.metadata.connected_google_services)) {
+                connected.push(...user.metadata.connected_google_services);
+            }
         }
 
         // Microsoft — ONLY if real OAuth tokens exist

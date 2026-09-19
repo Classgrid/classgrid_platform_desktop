@@ -100,14 +100,16 @@ router.get("/connect", isAuthenticated, (req, res) => {
     const statePayload = Buffer.from(JSON.stringify({ 
         userId: req.user._id.toString(),
         returnTo,
-        isPopup
+        isPopup,
+        service
     })).toString('base64');
 
     const url = oauth2Client.generateAuthUrl({
         access_type: 'offline', // Required to get a refresh token
         prompt: 'consent',      // Force consent screen to guarantee refresh token is provided
         scope: scopes,
-        state: statePayload
+        state: statePayload,
+        include_granted_scopes: true // Keep previously granted scopes (e.g. if they connect Gmail, then Calendar later)
     });
 
     res.json({ url });
@@ -123,10 +125,12 @@ router.get("/callback", async (req, res) => {
         const { code, state } = req.query;
 
         let userId;
+        let connectedService = null;
         try {
             const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
             userId = decodedState.userId;
             returnTo = decodedState.returnTo;
+            connectedService = decodedState.service;
         } catch (e) {
             // Fallback for old state format (just userId)
             userId = state;
@@ -183,8 +187,28 @@ router.get("/callback", async (req, res) => {
         user.metadata = user.metadata || {};
         if (user.metadata.integration_errors && user.metadata.integration_errors.google) {
             delete user.metadata.integration_errors.google;
-            user.markModified('metadata');
         }
+
+        // Keep track of exactly which Google services they connected
+        if (connectedService) {
+            user.metadata.connected_google_services = user.metadata.connected_google_services || [];
+            // Map the generic 'service' name from the URL to the exact ID used in the frontend
+            const serviceToIdMap = {
+                'gmail': 'gmail',
+                'calendar': 'gcal',
+                'drive': 'gdrive',
+                'classroom': 'gclass',
+                'meet': 'gmeet',
+                'forms': 'gforms',
+                'all': 'all'
+            };
+            const mappedId = serviceToIdMap[connectedService];
+            if (mappedId && mappedId !== 'all' && !user.metadata.connected_google_services.includes(mappedId)) {
+                user.metadata.connected_google_services.push(mappedId);
+            }
+        }
+        
+        user.markModified('metadata');
 
         await user.save();
 
@@ -265,6 +289,12 @@ router.post("/disconnect", isAuthenticated, async (req, res) => {
         user.google_access_token = undefined;
         user.google_refresh_token = undefined;
         user.google_token_expiry = undefined;
+
+        if (user.metadata && user.metadata.connected_google_services) {
+            user.metadata.connected_google_services = [];
+            user.markModified('metadata');
+        }
+
         await user.save();
 
         res.json({ success: true, message: "Google account disconnected" });
