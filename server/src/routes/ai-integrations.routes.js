@@ -49,6 +49,11 @@ router.get("/status", isAuthenticated, async (req, res) => {
         // Notion — ONLY if real OAuth tokens exist
         if (isValidToken(user.notion_access_token) || isValidToken(user.notion_refresh_token)) connected.push("mcp-notion");
 
+        // Generic integrations (Claude, ChatGPT, Cursor, etc)
+        if (user.metadata && Array.isArray(user.metadata.connected_integrations)) {
+            connected.push(...user.metadata.connected_integrations);
+        }
+
         // Log what we found for debugging
         console.log(`[Integration Status] User ${req.user._id}: connected=[${connected.join(',')}], google_token=${!!user.google_access_token}, ms_token=${!!user.microsoft_access_token}, zoom_token=${!!user.zoom_access_token}, vercel_token=${!!user.vercel_access_token}, notion_token=${!!user.notion_access_token}`);
 

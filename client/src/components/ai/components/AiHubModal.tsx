@@ -214,6 +214,8 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
         endpoint = `/api/auth/vercel/disconnect`;
       } else if (id === 'zoom') {
         endpoint = `/api/zoom/disconnect`;
+      } else {
+        endpoint = `/api/ai-integrations/disconnect/${id}`;
       }
 
       if (endpoint) {
