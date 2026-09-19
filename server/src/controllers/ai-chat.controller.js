@@ -794,7 +794,7 @@ If the connector tool IS NOT available, it means the user has NOT connected thei
                     }
 
                     if (msConnected) {
-                        activeDescriptions.push(`- **Microsoft 365 (Outlook, Teams)**: ✅ CONNECTED. Use 'microsoft_workspace_connector' tool to list_emails, mark_email_read, send_email, list_meetings, create_meeting. CRITICAL: When listing emails, you MUST ALWAYS explicitly state the exact sender email address (e.g. sender@gmail.com) and the exact time the email was received. CRITICAL: When creating a meeting, you MUST ALWAYS output the exact Teams joinUrl (Join Link) to the user.`);
+                        activeDescriptions.push(`- **Microsoft 365 (Outlook, Teams)**: ✅ CONNECTED. Use 'microsoft_workspace_connector' tool to list_emails, mark_email_read, send_email, list_meetings, create_meeting. CRITICAL: When listing emails, you MUST ALWAYS explicitly state the exact sender email address (e.g. sender@gmail.com) and the exact time the email was received. CRITICAL: When creating a meeting, you MUST NEVER hallucinate or invent fake meeting details. You MUST ALWAYS call the 'microsoft_workspace_connector' tool to create the meeting first, wait for the response, and then output the exact Teams joinUrl (Join Link) returned by the tool to the user.`);
                     }
 
                     if (zoomConnected) {
@@ -873,7 +873,9 @@ If the connector tool IS NOT available, it means the user has NOT connected thei
             maxToolDepth: 25,
             defaultMaxTokens: 2000,
             tools: [
-                ...getMcpTools().map(t => ({
+                ...getMcpTools()
+                  .filter(t => !t.name.endsWith('_connector') || allowedConnectorNames.has(t.name))
+                  .map(t => ({
                     type: "function",
                     function: {
                         name: t.name,
