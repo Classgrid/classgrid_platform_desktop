@@ -119,7 +119,14 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
         ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
         : "";
 
-      const res = await fetch(backendUrl + endpoint, {
+      let fetchEndpoint = endpoint;
+      if (fetchEndpoint.includes('?')) {
+        fetchEndpoint += '&popup=true';
+      } else {
+        fetchEndpoint += '?popup=true';
+      }
+
+      const res = await fetch(backendUrl + fetchEndpoint, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         credentials: "include"
