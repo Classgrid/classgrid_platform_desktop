@@ -48,8 +48,21 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
 export const createMcpRouter = (expressRouter) => {
   let transport = null;
 
+  const checkMcpAuth = (req, res, next) => {
+    const token = req.query.token || req.headers['x-mcp-api-key'];
+    if (!process.env.MCP_API_KEY) {
+      console.warn("⚠️ MCP_API_KEY is not set in environment. Defaulting to insecure 'dev-key-123'");
+    }
+    const expectedKey = process.env.MCP_API_KEY || 'dev-key-123';
+    
+    if (token !== expectedKey) {
+      return res.status(401).json({ error: "Unauthorized. Invalid MCP token." });
+    }
+    next();
+  };
+
   // The primary endpoint where the AI establishes the SSE connection
-  expressRouter.get('/mcp/sse', async (req, res) => {
+  expressRouter.get('/mcp/sse', checkMcpAuth, async (req, res) => {
     try {
       if (transport) {
         await transport.close();
@@ -59,12 +72,12 @@ export const createMcpRouter = (expressRouter) => {
       // Ignore close errors
     }
 
-    transport = new SSEServerTransport('/mcp/messages', res);
+    transport = new SSEServerTransport('/api/mcp/messages?token=' + req.query.token, res);
     await mcpServer.connect(transport);
   });
 
   // The endpoint where the AI posts messages/tool calls back to the server
-  expressRouter.post('/mcp/messages', async (req, res) => {
+  expressRouter.post('/mcp/messages', checkMcpAuth, async (req, res) => {
     if (!transport) {
       return res.status(503).send('SSE transport not initialized. Connect to /mcp/sse first.');
     }

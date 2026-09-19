@@ -62,6 +62,7 @@ import marksRoutes from "../src/routes/marks.routes.js";
 import assignmentRoutes from "../src/routes/assignment.routes.js";
 import leaveRoutes from "../src/routes/leave.routes.js";
 import meetRoutes from "../src/routes/meet.routes.js";
+import { createMcpRouter } from "../src/mcp/index.js";
 import googleWorkspaceRoutes from "../src/routes/auth.google_workspace.routes.js";
 import microsoftRoutes from "../src/routes/auth.microsoft.routes.js";
 import notionRoutes from "../src/routes/auth.notion.routes.js";
@@ -368,6 +369,11 @@ app.use("/api/internal-tests", internalTestsRoutes);
 app.use("/api/events", eventsRoutes);
 app.use("/api/academic-plans", academicPlanRoutes);
 app.use("/api/crm", crmRoutes);
+
+// 🚀 Mount the MCP Router
+const mcpRouter = express.Router();
+createMcpRouter(mcpRouter);
+app.use("/api", mcpRouter); // Mounts at /api/mcp/sse and /api/mcp/messages
 app.use("/api/certificates", certificateRoutes);
 app.use("/api/fees", feesRoutes);
 app.use("/api/push", pushRoutes);
