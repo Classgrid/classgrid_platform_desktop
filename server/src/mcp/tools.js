@@ -225,6 +225,37 @@ export const getMcpTools = () => [
       },
       required: ['toPhoneNumber', 'messageText']
     }
+  },
+  {
+    name: 'slack_workspace_connector',
+    description: 'Interact with Slack API to list channels and read/send messages using the connected user token.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['list_channels', 'read_channel_messages', 'send_message'], description: 'The operation to perform.' },
+        channelId: { type: 'string', description: 'The ID of the channel (required for read_channel_messages and send_message).' },
+        text: { type: 'string', description: 'The text content to send (required for send_message).' },
+        limit: { type: 'number', description: 'Max results to return (for read_channel_messages).' }
+      },
+      required: ['operation']
+    }
+  },
+  {
+    name: 'github_workspace_connector',
+    description: 'Interact with GitHub API to list repositories, read code files, and manage issues using the connected user token.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['list_repos', 'read_file', 'create_issue', 'list_issues'], description: 'The operation to perform.' },
+        owner: { type: 'string', description: 'The repository owner/organization.' },
+        repo: { type: 'string', description: 'The repository name.' },
+        path: { type: 'string', description: 'The path to the file in the repository (required for read_file).' },
+        title: { type: 'string', description: 'The title of the issue (required for create_issue).' },
+        body: { type: 'string', description: 'The markdown body of the issue (required for create_issue).' },
+        state: { type: 'string', enum: ['open', 'closed', 'all'], description: 'The state of issues to list (for list_issues).' }
+      },
+      required: ['operation']
+    }
   }
 ];
 
@@ -1428,6 +1459,107 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
       } catch (e) {
         return { content: [{ type: 'text', text: `Failed to execute Microsoft API call: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'slack_workspace_connector') {
+      const { operation, channelId, text, limit = 10 } = args;
+      const { userEmail = '' } = context;
+
+      const user = await mongoose.models.User.findOne({ email: userEmail });
+      if (!user || !user.slack_access_token) {
+        return { content: [{ type: 'text', text: "Error: No Slack account connected. Tell the user to click the Connect button in the AI Hub to link their Slack account." }] };
+      }
+
+      const accessToken = user.slack_access_token;
+
+      try {
+        if (operation === 'list_channels') {
+          const res = await fetch(`https://slack.com/api/conversations.list?types=public_channel,private_channel&limit=50`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || "Failed to list channels");
+          return { content: [{ type: 'text', text: JSON.stringify(data.channels.map(c => ({ id: c.id, name: c.name, is_private: c.is_private })), null, 2) }] };
+        } else if (operation === 'read_channel_messages') {
+          if (!channelId) throw new Error("channelId is required for read_channel_messages");
+          const res = await fetch(`https://slack.com/api/conversations.history?channel=${channelId}&limit=${limit}`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || "Failed to read messages");
+          return { content: [{ type: 'text', text: JSON.stringify(data.messages, null, 2) }] };
+        } else if (operation === 'send_message') {
+          if (!channelId || !text) throw new Error("channelId and text are required for send_message");
+          const res = await fetch(`https://slack.com/api/chat.postMessage`, {
+            method: 'POST',
+            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ channel: channelId, text })
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || "Failed to send message");
+          return { content: [{ type: 'text', text: JSON.stringify({ success: true, ts: data.ts }, null, 2) }] };
+        } else {
+          throw new Error(`Unsupported operation: ${operation}`);
+        }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to execute Slack API call: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'github_workspace_connector') {
+      const { operation, owner, repo, path: filePath, title, body, state = 'open' } = args;
+      const { userEmail = '' } = context;
+
+      const user = await mongoose.models.User.findOne({ email: userEmail });
+      if (!user || !user.github_access_token) {
+        return { content: [{ type: 'text', text: "Error: No GitHub account connected. Tell the user to click the Connect button in the AI Hub to link their GitHub account." }] };
+      }
+
+      const accessToken = user.github_access_token;
+      const headers = {
+        "Authorization": `Bearer ${accessToken}`,
+        "Accept": "application/vnd.github.v3+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+      };
+
+      try {
+        if (operation === 'list_repos') {
+          const res = await fetch(`https://api.github.com/user/repos?per_page=50&sort=updated`, { headers });
+          const data = await res.json();
+          if (data.message) throw new Error(data.message);
+          return { content: [{ type: 'text', text: JSON.stringify(data.map(r => ({ id: r.id, full_name: r.full_name, private: r.private, html_url: r.html_url })), null, 2) }] };
+        } else if (operation === 'read_file') {
+          if (!owner || !repo || !filePath) throw new Error("owner, repo, and path are required for read_file");
+          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, { headers });
+          const data = await res.json();
+          if (data.message) throw new Error(data.message);
+          if (data.type === 'file' && data.content) {
+            const contentDecoded = Buffer.from(data.content, 'base64').toString('utf8');
+            return { content: [{ type: 'text', text: contentDecoded }] };
+          }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        } else if (operation === 'list_issues') {
+          if (!owner || !repo) throw new Error("owner and repo are required for list_issues");
+          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues?state=${state}`, { headers });
+          const data = await res.json();
+          if (data.message) throw new Error(data.message);
+          return { content: [{ type: 'text', text: JSON.stringify(data.map(i => ({ number: i.number, title: i.title, state: i.state, user: i.user.login })), null, 2) }] };
+        } else if (operation === 'create_issue') {
+          if (!owner || !repo || !title || !body) throw new Error("owner, repo, title, and body are required for create_issue");
+          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ title, body })
+          });
+          const data = await res.json();
+          if (data.message) throw new Error(data.message);
+          return { content: [{ type: 'text', text: JSON.stringify({ number: data.number, html_url: data.html_url }, null, 2) }] };
+        } else {
+          throw new Error(`Unsupported operation: ${operation}`);
+        }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to execute GitHub API call: ${e.message}` }] };
       }
     }
 

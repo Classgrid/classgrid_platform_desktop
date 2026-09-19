@@ -1,0 +1,177 @@
+import express from "express";
+import { isAuthenticated } from "../middleware/auth.middleware.js";
+import User from "../models/User.js";
+import connectDB from "../../config/db.js";
+
+const router = express.Router();
+
+const getSlackAuthUrl = (statePayload) => {
+    const clientId = process.env.SLACK_CLIENT_ID;
+    const redirectUri = `${process.env.BACKEND_URL}/api/auth/slack/callback`;
+    const scopes = ['channels:history', 'channels:read', 'chat:write', 'groups:history', 'groups:read', 'im:history', 'im:read', 'im:write', 'mpim:history', 'mpim:read', 'mpim:write', 'users:read', 'users:read.email'];
+    
+    const authUrl = new URL(`https://slack.com/oauth/v2/authorize`);
+    authUrl.searchParams.append('client_id', clientId);
+    authUrl.searchParams.append('user_scope', scopes.join(',')); // user_scope instead of scope to act on behalf of user
+    authUrl.searchParams.append('redirect_uri', redirectUri);
+    authUrl.searchParams.append('state', statePayload);
+    
+    return authUrl.toString();
+};
+
+// 1. GENERATE OAUTH URL
+router.get("/connect", isAuthenticated, (req, res) => {
+    if (!process.env.SLACK_CLIENT_ID || !process.env.SLACK_CLIENT_SECRET) {
+        return res.status(500).json({ message: "Slack OAuth keys not configured in backend" });
+    }
+
+    const returnTo = req.query.returnTo || req.headers.referer || req.headers.origin || process.env.FRONTEND_URL;
+    const isPopup = req.query.popup === 'true';
+    const statePayload = Buffer.from(JSON.stringify({ 
+        userId: req.user._id.toString(),
+        returnTo,
+        isPopup
+    })).toString('base64');
+
+    const url = getSlackAuthUrl(statePayload);
+    res.json({ url });
+});
+
+// 2. HANDLE CALLBACK
+router.get("/callback", async (req, res) => {
+    let returnTo = null;
+    let isPopup = false;
+    try {
+        await connectDB();
+        const { code, state, error, error_description } = req.query;
+
+        let userId;
+        if (state) {
+            try {
+                const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
+                userId = decodedState.userId;
+                if (decodedState.returnTo) returnTo = decodedState.returnTo;
+                if (decodedState.isPopup) isPopup = true;
+            } catch (e) {
+                userId = state;
+            }
+        }
+
+        if (!returnTo) returnTo = req.headers.referer || req.headers.origin;
+
+        if (error) {
+            console.error("Slack OAuth Error:", error, error_description);
+            if (isPopup) {
+                return res.send(`
+                    <!DOCTYPE html>
+                    <html><head><title>Error</title></head>
+                    <body style="background:#0a0a0a; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                      <h2>Error authenticating.</h2>
+                      <script>
+                        const payload = { type: 'integration_error', provider: 'slack' };
+                        if (window.opener) { window.opener.postMessage(payload, '*'); }
+                        localStorage.setItem('integration_callback', JSON.stringify({ ...payload, timestamp: Date.now() }));
+                        window.close();
+                      </script>
+                    </body></html>
+                `);
+            }
+            return res.redirect(`${returnTo}?integration_error=slack`);
+        }
+
+        if (!code || !userId) {
+            return res.status(400).send("Missing code or state/userId.");
+        }
+
+        // Exchange code for token
+        const tokenResponse = await fetch(`https://slack.com/api/oauth.v2.access`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                client_id: process.env.SLACK_CLIENT_ID,
+                client_secret: process.env.SLACK_CLIENT_SECRET,
+                code,
+                redirect_uri: `${process.env.BACKEND_URL}/api/auth/slack/callback`
+            })
+        });
+
+        const tokenData = await tokenResponse.json();
+
+        if (!tokenData.ok) {
+            console.error("Slack token error:", tokenData);
+            throw new Error(tokenData.error || "Failed to exchange token");
+        }
+
+        const accessToken = tokenData.authed_user.access_token;
+        const refreshToken = tokenData.authed_user.refresh_token || null; 
+        
+        // Fetch user info to get email
+        const userRes = await fetch("https://slack.com/api/users.identity", {
+            headers: { 
+                "Authorization": `Bearer ${accessToken}`,
+            }
+        });
+        const slackUser = await userRes.json();
+        const slackEmail = slackUser.user?.email || null;
+
+        const user = await User.findById(userId);
+        if (!user) throw new Error("User not found");
+
+        user.slack_access_token = accessToken;
+        user.slack_refresh_token = refreshToken;
+        user.slack_email = slackEmail;
+        await user.save();
+
+        if (isPopup) {
+            return res.send(`
+                <!DOCTYPE html>
+                <html><head><title>Success</title></head>
+                <body style="background:#0a0a0a; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                  <h2>Authentication successful!</h2>
+                  <script>
+                    const payload = { type: 'integration_success', provider: 'slack' };
+                    if (window.opener) { window.opener.postMessage(payload, '*'); }
+                    localStorage.setItem('integration_callback', JSON.stringify({ ...payload, timestamp: Date.now() }));
+                    window.close();
+                  </script>
+                </body></html>
+            `);
+        }
+
+        res.redirect(`${returnTo}?integration_success=slack`);
+    } catch (error) {
+        console.error("Slack Callback Error:", error);
+        if (isPopup) {
+            return res.send(`
+                <!DOCTYPE html>
+                <html><head><title>Error</title></head>
+                <body style="background:#0a0a0a; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                  <h2>Authentication failed.</h2>
+                  <script>window.close();</script>
+                </body></html>
+            `);
+        }
+        res.redirect(`${returnTo}?integration_error=slack`);
+    }
+});
+
+// 3. DISCONNECT
+router.delete("/disconnect", isAuthenticated, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        user.slack_access_token = null;
+        user.slack_refresh_token = null;
+        user.slack_email = null;
+        await user.save();
+
+        res.json({ message: "Slack disconnected successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error disconnecting Slack", error: error.message });
+    }
+});
+
+export default router;

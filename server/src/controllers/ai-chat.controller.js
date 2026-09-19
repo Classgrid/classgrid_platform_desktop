@@ -807,6 +807,23 @@ If the connector tool IS NOT available, it means the user has NOT connected thei
                         allowedConnectorNames.add('notion_connector');
                     }
                     
+                    const slackConnected = !!latestUser.slack_access_token;
+                    if (slackConnected) {
+                        const slackEmail = latestUser.slack_email ? `(Connected as: ${latestUser.slack_email}) ` : '';
+                        activeDescriptions.push(`- **Slack**: ✅ CONNECTED. ${slackEmail}Use 'slack_workspace_connector' tool to list_channels, read_channel_messages, send_message. You can read messages and automate notifications in Slack.`);
+                        allowedConnectorNames.add('slack_workspace_connector');
+                    } else {
+                        disconnectedLinks.push(`[Slack](/api/auth/slack/connect)`);
+                    }
+
+                    const githubConnected = !!latestUser.github_access_token;
+                    if (githubConnected) {
+                        activeDescriptions.push(`- **GitHub**: ✅ CONNECTED. Use 'github_workspace_connector' tool to list_repos, read_file, create_issue, list_issues. You can explore repositories and manage issues on GitHub.`);
+                        allowedConnectorNames.add('github_workspace_connector');
+                    } else {
+                        disconnectedLinks.push(`[GitHub](/api/auth/github/connect)`);
+                    }
+                    
                     if (vercelConnected) {
                         activeDescriptions.push(`- **Vercel**: ✅ CONNECTED. Use 'vercel_connector' tool to list_projects, list_deployments, get_deployment. \n  *WHAT YOU CAN DO*: List projects, check deployment history, and view the status/details of a specific deployment.\n  *WHAT YOU CANNOT DO*: You CANNOT trigger new deployments, you CANNOT read server logs, you CANNOT delete projects, and you CANNOT manage environment variables.`);
                     } else {
@@ -1297,6 +1314,16 @@ except Exception as e:
                 microsoft_workspace_connector: async (args) => {
                     const userEmail = req.user?.email || body.userEmail || '';
                     const result = await handleToolCall('microsoft_workspace_connector', args, { userEmail });
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                slack_workspace_connector: async (args) => {
+                    const userEmail = req.user?.email || body.userEmail || '';
+                    const result = await handleToolCall('slack_workspace_connector', args, { userEmail });
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                github_workspace_connector: async (args) => {
+                    const userEmail = req.user?.email || body.userEmail || '';
+                    const result = await handleToolCall('github_workspace_connector', args, { userEmail });
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
                 zoom_connector: async (args) => {

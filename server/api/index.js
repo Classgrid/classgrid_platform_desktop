@@ -336,9 +336,14 @@ app.use("/api/feedback", feedbackRoutes);
 app.use("/api/platform-feedback", feedbackRoutes); // Added for frontend consistency
 app.use("/api/courses", courseRoutes);
 app.use("/api/meet", meetRoutes);
+import githubRoutes from "../src/routes/auth.github.routes.js";
+import slackRoutes from "../src/routes/auth.slack.routes.js";
+
 app.use("/api/google-workspace", googleWorkspaceRoutes);
 app.use("/api/auth/microsoft", microsoftRoutes);
 app.use("/api/auth/notion", notionRoutes);
+app.use("/api/auth/github", githubRoutes);
+app.use("/api/auth/slack", slackRoutes);
 app.use("/oauth", oauthProviderRoutes);
 app.use("/api/system", systemRoutes);
 app.use("/api/zoom", zoomRoutes);

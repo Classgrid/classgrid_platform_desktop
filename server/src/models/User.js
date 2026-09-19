@@ -572,6 +572,30 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    github_access_token: {
+      type: String,
+      default: null,
+    },
+    github_refresh_token: {
+      type: String,
+      default: null,
+    },
+    github_email: {
+      type: String,
+      default: null,
+    },
+    slack_access_token: {
+      type: String,
+      default: null,
+    },
+    slack_refresh_token: {
+      type: String,
+      default: null,
+    },
+    slack_email: {
+      type: String,
+      default: null,
+    },
     webex_access_token: {
       type: String,
       default: null,
