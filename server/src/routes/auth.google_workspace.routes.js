@@ -78,6 +78,7 @@ router.get("/connect", isAuthenticated, (req, res) => {
         scopes.push('https://www.googleapis.com/auth/classroom.courses.readonly');
         scopes.push('https://www.googleapis.com/auth/classroom.coursework.me.readonly');
         scopes.push('https://www.googleapis.com/auth/classroom.coursework.students');
+        scopes.push('https://www.googleapis.com/auth/drive.readonly'); // Required to read Classroom attachments
     }
     
     if (service === 'drive' || service === 'all') {
