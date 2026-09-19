@@ -756,7 +756,7 @@ If the connector tool IS NOT available, it means the user has NOT connected thei
                     // Using array destructuring on the outer variables (requires parentheses for assignment)
                     ;[googleConnected, msConnected, zoomConnected, notionConnected, vercelConnected] = await Promise.all([
                         latestUser.google_access_token 
-                            ? verifyWithPing('Google', 'https://oauth2.googleapis.com/tokeninfo', latestUser.google_access_token, refreshGoogle, {}, ['classroom.courses.readonly', 'classroom.coursework.students', 'drive.readonly']) 
+                            ? verifyWithPing('Google', 'https://oauth2.googleapis.com/tokeninfo', latestUser.google_access_token, refreshGoogle, {}, ['classroom.courses.readonly', 'classroom.coursework.students']) 
                             : Promise.resolve(false),
                         latestUser.microsoft_access_token 
                             ? verifyWithPing('Microsoft', 'https://graph.microsoft.com/v1.0/me', latestUser.microsoft_access_token, refreshMs) 
