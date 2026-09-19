@@ -1302,6 +1302,11 @@ except Exception as e:
                     const result = await handleToolCall('zoom_connector', args, { userEmail });
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
+                notion_connector: async (args) => {
+                    const userEmail = req.user?.email || body.userEmail || '';
+                    const result = await handleToolCall('notion_connector', args, { userEmail });
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
                 vercel_connector: async (args) => {
                     const userEmail = req.user?.email || body.userEmail || '';
                     const result = await handleToolCall('vercel_connector', args, { userEmail });
