@@ -1313,10 +1313,11 @@ except Exception as e:
                 },
                 check_integration_status: async (args) => {
                     const provider = args.providerName?.toLowerCase();
-                    if (provider === 'google' || provider === 'google_workspace') return googleConnected ? "YES: Verified and Connected." : "NO: Not connected.";
-                    if (provider === 'microsoft' || provider === 'ms') return msConnected ? "YES: Verified and Connected." : "NO: Not connected.";
+                    const googleVariations = ['google', 'google_workspace', 'gcal', 'google_calendar', 'gmail', 'gdrive', 'google_drive', 'gclass', 'google_classroom', 'gmeet', 'google_meet', 'gforms', 'google_forms'];
+                    if (googleVariations.includes(provider)) return googleConnected ? "YES: Verified and Connected." : "NO: Not connected.";
+                    if (provider === 'microsoft' || provider === 'ms' || provider === 'outlook' || provider === 'teams') return msConnected ? "YES: Verified and Connected." : "NO: Not connected.";
                     if (provider === 'zoom') return zoomConnected ? "YES: Verified and Connected." : "NO: Not connected.";
-                    if (provider === 'notion') return notionConnected ? "YES: Verified and Connected." : "NO: Not connected.";
+                    if (provider === 'notion' || provider === 'mcp-notion') return notionConnected ? "YES: Verified and Connected." : "NO: Not connected.";
                     if (provider === 'vercel') return vercelConnected ? "YES: Verified and Connected." : "NO: Not connected.";
                     if (provider === 'whatsapp') return whatsappConnected ? "YES: Verified and Connected." : "NO: Not connected.";
                     
