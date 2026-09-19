@@ -18,7 +18,7 @@ import { ChevronRight } from 'lucide-react';
  */
 export function CombinedReasoningBlock({ sentences, isStreaming = true, autoFinishMs }: { sentences: string[]; isStreaming?: boolean; autoFinishMs?: number }) {
   const [timer, setTimer] = useState(0);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [localIsStreaming, setLocalIsStreaming] = useState(isStreaming);
   const viewportRef = useRef<HTMLDivElement>(null);
 
@@ -78,12 +78,7 @@ export function CombinedReasoningBlock({ sentences, isStreaming = true, autoFini
               className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}
             />
           )}
-          <p
-            className="bg-[linear-gradient(110deg,#404040,35%,#fff,50%,#404040,75%,#404040)] bg-[length:200%_100%] bg-clip-text text-[14px] font-medium text-transparent"
-            style={{
-              animation: isFinished ? "none" : "shimmer 2.5s linear infinite",
-            }}
-          >
+          <p className="text-[14px] font-medium text-muted-foreground">
             {isFinished ? "Thought" : "Thinking"}
           </p>
           {!isFinished && (
@@ -131,10 +126,6 @@ export function CombinedReasoningBlock({ sentences, isStreaming = true, autoFini
 
       {!isFinished && (
         <style>{`
-          @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-          }
           @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
