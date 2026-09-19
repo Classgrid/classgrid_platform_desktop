@@ -547,12 +547,14 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
 *Note: The tool auto-pluralizes MongoDB names. If you need a module not listed here, just guess its PascalCase name (e.g. "LeaveRequest", "Timetable", "Invoice") and it will work!*
 
 2. Supabase (source="supabase", collectionOrTable="table_name"):
-- Chat Messages: \`messages\`
+- Chat Messages: \`messages\` (ONLY for internal Classgrid Talk messaging app. NOT for Gmail or personal emails!)
 - Chat Threads: \`threads\`
 - Classroom Chat: \`classroom_messages\`
 - Attachments: \`attachments\`
 - Holidays: \`holidays\`
 - Email Queue: \`email_notification_queue\` (CRITICAL: This is ONLY for internal system transactional emails. If the user asks to read their personal inbox, unread emails, or Gmail, you MUST use the 'google_workspace_connector' tool instead!)
+
+CRITICAL INSTRUCTION FOR EMAILS: If the user asks to read, send, or check "emails", "inbox", or "my emails", YOU MUST NEVER USE \`unified_db_query\`. YOU MUST ALWAYS USE \`google_workspace_connector\` with operation 'list_emails'. The Supabase and MongoDB tables are NEVER used for storing the user's personal inbox!
 
 3. Redis (source="redis", collectionOrTable="key_pattern"):
 - Use operation="find" to list keys (e.g. collectionOrTable="user:profile:*")
