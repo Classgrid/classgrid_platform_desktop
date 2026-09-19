@@ -680,15 +680,6 @@ If the connector tool IS NOT available, it means the user has NOT connected thei
                                 });
                             }
                             if (res.ok) {
-                                if (requiredScopes.length > 0 && url.includes('tokeninfo')) {
-                                    const data = await res.json();
-                                    const grantedScopes = (data.scope || "").toLowerCase();
-                                    const missingScopes = requiredScopes.filter(s => !grantedScopes.includes(s.toLowerCase()));
-                                    if (missingScopes.length > 0) {
-                                        console.log(`[integration-verify] ${label}: ❌ FAILED (missing scopes: ${missingScopes.join(', ')})`);
-                                        return false;
-                                    }
-                                }
                                 console.log(`[integration-verify] ${label}: ✅ VERIFIED`);
                                 return true;
                             }
@@ -756,7 +747,7 @@ If the connector tool IS NOT available, it means the user has NOT connected thei
                     // Using array destructuring on the outer variables (requires parentheses for assignment)
                     ;[googleConnected, msConnected, zoomConnected, notionConnected, vercelConnected] = await Promise.all([
                         latestUser.google_access_token 
-                            ? verifyWithPing('Google', 'https://oauth2.googleapis.com/tokeninfo', latestUser.google_access_token, refreshGoogle, {}, ['classroom.courses.readonly', 'classroom.coursework.students']) 
+                            ? verifyWithPing('Google', 'https://oauth2.googleapis.com/tokeninfo', latestUser.google_access_token, refreshGoogle) 
                             : Promise.resolve(false),
                         latestUser.microsoft_access_token 
                             ? verifyWithPing('Microsoft', 'https://graph.microsoft.com/v1.0/me', latestUser.microsoft_access_token, refreshMs) 
