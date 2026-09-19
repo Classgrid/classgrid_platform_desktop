@@ -95,9 +95,12 @@ router.get("/connect", isAuthenticated, (req, res) => {
     }
 
     const returnTo = req.query.returnTo || req.headers.referer || req.headers.origin || process.env.FRONTEND_URL;
+    const isPopup = req.query.popup === 'true';
+    
     const statePayload = Buffer.from(JSON.stringify({ 
         userId: req.user._id.toString(),
-        returnTo 
+        returnTo,
+        isPopup
     })).toString('base64');
 
     const url = oauth2Client.generateAuthUrl({
@@ -185,12 +188,63 @@ router.get("/callback", async (req, res) => {
 
         await user.save();
 
+        let isPopup = false;
+        if (state) {
+            try {
+                const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
+                if (decodedState.isPopup) isPopup = true;
+            } catch (e) {}
+        }
+
+        if (isPopup) {
+            return res.send(`
+                <!DOCTYPE html>
+                <html><head><title>Authenticating...</title></head>
+                <body style="background:#0a0a0a; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                  <h2>Authenticating...</h2>
+                  <script>
+                    const payload = { type: 'integration_success', provider: 'google' };
+                    if (window.opener) { window.opener.postMessage(payload, '*'); }
+                    localStorage.setItem('integration_callback', JSON.stringify({ ...payload, timestamp: Date.now() }));
+                    window.close();
+                    setTimeout(() => { document.body.innerHTML = '<h2>Authentication complete. You can safely close this window.</h2>'; }, 1000);
+                  </script>
+                </body></html>
+            `);
+        }
+
         // Redirect back to frontend
         const redirectUrl = new URL(returnTo);
         redirectUrl.searchParams.set('integration_success', 'google');
         res.redirect(redirectUrl.toString());
     } catch (err) {
         console.error("Google Workspace Callback Error:", err);
+        
+        let isPopup = false;
+        if (req.query.state) {
+            try {
+                const decodedState = JSON.parse(Buffer.from(req.query.state, 'base64').toString('utf8'));
+                if (decodedState.isPopup) isPopup = true;
+            } catch (e) {}
+        }
+
+        if (isPopup) {
+            return res.send(`
+                <!DOCTYPE html>
+                <html><head><title>Error</title></head>
+                <body style="background:#0a0a0a; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                  <h2>Error authenticating.</h2>
+                  <script>
+                    const payload = { type: 'integration_error', provider: 'google' };
+                    if (window.opener) { window.opener.postMessage(payload, '*'); }
+                    localStorage.setItem('integration_callback', JSON.stringify({ ...payload, timestamp: Date.now() }));
+                    window.close();
+                    setTimeout(() => { document.body.innerHTML = '<h2>Authentication failed. You can safely close this window.</h2>'; }, 1000);
+                  </script>
+                </body></html>
+            `);
+        }
+
         if (returnTo) {
             res.redirect(`${returnTo}?integration_error=google`);
         } else {

@@ -102,17 +102,17 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
       let endpoint = '';
       if (isGoogle) {
         const service = id === 'gcal' ? 'calendar' : id === 'gdrive' ? 'drive' : id === 'gclass' ? 'classroom' : id === 'gmeet' ? 'meet' : id === 'gforms' ? 'forms' : 'gmail';
-        endpoint = `/api/google-workspace/connect?service=${service}&returnTo=${encodeURIComponent(window.location.href)}`;
+        endpoint = `/api/google-workspace/connect?service=${service}&returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       } else if (isMicrosoft) {
-        endpoint = `/api/auth/microsoft/connect?returnTo=${encodeURIComponent(window.location.href)}`;
+        endpoint = `/api/auth/microsoft/connect?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       } else if (id === 'mcp-notion') {
-        endpoint = `/api/auth/notion/connect?returnTo=${encodeURIComponent(window.location.href)}`;
+        endpoint = `/api/auth/notion/connect?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       } else if (id === 'vercel') {
-        endpoint = `/api/auth/vercel/connect?returnTo=${encodeURIComponent(window.location.href)}`;
+        endpoint = `/api/auth/vercel/connect?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       } else if (id === 'zoom') {
-        endpoint = `/api/zoom/connect?returnTo=${encodeURIComponent(window.location.href)}`;
+        endpoint = `/api/zoom/connect?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       } else {
-        endpoint = `/api/ai-integrations/connect/${id}?returnTo=${encodeURIComponent(window.location.href)}`;
+        endpoint = `/api/ai-integrations/connect/${id}?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       }
 
       const backendUrl = typeof import.meta !== "undefined" && import.meta.env

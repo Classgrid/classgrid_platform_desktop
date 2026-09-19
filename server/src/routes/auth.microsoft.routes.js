@@ -29,9 +29,11 @@ router.get("/connect", isAuthenticated, (req, res) => {
     }
 
     const returnTo = req.query.returnTo || req.headers.referer || req.headers.origin || process.env.FRONTEND_URL;
+    const isPopup = req.query.popup === 'true';
     const statePayload = Buffer.from(JSON.stringify({ 
         userId: req.user._id.toString(),
-        returnTo 
+        returnTo,
+        isPopup
     })).toString('base64');
 
     const url = getMicrosoftAuthUrl(statePayload);
@@ -41,6 +43,7 @@ router.get("/connect", isAuthenticated, (req, res) => {
 // 2. HANDLE CALLBACK
 router.get("/callback", async (req, res) => {
     let returnTo = null;
+    let isPopup = false;
     try {
         await connectDB();
         const { code, state, error, error_description } = req.query;
@@ -51,6 +54,7 @@ router.get("/callback", async (req, res) => {
                 const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
                 userId = decodedState.userId;
                 if (decodedState.returnTo) returnTo = decodedState.returnTo;
+                if (decodedState.isPopup) isPopup = true;
             } catch (e) {
                 userId = state;
             }
@@ -70,10 +74,42 @@ router.get("/callback", async (req, res) => {
                     await user.save();
                 }
             }
+            if (isPopup) {
+                return res.send(`
+                    <!DOCTYPE html>
+                    <html><head><title>Error</title></head>
+                    <body style="background:#0a0a0a; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                      <h2>Error authenticating.</h2>
+                      <script>
+                        const payload = { type: 'integration_error', provider: 'microsoft' };
+                        if (window.opener) { window.opener.postMessage(payload, '*'); }
+                        localStorage.setItem('integration_callback', JSON.stringify({ ...payload, timestamp: Date.now() }));
+                        window.close();
+                        setTimeout(() => { document.body.innerHTML = '<h2>Authentication failed. You can safely close this window.</h2>'; }, 1000);
+                      </script>
+                    </body></html>
+                `);
+            }
             return res.redirect(`${returnTo}?integration_error=microsoft`);
         }
 
         if (!code || !userId) {
+            if (isPopup) {
+                return res.send(`
+                    <!DOCTYPE html>
+                    <html><head><title>Error</title></head>
+                    <body style="background:#0a0a0a; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                      <h2>Error authenticating.</h2>
+                      <script>
+                        const payload = { type: 'integration_error', provider: 'microsoft' };
+                        if (window.opener) { window.opener.postMessage(payload, '*'); }
+                        localStorage.setItem('integration_callback', JSON.stringify({ ...payload, timestamp: Date.now() }));
+                        window.close();
+                        setTimeout(() => { document.body.innerHTML = '<h2>Authentication failed. You can safely close this window.</h2>'; }, 1000);
+                      </script>
+                    </body></html>
+                `);
+            }
             return res.redirect(`${returnTo}?integration_error=missing_params`);
         }
 
@@ -94,11 +130,43 @@ router.get("/callback", async (req, res) => {
 
         if (tokenData.error) {
             console.error("Token Exchange Error:", tokenData);
+            if (isPopup) {
+                return res.send(`
+                    <!DOCTYPE html>
+                    <html><head><title>Error</title></head>
+                    <body style="background:#0a0a0a; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                      <h2>Error authenticating.</h2>
+                      <script>
+                        const payload = { type: 'integration_error', provider: 'microsoft' };
+                        if (window.opener) { window.opener.postMessage(payload, '*'); }
+                        localStorage.setItem('integration_callback', JSON.stringify({ ...payload, timestamp: Date.now() }));
+                        window.close();
+                        setTimeout(() => { document.body.innerHTML = '<h2>Authentication failed. You can safely close this window.</h2>'; }, 1000);
+                      </script>
+                    </body></html>
+                `);
+            }
             return res.redirect(`${returnTo}?integration_error=microsoft_token`);
         }
 
         const user = await User.findById(userId);
         if (!user) {
+            if (isPopup) {
+                return res.send(`
+                    <!DOCTYPE html>
+                    <html><head><title>Error</title></head>
+                    <body style="background:#0a0a0a; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                      <h2>Error authenticating.</h2>
+                      <script>
+                        const payload = { type: 'integration_error', provider: 'microsoft' };
+                        if (window.opener) { window.opener.postMessage(payload, '*'); }
+                        localStorage.setItem('integration_callback', JSON.stringify({ ...payload, timestamp: Date.now() }));
+                        window.close();
+                        setTimeout(() => { document.body.innerHTML = '<h2>Authentication failed. You can safely close this window.</h2>'; }, 1000);
+                      </script>
+                    </body></html>
+                `);
+            }
             return res.redirect(`${returnTo}?integration_error=user_not_found`);
         }
 
@@ -119,11 +187,44 @@ router.get("/callback", async (req, res) => {
 
         await user.save();
 
+        if (isPopup) {
+            return res.send(`
+                <!DOCTYPE html>
+                <html><head><title>Authenticating...</title></head>
+                <body style="background:#0a0a0a; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                  <h2>Authenticating...</h2>
+                  <script>
+                    const payload = { type: 'integration_success', provider: 'microsoft' };
+                    if (window.opener) { window.opener.postMessage(payload, '*'); }
+                    localStorage.setItem('integration_callback', JSON.stringify({ ...payload, timestamp: Date.now() }));
+                    window.close();
+                    setTimeout(() => { document.body.innerHTML = '<h2>Authentication complete. You can safely close this window.</h2>'; }, 1000);
+                  </script>
+                </body></html>
+            `);
+        }
+
         const redirectUrl = new URL(returnTo);
         redirectUrl.searchParams.set('integration_success', 'microsoft');
         res.redirect(redirectUrl.toString());
     } catch (err) {
         console.error("Microsoft Callback Error:", err);
+        if (isPopup) {
+            return res.send(`
+                <!DOCTYPE html>
+                <html><head><title>Error</title></head>
+                <body style="background:#0a0a0a; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                  <h2>Error authenticating.</h2>
+                  <script>
+                    const payload = { type: 'integration_error', provider: 'microsoft' };
+                    if (window.opener) { window.opener.postMessage(payload, '*'); }
+                    localStorage.setItem('integration_callback', JSON.stringify({ ...payload, timestamp: Date.now() }));
+                    window.close();
+                    setTimeout(() => { document.body.innerHTML = '<h2>Authentication failed. You can safely close this window.</h2>'; }, 1000);
+                  </script>
+                </body></html>
+            `);
+        }
         if (returnTo) {
             res.redirect(`${returnTo}?integration_error=microsoft_fatal`);
         } else {
