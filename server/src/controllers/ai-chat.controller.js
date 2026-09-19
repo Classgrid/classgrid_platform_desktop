@@ -583,7 +583,7 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
 
 CRITICAL INTEGRATION RULE:
 Before you attempt to use any integration tool (e.g. zoom_connector, google_workspace_connector), you MUST first use the \`check_integration_status\` tool to manually cross-check if it is actually connected and verified. 
-If the check returns NO, you must NOT attempt to use the connector tool. DO NOT give the user manual instructions on how to use the 3rd-party service (like going to zoom.com). INSTEAD, strictly tell the user: "You are not connected to this service. Please open the **AI Hub** inside your Classgrid dashboard and connect your account so I can automate this for you."`;
+If the check returns NO, you must NOT attempt to use the connector tool. DO NOT give the user manual instructions on how to use the 3rd-party service (like going to zoom.com). INSTEAD, you MUST immediately call the \`open_integration_panel\` tool so the UI opens the AI Hub for them, and tell the user: "I've opened the AI Hub for you. Please connect your account so I can automate this."`;
 
         if (!isIncognito) {
             dynamicSystemPrompt += `\n\nROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
@@ -871,6 +871,20 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                                 providerName: { type: "string", description: "The name of the provider (e.g. 'zoom', 'google', 'microsoft', 'notion', 'vercel', 'whatsapp')." }
                             },
                             required: ["providerName"]
+                        }
+                    }
+                },
+                {
+                    type: "function",
+                    function: {
+                        name: "open_integration_panel",
+                        description: "Opens the AI Hub integration panel for the user in their UI. Use this IMMEDIATELY when the check_integration_status tool returns NO, so the user can easily connect the required integration.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                reason: { type: "string", description: "Why we are opening the panel (e.g. 'To connect Zoom')" }
+                            },
+                            required: ["reason"]
                         }
                     }
                 },
@@ -1287,6 +1301,9 @@ except Exception as e:
                     const userEmail = req.user?.email || body.userEmail || '';
                     const result = await handleToolCall('whatsapp_business_connector', args, { userEmail });
                     return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                open_integration_panel: async () => {
+                    return "UI action emitted. The integration panel has been opened for the user.";
                 },
                 check_integration_status: async (args) => {
                     const provider = args.providerName?.toLowerCase();

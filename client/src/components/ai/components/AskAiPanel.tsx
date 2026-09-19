@@ -2696,6 +2696,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   ];
                 });
               } else if (event.type === "tool_start") {
+                if (event.tool === "open_integration_panel") {
+                  setIsAiHubOpen(true);
+                }
                 setMessages((prev) => {
                   let lastMsg = prev[prev.length - 1];
                   let targetPrev = prev;
