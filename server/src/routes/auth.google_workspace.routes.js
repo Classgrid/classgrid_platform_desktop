@@ -286,18 +286,33 @@ router.post("/disconnect", isAuthenticated, async (req, res) => {
         const user = await User.findById(req.user._id);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        user.google_access_token = undefined;
-        user.google_refresh_token = undefined;
-        user.google_token_expiry = undefined;
+        const serviceToDisconnect = req.query.service; // e.g., 'gforms', 'gmail'
 
-        if (user.metadata && user.metadata.connected_google_services) {
-            user.metadata.connected_google_services = [];
+        if (user.metadata && Array.isArray(user.metadata.connected_google_services) && serviceToDisconnect) {
+            // Remove just this specific service
+            user.metadata.connected_google_services = user.metadata.connected_google_services.filter(s => s !== serviceToDisconnect);
             user.markModified('metadata');
+            
+            // If they disconnected all Google services, we should wipe the actual tokens to be safe
+            if (user.metadata.connected_google_services.length === 0) {
+                user.google_access_token = undefined;
+                user.google_refresh_token = undefined;
+                user.google_token_expiry = undefined;
+            }
+        } else {
+            // Fallback (disconnect everything) if no specific service provided
+            user.google_access_token = undefined;
+            user.google_refresh_token = undefined;
+            user.google_token_expiry = undefined;
+            if (user.metadata && user.metadata.connected_google_services) {
+                user.metadata.connected_google_services = [];
+                user.markModified('metadata');
+            }
         }
 
         await user.save();
 
-        res.json({ success: true, message: "Google account disconnected" });
+        res.json({ success: true, message: `Disconnected ${serviceToDisconnect || 'Google account'}` });
     } catch (err) {
         console.error("Google Disconnect Error:", err);
         res.status(500).json({ message: "Failed to disconnect Google account" });

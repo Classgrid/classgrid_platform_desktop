@@ -205,7 +205,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
       
       let endpoint = '';
       if (isGoogle) {
-        endpoint = `/api/google-workspace/disconnect`;
+        endpoint = `/api/google-workspace/disconnect?service=${id}`;
       } else if (isMicrosoft) {
         endpoint = `/api/auth/microsoft/disconnect`;
       } else if (id === 'mcp-notion') {
