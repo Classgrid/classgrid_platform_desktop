@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { INTEGRATIONS_LIST } from "./AskAiPanel";
 import { Button } from "@/components/marketing_ui/button";
+import { WhatsappConfigModal } from "./WhatsappConfigModal";
 
 interface AiHubModalProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState(true);
+  const [showWhatsappConfig, setShowWhatsappConfig] = useState(false);
 
   const backendUrl = typeof import.meta !== "undefined" && import.meta.env
     ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
@@ -87,6 +89,12 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
       const isGoogle = ['gmail', 'gcal', 'gdrive', 'gclass', 'gmeet', 'gforms'].includes(id);
       const isMicrosoft = id === 'outlook' || id === 'teams';
       
+      if (id === 'whatsapp') {
+        setIsConnecting(false);
+        setShowWhatsappConfig(true);
+        return;
+      }
+
       let endpoint = '';
       if (isGoogle) {
         const service = id === 'gcal' ? 'calendar' : id === 'gdrive' ? 'drive' : id === 'gclass' ? 'classroom' : id === 'gmeet' ? 'meet' : id === 'gforms' ? 'forms' : 'gmail';
@@ -284,6 +292,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
   };
 
   return (
+    <>
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -569,5 +578,15 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
         </motion.div>
       )}
     </AnimatePresence>
+
+    <WhatsappConfigModal 
+      isOpen={showWhatsappConfig} 
+      onClose={() => setShowWhatsappConfig(false)}
+      backendUrl={backendUrl}
+      onSuccess={async () => {
+        await fetchStatus();
+      }}
+    />
+    </>
   );
 }
