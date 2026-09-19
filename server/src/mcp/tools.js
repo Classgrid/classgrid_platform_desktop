@@ -1248,7 +1248,15 @@ export const handleToolCall = async (name, args, context = {}) => {
             headers: { "Authorization": `Bearer ${accessToken}` }
           });
           const data = await res.json();
-          return { content: [{ type: 'text', text: JSON.stringify(data.value, null, 2) }] };
+          const safeData = (data.value || []).map(msg => ({
+            id: msg.id,
+            subject: msg.subject,
+            senderName: msg.sender?.emailAddress?.name || msg.from?.emailAddress?.name || 'Unknown',
+            senderEmail: msg.sender?.emailAddress?.address || msg.from?.emailAddress?.address || 'Unknown',
+            receivedDateTime: msg.receivedDateTime,
+            bodyPreview: msg.bodyPreview
+          }));
+          return { content: [{ type: 'text', text: JSON.stringify(safeData, null, 2) }] };
         } else if (operation === 'list_meetings') {
           const res = await fetch(`https://graph.microsoft.com/v1.0/me/onlineMeetings?$top=${limit}`, {
             headers: { "Authorization": `Bearer ${accessToken}` }
@@ -1257,13 +1265,14 @@ export const handleToolCall = async (name, args, context = {}) => {
           return { content: [{ type: 'text', text: JSON.stringify(data.value, null, 2) }] };
         } else if (operation === 'create_meeting') {
           if (!subject || !startTime || !endTime) throw new Error("subject, startTime, and endTime are required for create_meeting");
-          const res = await fetch(`https://graph.microsoft.com/v1.0/me/onlineMeetings`, {
+          const res = await fetch(`https://graph.microsoft.com/v1.0/me/events`, {
             method: 'POST',
             headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
             body: JSON.stringify({
-              startDateTime: startTime,
-              endDateTime: endTime,
-              subject: subject
+              subject: subject,
+              start: { dateTime: startTime, timeZone: "UTC" },
+              end: { dateTime: endTime, timeZone: "UTC" },
+              isOnlineMeeting: true
             })
           });
           const data = await res.json();
