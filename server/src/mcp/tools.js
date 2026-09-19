@@ -832,13 +832,6 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'vercel_connector') {
       const { operation, projectId, limit = 10, deploymentId } = args;
       const { userEmail = '', userRole = '' } = context;
-      const isSuperAdmin = userEmail.endsWith('@classgrid.in') || userRole === 'super_admin';
-
-      if (!isSuperAdmin) {
-        return {
-          content: [{ type: 'text', text: `SECURITY ERROR: Access Denied. Only super_admins can access the Vercel API.` }]
-        };
-      }
 
       // Fetch the OAuth token from the database
       const user = await mongoose.models.User.findOne({ email: userEmail });
