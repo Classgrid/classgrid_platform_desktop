@@ -611,7 +611,9 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
         // Fetches real-time token data from DB and builds a full status dashboard
         // so the AI knows EXACTLY what is connected, what is not, what it can do.
         // ─────────────────────────────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────────────────────────────
         let pluginPrompt = '';
+        let allowedConnectorNames = new Set();
         if (req.user) {
             try {
                 const User = mongoose.model('User');
@@ -664,6 +666,12 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
                     const cursorConnected = connectedMcps.includes('mcp-cursor');
                     const chatgptConnected = connectedMcps.includes('mcp-chatgpt');
                     const claudeConnected = connectedMcps.includes('mcp-claude');
+
+                    if (googleConnected) allowedConnectorNames.add('google_workspace_connector');
+                    if (msConnected) allowedConnectorNames.add('microsoft_workspace_connector');
+                    if (zoomConnected) allowedConnectorNames.add('zoom_connector');
+                    if (vercelConnected) allowedConnectorNames.add('vercel_connector');
+                    if (whatsappConnected) allowedConnectorNames.add('whatsapp_business_connector');
 
                     pluginPrompt = `
 
@@ -772,7 +780,7 @@ You are equipped with 14 external integration plugins. Below is the REAL-TIME co
             maxToolDepth: 25,
             defaultMaxTokens: 2000,
             tools: [
-                ...getMcpTools().map(t => ({
+                ...getMcpTools().filter(t => allowedConnectorNames.has(t.name)).map(t => ({
                     type: "function",
                     function: {
                         name: t.name,
