@@ -30,7 +30,7 @@ const TABS = [
   { id: "upgrade", label: "Upgrade", icon: ArrowUpCircle },
 ];
 
-export function AiHubModal({ isOpen, onClose }: AiHubModalProps) {
+export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
   const [activeTab, setActiveTab] = useState("plugins");
   const [selectedPlugin, setSelectedPlugin] = useState<any>(null);
   const [connectedPlugins, setConnectedPlugins] = useState<string[]>([]);
@@ -42,28 +42,55 @@ export function AiHubModal({ isOpen, onClose }: AiHubModalProps) {
   }, [activeTab]);
 
   React.useEffect(() => {
+    const handleSuccess = (provider: string) => {
+      toast.success(`Integration connected successfully!`);
+      setConnectedPlugins(prev => {
+        const newPlugins = [...prev];
+        if (provider === 'google') {
+           newPlugins.push('gmail', 'gcal', 'gdrive', 'gclass', 'gmeet');
+        } else {
+           newPlugins.push(provider);
+        }
+        return newPlugins;
+      });
+      setIsConnecting(false);
+    };
+
+    const handleError = (provider: string) => {
+      toast.error(`Integration failed: ${provider}`);
+      setIsConnecting(false);
+    };
+
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'integration_success') {
-         // The provider string might need mapping, but let's assume it matches the ID
-         toast.success(`Integration connected successfully!`);
-         setConnectedPlugins(prev => {
-            const newPlugins = [...prev];
-            // Handle generic 'google' mapping if needed
-            if (event.data.provider === 'google') {
-               newPlugins.push('gmail', 'gcal', 'gdrive', 'gclass', 'gmeet');
-            } else {
-               newPlugins.push(event.data.provider);
-            }
-            return newPlugins;
-         });
-         setIsConnecting(false);
+         handleSuccess(event.data.provider);
       } else if (event.data?.type === 'integration_error') {
-         toast.error(`Integration failed: ${event.data.provider}`);
-         setIsConnecting(false);
+         handleError(event.data.provider);
       }
     };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'integration_callback' && event.newValue) {
+        try {
+          const data = JSON.parse(event.newValue);
+          // Only process recent events (within last 10 seconds)
+          if (Date.now() - data.timestamp < 10000) {
+            if (data.type === 'integration_success') handleSuccess(data.provider);
+            else if (data.type === 'integration_error') handleError(data.provider);
+            localStorage.removeItem('integration_callback');
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   const handleConnect = async (id: string, name: string) => {
@@ -105,25 +132,39 @@ export function AiHubModal({ isOpen, onClose }: AiHubModalProps) {
         const height = 700;
         const left = (window.innerWidth - width) / 2;
         const top = (window.innerHeight - height) / 2;
-        window.open(
+        const popup = window.open(
           data.url, 
           'OAuth', 
           `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
         );
-        // The popup will postMessage back to us and close itself.
-        // We leave isConnecting=true until the message is received.
+        
+        if (popup) {
+          // Poll to see if the user closed the popup manually
+          const pollTimer = setInterval(() => {
+            if (popup.closed) {
+              clearInterval(pollTimer);
+              setIsConnecting(false);
+            }
+          }, 500);
+        } else {
+          // Popup blocker prevented it
+          setIsConnecting(false);
+          toast.error("Popup blocked. Please allow popups for this site.");
+        }
       } else if (data.success) {
         toast.success(`${name} connected successfully!`);
         setConnectedPlugins(prev => [...prev, id]);
+        setIsConnecting(false);
       } else {
         toast.error(data.message || `Failed to connect ${name}`);
+        setIsConnecting(false);
       }
     } catch (err) {
       console.error(err);
       toast.error(`Error connecting to ${name}`);
-    } finally {
       setIsConnecting(false);
     }
+    // Removed the finally block because we want isConnecting=true to persist while popup is open.
   };
 
   const getPluginFeatures = (name: string, id?: string) => {

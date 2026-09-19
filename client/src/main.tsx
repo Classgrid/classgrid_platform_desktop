@@ -64,24 +64,41 @@ if (typeof window !== 'undefined' && import.meta.env.VITE_POSTHOG_KEY) {
 
 // Intercept OAuth callback redirects in popup windows
 const params = new URLSearchParams(window.location.search);
-if (window.opener && window.opener !== window) {
-  if (params.get('integration_success')) {
-    window.opener.postMessage({ type: 'integration_success', provider: params.get('integration_success') }, '*');
-    window.close();
-  } else if (params.get('integration_error')) {
-    window.opener.postMessage({ type: 'integration_error', provider: params.get('integration_error') }, '*');
-    window.close();
-  }
-}
+const hasIntegrationCallback = params.has('integration_success') || params.has('integration_error');
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <PostHogProvider client={posthog}>
-        <AppProviders>
-          <App />
-        </AppProviders>
-      </PostHogProvider>
-    </BrowserRouter>
-  </React.StrictMode>
-);
+if (hasIntegrationCallback) {
+  const successProvider = params.get('integration_success');
+  const errorProvider = params.get('integration_error');
+  const payload = successProvider 
+    ? { type: 'integration_success', provider: successProvider } 
+    : { type: 'integration_error', provider: errorProvider };
+
+  // 1. Try postMessage (works if window.opener is preserved)
+  if (window.opener && window.opener !== window) {
+    window.opener.postMessage(payload, '*');
+  }
+  
+  // 2. Try localStorage as a fallback (works even if window.opener is null due to COOP)
+  localStorage.setItem('integration_callback', JSON.stringify({ ...payload, timestamp: Date.now() }));
+  
+  // 3. Close the popup
+  setTimeout(() => window.close(), 100);
+  
+  // 4. STOP React from rendering so the heavy app doesn't load
+  const root = document.getElementById("root");
+  if (root) {
+      root.innerHTML = "<div style='display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;'>Authenticating... You can close this window.</div>";
+  }
+} else {
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <PostHogProvider client={posthog}>
+          <AppProviders>
+            <App />
+          </AppProviders>
+        </PostHogProvider>
+      </BrowserRouter>
+    </React.StrictMode>
+  );
+}
