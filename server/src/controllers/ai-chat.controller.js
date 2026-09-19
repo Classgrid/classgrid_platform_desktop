@@ -617,7 +617,23 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
         // ─────────────────────────────────────────────────────────────────────────────────
         // ─────────────────────────────────────────────────────────────────────────────────
         let pluginPrompt = '';
-        let allowedConnectorNames = new Set();
+        let allowedConnectorNames = new Set([
+            'unified_db_query',
+            'run_code',
+            'execute_terminal_command',
+            'internal_thought_process',
+            'search_syllabus_vectors'
+        ]);
+        let googleConnected = false;
+        let msConnected = false;
+        let zoomConnected = false;
+        let notionConnected = false;
+        let vercelConnected = false;
+        let whatsappConnected = false;
+        let cursorConnected = false;
+        let chatgptConnected = false;
+        let claudeConnected = false;
+        
         if (req.user) {
             try {
                 const User = mongoose.model('User');
@@ -721,7 +737,8 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     };
 
                     // Run ALL verification pings in parallel
-                    const [googleConnected, msConnected, zoomConnected, notionConnected, vercelConnected] = await Promise.all([
+                    // Using array destructuring on the outer variables (requires parentheses for assignment)
+                    ;[googleConnected, msConnected, zoomConnected, notionConnected, vercelConnected] = await Promise.all([
                         latestUser.google_access_token 
                             ? verifyWithPing('Google', 'https://www.googleapis.com/oauth2/v1/userinfo', latestUser.google_access_token, refreshGoogle) 
                             : Promise.resolve(false),
@@ -740,10 +757,10 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     ]);
 
                     // ── MCP-based plugins (no API to ping, just config check) ──
-                    const whatsappConnected = !!(process.env.WHATSAPP_PHONE_ID && process.env.WHATSAPP_ACCESS_TOKEN);
-                    const cursorConnected = connectedMcps.includes('mcp-cursor');
-                    const chatgptConnected = connectedMcps.includes('mcp-chatgpt');
-                    const claudeConnected = connectedMcps.includes('mcp-claude');
+                    whatsappConnected = !!(process.env.WHATSAPP_PHONE_ID && process.env.WHATSAPP_ACCESS_TOKEN);
+                    cursorConnected = connectedMcps.includes('mcp-cursor');
+                    chatgptConnected = connectedMcps.includes('mcp-chatgpt');
+                    claudeConnected = connectedMcps.includes('mcp-claude');
 
                     // Only VERIFIED integrations get tools
                     if (googleConnected) allowedConnectorNames.add('google_workspace_connector');
@@ -837,7 +854,7 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
             maxToolDepth: 25,
             defaultMaxTokens: 2000,
             tools: [
-                ...getMcpTools().filter(t => allowedConnectorNames.has(t.name)).map(t => ({
+                ...getMcpTools().map(t => ({
                     type: "function",
                     function: {
                         name: t.name,
