@@ -14,42 +14,38 @@ router.get("/status", isAuthenticated, async (req, res) => {
     try {
         await connectDB();
         const user = await User.findById(req.user._id).select(
-            "vercel_access_token notion_access_token notion_refresh_token google_workspace_tokens microsoft_access_token microsoft_refresh_token zoom_access_token zoom_refresh_token metadata"
+            "google_access_token google_refresh_token microsoft_access_token microsoft_refresh_token zoom_access_token zoom_refresh_token vercel_access_token notion_access_token notion_refresh_token webex_access_token webex_refresh_token metadata"
         ).lean();
 
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // Check actual token presence for each integration
         const connected = [];
+
+        // Google Workspace — single OAuth token covers all Google services
+        if (user.google_access_token || user.google_refresh_token) {
+            connected.push("gmail", "gcal", "gdrive", "gclass", "gmeet", "gforms");
+        }
+
+        // Microsoft (Outlook + Teams share the same token)
+        if (user.microsoft_access_token || user.microsoft_refresh_token) {
+            connected.push("outlook", "teams");
+        }
+
+        // Zoom
+        if (user.zoom_access_token || user.zoom_refresh_token) {
+            connected.push("zoom");
+        }
 
         // Vercel
         if (user.vercel_access_token) connected.push("vercel");
 
         // Notion
-        if (user.notion_access_token) connected.push("mcp-notion");
+        if (user.notion_access_token || user.notion_refresh_token) connected.push("mcp-notion");
 
-        // Google Workspace services (single token grants access to all)
-        if (user.google_workspace_tokens?.access_token) {
-            const scopes = user.google_workspace_tokens.scope || "";
-            if (scopes.includes("gmail") || scopes.includes("mail")) connected.push("gmail");
-            if (scopes.includes("calendar")) connected.push("gcal");
-            if (scopes.includes("drive")) connected.push("gdrive");
-            if (scopes.includes("classroom")) connected.push("gclass");
-            // Google Meet uses Calendar API, so if calendar is connected, meet works too
-            if (scopes.includes("calendar")) connected.push("gmeet");
-        }
+        // WhatsApp Business — stored in metadata
+        if (user.metadata?.whatsapp_connected) connected.push("whatsapp");
 
-        // Microsoft (Outlook + Teams share the same token)
-        if (user.microsoft_access_token) {
-            connected.push("outlook");
-            connected.push("teams");
-        }
-
-        // Zoom
-        if (user.zoom_access_token) connected.push("zoom");
-
-        // MCP integrations (Cursor, ChatGPT, Claude) — these are stored in metadata
-        // because they use API key pairing, not full OAuth
+        // MCP integrations (Cursor, ChatGPT, Claude) — stored in metadata
         const mcpConnected = user.metadata?.connected_integrations || [];
         for (const id of mcpConnected) {
             if (!connected.includes(id)) connected.push(id);
