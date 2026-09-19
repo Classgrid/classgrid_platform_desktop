@@ -788,7 +788,7 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     }
 
                     if (notionConnected) {
-                        activeDescriptions.push(`- **Notion**: ✅ CONNECTED. Use 'notion_connector' tool to search, get_page.`);
+                        activeDescriptions.push(`- **Notion**: ✅ CONNECTED. Use 'notion_connector' tool to search, get_page, create_page.`);
                         allowedConnectorNames.add('notion_connector');
                     }
                     

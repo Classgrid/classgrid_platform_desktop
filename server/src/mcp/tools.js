@@ -181,10 +181,12 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['search', 'get_page'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['search', 'get_page', 'create_page'], description: 'The operation to perform.' },
         query: { type: 'string', description: 'The search term (required for search).' },
         limit: { type: 'number', description: 'Max results to return (for search).' },
-        pageId: { type: 'string', description: 'The ID of the page to retrieve (required for get_page).' }
+        pageId: { type: 'string', description: 'The ID of the page or database (required for get_page or create_page parent).' },
+        title: { type: 'string', description: 'The title of the new page (required for create_page).' },
+        content: { type: 'string', description: 'The markdown-like content to insert into the new page (for create_page).' }
       },
       required: ['operation']
     }
@@ -1211,6 +1213,44 @@ export const handleToolCall = async (name, args, context = {}) => {
           if (outputText.length > 3000) outputText = outputText.substring(0, 3000) + "\n[TRUNCATED TO SAVE CONTEXT]";
 
           return { content: [{ type: 'text', text: outputText || 'No readable text on this page.' }] };
+        } else if (operation === 'create_page') {
+          if (!args.pageId) throw new Error("pageId (parent page ID) is required for create_page");
+          if (!args.title) throw new Error("title is required for create_page");
+          
+          const payload = {
+            parent: { page_id: args.pageId },
+            properties: {
+              title: [
+                {
+                  text: { content: args.title }
+                }
+              ]
+            },
+            children: [
+              {
+                object: 'block',
+                type: 'paragraph',
+                paragraph: {
+                  rich_text: [
+                    {
+                      type: 'text',
+                      text: { content: args.content || "Empty page created by Classgrid AI" }
+                    }
+                  ]
+                }
+              }
+            ]
+          };
+
+          const res = await fetch('https://api.notion.com/v1/pages', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.message || 'Notion API error');
+
+          return { content: [{ type: 'text', text: `Success! Created Notion page with ID: ${data.id} and URL: ${data.url}` }] };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }
