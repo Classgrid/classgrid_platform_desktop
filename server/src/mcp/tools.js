@@ -18,6 +18,8 @@ import { marked } from 'marked';
 import { NodeSSH } from 'node-ssh';
 import { s3Client, BUCKET_NAME, CDN_BASE_URL } from '../config/s3Client.js';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { uploadBufferToR2 } from '../config/r2Client.js';
+import { Readable } from 'stream';
 
 const execPromise = util.promisify(exec);
 
@@ -124,7 +126,7 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'list_classroom_submissions', 'read_classroom_file'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
         formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
         formTitle: { type: 'string', description: 'The title of the new form (required for create_form).' },
@@ -145,7 +147,13 @@ export const getMcpTools = () => [
         topic: { type: 'string', description: 'The topic/title (for create_event).' },
         startTime: { type: 'string', description: 'Start time in ISO format (for create_event).' },
         endTime: { type: 'string', description: 'End time in ISO format (for create_event).' },
-        addMeetLink: { type: 'boolean', description: 'Whether to attach a Google Meet link (for create_event).' }
+        addMeetLink: { type: 'boolean', description: 'Whether to attach a Google Meet link (for create_event).' },
+        fileId: { type: 'string', description: 'The ID of the file in Google Drive or Classroom.' },
+        fileUrl: { type: 'string', description: 'The public URL of the file to download and upload into Drive (for upload_drive_file).' },
+        mimeType: { type: 'string', description: 'Optional. The MIME type to export as, if exporting a Google Doc (e.g. application/pdf).' },
+        courseId: { type: 'string', description: 'The Classroom course ID.' },
+        courseworkId: { type: 'string', description: 'The Classroom coursework/assignment ID.' },
+        submissionId: { type: 'string', description: 'The Classroom submission ID.' }
       },
       required: ['operation']
     }
@@ -946,6 +954,48 @@ export const handleToolCall = async (name, args, context = {}) => {
             fields: 'id, name, webViewLink',
           });
           data = res.data;
+        } else if (operation === 'read_drive_file') {
+          if (!args.fileId) throw new Error("fileId is required for read_drive_file");
+          const drive = google.drive({ version: 'v3', auth: oauth2Client });
+          const fileMeta = await drive.files.get({ fileId: args.fileId, fields: 'name, mimeType' });
+          const isGoogleWorkspaceType = fileMeta.data.mimeType.startsWith('application/vnd.google-apps.');
+          
+          let buffer;
+          let mime = fileMeta.data.mimeType;
+          if (isGoogleWorkspaceType) {
+              const exportMime = args.mimeType || 'application/pdf';
+              if (fileMeta.data.mimeType === 'application/vnd.google-apps.folder') throw new Error("Cannot read a folder as a file.");
+              const file = await drive.files.export({ fileId: args.fileId, mimeType: exportMime }, { responseType: 'arraybuffer' });
+              buffer = Buffer.from(file.data);
+              mime = exportMime;
+              if (exportMime === 'application/pdf' && !fileMeta.data.name.endsWith('.pdf')) fileMeta.data.name += '.pdf';
+          } else {
+              const file = await drive.files.get({ fileId: args.fileId, alt: 'media' }, { responseType: 'arraybuffer' });
+              buffer = Buffer.from(file.data);
+          }
+          
+          if (buffer.length > 10 * 1024 * 1024) throw new Error("File exceeds 10MB limit. OCR/Parsing rejected.");
+          const url = await uploadBufferToR2(buffer, fileMeta.data.name, mime, `ai-temp-cache/${Date.now()}-${fileMeta.data.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`);
+          data = { message: "File downloaded and securely staged in R2 temp cache.", url, name: fileMeta.data.name, mimeType: mime, sizeBytes: buffer.length };
+        } else if (operation === 'upload_drive_file') {
+          if (!args.fileUrl) throw new Error("fileUrl is required for upload_drive_file");
+          
+          // Download file from URL
+          const fetchRes = await fetch(args.fileUrl);
+          if (!fetchRes.ok) throw new Error(`Failed to download file from URL: ${fetchRes.statusText}`);
+          const arrBuffer = await fetchRes.arrayBuffer();
+          const buffer = Buffer.from(arrBuffer);
+          const mime = fetchRes.headers.get('content-type') || 'application/octet-stream';
+          const fileName = args.fileUrl.split('/').pop()?.split('?')[0] || `uploaded_${Date.now()}`;
+          
+          // Upload to Drive
+          const drive = google.drive({ version: 'v3', auth: oauth2Client });
+          const res = await drive.files.create({
+            resource: { name: fileName },
+            media: { mimeType: mime, body: Readable.from(buffer) },
+            fields: 'id, name, webViewLink'
+          });
+          data = { message: "File successfully uploaded to Google Drive.", ...res.data };
         } else if (operation === 'list_emails') {
           const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
           const res = await gmail.users.messages.list({
@@ -1041,6 +1091,44 @@ export const handleToolCall = async (name, args, context = {}) => {
           }
           const res = await calendar.events.insert(eventParams);
           data = res.data;
+        } else if (operation === 'list_classroom_courses') {
+          const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
+          const res = await classroom.courses.list({ pageSize: limit, courseStates: ['ACTIVE'] });
+          data = res.data.courses || [];
+        } else if (operation === 'list_classroom_assignments') {
+          if (!args.courseId) throw new Error("courseId is required for list_classroom_assignments");
+          const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
+          const res = await classroom.courses.courseWork.list({ courseId: args.courseId, pageSize: limit });
+          data = res.data.courseWork || [];
+        } else if (operation === 'list_classroom_submissions') {
+          if (!args.courseId || !args.courseworkId) throw new Error("courseId and courseworkId are required for list_classroom_submissions");
+          const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
+          const res = await classroom.courses.courseWork.studentSubmissions.list({ courseId: args.courseId, courseWorkId: args.courseworkId, pageSize: limit });
+          data = res.data.studentSubmissions || [];
+        } else if (operation === 'read_classroom_file') {
+          if (!args.fileId) throw new Error("fileId is required for read_classroom_file");
+          // Classroom files are just Drive files, so we reuse the read_drive_file logic under the hood
+          const drive = google.drive({ version: 'v3', auth: oauth2Client });
+          const fileMeta = await drive.files.get({ fileId: args.fileId, fields: 'name, mimeType' });
+          const isGoogleWorkspaceType = fileMeta.data.mimeType.startsWith('application/vnd.google-apps.');
+          
+          let buffer;
+          let mime = fileMeta.data.mimeType;
+          if (isGoogleWorkspaceType) {
+              const exportMime = args.mimeType || 'application/pdf';
+              if (fileMeta.data.mimeType === 'application/vnd.google-apps.folder') throw new Error("Cannot read a folder as a file.");
+              const file = await drive.files.export({ fileId: args.fileId, mimeType: exportMime }, { responseType: 'arraybuffer' });
+              buffer = Buffer.from(file.data);
+              mime = exportMime;
+              if (exportMime === 'application/pdf' && !fileMeta.data.name.endsWith('.pdf')) fileMeta.data.name += '.pdf';
+          } else {
+              const file = await drive.files.get({ fileId: args.fileId, alt: 'media' }, { responseType: 'arraybuffer' });
+              buffer = Buffer.from(file.data);
+          }
+          
+          if (buffer.length > 10 * 1024 * 1024) throw new Error("File exceeds 10MB limit. OCR/Parsing rejected.");
+          const url = await uploadBufferToR2(buffer, fileMeta.data.name, mime, `ai-temp-cache/${Date.now()}-${fileMeta.data.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`);
+          data = { message: "Classroom file downloaded and securely staged in R2 temp cache.", url, name: fileMeta.data.name, mimeType: mime, sizeBytes: buffer.length };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }

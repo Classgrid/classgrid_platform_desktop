@@ -778,7 +778,7 @@ If the check returns NO, you must NOT attempt to use the connector tool. DO NOT 
                     let disconnectedLinks = [];
 
                     if (googleConnected) {
-                        activeDescriptions.push(`- **Google Workspace (Gmail, Calendar, Drive, Meet, Forms)**: ✅ CONNECTED. Use 'google_workspace_connector' tool to list_emails, list_events, create_event, list_drive_files, create_folder, create_form, get_form. IMPORTANT: When a creation tool succeeds (like create_event or create_form), DO NOT generate "Add to Calendar" or similar manual fallback links in your response. The tool directly adds the item to the user's account automatically.`);
+                        activeDescriptions.push(`- **Google Workspace (Gmail, Calendar, Drive, Meet, Forms, Classroom)**: ✅ CONNECTED. Use 'google_workspace_connector' tool to list_emails, list_events, create_event, list_drive_files, create_folder, create_form, get_form, read_drive_file, upload_drive_file, list_classroom_courses, list_classroom_assignments, list_classroom_submissions, read_classroom_file. IMPORTANT WORKFLOW FOR DOCUMENTS: If the user asks you to read a file from Drive or Classroom, use \`read_drive_file\` or \`read_classroom_file\` to securely stage it in R2. The tool will return an R2 url. You MUST immediately call \`parse_document\` on that R2 url to read the text. To save a generated file to Drive, use \`upload_drive_file\` with the file URL.`);
                     }
 
                     if (msConnected) {
