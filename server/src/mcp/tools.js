@@ -120,12 +120,13 @@ export const getMcpTools = () => [
   },
   {
     name: 'google_workspace_connector',
-    description: 'Interact with Google Workspace APIs (Calendar, Drive, Classroom, Gmail) using the connected user token.',
+    description: 'Interact with Google Workspace APIs (Calendar, Drive, Classroom, Gmail, Forms) using the connected user token.',
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails'], description: 'The operation to perform.' },
-        limit: { type: 'number', description: 'Max results to return.' }
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'get_form', 'list_form_responses'], description: 'The operation to perform.' },
+        limit: { type: 'number', description: 'Max results to return.' },
+        formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' }
       },
       required: ['operation']
     }
@@ -914,6 +915,16 @@ export const handleToolCall = async (name, args, context = {}) => {
             const from = headers.find(h => h.name === 'From')?.value;
             data.push({ id: msg.data.id, snippet: msg.data.snippet, subject, from });
           }
+        } else if (operation === 'get_form') {
+          if (!args.formId) throw new Error("formId is required for get_form");
+          const forms = google.forms({ version: 'v1', auth: oauth2Client });
+          const res = await forms.forms.get({ formId: args.formId });
+          data = res.data;
+        } else if (operation === 'list_form_responses') {
+          if (!args.formId) throw new Error("formId is required for list_form_responses");
+          const forms = google.forms({ version: 'v1', auth: oauth2Client });
+          const res = await forms.forms.responses.list({ formId: args.formId });
+          data = res.data.responses || [];
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }

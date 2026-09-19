@@ -606,6 +606,133 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
             }
         }
 
+        // ─────────────────────────────────────────────────────────────────────────────────
+        // 🔌 COMPREHENSIVE PLUGIN & INTEGRATION STATUS INJECTION (50-100 LINES)
+        // Fetches real-time token data from DB and builds a full status dashboard
+        // so the AI knows EXACTLY what is connected, what is not, what it can do.
+        // ─────────────────────────────────────────────────────────────────────────────────
+        let pluginPrompt = '';
+        if (req.user) {
+            try {
+                const User = mongoose.model('User');
+                const latestUser = await User.findById(req.user._id).lean();
+                if (latestUser) {
+                    const connectedMcps = latestUser.metadata?.connected_integrations || [];
+                    const now = new Date();
+
+                    const integrationErrors = latestUser.metadata?.integration_errors || {};
+
+                    const getStatus = (isConnected, isExpired, provider) => {
+                        if (isConnected) {
+                            return isExpired ? '⚠️ TOKEN EXPIRED (auto-refresh will be attempted)' : '✅ CONNECTED & ACTIVE';
+                        }
+                        const err = integrationErrors[provider];
+                        if (err) {
+                            return `❌ NOT CONNECTED (Last attempt failed/cancelled: ${err})`;
+                        }
+                        return '❌ NOT CONNECTED';
+                    };
+
+                    // ── Google Workspace (5 sub-plugins share ONE OAuth token) ──
+                    const googleConnected = !!(latestUser.google_access_token && latestUser.google_refresh_token);
+                    const googleExpiry = latestUser.google_token_expiry ? new Date(latestUser.google_token_expiry) : null;
+                    const googleExpired = googleExpiry && googleExpiry < now;
+                    const googleStatus = getStatus(googleConnected, googleExpired, 'google');
+
+                    // ── Microsoft 365 ──
+                    const msConnected = !!(latestUser.microsoft_access_token);
+                    const msExpiry = latestUser.microsoft_token_expiry ? new Date(latestUser.microsoft_token_expiry) : null;
+                    const msExpired = msExpiry && msExpiry < now;
+                    const msStatus = getStatus(msConnected, msExpired, 'microsoft');
+
+                    // ── Zoom ──
+                    const zoomConnected = !!(latestUser.zoom_access_token);
+                    const zoomExpiry = latestUser.zoom_token_expiry ? new Date(latestUser.zoom_token_expiry) : null;
+                    const zoomExpired = zoomExpiry && zoomExpiry < now;
+                    const zoomStatus = getStatus(zoomConnected, zoomExpired, 'zoom');
+
+                    // ── Notion ──
+                    const notionConnected = !!(latestUser.notion_access_token);
+                    const notionStatus = getStatus(notionConnected, false, 'notion');
+
+                    // ── Vercel ──
+                    const vercelConnected = !!(latestUser.vercel_access_token);
+                    const vercelStatus = getStatus(vercelConnected, false, 'vercel');
+
+                    // ── MCP-based plugins ──
+                    const whatsappConnected = !!(process.env.WHATSAPP_PHONE_ID && process.env.WHATSAPP_ACCESS_TOKEN);
+                    const cursorConnected = connectedMcps.includes('mcp-cursor');
+                    const chatgptConnected = connectedMcps.includes('mcp-chatgpt');
+                    const claudeConnected = connectedMcps.includes('mcp-claude');
+
+                    pluginPrompt = `
+
+--- 🔌 INTEGRATION & PLUGIN STATUS DASHBOARD (CRITICAL — READ EVERY LINE) ---
+You are equipped with 14 external integration plugins. Below is the REAL-TIME connection status for this user, fetched directly from the database. This is NOT fake or placeholder data — these are actual OAuth token checks.
+
+## INTEGRATION STATUS TABLE
+| #  | Plugin               | Status                          | Tool Name                        | Available Operations                                                       |
+|----|----------------------|---------------------------------|----------------------------------|----------------------------------------------------------------------------|
+| 1  | Gmail                | ${googleStatus}                 | google_workspace_connector       | list_emails (read unread inbox)                                            |
+| 2  | Google Calendar      | ${googleStatus}                 | google_workspace_connector       | list_events (upcoming events)                                              |
+| 3  | Google Drive         | ${googleStatus}                 | google_workspace_connector       | list_drive_files (search/browse files)                                     |
+| 4  | Google Classroom     | ${googleStatus}                 | google_workspace_connector       | (via dedicated /api/google/ routes)                                        |
+| 5  | Google Meet          | ${googleStatus}                 | google_workspace_connector       | (via dedicated /api/google-workspace/meet route)                           |
+| 6  | Google Forms         | ${googleStatus}                 | google_workspace_connector       | get_form, list_form_responses                                              |
+| 7  | Microsoft Outlook    | ${msStatus}                     | microsoft_workspace_connector    | list_emails (unread Outlook emails)                                        |
+| 8  | Microsoft Teams      | ${msStatus}                     | microsoft_workspace_connector    | list_meetings (Teams meetings)                                             |
+| 9  | Zoom                 | ${zoomStatus}                   | zoom_connector                   | list_meetings (Zoom meetings list)                                         |
+| 10 | Notion               | ${notionStatus}                 | (via Notion API routes)          | Search pages, databases, create content                                    |
+| 11 | Vercel               | ${vercelStatus}                 | vercel_connector                 | list_projects, list_deployments, get_deployment                            |
+| 12 | WhatsApp Business    | ${whatsappConnected ? '✅ CONFIGURED (server-level)' : '❌ NOT CONFIGURED'} | whatsapp_business_connector | Send text messages to any phone number                                     |
+| 13 | Cursor IDE (MCP)     | ${cursorConnected ? '✅ CONNECTED' : '❌ NOT CONNECTED'} | (MCP bridge)              | Code workspace access, file analysis                                       |
+| 14 | ChatGPT (MCP)        | ${chatgptConnected ? '✅ CONNECTED' : '❌ NOT CONNECTED'} | (MCP bridge)             | GPT conversations, memory access                                           |
+| 15 | Claude (MCP)         | ${claudeConnected ? '✅ CONNECTED' : '❌ NOT CONNECTED'} | (MCP bridge)              | Large context analysis, document reasoning                                 |
+
+## YOUR ACCESS RULES (STRICT)
+1. For plugins marked ✅ CONNECTED: You HAVE FULL ACCESS. Use the corresponding tool name to interact with the API. NEVER say "I don't have access" or "I can't do that" — you CAN and you MUST.
+2. For plugins marked ⚠️ TOKEN EXPIRED: The system will automatically attempt to refresh the token. Try the tool call anyway — if it fails, tell the user their session expired and they need to reconnect.
+3. For plugins marked ❌ NOT CONNECTED: You do NOT have access. If the user asks you to use a disconnected plugin, tell them it is not connected and IMMEDIATELY provide them with the direct OAuth connection link so they can log in. Use the following markdown links:
+   - **Google Workspace** (Gmail, Calendar, Drive, Classroom, Meet, Forms): \`[Connect Google Workspace](/api/google-workspace/connect?service=all)\` (or append \`?service=forms\` for a specific app)
+   - **Microsoft** (Outlook, Teams): \`[Connect Microsoft](/api/auth/microsoft/connect)\`
+   - **Zoom**: \`[Connect Zoom](/api/zoom/connect)\`
+   - **Notion**: \`[Connect Notion](/api/auth/notion/connect)\`
+   - **Vercel**: \`[Connect Vercel](/api/auth/vercel/connect)\`
+
+## WHAT YOU CAN DO WITH CONNECTED PLUGINS
+- **Gmail**: Read unread emails, search inbox, summarize email threads. Tool: google_workspace_connector with operation='list_emails'.
+- **Google Calendar**: List upcoming events, check availability, find scheduling conflicts. Tool: google_workspace_connector with operation='list_events'.
+- **Google Drive**: Search and browse files, list recent documents, find specific spreadsheets or presentations. Tool: google_workspace_connector with operation='list_drive_files'.
+- **Google Classroom**: List active courses, view assignments, check student submissions. (Uses dedicated backend routes, not the connector tool.)
+- **Google Meet**: Create meeting links, schedule live classes with automatic student invites. (Uses dedicated backend routes.)
+- **Google Forms**: Fetch form structure and read form responses/survey answers. Tool: google_workspace_connector with operation='get_form' or 'list_form_responses'.
+- **Microsoft Outlook**: Read unread emails, search corporate inbox. Tool: microsoft_workspace_connector with operation='list_emails'.
+- **Microsoft Teams**: List scheduled Teams meetings. Tool: microsoft_workspace_connector with operation='list_meetings'.
+- **Zoom**: List all scheduled Zoom meetings, check upcoming calls. Tool: zoom_connector with operation='list_meetings'.
+- **Notion**: Search through Notion pages and databases, create new pages. (Uses dedicated backend Notion API routes.)
+- **Vercel**: List all Vercel projects, view deployments, check build status, inspect deployment details. Tool: vercel_connector with operation='list_projects'/'list_deployments'/'get_deployment'. IMPORTANT: Vercel access is restricted to super_admin users only.
+- **WhatsApp Business**: Send text messages to any phone number with country code. Tool: whatsapp_business_connector with toPhoneNumber and messageText.
+- **Cursor IDE**: Access the user's code workspace, analyze files, generate code snippets. (MCP bridge integration.)
+- **ChatGPT**: Access ChatGPT conversations and memory. (MCP bridge integration.)
+- **Claude**: Leverage Claude's large context window for document analysis. (MCP bridge integration.)
+
+## CRITICAL BEHAVIORAL RULES
+- You are NOT blind. You can see the full integration dashboard above. If someone asks "what plugins do I have?" or "what's connected?", show them the status table above in a clean, friendly format.
+- If the user asks "do you support [X] plugin?", check the table. If it exists, tell them the status. If it doesn't exist, say it's not available yet.
+- When you successfully use a tool (e.g., list_emails returns data), present the results in a clean, human-readable format — NOT raw JSON.
+- If a tool call fails with an auth error, do NOT silently fail. Tell the user their token may have expired and suggest they reconnect via the AI Hub.
+- You can also check system logs and server logs using the unified_db_query tool (source='mongodb', collectionOrTable='SystemLog' or 'ActivityLog'). This gives you visibility into what the user and their organization have been doing on the platform.
+--- END INTEGRATION DASHBOARD ---`;
+                }
+            } catch (err) {
+                console.error('Error building plugin status for system prompt:', err);
+            }
+        }
+
+        if (pluginPrompt) {
+            dynamicSystemPrompt += pluginPrompt;
+        }
+
         messages.unshift({ role: "system", content: dynamicSystemPrompt });
 
         // 3. Initialize the real LLM Client from the Classgrid SDK using the fallback hierarchy
@@ -1880,17 +2007,21 @@ export const bulkDeleteAgentReviews = async (req, res) => {
 export const generateImage = async (req, res) => {
     try {
         const { prompt, sessionId, userEmail, isIncognito } = req.body;
-        if (!prompt) {
-            return res.status(400).json({ error: "Prompt is required" });
-        }
-        // Truncate the prompt to prevent 414 URI Too Long errors from Pollinations GET request
-        const safePrompt = prompt.length > 800 ? prompt.substring(0, 800) : prompt;
-        const encodedPrompt = encodeURIComponent(safePrompt);
-        // Call Pollinations AI (Flux)
-        // We removed the seed parameter to perfectly match the WhatsApp repo logic.
-        const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
+        // Call Pollinations AI (Flux) using POST to support unlimited length prompts
+        const pollinationsUrl = `https://image.pollinations.ai/`;
         
-        const imageRes = await fetch(pollinationsUrl);
+        const imageRes = await fetch(pollinationsUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                prompt: prompt,
+                width: 1024,
+                height: 1024,
+                nologo: true
+            })
+        });
         if (!imageRes.ok) throw new Error(`Image API failed: ${imageRes.status}`);
         
         const imageBuffer = Buffer.from(await imageRes.arrayBuffer());

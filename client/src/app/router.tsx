@@ -183,6 +183,7 @@ import { TestFullScreenLoginPage } from "@/features/auth/pages/TestFullScreenLog
 import { ResetPasswordPage } from "@/features/auth/pages/ResetPasswordPage";
 import { RequiredPasswordResetPage } from "@/features/auth/pages/RequiredPasswordResetPage";
 import { EnterOrganizationCodePage } from "@/features/auth/pages/EnterOrganizationCodePage";
+import { OAuthConsentPage } from "@/features/oauth/pages/OAuthConsentPage";
 import { RequireAuth } from "@/features/auth/components/RequireAuth";
 import { getRedirectPath, isInstitutionAdminRole } from "@/features/auth/auth-helpers";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
@@ -281,6 +282,7 @@ export function AppRouter() {
       <Route element={<RequireAuth />}>
         <Route path="/required-password-reset" element={<RequiredPasswordResetPage />} />
         <Route path="/enter-org-code" element={<EnterOrganizationCodePage />} />
+        <Route path="/oauth/authorize" element={<OAuthConsentPage />} />
         
         {/* NEW SUPER ADMIN SHELL */}
         <Route element={<SuperAdminLayout />}>

@@ -1297,6 +1297,7 @@ export const INTEGRATIONS_LIST: any[] = [
   { id: "gdrive", name: "Google Drive", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Google_Drive_icon_(2026).svg" },
   { id: "gclass", name: "Google Classroom", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Google_Classroom_Logo.svg" },
   { id: "gmeet", name: "Google Meet", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Google_Meet_icon_(2026).svg" },
+  { id: "gforms", name: "Google Forms", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Google_Forms_icon_(2026).svg" },
   { id: "outlook", name: "Microsoft Outlook", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/Microsoft_Outlook_Icon_(2025%C3%A2%C2%80%C2%93present).svg" },
   { id: "teams", name: "Microsoft Teams", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/microsoft-teams-svgrepo-com.svg" },
   { id: "zoom", name: "Zoom", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/zoom-communications-icon_(1).svg" },
@@ -4821,6 +4822,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       <AiHubModal 
         isOpen={isAiHubOpen} 
         onClose={() => setIsAiHubOpen(false)} 
+        onSendPrompt={(text) => askQuestion(text)}
       />
     </>
   );

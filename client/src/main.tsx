@@ -62,6 +62,18 @@ if (typeof window !== 'undefined' && import.meta.env.VITE_POSTHOG_KEY) {
   });
 }
 
+// Intercept OAuth callback redirects in popup windows
+const params = new URLSearchParams(window.location.search);
+if (window.opener && window.opener !== window) {
+  if (params.get('integration_success')) {
+    window.opener.postMessage({ type: 'integration_success', provider: params.get('integration_success') }, '*');
+    window.close();
+  } else if (params.get('integration_error')) {
+    window.opener.postMessage({ type: 'integration_error', provider: params.get('integration_error') }, '*');
+    window.close();
+  }
+}
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>

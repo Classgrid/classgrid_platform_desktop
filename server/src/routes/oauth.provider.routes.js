@@ -84,36 +84,51 @@ router.post("/register", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
-// 2. AUTHORIZATION ENDPOINT (Shows Consent Screen)
+// 2. AUTHORIZATION ENDPOINT (Redirects to Frontend Consent Screen)
 // ─────────────────────────────────────────────
-router.get("/authorize", isAuthenticated, async (req, res) => {
+router.get("/authorize", async (req, res) => {
     try {
-        await connectDB();
         const { client_id, redirect_uri, response_type, state } = req.query;
 
-        if (response_type !== "code") {
-            return res.status(400).json({ error: "unsupported_response_type" });
-        }
+        // Redirect to the frontend consent UI
+        const defaultFrontendUrl = process.env.FRONTEND_URL?.trim() || (process.env.NODE_ENV === "production" ? "https://app.classgrid.in" : "http://localhost:5173");
+        
+        const redirectUrl = new URL(`${defaultFrontendUrl}/oauth/authorize`);
+        if (client_id) redirectUrl.searchParams.append("client_id", client_id);
+        if (redirect_uri) redirectUrl.searchParams.append("redirect_uri", redirect_uri);
+        if (response_type) redirectUrl.searchParams.append("response_type", response_type);
+        if (state) redirectUrl.searchParams.append("state", state);
+
+        return res.redirect(redirectUrl.toString());
+    } catch (err) {
+        console.error("Authorize GET Redirect Error:", err);
+        res.status(500).json({ error: "server_error" });
+    }
+});
+
+// ─────────────────────────────────────────────
+// 2.5. FETCH CLIENT DETAILS (Used by Frontend UI)
+// ─────────────────────────────────────────────
+router.get("/client-details", isAuthenticated, async (req, res) => {
+    try {
+        await connectDB();
+        const { client_id, redirect_uri } = req.query;
 
         const client = await OAuthClient.findOne({ clientId: client_id });
         if (!client) {
             return res.status(400).json({ error: "invalid_client" });
         }
 
-        if (!client.redirectUris.includes(redirect_uri)) {
+        if (redirect_uri && !client.redirectUris.includes(redirect_uri)) {
             return res.status(400).json({ error: "invalid_grant", message: "Redirect URI mismatch" });
         }
 
-        // Ideally, we'd render a frontend consent screen here: "Notion wants access to your data..."
-        // But since this is API-first, we'll respond with the app details so the frontend can build the UI.
         res.json({
             client: { name: client.name, clientId: client.clientId },
-            user: { name: req.user.name, email: req.user.email },
-            redirect_uri,
-            state
+            user: { name: req.user.name, email: req.user.email }
         });
     } catch (err) {
-        console.error("Authorize GET Error:", err);
+        console.error("Client Details GET Error:", err);
         res.status(500).json({ error: "server_error" });
     }
 });

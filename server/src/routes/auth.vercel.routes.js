@@ -7,8 +7,10 @@ const router = express.Router();
 
 const getVercelAuthUrl = (state) => {
     const clientId = process.env.VERCEL_CLIENT_ID;
+    const redirectUri = `${process.env.BACKEND_URL}/api/auth/vercel/callback`;
     const authUrl = new URL(`https://vercel.com/oauth/authorize`);
     authUrl.searchParams.append('client_id', clientId);
+    authUrl.searchParams.append('redirect_uri', redirectUri);
     authUrl.searchParams.append('state', state);
     
     return authUrl.toString();
@@ -90,7 +92,7 @@ router.get("/callback", async (req, res) => {
         res.redirect(redirectUrl.toString());
     } catch (err) {
         console.error("Vercel Callback Error:", err);
-        res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=vercel_fatal`);
+        res.redirect(`${process.env.FRONTEND_URL || 'https://classgrid.in'}?integration_error=vercel_fatal`);
     }
 });
 

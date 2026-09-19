@@ -89,6 +89,11 @@ router.get("/connect", isAuthenticated, (req, res) => {
         scopes.push('https://www.googleapis.com/auth/gmail.readonly');
     }
 
+    if (service === 'forms' || service === 'all') {
+        scopes.push('https://www.googleapis.com/auth/forms.body');
+        scopes.push('https://www.googleapis.com/auth/forms.responses.readonly');
+    }
+
     const returnTo = req.query.returnTo || req.headers.referer || req.headers.origin || process.env.FRONTEND_URL;
     const statePayload = Buffer.from(JSON.stringify({ 
         userId: req.user._id.toString(),
@@ -109,15 +114,12 @@ router.get("/connect", isAuthenticated, (req, res) => {
 // 2. HANDLE OAUTH CALLBACK
 // ─────────────────────────────────────────────
 router.get("/callback", async (req, res) => {
+    let returnTo = null;
     try {
         await connectDB();
         const { code, state } = req.query;
 
-        if (!code || !state) {
-            return res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=google_sync_failed`);
-        }
-
-        let userId, returnTo;
+        let userId;
         try {
             const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
             userId = decodedState.userId;
@@ -125,7 +127,32 @@ router.get("/callback", async (req, res) => {
         } catch (e) {
             // Fallback for old state format (just userId)
             userId = state;
-            returnTo = `${process.env.FRONTEND_URL}/tools`;
+        }
+
+        if (!returnTo) returnTo = req.headers.referer || req.headers.origin;
+
+        const { error } = req.query;
+        if (error) {
+            console.error("Google OAuth Error:", error);
+            if (userId) {
+                const user = await User.findById(userId);
+                if (user) {
+                    user.metadata = user.metadata || {};
+                    user.metadata.integration_errors = user.metadata.integration_errors || {};
+                    user.metadata.integration_errors.google = error;
+                    user.markModified('metadata');
+                    await user.save();
+                }
+            }
+            return returnTo 
+                ? res.redirect(`${returnTo}?integration_error=google_${error}`)
+                : res.status(400).json({ error });
+        }
+
+        if (!code || !state) {
+            return returnTo 
+                ? res.redirect(`${returnTo}?integration_error=google_missing_params`)
+                : res.status(400).json({ error: "Missing code or state" });
         }
 
         if (!userId) {
@@ -149,6 +176,13 @@ router.get("/callback", async (req, res) => {
             user.google_token_expiry = new Date(tokens.expiry_date);
         }
 
+        // Clear any previous errors on success
+        user.metadata = user.metadata || {};
+        if (user.metadata.integration_errors && user.metadata.integration_errors.google) {
+            delete user.metadata.integration_errors.google;
+            user.markModified('metadata');
+        }
+
         await user.save();
 
         // Redirect back to frontend
@@ -157,8 +191,11 @@ router.get("/callback", async (req, res) => {
         res.redirect(redirectUrl.toString());
     } catch (err) {
         console.error("Google Workspace Callback Error:", err);
-        // Fallback to marketing site if we don't have returnTo
-        res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=google`);
+        if (returnTo) {
+            res.redirect(`${returnTo}?integration_error=google`);
+        } else {
+            res.status(500).json({ error: "Google connection failed", message: err.message });
+        }
     }
 });
 

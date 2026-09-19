@@ -62,9 +62,13 @@ router.get("/connect", isAuthenticated, (req, res) => {
     const clientId = process.env.ZOOM_CLIENT_ID;
     const redirectUri = encodeURIComponent(process.env.ZOOM_REDIRECT_URI);
     
-    // Zoom OAuth endpoint with required scopes
-    const url = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${req.user._id.toString()}`;
+    const returnTo = req.query.returnTo || req.headers.referer || req.headers.origin;
+    const statePayload = Buffer.from(JSON.stringify({ 
+        userId: req.user._id.toString(),
+        returnTo 
+    })).toString('base64');
 
+    const url = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${statePayload}`;
     res.json({ url });
 });
 
@@ -72,19 +76,51 @@ router.get("/connect", isAuthenticated, (req, res) => {
 // 2. HANDLE OAUTH CALLBACK
 // ─────────────────────────────────────────────
 router.get("/callback", async (req, res) => {
+    let returnTo = null;
     try {
         await connectDB();
         
         console.log("🔍 ZOOM CALLBACK HIT. Query params:", req.query);
 
-        const { code, state: userId } = req.query;
+        const { code, state } = req.query;
+
+        let userId;
+        if (state) {
+            try {
+                const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
+                userId = decodedState.userId;
+                if (decodedState.returnTo) returnTo = decodedState.returnTo;
+            } catch (e) {
+                userId = state; // Fallback: old format was just userId
+            }
+        }
+
+        if (!returnTo) returnTo = req.headers.referer || req.headers.origin;
+
+        const { error, error_description } = req.query;
+        if (error) {
+            console.error("Zoom OAuth Error:", error, error_description);
+            if (userId) {
+                const user = await User.findById(userId);
+                if (user) {
+                    user.metadata = user.metadata || {};
+                    user.metadata.integration_errors = user.metadata.integration_errors || {};
+                    user.metadata.integration_errors.zoom = error_description || error;
+                    user.markModified('metadata');
+                    await user.save();
+                }
+            }
+            return returnTo 
+                ? res.redirect(`${returnTo}?integration_error=zoom_${error}`)
+                : res.status(400).json({ error });
+        }
 
         if (!code || !userId) {
             console.error("❌ Zoom Callback Missing code or state. Query was:", req.query);
-            return res.redirect(`${process.env.FRONTEND_URL}/settings?error=zoom_sync_failed`);
+            return returnTo 
+                ? res.redirect(`${returnTo}?integration_error=zoom_missing_params`)
+                : res.status(400).json({ error: "Missing code or state" });
         }
-
-        console.log("Initiating token exchange for code:", code.substring(0, 5) + "...");
 
         // Exchange code for tokens
         const tokenResponse = await fetch("https://zoom.us/oauth/token", {
@@ -101,17 +137,16 @@ router.get("/callback", async (req, res) => {
         });
 
         const tokenData = await tokenResponse.json();
-        
-        console.log("Zoom Token Data Response:", tokenData);
 
         if (tokenData.error) {
             throw new Error(`Zoom API Error: ${tokenData.error} - ${tokenData.error_description}`);
         }
 
-        // Update the user with the zoom tokens
         const user = await User.findById(userId);
         if (!user) {
-            return res.redirect(`${process.env.FRONTEND_URL}/settings?error=user_not_found`);
+            return returnTo 
+                ? res.redirect(`${returnTo}?integration_error=user_not_found`)
+                : res.status(404).json({ error: "User not found" });
         }
 
         user.zoom_access_token = tokenData.access_token;
@@ -122,12 +157,25 @@ router.get("/callback", async (req, res) => {
             user.zoom_token_expiry = new Date(Date.now() + tokenData.expires_in * 1000);
         }
 
+        // Clear any previous errors on success
+        user.metadata = user.metadata || {};
+        if (user.metadata.integration_errors && user.metadata.integration_errors.zoom) {
+            delete user.metadata.integration_errors.zoom;
+            user.markModified('metadata');
+        }
+
         await user.save();
 
-        res.redirect(`${process.env.FRONTEND_URL}/tools?integration_success=zoom`);
+        const redirectUrl = new URL(returnTo);
+        redirectUrl.searchParams.set('integration_success', 'zoom');
+        res.redirect(redirectUrl.toString());
     } catch (err) {
         console.error("Zoom Callback Detailed Error:", err);
-        res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=zoom`);
+        if (returnTo) {
+            res.redirect(`${returnTo}?integration_error=zoom`);
+        } else {
+            res.status(500).json({ error: "Zoom connection failed", message: err.message });
+        }
     }
 });
 

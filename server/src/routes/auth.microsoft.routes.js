@@ -5,7 +5,7 @@ import connectDB from "../../config/db.js";
 
 const router = express.Router();
 
-const getMicrosoftAuthUrl = (userId) => {
+const getMicrosoftAuthUrl = (statePayload) => {
     const tenant = 'common';
     const clientId = process.env.MICROSOFT_CLIENT_ID;
     const redirectUri = `${process.env.BACKEND_URL}/api/auth/microsoft/callback`;
@@ -40,11 +40,12 @@ router.get("/connect", isAuthenticated, (req, res) => {
 
 // 2. HANDLE CALLBACK
 router.get("/callback", async (req, res) => {
+    let returnTo = null;
     try {
         await connectDB();
         const { code, state, error, error_description } = req.query;
 
-        let userId, returnTo = process.env.FRONTEND_URL;
+        let userId;
         if (state) {
             try {
                 const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
@@ -55,8 +56,20 @@ router.get("/callback", async (req, res) => {
             }
         }
 
+        if (!returnTo) returnTo = req.headers.referer || req.headers.origin;
+
         if (error) {
             console.error("Microsoft OAuth Error:", error, error_description);
+            if (userId) {
+                const user = await User.findById(userId);
+                if (user) {
+                    user.metadata = user.metadata || {};
+                    user.metadata.integration_errors = user.metadata.integration_errors || {};
+                    user.metadata.integration_errors.microsoft = error_description || error;
+                    user.markModified('metadata');
+                    await user.save();
+                }
+            }
             return res.redirect(`${returnTo}?integration_error=microsoft`);
         }
 
@@ -97,6 +110,13 @@ router.get("/callback", async (req, res) => {
             user.microsoft_token_expiry = new Date(Date.now() + tokenData.expires_in * 1000);
         }
 
+        // Clear any previous errors on success
+        user.metadata = user.metadata || {};
+        if (user.metadata.integration_errors && user.metadata.integration_errors.microsoft) {
+            delete user.metadata.integration_errors.microsoft;
+            user.markModified('metadata');
+        }
+
         await user.save();
 
         const redirectUrl = new URL(returnTo);
@@ -104,8 +124,11 @@ router.get("/callback", async (req, res) => {
         res.redirect(redirectUrl.toString());
     } catch (err) {
         console.error("Microsoft Callback Error:", err);
-        // Fallback since returnTo might not be fully initialized in scope if an error happens early
-        res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=microsoft_fatal`);
+        if (returnTo) {
+            res.redirect(`${returnTo}?integration_error=microsoft_fatal`);
+        } else {
+            res.status(500).json({ error: "Microsoft connection failed", message: err.message });
+        }
     }
 });
 

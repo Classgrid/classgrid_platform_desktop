@@ -17,6 +17,7 @@ import { Button } from "@/components/marketing_ui/button";
 interface AiHubModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSendPrompt?: (prompt: string) => void;
 }
 
 const TABS = [
@@ -40,15 +41,40 @@ export function AiHubModal({ isOpen, onClose }: AiHubModalProps) {
      setSelectedPlugin(null);
   }, [activeTab]);
 
+  React.useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'integration_success') {
+         // The provider string might need mapping, but let's assume it matches the ID
+         toast.success(`Integration connected successfully!`);
+         setConnectedPlugins(prev => {
+            const newPlugins = [...prev];
+            // Handle generic 'google' mapping if needed
+            if (event.data.provider === 'google') {
+               newPlugins.push('gmail', 'gcal', 'gdrive', 'gclass', 'gmeet');
+            } else {
+               newPlugins.push(event.data.provider);
+            }
+            return newPlugins;
+         });
+         setIsConnecting(false);
+      } else if (event.data?.type === 'integration_error') {
+         toast.error(`Integration failed: ${event.data.provider}`);
+         setIsConnecting(false);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   const handleConnect = async (id: string, name: string) => {
     setIsConnecting(true);
     try {
-      const isGoogle = ['gmail', 'gcal', 'gdrive', 'gclass', 'gmeet'].includes(id);
+      const isGoogle = ['gmail', 'gcal', 'gdrive', 'gclass', 'gmeet', 'gforms'].includes(id);
       const isMicrosoft = id === 'outlook' || id === 'teams';
       
       let endpoint = '';
       if (isGoogle) {
-        const service = id === 'gcal' ? 'calendar' : id === 'gdrive' ? 'drive' : id === 'gclass' ? 'classroom' : id === 'gmeet' ? 'meet' : 'gmail';
+        const service = id === 'gcal' ? 'calendar' : id === 'gdrive' ? 'drive' : id === 'gclass' ? 'classroom' : id === 'gmeet' ? 'meet' : id === 'gforms' ? 'forms' : 'gmail';
         endpoint = `/api/google-workspace/connect?service=${service}&returnTo=${encodeURIComponent(window.location.href)}`;
       } else if (isMicrosoft) {
         endpoint = `/api/auth/microsoft/connect?returnTo=${encodeURIComponent(window.location.href)}`;
@@ -74,7 +100,18 @@ export function AiHubModal({ isOpen, onClose }: AiHubModalProps) {
       
       const data = await res.json();
       if (data.url) {
-        window.location.href = data.url;
+        // Open OAuth in a popup window
+        const width = 600;
+        const height = 700;
+        const left = (window.innerWidth - width) / 2;
+        const top = (window.innerHeight - height) / 2;
+        window.open(
+          data.url, 
+          'OAuth', 
+          `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+        );
+        // The popup will postMessage back to us and close itself.
+        // We leave isConnecting=true until the message is received.
       } else if (data.success) {
         toast.success(`${name} connected successfully!`);
         setConnectedPlugins(prev => [...prev, id]);
@@ -102,6 +139,7 @@ export function AiHubModal({ isOpen, onClose }: AiHubModalProps) {
       case "gdrive": return ["Search documents, sheets, and presentations", "Summarize Drive files on demand", "Generate content based on existing files"];
       case "gclass": return ["Access course materials and assignments", "Draft student feedback and grading rubrics", "Sync class announcements automatically"];
       case "gmeet": return ["Generate Google Meet links instantly", "Summarize meeting transcripts", "Share meeting context with attendees"];
+      case "gforms": return ["Generate custom surveys and quizzes", "Analyze form responses automatically", "Sync forms to classrooms"];
       case "outlook": return ["Manage Outlook emails seamlessly", "Summarize corporate communications", "Sync calendar and inbox data"];
       case "teams": return ["Send and read Microsoft Teams messages", "Summarize channel discussions", "Schedule Teams meetings automatically"];
       case "zoom": return ["Create Zoom meetings directly", "Retrieve recording summaries", "Invite participants effortlessly"];
@@ -112,6 +150,26 @@ export function AiHubModal({ isOpen, onClose }: AiHubModalProps) {
         `Search and sync data automatically`,
         `Take actions directly from the chat interface`
       ];
+    }
+  };
+
+  const getDemoMessages = (id?: string) => {
+    switch (id) {
+      case "mcp-notion": return ["Search my Notion for recent strategy docs", "Draft a new project spec and save to Notion", "Summarize the onboarding database in Notion", "Find the meeting notes from last Tuesday", "Create a new page in Notion for team goals"];
+      case "gmail": return ["Read my unread emails from today", "Draft an email to the marketing team about the launch", "Summarize the email thread about Q3 budget", "Find the email from John sent last week", "Reply to the latest email from Sarah saying I'll review it"];
+      case "gcal": return ["What's on my calendar for tomorrow?", "Schedule a 30 min sync with the engineering team for Friday", "Cancel my 2 PM meeting today", "When am I free next week?", "Move my 1-on-1 to Thursday afternoon"];
+      case "gdrive": return ["Find the Q2 financial report in Drive", "Summarize the product roadmap presentation", "Search Drive for all documents mentioning 'AI integration'", "Create a new folder in Drive for Marketing Assets", "List all files I modified yesterday"];
+      case "gclass": return ["List all active assignments in my Biology class", "Draft feedback for the recent essay submissions", "Create a new announcement for tomorrow's quiz", "Show me the grading rubric for the final project", "Which students haven't submitted the homework?"];
+      case "gmeet": return ["Create a new Google Meet link for a quick sync", "Schedule a Google Meet for my next class", "Share the Meet link with the attendees", "Summarize the transcript from yesterday's team sync", "Start a meeting and invite the product team"];
+      case "outlook": return ["Check my unread Outlook emails", "Draft a professional response to the client", "Find the invoice attachment from last month", "Summarize the weekly digest email", "Delete spam emails from my inbox"];
+      case "teams": return ["Send a message to the general channel about the update", "Read the latest messages in the design channel", "Schedule a Teams meeting for the weekly standup", "Summarize the discussion in the engineering team", "Reply to Mark in Teams saying I'm on it"];
+      case "zoom": return ["Schedule a Zoom meeting for 3 PM tomorrow", "Create an instant Zoom link for a quick chat", "Find the recording of the last town hall", "Summarize the Zoom transcript from the strategy session", "Cancel my scheduled Zoom meeting for today"];
+      case "whatsapp": return ["Send a WhatsApp reminder to students about the test", "Broadcast the holiday announcement via WhatsApp", "Draft a reply to a parent's inquiry on WhatsApp", "Send the Zoom link to the class WhatsApp group", "Check if there are any unread messages from parents"];
+      case "vercel": return ["Check the status of the latest production deployment", "Trigger a new deployment for the staging branch", "List all active environment variables", "Show me the build logs for the last failed deployment", "Roll back to the previous successful Vercel build"];
+      case "mcp-cursor": return ["Analyze the AiHubModal.tsx file in my Cursor workspace", "Find where the OAuth redirect is handled in the codebase", "Explain the authentication flow in the backend", "Draft a new React component for the settings page", "Fix the linting errors in the user controller"];
+      case "mcp-chatgpt": return ["Ask ChatGPT to review this text for tone", "Generate a creative story using ChatGPT", "Brainstorm 5 marketing ideas", "Translate this document to French", "Explain quantum computing simply"];
+      case "mcp-claude": return ["Analyze this 50-page PDF document", "Extract the key arguments from this research paper", "Compare these two long contracts", "Write a detailed technical specification", "Help me debug this complex logic issue"];
+      default: return ["Show me what you can do with this plugin", "Search for recent activity", "List available commands", "Sync my latest data", "Help me automate a workflow"];
     }
   };
 
@@ -271,9 +329,35 @@ export function AiHubModal({ isOpen, onClose }: AiHubModalProps) {
 
                       <div className="pt-6 pb-2">
                         {connectedPlugins.includes(selectedPlugin.id) ? (
-                          <div className="flex items-center gap-2 text-emerald-500 font-medium px-4 py-2 rounded-lg bg-emerald-500/10 w-fit">
-                            <CheckCircle2 className="w-5 h-5" />
-                            Connected
+                          <div className="space-y-6">
+                            <div className="flex items-center gap-2 text-emerald-500 font-medium px-4 py-2 rounded-lg bg-emerald-500/10 w-fit">
+                              <CheckCircle2 className="w-5 h-5" />
+                              Connected
+                            </div>
+                            
+                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                <Zap className="w-4 h-4 text-emerald-500" />
+                                Try asking the AI
+                              </h3>
+                              <div className="flex flex-col gap-2">
+                                {getDemoMessages(selectedPlugin.id).map((msg, i) => (
+                                  <button
+                                    key={i}
+                                    onClick={() => {
+                                      if (onSendPrompt) {
+                                        onSendPrompt(msg);
+                                        onClose();
+                                      }
+                                    }}
+                                    className="text-left px-4 py-3 rounded-lg border border-border bg-muted/30 hover:bg-accent hover:border-emerald-500/30 transition-all duration-200 text-sm text-muted-foreground hover:text-foreground shadow-sm flex items-center justify-between group"
+                                  >
+                                    <span>"{msg}"</span>
+                                    <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-emerald-500" />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           </div>
                         ) : (
                           <Button 

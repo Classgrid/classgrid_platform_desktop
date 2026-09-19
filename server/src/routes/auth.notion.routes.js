@@ -37,11 +37,12 @@ router.get("/connect", isAuthenticated, (req, res) => {
 
 // 2. HANDLE CALLBACK
 router.get("/callback", async (req, res) => {
+    let returnTo = null;
     try {
         await connectDB();
         const { code, state, error, error_description } = req.query;
 
-        let userId, returnTo = process.env.FRONTEND_URL;
+        let userId;
         if (state) {
             try {
                 const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
@@ -52,8 +53,20 @@ router.get("/callback", async (req, res) => {
             }
         }
 
+        if (!returnTo) returnTo = req.headers.referer || req.headers.origin;
+
         if (error) {
             console.error("Notion OAuth Error:", error, error_description);
+            if (userId) {
+                const user = await User.findById(userId);
+                if (user) {
+                    user.metadata = user.metadata || {};
+                    user.metadata.integration_errors = user.metadata.integration_errors || {};
+                    user.metadata.integration_errors.notion = error_description || error;
+                    user.markModified('metadata');
+                    await user.save();
+                }
+            }
             return res.redirect(`${returnTo}?integration_error=notion`);
         }
 
@@ -94,6 +107,12 @@ router.get("/callback", async (req, res) => {
         if (tokenData.refresh_token) {
             user.notion_refresh_token = tokenData.refresh_token; 
         }
+        // Clear any previous errors on success
+        user.metadata = user.metadata || {};
+        if (user.metadata.integration_errors && user.metadata.integration_errors.notion) {
+            delete user.metadata.integration_errors.notion;
+            user.markModified('metadata');
+        }
         
         await user.save();
 
@@ -102,7 +121,11 @@ router.get("/callback", async (req, res) => {
         res.redirect(redirectUrl.toString());
     } catch (err) {
         console.error("Notion Callback Error:", err);
-        res.redirect(`${process.env.FRONTEND_URL}/tools?integration_error=notion_fatal`);
+        if (returnTo) {
+            res.redirect(`${returnTo}?integration_error=notion_fatal`);
+        } else {
+            res.status(500).json({ error: "Notion connection failed", message: err.message });
+        }
     }
 });
 
