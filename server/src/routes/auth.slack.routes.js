@@ -5,8 +5,11 @@ import connectDB from "../../config/db.js";
 
 const router = express.Router();
 
+const SLACK_CLIENT_ID = "11597433427378.12100062712277";
+const SLACK_CLIENT_SECRET = "6d586b933a83e67f3256c02ab349b766";
+
 const getSlackAuthUrl = (statePayload) => {
-    const clientId = process.env.SLACK_CLIENT_ID;
+    const clientId = SLACK_CLIENT_ID;
     const redirectUri = `${process.env.BACKEND_URL}/api/auth/slack/callback`;
     const scopes = ['channels:history', 'channels:read', 'chat:write', 'groups:history', 'groups:read', 'im:history', 'im:read', 'im:write', 'mpim:history', 'mpim:read', 'mpim:write', 'users:read', 'users:read.email'];
     
@@ -21,7 +24,7 @@ const getSlackAuthUrl = (statePayload) => {
 
 // 1. GENERATE OAUTH URL
 router.get("/connect", isAuthenticated, (req, res) => {
-    if (!process.env.SLACK_CLIENT_ID || !process.env.SLACK_CLIENT_SECRET) {
+    if (!SLACK_CLIENT_ID || !SLACK_CLIENT_SECRET) {
         return res.status(500).json({ message: "Slack OAuth keys not configured in backend" });
     }
 
@@ -90,8 +93,8 @@ router.get("/callback", async (req, res) => {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({
-                client_id: process.env.SLACK_CLIENT_ID,
-                client_secret: process.env.SLACK_CLIENT_SECRET,
+                client_id: SLACK_CLIENT_ID,
+                client_secret: SLACK_CLIENT_SECRET,
                 code,
                 redirect_uri: `${process.env.BACKEND_URL}/api/auth/slack/callback`
             })

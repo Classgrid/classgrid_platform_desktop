@@ -5,8 +5,11 @@ import connectDB from "../../config/db.js";
 
 const router = express.Router();
 
+const GITHUB_CLIENT_ID = "Ov23lije9NerEtV7Lseb";
+const GITHUB_CLIENT_SECRET = "07acf4d6a0f8f9be1da6b8b6c18900531ff10ee1";
+
 const getGithubAuthUrl = (statePayload) => {
-    const clientId = process.env.GITHUB_CLIENT_ID;
+    const clientId = GITHUB_CLIENT_ID;
     const redirectUri = `${process.env.BACKEND_URL}/api/auth/github/callback`;
     const scopes = ['repo', 'user:email'];
     
@@ -21,7 +24,7 @@ const getGithubAuthUrl = (statePayload) => {
 
 // 1. GENERATE OAUTH URL
 router.get("/connect", isAuthenticated, (req, res) => {
-    if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+    if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
         return res.status(500).json({ message: "GitHub OAuth keys not configured in backend" });
     }
 
@@ -91,8 +94,8 @@ router.get("/callback", async (req, res) => {
                 'Accept': 'application/json'
             },
             body: JSON.stringify({
-                client_id: process.env.GITHUB_CLIENT_ID,
-                client_secret: process.env.GITHUB_CLIENT_SECRET,
+                client_id: GITHUB_CLIENT_ID,
+                client_secret: GITHUB_CLIENT_SECRET,
                 code,
                 redirect_uri: `${process.env.BACKEND_URL}/api/auth/github/callback`
             })
