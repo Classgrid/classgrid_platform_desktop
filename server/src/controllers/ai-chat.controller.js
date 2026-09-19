@@ -769,7 +769,7 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
                     timeoutMs: 60000
                 }
             ],
-            verbose: false,
+            verbose: true, // TEMP: enabled to debug provider failures
             maxToolDepth: 25,
             defaultMaxTokens: 2000,
             tools: [
