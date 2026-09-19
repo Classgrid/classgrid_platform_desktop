@@ -741,18 +741,21 @@ You are equipped with 14 external integration plugins. Below is the REAL-TIME co
         // 🚨 AI WARNING: DO NOT ADD NEW MODELS OR CHANGE EXISTING MODELS 🚨
         // CHANGING ANY AI MODEL IS STRICTLY BANNED BY PLATFORM POLICY.
         const client = createLLMClient({
+            timeoutMs: 60000,
             providers: [
                 {
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
                     apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
-                    model: "open-mistral-nemo"
+                    model: "open-mistral-nemo",
+                    timeoutMs: 60000
                 },
                 {
                     name: "groq",
                     url: "https://api.groq.com/openai/v1/chat/completions",
                     apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b"
+                    model: "openai/gpt-oss-20b",
+                    timeoutMs: 60000
                 },
                 {
                     name: "gemini",
@@ -761,7 +764,8 @@ You are equipped with 14 external integration plugins. Below is the REAL-TIME co
                     // 🚨 AI WARNING: DO NOT CHANGE THIS TO gemini-1.5-flash 🚨
                     // gemini-1.5-flash was deprecated and completely removed by Google in 2025.
                     // If you change this back to 1.5, the backend will crash and hang.
-                    model: "gemini-3.5-flash"
+                    model: "gemini-3.5-flash",
+                    timeoutMs: 60000
                 }
             ],
             verbose: false,
