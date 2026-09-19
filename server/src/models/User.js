@@ -568,6 +568,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    microsoft_email: {
+      type: String,
+      default: null,
+    },
     webex_access_token: {
       type: String,
       default: null,

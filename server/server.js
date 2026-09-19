@@ -103,11 +103,40 @@ server.listen(PORT, () => {
 // ─────────────────────────────────────────────────────────
 // 🛑 Graceful Shutdown for Zero-Downtime Deployments (PM2)
 // ─────────────────────────────────────────────────────────
+import mongoose from "mongoose";
+import redis from "./src/config/redis.js";
+
 process.on('SIGINT', () => {
   console.log('🛑 PM2 SIGINT received: Gracefully shutting down HTTP server...');
-  // server.close() stops accepting new connections and waits for active ones to finish
-  server.close(() => {
-    console.log('✅ All active connections finished. Exiting safely.');
-    process.exit(0);
+  
+  // Close the server first so we stop accepting new requests
+  server.close(async () => {
+    try {
+      console.log('⏳ HTTP server closed. Disconnecting databases...');
+      
+      // Close MongoDB connection
+      if (mongoose.connection.readyState === 1) {
+        await mongoose.connection.close(false);
+        console.log('✅ MongoDB disconnected.');
+      }
+
+      // Close Redis connection
+      if (redis.status === 'ready') {
+        await redis.quit();
+        console.log('✅ Redis disconnected.');
+      }
+
+      console.log('✅ All active connections finished. Exiting safely.');
+      process.exit(0);
+    } catch (err) {
+      console.error('❌ Error during graceful shutdown:', err);
+      process.exit(1);
+    }
   });
+
+  // Failsafe timeout: Force exit after 10 seconds if graceful shutdown hangs
+  setTimeout(() => {
+    console.error('❌ Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
 });

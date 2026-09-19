@@ -179,6 +179,19 @@ router.get("/callback", async (req, res) => {
             user.microsoft_token_expiry = new Date(Date.now() + tokenData.expires_in * 1000);
         }
 
+        // Fetch user profile to get their email address
+        try {
+            const profileRes = await fetch("https://graph.microsoft.com/v1.0/me", {
+                headers: { "Authorization": `Bearer ${tokenData.access_token}` }
+            });
+            if (profileRes.ok) {
+                const profile = await profileRes.json();
+                user.microsoft_email = profile.mail || profile.userPrincipalName;
+            }
+        } catch (e) {
+            console.error("Failed to fetch Microsoft profile:", e);
+        }
+
         // Clear any previous errors on success
         user.metadata = user.metadata || {};
         if (user.metadata.integration_errors && user.metadata.integration_errors.microsoft) {
@@ -244,6 +257,7 @@ router.post("/disconnect", isAuthenticated, async (req, res) => {
         user.microsoft_access_token = undefined;
         user.microsoft_refresh_token = undefined;
         user.microsoft_token_expiry = undefined;
+        user.microsoft_email = undefined;
         await user.save();
 
         res.json({ success: true, message: "Microsoft account disconnected" });
