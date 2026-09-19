@@ -15,7 +15,7 @@ const getVercelAuthUrl = (state) => {
     // Client ID and Redirect URI are automatically handled by Vercel's dashboard config.
     const authUrl = new URL(`https://vercel.com/integrations/classgrid-mcp/new`);
     authUrl.searchParams.append('state', state);
-    
+
     console.log(`[Vercel OAuth] Auth URL generated for Integration: ${authUrl.toString()}`);
     return authUrl.toString();
 };
@@ -23,10 +23,10 @@ const getVercelAuthUrl = (state) => {
 // 1. GENERATE OAUTH URL
 router.get("/connect", isAuthenticated, (req, res) => {
     // Keys are hardcoded now, no need to check process.env
-    
+
     const returnTo = req.query.returnTo || req.headers.referer || req.headers.origin || process.env.FRONTEND_URL;
     const isPopup = req.query.popup === 'true';
-    const statePayload = Buffer.from(JSON.stringify({ 
+    const statePayload = Buffer.from(JSON.stringify({
         userId: req.user._id.toString(),
         returnTo,
         isPopup

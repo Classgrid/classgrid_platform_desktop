@@ -57,7 +57,6 @@ import { markOnboardingStep, syncDerivedOnboardingProgress } from "../services/o
 import mongoose from "mongoose";
 import redis from "../config/redis.js";
 import { uploadBufferToR2, deleteFromR2, getPresignedUploadUrl } from "../config/r2Client.js";
-import { getEffectivePlan, getMaxFaculty } from "../config/plan.config.js";
 import {
     deleteMongoAnnouncementBySupabaseId,
     deliverPublishedOrganizationAnnouncement,
@@ -1194,23 +1193,6 @@ export const verifyOrgCode = async (req, res) => {
                 return res.status(403).json({
                     message: `Your email domain (@${userDomain}) is not authorized for this organization. Allowed: ${orgDomains.join(', ')} or @gmail.com`,
                     code: "DOMAIN_MISMATCH"
-                });
-            }
-        }
-
-        // ── PLAN LIMITS (Faculty only) ───────────────────────────────
-        if (type === 'faculty') {
-            const facultyCount = await User.countDocuments({
-                role: "faculty",
-                organization_id: org._id,
-                is_demo: { $ne: true },
-            });
-            const effectivePlan = getEffectivePlan(org.plan, org.planExpiresAt);
-            const maxFaculty = getMaxFaculty(effectivePlan);
-            if (facultyCount >= maxFaculty) {
-                return res.status(403).json({
-                    message: `Organization faculty limit reached (${maxFaculty} on ${effectivePlan} plan). Contact your administrator.`,
-                    code: 'PLAN_LIMIT_REACHED',
                 });
             }
         }
