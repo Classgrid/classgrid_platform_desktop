@@ -59,6 +59,13 @@ jobs:
             # Force wipe node_modules to fix recent Mongoose corruption
             sudo rm -rf node_modules || true
             
+            # Free up disk space to prevent ENOSPC (Out of Space) errors during npm install
+            sudo apt-get clean || true
+            npm cache clean --force || true
+            pm2 flush || true
+            sudo rm -rf /tmp/* || true
+            sudo journalctl --vacuum-time=1d || true
+
             # Run npm install. If it fails due to corruption (like ENOTEMPTY), wipe node_modules using sudo and retry.
             npm install --omit=dev --no-audit --no-fund --legacy-peer-deps || (sudo rm -rf node_modules && npm install --omit=dev --no-audit --no-fund --legacy-peer-deps)
 
