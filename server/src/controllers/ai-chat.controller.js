@@ -635,31 +635,137 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
                         return '❌ NOT CONNECTED';
                     };
 
-                    // ── Google Workspace (5 sub-plugins share ONE OAuth token) ──
-                    const googleConnected = !!(latestUser.google_access_token && latestUser.google_refresh_token);
-                    const googleExpiry = latestUser.google_token_expiry ? new Date(latestUser.google_token_expiry) : null;
-                    const googleExpired = googleExpiry && googleExpiry < now;
-                    const googleStatus = getStatus(googleConnected, googleExpired, 'google');
+                    // ── REAL API VERIFICATION ──
+                    // We don't just check if a token exists in DB. We actually CALL the API
+                    // to verify the connection is real and working. Only verified integrations
+                    // get exposed to the AI.
+
+                    const verifyWithPing = async (url, token, refreshFn) => {
+                        try {
+                            let res = await fetch(url, { 
+                                headers: { 'Authorization': `Bearer ${token}` },
+                                signal: AbortSignal.timeout(5000) // 5s max
+                            });
+                            if (res.status === 401 && refreshFn) {
+                                // Token expired — try refreshing
+                                const newToken = await refreshFn();
+                                if (!newToken) return false;
+                                res = await fetch(url, { 
+                                    headers: { 'Authorization': `Bearer ${newToken}` },
+                                    signal: AbortSignal.timeout(5000)
+                                });
+                            }
+                            return res.ok;
+                        } catch {
+                            return false;
+                        }
+                    };
+
+                    // ── Google Workspace ──
+                    let googleConnected = false;
+                    if (latestUser.google_access_token) {
+                        const refreshGoogle = async () => {
+                            try {
+                                if (!latestUser.google_refresh_token) return null;
+                                const res = await fetch('https://oauth2.googleapis.com/token', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                    body: new URLSearchParams({
+                                        client_id: process.env.GOOGLE_CLIENT_ID,
+                                        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+                                        refresh_token: latestUser.google_refresh_token,
+                                        grant_type: 'refresh_token'
+                                    }),
+                                    signal: AbortSignal.timeout(5000)
+                                });
+                                const data = await res.json();
+                                if (data.access_token) {
+                                    await mongoose.model('User').updateOne({ _id: latestUser._id }, { google_access_token: data.access_token, google_token_expiry: new Date(Date.now() + data.expires_in * 1000) });
+                                    return data.access_token;
+                                }
+                                return null;
+                            } catch { return null; }
+                        };
+                        googleConnected = await verifyWithPing('https://www.googleapis.com/oauth2/v1/userinfo', latestUser.google_access_token, refreshGoogle);
+                    }
 
                     // ── Microsoft 365 ──
-                    const msConnected = !!(latestUser.microsoft_access_token);
-                    const msExpiry = latestUser.microsoft_token_expiry ? new Date(latestUser.microsoft_token_expiry) : null;
-                    const msExpired = msExpiry && msExpiry < now;
-                    const msStatus = getStatus(msConnected, msExpired, 'microsoft');
+                    let msConnected = false;
+                    if (latestUser.microsoft_access_token) {
+                        const refreshMs = async () => {
+                            try {
+                                if (!latestUser.microsoft_refresh_token) return null;
+                                const res = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                    body: new URLSearchParams({
+                                        client_id: process.env.MICROSOFT_CLIENT_ID,
+                                        client_secret: process.env.MICROSOFT_CLIENT_SECRET,
+                                        refresh_token: latestUser.microsoft_refresh_token,
+                                        grant_type: 'refresh_token'
+                                    }),
+                                    signal: AbortSignal.timeout(5000)
+                                });
+                                const data = await res.json();
+                                if (data.access_token) {
+                                    await mongoose.model('User').updateOne({ _id: latestUser._id }, { microsoft_access_token: data.access_token, ...(data.refresh_token ? { microsoft_refresh_token: data.refresh_token } : {}), microsoft_token_expiry: new Date(Date.now() + data.expires_in * 1000) });
+                                    return data.access_token;
+                                }
+                                return null;
+                            } catch { return null; }
+                        };
+                        msConnected = await verifyWithPing('https://graph.microsoft.com/v1.0/me', latestUser.microsoft_access_token, refreshMs);
+                    }
 
                     // ── Zoom ──
-                    const zoomConnected = !!(latestUser.zoom_access_token);
-                    const zoomExpiry = latestUser.zoom_token_expiry ? new Date(latestUser.zoom_token_expiry) : null;
-                    const zoomExpired = zoomExpiry && zoomExpiry < now;
-                    const zoomStatus = getStatus(zoomConnected, zoomExpired, 'zoom');
+                    let zoomConnected = false;
+                    if (latestUser.zoom_access_token) {
+                        const refreshZoom = async () => {
+                            try {
+                                if (!latestUser.zoom_refresh_token) return null;
+                                const res = await fetch('https://zoom.us/oauth/token', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Authorization': `Basic ${Buffer.from(process.env.ZOOM_CLIENT_ID + ':' + process.env.ZOOM_CLIENT_SECRET).toString('base64')}`,
+                                        'Content-Type': 'application/x-www-form-urlencoded'
+                                    },
+                                    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: latestUser.zoom_refresh_token }),
+                                    signal: AbortSignal.timeout(5000)
+                                });
+                                const data = await res.json();
+                                if (data.access_token) {
+                                    await mongoose.model('User').updateOne({ _id: latestUser._id }, { zoom_access_token: data.access_token, zoom_refresh_token: data.refresh_token, zoom_token_expiry: new Date(Date.now() + data.expires_in * 1000) });
+                                    return data.access_token;
+                                }
+                                return null;
+                            } catch { return null; }
+                        };
+                        zoomConnected = await verifyWithPing('https://api.zoom.us/v2/users/me', latestUser.zoom_access_token, refreshZoom);
+                    }
 
                     // ── Notion ──
-                    const notionConnected = !!(latestUser.notion_access_token);
-                    const notionStatus = getStatus(notionConnected, false, 'notion');
+                    let notionConnected = false;
+                    if (latestUser.notion_access_token) {
+                        try {
+                            const res = await fetch('https://api.notion.com/v1/users/me', {
+                                headers: { 'Authorization': `Bearer ${latestUser.notion_access_token}`, 'Notion-Version': '2022-06-28' },
+                                signal: AbortSignal.timeout(5000)
+                            });
+                            notionConnected = res.ok;
+                        } catch { notionConnected = false; }
+                    }
 
                     // ── Vercel ──
-                    const vercelConnected = !!(latestUser.vercel_access_token);
-                    const vercelStatus = getStatus(vercelConnected, false, 'vercel');
+                    let vercelConnected = false;
+                    if (latestUser.vercel_access_token) {
+                        try {
+                            const res = await fetch('https://api.vercel.com/v2/user', {
+                                headers: { 'Authorization': `Bearer ${latestUser.vercel_access_token}` },
+                                signal: AbortSignal.timeout(5000)
+                            });
+                            vercelConnected = res.ok;
+                        } catch { vercelConnected = false; }
+                    }
 
                     // ── MCP-based plugins ──
                     const whatsappConnected = !!(process.env.WHATSAPP_PHONE_ID && process.env.WHATSAPP_ACCESS_TOKEN);
