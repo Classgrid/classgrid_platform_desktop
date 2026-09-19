@@ -749,25 +749,29 @@ If the connector tool IS NOT available, it means the user has NOT connected thei
                         } catch { return null; }
                     };
 
-                    // Run ALL verification pings in parallel
-                    // Using array destructuring on the outer variables (requires parentheses for assignment)
-                    ;[googleConnected, msConnected, zoomConnected, notionConnected, vercelConnected] = await Promise.all([
-                        latestUser.google_access_token 
-                            ? verifyWithPing('Google', 'https://oauth2.googleapis.com/tokeninfo', latestUser.google_access_token, refreshGoogle) 
-                            : Promise.resolve(false),
-                        latestUser.microsoft_access_token 
-                            ? verifyWithPing('Microsoft', 'https://graph.microsoft.com/v1.0/me', latestUser.microsoft_access_token, refreshMs) 
-                            : Promise.resolve(false),
-                        latestUser.zoom_access_token 
-                            ? verifyWithPing('Zoom', 'https://api.zoom.us/v2/users/me', latestUser.zoom_access_token, refreshZoom) 
-                            : Promise.resolve(false),
-                        latestUser.notion_access_token 
-                            ? verifyWithPing('Notion', 'https://api.notion.com/v1/users/me', latestUser.notion_access_token, null, { 'Notion-Version': '2022-06-28' }) 
-                            : Promise.resolve(false),
-                        latestUser.vercel_access_token 
-                            ? verifyWithPing('Vercel', 'https://api.vercel.com/v9/projects?limit=1', latestUser.vercel_access_token) 
-                            : Promise.resolve(false),
-                    ]);
+                    // ── TRUST THE DATABASE, NOT THE PING ──
+                    // If a refresh token exists in MongoDB, the integration IS connected.
+                    // The tool handlers in tools.js already refresh expired tokens internally.
+                    // We only ping Google because its tokeninfo endpoint is fast and we need scope verification.
+                    googleConnected = latestUser.google_access_token 
+                        ? await verifyWithPing('Google', 'https://oauth2.googleapis.com/tokeninfo', latestUser.google_access_token, refreshGoogle) 
+                        : false;
+                    
+                    // Microsoft: trust the refresh token. Tool will refresh access token when needed.
+                    msConnected = !!(latestUser.microsoft_refresh_token || latestUser.microsoft_access_token);
+                    if (msConnected) console.log('[integration-verify] Microsoft: ✅ CONNECTED (refresh token in DB)');
+                    
+                    // Zoom: trust the refresh token. Tool will refresh access token when needed.
+                    zoomConnected = !!(latestUser.zoom_refresh_token || latestUser.zoom_access_token);
+                    if (zoomConnected) console.log('[integration-verify] Zoom: ✅ CONNECTED (refresh token in DB)');
+                    
+                    // Notion: tokens don't expire, just check if it exists.
+                    notionConnected = !!latestUser.notion_access_token;
+                    if (notionConnected) console.log('[integration-verify] Notion: ✅ CONNECTED (token in DB)');
+                    
+                    // Vercel: just check if token exists.
+                    vercelConnected = !!latestUser.vercel_access_token;
+                    if (vercelConnected) console.log('[integration-verify] Vercel: ✅ CONNECTED (token in DB)');
 
                     // ── MCP-based plugins (no API to ping, just config check) ──
                     whatsappConnected = !!(process.env.WHATSAPP_PHONE_ID && process.env.WHATSAPP_ACCESS_TOKEN);
