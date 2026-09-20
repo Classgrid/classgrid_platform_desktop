@@ -2293,7 +2293,8 @@ export const generateImage = async (req, res) => {
                 
                 // Using GET with random seed AND timestamp guarantees a 100% cache miss.
                 // Added &model=turbo to drastically reduce generation time from 30s to 3s!
-                const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${randomSeed}&cb=${timestamp}&model=turbo`;
+                // &safe=true enables Pollinations' built-in NSFW filter — CRITICAL for school platform safety
+                const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${randomSeed}&cb=${timestamp}&model=turbo&safe=true`;
                 
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
