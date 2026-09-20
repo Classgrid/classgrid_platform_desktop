@@ -2276,8 +2276,8 @@ export const bulkDeleteAgentReviews = async (req, res) => {
 export const generateImage = async (req, res) => {
     try {
         const { prompt, sessionId, userEmail, isIncognito } = req.body;
-        // Call Hugging Face Inference API (Stable Diffusion XL - fully supported on Free Tier)
-        const hfUrl = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0";
+        // Call Hugging Face Inference API (Stable Diffusion 1.5 - Fully Ungated and Free)
+        const hfUrl = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5";
         const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY || ("hf_txJfQNKfS" + "sIxdVnCQQEhWNYwnCXTIxIylJ");
         
         let imageRes;
