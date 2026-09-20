@@ -2278,7 +2278,7 @@ export const generateImage = async (req, res) => {
         const { prompt, sessionId, userEmail, isIncognito } = req.body;
         // Call Pollinations AI (Flux) using POST to support unlimited length prompts
         const randomSeed = Math.floor(Math.random() * 1000000);
-        const pollinationsUrl = `https://image.pollinations.ai/?seed=${randomSeed}&nologo=true`;
+        const pollinationsUrl = `https://image.pollinations.ai/`;
 
         const imageRes = await fetch(pollinationsUrl, {
             method: 'POST',
@@ -2286,11 +2286,10 @@ export const generateImage = async (req, res) => {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                prompt: prompt,
+                prompt: prompt + " [Seed: " + randomSeed + "]",
                 width: 1024,
                 height: 1024,
-                nologo: true,
-                seed: randomSeed
+                nologo: true
             })
         });
         if (!imageRes.ok) throw new Error(`Image API failed: ${imageRes.status}`);
