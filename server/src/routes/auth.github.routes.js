@@ -11,7 +11,7 @@ const GITHUB_CLIENT_SECRET = "07acf4d6a0f8f9be1da6b8b6c18900531ff10ee1";
 const getGithubAuthUrl = (statePayload) => {
     const clientId = GITHUB_CLIENT_ID;
     const redirectUri = `${process.env.BACKEND_URL}/api/auth/github/callback`;
-    const scopes = ['repo', 'user:email'];
+    const scopes = ['repo', 'workflow', 'user:email'];
     
     const authUrl = new URL(`https://github.com/login/oauth/authorize`);
     authUrl.searchParams.append('client_id', clientId);

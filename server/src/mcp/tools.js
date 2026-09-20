@@ -228,31 +228,48 @@ export const getMcpTools = () => [
   },
   {
     name: 'slack_workspace_connector',
-    description: 'Interact with Slack API to list channels and read/send messages using the connected user token.',
+    description: 'Interact with Slack API to list channels, read/send messages, create channels, search messages, list users, invite users, and set roles using the connected user token.',
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_channels', 'read_channel_messages', 'send_message'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_channels', 'read_channel_messages', 'send_message', 'create_channel', 'list_users', 'search_messages', 'invite_user', 'set_user_role'], description: 'The operation to perform.' },
         channelId: { type: 'string', description: 'The ID of the channel (required for read_channel_messages and send_message).' },
         text: { type: 'string', description: 'The text content to send (required for send_message).' },
-        limit: { type: 'number', description: 'Max results to return (for read_channel_messages).' }
+        limit: { type: 'number', description: 'Max results to return (for read_channel_messages).' },
+        channelName: { type: 'string', description: 'The name of the new channel (for create_channel).' },
+        isPrivate: { type: 'boolean', description: 'Whether the new channel is private (for create_channel).' },
+        query: { type: 'string', description: 'Search query string (for search_messages).' },
+        email: { type: 'string', description: 'The email address of the user to invite (for invite_user).' },
+        teamId: { type: 'string', description: 'The Slack Team ID (for invite_user and set_user_role).' },
+        userId: { type: 'string', description: 'The ID of the user whose role to change (for set_user_role).' },
+        role: { type: 'string', enum: ['admin', 'owner', 'regular'], description: 'The role to set for the user (for set_user_role).' }
       },
       required: ['operation']
     }
   },
   {
     name: 'github_workspace_connector',
-    description: 'Interact with GitHub API to list repositories, read code files, and manage issues using the connected user token.',
+    description: 'Interact with GitHub API to list repos, read/write files, manage issues/PRs, search code, and more using the connected user token.',
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_repos', 'read_file', 'create_issue', 'list_issues'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_repos', 'read_file', 'create_issue', 'list_issues', 'create_repo', 'create_or_update_file', 'create_pull_request', 'list_pull_requests', 'add_issue_comment', 'search_code'], description: 'The operation to perform.' },
         owner: { type: 'string', description: 'The repository owner/organization.' },
         repo: { type: 'string', description: 'The repository name.' },
-        path: { type: 'string', description: 'The path to the file in the repository (required for read_file).' },
-        title: { type: 'string', description: 'The title of the issue (required for create_issue).' },
-        body: { type: 'string', description: 'The markdown body of the issue (required for create_issue).' },
-        state: { type: 'string', enum: ['open', 'closed', 'all'], description: 'The state of issues to list (for list_issues).' }
+        path: { type: 'string', description: 'The path to the file in the repository (for read_file, create_or_update_file).' },
+        title: { type: 'string', description: 'The title of the issue or PR (for create_issue, create_pull_request).' },
+        body: { type: 'string', description: 'The markdown body (for create_issue, create_pull_request, add_issue_comment).' },
+        state: { type: 'string', enum: ['open', 'closed', 'all'], description: 'The state of issues/PRs to list.' },
+        repoName: { type: 'string', description: 'The name of the new repository (for create_repo).' },
+        isPrivate: { type: 'boolean', description: 'Whether the new repository is private (for create_repo).' },
+        content: { type: 'string', description: 'The raw text content of the file (for create_or_update_file).' },
+        message: { type: 'string', description: 'The commit message (for create_or_update_file).' },
+        branch: { type: 'string', description: 'The branch name (for create_or_update_file).' },
+        sha: { type: 'string', description: 'The blob SHA of the file being replaced (required for update in create_or_update_file).' },
+        head: { type: 'string', description: 'The name of the branch where your changes are implemented (for create_pull_request).' },
+        base: { type: 'string', description: 'The name of the branch you want the changes pulled into (for create_pull_request).' },
+        issueNumber: { type: 'number', description: 'The issue or PR number (for add_issue_comment).' },
+        query: { type: 'string', description: 'Search query (for search_code).' }
       },
       required: ['operation']
     }
@@ -1463,7 +1480,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'slack_workspace_connector') {
-      const { operation, channelId, text, limit = 10 } = args;
+      const { operation, channelId, text, limit = 10, channelName, isPrivate, query, email, teamId, userId, role } = args;
       const { userEmail = '' } = context;
 
       const user = await mongoose.models.User.findOne({ email: userEmail });
@@ -1499,6 +1516,55 @@ export const handleToolCall = async (name, args, context = {}) => {
           const data = await res.json();
           if (!data.ok) throw new Error(data.error || "Failed to send message");
           return { content: [{ type: 'text', text: JSON.stringify({ success: true, ts: data.ts }, null, 2) }] };
+        } else if (operation === 'create_channel') {
+          if (!channelName) throw new Error("channelName is required for create_channel");
+          const res = await fetch(`https://slack.com/api/conversations.create`, {
+            method: 'POST',
+            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ name: channelName, is_private: isPrivate })
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || "Failed to create channel");
+          return { content: [{ type: 'text', text: JSON.stringify({ id: data.channel.id, name: data.channel.name }, null, 2) }] };
+        } else if (operation === 'list_users') {
+          const res = await fetch(`https://slack.com/api/users.list?limit=50`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || "Failed to list users");
+          return { content: [{ type: 'text', text: JSON.stringify(data.members.filter(u => !u.deleted).map(u => ({ id: u.id, name: u.name, real_name: u.real_name })), null, 2) }] };
+        } else if (operation === 'search_messages') {
+          if (!query) throw new Error("query is required for search_messages");
+          const res = await fetch(`https://slack.com/api/search.messages?query=${encodeURIComponent(query)}&count=${limit}`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || "Failed to search messages");
+          return { content: [{ type: 'text', text: JSON.stringify(data.messages.matches, null, 2) }] };
+        } else if (operation === 'invite_user') {
+          if (!teamId || !email) throw new Error("teamId and email are required for invite_user");
+          const res = await fetch(`https://slack.com/api/admin.users.invite`, {
+            method: 'POST',
+            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ team_id: teamId, email })
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || "Failed to invite user");
+          return { content: [{ type: 'text', text: JSON.stringify({ success: true, message: `Invited ${email}` }, null, 2) }] };
+        } else if (operation === 'set_user_role') {
+          if (!teamId || !userId || !role) throw new Error("teamId, userId, and role are required for set_user_role");
+          let endpoint = 'admin.users.setRegular';
+          if (role === 'admin') endpoint = 'admin.users.setAdmin';
+          if (role === 'owner') endpoint = 'admin.users.setOwner';
+          
+          const res = await fetch(`https://slack.com/api/${endpoint}`, {
+            method: 'POST',
+            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ team_id: teamId, user_id: userId })
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || `Failed to set role to ${role}`);
+          return { content: [{ type: 'text', text: JSON.stringify({ success: true, role }, null, 2) }] };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }
@@ -1508,7 +1574,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'github_workspace_connector') {
-      const { operation, owner, repo, path: filePath, title, body, state = 'open' } = args;
+      const { operation, owner, repo, path: filePath, title, body, state = 'open', repoName, isPrivate, content, message, branch, sha, head, base, issueNumber, query } = args;
       const { userEmail = '' } = context;
 
       const user = await mongoose.models.User.findOne({ email: userEmail });
@@ -1555,6 +1621,62 @@ export const handleToolCall = async (name, args, context = {}) => {
           const data = await res.json();
           if (data.message) throw new Error(data.message);
           return { content: [{ type: 'text', text: JSON.stringify({ number: data.number, html_url: data.html_url }, null, 2) }] };
+        } else if (operation === 'create_repo') {
+          if (!repoName) throw new Error("repoName is required for create_repo");
+          const res = await fetch(`https://api.github.com/user/repos`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ name: repoName, private: isPrivate || false })
+          });
+          const data = await res.json();
+          if (data.message) throw new Error(data.message);
+          return { content: [{ type: 'text', text: JSON.stringify({ id: data.id, full_name: data.full_name, html_url: data.html_url }, null, 2) }] };
+        } else if (operation === 'create_or_update_file') {
+          if (!owner || !repo || !filePath || !content || !message) throw new Error("owner, repo, path, content, and message are required for create_or_update_file");
+          const contentEncoded = Buffer.from(content, 'utf8').toString('base64');
+          const payload = { message, content: contentEncoded };
+          if (branch) payload.branch = branch;
+          if (sha) payload.sha = sha;
+          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.message) throw new Error(data.message);
+          return { content: [{ type: 'text', text: JSON.stringify({ commit: data.commit.html_url, content: data.content?.html_url }, null, 2) }] };
+        } else if (operation === 'create_pull_request') {
+          if (!owner || !repo || !title || !head || !base) throw new Error("owner, repo, title, head, and base are required for create_pull_request");
+          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ title, body, head, base })
+          });
+          const data = await res.json();
+          if (data.message) throw new Error(data.message);
+          return { content: [{ type: 'text', text: JSON.stringify({ number: data.number, html_url: data.html_url, state: data.state }, null, 2) }] };
+        } else if (operation === 'list_pull_requests') {
+          if (!owner || !repo) throw new Error("owner and repo are required for list_pull_requests");
+          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls?state=${state}`, { headers });
+          const data = await res.json();
+          if (data.message) throw new Error(data.message);
+          return { content: [{ type: 'text', text: JSON.stringify(data.map(pr => ({ number: pr.number, title: pr.title, state: pr.state, url: pr.html_url })), null, 2) }] };
+        } else if (operation === 'add_issue_comment') {
+          if (!owner || !repo || !issueNumber || !body) throw new Error("owner, repo, issueNumber, and body are required for add_issue_comment");
+          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}/comments`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ body })
+          });
+          const data = await res.json();
+          if (data.message) throw new Error(data.message);
+          return { content: [{ type: 'text', text: JSON.stringify({ id: data.id, html_url: data.html_url }, null, 2) }] };
+        } else if (operation === 'search_code') {
+          if (!query) throw new Error("query is required for search_code");
+          const res = await fetch(`https://api.github.com/search/code?q=${encodeURIComponent(query)}`, { headers });
+          const data = await res.json();
+          if (data.message) throw new Error(data.message);
+          return { content: [{ type: 'text', text: JSON.stringify(data.items.slice(0, 10).map(i => ({ name: i.name, path: i.path, repository: i.repository.full_name, html_url: i.html_url })), null, 2) }] };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }
