@@ -228,35 +228,31 @@ export const getMcpTools = () => [
   },
   {
     name: 'slack_workspace_connector',
-    description: 'Interact with Slack API to list channels, read/send messages, create channels, search messages, list users, invite users, and set roles using the connected user token.',
+    description: 'Interact with Slack API to list channels, read/send messages, create channels, search messages, and list users using the connected user token.',
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_channels', 'read_channel_messages', 'send_message', 'create_channel', 'list_users', 'search_messages', 'invite_user', 'set_user_role'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_channels', 'read_channel_messages', 'send_message', 'create_channel', 'list_users', 'search_messages'], description: 'The operation to perform.' },
         channelId: { type: 'string', description: 'The ID of the channel (required for read_channel_messages and send_message).' },
         text: { type: 'string', description: 'The text content to send (required for send_message).' },
         limit: { type: 'number', description: 'Max results to return (for read_channel_messages).' },
         channelName: { type: 'string', description: 'The name of the new channel (for create_channel).' },
         isPrivate: { type: 'boolean', description: 'Whether the new channel is private (for create_channel).' },
-        query: { type: 'string', description: 'Search query string (for search_messages).' },
-        email: { type: 'string', description: 'The email address of the user to invite (for invite_user).' },
-        teamId: { type: 'string', description: 'The Slack Team ID (for invite_user and set_user_role).' },
-        userId: { type: 'string', description: 'The ID of the user whose role to change (for set_user_role).' },
-        role: { type: 'string', enum: ['admin', 'owner', 'regular'], description: 'The role to set for the user (for set_user_role).' }
+        query: { type: 'string', description: 'Search query string (for search_messages).' }
       },
       required: ['operation']
     }
   },
   {
     name: 'github_workspace_connector',
-    description: 'Interact with GitHub API to list repos, read/write files, manage issues/PRs, search code, and more using the connected user token.',
+    description: 'Interact with GitHub API to list repos, read/write files, manage issues/PRs, search code, read commit history, and more using the connected user token.',
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_repos', 'read_file', 'create_issue', 'list_issues', 'create_repo', 'create_or_update_file', 'create_pull_request', 'list_pull_requests', 'add_issue_comment', 'search_code'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_repos', 'read_file', 'create_issue', 'list_issues', 'create_repo', 'create_or_update_file', 'create_pull_request', 'list_pull_requests', 'add_issue_comment', 'search_code', 'list_commits', 'get_commit', 'list_branches'], description: 'The operation to perform.' },
         owner: { type: 'string', description: 'The repository owner/organization.' },
         repo: { type: 'string', description: 'The repository name.' },
-        path: { type: 'string', description: 'The path to the file in the repository (for read_file, create_or_update_file).' },
+        path: { type: 'string', description: 'The path to the file/directory in the repository (for read_file, create_or_update_file, list_commits filtering).' },
         title: { type: 'string', description: 'The title of the issue or PR (for create_issue, create_pull_request).' },
         body: { type: 'string', description: 'The markdown body (for create_issue, create_pull_request, add_issue_comment).' },
         state: { type: 'string', enum: ['open', 'closed', 'all'], description: 'The state of issues/PRs to list.' },
@@ -265,7 +261,7 @@ export const getMcpTools = () => [
         content: { type: 'string', description: 'The raw text content of the file (for create_or_update_file).' },
         message: { type: 'string', description: 'The commit message (for create_or_update_file).' },
         branch: { type: 'string', description: 'The branch name (for create_or_update_file).' },
-        sha: { type: 'string', description: 'The blob SHA of the file being replaced (required for update in create_or_update_file).' },
+        sha: { type: 'string', description: 'The commit SHA or blob SHA (required for get_commit and updating files).' },
         head: { type: 'string', description: 'The name of the branch where your changes are implemented (for create_pull_request).' },
         base: { type: 'string', description: 'The name of the branch you want the changes pulled into (for create_pull_request).' },
         issueNumber: { type: 'number', description: 'The issue or PR number (for add_issue_comment).' },
@@ -1480,7 +1476,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'slack_workspace_connector') {
-      const { operation, channelId, text, limit = 10, channelName, isPrivate, query, email, teamId, userId, role } = args;
+      const { operation, channelId, text, limit = 10, channelName, isPrivate, query } = args;
       const { userEmail = '' } = context;
 
       const user = await mongoose.models.User.findOne({ email: userEmail });
@@ -1541,30 +1537,6 @@ export const handleToolCall = async (name, args, context = {}) => {
           const data = await res.json();
           if (!data.ok) throw new Error(data.error || "Failed to search messages");
           return { content: [{ type: 'text', text: JSON.stringify(data.messages.matches, null, 2) }] };
-        } else if (operation === 'invite_user') {
-          if (!teamId || !email) throw new Error("teamId and email are required for invite_user");
-          const res = await fetch(`https://slack.com/api/admin.users.invite`, {
-            method: 'POST',
-            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ team_id: teamId, email })
-          });
-          const data = await res.json();
-          if (!data.ok) throw new Error(data.error || "Failed to invite user");
-          return { content: [{ type: 'text', text: JSON.stringify({ success: true, message: `Invited ${email}` }, null, 2) }] };
-        } else if (operation === 'set_user_role') {
-          if (!teamId || !userId || !role) throw new Error("teamId, userId, and role are required for set_user_role");
-          let endpoint = 'admin.users.setRegular';
-          if (role === 'admin') endpoint = 'admin.users.setAdmin';
-          if (role === 'owner') endpoint = 'admin.users.setOwner';
-          
-          const res = await fetch(`https://slack.com/api/${endpoint}`, {
-            method: 'POST',
-            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ team_id: teamId, user_id: userId })
-          });
-          const data = await res.json();
-          if (!data.ok) throw new Error(data.error || `Failed to set role to ${role}`);
-          return { content: [{ type: 'text', text: JSON.stringify({ success: true, role }, null, 2) }] };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }
@@ -1677,6 +1649,26 @@ export const handleToolCall = async (name, args, context = {}) => {
           const data = await res.json();
           if (data.message) throw new Error(data.message);
           return { content: [{ type: 'text', text: JSON.stringify(data.items.slice(0, 10).map(i => ({ name: i.name, path: i.path, repository: i.repository.full_name, html_url: i.html_url })), null, 2) }] };
+        } else if (operation === 'list_commits') {
+          if (!owner || !repo) throw new Error("owner and repo are required for list_commits");
+          let url = `https://api.github.com/repos/${owner}/${repo}/commits?per_page=30`;
+          if (filePath) url += `&path=${filePath}`;
+          const res = await fetch(url, { headers });
+          const data = await res.json();
+          if (data.message) throw new Error(data.message);
+          return { content: [{ type: 'text', text: JSON.stringify(data.map(c => ({ sha: c.sha, message: c.commit.message, author: c.commit.author.name, date: c.commit.author.date })), null, 2) }] };
+        } else if (operation === 'get_commit') {
+          if (!owner || !repo || !sha) throw new Error("owner, repo, and sha are required for get_commit");
+          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${sha}`, { headers });
+          const data = await res.json();
+          if (data.message) throw new Error(data.message);
+          return { content: [{ type: 'text', text: JSON.stringify({ sha: data.sha, message: data.commit.message, files: data.files?.map(f => ({ filename: f.filename, status: f.status, additions: f.additions, deletions: f.deletions, patch: f.patch })) }, null, 2) }] };
+        } else if (operation === 'list_branches') {
+          if (!owner || !repo) throw new Error("owner and repo are required for list_branches");
+          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches?per_page=50`, { headers });
+          const data = await res.json();
+          if (data.message) throw new Error(data.message);
+          return { content: [{ type: 'text', text: JSON.stringify(data.map(b => ({ name: b.name, commit_sha: b.commit.sha })), null, 2) }] };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }

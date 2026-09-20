@@ -114,8 +114,20 @@ router.post("/disconnect/:id", isAuthenticated, async (req, res) => {
         if (user.metadata && user.metadata.connected_integrations) {
             user.metadata.connected_integrations = user.metadata.connected_integrations.filter(i => i !== id);
             user.markModified('metadata');
-            await user.save();
         }
+
+        if (id === 'slack') {
+            user.slack_access_token = undefined;
+            user.slack_refresh_token = undefined;
+            user.slack_email = undefined;
+        } else if (id === 'github') {
+            user.github_access_token = undefined;
+            user.github_refresh_token = undefined;
+            user.github_username = undefined;
+            user.github_email = undefined;
+        }
+
+        await user.save();
 
         res.json({ success: true, message: "Integration disconnected" });
     } catch (error) {
