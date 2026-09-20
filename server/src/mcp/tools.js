@@ -144,7 +144,7 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'list_sent_emails', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'list_classroom_submissions', 'read_classroom_file'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'list_sent_emails', 'mark_email_read', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'list_classroom_submissions', 'read_classroom_file'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
         formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
         formTitle: { type: 'string', description: 'The title of the new form (required for create_form).' },
@@ -165,6 +165,7 @@ export const getMcpTools = () => [
         topic: { type: 'string', description: 'The topic/title (for create_event).' },
         startTime: { type: 'string', description: 'Start time in ISO format (for create_event).' },
         endTime: { type: 'string', description: 'End time in ISO format (for create_event).' },
+        messageId: { type: 'string', description: 'The ID of the Gmail message (for mark_email_read).' },
         addMeetLink: { type: 'boolean', description: 'Whether to attach a Google Meet link (for create_event).' },
         fileId: { type: 'string', description: 'The ID of the file in Google Drive or Classroom.' },
         fileUrl: { type: 'string', description: 'The public URL of the file to download and upload into Drive (for upload_drive_file).' },
@@ -1177,6 +1178,15 @@ export const handleToolCall = async (name, args, context = {}) => {
             const from = headers.find(h => h.name === 'From')?.value;
             data.push({ id: msg.data.id, snippet: msg.data.snippet, subject, from });
           }
+        } else if (operation === 'mark_email_read') {
+          if (!args.messageId) throw new Error("messageId is required for mark_email_read");
+          const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+          await gmail.users.messages.modify({
+            userId: 'me',
+            id: args.messageId,
+            requestBody: { removeLabelIds: ['UNREAD'] }
+          });
+          data = { message: "Email marked as read successfully." };
         } else if (operation === 'get_form') {
           if (!args.formId) throw new Error("formId is required for get_form");
           const forms = google.forms({ version: 'v1', auth: oauth2Client });
