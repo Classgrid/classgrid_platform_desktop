@@ -2286,15 +2286,23 @@ export const generateImage = async (req, res) => {
             try {
                 const randomSeed = Math.floor(Math.random() * 1000000000);
                 const timestamp = Date.now();
-                const encodedPrompt = encodeURIComponent(prompt);
+                // Ensure prompt is not too long to prevent URL length limits (HTTP 414/500 errors)
+                const safePrompt = prompt.length > 800 ? prompt.substring(0, 800) : prompt;
+                const encodedPrompt = encodeURIComponent(safePrompt);
                 
                 // Using GET with random seed AND timestamp guarantees a 100% cache miss.
                 // Added &model=turbo to drastically reduce generation time from 30s to 3s!
                 const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${randomSeed}&cb=${timestamp}&model=turbo`;
                 
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+                
                 imageRes = await fetch(pollinationsUrl, {
-                    method: 'GET'
+                    method: 'GET',
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 
                 if (!imageRes.ok) {
                     throw new Error(`Pollinations API failed: ${imageRes.status}`);
@@ -2306,7 +2314,7 @@ export const generateImage = async (req, res) => {
             } catch (err) {
                 lastError = err;
                 console.error(`[Pollinations API] Attempt ${attempt} failed:`, err.message);
-                if (attempt < 3) await new Promise(res => setTimeout(res, 2000)); // Wait 2s before retry
+                if (attempt < 3) await new Promise(res => setTimeout(res, 4000)); // Wait 4s before retry
             }
         }
 
