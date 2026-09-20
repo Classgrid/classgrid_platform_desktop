@@ -53,7 +53,7 @@ export function CdnUploadView({ fileName, url, status, error }: CdnUploadViewPro
           Uploaded {fileName} to the global CDN
         </span>
         {url && (
-          <a 
+          <a
             href={url}
             target="_blank"
             rel="noreferrer"
