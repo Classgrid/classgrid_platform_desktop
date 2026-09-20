@@ -275,7 +275,10 @@ router.put("/update", isAuthenticated, attachInstitutionProfile({ required: fals
       if (req.body.metadata["organization.type"] !== undefined) {
         delete req.body.metadata["organization.type"];
       }
-      updateData.metadata = req.body.metadata;
+      // SAFE MERGE: Prevent wiping out backend-only metadata (like integrations, whatsapp credentials)
+      for (const key of Object.keys(req.body.metadata)) {
+        updateData[`metadata.${key}`] = req.body.metadata[key];
+      }
     }
 
     // Fetch the current user to enforce field locking

@@ -802,7 +802,7 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
                     if (vercelConnected) console.log('[integration-verify] Vercel: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED (token in DB)');
 
                     // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ MCP-based plugins (no API to ping, just config check) ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-                    whatsappConnected = !!(process.env.WHATSAPP_PHONE_ID && process.env.WHATSAPP_ACCESS_TOKEN);
+                    whatsappConnected = connectedMcps.includes('whatsapp');
                     cursorConnected = connectedMcps.includes('mcp-cursor');
                     chatgptConnected = connectedMcps.includes('mcp-chatgpt');
                     claudeConnected = connectedMcps.includes('mcp-claude');
