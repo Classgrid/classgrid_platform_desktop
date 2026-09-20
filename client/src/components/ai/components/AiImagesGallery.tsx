@@ -43,9 +43,20 @@ export function AiImagesGallery({ backendUrl }: AiImagesGalleryProps) {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-        <Loader2 className="w-8 h-8 animate-spin mb-4" />
-        <p>Loading your generated images...</p>
+      <div className="space-y-10 animate-in fade-in duration-500">
+        <div>
+          <div className="h-6 w-32 bg-muted rounded-md mb-4 animate-pulse"></div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="flex flex-col gap-2">
+                <div className="aspect-square rounded-xl bg-muted animate-pulse border border-border/20"></div>
+                <div className="px-1 flex flex-col items-center">
+                  <div className="h-3 w-20 bg-muted rounded animate-pulse mt-1"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
