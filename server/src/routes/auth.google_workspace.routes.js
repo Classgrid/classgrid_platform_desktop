@@ -78,6 +78,8 @@ router.get("/connect", isAuthenticated, (req, res) => {
         scopes.push('https://www.googleapis.com/auth/classroom.courses.readonly');
         scopes.push('https://www.googleapis.com/auth/classroom.coursework.me.readonly');
         scopes.push('https://www.googleapis.com/auth/classroom.coursework.students');
+        scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.me.readonly');
+        scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.students.readonly');
         scopes.push('https://www.googleapis.com/auth/drive.readonly'); // Required to read Classroom attachments
     }
     
@@ -182,6 +184,18 @@ router.get("/callback", async (req, res) => {
         }
         if (tokens.expiry_date) {
             user.google_token_expiry = new Date(tokens.expiry_date);
+        }
+
+        // Fetch user profile to get their connected Google email and name
+        try {
+            const oauth2Client = getOAuth2Client();
+            oauth2Client.setCredentials({ access_token: tokens.access_token });
+            const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+            const { data: profile } = await oauth2.userinfo.get();
+            if (profile.email) user.google_email = profile.email;
+            if (profile.name) user.google_name = profile.name;
+        } catch (e) {
+            console.error("Failed to fetch Google profile:", e.message);
         }
 
         // Clear any previous errors on success
