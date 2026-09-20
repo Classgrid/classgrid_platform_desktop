@@ -2540,7 +2540,15 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           })
         });
         
-        if (!res.ok) throw new Error("Failed to generate image");
+        if (!res.ok) {
+          let errorMsg = "Failed to generate image";
+          try {
+            const errData = await res.json();
+            if (errData.error) errorMsg = errData.error;
+          } catch(e) {}
+          console.error("Backend returned 500 error:", errorMsg);
+          throw new Error(errorMsg);
+        }
         
         const data = await res.json();
         
@@ -2554,7 +2562,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           const lastMsg = prev[prev.length - 1];
           return [
             ...prev.slice(0, -1),
-            { ...lastMsg, content: `[IMAGE_GENERATION_COMPLETE: ${prompt} : ${data.imageUrl}]` }
+            // Use | as separator because prompts can contain colons (e.g. 16:9)
+            { ...lastMsg, content: `[IMAGE_GENERATION_COMPLETE: ${prompt} | ${data.imageUrl}]` }
           ];
         });
       } catch (err) {
@@ -2848,7 +2857,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     void askQuestion(input);
   }
 
-  // â”€â”€â”€ Panel content (shared between desktop sidebar and mobile bottom-sheet) â”€â”€â”€
+  // ─── Panel content (shared between desktop sidebar and mobile bottom-sheet) ───
   const panelHeader = (
     <div className={cn("flex items-center justify-between px-4 py-4", variant !== "full-page" && "border-b border-border")}>
       <div className="flex items-center gap-2">
@@ -2971,7 +2980,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           <>
             {/* PostHog-style centered greeting with logo & suggestion chips */}
             <div className="flex flex-col items-center justify-center py-16 gap-5 select-none">
-              {/* Classgrid Logo â€” same size as PostHog */}
+              {/* Classgrid Logo — same size as PostHog */}
               <div className="flex items-center gap-2">
                 <img src="/logo.png" alt="Classgrid" className="h-12 w-12 object-contain" />
               </div>
@@ -3063,7 +3072,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   >
                     <div className={cn("flex flex-col gap-1.5 min-w-0", isUser ? "items-end max-w-[75%]" : "w-full")}>
 
-                      {/* â”€â”€ Text Bubble â”€â”€ */}
+                      {/* ── Text Bubble ── */}
                       {(message.content || (message.steps && message.steps.length > 0) || (message.thought && message.thought.trim().length > 0) || (message.attachments && message.attachments.length > 0) || (!isUser && index === messages.length - 1 && thinking)) && (
                         <div
                           id={isUser ? `msg-${message.id}` : undefined}
@@ -3407,7 +3416,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 if (isQueued || isError) {
                                   prompt = message.content.match(/\[IMAGE_GENERATION(?:_QUEUED|_ERROR):\s*(.*?)\]/)?.[1] || prompt;
                                 } else if (isComplete) {
-                                  const match = message.content.match(/\[IMAGE_GENERATION_COMPLETE:\s*(.*?)\s*:\s*(.*?)\]/);
+                                  // Split using | instead of : to avoid breaking on prompts that contain colons (like 16:9)
+                                  const match = message.content.match(/\[IMAGE_GENERATION_COMPLETE:\s*(.*?)\s*\|\s*(.*?)\]/);
                                   if (match) {
                                     prompt = match[1];
                                     url = match[2];
