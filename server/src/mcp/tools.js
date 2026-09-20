@@ -26,7 +26,16 @@ const execPromise = util.promisify(exec);
 export const getMcpTools = () => [
   {
     name: 'unified_db_query',
-    description: 'Executes a direct read or write query against MongoDB or Supabase. You can use this to access ANY data in the system (e.g. Users, Tickets, Logs, Classes).',
+    description: `Executes a query against MongoDB or Supabase. MANDATORY RULES:
+1. You MUST ALWAYS provide the 'fields' parameter with ONLY the specific fields you need (e.g. ["name", "email"]). NEVER request all fields.
+2. For a single item, use operation='findOne'. For lists, use operation='find'.
+3. QUERY EXAMPLES:
+   - "Tell me org name" → source="mongodb", collectionOrTable="Organization", operation="findOne", query={}, fields=["name"]
+   - "List all students" → source="mongodb", collectionOrTable="User", operation="find", query={"role":"student"}, fields=["name","email"], limit=20
+   - "Who are the org admins?" → source="mongodb", collectionOrTable="User", operation="find", query={"role":"org_admin"}, fields=["name","email","organization_id"], limit=20
+   - "How many users?" → source="mongodb", collectionOrTable="User", operation="countDocuments", query={}
+4. NEVER request more than 20 items unless the user explicitly asks for all.
+5. Keep queries minimal. If the user asks for a name, only request ["name"]. Do NOT request the entire document.`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -55,10 +64,14 @@ export const getMcpTools = () => [
         fields: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Optional array of field names to return (e.g. ["name", "email"]). USE THIS TO PREVENT TOKEN LIMIT ERRORS.'
+          description: 'REQUIRED: Array of specific field names to return (e.g. ["name", "email"]). You MUST always specify this. Never omit it.'
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of documents to return for find operations. Default is 20. Max is 50.'
         }
       },
-      required: ['source', 'collectionOrTable', 'operation'],
+      required: ['source', 'collectionOrTable', 'operation', 'fields'],
     },
   },
   {
@@ -369,11 +382,21 @@ export const handleToolCall = async (name, args, context = {}) => {
           args.fields.forEach(f => projection[f] = 1);
         }
 
+        // ISSUE #1 FIX: Reject find/findOne queries without fields to prevent returning full documents
+        if ((operation === 'find' || operation === 'findOne') && Object.keys(projection).length === 0) {
+          return {
+            content: [{ type: 'text', text: `ERROR: You MUST specify the 'fields' parameter with the exact fields you need (e.g. fields: ["name", "email"]). Returning full documents is blocked. Available fields for reference: _id, name, email, role, organization_id, phone, status, createdAt` }]
+          };
+        }
+
+        // Use user-specified limit, default 20, max 50
+        const queryLimit = Math.min(Math.max(1, args.limit || 20), 50);
+
         if (operation === 'find') {
           if (actualCollectionName === 'users') {
             const pipeline = [
               { $match: query || {} },
-              { $limit: 50 },
+              { $limit: queryLimit },
               {
                 $addFields: {
                   orgObjId: { $convert: { input: "$organization_id", to: "objectId", onError: null, onNull: null } }
@@ -396,13 +419,17 @@ export const handleToolCall = async (name, args, context = {}) => {
             result = await collection.aggregate(pipeline).toArray();
           } else {
             if (Object.keys(projection).length > 0) {
-              result = await collection.find(query).project(projection).limit(50).toArray();
+              result = await collection.find(query).project(projection).limit(queryLimit).toArray();
             } else {
-              result = await collection.find(query).limit(50).toArray();
+              result = await collection.find(query).limit(queryLimit).toArray();
             }
           }
         } else if (operation === 'findOne') {
-          result = await collection.findOne(query);
+          if (Object.keys(projection).length > 0) {
+            result = await collection.findOne(query, { projection });
+          } else {
+            result = await collection.findOne(query);
+          }
         } else if (operation === 'countDocuments') {
           result = { count: await collection.countDocuments(query) };
         } else if (operation === 'distinct') {
@@ -419,6 +446,9 @@ export const handleToolCall = async (name, args, context = {}) => {
               pipeline.unshift({ $match: { organization_id: userDoc.organization_id } });
             }
           }
+          
+          const hasLimit = pipeline.some(stage => Object.keys(stage)[0] === '$limit');
+          if (!hasLimit) pipeline.push({ $limit: queryLimit });
 
           result = await collection.aggregate(pipeline).toArray();
         } else if (operation === 'update') {
@@ -431,14 +461,27 @@ export const handleToolCall = async (name, args, context = {}) => {
           throw new Error(`Unsupported MongoDB operation: ${operation}`);
         }
 
+        // Enforce projection for multiple items to solve Issue #1 (Data Leak & Token Limits)
+        if (Array.isArray(result) && result.length > 1) {
+          const hasFields = args.fields && Array.isArray(args.fields) && args.fields.length > 0;
+          const hasProject = operation === 'aggregate' && pipeline && pipeline.some(stage => Object.keys(stage)[0] === '$project');
+          
+          if (!hasFields && !hasProject) {
+            return {
+              content: [{ type: 'text', text: `ERROR: Query returned ${result.length} documents. You MUST use the 'fields' array parameter (or a $project stage) to specify exactly which fields you need (e.g. fields: ["name", "email"]). Returning full documents is forbidden for security and token limit reasons. First document keys for reference: ${Object.keys(result[0] || {}).join(', ')}` }]
+            };
+          }
+        }
+
         // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨ AI TOKEN OVERFLOW PROTECTION ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨
         const aiSafetyReplacer = (key, value) => {
           const forbiddenKeys = [
             'password', 'profilePicture', 'profileBanner', 'logo', 'favicon', 'signature',
             'activationToken', 'resetPasswordToken', 'payroll_config', 'preferences', 'settings',
-            'fee_structures', 'modules', 'theme', 'audit_logs', 'history', 'metadata', 'permissions'
+            'fee_structures', 'modules', 'theme', 'audit_logs', 'history', 'metadata', 'permissions',
+            'hash', 'salt', 'biometric', 'token', 'secret'
           ];
-          if (forbiddenKeys.includes(key)) return undefined;
+          if (forbiddenKeys.some(fk => key.toLowerCase().includes(fk))) return undefined;
 
           if (typeof value === 'string' && value.length > 500) return "[TRUNCATED HUGE STRING]";
 
@@ -451,6 +494,13 @@ export const handleToolCall = async (name, args, context = {}) => {
         };
 
         let outputText = JSON.stringify(result, aiSafetyReplacer, 2);
+        
+        if (outputText.length > 10000) {
+          return {
+            content: [{ type: 'text', text: `ERROR: The result is too large (${outputText.length} bytes). Even with fields requested, it exceeds the context window. Add a stricter filter to your query.` }]
+          };
+        }
+
         if (Array.isArray(result) && result.length > 2) {
           outputText += `\n\n[SYSTEM DIRECTIVE TO AI: The database returned EXACTLY ${result.length} items. YOU ARE STRICTLY FORBIDDEN from truncating this list in your response to the user. You MUST transcribe ALL ${result.length} items. Do not stop early. Do not summarize.]`;
         }

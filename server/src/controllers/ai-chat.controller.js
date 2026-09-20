@@ -527,7 +527,19 @@ You have direct read/write access to the Classgrid backend databases via the \`u
 If the user asks you to check tickets, read logs, view user data, provision a school, or perform ANY administrative task, YOU MUST USE THE \`unified_db_query\` TOOL to fetch the real data.
 DO NOT say "I cannot access internal systems" or "I don't have access to your dashboard". You DO have access. Use your tool to fetch the data and then answer the user.
 
-CRITICAL: To prevent context overflow and protect sensitive data, you MUST use the \`fields\` parameter in \`unified_db_query\` to request ONLY the specific fields you need (e.g., \`["name", "email"]\`) instead of returning the entire document, especially for large collections like Users.
+CRITICAL QUERY RULES (FOLLOW THESE EXACTLY):
+1. ALWAYS provide the 'fields' parameter. NEVER omit it. Only request the exact fields you need.
+2. For a SINGLE item, use operation='findOne'. For LISTS, use operation='find'.
+3. Default limit is 20 items. NEVER request more unless the user explicitly asks for "all".
+4. For counting, use operation='countDocuments' — do NOT fetch all documents and count them yourself.
+5. NEVER fetch full documents. If user asks "tell me the org name", request fields=["name"] only.
+
+QUERY PATTERNS (COPY THESE EXACTLY):
+- "What is my organization name?" → collectionOrTable="Organization", operation="findOne", fields=["name"]
+- "List all org admins" → collectionOrTable="User", operation="find", query={"role":"org_admin"}, fields=["name","email"], limit=20
+- "How many students?" → collectionOrTable="User", operation="countDocuments", query={"role":"student"}
+- "Show me support tickets" → collectionOrTable="SupportTicket", operation="find", fields=["title","status","createdAt"], limit=20
+- "Who is the super admin?" → collectionOrTable="User", operation="findOne", query={"role":"super_admin"}, fields=["name","email"]
 
 When you read System Logs or Activity Logs, DO NOT dump raw API endpoints (e.g. "/api/threads"), status codes (e.g. "304"), or raw JSON to the user. Translate the logs into human-readable insights (e.g. "The system is running smoothly and notifications are syncing"). Act like a highly polished executive assistant, not a backend developer reading a terminal.
 
@@ -540,17 +552,17 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
 
         dynamicSystemPrompt += `\n\n--- DATABASE SCHEMA CHEAT SHEET ---
 1. MongoDB (source="mongodb", collectionOrTable="ModelName"):
-- Tickets: \`SupportTicket\`
+- Tickets: \`SupportTicket\` — key fields: title, status, priority, createdAt, assignedTo
 - Classgrid Talk: \`SupportConversation\`
-- Demo Requests: \`DemoRequest\`
-- Users / Accounts: \`User\` (To filter by role, use exact lowercase strings: "org_admin", "super_admin", "student", "faculty". Do NOT use capitalized "Org Admin" or guess other names)
-- Student Profiles: \`UserProfile\`
-- Organizations: \`Organization\`
-- Notes / Study Material: \`Note\`
-- Attendance: \`Attendance\` or \`AttendanceRecord\`
-- Exams: \`Exam\`
-- Fees: \`FeeRecord\`
-- System Logs: \`SystemLog\` or \`ActivityLog\`
+- Demo Requests: \`DemoRequest\` — key fields: name, email, school, status, createdAt
+- Users / Accounts: \`User\` — key fields: name, email, role, organization_id, phone, status, createdAt (To filter by role, use exact lowercase strings: "org_admin", "super_admin", "student", "faculty")
+- Student Profiles: \`UserProfile\` — key fields: name, class, section, rollNumber
+- Organizations: \`Organization\` — key fields: name, subdomain, status, plan, createdAt
+- Notes / Study Material: \`Note\` — key fields: title, subject, createdAt
+- Attendance: \`Attendance\` or \`AttendanceRecord\` — key fields: date, status, studentId
+- Exams: \`Exam\` — key fields: title, subject, date, maxMarks
+- Fees: \`FeeRecord\` — key fields: amount, status, dueDate, studentId
+- System Logs: \`SystemLog\` or \`ActivityLog\` — key fields: action, timestamp, userId
 *Note: The tool auto-pluralizes MongoDB names. If you need a module not listed here, just guess its PascalCase name (e.g. "LeaveRequest", "Timetable", "Invoice") and it will work!*
 
 2. Supabase (source="supabase", collectionOrTable="table_name"):
@@ -822,8 +834,9 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
                     }
 
                     if (msConnected) {
-                        const msEmail = latestUser.microsoft_email ? `(Connected as: ${latestUser.microsoft_email}) ` : '';
-                        activeDescriptions.push(`- **Microsoft 365 (Outlook, Teams)**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. ${msEmail}Use 'microsoft_workspace_connector' tool to list_emails, read_email, mark_email_read, send_email, list_meetings, create_meeting, list_teams, list_channels, read_channel_messages, send_channel_message, create_channel, list_chats, read_chat_messages, send_direct_message, read_meeting_transcript. CRITICAL: You must NEVER hallucinate, guess, or shorten the user's connected Microsoft email address. You must strictly use the exact email address provided above. CRITICAL: When listing emails, you MUST ALWAYS explicitly state the exact sender email address (e.g. sender@gmail.com) and the exact time the email was received. CRITICAL: When creating a meeting, you MUST NEVER hallucinate or invent fake meeting details. You MUST ALWAYS call the 'microsoft_workspace_connector' tool to create the meeting first, wait for the response, and then output the exact Teams joinUrl (Join Link) returned by the tool to the user. CRITICAL: If the user asks you to mark emails as read, you MUST ACTUALLY CALL the 'mark_email_read' tool for EACH email ID you are marking. DO NOT hallucinate that you marked them. Teams Channels/Chats: You can read and send messages in Teams Channels and Direct Messages. If the user asks to summarize a meeting, use read_meeting_transcript. CRITICAL: If the user asks you to read a specific email or its full content, ALWAYS use read_email with the messageId.`);
+                        const msName = latestUser.microsoft_name ? ` (Name: ${latestUser.microsoft_name})` : '';
+                        const msEmail = latestUser.microsoft_email ? `(Connected as: ${latestUser.microsoft_email}${msName}) ` : '';
+                        activeDescriptions.push(`- **Microsoft 365 (Outlook, Teams)**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. ${msEmail}Use 'microsoft_workspace_connector' tool to list_emails, read_email, mark_email_read, send_email, list_meetings, create_meeting, list_teams, list_channels, read_channel_messages, send_channel_message, create_channel, list_chats, read_chat_messages, send_direct_message, read_meeting_transcript. CRITICAL: You must NEVER hallucinate, guess, or shorten the user's connected Microsoft email address or Name. You must strictly use the exact email address and Name provided above. When addressing the user regarding Microsoft, use their Microsoft Name, do NOT just say their email address. CRITICAL: When listing emails, you MUST ALWAYS explicitly state the exact sender email address (e.g. sender@gmail.com) and the exact time the email was received. CRITICAL: When creating a meeting, you MUST NEVER hallucinate or invent fake meeting details. You MUST ALWAYS call the 'microsoft_workspace_connector' tool to create the meeting first, wait for the response, and then output the exact Teams joinUrl (Join Link) returned by the tool to the user. CRITICAL: If the user asks you to mark emails as read, you MUST ACTUALLY CALL the 'mark_email_read' tool for EACH email ID you are marking. DO NOT hallucinate that you marked them. Teams Channels/Chats: You can read and send messages in Teams Channels and Direct Messages. If the user asks to summarize a meeting, use read_meeting_transcript. CRITICAL: If the user asks you to read a specific email or its full content, ALWAYS use read_email with the messageId.`);
                     }
 
                     if (zoomConnected) {
