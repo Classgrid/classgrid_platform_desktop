@@ -1,6 +1,6 @@
 /*
  * =========================================================================================
- * 🚨 CRITICAL AI & SYSTEM RULE 🚨
+ * ðŸš¨ CRITICAL AI & SYSTEM RULE ðŸš¨
  * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
  * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
  * =========================================================================================
@@ -16,29 +16,29 @@
  */
 
 /*
- * ─────────────────────────────────────────────────────────
- * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * ðŸš¨ CRITICAL AI AND SYSTEM RULES ðŸš¨
  * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
  * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
  * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
- * ─────────────────────────────────────────────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  */
 
 /*
- * ─────────────────────────────────────────────────────────
- * 🚨 NAMING CONVENTION RULE 🚨
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * ðŸš¨ NAMING CONVENTION RULE ðŸš¨
  * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
  * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
  * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
- * ─────────────────────────────────────────────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  */
 
 /*
- * ─────────────────────────────────────────────────────────
- * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * ðŸš¨ HOSTING & ARCHITECTURE RULE ðŸš¨
  * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
  * 2. FRONTEND IS HOSTED ON VERCEL
- * ─────────────────────────────────────────────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  */
 
 import mongoose from "mongoose";
@@ -92,7 +92,7 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
-    // 🎓 Primary role (determines main dashboard view)
+    // ðŸŽ“ Primary role (determines main dashboard view)
     role: {
       type: String,
       enum: [
@@ -105,7 +105,7 @@ const userSchema = new mongoose.Schema(
       default: "student",
     },
 
-    // 🔀 Additional roles (supports one person = multiple hats)
+    // ðŸ”€ Additional roles (supports one person = multiple hats)
     // e.g., an HOD who also teaches gets role: "hod", additional_roles: ["faculty"]
     additional_roles: {
       type: [String],
@@ -155,7 +155,7 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
-    // 🎓 Admission & Category (College ERP)
+    // ðŸŽ“ Admission & Category (College ERP)
     admission_type: {
       type: String,
       enum: ["CAP", "Management", "Direct", "Lateral", null],
@@ -168,7 +168,7 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
-    // 🏛️ Compliance IDs (Mainly for Higher Ed / Engineering)
+    // ðŸ›ï¸ Compliance IDs (Mainly for Higher Ed / Engineering)
     abc_id: {
       type: String,
       default: null,
@@ -186,7 +186,7 @@ const userSchema = new mongoose.Schema(
       default: "active",
     },
 
-    // 🛡️ Security: Forces self-registered users (Honor Code) into a waitlist until admin approves
+    // ðŸ›¡ï¸ Security: Forces self-registered users (Honor Code) into a waitlist until admin approves
     verification_status: {
       type: String,
       enum: ["verified", "pending", "rejected"],
@@ -199,7 +199,7 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
-    // 🆔 PRN / Roll Number — set once by student, immutable, unique per org
+    // ðŸ†” PRN / Roll Number â€” set once by student, immutable, unique per org
     prn: {
       type: String,
       sparse: true,
@@ -225,7 +225,7 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
-    // 📚 Subject assignment (for teachers only)
+    // ðŸ“š Subject assignment (for teachers only)
     subject: {
       type: String,
       enum: ["science", "physics", "cpp", "mathematics", null],
@@ -238,7 +238,7 @@ const userSchema = new mongoose.Schema(
       alias: "photoUrl",
     },
 
-    // 🏢 Super Admin: Platform Logo (stored separately from personal profile picture)
+    // ðŸ¢ Super Admin: Platform Logo (stored separately from personal profile picture)
     platformLogo: {
       type: String,
       default: "",
@@ -259,7 +259,7 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
-    // 🎓 Faculty profile fields
+    // ðŸŽ“ Faculty profile fields
     qualification: {
       type: String,
       default: "",
@@ -292,7 +292,7 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
-    // 🏢 HR Module: Biometric Turnstile ID mapping
+    // ðŸ¢ HR Module: Biometric Turnstile ID mapping
     biometricId: {
       type: String,
       sparse: true,
@@ -300,7 +300,7 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
-    // 🏢 HR Module: Payroll details
+    // ðŸ¢ HR Module: Payroll details
     payroll_config: {
       salary_mode: { type: String, enum: ["hourly", "monthly", "none"], default: "none" },
       hourly_rate: { type: Number, default: 0 },
@@ -312,20 +312,20 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
-    // 🔐 hashed password (for manual auth)
+    // ðŸ” hashed password (for manual auth)
     password: {
       type: String, // hashed
       default: null,
       select: false, // Don't return by default
     },
 
-    // ⏳ password expiry (optional policy)
+    // â³ password expiry (optional policy)
     passwordExpiresAt: {
       type: Date,
       default: null,
     },
 
-    // 🗓️ Track password changes for JWT invalidation
+    // ðŸ—“ï¸ Track password changes for JWT invalidation
     passwordChangedAt: {
       type: Date,
     },
@@ -388,7 +388,7 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
-    // 🔒 Trusted devices — suppress login notification emails for known devices
+    // ðŸ”’ Trusted devices â€” suppress login notification emails for known devices
     trustedDevices: [{
       fingerprint: { type: String, required: true }, // SHA-256 hash of userAgent + IP
       browser: { type: String, default: "" },
@@ -397,32 +397,32 @@ const userSchema = new mongoose.Schema(
       addedAt: { type: Date, default: Date.now },
     }],
 
-    // 🔇 Muted Chat Threads
+    // ðŸ”‡ Muted Chat Threads
     muted_chat_threads: {
       type: [String],
       default: []
     },
 
-    // ⭐ Starred Chat Messages
+    // â­ Starred Chat Messages
     starred_chat_messages: {
       type: [String],
       default: []
     },
 
-    // 🗑️ Hidden Chat Messages (Delete for Me)
+    // ðŸ—‘ï¸ Hidden Chat Messages (Delete for Me)
     hidden_chat_messages: {
       type: [String],
       default: []
     },
 
-    // 🗑️ Cleared Chat Threads (Thread ID -> Cleared At Timestamp)
+    // ðŸ—‘ï¸ Cleared Chat Threads (Thread ID -> Cleared At Timestamp)
     cleared_chat_threads: {
         type: Map,
         of: Date,
         default: {}
     },
 
-    // 🔔 In-App notification preferences (Bell icon inbox)
+    // ðŸ”” In-App notification preferences (Bell icon inbox)
     inAppNotifications: {
       global: { type: Boolean, default: true },
       chat: { type: Boolean, default: true },
@@ -445,13 +445,13 @@ const userSchema = new mongoose.Schema(
       default: []
     },
 
-    // 📧 Email notification preferences
+    // ðŸ“§ Email notification preferences
     emailNotifications: {
       // Delivery mode: instant (default), daily digest, weekly summary
       digestMode: { type: String, enum: ['instant', 'daily', 'weekly'], default: 'instant' },
-      // Reliable digest tracking — queries from this date, not fixed 24h window
+      // Reliable digest tracking â€” queries from this date, not fixed 24h window
       lastDigestSentAt: { type: Date, default: null },
-      // Global kill switch — if false, NO emails are sent
+      // Global kill switch â€” if false, NO emails are sent
       global: { type: Boolean, default: true },
       // Per-type toggles (students + faculty)
       announcements: { type: Boolean, default: true },
@@ -464,7 +464,7 @@ const userSchema = new mongoose.Schema(
       attendanceReportMode: { type: String, enum: ['daily', 'weekly', 'off'], default: 'off' },
     },
 
-    // 🧪 Demo / Role Sandbox flags
+    // ðŸ§ª Demo / Role Sandbox flags
     is_demo: {
       type: Boolean,
       default: false,
@@ -476,7 +476,7 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
-    // 🧪 Sandbox isolation — sandbox users cannot affect real data/analytics
+    // ðŸ§ª Sandbox isolation â€” sandbox users cannot affect real data/analytics
     isSandbox: {
       type: Boolean,
       default: false,
@@ -631,7 +631,7 @@ userSchema.index(
   { unique: true, partialFilterExpression: { prn: { $type: "string" } } }
 );
 
-// 🛡️ Auto-verify all @classgrid.in emails
+// ðŸ›¡ï¸ Auto-verify all @classgrid.in emails
 userSchema.pre('save', async function() {
   if (this.email && this.email.toLowerCase().endsWith('@classgrid.in')) {
     this.isEmailVerified = true;
@@ -639,7 +639,7 @@ userSchema.pre('save', async function() {
   }
 });
 
-// 🔄 Auto-sync newly created users to Supabase blog_subscribers
+// ðŸ”„ Auto-sync newly created users to Supabase blog_subscribers
 // Track isNew before save fires (isNew becomes false after save)
 userSchema.pre('save', async function() {
   this.$wasNew = this.isNew;

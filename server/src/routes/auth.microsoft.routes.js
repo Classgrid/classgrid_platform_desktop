@@ -187,6 +187,7 @@ router.get("/callback", async (req, res) => {
             if (profileRes.ok) {
                 const profile = await profileRes.json();
                 user.microsoft_email = profile.mail || profile.userPrincipalName;
+                user.microsoft_name = profile.displayName;
             }
         } catch (e) {
             console.error("Failed to fetch Microsoft profile:", e);
