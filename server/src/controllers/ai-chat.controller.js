@@ -2288,7 +2288,8 @@ export const generateImage = async (req, res) => {
                 prompt: prompt,
                 width: 1024,
                 height: 1024,
-                nologo: true
+                nologo: true,
+                seed: Math.floor(Math.random() * 1000000)
             })
         });
         if (!imageRes.ok) throw new Error(`Image API failed: ${imageRes.status}`);
