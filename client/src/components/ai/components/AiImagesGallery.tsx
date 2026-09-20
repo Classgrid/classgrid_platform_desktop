@@ -110,11 +110,8 @@ export function AiImagesGallery({ backendUrl }: AiImagesGalleryProps) {
                             loading="lazy"
                           />
                         </div>
-                        <div className="px-1">
-                          <p className="text-sm font-medium text-foreground line-clamp-1" title={img.prompt}>
-                            {img.prompt}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
+                        <div className="px-1 text-center">
+                          <p className="text-xs font-medium text-muted-foreground mt-1">
                             {format(parseISO(img.createdAt), "MMM d, yyyy 'at' h:mm a")}
                           </p>
                         </div>
