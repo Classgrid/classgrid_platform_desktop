@@ -14,7 +14,7 @@ router.get("/status", isAuthenticated, async (req, res) => {
     try {
         await connectDB();
         const user = await User.findById(req.user._id).select(
-            "google_access_token google_refresh_token microsoft_access_token microsoft_refresh_token zoom_access_token zoom_refresh_token vercel_access_token notion_access_token notion_refresh_token webex_access_token webex_refresh_token metadata"
+            "google_access_token google_refresh_token microsoft_access_token microsoft_refresh_token zoom_access_token zoom_refresh_token vercel_access_token notion_access_token notion_refresh_token webex_access_token webex_refresh_token metadata slack_access_token github_access_token"
         ).lean();
 
         if (!user) return res.status(404).json({ message: "User not found" });
@@ -49,13 +49,22 @@ router.get("/status", isAuthenticated, async (req, res) => {
         // Notion — ONLY if real OAuth tokens exist
         if (isValidToken(user.notion_access_token) || isValidToken(user.notion_refresh_token)) connected.push("mcp-notion");
 
+        // Slack — ONLY if real OAuth token exists
+        if (isValidToken(user.slack_access_token)) connected.push("slack");
+
+        // GitHub — ONLY if real OAuth token exists
+        if (isValidToken(user.github_access_token)) connected.push("github");
+
         // Generic integrations (Claude, ChatGPT, Cursor, etc)
         if (user.metadata && Array.isArray(user.metadata.connected_integrations)) {
-            connected.push(...user.metadata.connected_integrations);
+            const genericIntegrations = user.metadata.connected_integrations.filter(id => 
+                !["slack", "github", "mcp-notion", "vercel", "zoom", "outlook", "teams"].includes(id)
+            );
+            connected.push(...genericIntegrations);
         }
 
         // Log what we found for debugging
-        console.log(`[Integration Status] User ${req.user._id}: connected=[${connected.join(',')}], google_token=${!!user.google_access_token}, ms_token=${!!user.microsoft_access_token}, zoom_token=${!!user.zoom_access_token}, vercel_token=${!!user.vercel_access_token}, notion_token=${!!user.notion_access_token}`);
+        console.log(`[Integration Status] User ${req.user._id}: connected=[${connected.join(',')}], google_token=${!!user.google_access_token}, ms_token=${!!user.microsoft_access_token}, zoom_token=${!!user.zoom_access_token}, vercel_token=${!!user.vercel_access_token}, notion_token=${!!user.notion_access_token}, slack_token=${!!user.slack_access_token}, github_token=${!!user.github_access_token}`);
 
         res.json({ connected });
     } catch (err) {
