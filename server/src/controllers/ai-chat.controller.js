@@ -597,6 +597,8 @@ If you are asked to interact with a 3rd party service (like Zoom, Google Workspa
 ANTI-HALLUCINATION RULE:
 If a tool execution returns an error (e.g., "Failed to execute API call"), you MUST read the error and tell the user exactly what failed. NEVER pretend that a tool succeeded if it actually returned an error. NEVER fabricate links or success messages for tasks you did not successfully complete.`;
 
+        dynamicSystemPrompt += `\n\nFORMATTING RULE:\nDo NEVER use parentheses \`()\` to enclose a list of items or repositories (e.g. DO NOT write \`( repo1 and repo2 )\`). If you need to list multiple items, use standard markdown bullet points \`-\` or a simple comma-separated inline list. Avoid excessive line breaks.`;
+
         if (!isIncognito) {
             dynamicSystemPrompt += `\n\nROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
 - If the user uploads a file, call \`parse_document\` with the URL immediately after your thought.

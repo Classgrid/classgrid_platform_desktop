@@ -163,6 +163,7 @@ router.get("/callback", async (req, res) => {
 // 3. DISCONNECT
 router.delete("/disconnect", isAuthenticated, async (req, res) => {
     try {
+        await connectDB();
         const user = await User.findById(req.user._id);
         if (!user) return res.status(404).json({ message: "User not found" });
 
