@@ -18,6 +18,7 @@ const getSlackAuthUrl = (statePayload) => {
     authUrl.searchParams.append('user_scope', scopes.join(',')); // user_scope instead of scope to act on behalf of user
     authUrl.searchParams.append('redirect_uri', redirectUri);
     authUrl.searchParams.append('state', statePayload);
+    authUrl.searchParams.append('prompt', 'consent');
     
     return authUrl.toString();
 };
@@ -125,6 +126,7 @@ router.get("/callback", async (req, res) => {
         user.slack_access_token = accessToken;
         user.slack_refresh_token = refreshToken;
         user.slack_email = slackEmail;
+        user.slack_name = slackUser.user?.name || null;
         await user.save();
 
         if (isPopup) {

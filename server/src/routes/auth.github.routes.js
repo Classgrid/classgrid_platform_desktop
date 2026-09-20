@@ -18,6 +18,7 @@ const getGithubAuthUrl = (statePayload) => {
     authUrl.searchParams.append('redirect_uri', redirectUri);
     authUrl.searchParams.append('scope', scopes.join(' '));
     authUrl.searchParams.append('state', statePayload);
+    authUrl.searchParams.append('prompt', 'consent');
     
     return authUrl.toString();
 };
