@@ -107,6 +107,10 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
         endpoint = `/api/auth/vercel/connect?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       } else if (id === 'zoom') {
         endpoint = `/api/zoom/connect?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
+      } else if (id === 'slack') {
+        endpoint = `/api/auth/slack/connect?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
+      } else if (id === 'github') {
+        endpoint = `/api/auth/github/connect?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       } else {
         endpoint = `/api/ai-integrations/connect/${id}?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       }
@@ -222,12 +226,17 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
         endpoint = `/api/auth/vercel/disconnect`;
       } else if (id === 'zoom') {
         endpoint = `/api/zoom/disconnect`;
+      } else if (id === 'slack') {
+        endpoint = `/api/auth/slack/disconnect`;
+      } else if (id === 'github') {
+        endpoint = `/api/auth/github/disconnect`;
       } else {
         endpoint = `/api/ai-integrations/disconnect/${id}`;
       }
 
       if (endpoint) {
-        const res = await fetch(backendUrl + endpoint, { method: 'POST', credentials: 'include' });
+        const method = (id === 'slack' || id === 'github') ? 'DELETE' : 'POST';
+        const res = await fetch(backendUrl + endpoint, { method, credentials: 'include' });
         if (res.ok) {
           toast.success(`${name} disconnected successfully`);
           await fetchStatus();
