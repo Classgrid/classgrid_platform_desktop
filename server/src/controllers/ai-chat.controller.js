@@ -2276,8 +2276,10 @@ export const bulkDeleteAgentReviews = async (req, res) => {
 export const generateImage = async (req, res) => {
     try {
         const { prompt, sessionId, userEmail, isIncognito } = req.body;
-        // Call Pollinations AI (Flux) using POST with robust cache-busting and retry logic
-        const pollinationsUrl = `https://image.pollinations.ai/`;
+        // Call Hugging Face Inference API (FLUX.1-schnell)
+        const hfUrl = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell";
+        const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY || "hf_replace_me"; // Replace this with your actual key
+        
         let imageRes;
         let imageBuffer;
         let success = false;
@@ -2285,30 +2287,29 @@ export const generateImage = async (req, res) => {
 
         for (let attempt = 1; attempt <= 3; attempt++) {
             try {
-                // Highly aggressive cache busting: Append unique ID to prompt
-                const uniqueId = `[ID: ${Date.now()}-${Math.floor(Math.random() * 10000)}]`;
-                const finalPrompt = prompt + " " + uniqueId;
-
-                imageRes = await fetch(pollinationsUrl, {
+                imageRes = await fetch(hfUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Authorization': `Bearer ${HUGGINGFACE_API_KEY}`,
+                        'Content-Type': 'application/json' 
+                    },
                     body: JSON.stringify({
-                        prompt: finalPrompt,
-                        width: 1024,
-                        height: 1024,
-                        nologo: true,
-                        seed: Math.floor(Math.random() * 1000000)
+                        inputs: prompt,
+                        parameters: { 
+                            guidance_scale: 7.5,
+                            num_inference_steps: 4
+                        }
                     })
                 });
 
-                if (!imageRes.ok) throw new Error(`Image API failed: ${imageRes.status}`);
+                if (!imageRes.ok) throw new Error(`HuggingFace API failed: ${imageRes.status}`);
                 imageBuffer = Buffer.from(await imageRes.arrayBuffer());
                 success = true;
                 break; // Break out of retry loop if successful
             } catch (err) {
                 lastError = err;
-                console.error(`[Pollinations AI] Attempt ${attempt} failed:`, err.message);
-                if (attempt < 3) await new Promise(res => setTimeout(res, 1000)); // Wait 1s before retry
+                console.error(`[HuggingFace API] Attempt ${attempt} failed:`, err.message);
+                if (attempt < 3) await new Promise(res => setTimeout(res, 2000)); // Wait 2s before retry
             }
         }
 
