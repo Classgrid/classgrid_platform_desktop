@@ -67,13 +67,13 @@ import {
 } from "lucide-react";
 
 const CustomSlidersIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
     strokeLinejoin="round"
     className={className}
   >
@@ -1499,7 +1499,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const { sessionId: routeSessionId } = useParams<{ sessionId?: string }>();
   const [localSessionId, setLocalSessionId] = useState<string | null>(null);
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
-  const [viewingPastedText, setViewingPastedText] = useState<{ title: string, content: string } | null>(null);
+  const [viewingPastedText, setViewingPastedText] = useState<{title: string, content: string} | null>(null);
   const [isExpandedBox, setIsExpandedBox] = useState(false);
 
   // Use route parameter if present (dashboard mode), otherwise fallback to local state (website floating mode)
@@ -2512,7 +2512,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     // --- INTERCEPT @Create image ---
     if (apiQuestion.trim().startsWith("@Create image")) {
       const prompt = apiQuestion.replace("@Create image", "").trim() || "A beautiful image";
-
+      
       // Update assistant message to QUEUED state
       setMessages(prev => {
         const lastMsg = prev[prev.length - 1];
@@ -2527,37 +2527,37 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         const endpoint = typeof import.meta !== "undefined" && import.meta.env
           ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in") + "/api/ai/generate-image"
           : "/api/ai/generate-image";
-
+          
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({
+          body: JSON.stringify({ 
             prompt,
             sessionId: sessionId ?? undefined,
             userEmail: session?.user?.email ?? undefined,
             isIncognito: isIncognito
           })
         });
-
+        
         if (!res.ok) {
           let errorMsg = "Failed to generate image";
           try {
             const errData = await res.json();
             if (errData.error) errorMsg = errData.error;
-          } catch (e) { }
+          } catch(e) {}
           console.error("Backend returned 500 error:", errorMsg);
           throw new Error(errorMsg);
         }
-
+        
         const data = await res.json();
-
+        
         if (data.sessionId && !sessionId) {
           setSessionId(data.sessionId);
           window.history.pushState({}, "", `/superadmin/agent?session=${data.sessionId}`);
           window.dispatchEvent(new Event("agent:refresh-sessions"));
         }
-
+        
         // Preload the image before switching from QUEUED animation to COMPLETE.
         // This keeps the existing loading animation visible until the image is ready,
         // preventing a black box or broken image flash.
@@ -2569,7 +2569,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           // Safety timeout: don't wait more than 60 seconds
           setTimeout(() => resolve(), 60000);
         });
-
+        
         setMessages(prev => {
           const lastMsg = prev[prev.length - 1];
           return [
@@ -3018,7 +3018,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               let displayContent = typeof message.content === 'object' && message.content !== null
                 ? (message.content as any).content || JSON.stringify(message.content)
                 : String(message.content || '');
-
+              
               if (message.role === "user" && displayContent.includes("[PASTED TEXT")) {
                 const extractedPastedTexts: string[] = [];
                 const pastedTextRegex = /\[PASTED TEXT \d+\]:\n([\s\S]*?)(?=\n\n\[PASTED TEXT \d+\]:|$)/g;
@@ -3028,7 +3028,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 }
                 displayContent = displayContent.replace(/\[PASTED TEXT \d+\]:\n[\s\S]*?(?=\n\n\[PASTED TEXT \d+\]:|$)/g, "").trim();
                 message.content = displayContent;
-
+                
                 if (extractedPastedTexts.length > 0) {
                   const newAttachments = [...(message.attachments || [])];
                   extractedPastedTexts.forEach((text, i) => {
@@ -3385,19 +3385,19 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                           let loadingText = `Using ${step.tool.replace(/_/g, ' ')}...`;
 
                                           if (step.tool === 'notion_connector' && step.args?.operation) {
-                                            if (step.args.operation === 'search' && step.args.query) {
-                                              dynamicText = `Searched Notion for "${step.args.query}"`;
-                                              loadingText = `Searching Notion for "${step.args.query}"...`;
-                                            } else {
-                                              dynamicText = `Successfully used Notion to ${step.args.operation.replace(/_/g, ' ')}`;
-                                              loadingText = `Using Notion to ${step.args.operation.replace(/_/g, ' ')}...`;
-                                            }
+                                              if (step.args.operation === 'search' && step.args.query) {
+                                                  dynamicText = `Searched Notion for "${step.args.query}"`;
+                                                  loadingText = `Searching Notion for "${step.args.query}"...`;
+                                              } else {
+                                                  dynamicText = `Successfully used Notion to ${step.args.operation.replace(/_/g, ' ')}`;
+                                                  loadingText = `Using Notion to ${step.args.operation.replace(/_/g, ' ')}...`;
+                                              }
                                           } else if (step.tool === 'google_workspace_connector' && step.args?.operation) {
-                                            dynamicText = `Successfully used Google Workspace to ${step.args.operation.replace(/_/g, ' ')}`;
-                                            loadingText = `Using Google Workspace to ${step.args.operation.replace(/_/g, ' ')}...`;
+                                              dynamicText = `Successfully used Google Workspace to ${step.args.operation.replace(/_/g, ' ')}`;
+                                              loadingText = `Using Google Workspace to ${step.args.operation.replace(/_/g, ' ')}...`;
                                           } else if (step.tool === 'zoom_connector' && step.args?.operation) {
-                                            dynamicText = `Successfully used Zoom to ${step.args.operation.replace(/_/g, ' ')}`;
-                                            loadingText = `Using Zoom to ${step.args.operation.replace(/_/g, ' ')}...`;
+                                              dynamicText = `Successfully used Zoom to ${step.args.operation.replace(/_/g, ' ')}`;
+                                              loadingText = `Using Zoom to ${step.args.operation.replace(/_/g, ' ')}...`;
                                           }
 
                                           elements.push(
@@ -3421,10 +3421,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 const isQueued = message.content.startsWith("[IMAGE_GENERATION_QUEUED");
                                 const isError = message.content.startsWith("[IMAGE_GENERATION_ERROR");
                                 const isComplete = message.content.startsWith("[IMAGE_GENERATION_COMPLETE");
-
+                                
                                 let prompt = "Image generation";
                                 let url = "";
-
+                                
                                 if (isQueued || isError) {
                                   prompt = message.content.match(/\[IMAGE_GENERATION(?:_QUEUED|_ERROR):\s*(.*?)\]/)?.[1] || prompt;
                                 } else if (isComplete) {
@@ -3440,11 +3440,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     url = match[2];
                                   }
                                 }
-
+                                
                                 // Track whether this specific image has loaded in the browser
                                 const imgKey = `img-loaded-${message.id}`;
                                 const isImgLoaded = (window as any)[imgKey] === true;
-
+                                
                                 return (
                                   <div className="mb-2 mt-1 w-full max-w-[320px]">
                                     <ImageGeneration
@@ -3476,10 +3476,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                             <DocsImageViewer
                                               images={[{ id: `gen-${message.id}`, src: url, alt: prompt }]}
                                               renderThumbnails={(images, openImage) => (
-                                                <img
-                                                  src={images[0].src}
-                                                  alt={images[0].alt}
-                                                  className="w-full h-full object-cover rounded-xl cursor-zoom-in hover:opacity-95 transition-opacity"
+                                                <img 
+                                                  src={images[0].src} 
+                                                  alt={images[0].alt} 
+                                                  className="w-full h-full object-cover rounded-xl cursor-zoom-in hover:opacity-95 transition-opacity" 
                                                   onClick={(e) => openImage(images[0], e)}
                                                 />
                                               )}
@@ -3856,8 +3856,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     className="absolute bottom-[100%] mb-2 left-0 w-full max-h-[350px] overflow-y-auto bg-popover rounded-2xl border border-border shadow-2xl z-50 flex flex-col p-1.5"
                   >
                     {(() => {
-                      const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
-                        item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
+                      const filteredIntegrations = INTEGRATIONS_LIST.filter(item => 
+                        item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) || 
                         (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
                       );
                       const baseItems = [
@@ -3901,10 +3901,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 onMouseEnter={() => setAtMenuSelectedIndex(index)}
                               >
                                 {item.imgUrl ? (
-                                  <img
-                                    src={item.imgUrl}
-                                    alt={item.name}
-                                    className="w-5 h-5 object-contain"
+                                  <img 
+                                    src={item.imgUrl} 
+                                    alt={item.name} 
+                                    className="w-5 h-5 object-contain" 
                                     style={{ filter: item.invertInDarkMode ? 'var(--icon-invert, none)' : item.invertInLightMode ? 'var(--icon-invert-light, none)' : 'none' }}
                                   />
                                 ) : IconComponent ? (
@@ -3967,8 +3967,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 onPaste={handlePaste}
                 onKeyDown={(e) => {
                   if (atMenuOpen) {
-                    const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
-                      item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
+                    const filteredIntegrations = INTEGRATIONS_LIST.filter(item => 
+                      item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) || 
                       (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
                     );
                     const baseItems = [
@@ -4361,8 +4361,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 className="absolute top-[100%] mt-2 left-0 w-full max-h-[160px] overflow-y-auto bg-popover rounded-2xl border border-border shadow-2xl z-50 flex flex-col p-1.5 custom-scrollbar"
                               >
                                 {(() => {
-                                  const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
-                                    item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
+                                  const filteredIntegrations = INTEGRATIONS_LIST.filter(item => 
+                                    item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) || 
                                     (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
                                   );
                                   const baseItems = [
@@ -4406,9 +4406,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                             onMouseEnter={() => setAtMenuSelectedIndex(index)}
                                           >
                                             {item.imgUrl ? (
-                                              <img
-                                                src={item.imgUrl}
-                                                alt={item.name}
+                                              <img 
+                                                src={item.imgUrl} 
+                                                alt={item.name} 
                                                 className="w-5 h-5 object-contain"
                                                 style={{ filter: item.invertInDarkMode ? 'var(--icon-invert, none)' : item.invertInLightMode ? 'var(--icon-invert-light, none)' : 'none' }}
                                               />
@@ -4472,8 +4472,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                             onPaste={handlePaste}
                             onKeyDown={(e) => {
                               if (atMenuOpen) {
-                                const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
-                                  item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
+                                const filteredIntegrations = INTEGRATIONS_LIST.filter(item => 
+                                  item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) || 
                                   (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
                                 );
                                 const baseItems = [
@@ -4580,119 +4580,119 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   {/* Suggestion chips */}
                   {!isExpandedBox && (
                     <div className="flex flex-col items-center gap-3 mt-2">
-                      <p className="text-xs text-muted-foreground font-medium tracking-wide">
-                        Try Classgrid AI for...
-                      </p>
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {(() => {
-                          const role = user?.role?.toLowerCase() || "";
-                          let chips: { icon: string; label: string }[] = [];
+                    <p className="text-xs text-muted-foreground font-medium tracking-wide">
+                      Try Classgrid AI for...
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {(() => {
+                        const role = user?.role?.toLowerCase() || "";
+                        let chips: { icon: string; label: string }[] = [];
 
-                          if (role === "super_admin" || role === "superadmin" || role === "platform_owner") {
-                            chips = [
-                              { icon: "📊", label: "Analytics" },
-                              { icon: "🏢", label: "Organizations" },
-                              { icon: "💰", label: "Revenue" },
-                              { icon: "📋", label: "Leads" },
-                            ];
-                          } else if (role === "org_admin" || role === "admin" || role === "principal" || role === "director") {
-                            chips = [
-                              { icon: "👥", label: "Students" },
-                              { icon: "👨‍🏫", label: "Faculty" },
-                              { icon: "💳", label: "Fees" },
-                              { icon: "📅", label: "Attendance" },
-                            ];
-                          } else if (role.includes("admission")) {
-                            chips = [
-                              { icon: "📋", label: "Applications" },
-                              { icon: "🏅", label: "Merit Lists" },
-                              { icon: "📂", label: "Documents" },
-                              { icon: "✅", label: "Enrollment" },
-                            ];
-                          } else if (role.includes("fee") || role === "fee_manager") {
-                            chips = [
-                              { icon: "💰", label: "Payments" },
-                              { icon: "⚠️", label: "Defaulters" },
-                              { icon: "📊", label: "Fee Structure" },
-                              { icon: "📋", label: "Reports" },
-                            ];
-                          } else if (role.includes("exam") || role === "exam_controller") {
-                            chips = [
-                              { icon: "📝", label: "Exams" },
-                              { icon: "📊", label: "Results" },
-                              { icon: "🎯", label: "Grading" },
-                              { icon: "📅", label: "Schedule" },
-                            ];
-                          } else if (role.includes("library") || role === "librarian") {
-                            chips = [
-                              { icon: "📚", label: "Books" },
-                              { icon: "📖", label: "Issued" },
-                              { icon: "⏰", label: "Overdue" },
-                              { icon: "🗂️", label: "Catalog" },
-                            ];
-                          } else if (role.includes("attendance")) {
-                            chips = [
-                              { icon: "📋", label: "Today's Attendance" },
-                              { icon: "📊", label: "Reports" },
-                              { icon: "🔔", label: "Alerts" },
-                              { icon: "📈", label: "Trends" },
-                            ];
-                          } else if (role.includes("hr") || role === "hr_manager") {
-                            chips = [
-                              { icon: "👥", label: "Staff" },
-                              { icon: "💰", label: "Payroll" },
-                              { icon: "📅", label: "Leave" },
-                              { icon: "📋", label: "Recruitment" },
-                            ];
-                          } else if (role.includes("hostel") || role.includes("transport")) {
-                            chips = [
-                              { icon: "🏠", label: "Rooms" },
-                              { icon: "👥", label: "Residents" },
-                              { icon: "📝", label: "Complaints" },
-                              { icon: "🍽️", label: "Mess" },
-                            ];
-                          } else if (role === "faculty" || role === "teacher" || role === "hod" || role === "vice_principal") {
-                            chips = [
-                              { icon: "📚", label: "My Classes" },
-                              { icon: "📋", label: "Attendance" },
-                              { icon: "📊", label: "Results" },
-                              { icon: "📅", label: "Timetable" },
-                            ];
-                          } else if (role === "student") {
-                            chips = [
-                              { icon: "💳", label: "My Fees" },
-                              { icon: "📋", label: "Attendance" },
-                              { icon: "📊", label: "Results" },
-                              { icon: "📅", label: "Timetable" },
-                            ];
-                          } else {
-                            chips = [
-                              { icon: "📊", label: "Analytics" },
-                              { icon: "👥", label: "Users" },
-                              { icon: "💬", label: "Help" },
-                              { icon: "📋", label: "Reports" },
-                            ];
-                          }
+                        if (role === "super_admin" || role === "superadmin" || role === "platform_owner") {
+                          chips = [
+                            { icon: "📊", label: "Analytics" },
+                            { icon: "🏢", label: "Organizations" },
+                            { icon: "💰", label: "Revenue" },
+                            { icon: "📋", label: "Leads" },
+                          ];
+                        } else if (role === "org_admin" || role === "admin" || role === "principal" || role === "director") {
+                          chips = [
+                            { icon: "👥", label: "Students" },
+                            { icon: "👨‍🏫", label: "Faculty" },
+                            { icon: "💳", label: "Fees" },
+                            { icon: "📅", label: "Attendance" },
+                          ];
+                        } else if (role.includes("admission")) {
+                          chips = [
+                            { icon: "📋", label: "Applications" },
+                            { icon: "🏅", label: "Merit Lists" },
+                            { icon: "📂", label: "Documents" },
+                            { icon: "✅", label: "Enrollment" },
+                          ];
+                        } else if (role.includes("fee") || role === "fee_manager") {
+                          chips = [
+                            { icon: "💰", label: "Payments" },
+                            { icon: "⚠️", label: "Defaulters" },
+                            { icon: "📊", label: "Fee Structure" },
+                            { icon: "📋", label: "Reports" },
+                          ];
+                        } else if (role.includes("exam") || role === "exam_controller") {
+                          chips = [
+                            { icon: "📝", label: "Exams" },
+                            { icon: "📊", label: "Results" },
+                            { icon: "🎯", label: "Grading" },
+                            { icon: "📅", label: "Schedule" },
+                          ];
+                        } else if (role.includes("library") || role === "librarian") {
+                          chips = [
+                            { icon: "📚", label: "Books" },
+                            { icon: "📖", label: "Issued" },
+                            { icon: "⏰", label: "Overdue" },
+                            { icon: "🗂️", label: "Catalog" },
+                          ];
+                        } else if (role.includes("attendance")) {
+                          chips = [
+                            { icon: "📋", label: "Today's Attendance" },
+                            { icon: "📊", label: "Reports" },
+                            { icon: "🔔", label: "Alerts" },
+                            { icon: "📈", label: "Trends" },
+                          ];
+                        } else if (role.includes("hr") || role === "hr_manager") {
+                          chips = [
+                            { icon: "👥", label: "Staff" },
+                            { icon: "💰", label: "Payroll" },
+                            { icon: "📅", label: "Leave" },
+                            { icon: "📋", label: "Recruitment" },
+                          ];
+                        } else if (role.includes("hostel") || role.includes("transport")) {
+                          chips = [
+                            { icon: "🏠", label: "Rooms" },
+                            { icon: "👥", label: "Residents" },
+                            { icon: "📝", label: "Complaints" },
+                            { icon: "🍽️", label: "Mess" },
+                          ];
+                        } else if (role === "faculty" || role === "teacher" || role === "hod" || role === "vice_principal") {
+                          chips = [
+                            { icon: "📚", label: "My Classes" },
+                            { icon: "📋", label: "Attendance" },
+                            { icon: "📊", label: "Results" },
+                            { icon: "📅", label: "Timetable" },
+                          ];
+                        } else if (role === "student") {
+                          chips = [
+                            { icon: "💳", label: "My Fees" },
+                            { icon: "📋", label: "Attendance" },
+                            { icon: "📊", label: "Results" },
+                            { icon: "📅", label: "Timetable" },
+                          ];
+                        } else {
+                          chips = [
+                            { icon: "📊", label: "Analytics" },
+                            { icon: "👥", label: "Users" },
+                            { icon: "💬", label: "Help" },
+                            { icon: "📋", label: "Reports" },
+                          ];
+                        }
 
-                          return chips.map((chip) => (
-                            <button
-                              key={chip.label}
-                              type="button"
-                              onClick={() => {
-                                setInput(chip.label);
-                                setTimeout(() => {
-                                  const el = document.getElementById("ask-ai-input") as HTMLTextAreaElement | null;
-                                  if (el) el.focus();
-                                }, 50);
-                              }}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-border bg-card hover:bg-muted text-sm text-foreground font-medium transition-colors cursor-pointer shadow-sm hover:shadow-md"
-                            >
-                              <span>{chip.icon}</span>
-                              <span>{chip.label}</span>
-                            </button>
-                          ));
-                        })()}
-                      </div>
+                        return chips.map((chip) => (
+                          <button
+                            key={chip.label}
+                            type="button"
+                            onClick={() => {
+                              setInput(chip.label);
+                              setTimeout(() => {
+                                const el = document.getElementById("ask-ai-input") as HTMLTextAreaElement | null;
+                                if (el) el.focus();
+                              }, 50);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-border bg-card hover:bg-muted text-sm text-foreground font-medium transition-colors cursor-pointer shadow-sm hover:shadow-md"
+                          >
+                            <span>{chip.icon}</span>
+                            <span>{chip.label}</span>
+                          </button>
+                        ));
+                      })()}
+                    </div>
                     </div>
                   )}
 
@@ -4883,7 +4883,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       <ExpandedInputModal
         isOpen={viewingPastedText !== null}
         onClose={() => setViewingPastedText(null)}
-        onSave={() => { }}
+        onSave={() => {}}
         value={viewingPastedText?.content || ""}
         title={viewingPastedText?.title || "Pasted text"}
         readOnly={true}
@@ -4898,9 +4898,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         isLoading={isDeletingChat}
         onConfirm={handleDeleteChat}
       />
-      <AiHubModal
-        isOpen={isAiHubOpen}
-        onClose={() => setIsAiHubOpen(false)}
+      <AiHubModal 
+        isOpen={isAiHubOpen} 
+        onClose={() => setIsAiHubOpen(false)} 
         onSendPrompt={(text) => askQuestion(text, { hidden: true })}
       />
     </>
