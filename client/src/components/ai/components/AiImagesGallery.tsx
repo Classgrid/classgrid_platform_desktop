@@ -98,23 +98,24 @@ export function AiImagesGallery({ backendUrl }: AiImagesGalleryProps) {
                   {monthImages.map((img) => {
                     const viewerImg = viewerImages.find((v) => v.id === img.id)!;
                     return (
-                      <div
-                        key={img.id}
-                        className="group relative aspect-square rounded-xl overflow-hidden bg-muted cursor-pointer border border-border/50 hover:border-emerald-500/50 transition-colors"
-                        onClick={(e) => openImage(viewerImg, e)}
-                      >
-                        <img
-                          src={img.url}
-                          alt={img.prompt}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
-                          <p className="text-white text-xs line-clamp-2 mb-1 font-medium shadow-sm">
+                      <div key={img.id} className="flex flex-col gap-2">
+                        <div
+                          className="group relative aspect-square rounded-xl overflow-hidden bg-muted cursor-pointer border border-border/50 hover:border-emerald-500/50 transition-colors"
+                          onClick={(e) => openImage(viewerImg, e)}
+                        >
+                          <img
+                            src={img.url}
+                            alt={img.prompt}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="px-1">
+                          <p className="text-sm font-medium text-foreground line-clamp-1" title={img.prompt}>
                             {img.prompt}
                           </p>
-                          <p className="text-white/70 text-[10px]">
-                            {format(parseISO(img.createdAt), "MMM d, h:mm a")}
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {format(parseISO(img.createdAt), "MMM d, yyyy 'at' h:mm a")}
                           </p>
                         </div>
                       </div>
