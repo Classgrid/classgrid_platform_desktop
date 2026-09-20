@@ -2296,7 +2296,8 @@ export const generateImage = async (req, res) => {
                         prompt: finalPrompt,
                         width: 1024,
                         height: 1024,
-                        nologo: true
+                        nologo: true,
+                        seed: Math.floor(Math.random() * 1000000)
                     })
                 });
                 
