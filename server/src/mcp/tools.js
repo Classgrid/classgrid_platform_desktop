@@ -228,12 +228,12 @@ export const getMcpTools = () => [
   },
   {
     name: 'slack_workspace_connector',
-    description: 'Interact with Slack API to list channels, read/send messages, create channels, search messages, list users, and invite users to channels using the connected user token.',
+    description: 'Interact with Slack API to list channels, read/send messages, create channels, search messages, list users, invite users to channels, and archive/delete channels using the connected user token.',
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_channels', 'read_channel_messages', 'send_message', 'create_channel', 'list_users', 'search_messages', 'invite_to_channel'], description: 'The operation to perform.' },
-        channelId: { type: 'string', description: 'The ID of the channel (required for read_channel_messages, send_message, invite_to_channel).' },
+        operation: { type: 'string', enum: ['list_channels', 'read_channel_messages', 'send_message', 'create_channel', 'list_users', 'search_messages', 'invite_to_channel', 'archive_channel'], description: 'The operation to perform.' },
+        channelId: { type: 'string', description: 'The ID of the channel (required for read_channel_messages, send_message, invite_to_channel, archive_channel).' },
         text: { type: 'string', description: 'The text content to send (required for send_message).' },
         limit: { type: 'number', description: 'Max results to return (for read_channel_messages).' },
         channelName: { type: 'string', description: 'The name of the new channel (for create_channel).' },
@@ -1548,6 +1548,16 @@ export const handleToolCall = async (name, args, context = {}) => {
           const data = await res.json();
           if (!data.ok) throw new Error(data.error || "Failed to invite to channel");
           return { content: [{ type: 'text', text: JSON.stringify({ success: true, channel: data.channel.id }, null, 2) }] };
+        } else if (operation === 'archive_channel') {
+          if (!channelId) throw new Error("channelId is required for archive_channel");
+          const res = await fetch(`https://slack.com/api/conversations.archive`, {
+            method: 'POST',
+            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ channel: channelId })
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || "Failed to archive channel");
+          return { content: [{ type: 'text', text: JSON.stringify({ success: true, message: `Successfully deleted/archived channel ${channelId}` }, null, 2) }] };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }

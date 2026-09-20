@@ -592,7 +592,10 @@ IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly
 CRITICAL INTEGRATION RULE:
 If you are asked to interact with a 3rd party service (like Zoom, Google Workspace, Notion, Slack, GitHub, etc.), you MUST FIRST cross-check your available tools list. 
 - If the connector tool (e.g. \`slack_workspace_connector\`) IS present in your list, it is 10000% CONFIRMED that the integration is active and connected. You MUST use the tool immediately. DO NOT ask the user to connect, and DO NOT call \`open_integration_panel\`.
-- If the connector tool IS NOT in your list, it is 10000% CONFIRMED that the user is completely disconnected. ONLY THEN should you immediately call the \`open_integration_panel\` tool and tell the user: "I've opened the AI Hub for you. Please connect your account so I can automate this."`;
+- If the connector tool IS NOT in your list, it is 10000% CONFIRMED that the user is completely disconnected. ONLY THEN should you immediately call the \`open_integration_panel\` tool and tell the user: "I've opened the AI Hub for you. Please connect your account so I can automate this."
+
+ANTI-HALLUCINATION RULE:
+If a tool execution returns an error (e.g., "Failed to execute API call"), you MUST read the error and tell the user exactly what failed. NEVER pretend that a tool succeeded if it actually returned an error. NEVER fabricate links or success messages for tasks you did not successfully complete.`;
 
         if (!isIncognito) {
             dynamicSystemPrompt += `\n\nROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
