@@ -810,7 +810,7 @@ If the connector tool IS NOT available, it means the user has NOT connected thei
                     const slackConnected = !!latestUser.slack_access_token;
                     if (slackConnected) {
                         const slackEmail = latestUser.slack_email ? `(Connected as: ${latestUser.slack_email}) ` : '';
-                        activeDescriptions.push(`- **Slack**: ✅ CONNECTED. ${slackEmail}Use 'slack_workspace_connector' tool to list_channels, read_channel_messages, send_message. You can read messages and automate notifications in Slack.`);
+                        activeDescriptions.push(`- **Slack**: ✅ CONNECTED. ${slackEmail}Use 'slack_workspace_connector' tool to list_channels, read_channel_messages, send_message, create_channel, list_users, search_messages, invite_to_channel. You can read messages, create channels, search globally, and automate notifications. CRITICAL LIMITATION: You CANNOT invite a brand new user to the Slack workspace via their email address. You can ONLY invite existing workspace members to a specific channel using their Slack User ID (which you can find via list_users or search_messages). Do not pretend to invite them via email.`);
                         allowedConnectorNames.add('slack_workspace_connector');
                     } else {
                         disconnectedLinks.push(`[Slack](/api/auth/slack/connect)`);
@@ -818,7 +818,7 @@ If the connector tool IS NOT available, it means the user has NOT connected thei
 
                     const githubConnected = !!latestUser.github_access_token;
                     if (githubConnected) {
-                        activeDescriptions.push(`- **GitHub**: ✅ CONNECTED. Use 'github_workspace_connector' tool to list_repos, read_file, create_issue, list_issues. You can explore repositories and manage issues on GitHub.`);
+                        activeDescriptions.push(`- **GitHub**: ✅ CONNECTED. Use 'github_workspace_connector' tool to list_repos, read_file, create_issue, list_issues, create_repo, create_or_update_file, create_pull_request, list_pull_requests, add_issue_comment, search_code, list_commits, get_commit, list_branches. You have complete read/write access to explore repositories, manage issues/PRs, and push commits directly.`);
                         allowedConnectorNames.add('github_workspace_connector');
                     } else {
                         disconnectedLinks.push(`[GitHub](/api/auth/github/connect)`);

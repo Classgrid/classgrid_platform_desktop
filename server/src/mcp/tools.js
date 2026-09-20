@@ -228,17 +228,18 @@ export const getMcpTools = () => [
   },
   {
     name: 'slack_workspace_connector',
-    description: 'Interact with Slack API to list channels, read/send messages, create channels, search messages, and list users using the connected user token.',
+    description: 'Interact with Slack API to list channels, read/send messages, create channels, search messages, list users, and invite users to channels using the connected user token.',
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_channels', 'read_channel_messages', 'send_message', 'create_channel', 'list_users', 'search_messages'], description: 'The operation to perform.' },
-        channelId: { type: 'string', description: 'The ID of the channel (required for read_channel_messages and send_message).' },
+        operation: { type: 'string', enum: ['list_channels', 'read_channel_messages', 'send_message', 'create_channel', 'list_users', 'search_messages', 'invite_to_channel'], description: 'The operation to perform.' },
+        channelId: { type: 'string', description: 'The ID of the channel (required for read_channel_messages, send_message, invite_to_channel).' },
         text: { type: 'string', description: 'The text content to send (required for send_message).' },
         limit: { type: 'number', description: 'Max results to return (for read_channel_messages).' },
         channelName: { type: 'string', description: 'The name of the new channel (for create_channel).' },
         isPrivate: { type: 'boolean', description: 'Whether the new channel is private (for create_channel).' },
-        query: { type: 'string', description: 'Search query string (for search_messages).' }
+        query: { type: 'string', description: 'Search query string (for search_messages).' },
+        userIds: { type: 'string', description: 'Comma-separated Slack user IDs to invite (for invite_to_channel). Note: These must be Slack User IDs (e.g., U1234), not email addresses. Use list_users or search to find IDs.' }
       },
       required: ['operation']
     }
@@ -1476,7 +1477,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'slack_workspace_connector') {
-      const { operation, channelId, text, limit = 10, channelName, isPrivate, query } = args;
+      const { operation, channelId, text, limit = 10, channelName, isPrivate, query, userIds } = args;
       const { userEmail = '' } = context;
 
       const user = await mongoose.models.User.findOne({ email: userEmail });
@@ -1537,6 +1538,16 @@ export const handleToolCall = async (name, args, context = {}) => {
           const data = await res.json();
           if (!data.ok) throw new Error(data.error || "Failed to search messages");
           return { content: [{ type: 'text', text: JSON.stringify(data.messages.matches, null, 2) }] };
+        } else if (operation === 'invite_to_channel') {
+          if (!channelId || !userIds) throw new Error("channelId and userIds are required for invite_to_channel");
+          const res = await fetch(`https://slack.com/api/conversations.invite`, {
+            method: 'POST',
+            headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ channel: channelId, users: userIds })
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || "Failed to invite to channel");
+          return { content: [{ type: 'text', text: JSON.stringify({ success: true, channel: data.channel.id }, null, 2) }] };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
         }
