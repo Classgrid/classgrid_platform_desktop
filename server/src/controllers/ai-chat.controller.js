@@ -521,7 +521,7 @@ export const streamAskAi = async (req, res) => {
         dynamicSystemPrompt += `\nCRITICAL TIMEZONE RULE FOR MEETINGS: When scheduling a Zoom meeting or Google Calendar event, the APIs EXPECT the 'startTime' parameter to be in UTC format (with a 'Z' at the end). To ensure accuracy, YOU MUST ALWAYS USE the \`get_timezone_time\` tool to check the current time and UTC offset for the user's location BEFORE scheduling any future meetings. Use the offset returned by the tool (e.g. GMT+05:30) to calculate the correct UTC time for the meeting.`;
 
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (HIGHEST PRIORITY): If a user asks you to perform ANY task (e.g. "make a flowchart", "write an email", "create a plan") BUT they do not provide the necessary data, topic, or context, your ONLY ALLOWED RESPONSE is a question asking for that information. Under NO circumstances should you generate placeholder content, guess the topic, or attempt to fulfill the request without the context.\nCRITICAL: NEVER say generic confirmation phrases like "I have completed the requested actions" or "I have executed the tool." Just provide the direct answer, summary, or link.\nCONVERSATIONAL FLOW RULE: If the user provides a brief acknowledgement (like "okay", "thanks", "got it", "no issue"), DO NOT repeat previous information or restate the previous answer. Keep your response extremely brief, conversational, and natural, such as "You're welcome!" or "Let me know if you need anything else!"\nERROR HANDLING & APOLOGY RULE: If the user points out that you made a mistake (e.g. you said something wasn't there but it was), you MUST simply apologize, admit the mistake, and say you will keep it in mind. DO NOT reprint the entire list, table, or context again to prove you fixed it. Repeating large blocks of text when apologizing is strictly forbidden.\nSTRICT FORMATTING BAN: You are STRICTLY BANNED from wrapping tool call outputs, markdown code blocks, or repository names in parentheses \`( )\`. Never do things like \`( \`\`\`code\`\`\` )\`. Do not use parentheses to enclose multiline content or blocks as it breaks the UI rendering. NEVER write around like this!`;
-        
+
         dynamicSystemPrompt += `\n\nDUPLICATE EMAIL PREVENTION RULE:\nCRITICAL: BEFORE calling 'send_email' or sending an email via 'microsoft_workspace_connector'/'google_workspace_connector', you MUST FIRST cross-check if the email was already sent in the last 15 minutes to prevent spam. For native send_email, use the 'check_email_logs' tool. For Outlook/Google, use 'list_sent_emails' operation. If the email was already sent, DO NOT SEND IT AGAIN. Simply tell the user 'I already sent this email.'`;
 
         dynamicSystemPrompt += `\n\n--- DATABASE ACCESS RULES (CRITICAL) ---
@@ -780,9 +780,9 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
                                     console.error("[refreshMs] Error fetching Microsoft profile:", e);
                                 }
 
-                                await mongoose.model('User').updateOne({ _id: latestUser._id }, { 
-                                    microsoft_access_token: data.access_token, 
-                                    ...(data.refresh_token ? { microsoft_refresh_token: data.refresh_token } : {}), 
+                                await mongoose.model('User').updateOne({ _id: latestUser._id }, {
+                                    microsoft_access_token: data.access_token,
+                                    ...(data.refresh_token ? { microsoft_refresh_token: data.refresh_token } : {}),
                                     microsoft_token_expiry: new Date(Date.now() + data.expires_in * 1000),
                                     ...profileUpdates
                                 });
@@ -2276,17 +2276,44 @@ export const bulkDeleteAgentReviews = async (req, res) => {
 export const generateImage = async (req, res) => {
     try {
         const { prompt, sessionId, userEmail, isIncognito } = req.body;
-        // Call Pollinations AI (Flux) using GET to guarantee cache bypassing via seed
-        const randomSeed = Math.floor(Math.random() * 1000000);
-        const encodedPrompt = encodeURIComponent(prompt);
-        const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${randomSeed}`;
-
-        const imageRes = await fetch(pollinationsUrl, {
-            method: 'GET'
-        });
-        if (!imageRes.ok) throw new Error(`Image API failed: ${imageRes.status}`);
-
-        const imageBuffer = Buffer.from(await imageRes.arrayBuffer());
+        // Call Pollinations AI (Flux) using POST with robust cache-busting and retry logic
+        const pollinationsUrl = `https://image.pollinations.ai/`;
+        let imageRes;
+        let imageBuffer;
+        let success = false;
+        let lastError = null;
+        
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                // Highly aggressive cache busting: Append unique ID to prompt
+                const uniqueId = `[ID: ${Date.now()}-${Math.floor(Math.random() * 10000)}]`;
+                const finalPrompt = prompt + " " + uniqueId;
+                
+                imageRes = await fetch(pollinationsUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: finalPrompt,
+                        width: 1024,
+                        height: 1024,
+                        nologo: true
+                    })
+                });
+                
+                if (!imageRes.ok) throw new Error(`Image API failed: ${imageRes.status}`);
+                imageBuffer = Buffer.from(await imageRes.arrayBuffer());
+                success = true;
+                break; // Break out of retry loop if successful
+            } catch (err) {
+                lastError = err;
+                console.error(`[Pollinations AI] Attempt ${attempt} failed:`, err.message);
+                if (attempt < 3) await new Promise(res => setTimeout(res, 1000)); // Wait 1s before retry
+            }
+        }
+        
+        if (!success) {
+            throw lastError || new Error("Image API failed after 3 attempts");
+        }
 
         // Upload to Cloudflare R2
         const r2Url = await uploadBufferToR2(
