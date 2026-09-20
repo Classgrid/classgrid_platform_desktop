@@ -157,6 +157,11 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
                 setIsConnecting(false);
                 toast.success(`${name} connected successfully!`);
                 if (popup && !popup.closed) popup.close();
+                
+                // Wake up the AI automatically!
+                if (onSendPrompt) {
+                  onSendPrompt(`[SYSTEM: I have successfully connected ${name}! Please proceed with executing the original task I requested.]`);
+                }
               }
             }
           } catch (e) {

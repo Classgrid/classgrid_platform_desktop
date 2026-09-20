@@ -590,8 +590,9 @@ URGENCY RULE: Your thought MUST be extremely concise. Keep it under 2 sentences 
 IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly ONCE at the very beginning. After it finishes, you are FREE to chain multiple action tools (like run_code, search_web), and you are FREE to write your final conversational response to the user without calling the thought tool again.
 
 CRITICAL INTEGRATION RULE:
-If you are asked to interact with a 3rd party service (like Zoom, Google Workspace, Notion, etc.), check your available tools. If the connector tool (e.g. google_workspace_connector) IS available in your tool list, it means the integration is ALREADY VERIFIED AND CONNECTED by the backend. You MUST use it immediately without asking the user or checking status.
-If the connector tool IS NOT available, it means the user has NOT connected their account or lacks permissions. You MUST immediately call the \`open_integration_panel\` tool and tell the user: "I've opened the AI Hub for you. Please connect your account so I can automate this."`;
+If you are asked to interact with a 3rd party service (like Zoom, Google Workspace, Notion, Slack, GitHub, etc.), you MUST FIRST cross-check your available tools list. 
+- If the connector tool (e.g. \`slack_workspace_connector\`) IS present in your list, it is 10000% CONFIRMED that the integration is active and connected. You MUST use the tool immediately. DO NOT ask the user to connect, and DO NOT call \`open_integration_panel\`.
+- If the connector tool IS NOT in your list, it is 10000% CONFIRMED that the user is completely disconnected. ONLY THEN should you immediately call the \`open_integration_panel\` tool and tell the user: "I've opened the AI Hub for you. Please connect your account so I can automate this."`;
 
         if (!isIncognito) {
             dynamicSystemPrompt += `\n\nROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
@@ -905,11 +906,11 @@ If the connector tool IS NOT available, it means the user has NOT connected thei
                     type: "function",
                     function: {
                         name: "open_integration_panel",
-                        description: "Opens the AI Hub integration panel for the user in their UI. Use this IMMEDIATELY when the user asks for a service (like Zoom/Google) but you DO NOT have the required connector tool in your list.",
+                        description: "Opens the AI Hub integration panel for the user in their UI. Use this ONLY when you are 10000% confirmed the user is disconnected (because the connector tool is missing from your available tools).",
                         parameters: {
                             type: "object",
                             properties: {
-                                reason: { type: "string", description: "Why we are opening the panel (e.g. 'To connect Zoom')" }
+                                reason: { type: "string", description: "Why we are opening the panel (e.g. 'To connect Slack')" }
                             },
                             required: ["reason"]
                         }
