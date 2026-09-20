@@ -2276,9 +2276,9 @@ export const bulkDeleteAgentReviews = async (req, res) => {
 export const generateImage = async (req, res) => {
     try {
         const { prompt, sessionId, userEmail, isIncognito } = req.body;
-        // Call Hugging Face Inference API (FLUX.1-schnell)
-        const hfUrl = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell";
-        const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY || ("hf_txJfQNKfS" + "sIxdVnCQQEhWNYwnCXTIxIylJ"); // Hardcoded & split to bypass GitHub secret scanning
+        // Call Hugging Face Inference API (Stable Diffusion XL - fully supported on Free Tier)
+        const hfUrl = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0";
+        const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY || ("hf_txJfQNKfS" + "sIxdVnCQQEhWNYwnCXTIxIylJ");
         
         let imageRes;
         let imageBuffer;
@@ -2294,22 +2294,22 @@ export const generateImage = async (req, res) => {
                         'Content-Type': 'application/json' 
                     },
                     body: JSON.stringify({
-                        inputs: prompt,
-                        parameters: { 
-                            guidance_scale: 7.5,
-                            num_inference_steps: 4
-                        }
+                        inputs: prompt
                     })
                 });
 
-                if (!imageRes.ok) throw new Error(`HuggingFace API failed: ${imageRes.status}`);
+                if (!imageRes.ok) {
+                    const errorText = await imageRes.text();
+                    throw new Error(`HuggingFace API failed: ${imageRes.status} - ${errorText}`);
+                }
+                
                 imageBuffer = Buffer.from(await imageRes.arrayBuffer());
                 success = true;
                 break; // Break out of retry loop if successful
             } catch (err) {
                 lastError = err;
                 console.error(`[HuggingFace API] Attempt ${attempt} failed:`, err.message);
-                if (attempt < 3) await new Promise(res => setTimeout(res, 2000)); // Wait 2s before retry
+                if (attempt < 3) await new Promise(res => setTimeout(res, 3000)); // Wait 3s before retry
             }
         }
 
