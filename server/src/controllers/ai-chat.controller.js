@@ -918,6 +918,8 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
             dynamicSystemPrompt += pluginPrompt;
         }
 
+        dynamicSystemPrompt += `\n\nCRITICAL GOOGLE CLASSROOM RULE:\nYou MUST NEVER tell the user to check their assignments, courses, or submissions manually (e.g., by going to classroom.google.com). You have ALL READ PERMISSIONS for Google Classroom! You MUST ALWAYS use the \`google_workspace_connector\` tool (with \`list_classroom_courses\`, \`list_classroom_assignments\`, etc.) to fetch and display the data directly in the chat. Never reject a request to read Google Classroom!`;
+
         messages.unshift({ role: "system", content: dynamicSystemPrompt });
 
         // 3. Initialize the real LLM Client from the Classgrid SDK using the fallback hierarchy
