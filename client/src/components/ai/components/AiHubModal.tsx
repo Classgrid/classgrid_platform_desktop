@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { INTEGRATIONS_LIST } from "./AskAiPanel";
 import { Button } from "@/components/marketing_ui/button";
 import { WhatsappConfigModal } from "./WhatsappConfigModal";
+import { AiImagesGallery } from "./AiImagesGallery";
 
 interface AiHubModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ interface AiHubModalProps {
 
 const TABS = [
   { id: "plugins", label: "Plugins", icon: Plug },
+  { id: "images", label: "Images", icon: ImageIcon },
   { id: "skills", label: "Skills", icon: Zap },
   { id: "prompts", label: "Prompts", icon: MessageSquare },
   { id: "settings", label: "Settings", icon: Settings2 },
@@ -564,6 +566,16 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
                       </div>
                     </div>
                   )
+                ) : activeTab === "images" ? (
+                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col">
+                    <h3 className="text-2xl font-bold text-foreground mb-2">My Generated Images</h3>
+                    <p className="text-sm text-muted-foreground mb-8 max-w-xl">
+                      View and download all the images you've generated across all your chat sessions.
+                    </p>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                      <AiImagesGallery backendUrl={backendUrl} />
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <h3 className="text-2xl font-bold text-foreground mb-2">{TABS.find(t => t.id === activeTab)?.label}</h3>

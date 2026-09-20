@@ -20,7 +20,8 @@ import {
     updateSessionPinned,
     getSessionById,
     createSharedSnapshot,
-    getSharedSnapshot
+    getSharedSnapshot,
+    getUserGeneratedImages
 } from "../services/ai-chat.service.js";
 import { getHistory, appendToHistory, invalidateHistoryCache } from "../services/ai-chat-history.service.js";
 import { sendEmail } from "../services/aws-ses.service.js";
@@ -2351,6 +2352,20 @@ export const generateImage = async (req, res) => {
         res.json({ imageUrl: r2Url, sessionId: activeSessionId });
     } catch (e) {
         console.error("Error generating image:", e);
+        res.status(500).json({ error: String(e.stack || e.message || e) });
+    }
+};
+
+export const getMyGeneratedImages = async (req, res) => {
+    try {
+        const userEmail = req.user?.email || req.auth?.user?.email;
+        if (!userEmail) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+        const images = await getUserGeneratedImages(userEmail);
+        res.json({ images });
+    } catch (e) {
+        console.error("Error fetching user images:", e);
         res.status(500).json({ error: String(e.stack || e.message || e) });
     }
 };

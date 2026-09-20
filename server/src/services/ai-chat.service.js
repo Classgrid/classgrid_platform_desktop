@@ -226,3 +226,52 @@ export async function getSharedSnapshot(shareId) {
 
     return data;
 }
+
+/**
+ * Retrieves all AI generated images for a user across all non-incognito sessions.
+ */
+export async function getUserGeneratedImages(userEmail) {
+    const { data: sessions, error: sessionsError } = await primarySupabaseClient
+        .from('ai_chat_sessions')
+        .select('id')
+        .eq('user_email', userEmail)
+        .eq('is_incognito', false);
+
+    if (sessionsError) {
+        console.error("Error fetching sessions for images:", sessionsError);
+        throw sessionsError;
+    }
+
+    if (!sessions || sessions.length === 0) return [];
+
+    const sessionIds = sessions.map(s => s.id);
+
+    const { data: messages, error: messagesError } = await primarySupabaseClient
+        .from('ai_chat_messages')
+        .select('*')
+        .in('session_id', sessionIds)
+        .like('content', '%[IMAGE_GENERATION_COMPLETE:%')
+        .order('created_at', { ascending: false });
+
+    if (messagesError) {
+        console.error("Error fetching image messages:", messagesError);
+        throw messagesError;
+    }
+
+    const images = [];
+    for (const msg of messages) {
+        const content = msg.content;
+        const match = content.match(/\[IMAGE_GENERATION_COMPLETE:\s*(.*?)\s*[|:]\s*(.*?)\]/);
+        if (match) {
+            images.push({
+                id: msg.id,
+                prompt: match[1].trim(),
+                url: match[2].trim(),
+                createdAt: msg.created_at,
+                sessionId: msg.session_id
+            });
+        }
+    }
+
+    return images;
+}
