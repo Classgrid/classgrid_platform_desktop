@@ -2276,10 +2276,7 @@ export const bulkDeleteAgentReviews = async (req, res) => {
 export const generateImage = async (req, res) => {
     try {
         const { prompt, sessionId, userEmail, isIncognito } = req.body;
-        // Call Hugging Face Inference API (Stable Diffusion 1.5 - Fully Ungated and Free)
-        const hfUrl = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5";
-        const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY || ("hf_txJfQNKfS" + "sIxdVnCQQEhWNYwnCXTIxIylJ");
-        
+        // Call Pollinations AI (Flux) using GET to guarantee cache bypassing via seed and timestamp
         let imageRes;
         let imageBuffer;
         let success = false;
@@ -2287,20 +2284,19 @@ export const generateImage = async (req, res) => {
 
         for (let attempt = 1; attempt <= 3; attempt++) {
             try {
-                imageRes = await fetch(hfUrl, {
-                    method: 'POST',
-                    headers: { 
-                        'Authorization': `Bearer ${HUGGINGFACE_API_KEY}`,
-                        'Content-Type': 'application/json' 
-                    },
-                    body: JSON.stringify({
-                        inputs: prompt
-                    })
+                const randomSeed = Math.floor(Math.random() * 1000000000);
+                const timestamp = Date.now();
+                const encodedPrompt = encodeURIComponent(prompt);
+                
+                // Using GET with random seed AND timestamp guarantees a 100% cache miss
+                const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${randomSeed}&cb=${timestamp}`;
+                
+                imageRes = await fetch(pollinationsUrl, {
+                    method: 'GET'
                 });
-
+                
                 if (!imageRes.ok) {
-                    const errorText = await imageRes.text();
-                    throw new Error(`HuggingFace API failed: ${imageRes.status} - ${errorText}`);
+                    throw new Error(`Pollinations API failed: ${imageRes.status}`);
                 }
                 
                 imageBuffer = Buffer.from(await imageRes.arrayBuffer());
@@ -2308,8 +2304,8 @@ export const generateImage = async (req, res) => {
                 break; // Break out of retry loop if successful
             } catch (err) {
                 lastError = err;
-                console.error(`[HuggingFace API] Attempt ${attempt} failed:`, err.message);
-                if (attempt < 3) await new Promise(res => setTimeout(res, 3000)); // Wait 3s before retry
+                console.error(`[Pollinations API] Attempt ${attempt} failed:`, err.message);
+                if (attempt < 3) await new Promise(res => setTimeout(res, 2000)); // Wait 2s before retry
             }
         }
 
