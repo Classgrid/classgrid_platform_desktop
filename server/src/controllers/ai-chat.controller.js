@@ -2276,21 +2276,13 @@ export const bulkDeleteAgentReviews = async (req, res) => {
 export const generateImage = async (req, res) => {
     try {
         const { prompt, sessionId, userEmail, isIncognito } = req.body;
-        // Call Pollinations AI (Flux) using POST to support unlimited length prompts
+        // Call Pollinations AI (Flux) using GET to guarantee cache bypassing via seed
         const randomSeed = Math.floor(Math.random() * 1000000);
-        const pollinationsUrl = `https://image.pollinations.ai/`;
+        const encodedPrompt = encodeURIComponent(prompt);
+        const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${randomSeed}`;
 
         const imageRes = await fetch(pollinationsUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                prompt: prompt + " [Seed: " + randomSeed + "]",
-                width: 1024,
-                height: 1024,
-                nologo: true
-            })
+            method: 'GET'
         });
         if (!imageRes.ok) throw new Error(`Image API failed: ${imageRes.status}`);
 
