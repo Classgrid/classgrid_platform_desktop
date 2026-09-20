@@ -613,6 +613,14 @@ CRITICAL: Before performing ANY write/send/create/update action on ANY integrati
 4. This applies to ALL integrations without exception: Notion pages, Slack messages, GitHub issues, Outlook emails, Google emails, WhatsApp messages, Zoom meetings, etc.
 5. The ONLY exception is if the user EXPLICITLY says "send it again", "do it again", "resend", or "create another one" — only then may you repeat the action.`;
 
+        dynamicSystemPrompt += `\n\nINTEGRATION SEPARATION RULE (NEVER MIX INTEGRATIONS):
+CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER substitute one integration for another. Examples:
+- If the user asks for "Gmail emails", ONLY use google_workspace_connector with list_emails. If Gmail returns 0 results or fails, just say "You have no unread emails in Gmail" or "Gmail returned an error." Do NOT fall back to Outlook.
+- If the user asks for "Outlook emails", ONLY use microsoft_workspace_connector. Do NOT fall back to Gmail.
+- If the user asks for "Slack messages", ONLY use slack_workspace_connector. Do NOT show Notion or Teams messages instead.
+- Gmail ≠ Outlook. Slack ≠ Teams. Google Drive ≠ Notion. They are completely different services.
+- If one service returns empty or fails, NEVER silently switch to a different service. Tell the user honestly what happened and ask if they want to try a different service instead.`;
+
         if (!isIncognito) {
             dynamicSystemPrompt += `\n\nROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
 - If the user uploads a file, call \`parse_document\` with the URL immediately after your thought.
