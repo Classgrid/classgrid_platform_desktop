@@ -764,7 +764,31 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
                             });
                             const data = await res.json();
                             if (data.access_token) {
-                                await mongoose.model('User').updateOne({ _id: latestUser._id }, { microsoft_access_token: data.access_token, ...(data.refresh_token ? { microsoft_refresh_token: data.refresh_token } : {}), microsoft_token_expiry: new Date(Date.now() + data.expires_in * 1000) });
+                                let profileUpdates = {};
+                                try {
+                                    const profileRes = await fetch("https://graph.microsoft.com/v1.0/me", {
+                                        headers: { "Authorization": `Bearer ${data.access_token}` }
+                                    });
+                                    if (profileRes.ok) {
+                                        const profile = await profileRes.json();
+                                        if (profile.displayName) profileUpdates.microsoft_name = profile.displayName;
+                                        if (profile.mail || profile.userPrincipalName) profileUpdates.microsoft_email = profile.mail || profile.userPrincipalName;
+                                    }
+                                } catch (e) {
+                                    console.error("[refreshMs] Error fetching Microsoft profile:", e);
+                                }
+
+                                await mongoose.model('User').updateOne({ _id: latestUser._id }, { 
+                                    microsoft_access_token: data.access_token, 
+                                    ...(data.refresh_token ? { microsoft_refresh_token: data.refresh_token } : {}), 
+                                    microsoft_token_expiry: new Date(Date.now() + data.expires_in * 1000),
+                                    ...profileUpdates
+                                });
+
+                                // Apply live updates to current session
+                                if (profileUpdates.microsoft_name) latestUser.microsoft_name = profileUpdates.microsoft_name;
+                                if (profileUpdates.microsoft_email) latestUser.microsoft_email = profileUpdates.microsoft_email;
+
                                 return data.access_token;
                             }
                             return null;
@@ -834,7 +858,8 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
                     }
 
                     if (msConnected) {
-                        const msName = latestUser.microsoft_name ? ` (Name: ${latestUser.microsoft_name})` : '';
+                        const resolvedName = latestUser.microsoft_name || latestUser.name;
+                        const msName = resolvedName ? ` (Name: ${resolvedName})` : '';
                         const msEmail = latestUser.microsoft_email ? `(Connected as: ${latestUser.microsoft_email}${msName}) ` : '';
                         activeDescriptions.push(`- **Microsoft 365 (Outlook, Teams)**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. ${msEmail}Use 'microsoft_workspace_connector' tool to list_emails, read_email, mark_email_read, send_email, list_meetings, create_meeting, list_teams, list_channels, read_channel_messages, send_channel_message, create_channel, list_chats, read_chat_messages, send_direct_message, read_meeting_transcript. CRITICAL: You must NEVER hallucinate, guess, or shorten the user's connected Microsoft email address or Name. You must strictly use the exact email address and Name provided above. When addressing the user regarding Microsoft, use their Microsoft Name, do NOT just say their email address. CRITICAL: When listing emails, you MUST ALWAYS explicitly state the exact sender email address (e.g. sender@gmail.com) and the exact time the email was received. CRITICAL: When creating a meeting, you MUST NEVER hallucinate or invent fake meeting details. You MUST ALWAYS call the 'microsoft_workspace_connector' tool to create the meeting first, wait for the response, and then output the exact Teams joinUrl (Join Link) returned by the tool to the user. CRITICAL: If the user asks you to mark emails as read, you MUST ACTUALLY CALL the 'mark_email_read' tool for EACH email ID you are marking. DO NOT hallucinate that you marked them. Teams Channels/Chats: You can read and send messages in Teams Channels and Direct Messages. If the user asks to summarize a meeting, use read_meeting_transcript. CRITICAL: If the user asks you to read a specific email or its full content, ALWAYS use read_email with the messageId.`);
                     }
