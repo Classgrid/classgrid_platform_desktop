@@ -2294,61 +2294,34 @@ export const generateImage = async (req, res) => {
                 // Added &model=turbo to drastically reduce generation time from 30s to 3s!
                 const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${randomSeed}&cb=${timestamp}&model=turbo`;
                 
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+                // BYPASS AWS IP RATE LIMITS (HTTP 429):
+                // Pollinations bans data center IPs after repeated requests.
+                // Instead of the backend fetching the image and uploading to R2,
+                // we return the URL directly to the frontend. The user's browser
+                // fetches the image from their own residential IP, bypassing the ban.
                 
-                imageRes = await fetch(pollinationsUrl, {
-                    method: 'GET',
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (!imageRes.ok) {
-                    throw new Error(`Pollinations API failed: ${imageRes.status}`);
+                let activeSessionId = sessionId;
+
+                if (!isIncognito) {
+                    if (!activeSessionId && userEmail) {
+                        const newSession = await createSession(userEmail, prompt.substring(0, 50));
+                        if (newSession) {
+                            activeSessionId = newSession.id;
+                        }
+                    }
+
+                    if (activeSessionId) {
+                        await saveMessage(activeSessionId, 'user', `@Create image ${prompt}`);
+                        await saveMessage(activeSessionId, 'assistant', `[IMAGE_GENERATION_COMPLETE: ${prompt} | ${pollinationsUrl}]`);
+                    }
                 }
-                
-                imageBuffer = Buffer.from(await imageRes.arrayBuffer());
-                success = true;
-                break; // Break out of retry loop if successful
+
+                return res.json({ imageUrl: pollinationsUrl, sessionId: activeSessionId });
             } catch (err) {
                 lastError = err;
                 console.error(`[Pollinations API] Attempt ${attempt} failed:`, err.message);
-                if (attempt < 3) await new Promise(res => setTimeout(res, 4000)); // Wait 4s before retry
             }
         }
-
-        if (!success) {
-            throw lastError || new Error("Image API failed after 3 attempts");
-        }
-
-        // Upload to Cloudflare R2
-        const r2Url = await uploadBufferToR2(
-            imageBuffer,
-            `generated-${Date.now()}.jpg`,
-            'image/jpeg',
-            `ai-generated/image-${Date.now()}.jpg`
-        );
-
-        let activeSessionId = sessionId;
-
-        if (!isIncognito) {
-            if (!activeSessionId && userEmail) {
-                const newSession = await createSession(userEmail, prompt.substring(0, 50));
-                if (newSession) {
-                    activeSessionId = newSession.id;
-                }
-            }
-
-            if (activeSessionId) {
-                // Save user prompt
-                await saveMessage(activeSessionId, 'user', `@Create image ${prompt}`);
-                // Save assistant image response
-                await saveMessage(activeSessionId, 'assistant', `[IMAGE_GENERATION_COMPLETE: ${prompt} : ${r2Url}]`);
-            }
-        }
-
-        res.json({ imageUrl: r2Url, sessionId: activeSessionId });
     } catch (e) {
         console.error("Error generating image:", e);
         res.status(500).json({ error: String(e.stack || e.message || e) });
