@@ -202,6 +202,20 @@ router.get("/callback", async (req, res) => {
         }
 
         user.zoom_access_token = tokenData.access_token;
+        
+        try {
+            const userRes = await fetch("https://api.zoom.us/v2/users/me", {
+                headers: { "Authorization": `Bearer ${tokenData.access_token}` }
+            });
+            const zUser = await userRes.json();
+            if (zUser) {
+                user.zoom_email = zUser.email || null;
+                user.zoom_name = (zUser.first_name || '') + ' ' + (zUser.last_name || '');
+                user.zoom_name = user.zoom_name.trim();
+            }
+        } catch (e) {
+            console.error("Failed to fetch Zoom profile:", e);
+        }
         if (tokenData.refresh_token) {
             user.zoom_refresh_token = tokenData.refresh_token; 
         }

@@ -524,6 +524,14 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    google_email: {
+      type: String,
+      default: null,
+    },
+    google_name: {
+      type: String,
+      default: null,
+    },
     vercel_access_token: {
       type: String,
       default: null,
@@ -584,6 +592,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    github_name: {
+      type: String,
+      default: null,
+    },
     slack_access_token: {
       type: String,
       default: null,
@@ -593,6 +605,10 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
     slack_email: {
+      type: String,
+      default: null,
+    },
+    slack_name: {
       type: String,
       default: null,
     },

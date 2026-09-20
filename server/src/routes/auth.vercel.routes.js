@@ -152,6 +152,19 @@ router.get("/callback", async (req, res) => {
         }
 
         user.vercel_access_token = tokenData.access_token;
+        
+        try {
+            const userRes = await fetch("https://api.vercel.com/v2/user", {
+                headers: { "Authorization": `Bearer ${tokenData.access_token}` }
+            });
+            const vUser = await userRes.json();
+            if (vUser && vUser.user) {
+                user.vercel_email = vUser.user.email || null;
+                user.vercel_name = vUser.user.name || null;
+            }
+        } catch (e) {
+            console.error("Failed to fetch Vercel profile:", e);
+        }
         if (tokenData.team_id) {
             user.vercel_team_id = tokenData.team_id;
         }

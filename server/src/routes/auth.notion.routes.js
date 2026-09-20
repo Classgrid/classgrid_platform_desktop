@@ -141,6 +141,28 @@ router.get("/callback", async (req, res) => {
         }
 
         user.notion_access_token = tokenData.access_token;
+        
+        try {
+            // Notion's /v1/users/me returns bot info which often includes the owner
+            const userRes = await fetch("https://api.notion.com/v1/users/me", {
+                headers: { 
+                    "Authorization": `Bearer ${tokenData.access_token}`,
+                    "Notion-Version": "2022-06-28"
+                }
+            });
+            const nUser = await userRes.json();
+            if (nUser && nUser.bot && nUser.bot.owner && nUser.bot.owner.user) {
+                const owner = nUser.bot.owner.user;
+                if (owner.person) {
+                    user.notion_email = owner.person.email || null;
+                }
+                user.notion_name = owner.name || null;
+            } else if (tokenData.workspace_name) {
+                user.notion_name = tokenData.workspace_name;
+            }
+        } catch (e) {
+            console.error("Failed to fetch Notion profile:", e);
+        }
         user.notion_workspace_id = tokenData.workspace_id;
         user.notion_bot_id = tokenData.bot_id;
 

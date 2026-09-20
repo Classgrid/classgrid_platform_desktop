@@ -2282,13 +2282,13 @@ export const generateImage = async (req, res) => {
         let imageBuffer;
         let success = false;
         let lastError = null;
-        
+
         for (let attempt = 1; attempt <= 3; attempt++) {
             try {
                 // Highly aggressive cache busting: Append unique ID to prompt
                 const uniqueId = `[ID: ${Date.now()}-${Math.floor(Math.random() * 10000)}]`;
                 const finalPrompt = prompt + " " + uniqueId;
-                
+
                 imageRes = await fetch(pollinationsUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -2300,7 +2300,7 @@ export const generateImage = async (req, res) => {
                         seed: Math.floor(Math.random() * 1000000)
                     })
                 });
-                
+
                 if (!imageRes.ok) throw new Error(`Image API failed: ${imageRes.status}`);
                 imageBuffer = Buffer.from(await imageRes.arrayBuffer());
                 success = true;
@@ -2311,7 +2311,7 @@ export const generateImage = async (req, res) => {
                 if (attempt < 3) await new Promise(res => setTimeout(res, 1000)); // Wait 1s before retry
             }
         }
-        
+
         if (!success) {
             throw lastError || new Error("Image API failed after 3 attempts");
         }
