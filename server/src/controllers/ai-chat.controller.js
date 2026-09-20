@@ -2351,6 +2351,6 @@ export const generateImage = async (req, res) => {
         res.json({ imageUrl: r2Url, sessionId: activeSessionId });
     } catch (e) {
         console.error("Error generating image:", e);
-        res.status(500).json({ error: "Failed to generate image" });
+        res.status(500).json({ error: String(e.stack || e.message || e) });
     }
 };
