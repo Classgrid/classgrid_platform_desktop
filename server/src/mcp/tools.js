@@ -1393,6 +1393,20 @@ export const handleToolCall = async (name, args, context = {}) => {
           user.microsoft_access_token = tokenData.access_token;
           if (tokenData.refresh_token) user.microsoft_refresh_token = tokenData.refresh_token;
           user.microsoft_token_expiry = new Date(Date.now() + tokenData.expires_in * 1000);
+          
+          try {
+            const profileRes = await fetch("https://graph.microsoft.com/v1.0/me", {
+                headers: { "Authorization": `Bearer ${tokenData.access_token}` }
+            });
+            if (profileRes.ok) {
+                const profile = await profileRes.json();
+                if (profile.displayName) user.microsoft_name = profile.displayName;
+                if (profile.mail || profile.userPrincipalName) user.microsoft_email = profile.mail || profile.userPrincipalName;
+            }
+          } catch (e) {
+            console.error("Failed to sync Microsoft profile during tool refresh:", e);
+          }
+          
           await user.save();
           accessToken = user.microsoft_access_token;
         }
