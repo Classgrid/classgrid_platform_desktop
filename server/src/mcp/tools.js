@@ -144,7 +144,7 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'list_sent_emails', 'mark_email_read', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'list_classroom_submissions', 'read_classroom_file'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'list_sent_emails', 'mark_email_read', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'list_classroom_submissions', 'list_classroom_teachers', 'read_classroom_file'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
         formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
         formTitle: { type: 'string', description: 'The title of the new form (required for create_form).' },
@@ -1270,6 +1270,11 @@ export const handleToolCall = async (name, args, context = {}) => {
           const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
           const res = await classroom.courses.list({ pageSize: limit, courseStates: ['ACTIVE'] });
           data = res.data.courses || [];
+        } else if (operation === 'list_classroom_teachers') {
+          if (!args.courseId) throw new Error("courseId is required for list_classroom_teachers");
+          const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
+          const res = await classroom.courses.teachers.list({ courseId: args.courseId, pageSize: limit });
+          data = res.data.teachers || [];
         } else if (operation === 'list_classroom_assignments') {
           if (!args.courseId) throw new Error("courseId is required for list_classroom_assignments");
           const classroom = google.classroom({ version: 'v1', auth: oauth2Client });

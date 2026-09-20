@@ -80,6 +80,7 @@ router.get("/connect", isAuthenticated, (req, res) => {
         scopes.push('https://www.googleapis.com/auth/classroom.coursework.students');
         scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.me.readonly');
         scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.students.readonly');
+        scopes.push('https://www.googleapis.com/auth/classroom.rosters.readonly');
         scopes.push('https://www.googleapis.com/auth/drive.readonly'); // Required to read Classroom attachments
     }
     
@@ -89,7 +90,7 @@ router.get("/connect", isAuthenticated, (req, res) => {
     }
 
     if (service === 'gmail' || service === 'all') {
-        scopes.push('https://www.googleapis.com/auth/gmail.readonly');
+        scopes.push('https://www.googleapis.com/auth/gmail.modify');
     }
 
     if (service === 'forms' || service === 'all') {
