@@ -3436,26 +3436,51 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   }
                                 }
                                 
+                                // Track whether this specific image has loaded in the browser
+                                const imgKey = `img-loaded-${message.id}`;
+                                const isImgLoaded = (window as any)[imgKey] === true;
+                                
                                 return (
                                   <div className="mb-2 mt-1 w-full max-w-[320px]">
                                     <ImageGeneration
-                                      status={isError ? "error" : isComplete ? "complete" : "generating"}
+                                      status={isError ? "error" : (isComplete && isImgLoaded) ? "complete" : "generating"}
                                       size="fluid"
                                       showStatus={false}
                                       resolution=""
                                     >
                                       {isComplete && url && (
-                                        <DocsImageViewer
-                                          images={[{ id: `gen-${message.id}`, src: url, alt: prompt }]}
-                                          renderThumbnails={(images, openImage) => (
-                                            <img 
-                                              src={images[0].src} 
-                                              alt={images[0].alt} 
-                                              className="w-full h-full object-cover rounded-xl cursor-zoom-in hover:opacity-95 transition-opacity" 
-                                              onClick={(e) => openImage(images[0], e)}
+                                        <>
+                                          {/* Hidden img to trigger browser load; once loaded, re-render shows the image */}
+                                          {!isImgLoaded && (
+                                            <img
+                                              src={url}
+                                              alt=""
+                                              style={{ display: 'none' }}
+                                              onLoad={() => {
+                                                (window as any)[imgKey] = true;
+                                                // Force a re-render by dispatching a tiny state update
+                                                setMessages(prev => [...prev]);
+                                              }}
+                                              onError={() => {
+                                                (window as any)[imgKey] = true;
+                                                setMessages(prev => [...prev]);
+                                              }}
                                             />
                                           )}
-                                        />
+                                          {isImgLoaded && (
+                                            <DocsImageViewer
+                                              images={[{ id: `gen-${message.id}`, src: url, alt: prompt }]}
+                                              renderThumbnails={(images, openImage) => (
+                                                <img 
+                                                  src={images[0].src} 
+                                                  alt={images[0].alt} 
+                                                  className="w-full h-full object-cover rounded-xl cursor-zoom-in hover:opacity-95 transition-opacity" 
+                                                  onClick={(e) => openImage(images[0], e)}
+                                                />
+                                              )}
+                                            />
+                                          )}
+                                        </>
                                       )}
                                     </ImageGeneration>
                                   </div>
