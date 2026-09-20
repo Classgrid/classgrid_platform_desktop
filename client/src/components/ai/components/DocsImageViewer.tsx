@@ -129,17 +129,30 @@ export function DocsImageViewer({ images, renderThumbnails, defaultOpenIndex, on
               >
                 {/* ── Top Right Controls ── */}
                 <div className="absolute top-4 right-4 z-[10000] flex items-center gap-2">
-                  <a
-                    href={selectedImage.src}
-                    download={`Classgrid_AI_Image_${selectedImage.id}.jpg`}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
                     className="p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-black/60 dark:text-white/60 transition-all cursor-pointer"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        const response = await fetch(selectedImage.src);
+                        const blob = await response.blob();
+                        const blobUrl = window.URL.createObjectURL(blob);
+                        const link = document.createElement("a");
+                        link.href = blobUrl;
+                        link.download = `Classgrid_AI_Image_${selectedImage.id}.jpg`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(blobUrl);
+                      } catch (error) {
+                        console.error("Download failed", error);
+                        window.open(selectedImage.src, "_blank");
+                      }
+                    }}
                     title="Download Image"
                   >
                     <Download className="w-5 h-5" />
-                  </a>
+                  </button>
                   <button
                     className="p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-black/60 dark:text-white/60 transition-all cursor-pointer"
                     onClick={(e) => { e.stopPropagation(); closeImage(); }}
