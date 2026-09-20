@@ -184,14 +184,14 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_emails', 'list_meetings', 'create_meeting', 'send_email', 'mark_email_read', 'list_teams', 'list_channels', 'read_channel_messages', 'send_channel_message', 'create_channel', 'list_chats', 'read_chat_messages', 'send_direct_message', 'read_meeting_transcript'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_emails', 'read_email', 'list_meetings', 'create_meeting', 'send_email', 'mark_email_read', 'list_teams', 'list_channels', 'read_channel_messages', 'send_channel_message', 'create_channel', 'list_chats', 'read_chat_messages', 'send_direct_message', 'read_meeting_transcript'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
         to: { type: 'string', description: 'Recipient email address (for send_email).' },
         subject: { type: 'string', description: 'Subject of the email or meeting (for send_email, create_meeting).' },
         body: { type: 'string', description: 'Body content (for send_email, send_channel_message, send_direct_message).' },
         startTime: { type: 'string', description: 'Start time in UTC ISO format (for create_meeting).' },
         endTime: { type: 'string', description: 'End time in UTC ISO format (for create_meeting).' },
-        messageId: { type: 'string', description: 'ID of the email message (for mark_email_read).' },
+        messageId: { type: 'string', description: 'ID of the email message (for mark_email_read, read_email).' },
         teamId: { type: 'string', description: 'ID of the Microsoft Team (for list_channels, read_channel_messages, send_channel_message, create_channel).' },
         channelId: { type: 'string', description: 'ID of the Microsoft Teams Channel (for read_channel_messages, send_channel_message).' },
         chatId: { type: 'string', description: 'ID of the Microsoft Teams Chat (for read_chat_messages, send_direct_message).' },
@@ -1374,6 +1374,14 @@ export const handleToolCall = async (name, args, context = {}) => {
             bodyPreview: msg.bodyPreview
           }));
           return { content: [{ type: 'text', text: JSON.stringify(safeData, null, 2) }] };
+        } else if (operation === 'read_email') {
+          if (!messageId) throw new Error("messageId is required for read_email");
+          const res = await fetch(`https://graph.microsoft.com/v1.0/me/messages/${messageId}`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message);
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
         } else if (operation === 'list_meetings') {
           const res = await fetch(`https://graph.microsoft.com/v1.0/me/onlineMeetings?$top=${limit}`, {
             headers: { "Authorization": `Bearer ${accessToken}` }
