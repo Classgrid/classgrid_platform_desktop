@@ -2558,6 +2558,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           window.dispatchEvent(new Event("agent:refresh-sessions"));
         }
         
+        // Preload the image before switching from QUEUED animation to COMPLETE.
+        // This keeps the existing loading animation visible until the image is ready,
+        // preventing a black box or broken image flash.
+        await new Promise<void>((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve();
+          img.onerror = () => resolve(); // Still show the URL even if preload fails
+          img.src = data.imageUrl;
+          // Safety timeout: don't wait more than 60 seconds
+          setTimeout(() => resolve(), 60000);
+        });
+        
         setMessages(prev => {
           const lastMsg = prev[prev.length - 1];
           return [
