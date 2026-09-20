@@ -350,20 +350,20 @@ export const handleToolCall = async (name, args, context = {}) => {
         // --- LAYER 3 TENANT ISOLATION ---
         // If not a super admin, force filter by their organization_id to prevent multi-tenant data leaks.
         if (!isSuperAdmin) {
-           const usersCollection = mongoose.connection.db.collection('users');
-           const userDoc = await usersCollection.findOne({ email: userEmail });
-           if (userDoc && userDoc.organization_id) {
-               // Safely inject into query
-               if (query && !Array.isArray(query)) {
-                   query.organization_id = userDoc.organization_id;
-               }
-           } else {
-               return {
-                  content: [{ type: 'text', text: `SECURITY ERROR: Could not determine your organization_id. Cannot execute query.` }]
-               };
-           }
+          const usersCollection = mongoose.connection.db.collection('users');
+          const userDoc = await usersCollection.findOne({ email: userEmail });
+          if (userDoc && userDoc.organization_id) {
+            // Safely inject into query
+            if (query && !Array.isArray(query)) {
+              query.organization_id = userDoc.organization_id;
+            }
+          } else {
+            return {
+              content: [{ type: 'text', text: `SECURITY ERROR: Could not determine your organization_id. Cannot execute query.` }]
+            };
+          }
         }
-        
+
         let projection = {};
         if (args.fields && Array.isArray(args.fields) && args.fields.length > 0) {
           args.fields.forEach(f => projection[f] = 1);
@@ -388,11 +388,11 @@ export const handleToolCall = async (name, args, context = {}) => {
                 }
               }
             ];
-            
+
             if (Object.keys(projection).length > 0) {
               pipeline.push({ $project: projection });
             }
-            
+
             result = await collection.aggregate(pipeline).toArray();
           } else {
             if (Object.keys(projection).length > 0) {
@@ -411,15 +411,15 @@ export const handleToolCall = async (name, args, context = {}) => {
           result = await collection.distinct(field, filter);
         } else if (operation === 'aggregate') {
           const pipeline = Array.isArray(query) ? query : (Array.isArray(data) ? data : data?.pipeline || query?.pipeline || []);
-          
+
           if (!isSuperAdmin) {
-             const usersCollection = mongoose.connection.db.collection('users');
-             const userDoc = await usersCollection.findOne({ email: userEmail });
-             if (userDoc && userDoc.organization_id) {
-                 pipeline.unshift({ $match: { organization_id: userDoc.organization_id } });
-             }
+            const usersCollection = mongoose.connection.db.collection('users');
+            const userDoc = await usersCollection.findOne({ email: userEmail });
+            if (userDoc && userDoc.organization_id) {
+              pipeline.unshift({ $match: { organization_id: userDoc.organization_id } });
+            }
           }
-          
+
           result = await collection.aggregate(pipeline).toArray();
         } else if (operation === 'update') {
           result = await collection.updateMany(query, { $set: data });
@@ -686,11 +686,11 @@ export const handleToolCall = async (name, args, context = {}) => {
         let execCmd = '';
         let finalCode = code;
 
-        if (language === 'python') { 
-            ext = 'py'; 
-            execCmd = 'python3'; 
-            // Auto-inject common standard libraries to prevent AI hallucination/forgetting errors
-            finalCode = "import os, sys, json, base64, math, datetime, re\n" + finalCode;
+        if (language === 'python') {
+          ext = 'py';
+          execCmd = 'python3';
+          // Auto-inject common standard libraries to prevent AI hallucination/forgetting errors
+          finalCode = "import os, sys, json, base64, math, datetime, re\n" + finalCode;
         }
         else if (language === 'javascript') { ext = 'js'; execCmd = 'node'; }
         else if (language === 'bash') { ext = 'sh'; execCmd = 'bash'; }
