@@ -127,14 +127,28 @@ export function DocsImageViewer({ images, renderThumbnails, defaultOpenIndex, on
                 className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/95 dark:bg-black/95 backdrop-blur-sm cursor-zoom-out"
                 onClick={closeImage}
               >
-                {/* ── Close button ── */}
-                <button
-                  className="absolute top-4 right-4 z-[10000] p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-black/60 dark:text-white/60 transition-all cursor-pointer"
-                  onClick={(e) => { e.stopPropagation(); closeImage(); }}
-                  aria-label="Close viewer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                {/* ── Top Right Controls ── */}
+                <div className="absolute top-4 right-4 z-[10000] flex items-center gap-2">
+                  <a
+                    href={selectedImage.src}
+                    download={`Classgrid_AI_Image_${selectedImage.id}.jpg`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-black/60 dark:text-white/60 transition-all cursor-pointer"
+                    onClick={(e) => e.stopPropagation()}
+                    title="Download Image"
+                  >
+                    <Download className="w-5 h-5" />
+                  </a>
+                  <button
+                    className="p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-black/60 dark:text-white/60 transition-all cursor-pointer"
+                    onClick={(e) => { e.stopPropagation(); closeImage(); }}
+                    aria-label="Close viewer"
+                    title="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
 
                 {/* ── Image ── */}
                 <div

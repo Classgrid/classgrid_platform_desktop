@@ -105,10 +105,32 @@ export function AiImagesGallery({ backendUrl }: AiImagesGalleryProps) {
                         >
                           <img
                             src={img.url}
-                            alt={img.prompt}
+                            alt="" // Empty alt to prevent massive prompt text if broken
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             loading="lazy"
+                            onError={(e) => {
+                              // If image fails to load, hide it and show a fallback
+                              e.currentTarget.style.display = 'none';
+                              const parent = e.currentTarget.parentElement;
+                              if (parent) {
+                                parent.classList.add('flex', 'items-center', 'justify-center', 'bg-muted');
+                                parent.innerHTML = '<div class="text-center p-4"><p class="text-xs text-muted-foreground font-medium">Image Expired</p><p class="text-[10px] text-muted-foreground/60 mt-1">This link is no longer active</p></div>';
+                              }
+                            }}
                           />
+                          
+                          {/* Hover Download Button */}
+                          <a
+                            href={img.url}
+                            download={`Classgrid_AI_Image_${img.id}.jpg`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="absolute top-2 right-2 p-2 rounded-lg bg-black/50 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            onClick={(e) => e.stopPropagation()}
+                            title="Download"
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
                         </div>
                         <div className="px-1 text-center">
                           <p className="text-xs font-medium text-muted-foreground mt-1">
