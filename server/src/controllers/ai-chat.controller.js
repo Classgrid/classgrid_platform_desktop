@@ -854,7 +854,9 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
                     let disconnectedLinks = [];
 
                     if (googleConnected) {
-                        activeDescriptions.push(`- **Google Workspace (Gmail, Calendar, Drive, Meet, Forms, Classroom)**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. Use 'google_workspace_connector' tool to list_emails, list_events, create_event, list_drive_files, create_folder, create_form, get_form, read_drive_file, upload_drive_file, list_classroom_courses, list_classroom_assignments, list_classroom_submissions, read_classroom_file. IMPORTANT WORKFLOW FOR DOCUMENTS: If the user asks you to read a file from Drive or Classroom, use \`read_drive_file\` or \`read_classroom_file\` to securely stage it in R2. The tool will return an R2 url. You MUST immediately call \`parse_document\` on that R2 url to read the text. To save a generated file to Drive, use \`upload_drive_file\` with the file URL.`);
+                        const googleName = latestUser.google_name ? ` (Name: ${latestUser.google_name})` : '';
+                        const googleEmail = latestUser.google_email ? `(Connected as: ${latestUser.google_email}${googleName}) ` : '';
+                        activeDescriptions.push(`- **Google Workspace (Gmail, Calendar, Drive, Meet, Forms, Classroom)**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. ${googleEmail}Use 'google_workspace_connector' tool to list_emails, list_events, create_event, list_drive_files, create_folder, create_form, get_form, read_drive_file, upload_drive_file, list_classroom_courses, list_classroom_assignments, list_classroom_submissions, read_classroom_file. IMPORTANT WORKFLOW FOR DOCUMENTS: If the user asks you to read a file from Drive or Classroom, use \`read_drive_file\` or \`read_classroom_file\` to securely stage it in R2. The tool will return an R2 url. You MUST immediately call \`parse_document\` on that R2 url to read the text. To save a generated file to Drive, use \`upload_drive_file\` with the file URL.`);
                     }
 
                     if (msConnected) {
@@ -865,11 +867,15 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
                     }
 
                     if (zoomConnected) {
-                        activeDescriptions.push(`- **Zoom**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. Use 'zoom_connector' tool to list_meetings, create_meeting.`);
+                        const zoomName = latestUser.zoom_name ? ` (Name: ${latestUser.zoom_name})` : '';
+                        const zoomEmail = latestUser.zoom_email ? `(Connected as: ${latestUser.zoom_email}${zoomName}) ` : '';
+                        activeDescriptions.push(`- **Zoom**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. ${zoomEmail}Use 'zoom_connector' tool to list_meetings, create_meeting.`);
                     }
 
                     if (notionConnected) {
-                        activeDescriptions.push(`- **Notion**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. Use 'notion_connector' tool to search, get_page, create_page, update_page, add_comment, read_comments. \n  *WHAT YOU CAN DO*: Read pages, search workspace, create notes, append content to pages, and read/write comments.\n  *WHAT YOU CANNOT DO*: You CANNOT delete pages, you CANNOT read entire databases, and you CANNOT manage workspace permissions.`);
+                        const notionName = latestUser.notion_name ? ` (Name: ${latestUser.notion_name})` : '';
+                        const notionEmail = latestUser.notion_email ? `(Connected as: ${latestUser.notion_email}${notionName}) ` : '';
+                        activeDescriptions.push(`- **Notion**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. ${notionEmail}Use 'notion_connector' tool to search, get_page, create_page, update_page, add_comment, read_comments. \n  *WHAT YOU CAN DO*: Read pages, search workspace, create notes, append content to pages, and read/write comments.\n  *WHAT YOU CANNOT DO*: You CANNOT delete pages, you CANNOT read entire databases, and you CANNOT manage workspace permissions.`);
                         allowedConnectorNames.add('notion_connector');
                     }
 
@@ -884,14 +890,18 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
 
                     const githubConnected = !!latestUser.github_access_token;
                     if (githubConnected) {
-                        activeDescriptions.push(`- **GitHub**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. Use 'github_workspace_connector' tool to list_repos, read_file, create_issue, list_issues, create_repo, create_or_update_file, create_pull_request, list_pull_requests, add_issue_comment, search_code, list_commits, get_commit, list_branches. You have complete read/write access to explore repositories, manage issues/PRs, and push commits directly.`);
+                        const githubName = latestUser.github_name ? ` (Name: ${latestUser.github_name})` : '';
+                        const githubEmail = latestUser.github_email ? `(Connected as: ${latestUser.github_email}${githubName}) ` : '';
+                        activeDescriptions.push(`- **GitHub**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. ${githubEmail}Use 'github_workspace_connector' tool to list_repos, read_file, create_issue, list_issues, create_repo, create_or_update_file, create_pull_request, list_pull_requests, add_issue_comment, search_code, list_commits, get_commit, list_branches. You have complete read/write access to explore repositories, manage issues/PRs, and push commits directly.`);
                         allowedConnectorNames.add('github_workspace_connector');
                     } else {
                         disconnectedLinks.push(`[GitHub](/api/auth/github/connect)`);
                     }
 
                     if (vercelConnected) {
-                        activeDescriptions.push(`- **Vercel**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. Use 'vercel_connector' tool to list_projects, list_deployments, get_deployment. \n  *WHAT YOU CAN DO*: List projects, check deployment history, and view the status/details of a specific deployment.\n  *WHAT YOU CANNOT DO*: You CANNOT trigger new deployments, you CANNOT read server logs, you CANNOT delete projects, and you CANNOT manage environment variables.`);
+                        const vercelName = latestUser.vercel_name ? ` (Name: ${latestUser.vercel_name})` : '';
+                        const vercelEmail = latestUser.vercel_email ? `(Connected as: ${latestUser.vercel_email}${vercelName}) ` : '';
+                        activeDescriptions.push(`- **Vercel**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. ${vercelEmail}Use 'vercel_connector' tool to list_projects, list_deployments, get_deployment. \n  *WHAT YOU CAN DO*: List projects, check deployment history, and view the status/details of a specific deployment.\n  *WHAT YOU CANNOT DO*: You CANNOT trigger new deployments, you CANNOT read server logs, you CANNOT delete projects, and you CANNOT manage environment variables.`);
                     } else {
                         disconnectedLinks.push(`[Vercel](/api/auth/vercel/connect)`);
                     }
@@ -918,7 +928,7 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
             dynamicSystemPrompt += pluginPrompt;
         }
 
-        dynamicSystemPrompt += `\n\nCRITICAL GOOGLE CLASSROOM RULE:\nYou MUST NEVER tell the user to check their assignments, courses, or submissions manually (e.g., by going to classroom.google.com). You have ALL READ PERMISSIONS for Google Classroom! You MUST ALWAYS use the \`google_workspace_connector\` tool (with \`list_classroom_courses\`, \`list_classroom_assignments\`, etc.) to fetch and display the data directly in the chat. Never reject a request to read Google Classroom!`;
+        dynamicSystemPrompt += `\n\nCRITICAL GOOGLE CLASSROOM RULE:\nYou MUST NEVER tell the user to check their assignments, courses, or submissions manually (e.g., by going to classroom.google.com). You have ALL READ PERMISSIONS for Google Classroom! You MUST ALWAYS use the \`google_workspace_connector\` tool (with \`list_classroom_courses\`, \`list_classroom_assignments\`, etc.) to fetch and display the data directly in the chat. Never reject a request to read Google Classroom!\nWORKFLOW REQUIRED: If the user asks for "assignments", do NOT just run list_classroom_courses and stop. You MUST FIRST run list_classroom_courses to get the courseId, and then IMMEDIATELY chain a second tool call to list_classroom_assignments using that courseId to actually get and display the assignments!`;
 
         messages.unshift({ role: "system", content: dynamicSystemPrompt });
 
