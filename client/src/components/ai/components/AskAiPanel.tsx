@@ -2558,6 +2558,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           ];
         });
       } catch (err) {
+        console.error("Image generation failed", err);
         setMessages(prev => {
           const lastMsg = prev[prev.length - 1];
           return [
@@ -4848,7 +4849,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       <AiHubModal 
         isOpen={isAiHubOpen} 
         onClose={() => setIsAiHubOpen(false)} 
-        onSendPrompt={(text) => askQuestion(text)}
+        onSendPrompt={(text) => askQuestion(text, { hidden: true })}
       />
     </>
   );
