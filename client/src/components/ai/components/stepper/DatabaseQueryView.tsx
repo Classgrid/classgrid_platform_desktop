@@ -74,23 +74,46 @@ export function DatabaseQueryView({ query, results }: DatabaseQueryViewProps) {
               {results && results.length > 0 ? (
                 <div className="flex flex-col gap-1">
                   <span className="text-slate-500 dark:text-slate-400">{"["}</span>
-                  {results.map((item, index) => (
-                    <div key={index} className="pl-4">
-                      <span className="text-slate-500 dark:text-slate-400">{"{"}</span>
-                      {Object.entries(item).map(([key, value], i, arr) => (
-                        <div key={key} className="pl-4">
-                          <span className="text-blue-600 dark:text-blue-400">"{key}"</span>
-                          <span className="text-slate-500 dark:text-slate-400">: </span> 
-                          <span className="text-emerald-600 dark:text-[#a5d6ff]">
-                            {typeof value === 'string' ? `"${value}"` : `${value}`}
-                          </span>
-                          {i < arr.length - 1 ? <span className="text-slate-500 dark:text-slate-400">,</span> : ''}
-                        </div>
-                      ))}
-                      <span className="text-slate-500 dark:text-slate-400">{"}"}</span>
-                      {index < results.length - 1 ? <span className="text-slate-500 dark:text-slate-400">,</span> : ''}
+                  {results.slice(0, 5).map((item, index) => {
+                    // Sanitize sensitive fields from being rendered in the UI
+                    const sanitizedItem = { ...item };
+                    const sensitiveKeys = ['password', 'hash', 'salt', 'token', 'secret', 'otp', 'biometric', '__v'];
+                    
+                    Object.keys(sanitizedItem).forEach(key => {
+                      const lowerKey = key.toLowerCase();
+                      if (sensitiveKeys.some(sensitive => lowerKey.includes(sensitive))) {
+                         sanitizedItem[key] = "[REDACTED]";
+                      }
+                    });
+
+                    return (
+                      <div key={index} className="pl-4">
+                        <span className="text-slate-500 dark:text-slate-400">{"{"}</span>
+                        {Object.entries(sanitizedItem).map(([key, value], i, arr) => {
+                          const displayValue = typeof value === 'object' && value !== null 
+                            ? JSON.stringify(value) 
+                            : (typeof value === 'string' ? `"${value}"` : `${value}`);
+                          return (
+                            <div key={key} className="pl-4">
+                              <span className="text-blue-600 dark:text-blue-400">"{key}"</span>
+                              <span className="text-slate-500 dark:text-slate-400">: </span> 
+                              <span className="text-emerald-600 dark:text-[#a5d6ff]">
+                                {displayValue}
+                              </span>
+                              {i < arr.length - 1 ? <span className="text-slate-500 dark:text-slate-400">,</span> : ''}
+                            </div>
+                          );
+                        })}
+                        <span className="text-slate-500 dark:text-slate-400">{"}"}</span>
+                        {index < Math.min(results.length, 5) - 1 ? <span className="text-slate-500 dark:text-slate-400">,</span> : ''}
+                      </div>
+                    );
+                  })}
+                  {results.length > 5 && (
+                    <div className="pl-4 text-slate-500 dark:text-slate-400 italic">
+                      ... and {results.length - 5} more items. (Hidden for UI performance)
                     </div>
-                  ))}
+                  )}
                   <span className="text-slate-500 dark:text-slate-400">{"]"}</span>
                 </div>
               ) : (

@@ -1,6 +1,6 @@
 /*
  * =========================================================================================
- * 🚨 CRITICAL AI & SYSTEM RULE 🚨
+ * ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨ CRITICAL AI & SYSTEM RULE ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨
  * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
  * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
  * =========================================================================================
@@ -51,6 +51,11 @@ export const getMcpTools = () => [
         data: {
           type: 'object',
           description: 'The payload for insert or update operations.'
+        },
+        fields: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Optional array of field names to return (e.g. ["name", "email"]). USE THIS TO PREVENT TOKEN LIMIT ERRORS.'
         }
       },
       required: ['source', 'collectionOrTable', 'operation'],
@@ -126,7 +131,7 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'list_classroom_submissions', 'read_classroom_file'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'list_sent_emails', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'list_classroom_submissions', 'read_classroom_file'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
         formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
         formTitle: { type: 'string', description: 'The title of the new form (required for create_form).' },
@@ -342,9 +347,31 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         let result;
 
+        // --- LAYER 3 TENANT ISOLATION ---
+        // If not a super admin, force filter by their organization_id to prevent multi-tenant data leaks.
+        if (!isSuperAdmin) {
+           const usersCollection = mongoose.connection.db.collection('users');
+           const userDoc = await usersCollection.findOne({ email: userEmail });
+           if (userDoc && userDoc.organization_id) {
+               // Safely inject into query
+               if (query && !Array.isArray(query)) {
+                   query.organization_id = userDoc.organization_id;
+               }
+           } else {
+               return {
+                  content: [{ type: 'text', text: `SECURITY ERROR: Could not determine your organization_id. Cannot execute query.` }]
+               };
+           }
+        }
+        
+        let projection = {};
+        if (args.fields && Array.isArray(args.fields) && args.fields.length > 0) {
+          args.fields.forEach(f => projection[f] = 1);
+        }
+
         if (operation === 'find') {
           if (actualCollectionName === 'users') {
-            result = await collection.aggregate([
+            const pipeline = [
               { $match: query || {} },
               { $limit: 50 },
               {
@@ -360,9 +387,19 @@ export const handleToolCall = async (name, args, context = {}) => {
                   as: 'organization_details'
                 }
               }
-            ]).toArray();
+            ];
+            
+            if (Object.keys(projection).length > 0) {
+              pipeline.push({ $project: projection });
+            }
+            
+            result = await collection.aggregate(pipeline).toArray();
           } else {
-            result = await collection.find(query).limit(50).toArray();
+            if (Object.keys(projection).length > 0) {
+              result = await collection.find(query).project(projection).limit(50).toArray();
+            } else {
+              result = await collection.find(query).limit(50).toArray();
+            }
           }
         } else if (operation === 'findOne') {
           result = await collection.findOne(query);
@@ -374,6 +411,15 @@ export const handleToolCall = async (name, args, context = {}) => {
           result = await collection.distinct(field, filter);
         } else if (operation === 'aggregate') {
           const pipeline = Array.isArray(query) ? query : (Array.isArray(data) ? data : data?.pipeline || query?.pipeline || []);
+          
+          if (!isSuperAdmin) {
+             const usersCollection = mongoose.connection.db.collection('users');
+             const userDoc = await usersCollection.findOne({ email: userEmail });
+             if (userDoc && userDoc.organization_id) {
+                 pipeline.unshift({ $match: { organization_id: userDoc.organization_id } });
+             }
+          }
+          
           result = await collection.aggregate(pipeline).toArray();
         } else if (operation === 'update') {
           result = await collection.updateMany(query, { $set: data });
@@ -385,7 +431,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           throw new Error(`Unsupported MongoDB operation: ${operation}`);
         }
 
-        // 🚨 AI TOKEN OVERFLOW PROTECTION 🚨
+        // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨ AI TOKEN OVERFLOW PROTECTION ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨
         const aiSafetyReplacer = (key, value) => {
           const forbiddenKeys = [
             'password', 'profilePicture', 'profileBanner', 'logo', 'favicon', 'signature',
@@ -511,7 +557,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
     if (name === 'internal_thought_process') {
       const { title, details } = args;
-      console.log(`\n🧠 [THOUGHT] ${title}: ${details}`);
+      console.log(`\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â  [THOUGHT] ${title}: ${details}`);
       return {
         content: [{ type: 'text', text: `Thought recorded successfully. Proceed with your next action.` }]
       };
@@ -522,9 +568,9 @@ export const handleToolCall = async (name, args, context = {}) => {
       const { sessionId = 'default', userEmail = 'unknown' } = context;
 
       console.log(`\n=================================================`);
-      console.log(`🚀 [SANDBOX TERMINAL ACTION STARTED]`);
-      console.log(`👤 User: ${userEmail} | 🆔 Session: ${sessionId}`);
-      console.log(`💻 Command:\n${command}`);
+      console.log(`ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ [SANDBOX TERMINAL ACTION STARTED]`);
+      console.log(`ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ User: ${userEmail} | ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Session: ${sessionId}`);
+      console.log(`ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â» Command:\n${command}`);
       console.log(`=================================================\n`);
       fs.appendFileSync('ai_commands.log', `[${new Date().toISOString()}] COMMAND: ${command}\n`);
 
@@ -571,9 +617,9 @@ export const handleToolCall = async (name, args, context = {}) => {
         const result = await ssh.execCommand(dockerCommand);
 
         console.log(`\n=================================================`);
-        console.log(`✅ [SANDBOX TERMINAL ACTION FINISHED]`);
-        console.log(`🟢 STDOUT:\n${result.stdout}`);
-        if (result.stderr) console.log(`🔴 STDERR:\n${result.stderr}`);
+        console.log(`ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ [SANDBOX TERMINAL ACTION FINISHED]`);
+        console.log(`ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ STDOUT:\n${result.stdout}`);
+        if (result.stderr) console.log(`ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´ STDERR:\n${result.stderr}`);
         console.log(`=================================================\n`);
 
         accessLogger.info("Sandbox Terminal Action Finished", {
@@ -602,10 +648,10 @@ export const handleToolCall = async (name, args, context = {}) => {
       const { sessionId = 'default', userEmail = 'unknown' } = context;
 
       console.log(`\n=================================================`);
-      console.log(`🚀 [SANDBOX CODE EXECUTION STARTED]`);
-      console.log(`👤 User: ${userEmail} | 🆔 Session: ${sessionId}`);
-      console.log(`💻 Language: ${language}`);
-      console.log(`📝 Code Payload:\n${code}`);
+      console.log(`ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ [SANDBOX CODE EXECUTION STARTED]`);
+      console.log(`ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ User: ${userEmail} | ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Session: ${sessionId}`);
+      console.log(`ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â» Language: ${language}`);
+      console.log(`ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Code Payload:\n${code}`);
       console.log(`=================================================\n`);
 
       accessLogger.info("Sandbox Code Execution Started", {
@@ -638,8 +684,14 @@ export const handleToolCall = async (name, args, context = {}) => {
         // we will write the code to a file in the shared /data folder and execute it.
         let ext = '';
         let execCmd = '';
+        let finalCode = code;
 
-        if (language === 'python') { ext = 'py'; execCmd = 'python3'; }
+        if (language === 'python') { 
+            ext = 'py'; 
+            execCmd = 'python3'; 
+            // Auto-inject common standard libraries to prevent AI hallucination/forgetting errors
+            finalCode = "import os, sys, json, base64, math, datetime, re\n" + finalCode;
+        }
         else if (language === 'javascript') { ext = 'js'; execCmd = 'node'; }
         else if (language === 'bash') { ext = 'sh'; execCmd = 'bash'; }
         else throw new Error("Unsupported language. Use python, javascript, or bash.");
@@ -649,7 +701,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         const scriptPath = `/home/ubuntu/sandbox_data/${sessionId}/script.${ext}`;
 
         // We use EOF heredoc to safely write the script without quote escaping issues
-        const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${code}\nEOF_SCRIPT`;
+        const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${finalCode}\nEOF_SCRIPT`;
         await ssh.execCommand(writeCommand);
 
         const envVars = ` -e AWS_ACCESS_KEY_ID="${process.env.AWS_ACCESS_KEY_ID || ''}" -e AWS_SECRET_ACCESS_KEY="${process.env.AWS_SECRET_ACCESS_KEY || ''}" -e AWS_S3_REGION="${process.env.AWS_S3_REGION || ''}" -e AWS_S3_BUCKET="${process.env.AWS_S3_BUCKET || ''}" -e AWS_S3_ERP_ACCESS_KEY="${process.env.AWS_S3_ERP_ACCESS_KEY || ''}" -e AWS_S3_ERP_SECRET_KEY="${process.env.AWS_S3_ERP_SECRET_KEY || ''}" -e AWS_S3_ERP_REGION="${process.env.AWS_S3_ERP_REGION || ''}" -e AWS_S3_ERP_BUCKET_NAME="${process.env.AWS_S3_ERP_BUCKET_NAME || ''}" -e AWS_CLOUDFRONT_ERP_DOMAIN="${process.env.AWS_CLOUDFRONT_ERP_DOMAIN || ''}" -e R2_ACCOUNT_ID="${process.env.R2_ACCOUNT_ID || ''}" -e R2_ACCESS_KEY_ID="${process.env.R2_ACCESS_KEY_ID || ''}" -e R2_SECRET_ACCESS_KEY="${process.env.R2_SECRET_ACCESS_KEY || ''}" -e R2_BUCKET_NAME="${process.env.R2_BUCKET_NAME || 'classgrid-storage'}" -e R2_PUBLIC_URL="${process.env.R2_PUBLIC_URL || 'https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev'}" -e AWS_SES_SMTP_HOST="${process.env.AWS_SES_SMTP_HOST || ''}" -e AWS_SES_SMTP_USER="${process.env.AWS_SES_SMTP_USER || ''}" -e AWS_SES_SMTP_PASS="${process.env.AWS_SES_SMTP_PASS || ''}" `;
@@ -659,9 +711,9 @@ export const handleToolCall = async (name, args, context = {}) => {
         const result = await ssh.execCommand(dockerCommand);
 
         console.log(`\n=================================================`);
-        console.log(`✅ [SANDBOX CODE EXECUTION FINISHED]`);
-        console.log(`🟢 STDOUT:\n${result.stdout}`);
-        if (result.stderr) console.log(`🔴 STDERR:\n${result.stderr}`);
+        console.log(`ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ [SANDBOX CODE EXECUTION FINISHED]`);
+        console.log(`ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ STDOUT:\n${result.stdout}`);
+        if (result.stderr) console.log(`ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´ STDERR:\n${result.stderr}`);
         console.log(`=================================================\n`);
 
         accessLogger.info("Sandbox Code Execution Finished", {
@@ -687,7 +739,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'generate_pdf') {
       let { content = '', title, rawData } = args;
 
-      console.log(`\n📄 [AWS NATIVE] AI is generating a REAL PDF document securely using Puppeteer!`);
+      console.log(`\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ [AWS NATIVE] AI is generating a REAL PDF document securely using Puppeteer!`);
 
       try {
         if (rawData && Array.isArray(rawData) && rawData.length > 0) {
@@ -758,7 +810,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'generate_pdf_from_db') {
       const { source, collectionOrTable, query, title, htmlTemplate } = args;
       try {
-        console.log(`\n📄 [AWS NATIVE] AI is directly fetching data and using Handlebars to bypass token limits!`);
+        console.log(`\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ [AWS NATIVE] AI is directly fetching data and using Handlebars to bypass token limits!`);
         let result;
         if (source === 'mongodb') {
           const collectionName = collectionOrTable.toLowerCase() === 'user' ? 'users' : collectionOrTable;
@@ -944,7 +996,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         const data = await response.json();
 
-        // 🚨 AI TOKEN OVERFLOW PROTECTION 🚨
+        // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨ AI TOKEN OVERFLOW PROTECTION ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨
         const aiSafetyReplacer = (key, value) => {
           const forbiddenKeys = ['source', 'env', 'builds', 'routes', 'meta'];
           if (forbiddenKeys.includes(key)) return undefined;
@@ -1295,7 +1347,20 @@ export const handleToolCall = async (name, args, context = {}) => {
           accessToken = user.microsoft_access_token;
         }
 
-        if (operation === 'list_emails') {
+        if (operation === 'list_sent_emails') {
+          const res = await fetch(`https://graph.microsoft.com/v1.0/me/mailFolders('SentItems')/messages?$top=${limit}`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+          });
+          const data = await res.json();
+          const safeData = (data.value || []).map(msg => ({
+            id: msg.id,
+            subject: msg.subject,
+            to: msg.toRecipients?.map(r => r.emailAddress?.address).join(', ') || 'Unknown',
+            sentDateTime: msg.sentDateTime,
+            bodyPreview: msg.bodyPreview
+          }));
+          return { content: [{ type: 'text', text: JSON.stringify(safeData, null, 2) }] };
+        } else if (operation === 'list_emails') {
           const res = await fetch(`https://graph.microsoft.com/v1.0/me/messages?$top=${limit}&$filter=isRead eq false`, {
             headers: { "Authorization": `Bearer ${accessToken}` }
           });
@@ -1474,6 +1539,18 @@ export const handleToolCall = async (name, args, context = {}) => {
       } catch (e) {
         return { content: [{ type: 'text', text: `Failed to execute Microsoft API call: ${e.message}` }] };
       }
+    }
+
+    if (name === 'check_email_logs') {
+      const { recipientEmail } = args;
+      if (!recipientEmail) throw new Error('recipientEmail is required');
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+      const NotificationLog = mongoose.model('NotificationLog');
+      const logs = await NotificationLog.find({ recipient: recipientEmail, type: 'EMAIL', createdAt: { $gte: fifteenMinutesAgo } }).lean();
+      if (logs.length > 0) {
+        return { content: [{ type: 'text', text: 'YES: An email was already sent to ' + recipientEmail + ' recently. DO NOT SEND AGAIN.' }] };
+      }
+      return { content: [{ type: 'text', text: 'NO: No recent email found for ' + recipientEmail + '. Safe to send.' }] };
     }
 
     if (name === 'slack_workspace_connector') {

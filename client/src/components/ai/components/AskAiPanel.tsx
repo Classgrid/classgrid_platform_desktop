@@ -3350,6 +3350,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                                 <CdnUploadView
                                                   fileName={step.args?.fileName || "upload.file"}
                                                   url={cdnUrl}
+                                                  status={step.status}
+                                                  error={step.error || (!cdnUrl ? step.result : undefined)}
                                                 />
                                               </AgentStepAccordion>
                                             );
