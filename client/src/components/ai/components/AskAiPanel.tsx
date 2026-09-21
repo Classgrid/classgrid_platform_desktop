@@ -2245,9 +2245,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     const element = chatScrollRef.current;
     if (!element) return;
 
-    // Only run while a message is actively being typed
+    // Only run while a message is actively being typed or we are streaming
     const lastMsg = messages[messages.length - 1];
-    if (!lastMsg?.typing) return;
+    if (!lastMsg?.typing && !thinking && !submitting) return;
 
     const interval = setInterval(() => {
       // If user scrolled up, respect their position
@@ -2262,7 +2262,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     }, 150);
 
     return () => clearInterval(interval);
-  }, [open, messages.length, messages[messages.length - 1]?.typing]);
+  }, [open, messages.length, messages[messages.length - 1]?.typing, thinking, submitting]);
 
   function createMessageId(prefix: string) {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
