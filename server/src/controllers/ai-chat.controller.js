@@ -349,6 +349,12 @@ async function generateSessionTitle(sessionId, question) {
         const client = createLLMClient({
             providers: [
                 {
+                    name: "cloudflare",
+                    url: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
+                    apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN || "",
+                    model: "@cf/deepseek-ai/deepseek-v4-pro-0813"
+                },
+                {
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
                     apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
@@ -943,6 +949,13 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
         const client = createLLMClient({
             timeoutMs: 60000,
             providers: [
+                {
+                    name: "cloudflare",
+                    url: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
+                    apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN || "",
+                    model: "@cf/deepseek-ai/deepseek-v4-pro-0813",
+                    timeoutMs: 60000
+                },
                 {
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
@@ -2277,37 +2290,39 @@ export const bulkDeleteAgentReviews = async (req, res) => {
 export const generateImage = async (req, res) => {
     try {
         const { prompt, sessionId, userEmail, isIncognito } = req.body;
-        // Call Pollinations AI (Flux) using GET to guarantee cache bypassing via seed and timestamp
+        // Call Cloudflare Workers AI (Flux-1-Schnell)
         let imageRes;
         let imageBuffer;
         let success = false;
         let lastError = null;
+        
+        const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+        const cfToken = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
 
         for (let attempt = 1; attempt <= 3; attempt++) {
             try {
-                const randomSeed = Math.floor(Math.random() * 1000000000);
-                const timestamp = Date.now();
-                // Ensure prompt is not too long to prevent URL length limits (HTTP 414/500 errors)
+                // Ensure prompt is not too long
                 const safePrompt = prompt.length > 800 ? prompt.substring(0, 800) : prompt;
-                const encodedPrompt = encodeURIComponent(safePrompt);
                 
-                // Using GET with random seed AND timestamp guarantees a 100% cache miss.
-                // Added &model=turbo to drastically reduce generation time from 30s to 3s!
-                // &safe=true enables Pollinations' built-in NSFW filter — CRITICAL for school platform safety
-                const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${randomSeed}&cb=${timestamp}&model=turbo&safe=true`;
+                const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/black-forest-labs/flux-1-schnell`;
                 
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
                 
-                imageRes = await fetch(pollinationsUrl, {
-                    method: 'GET',
+                imageRes = await fetch(cfUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${cfToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt: safePrompt }),
                     signal: controller.signal
                 });
                 
                 clearTimeout(timeoutId);
                 
                 if (!imageRes.ok) {
-                    throw new Error(`Pollinations API failed: ${imageRes.status}`);
+                    throw new Error(`Cloudflare AI failed: ${imageRes.status}`);
                 }
                 
                 imageBuffer = Buffer.from(await imageRes.arrayBuffer());
@@ -2315,7 +2330,7 @@ export const generateImage = async (req, res) => {
                 break; // Break out of retry loop if successful
             } catch (err) {
                 lastError = err;
-                console.error(`[Pollinations API] Attempt ${attempt} failed:`, err.message);
+                console.error(`[Cloudflare Image API] Attempt ${attempt} failed:`, err.message);
                 if (attempt < 3) await new Promise(res => setTimeout(res, 4000)); // Wait 4s before retry
             }
         }
