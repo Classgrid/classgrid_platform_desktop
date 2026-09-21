@@ -647,6 +647,12 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
 - Gmail ≠ Outlook. Slack ≠ Teams. Google Drive ≠ Notion. They are completely different services.
 - If one service returns empty or fails, NEVER silently switch to a different service. Tell the user honestly what happened and ask if they want to try a different service instead.`;
 
+        dynamicSystemPrompt += `\n\nEMPTY RESULTS & ANTI-LOOPING RULE (CRITICAL FOR INTEGRATIONS):
+CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google Drive, Notion, Slack, etc.) and it returns empty results (like an empty array \`[]\`, "0 results found", "no assignments", or "failed"), you MUST ACCEPT THIS REALITY. 
+1. Do NOT call the exact same tool with the exact same arguments again trying to force a different result. 
+2. Do NOT get stuck in an infinite retry loop.
+3. IMMEDIATELY stop and tell the user that no records were found or the action failed. You are STRICTLY FORBIDDEN from looping empty responses.`;
+
         if (!isIncognito) {
             dynamicSystemPrompt += `\n\nROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
 - If the user uploads a file, call \`parse_document\` with the URL immediately after your thought.
