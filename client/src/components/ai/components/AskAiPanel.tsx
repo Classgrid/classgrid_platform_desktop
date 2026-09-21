@@ -2844,9 +2844,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           setThinking(false);
 
           if (hasReceivedTokens) {
-            // Flush any remaining buffered words, then set final answer
-            tokenBufferRef.current = "";
-            thoughtBufferRef.current = "";
+            // Wait for the word-by-word buffer to finish draining before finalizing
+            while (tokenBufferRef.current.length > 0 || thoughtBufferRef.current.length > 0) {
+              await wait(100);
+            }
             wordTypingActiveRef.current = false;
             // Wait a moment for the last word-by-word interval to finish
             await wait(200);
