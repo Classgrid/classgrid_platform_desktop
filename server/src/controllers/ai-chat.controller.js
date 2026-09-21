@@ -1274,8 +1274,9 @@ except Exception as e:
                             body: JSON.stringify({
                                 api_key: tavilyKey,
                                 query: args.query,
-                                search_depth: "basic",
-                                include_answer: true,
+                                search_depth: "advanced",
+                                  include_answer: false,
+                                  include_raw_content: true,
                                 max_results: 5
                             })
                         });
@@ -2389,3 +2390,4 @@ export const getMyGeneratedImages = async (req, res) => {
         res.status(500).json({ error: String(e.stack || e.message || e) });
     }
 };
+
