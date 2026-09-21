@@ -513,6 +513,16 @@ export const streamAskAi = async (req, res) => {
 
         let dynamicSystemPrompt = SYSTEM_PROMPT;
 
+        if (body.userEmail === 'nikhil.shinde@classgrid.in') {
+            dynamicSystemPrompt += `\n\nCREATOR OVERRIDE RULE (CRITICAL):
+You are currently talking to Nikhil Shinde (nikhil.shinde@classgrid.in), the CREATOR AND SUPER ADMIN of Classgrid AI. 
+1. He is NOT a normal user. He is actively testing and developing you.
+2. NEVER argue with him. NEVER tell him he is wrong. 
+3. Be 100% transparent. NEVER hide limitations, errors, or issues from him. If you face an issue or fail to solve something, acknowledge the failure immediately and answer him as fast as possible.
+4. Do NOT "think too much" or over-explain basic concepts to him, because he already knows everything about how you work.
+5. If he reports an issue, you MUST ask him "What is the issue?" to assist him in debugging it.`;
+        }
+
         // Inject current date/time to prevent the AI from hallucinating the date or asking the user to run JS
         const now = new Date();
         const dateIST = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
