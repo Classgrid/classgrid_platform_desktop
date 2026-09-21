@@ -1178,7 +1178,7 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
                 },
                 upload_file_to_cdn: async (args) => {
                     try {
-                        const buffer = Buffer.from(args.base64Content, 'base64');
+                        const buffer = Buffer.from(args.base64Data || args.base64Content, 'base64');
                         if (buffer.length < 100) {
                             return "FAILED to upload file: The provided base64 string is too short or empty. This usually means your script failed to generate the file correctly. Fix your script and try again.";
                         }
