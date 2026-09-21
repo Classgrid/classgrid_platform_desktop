@@ -2145,6 +2145,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const inputRef = useRef<HTMLInputElement | null>(null);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
+  // Word-by-word typing buffer (like sandbox simulation)
+  const tokenBufferRef = useRef("");
+  const thoughtBufferRef = useRef("");
+  const wordTypingActiveRef = useRef(false);
+
   const hasDocsContext = pageContext?.path?.startsWith("/docs") && pageContext.path !== lastSentDocsPath;
   const isAnyFileUploading = attachedFiles.some(f => f.status === "uploading");
   const canSubmit = (input.trim().length > 0 || hasDocsContext || attachedFiles.length > 0 || pastedTexts.length > 0) && !isAnyFileUploading;
@@ -2263,6 +2268,48 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
     return () => clearInterval(interval);
   }, [open, messages.length, messages[messages.length - 1]?.typing, thinking, submitting]);
+
+  // Word-by-word drain effect — releases one word at a time from the buffer
+  // This matches the sandbox simulation's word-by-word typing behavior
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Drain token buffer one word at a time
+      if (tokenBufferRef.current.length > 0) {
+        const match = tokenBufferRef.current.match(/^\s*\S+\s?/);
+        if (match) {
+          const word = match[0];
+          tokenBufferRef.current = tokenBufferRef.current.slice(word.length);
+          setMessages((prev) => {
+            const lastMsg = prev[prev.length - 1];
+            if (!lastMsg || lastMsg.role !== 'assistant') return prev;
+            return [...prev.slice(0, -1), { ...lastMsg, content: (lastMsg.content || '') + word, typing: true }];
+          });
+        }
+      }
+
+      // Drain thought buffer one word at a time
+      if (thoughtBufferRef.current.length > 0) {
+        const match = thoughtBufferRef.current.match(/^\s*\S+\s?/);
+        if (match) {
+          const word = match[0];
+          thoughtBufferRef.current = thoughtBufferRef.current.slice(word.length);
+          setMessages((prev) => {
+            const lastMsg = prev[prev.length - 1];
+            if (!lastMsg || lastMsg.role !== 'assistant') return prev;
+            return [...prev.slice(0, -1), { ...lastMsg, thought: (lastMsg.thought || '') + word }];
+          });
+        }
+      }
+
+      // When both buffers are empty and stream is done, mark typing as finished
+      if (tokenBufferRef.current.length === 0 && thoughtBufferRef.current.length === 0 && wordTypingActiveRef.current) {
+        // Check again after a small delay to make sure no more data is coming
+        if (!wordTypingActiveRef.current) return;
+      }
+    }, 80); // ~12 words per second — smooth word-by-word like the sandbox
+
+    return () => clearInterval(interval);
+  }, []);
 
   function createMessageId(prefix: string) {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -2690,35 +2737,35 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               } else if (event.type === "token") {
                 hasReceivedTokens = true;
                 setThinking(false);
+                // Buffer tokens for word-by-word typing (like sandbox simulation)
+                tokenBufferRef.current += (event.token || "");
+                wordTypingActiveRef.current = true;
+                // Ensure an assistant message exists to receive the words
                 setMessages((prev) => {
-                  let lastMsg = prev[prev.length - 1];
-                  let targetPrev = prev;
+                  const lastMsg = prev[prev.length - 1];
                   if (!lastMsg || lastMsg.role !== "assistant") {
-                    lastMsg = { id: createMessageId("assistant"), role: "assistant", content: "", createdAt: Date.now() };
-                    targetPrev = [...prev, lastMsg];
+                    return [...prev, { id: createMessageId("assistant"), role: "assistant", content: "", createdAt: Date.now(), typing: true }];
                   }
-
-
-                  return [
-                    ...targetPrev.slice(0, -1),
-                    { ...lastMsg, content: (lastMsg.content || "") + (event.token || "") }
-                  ];
+                  if (!lastMsg.typing) {
+                    return [...prev.slice(0, -1), { ...lastMsg, typing: true }];
+                  }
+                  return prev;
                 });
               } else if (event.type === "thought") {
-                setMessages((prev) => {
-                  let lastMsg = prev[prev.length - 1];
-                  let targetPrev = prev;
-                  if (!lastMsg || lastMsg.role !== "assistant") {
-                    lastMsg = { id: createMessageId("assistant"), role: "assistant", content: "", createdAt: Date.now() };
-                    targetPrev = [...prev, lastMsg];
-                  }
-                  const thoughtText = event.thought || event.content;
-                  if (!thoughtText) return prev; // Skip undefined/null chunks
-                  return [
-                    ...targetPrev.slice(0, -1),
-                    { ...lastMsg, thought: (lastMsg.thought || "") + thoughtText }
-                  ];
-                });
+                const thoughtText = event.thought || event.content;
+                if (thoughtText) {
+                  // Buffer thoughts for word-by-word typing (like sandbox simulation)
+                  thoughtBufferRef.current += thoughtText;
+                  wordTypingActiveRef.current = true;
+                  // Ensure an assistant message exists
+                  setMessages((prev) => {
+                    const lastMsg = prev[prev.length - 1];
+                    if (!lastMsg || lastMsg.role !== "assistant") {
+                      return [...prev, { id: createMessageId("assistant"), role: "assistant", content: "", createdAt: Date.now() }];
+                    }
+                    return prev;
+                  });
+                }
               } else if (event.type === "tool_start") {
                 if (event.tool === "open_integration_panel") {
                   setIsAiHubOpen(true);
@@ -2797,13 +2844,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           setThinking(false);
 
           if (hasReceivedTokens) {
-            // Already streamed in real-time, just ensure final state is exactly correct
+            // Flush any remaining buffered words, then set final answer
+            tokenBufferRef.current = "";
+            thoughtBufferRef.current = "";
+            wordTypingActiveRef.current = false;
+            // Wait a moment for the last word-by-word interval to finish
+            await wait(200);
             setMessages((prev) => {
               const lastMsg = prev[prev.length - 1];
               if (!lastMsg || lastMsg.role !== "assistant") return prev;
               return [
                 ...prev.slice(0, -1),
-                { ...lastMsg, content: answer }
+                { ...lastMsg, content: answer, typing: false }
               ];
             });
           } else {

@@ -18,6 +18,8 @@ import { marked } from 'marked';
 import { NodeSSH } from 'node-ssh';
 import { s3Client, BUCKET_NAME, CDN_BASE_URL } from '../config/s3Client.js';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
+import puppeteer from 'puppeteer';
+import Handlebars from 'handlebars';
 import { uploadBufferToR2 } from '../config/r2Client.js';
 import { Readable } from 'stream';
 
