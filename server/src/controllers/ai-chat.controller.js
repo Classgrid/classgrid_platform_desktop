@@ -622,7 +622,7 @@ If you are asked to interact with a 3rd party service (like Zoom, Google Workspa
 ANTI-HALLUCINATION RULE:
 1. If a tool execution returns an error (e.g., "Failed to execute API call"), you MUST read the error and tell the user exactly what failed. NEVER pretend that a tool succeeded if it actually returned an error. NEVER fabricate links or success messages for tasks you did not successfully complete.
 2. PREMISE CONFIRMATION BIAS: Beware of trick questions! If a user asks about an event, person, or shipment, and your web search reveals that the underlying premise is FALSE (e.g. the shipment hasn't happened yet), you must explicitly tell the user their premise is incorrect. DO NOT stitch unrelated facts together to force an answer.
-3. MISSING INFORMATION: If you cannot find the answer after searching Google, the knowledge base, or our website, STOP SEARCHING. Do not get stuck in an infinite loop searching over and over again. Simply admit that the information is not available, provide your best logical assessment based on your existing knowledge, and ABSOLUTELY DO NOT lie or fabricate facts.`;
+3. MISSING INFORMATION: If you cannot find the answer after searching Google, the knowledge base, or our website, STOP SEARCHING. You are strictly allowed a MAXIMUM of 3 search attempts per question. After 3 searches, you must immediately stop searching. Do not get stuck in an infinite loop. Simply admit that the information is not available, provide your best logical assessment based on your existing knowledge, and ABSOLUTELY DO NOT lie or fabricate facts.`;
 
         dynamicSystemPrompt += `\n\nFORMATTING RULE (YOU ARE BANNED FROM USING PARENTHESES THIS WAY):
 You are STRICTLY FORBIDDEN and BANNED from using parentheses \`()\` to enclose code blocks, variables, repositories, or lists! 
@@ -1277,7 +1277,7 @@ except Exception as e:
                                 search_depth: "advanced",
                                   include_answer: false,
                                   include_raw_content: true,
-                                max_results: 5
+                                max_results: 10
                             })
                         });
                         const searchData = await tavilyRes.json();
@@ -2390,4 +2390,5 @@ export const getMyGeneratedImages = async (req, res) => {
         res.status(500).json({ error: String(e.stack || e.message || e) });
     }
 };
+
 
