@@ -1,6 +1,6 @@
 /*
  * ─────────────────────────────────────────────────────────
- * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * 🚨svdbfebgf CRITICAL AI AND SYSTEM RULES 🚨
  * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
  * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
  * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
@@ -327,23 +327,23 @@ while ((match = studentRegex.exec(rawData)) !== null) {
   const prn = match[1];
   const fullName = match[2].trim();
   const nameParts = fullName.split(' ');
-  const firstName = nameParts[1] && nameParts[1].length > 1 ? 
-      nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1).toLowerCase() : 
-      nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
-  
+  const firstName = nameParts[1] && nameParts[1].length > 1 ?
+    nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1).toLowerCase() :
+    nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+
   // The PDF format is SURNAME FIRSTNAME FATHERNAME (e.g. SHINDE NIKHIL SUBHASH)
   const first = nameParts[1] ? nameParts[1].toLowerCase() : nameParts[0].toLowerCase();
   const last = nameParts[0].toLowerCase();
-  const email = `${first}.${last}25@pccoepune.org`; 
-  
+  const email = `${first}.${last}25@pccoepune.org`;
+
   students.push({ prn, firstName, email });
 }
 
 // Add Suvarna Patil manually as she has no PRN and doesn't use '25' suffix
 students.push({
-    prn: "FACULTY",
-    firstName: "Suvarna",
-    email: "suvarna.patil@pccoepune.org"
+  prn: "FACULTY",
+  firstName: "Suvarna",
+  email: "suvarna.patil@pccoepune.org"
 });
 
 fs.writeFileSync('parsed_students.json', JSON.stringify(students, null, 2));
