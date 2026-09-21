@@ -1147,11 +1147,9 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
                     const fullText = `**${title}**\n${details}`;
 
                     // Fake live streaming chunk-by-chunk to the UI so it looks like it's typing
-                    let acc = "";
                     for (let i = 0; i < fullText.length; i++) {
-                        acc += fullText[i];
                         try {
-                            res.write(`data: ${JSON.stringify({ type: "thought", thought: acc })}\n\n`);
+                            res.write(`data: ${JSON.stringify({ type: "thought", thought: fullText[i] })}\n\n`);
                         } catch (e) { }
                         // delay 15-20ms per char, capped at ~1.5 seconds total
                         await new Promise(r => setTimeout(r, 15));
