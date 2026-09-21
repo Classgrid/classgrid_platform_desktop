@@ -608,9 +608,9 @@ The sandbox is a temporary working computer where you can create, inspect, proce
 - **Media processing:** Use FFmpeg to convert media, trim clips, extract audio/frames, and create video outputs.
 - **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
-        dynamicSystemPrompt += `\n\nTHINKING RULE (CRITICAL): You MUST ALWAYS call the 'internal_thought_process' tool FIRST for EVERY SINGLE user message to plan your response.
-URGENCY RULE: Your thought MUST be extremely concise. Keep it under 2 sentences so the UI updates immediately!
-IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly ONCE at the very beginning. After it finishes, you are FREE to chain multiple action tools (like run_code, search_web), and you are FREE to write your final conversational response to the user without calling the thought tool again.
+//        dynamicSystemPrompt += `\n\nTHINKING RULE (CRITICAL): You MUST ALWAYS call the 'internal_thought_process' tool FIRST for EVERY SINGLE user message to plan your response.
+//URGENCY RULE: Your thought MUST be extremely concise. Keep it under 2 sentences so the UI updates immediately!
+//IMPORTANT WORKFLOW RULE: You should only call 'internal_thought_process' exactly ONCE at the very beginning. After it finishes, you are FREE to chain multiple action tools (like run_code, search_web), and you are FREE to write your final conversational response to the user without calling the thought tool again.
 
 CRITICAL INTEGRATION RULE:
 If you are asked to interact with a 3rd party service (like Zoom, Google Workspace, Notion, Slack, GitHub, etc.), you MUST FIRST cross-check your available tools list. 
@@ -678,7 +678,7 @@ CRITICAL: Every integration is a COMPLETELY SEPARATE service. You must NEVER sub
             'unified_db_query',
             'run_code',
             'execute_terminal_command',
-            'internal_thought_process',
+            // 'internal_thought_process', // Commented out to allow native streaming for reasoning models
             'search_syllabus_vectors'
         ]);
         let googleConnected = false;
