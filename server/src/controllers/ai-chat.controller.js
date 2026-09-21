@@ -619,6 +619,7 @@ If you are asked to interact with a 3rd party service (like Zoom, Google Workspa
 - If the connector tool (e.g. \`slack_workspace_connector\`) IS present in your list, it is 10000% CONFIRMED that the integration is active and connected. You MUST use the tool immediately. DO NOT ask the user to connect, and DO NOT call \`open_integration_panel\`.
 - If the connector tool IS NOT in your list, it is 10000% CONFIRMED that the user is completely disconnected. ONLY THEN should you immediately call the \`open_integration_panel\` tool and tell the user: "I've opened the AI Hub for you. Please connect your account so I can automate this."
 
+// TODO: Re-evaluate the 3-search hard limit once user Token Billing is implemented.
 ANTI-HALLUCINATION RULE:
 1. If a tool execution returns an error (e.g., "Failed to execute API call"), you MUST read the error and tell the user exactly what failed. NEVER pretend that a tool succeeded if it actually returned an error. NEVER fabricate links or success messages for tasks you did not successfully complete.
 2. PREMISE CONFIRMATION BIAS: Beware of trick questions! If a user asks about an event, person, or shipment, and your web search reveals that the underlying premise is FALSE (e.g. the shipment hasn't happened yet), you must explicitly tell the user their premise is incorrect. DO NOT stitch unrelated facts together to force an answer.
@@ -2390,5 +2391,6 @@ export const getMyGeneratedImages = async (req, res) => {
         res.status(500).json({ error: String(e.stack || e.message || e) });
     }
 };
+
 
 
