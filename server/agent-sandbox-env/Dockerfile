@@ -32,7 +32,7 @@ RUN pip install --no-cache-dir \
     scipy sympy xlrd xlwt PyPDF2 python-docx python-pptx pytesseract pydub \
     moviepy jinja2 lxml qrcode fpdf2 pycryptodome boto3 sqlalchemy tabulate \
     rich opencv-python-headless pdf2image lxml html5lib markdown \
-    textblob spacy nltk scikit-learn statmodels yfinance apscheduler
+    textblob spacy nltk scikit-learn statsmodels yfinance apscheduler
 
 # Create a non-root user for security (so the Agent isn't running as root inside the container)
 RUN useradd -m agent && chown -R agent:agent /data
