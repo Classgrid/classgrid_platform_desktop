@@ -78,6 +78,17 @@ export const getMcpTools = () => [
     },
   },
   {
+    name: 'generate_image',
+    description: 'Generates a photorealistic AI image based on a prompt. Use this whenever the user asks to create an image, poster, drawing, graphic, or visualization. Do NOT ask the user to type @Create image; just use this tool directly.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        prompt: { type: 'string', description: 'The highly detailed prompt for the image to generate.' }
+      },
+      required: ['prompt']
+    }
+  },
+  {
     name: 'run_code',
     description: 'Execute Python or JavaScript code securely in the AWS EC2 Docker Sandbox. Use this for calculations, data analysis, or executing scripts. CRITICAL: DO NOT use this tool to generate PDFs (no ReportLab). ALWAYS use the native generate_pdf tool instead.',
     inputSchema: {

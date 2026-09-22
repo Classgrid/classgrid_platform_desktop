@@ -170,7 +170,10 @@ The sandbox already includes tools such as:
 - Long-running commands must be controlled or run in the background so they do not block the task.
 
 ### How to Handle User Attachments (CRITICAL INSTRUCTION)
-If the user's message contains "Attached Files:" followed by one or more URLs, you MUST use the \`parse_document\` tool to download and extract the text from the file. ALWAYS use \`parse_document\` as your first step when a user attaches a file to read its contents. Do NOT write a Python script manually to read basic documents; use the \`parse_document\` tool first. CRITICAL: Never use execute_terminal_command or curl to download attachments. You MUST use the native parse_document tool because it has secure internal access to private files.
+If the user's message contains "Attached Files:" followed by one or more URLs, you MUST use the appropriate parsing tool:
+1. For Images (.jpg, .png, .jpeg, .webp): You MUST use the \`analyze_image\` tool. Pass the image URL and the user's exact question. CRITICAL RULE: You are STRICTLY FORBIDDEN from writing Python scripts or using terminal commands (like Tesseract or OpenCV) to read or OCR images. NEVER use \`execute_terminal_command\` for images. ALWAYS use the \`analyze_image\` tool natively.
+2. For Documents (.pdf, .txt, .docx): You MUST use the \`parse_document\` tool. 
+
 CRITICAL INSTRUCTION (STRICT DEMO WORKFLOW SEQUENCES):
 You are an autonomous AI Agent in a Sandbox. You MUST strictly follow these exact tool sequences based on the user's request to trigger the correct UI components. Never skip a step. Never deviate from the sequence.
 
@@ -318,12 +321,10 @@ If the user asks to identify students involved in an incident, draft an email, a
 4. \`send_email\`: Send the warning email to the parents.
 5. \`generate_pdf\`: Generate the official PDF warning letter.
 
---- WORKFLOW 2: PDF OCR ANALYSIS ---
-If the user attaches an identity card or image file (message contains "Attached Files:"), follow this EXACT sequence:
-\`internal_thought_process\`: "I need to download and read the attached file from the computer."
-2. \`parse_document\`: Pass the attached URL to download the file.
-\`internal_thought_process\`: "The document is an image. I will use the terminal to run an OCR script on the image to extract the text."
-4. \`execute_terminal_command\`: Run the exact python3 OCR script provided to you on the file path.
+--- WORKFLOW 2: IMAGE VISION ANALYSIS ---
+If the user attaches an identity card or image file and asks a question about it, follow this EXACT sequence:
+\`internal_thought_process\`: "I need to analyze the attached image using the vision model to answer the user's question."
+2. \`analyze_image\`: Pass the attached image URL and the user's exact question to the vision tool. NEVER run terminal OCR scripts.
 
 --- WORKFLOW 3: STANDALONE PDF GENERATION ---
 If the user requests to generate a summary report or standalone PDF, follow this EXACT sequence:
@@ -754,7 +755,8 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 
         if (!isIncognito) {
             dynamicSystemPrompt += `\n\nROUTING RULES (APPLY ONLY AFTER YOUR THOUGHT):
-- If the user uploads a file, call \`parse_document\` with the URL immediately after your thought.
+- If the user uploads an image, call \`analyze_image\` with the URL immediately after your thought.
+- If the user uploads a document/PDF, call \`parse_document\` with the URL immediately after your thought.
 - If the user asks to send an email, call \`send_email\` immediately after your thought.
 - If the user asks to query internal platform data (users, fees, attendance), call \`unified_db_query\` immediately after your thought. DO NOT use this for Google Classroom or Drive queries.
 - If the user asks to generate a PDF, call \`generate_pdf\` immediately after your thought.
@@ -795,7 +797,9 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
             'run_code',
             'execute_terminal_command',
             'internal_thought_process',
-            'search_syllabus_vectors'
+            'search_syllabus_vectors',
+            'generate_image',
+            'analyze_image'
         ]);
         let googleConnected = false;
         let msConnected = false;
@@ -1176,12 +1180,27 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                 {
                     type: "function",
                     function: {
-                        name: "parse_document",
-                        description: "Downloads a URL (like an R2/S3 attachment or public PDF) and extracts its text contents using PyMuPDF inside the sandbox. Use this IMMEDIATELY when a user uploads a file or provides a document URL.",
+                        name: "analyze_image",
+                        description: "Analyzes an image URL (.jpg, .png) using the Cloudflare Vision AI model. NEVER use terminal OCR for images, ALWAYS use this tool. You must pass the image URL and the user's specific question about the image.",
                         parameters: {
                             type: "object",
                             properties: {
-                                url: { type: "string", description: "The full URL of the document to download and parse (e.g. an R2 CDN link or any public URL ending in .pdf, .docx, .txt, etc.)" }
+                                url: { type: "string", description: "The full URL of the image to analyze." },
+                                question: { type: "string", description: "The exact question or instruction the user asked about the image." }
+                            },
+                            required: ["url", "question"]
+                        }
+                    }
+                },
+                {
+                    type: "function",
+                    function: {
+                        name: "parse_document",
+                        description: "Downloads a Document URL (PDF, TXT, DOCX) and extracts its text contents. DO NOT use this for images. Use analyze_image for images.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                url: { type: "string", description: "The full URL of the document to download and parse." }
                             },
                             required: ["url"]
                         }
@@ -1339,37 +1358,19 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                         return `FAILED to upload file: ${e.message}`;
                     }
                 },
-                parse_document: async (args) => {
+                analyze_image: async (args) => {
                     try {
-                        const { url } = args;
+                        const { url, question } = args;
                         if (!url) return "ERROR: No url provided in tool arguments.";
                         
-                        console.log(`[parse_document] Fetching URL: ${url}`);
+                        console.log(`[analyze_image] Fetching Image URL: ${url}`);
                         const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-                        if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`);
+                        if (!response.ok) throw new Error(`Failed to fetch Image URL: ${response.statusText}`);
                         
                         const arrayBuffer = await response.arrayBuffer();
                         const buffer = Buffer.from(arrayBuffer);
                         
-                        const isPdf = url.toLowerCase().includes('.pdf') || url.toLowerCase().includes('ai-chat-uploads');
-                        const isImage = url.match(/\.(jpeg|jpg|gif|png|webp|heic)$/i) || response.headers.get('content-type')?.includes('image');
-
-                        if (isPdf) {
-                            try {
-                                const pdfParse = (await import('pdf-parse')).default;
-                                const data = await pdfParse(buffer);
-                                const text = data.text.trim();
-                                // If we got substantial text, it's a digital PDF, not just scanned images
-                                if (text.length > 50) {
-                                    return "DOCUMENT CONTENTS:\n" + text;
-                                }
-                            } catch (err) {
-                                console.log("[parse_document] pdf-parse failed or no text found, falling back to Vision API");
-                            }
-                        }
-
-                        // If it's an image, or PDF with no text (scanned PDF), use Cloudflare Workers AI Vision
-                        console.log("[parse_document] Using Cloudflare Workers AI Vision for image analysis...");
+                        console.log(`[analyze_image] Using Cloudflare Vision AI. Question: ${question}`);
                         const cfToken = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
                         const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
                         
@@ -1390,7 +1391,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                             },
                             body: JSON.stringify({
                                 messages: [
-                                    { role: "user", content: "Analyze this document/image. Extract all text accurately. If there are tables, charts, or diagrams, describe them in high detail. Do not miss any information. Output raw text." }
+                                    { role: "user", content: question || "Describe this image in high detail, extracting all text and explaining visual elements." }
                                 ],
                                 image: uint8Array
                             })
@@ -1401,14 +1402,75 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                         }
 
                         const json = await visionResponse.json();
-                        return "VISION ANALYSIS:\n" + (json.result?.response || JSON.stringify(json.result));
+                        return "VISION AI ANSWER:\n" + (json.result?.response || JSON.stringify(json.result));
                     } catch (e) {
-                        return `FAILED to parse document in sandbox: ${e.message}`;
+                        return `FAILED to analyze image: ${e.message}`;
+                    }
+                },
+                parse_document: async (args) => {
+                    try {
+                        const { url } = args;
+                        if (!url) return "ERROR: No url provided in tool arguments.";
+                        
+                        console.log(`[parse_document] Fetching Document URL: ${url}`);
+                        const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+                        if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`);
+                        
+                        const arrayBuffer = await response.arrayBuffer();
+                        const buffer = Buffer.from(arrayBuffer);
+                        
+                        const isPdf = url.toLowerCase().includes('.pdf') || url.toLowerCase().includes('ai-chat-uploads');
+
+                        if (isPdf) {
+                            try {
+                                const pdfParse = (await import('pdf-parse')).default;
+                                const data = await pdfParse(buffer);
+                                const text = data.text.trim();
+                                // If we got substantial text, it's a digital PDF, not just scanned images
+                                if (text.length > 50) {
+                                    return "DOCUMENT CONTENTS:\n" + text;
+                                } else {
+                                    return "FAILED: This PDF seems to be scanned and contains no extractable text. Please use the analyze_image tool if you need to read it via vision AI.";
+                                }
+                            } catch (err) {
+                                return `FAILED to parse PDF: ${err.message}`;
+                            }
+                        }
+
+                        return "FAILED: This tool is only for PDFs. For images, use the analyze_image tool.";
+                    } catch (e) {
+                        return `FAILED to parse document: ${e.message}`;
                     }
                 },
                 generate_pdf_from_db: async (args) => {
                     const result = await handleToolCall('generate_pdf_from_db', args, {});
                     return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                generate_image: async (args) => {
+                    try {
+                        const port = process.env.PORT || 3000;
+                        const url = `http://127.0.0.1:${port}/api/ai/generate-image`;
+                        const resData = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': req.headers.authorization || ''
+                            },
+                            body: JSON.stringify({
+                                prompt: args.prompt,
+                                sessionId: sessionId,
+                                userEmail: userEmail,
+                                isIncognito: isIncognito
+                            })
+                        });
+                        const json = await resData.json();
+                        if (json.imageUrl) {
+                            return `[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${json.imageUrl}]`;
+                        }
+                        return `FAILED to generate image: ${json.error || 'Unknown error'}`;
+                    } catch (e) {
+                        return `FAILED to generate image: ${e.message}`;
+                    }
                 },
 
                 get_timezone_time: async (args) => {
