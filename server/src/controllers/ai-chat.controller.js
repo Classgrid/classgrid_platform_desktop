@@ -1396,9 +1396,14 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                             },
                             body: JSON.stringify({
                                 messages: [
-                                    { role: "user", content: question || "Describe this image in high detail, extracting all text and explaining visual elements." }
-                                ],
-                                image: base64String
+                                    {
+                                        role: "user",
+                                        content: [
+                                            { type: "text", text: question || "Describe this image in high detail, extracting all text and explaining visual elements." },
+                                            { type: "image", image: base64String }
+                                        ]
+                                    }
+                                ]
                             })
                         });
 
