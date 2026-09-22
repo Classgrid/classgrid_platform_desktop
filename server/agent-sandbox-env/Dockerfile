@@ -3,6 +3,7 @@ FROM python:3.13-slim
 # Set the working directory in the container
 WORKDIR /data
 ENV NODE_PATH=/usr/lib/node_modules
+ENV PATH="/home/agent/.local/bin:${PATH}"
 
 # Install system dependencies: FFmpeg, Ghostscript, Poppler (for PDFs), ImageMagick, OCR, LibreOffice, Chromium
 RUN apt-get update && apt-get install -y \
