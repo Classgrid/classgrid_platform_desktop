@@ -1343,6 +1343,15 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   // Ref to hold latest askQuestion to avoid stale closures in retries
   const askQuestionRef = useRef<any>(null);
 
+  const typingRunRef = useRef(0);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Word-by-word typing buffer (like sandbox simulation)
+  const tokenBufferRef = useRef("");
+  const thoughtBufferRef = useRef("");
+  const wordTypingActiveRef = useRef(false);
+
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -1845,6 +1854,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setAttachedFiles([]);
       setLastSentDocsPath(null);
 
+      // CLEAR BUFFERS SO OLD STREAM DOESN'T BLEED IN
+      tokenBufferRef.current = "";
+      thoughtBufferRef.current = "";
+      wordTypingActiveRef.current = false;
 
       localStorage.removeItem("askAiDraftContext");
 
@@ -1863,6 +1876,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setSessionId(id);
       setIsLoadingChat(true);
       setIsPinned(false);
+
+      // CLEAR BUFFERS SO OLD STREAM DOESN'T BLEED IN
+      tokenBufferRef.current = "";
+      thoughtBufferRef.current = "";
+      wordTypingActiveRef.current = false;
 
       try {
         const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
@@ -2117,6 +2135,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     setAttachedFiles([]);
     setLastSentDocsPath(null);
 
+    // CLEAR BUFFERS SO OLD STREAM DOESN'T BLEED IN
+    tokenBufferRef.current = "";
+    thoughtBufferRef.current = "";
+    wordTypingActiveRef.current = false;
 
     localStorage.removeItem("askAiDraftContext");
   }
@@ -2165,15 +2187,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   }, []);
 
   const userInitial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : null;
-
-  const typingRunRef = useRef(0);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const chatScrollRef = useRef<HTMLDivElement | null>(null);
-
-  // Word-by-word typing buffer (like sandbox simulation)
-  const tokenBufferRef = useRef("");
-  const thoughtBufferRef = useRef("");
-  const wordTypingActiveRef = useRef(false);
 
   const hasDocsContext = pageContext?.path?.startsWith("/docs") && pageContext.path !== lastSentDocsPath;
   const isAnyFileUploading = attachedFiles.some(f => f.status === "uploading");
@@ -2456,6 +2469,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     localStorage.removeItem("askAiDraftInput");
     localStorage.removeItem("askAiDraftFiles");
     localStorage.removeItem("askAiDraftContext");
+
+    // CLEAR BUFFERS SO OLD STREAM DOESN'T BLEED IN
+    tokenBufferRef.current = "";
+    thoughtBufferRef.current = "";
+    wordTypingActiveRef.current = false;
+
     setSubmitting(true);
     setThinking(true);
     setThinkingLabel("Thinking");
