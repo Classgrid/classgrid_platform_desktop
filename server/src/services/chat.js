@@ -349,7 +349,7 @@ async function getGeminiReply(message, modePrompt = '') {
     const prompt = `${fullSystemPrompt}\n\nUser Question: ${message}\n\nProvide a clear, academic response:`;
 
     const response = await genAI.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.5-flash',
       contents: prompt,
     });
 
@@ -407,7 +407,7 @@ export async function getChatReply(message, modelArg = 'groq', mode = 'chat', cl
             organization_id: context.orgId,
             userId: context.userId,
             provider: modelArg === 'gemini' ? 'gemini' : 'groq',
-            model: modelArg === 'gemini' ? 'gemini-2.5-flash' : '@cf/deepseek-ai/deepseek-v4-pro-0813',
+            model: modelArg === 'gemini' ? 'gemini-3.5-flash' : '@cf/deepseek-ai/deepseek-v4-pro-0813',
             inputTokens,
             outputTokens,
             totalTokens: inputTokens + outputTokens,
@@ -428,7 +428,7 @@ export async function getChatReply(message, modelArg = 'groq', mode = 'chat', cl
         const startTime = Date.now();
         const reply = await getGeminiReply(fullMessage, modePrompt);
         const responseTime = Date.now() - startTime;
-        accessLogger.info(`Fallback response from Gemini 2.5 Flash in ${responseTime}ms`, { provider: 'ai', model: 'gemini-2.5-flash', mode, durationMs: responseTime });
+        accessLogger.info(`Fallback response from Gemini 2.5 Flash in ${responseTime}ms`, { provider: 'ai', model: 'gemini-3.5-flash', mode, durationMs: responseTime });
         return reply;
       } catch (fallbackError) {
         console.error('Both primary and fallback models failed:', fallbackError.message);
@@ -501,7 +501,7 @@ export async function getVisionReply(message, base64Image, mimeType, modelArg = 
     accessLogger.info("Sending image to Gemini Vision...", { provider: 'ai', model: 'gemini-vision' });
 
     const response = await genAI.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.5-flash',
       contents: [
         { text: prompt },
         {
@@ -524,7 +524,7 @@ export async function getVisionReply(message, base64Image, mimeType, modelArg = 
             organization_id: context.orgId,
             userId: context.userId,
             provider: 'gemini',
-            model: 'gemini-2.5-flash-vision',
+            model: 'gemini-3.5-flash',
             inputTokens,
             outputTokens,
             totalTokens: inputTokens + outputTokens,
@@ -548,7 +548,7 @@ export async function checkModelAvailability() {
   const status = {
     timestamp: new Date().toISOString(),
     groq: { available: false, model: '@cf/deepseek-ai/deepseek-v4-pro-0813', responseTime: null },
-    gemini: { available: false, model: 'gemini-1.5-flash', responseTime: null },
+    gemini: { available: false, model: 'gemini-3.5-flash', responseTime: null },
     recommendedModel: 'groq'
   };
 
@@ -615,7 +615,7 @@ export const MODEL_CONFIG = {
   },
   FALLBACK: {
     provider: 'Google AI',
-    model: 'gemini-1.5-flash',
+    model: 'gemini-3.5-flash',
     temperature: 0.6,
     maxTokens: 1000
   },

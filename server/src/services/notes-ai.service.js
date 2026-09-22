@@ -46,7 +46,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
 const genAI = new GoogleGenerativeAI(process.env.Gemini_API_KEY);
-const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const geminiModel = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
 
 // ─────────────────────────────────────────────
 // AI VERIFY & SUMMARIZE

@@ -53,7 +53,7 @@ const genAI = new GoogleGenerativeAI(process.env.Gemini_API_KEY);
  */
 export async function extractQuestionsFromImage(imageBuffer, mimeType) {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
 
         const prompt = `
         You are an expert OCR and Question Parser for Classgrid Platform.
