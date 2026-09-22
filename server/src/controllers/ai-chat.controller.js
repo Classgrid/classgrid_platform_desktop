@@ -247,7 +247,7 @@ ACADEMIC HIERARCHY (BACKEND DOMAIN KNOWLEDGE):
 DATABASE ARCHITECTURE (CRITICAL GROUND TRUTH):
 Classgrid uses a hybrid dual-database architecture. When using \`unified_db_query\`, you MUST set the correct 'source' parameter based on this mapping:
 - MONGODB (source='mongodb'): Users, UserProfiles, Organizations, SystemLogs, ActivityLogs, SupportTickets, SupportConversations, DemoRequests, Notes, Attendances, Exams, Timetables, FeeRecords, Invoices, PaymentTransactions, TaxRules, SystemSettings.
-- SUPABASE POSTGRES (source='supabase'): messages, threads, classroom_messages, email_notification_queue, device_tokens, syllabus_vectors, material_summaries, events, holidays, leaves, PLUS all V2 Migrated tables (Advanced Quiz, Certificates, Alumni, Library, Result Engine).
+- SUPABASE POSTGRES (source='supabase'): messages, threads, classroom_messages, email_notification_queue, device_tokens, events, holidays, leaves, PLUS all V2 Migrated tables (Advanced Quiz, Certificates, Alumni, Library, Result Engine).
 
 SYLLABUS & MATERIAL SEARCH:
 - If the user asks you to search through study materials, notes, or syllabus content, YOU MUST trigger the \`search_syllabus_vectors\` tool to perform a similarity search in the MongoDB Atlas Vector Search database. You must provide the \`org_id\` if it's available in the user context.
