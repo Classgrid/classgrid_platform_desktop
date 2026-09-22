@@ -1115,13 +1115,16 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
     const parts = text.split(/(```[\s\S]*?```)/g);
     for (let i = 0; i < parts.length; i++) {
       if (i % 2 === 0) { // Not a code block
-        // Remove newlines that isolate commas (e.g. \n,\n or \n, )
+        // Remove newlines that isolate commas (e.g. \n,\n or \n, ) and slashes
         parts[i] = parts[i]
-          .replace(/\n+\s*,\s*\n+/g, ', ')
-          .replace(/([a-zA-Z0-9])\n+\s*,/g, '$1,')
-          .replace(/,\n+\s*([a-zA-Z0-9])/g, ', $1')
-          .replace(/\(\n+\s*/g, '(')
-          .replace(/\s*\n+\)/g, ')');
+          .replace(/(?:\r?\n)+\s*,\s*(?:\r?\n)+/g, ', ')
+          .replace(/(\S)(?:\r?\n)+\s*,/g, '$1,')
+          .replace(/,\s*(?:\r?\n)+\s*(\S)/g, ', $1')
+          .replace(/(?:\r?\n)+\s*\/\s*(?:\r?\n)+/g, ' / ')
+          .replace(/(\S)(?:\r?\n)+\s*\//g, '$1 /')
+          .replace(/\/\s*(?:\r?\n)+\s*(\S)/g, '/ $1')
+          .replace(/\(\s*(?:\r?\n)+\s*/g, '(')
+          .replace(/\s*(?:\r?\n)+\s*\)/g, ')');
       }
     }
     return parts.join('');
