@@ -6,7 +6,7 @@ ENV NODE_PATH=/usr/lib/node_modules
 ENV PATH="/home/agent/.local/bin:${PATH}"
 
 # Install system dependencies: FFmpeg, Ghostscript, Poppler (for PDFs), ImageMagick, OCR, LibreOffice, Chromium
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     wget \
     gnupg \
