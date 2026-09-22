@@ -1230,7 +1230,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
         );
       },
       p({ children, ...props }) {
-        return <p className="text-[#2C2C2B] dark:text-[#F0EFED] whitespace-pre-wrap mb-3 last:mb-0" {...props}>{children}</p>;
+        return <p className="text-[#2C2C2B] dark:text-[#F0EFED] whitespace-normal mb-3 last:mb-0" {...props}>{children}</p>;
       },
       strong({ children, ...props }) {
         return <strong className="font-semibold text-[#2C2C2B] dark:text-[#F0EFED]" {...props}>{children}</strong>;
