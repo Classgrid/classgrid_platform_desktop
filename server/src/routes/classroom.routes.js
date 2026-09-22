@@ -66,7 +66,7 @@ const pdfParse = require('pdf-parse');
 import { Groq } from "groq-sdk";
 
 const router = express.Router();
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
+const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
 
 // Supabase Client — centralized via supabaseClient.js
 // getChatSb() is imported from config, no local createClient needed.
@@ -1840,7 +1840,7 @@ Content: ${text.substring(0, 10000)}
 `;
 
         const response = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+            model: '@cf/meta/llama-3.1-8b-instruct',
             messages: [{ role: "user", content: prompt }],
             temperature: 0.3,
             max_tokens: 1000,

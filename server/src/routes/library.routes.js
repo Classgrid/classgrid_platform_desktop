@@ -220,7 +220,7 @@ router.post('/import', isAuthenticated, requireRole('org_admin', 'library_manage
                 const { default: Groq } = await import('groq-sdk').catch(() => ({ default: null }));
                 
                 if (Groq) {
-                    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
+                    const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
                     
                     const prompt = `You are a librarian AI. Categorize these books into standard broad academic subjects (like 'Physics', 'Computer Science', 'Literature', 'Commerce', etc.). 
 Respond ONLY with a valid JSON array of strings in the exact same order as the input. Do not include any markdown formatting, backticks, or explanation.
@@ -228,7 +228,7 @@ Input: ${JSON.stringify(titlesToAnalyze)}`;
 
                     const completion = await groq.chat.completions.create({
                         messages: [{ role: "user", content: prompt }],
-                        model: "llama-3.3-70b-versatile",
+                        model: '@cf/meta/llama-3.1-8b-instruct',
                         temperature: 0.1,
                         max_tokens: 2000
                     });
@@ -537,13 +537,13 @@ router.post('/student/book-info', isAuthenticated, async (req, res) => {
         const { default: Groq } = await import('groq-sdk').catch(() => ({ default: null }));
         if (!Groq) return res.json({ summary: "AI module not loaded." });
 
-        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
+        const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
         
         const prompt = `You are a knowledgeable librarian. Provide a very concise, engaging, 2-3 sentence overview about the book titled "${book_name}" (Subject: ${subject || 'Unknown'}). Describe what the student will learn from it or what it's about. No markdown formatting.`;
 
         const completion = await groq.chat.completions.create({
             messages: [{ role: "user", content: prompt }],
-            model: "llama-3.3-70b-versatile",
+            model: '@cf/meta/llama-3.1-8b-instruct',
             temperature: 0.5,
             max_tokens: 150
         });

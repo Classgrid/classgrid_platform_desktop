@@ -47,7 +47,7 @@ import StudentMark from '../../models/StudentMark.js';
 import QuizSession from '../../models/QuizSession.js';
 import User from '../../models/User.js';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
+const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
 
 /**
  * generateStudentPersona
@@ -119,7 +119,7 @@ Follow this output format strictly (Valid JSON):
                 { role: "system", content: systemPrompt },
                 { role: "user", content: `STUDENT DATA:\n${JSON.stringify(dataContext, null, 2)}` }
             ],
-            model: "llama-3.3-70b-versatile",
+            model: '@cf/meta/llama-3.1-8b-instruct',
             temperature: 0.5,
             response_format: { type: "json_object" }
         });

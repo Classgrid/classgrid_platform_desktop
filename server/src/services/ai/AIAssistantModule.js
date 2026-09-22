@@ -77,7 +77,7 @@ class AIAssistantModule {
                             : chatHistory
                     }
                 ],
-                model: "llama3-8b-8192", // Use the blazing fast 8B model
+                model: '@cf/meta/llama-3.1-8b-instruct', // Use the blazing fast 8B model
                 temperature: 0.3,
             });
 
@@ -114,7 +114,7 @@ class AIAssistantModule {
                         content: chatContext
                     }
                 ],
-                model: "llama3-8b-8192",
+                model: '@cf/meta/llama-3.1-8b-instruct',
                 temperature: 0.5,
             });
 
@@ -149,7 +149,7 @@ Keep it strictly under 500 words.`;
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: `TRANSCRIPT:\n\n${chatScript}` }
                 ],
-                model: 'llama3-8b-8192',
+                model: '@cf/meta/llama-3.1-8b-instruct',
                 max_tokens: 1500,
                 temperature: 0.3
             });

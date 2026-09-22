@@ -50,7 +50,7 @@ import { primarySupabaseClient as supabase } from "../config/supabaseClient.js";
 import Groq from "groq-sdk";
 
 const router = express.Router();
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
+const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
 
 // ═══════════════════════════════════════════════════════════════
 // STUDENT ANALYTICS
@@ -120,7 +120,7 @@ INSTRUCTIONS:
 
         const completion = await groq.chat.completions.create({
             messages: [{ role: "user", content: prompt }],
-            model: "llama-3.3-70b-versatile",
+            model: '@cf/meta/llama-3.1-8b-instruct',
             temperature: 0.7,
             max_tokens: 400
         });

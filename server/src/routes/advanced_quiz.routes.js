@@ -775,7 +775,7 @@ router.post("/:quizId/explain", isAuthenticated, requireRole("student"), async (
         const { question, options, correct_answer, selected_answer } = req.body;
         
         const Groq = (await import("groq-sdk")).default;
-        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
+        const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
         if (!process.env.GROQ_API_KEY) return res.status(500).json({ error: "AI not configured" });
 
         const correctOption = typeof correct_answer === 'number' ? options[correct_answer] : correct_answer;
@@ -792,7 +792,7 @@ Give a brief, clear explanation of WHY the correct answer is right. Keep it unde
 
         const completion = await groq.chat.completions.create({
             messages: [{ role: 'user', content: prompt }],
-            model: 'llama-3.3-70b-versatile',
+            model: '@cf/meta/llama-3.1-8b-instruct',
             max_tokens: 150,
             temperature: 0.3,
         });

@@ -50,7 +50,7 @@ import axios from "axios";
 import OpenAI from "openai";
 import { generateStudentPersona } from "../services/ai/persona.service.js";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
 
 /**
  * indexMaterial
@@ -142,7 +142,7 @@ CONTEXT:
 ${contextText}`;
 
         const completion = await openai.chat.completions.create({
-            model: "gpt-4o-mini", // Fast and powerful enough for RAG
+            model: '@cf/meta/llama-3.1-8b-instruct', // Fast and powerful enough for RAG
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: query }

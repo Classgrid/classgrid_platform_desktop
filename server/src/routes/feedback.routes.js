@@ -50,7 +50,7 @@ import User from '../models/User.js';
 import { bulkDispatchNotification } from '../services/notification.service.js';
 
 const router = express.Router();
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' }) : null;
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` }) : null;
 
 function getOrgId(user) {
     return user?.organization?._id?.toString() || user?.organization?.toString() || user?.org_id?.toString();

@@ -46,7 +46,7 @@ import crypto from 'crypto';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' }) : null;
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` }) : null;
 
 export async function generateAiQuestions(topic, difficulty, count) {
     if (!groq) throw new Error("Groq API key not configured");
@@ -90,7 +90,7 @@ Example JSON:
         try {
             const completion = await groq.chat.completions.create({
                 messages: [{ role: "user", content: prompt }],
-                model: "llama-3.3-70b-versatile",
+                model: '@cf/meta/llama-3.1-8b-instruct',
                 temperature: 0.7,
                 response_format: { type: "json_object" }
             });
@@ -172,7 +172,7 @@ ${subject.toLowerCase().includes('coding') ? 'Include code snippets in markdown 
                     { role: "system", content: "You are a professional exam paper setter for national-level competitive exams." },
                     { role: "user", content: prompt }
                 ],
-                model: "llama-3.3-70b-versatile",
+                model: '@cf/meta/llama-3.1-8b-instruct',
                 temperature: 0.6,
                 response_format: { type: "json_object" }
             });

@@ -55,7 +55,7 @@ import { uploadBufferToR2, deleteFromR2, getPresignedUploadUrl } from "../config
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' }) : null;
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` }) : null;
 
 // Middleware to ensure user is logged in and profile context is available.
 router.use(isAuthenticated, attachInstitutionProfile({ required: false }));
@@ -304,7 +304,7 @@ router.post('/admin/:examId/timetable/upload', upload.single('file'), async (req
 
         const groqResponse = await groq.chat.completions.create({
             messages: [{ role: 'user', content: prompt }],
-            model: 'llama-3.3-70b-versatile',
+            model: '@cf/meta/llama-3.1-8b-instruct',
             temperature: 0.1,
         });
 

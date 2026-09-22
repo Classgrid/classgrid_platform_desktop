@@ -48,9 +48,7 @@ import accessLogger from '../config/logger.js';
 import { asyncContext } from '../utils/async-context.js';
 import AiUsageLog from '../models/AiUsageLog.js';
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || 'missing-key',
-});
+const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
 
 const genAI = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY || process.env.Gemini_API_KEY
@@ -307,7 +305,7 @@ async function getGroqReply(message, modePrompt = '') {
   try {
     const fullSystemPrompt = modePrompt ? `${SYSTEM_PROMPT()}\n\n${modePrompt}` : SYSTEM_PROMPT();
     const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: '@cf/meta/llama-3.1-8b-instruct',
       messages: [
         { role: 'system', content: fullSystemPrompt },
         { role: 'user', content: message },
@@ -409,7 +407,7 @@ export async function getChatReply(message, modelArg = 'groq', mode = 'chat', cl
             organization_id: context.orgId,
             userId: context.userId,
             provider: modelArg === 'gemini' ? 'gemini' : 'groq',
-            model: modelArg === 'gemini' ? 'gemini-2.5-flash' : 'llama-3.3-70b-versatile',
+            model: modelArg === 'gemini' ? 'gemini-2.5-flash' : '@cf/meta/llama-3.1-8b-instruct',
             inputTokens,
             outputTokens,
             totalTokens: inputTokens + outputTokens,
@@ -473,7 +471,7 @@ export async function getChatReplyStream(message, modelArg = 'groq', mode = 'cha
 
   try {
     const stream = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: '@cf/meta/llama-3.1-8b-instruct',
       messages,
       temperature: 0.6,
       max_tokens: 1500,
@@ -549,7 +547,7 @@ export async function getVisionReply(message, base64Image, mimeType, modelArg = 
 export async function checkModelAvailability() {
   const status = {
     timestamp: new Date().toISOString(),
-    groq: { available: false, model: 'llama-3.3-70b-versatile', responseTime: null },
+    groq: { available: false, model: '@cf/meta/llama-3.1-8b-instruct', responseTime: null },
     gemini: { available: false, model: 'gemini-1.5-flash', responseTime: null },
     recommendedModel: 'groq'
   };
@@ -558,7 +556,7 @@ export async function checkModelAvailability() {
   try {
     const groqStart = Date.now();
     await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: '@cf/meta/llama-3.1-8b-instruct',
       messages: [{ role: 'user', content: 'ping' }],
       max_tokens: 1
     });
@@ -611,7 +609,7 @@ export async function testModels() {
 export const MODEL_CONFIG = {
   PRIMARY: {
     provider: 'Groq',
-    model: 'llama-3.3-70b-versatile',
+    model: '@cf/meta/llama-3.1-8b-instruct',
     temperature: 0.6,
     maxTokens: 1000
   },

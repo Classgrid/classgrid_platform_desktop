@@ -44,7 +44,7 @@
 import Groq from "groq-sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
+const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
 const genAI = new GoogleGenerativeAI(process.env.Gemini_API_KEY);
 const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
@@ -73,7 +73,7 @@ Respond ONLY in this exact JSON format (no markdown, no code blocks):
     try {
         // Try Groq first
         const response = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+            model: '@cf/meta/llama-3.1-8b-instruct',
             messages: [{ role: "user", content: prompt }],
             temperature: 0.3,
             max_tokens: 800,
@@ -164,7 +164,7 @@ Respond ONLY in this exact JSON format (no markdown, no code blocks):
 
     try {
         const response = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+            model: '@cf/meta/llama-3.1-8b-instruct',
             messages: [{ role: "user", content: prompt }],
             temperature: 0.4,
             max_tokens: 2000,

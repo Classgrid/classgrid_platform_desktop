@@ -51,7 +51,7 @@ import Groq from "groq-sdk";
 import mongoose from "mongoose";
 
 const router = express.Router();
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
+const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
 
 // ═══════════════════════════════════════════════════════════════
 // VIVA SCHEDULE MODEL (Inline — Faculty schedules class-wide vivas)
@@ -253,7 +253,7 @@ router.post("/evaluate-session", isAuthenticated, async (req, res) => {
 
         const completion = await groq.chat.completions.create({
             messages: [{ role: "user", content: evaluationPrompt }],
-            model: "llama-3.3-70b-versatile",
+            model: '@cf/meta/llama-3.1-8b-instruct',
             response_format: { type: "json_object" }
         });
 

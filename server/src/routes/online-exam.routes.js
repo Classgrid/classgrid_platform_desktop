@@ -1123,7 +1123,7 @@ router.post("/:examId/verify-access", isAuthenticated, requireRole("student"), a
 });
 
 import { Groq } from "groq-sdk";
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
+const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
 
 // ─────────────────────────────────────────────────────────────
 // SUBMIT EXAM WITH BEHAVIORAL PENALTY
@@ -1254,7 +1254,7 @@ router.post("/explain-mistake", isAuthenticated, async (req, res) => {
 
         const completion = await groq.chat.completions.create({
             messages: [{ role: "user", content: prompt }],
-            model: "llama3-8b-8192",
+            model: '@cf/meta/llama-3.1-8b-instruct',
         });
 
         res.json({ explanation: completion.choices[0].message.content });

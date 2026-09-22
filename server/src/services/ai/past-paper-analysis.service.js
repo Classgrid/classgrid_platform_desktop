@@ -47,7 +47,7 @@ import Groq from 'groq-sdk';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'missing-key' });
+const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
 
 /**
  * Past Paper Analysis Engine — Module 24 Extension
@@ -135,7 +135,7 @@ async function classifyTopics(paperId) {
     ).join('\n');
 
     const response = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
+        model: '@cf/meta/llama-3.1-8b-instruct',
         messages: [{
             role: 'system',
             content: `You are an academic question classifier for the subject "${paper.subject}".
