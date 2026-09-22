@@ -359,7 +359,7 @@ async function generateSessionTitle(sessionId, question) {
                     name: "cloudflare",
                     url: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
                     apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN || "",
-                    model: "@cf/deepseek-ai/deepseek-v4-pro-0813"
+                    model: "@cf/meta/llama-3.1-8b-instruct"
                 },
                 {
                     name: "mistral",
@@ -371,8 +371,14 @@ async function generateSessionTitle(sessionId, question) {
                     name: "gemini",
                     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                     apiKey: process.env.GEMINI_API_KEY || "",
-                    model: "gemini-3.5-flash"
+                    model: "gemini-1.5-flash"
                 },
+                {
+                    name: "groq",
+                    url: "https://api.groq.com/openai/v1/chat/completions",
+                    apiKey: process.env.GROQ_API_KEY || "",
+                    model: "llama3-8b-8192"
+                }
                 {
                     name: "groq",
                     url: "https://api.groq.com/openai/v1/chat/completions",
@@ -1040,7 +1046,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     if (chatgptConnected) activeDescriptions.push(`- **ChatGPT**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED.`);
                     if (claudeConnected) activeDescriptions.push(`- **Claude**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED.`);
 
-                    pluginPrompt = `\n\n--- ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ…â€™ ACTIVE INTEGRATIONS ---`;
+                    pluginPrompt = `\n\n--- ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã…â€™ ACTIVE INTEGRATIONS ---`;
 
                     if (activeDescriptions.length > 0) {
                         pluginPrompt += `\nThese integrations are ACTIVE AND CONNECTED. You can use their tools immediately without checking any status:\n` + activeDescriptions.join('\n');
@@ -2542,7 +2548,7 @@ export const generateImage = async (req, res) => {
         // Step 1: Prompt Upsampling (Enhancement) via LLM
         let enhancedPrompt = prompt;
         try {
-            const llmUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/deepseek-ai/deepseek-v4-pro-0813`;
+            const llmUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`;
             const llmRes = await fetch(llmUrl, {
                 method: 'POST',
                 headers: {
