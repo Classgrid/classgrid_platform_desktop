@@ -1127,7 +1127,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
             ],
             verbose: false,
             maxToolDepth: 25,
-            defaultMaxTokens: 2000,
+            defaultMaxTokens: 8192,
             tools: [
                 ...getMcpTools()
                     .filter(t => !t.name.endsWith('_connector') || allowedConnectorNames.has(t.name))
