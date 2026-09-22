@@ -30,6 +30,10 @@ import NotificationLog from "../models/NotificationLog.js";
 import { getMcpTools, handleToolCall } from "../mcp/tools.js";
 import { RagPipeline, MongoVectorStore, VoyageEmbedder } from "@classgrid/ai/rag";
 import Note from "../models/Note.js";
+import User from "../models/User.js";
+import Organization from "../models/Organization.js";
+import Classroom from "../models/Classroom.js";
+import ClassroomMembership from "../models/ClassroomMembership.js";
 import { ROLE_DEFINITIONS } from "../utils/roles.js";
 
 const uniqueDashboards = [...new Set(Object.values(ROLE_DEFINITIONS).map(r => r.dashboard))];
@@ -405,6 +409,46 @@ async function generateSessionTitle(sessionId, question) {
     }
 }
 
+async function buildDeepContext(userEmail) {
+    if (!userEmail || userEmail.endsWith('@classgrid.in')) return "";
+    try {
+        const user = await User.findOne({ email: userEmail }).select('_id role organization_id');
+        if (!user || !user.organization_id) return "";
+
+        let context = "";
+        
+        if (user.role === 'student') {
+            const memberships = await ClassroomMembership.find({
+                'student._id': user._id,
+                status: 'approved'
+            }).select('classroom_id');
+            
+            const classroomIds = memberships.map(m => m.classroom_id);
+            if (classroomIds.length > 0) {
+                const classrooms = await Classroom.find({ _id: { $in: classroomIds } })
+                    .select('name subject teacher.name')
+                    .lean();
+                
+                if (classrooms.length > 0) {
+                    context += `\nEnrolled Classes:\n` + classrooms.map(c => `- ${c.name} (${c.subject}) taught by ${c.teacher?.name || "Unknown"}`).join('\n');
+                }
+            }
+        } else if (['teacher', 'faculty'].includes(user.role)) {
+            const classrooms = await Classroom.find({ 'teacher._id': user._id, 'settings.isArchived': false })
+                .select('name subject')
+                .lean();
+            if (classrooms.length > 0) {
+                context += `\nClasses You Teach:\n` + classrooms.map(c => `- ${c.name} (${c.subject})`).join('\n');
+            }
+        }
+        
+        return context;
+    } catch (err) {
+        console.error("Error building deep context:", err);
+        return "";
+    }
+}
+
 export const streamAskAi = async (req, res) => {
     // 1. Setup Server-Sent Events (SSE) headers for Express
     res.writeHead(200, {
@@ -635,7 +679,7 @@ If a user requests data they do not have clearance for (e.g. a Student asking fo
 - Holidays: \`holidays\`
 - Email Queue: \`email_notification_queue\` (CRITICAL: This is ONLY for internal system transactional emails. If the user asks to read their personal inbox, unread emails, or Gmail, you MUST use the 'google_workspace_connector' tool instead!)
 
-CRITICAL INSTRUCTION FOR GOOGLE WORKSPACE: If the user asks about "emails", "inbox", "Google Drive files", "Drive folders", "Google Classroom", "Classroom courses", "assignments", or "student submissions" (e.g. "active assignments in my Biology class"), YOU MUST NEVER USE \`unified_db_query\`. YOU MUST ALWAYS USE \`google_workspace_connector\`. The internal Supabase and MongoDB tables are NEVER used for storing the user's personal Google Drive, Google Classroom, or Gmail data!
+CRITICAL INSTRUCTION FOR GOOGLE WORKSPACE & CLASSROOM DISAMBIGUATION: If the user asks about "emails", "inbox", "Google Drive files", "Drive folders", "assignments", or "student submissions", YOU MUST NEVER USE \`unified_db_query\`. YOU MUST ALWAYS USE \`google_workspace_connector\`. HOWEVER, if the user ambiguously asks about "classroom" or "announcements" (e.g., "read my classroom" or "show announcements"), YOU MUST EXPLICITLY ASK THEM: "Do you mean your Google Classroom or your Classgrid Classroom?" DO NOT assume one or the other. Only after they clarify should you use the respective tool (\`google_workspace_connector\` for Google, or \`unified_db_query\` for Classgrid). The internal Supabase and MongoDB tables are NEVER used for storing the user's personal Google Drive, Google Classroom, or Gmail data!
 
 3. Redis (source="redis", collectionOrTable="key_pattern"):
 - Use operation="find" to list keys (e.g. collectionOrTable="user:profile:*")
@@ -730,6 +774,12 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                 if (body.subdomain !== "classgrid.in" && body.subdomain !== "superadmin.classgrid.in" && body.subdomain !== "localhost") {
                     dynamicSystemPrompt += ` (This means they are using a school/organization's dashboard, not the super admin dashboard)`;
                 }
+            }
+            
+            // Inject Deep Context (Enrolled Classes, Subjects, Teachers)
+            const deepContext = await buildDeepContext(body.userEmail);
+            if (deepContext) {
+                dynamicSystemPrompt += deepContext;
             }
         }
 
@@ -1293,37 +1343,52 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     try {
                         const { url } = args;
                         if (!url) return "ERROR: No url provided in tool arguments.";
-                        const safeUrl = url.replace(/"/g, '\\"');
-                        const code = `
-import urllib.request, sys, os
-import fitz
+                        
+                        console.log(`[parse_document] Fetching URL: ${url}`);
+                        const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+                        if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`);
+                        
+                        const arrayBuffer = await response.arrayBuffer();
+                        const buffer = Buffer.from(arrayBuffer);
+                        
+                        const isPdf = url.toLowerCase().includes('.pdf') || url.toLowerCase().includes('ai-chat-uploads');
+                        const isImage = url.match(/\.(jpeg|jpg|gif|png|webp|heic)$/i) || response.headers.get('content-type')?.includes('image');
 
-url = "${safeUrl}"
-try:
-    path = "/data/document.pdf"
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req) as response:
-        with open(path, 'wb') as f:
-            f.write(response.read())
+                        if (isPdf) {
+                            try {
+                                const pdfParse = (await import('pdf-parse')).default;
+                                const data = await pdfParse(buffer);
+                                const text = data.text.trim();
+                                // If we got substantial text, it's a digital PDF, not just scanned images
+                                if (text.length > 50) {
+                                    return "DOCUMENT CONTENTS:\n" + text;
+                                }
+                            } catch (err) {
+                                console.log("[parse_document] pdf-parse failed or no text found, falling back to Vision API");
+                            }
+                        }
 
-    if url.lower().endswith('.pdf') or 'pdf' in url.lower() or 'ai-chat-uploads' in url.lower():
-        doc = fitz.open(path)
-        text = "\\n".join([page.get_text().strip() for page in doc]).strip()
-        
-        if not text:
-            print("No text found via standard extraction. The document appears to be an image.")
-            print("CRITICAL: You MUST use execute_terminal_command to run the following OCR script on the file:")
-            print(f"python3 -c \\\"import fitz, pytesseract, io; from PIL import Image; print(' '.join([pytesseract.image_to_string(Image.open(io.BytesIO(page.get_pixmap(dpi=150).tobytes('png')))) for page in fitz.open('{path}')]))\\\"")
-        else:
-            print("DOCUMENT CONTENTS:\\n" + text)
-    else:
-        with open(path, 'r', encoding='utf-8') as f:
-            print("DOCUMENT CONTENTS:\\n" + f.read())
-except Exception as e:
-    print("ERROR reading document:", e)
-`;
-                        const result = await handleToolCall('run_code', { language: 'python', code }, { sessionId });
-                        return result.isError ? result.content[0].text : result.content[0].text;
+                        // If it's an image, or PDF with no text (scanned PDF), use Gemini Vision
+                        console.log("[parse_document] Using Gemini Vision AI for image/document analysis...");
+                        const { GoogleGenerativeAI } = await import('@google/generative-ai');
+                        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+                        // Use gemini-3.5-flash as it supports image and pdf natively
+                        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+
+                        let mimeType = response.headers.get('content-type') || 'application/pdf';
+                        if (isImage && !mimeType.includes('image')) mimeType = 'image/jpeg';
+                        
+                        const result = await model.generateContent([
+                            "Analyze this document/image. Extract all text accurately. If there are tables, charts, or diagrams, describe them in high detail. Do not miss any information. Output raw text.",
+                            {
+                                inlineData: {
+                                    data: buffer.toString("base64"),
+                                    mimeType
+                                }
+                            }
+                        ]);
+                        
+                        return "VISION ANALYSIS:\n" + result.response.text();
                     } catch (e) {
                         return `FAILED to parse document in sandbox: ${e.message}`;
                     }

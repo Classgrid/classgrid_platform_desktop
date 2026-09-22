@@ -18,6 +18,7 @@ import { marked } from 'marked';
 import { NodeSSH } from 'node-ssh';
 import { s3Client, BUCKET_NAME, CDN_BASE_URL } from '../config/s3Client.js';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { SESClient, GetSendStatisticsCommand, ListIdentitiesCommand } from '@aws-sdk/client-ses';
 import puppeteer from 'puppeteer';
 import Handlebars from 'handlebars';
 import { uploadBufferToR2 } from '../config/r2Client.js';
@@ -139,6 +140,29 @@ export const getMcpTools = () => [
         match_count: { type: 'number', description: 'Number of results to return.' }
       },
       required: ['query', 'org_id']
+    }
+  },
+  {
+    name: 'read_server_logs',
+    description: 'Read the latest server logs from the host machine. You can read PM2 logs or Winston local file logs.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        log_type: { type: 'string', enum: ['pm2_error', 'pm2_out', 'winston_error', 'winston_combined'], description: 'The type of logs to read.' },
+        lines: { type: 'number', description: 'Number of lines to read from the end of the file. Max 500.' }
+      },
+      required: ['log_type']
+    }
+  },
+  {
+    name: 'aws_ses_connector',
+    description: 'Interact with AWS SES (Simple Email Service) to check email sending statistics and verified identities.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['get_statistics', 'list_identities'], description: 'The SES operation to perform.' }
+      },
+      required: ['operation']
     }
   },
   {
@@ -1091,6 +1115,60 @@ export const handleToolCall = async (name, args, context = {}) => {
         throw new Error("Invalid action. Must be create, read, update, delete, or list.");
       } catch (e) {
         return { content: [{ type: 'text', text: `Failed to manage RAG document: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'read_server_logs') {
+      const { log_type, lines = 100 } = args;
+      const numLines = Math.min(lines, 500); // Cap at 500
+      try {
+        let command = '';
+        if (log_type === 'pm2_error') {
+          command = `pm2 logs --err --nostream --lines ${numLines}`;
+        } else if (log_type === 'pm2_out') {
+          command = `pm2 logs --out --nostream --lines ${numLines}`;
+        } else if (log_type === 'winston_error') {
+          command = `tail -n ${numLines} logs/error.log || echo 'File not found'`;
+        } else if (log_type === 'winston_combined') {
+          command = `tail -n ${numLines} logs/combined.log || echo 'File not found'`;
+        }
+        
+        const { stdout, stderr } = await execPromise(command, { maxBuffer: 1024 * 1024 * 10 });
+        let resultText = stdout || stderr;
+        if (!resultText) resultText = "No logs found or empty output.";
+        return { content: [{ type: 'text', text: resultText.substring(resultText.length - 150000) }] }; // Keep within reasonable limits
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Failed to read server logs: ${err.message}\nStderr: ${err.stderr || ''}` }] };
+      }
+    }
+
+    if (name === 'aws_ses_connector') {
+      const { operation } = args;
+      try {
+        // Classgrid uses EU-NORTH-1 for SES based on .env
+        const sesClient = new SESClient({
+          region: 'eu-north-1',
+          credentials: {
+            accessKeyId: process.env.AWS_S3_ERP_ACCESS_KEY,
+            secretAccessKey: process.env.AWS_S3_ERP_SECRET_KEY
+          }
+        });
+
+        if (operation === 'get_statistics') {
+          const command = new GetSendStatisticsCommand({});
+          const response = await sesClient.send(command);
+          return { content: [{ type: 'text', text: `AWS SES Statistics:\n` + JSON.stringify(response.SendDataPoints, null, 2) }] };
+        }
+
+        if (operation === 'list_identities') {
+          const command = new ListIdentitiesCommand({ IdentityType: "EmailAddress" });
+          const response = await sesClient.send(command);
+          return { content: [{ type: 'text', text: `Verified AWS SES Identities:\n` + JSON.stringify(response.Identities, null, 2) }] };
+        }
+
+        throw new Error("Invalid operation for aws_ses_connector");
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed AWS SES operation: ${e.message}\nNote: Make sure the IAM keys (AWS_S3_ERP_ACCESS_KEY) have SES permissions.` }] };
       }
     }
 
