@@ -7,7 +7,7 @@
  */
 
 // Triggering test deployment for GitHub Actions (Backend) and Vercel (Frontend)
-import { createLLMClient } from "../ai/llm-client.js";
+import { createLLMClient } from "@classgrid/ai/core";
 import { getPresignedUploadUrl, uploadBufferToR2 } from "../config/r2Client.js";
 import { primarySupabaseClient as supabase } from "../config/supabaseClient.js";
 import {
