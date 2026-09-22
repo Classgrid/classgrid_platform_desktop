@@ -506,6 +506,28 @@ export const streamAskAi = async (req, res) => {
                 return; // SKIP THE LLM ENTIRELY!
             }
 
+            // Short-circuit for greetings — skip the LLM entirely for instant response
+            const greetWords = ["hello", "hi", "hey", "good morning", "good afternoon", "good evening", "good night", "gm", "morning"];
+            if (greetWords.some(g => cleanMsg === g || cleanMsg.startsWith(g + " ")) && (!body.fileUrls || body.fileUrls.length === 0) && cleanMsg.length < 25) {
+                const userName = body.userName || "";
+                const hourStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false });
+                const hourNum = parseInt(hourStr);
+                let greeting;
+                if (hourNum < 12) greeting = "Good morning";
+                else if (hourNum < 17) greeting = "Good afternoon";
+                else greeting = "Good evening";
+                const fastReply = userName ? `${greeting}, ${userName}! 😊 How can I help you today?` : `${greeting}! 😊 How can I help you today?`;
+
+                if (!isIncognito && sessionId) {
+                    saveMessage(sessionId, "assistant", fastReply, []).catch(err => console.error(err));
+                    appendToHistory(sessionId, "assistant", fastReply).catch(err => console.error(err));
+                }
+                res.write(`data: ${JSON.stringify({ type: "answer", answer: fastReply })}\n\n`);
+                if (keepAliveInterval) clearInterval(keepAliveInterval);
+                res.end();
+                return;
+            }
+
 
 
             messages.push({ role: "user", content });
@@ -990,7 +1012,22 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 2. NO DUPLICATE HEADINGS: The \`generate_pdf\` tool automatically renders the \`title\` parameter as an \`<h1>\` at the top of the document. Do NOT manually add a duplicate \`<h1>\` with the title inside your HTML content.
 3. HUMANIZE LABELS: NEVER output raw backend database enum values (like "org_admin", "super_admin") in your chat responses or in PDF reports. Always map them to human-readable labels (e.g., "Organization Admin", "Super Admin") before rendering.`;
 
-        messages.unshift({ role: "system", content: dynamicSystemPrompt });
+        // PERFORMANCE: Only inject full system prompt on the FIRST message of a session.
+        // For subsequent messages, inject a lightweight context-only prompt since
+        // the full rules are already in conversation history from the first message.
+        const hasSystemPromptInHistory = messages.some(m => m.role === 'system');
+        if (!hasSystemPromptInHistory) {
+            // First message — inject the full system prompt with all rules
+            messages.unshift({ role: "system", content: dynamicSystemPrompt });
+        } else {
+            // Subsequent messages — only inject dynamic context (time, integrations)
+            const now2 = new Date();
+            const dateIST2 = now2.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const timeIST2 = now2.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
+            let lightPrompt = `--- CONTEXT UPDATE ---\nCurrent time: ${timeIST2} on ${dateIST2} (IST).\nRemember all your rules and instructions from the first message. Follow them strictly.`;
+            if (pluginPrompt) lightPrompt += pluginPrompt;
+            messages.unshift({ role: "system", content: lightPrompt });
+        }
 
         // 3. Initialize the real LLM Client from the Classgrid SDK using the fallback hierarchy
         let accSteps = []; // hoisted here so tool wrappers can push to it
@@ -1200,8 +1237,8 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                         try {
                             res.write(`data: ${JSON.stringify({ type: "thought", thought: fullText[i] })}\n\n`);
                         } catch (e) { }
-                        // delay 15-20ms per char, capped at ~1.5 seconds total
-                        await new Promise(r => setTimeout(r, 15));
+                        // Fast typing animation — 3ms per char (was 15ms)
+                        await new Promise(r => setTimeout(r, 3));
                     }
 
                     return "Thought logged successfully. Proceed with the next step in your workflow sequence.";
