@@ -1368,27 +1368,40 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                             }
                         }
 
-                        // If it's an image, or PDF with no text (scanned PDF), use Gemini Vision
-                        console.log("[parse_document] Using Gemini Vision AI for image/document analysis...");
-                        const { GoogleGenerativeAI } = await import('@google/generative-ai');
-                        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-                        // Use gemini-3.5-flash as it supports image and pdf natively
-                        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+                        // If it's an image, or PDF with no text (scanned PDF), use Cloudflare Workers AI Vision
+                        console.log("[parse_document] Using Cloudflare Workers AI Vision for image analysis...");
+                        const cfToken = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
+                        const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+                        
+                        if (!cfToken || !cfAccountId) {
+                            throw new Error("Missing Cloudflare AI credentials for Vision API.");
+                        }
 
-                        let mimeType = response.headers.get('content-type') || 'application/pdf';
-                        if (isImage && !mimeType.includes('image')) mimeType = 'image/jpeg';
+                        const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`;
                         
-                        const result = await model.generateContent([
-                            "Analyze this document/image. Extract all text accurately. If there are tables, charts, or diagrams, describe them in high detail. Do not miss any information. Output raw text.",
-                            {
-                                inlineData: {
-                                    data: buffer.toString("base64"),
-                                    mimeType
-                                }
-                            }
-                        ]);
-                        
-                        return "VISION ANALYSIS:\n" + result.response.text();
+                        // Cloudflare requires the image as an array of integers (Uint8Array converted to normal array)
+                        const uint8Array = [...new Uint8Array(buffer)];
+
+                        const visionResponse = await fetch(cfUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${cfToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                messages: [
+                                    { role: "user", content: "Analyze this document/image. Extract all text accurately. If there are tables, charts, or diagrams, describe them in high detail. Do not miss any information. Output raw text." }
+                                ],
+                                image: uint8Array
+                            })
+                        });
+
+                        if (!visionResponse.ok) {
+                            throw new Error(`Cloudflare Vision AI failed: ${visionResponse.statusText}`);
+                        }
+
+                        const json = await visionResponse.json();
+                        return "VISION ANALYSIS:\n" + (json.result?.response || JSON.stringify(json.result));
                     } catch (e) {
                         return `FAILED to parse document in sandbox: ${e.message}`;
                     }
