@@ -1084,7 +1084,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           if (action === 'update' && !id) throw new Error("ID required for update action");
 
           console.log(`[RAG] Generating embedding for documentType: ${documentType}`);
-          const voyageRes = await fetch("https://api.voyageai.com/v1/embeddings", {
+          const voyageRes = await fetch("https://ai.mongodb.com/v1/embeddings", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1098,7 +1098,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
           if (!voyageRes.ok) {
             const errText = await voyageRes.text();
-            throw new Error(`Voyage AI error: ${errText}`);
+            throw new Error(`Voyage AI (Atlas) error: ${errText}`);
           }
 
           const embeddingResponse = await voyageRes.json();
