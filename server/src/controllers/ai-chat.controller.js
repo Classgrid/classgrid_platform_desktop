@@ -1487,7 +1487,9 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                         try {
                             const json = JSON.parse(text);
                             if (json.imageUrl) {
-                                return `[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${json.imageUrl}]`;
+                                const uiString = `\n\n[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${json.imageUrl}]\n\n`;
+                                res.write(`data: ${JSON.stringify({ type: "answer", answer: uiString })}\n\n`);
+                                return `SUCCESS. The image has been securely sent to the user's screen. Just say something short like "Here is your image!". Do not output the URL.`;
                             }
                             return `FAILED to generate image: ${json.error || json.message || text}`;
                         } catch (e) {
