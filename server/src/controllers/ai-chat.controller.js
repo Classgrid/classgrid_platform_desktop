@@ -1683,6 +1683,14 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     const result = await handleToolCall('whatsapp_business_connector', args, { userEmail });
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
+                read_server_logs: async (args) => {
+                    const result = await handleToolCall('read_server_logs', args, {});
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
+                aws_ses_connector: async (args) => {
+                    const result = await handleToolCall('aws_ses_connector', args, {});
+                    return result.isError ? result.content[0].text : result.content[0].text;
+                },
                 open_integration_panel: async () => {
                     return "UI action emitted. The integration panel has been opened for the user.";
                 },
