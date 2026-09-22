@@ -3487,10 +3487,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   prompt = message.content.match(/\[IMAGE_GENERATION(?:_QUEUED|_ERROR):\s*(.*?)\]/)?.[1] || prompt;
                                 } else if (isComplete) {
                                   // Try pipe separator first (new format), then fall back to colon (old format)
-                                  let match = message.content.match(/\[IMAGE_GENERATION_COMPLETE:\s*(.*?)\s*\|\s*(https?:\/\/.*?)\]/);
+                                  let match = message.content.match(/\[IMAGE_GENERATION_COMPLETE:\s*([\s\S]*?)\s*\|\s*(https?:\/\/.*?)\]/);
                                   if (!match) {
                                     // Old format: split on last https:// occurrence
-                                    const oldMatch = message.content.match(/\[IMAGE_GENERATION_COMPLETE:\s*(.*?)\s*:\s*(https?:\/\/.*?)\]/);
+                                    const oldMatch = message.content.match(/\[IMAGE_GENERATION_COMPLETE:\s*([\s\S]*?)\s*:\s*(https?:\/\/.*?)\]/);
                                     if (oldMatch) match = oldMatch;
                                   }
                                   if (match) {
