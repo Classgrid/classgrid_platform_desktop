@@ -2400,7 +2400,12 @@ export const generateImage = async (req, res) => {
                         'Authorization': `Bearer ${cfToken}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ prompt: safePrompt }),
+                    body: JSON.stringify({ 
+                        prompt: safePrompt,
+                        width: 1024,
+                        height: 1024,
+                        num_steps: 4
+                    }),
                     signal: controller.signal
                 });
                 

@@ -66,14 +66,13 @@ const getOAuth2Client = () => {
 router.get("/connect", isAuthenticated, (req, res) => {
     const oauth2Client = getOAuth2Client();
     const service = req.query.service || 'all';
-    
+
     let scopes = [];
-    
+
     if (service === 'calendar' || service === 'meet' || service === 'all') {
         scopes.push('https://www.googleapis.com/auth/calendar');
         scopes.push('https://www.googleapis.com/auth/calendar.events');
     }
-    
     if (service === 'classroom' || service === 'all') {
         scopes.push('https://www.googleapis.com/auth/classroom.courses.readonly');
         scopes.push('https://www.googleapis.com/auth/classroom.coursework.me.readonly');
@@ -81,9 +80,10 @@ router.get("/connect", isAuthenticated, (req, res) => {
         scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.me.readonly');
         scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.students.readonly');
         scopes.push('https://www.googleapis.com/auth/classroom.rosters.readonly');
+        scopes.push('https://www.googleapis.com/auth/classroom.announcements.readonly'); // Required for AI to read announcements
         scopes.push('https://www.googleapis.com/auth/drive.readonly'); // Required to read Classroom attachments
     }
-    
+
     if (service === 'drive' || service === 'all') {
         scopes.push('https://www.googleapis.com/auth/drive.readonly');
         scopes.push('https://www.googleapis.com/auth/drive.file');
@@ -100,8 +100,8 @@ router.get("/connect", isAuthenticated, (req, res) => {
 
     const returnTo = req.query.returnTo || req.headers.referer || req.headers.origin || process.env.FRONTEND_URL;
     const isPopup = req.query.popup === 'true';
-    
-    const statePayload = Buffer.from(JSON.stringify({ 
+
+    const statePayload = Buffer.from(JSON.stringify({
         userId: req.user._id.toString(),
         returnTo,
         isPopup,
@@ -155,13 +155,13 @@ router.get("/callback", async (req, res) => {
                     await user.save();
                 }
             }
-            return returnTo 
+            return returnTo
                 ? res.redirect(`${returnTo}?integration_error=google_${error}`)
                 : res.status(400).json({ error });
         }
 
         if (!code || !state) {
-            return returnTo 
+            return returnTo
                 ? res.redirect(`${returnTo}?integration_error=google_missing_params`)
                 : res.status(400).json({ error: "Missing code or state" });
         }
@@ -181,7 +181,7 @@ router.get("/callback", async (req, res) => {
 
         user.google_access_token = tokens.access_token;
         if (tokens.refresh_token) {
-            user.google_refresh_token = tokens.refresh_token; 
+            user.google_refresh_token = tokens.refresh_token;
         }
         if (tokens.expiry_date) {
             user.google_token_expiry = new Date(tokens.expiry_date);
@@ -223,7 +223,7 @@ router.get("/callback", async (req, res) => {
                 user.metadata.connected_google_services.push(mappedId);
             }
         }
-        
+
         user.markModified('metadata');
 
         await user.save();
@@ -233,7 +233,7 @@ router.get("/callback", async (req, res) => {
             try {
                 const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
                 if (decodedState.isPopup) isPopup = true;
-            } catch (e) {}
+            } catch (e) { }
         }
 
         if (isPopup) {
@@ -259,13 +259,13 @@ router.get("/callback", async (req, res) => {
         res.redirect(redirectUrl.toString());
     } catch (err) {
         console.error("Google Workspace Callback Error:", err);
-        
+
         let isPopup = false;
         if (req.query.state) {
             try {
                 const decodedState = JSON.parse(Buffer.from(req.query.state, 'base64').toString('utf8'));
                 if (decodedState.isPopup) isPopup = true;
-            } catch (e) {}
+            } catch (e) { }
         }
 
         if (isPopup) {
@@ -308,7 +308,7 @@ router.post("/disconnect", isAuthenticated, async (req, res) => {
             // Remove just this specific service
             user.metadata.connected_google_services = user.metadata.connected_google_services.filter(s => s !== serviceToDisconnect);
             user.markModified('metadata');
-            
+
             // If they disconnected all Google services, we should wipe the actual tokens to be safe
             if (user.metadata.connected_google_services.length === 0) {
                 user.google_access_token = undefined;
@@ -368,7 +368,7 @@ router.post("/meet", isAuthenticated, requireRole("faculty", "org_admin"), async
         const members = await ClassroomMembership.find({ classroom: classroomId, status: "approved" }).select("student").lean();
         const memberIds = members.map(m => m.student);
         const memberUsers = await User.find({ _id: { $in: memberIds } }).select("_id email pushNotifications").lean();
-        
+
         // Build attendees list for Google Calendar (students get automatic phone notifications!)
         const attendees = memberUsers
             .filter(u => u.email) // Only users with valid emails
@@ -380,7 +380,7 @@ router.post("/meet", isAuthenticated, requireRole("faculty", "org_admin"), async
             description: `Live session for ${topic}\n\nJoin via ClassGrid: ${process.env.FRONTEND_URL}/classroom/${classroomId}/liveclass`,
             start: {
                 dateTime: startDate.toISOString(),
-                timeZone: "Asia/Kolkata", 
+                timeZone: "Asia/Kolkata",
             },
             end: {
                 dateTime: endDate.toISOString(),
@@ -430,8 +430,8 @@ router.post("/meet", isAuthenticated, requireRole("faculty", "org_admin"), async
             .single();
 
         if (meetError) {
-             console.error("Supabase insert error:", meetError);
-             throw new Error("Failed to save meeting track in database.");
+            console.error("Supabase insert error:", meetError);
+            throw new Error("Failed to save meeting track in database.");
         }
 
         // 🔔 Notify students via Supabase (reuse already-fetched memberUsers)
@@ -450,7 +450,7 @@ router.post("/meet", isAuthenticated, requireRole("faculty", "org_admin"), async
                     });
                 }
             }
-            
+
             if (notifications.length > 0) {
                 await supabase.from('notifications').insert(notifications);
             }
@@ -527,8 +527,8 @@ router.delete("/meet/:id", isAuthenticated, requireRole("faculty", "org_admin"),
             .eq('id', meetingId);
 
         if (deleteError) {
-             console.error("Supabase delete error:", deleteError);
-             throw new Error("Failed to remove meeting from local database.");
+            console.error("Supabase delete error:", deleteError);
+            throw new Error("Failed to remove meeting from local database.");
         }
 
         res.json({ message: "Meeting cancelled successfully" });

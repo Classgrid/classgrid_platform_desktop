@@ -113,6 +113,19 @@ export const getMcpTools = () => [
     }
   },
   {
+    name: 'manage_rag_document',
+    description: 'Create or update a document in the Platform RAG Knowledge Base. The text will be vectorized using Voyage AI and stored in MongoDB Atlas.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        documentType: { type: 'string', description: 'Type of document (e.g. "policy", "tutorial", "faq").' },
+        chunkText: { type: 'string', description: 'The actual text content to embed and store.' },
+        sourceUrl: { type: 'string', description: 'Optional source URL or identifier.' }
+      },
+      required: ['documentType', 'chunkText']
+    }
+  },
+  {
     name: 'search_syllabus_vectors',
     description: 'Perform similarity search on the syllabus/material pgvector database in Supabase Postgres.',
     inputSchema: {
@@ -663,7 +676,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${command}\nEOF_SCRIPT`;
         await ssh.execCommand(writeCommand);
 
-        const envVars = ` -e AWS_ACCESS_KEY_ID="${process.env.AWS_ACCESS_KEY_ID || ''}" -e AWS_SECRET_ACCESS_KEY="${process.env.AWS_SECRET_ACCESS_KEY || ''}" -e AWS_S3_REGION="${process.env.AWS_S3_REGION || ''}" -e AWS_S3_BUCKET="${process.env.AWS_S3_BUCKET || ''}" -e R2_ACCOUNT_ID="${process.env.R2_ACCOUNT_ID || ''}" -e R2_ACCESS_KEY_ID="${process.env.R2_ACCESS_KEY_ID || ''}" -e R2_SECRET_ACCESS_KEY="${process.env.R2_SECRET_ACCESS_KEY || ''}" -e R2_BUCKET_NAME="${process.env.R2_BUCKET_NAME || 'classgrid-storage'}" -e R2_PUBLIC_URL="${process.env.R2_PUBLIC_URL || 'https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev'}" -e AWS_SES_SMTP_HOST="${process.env.AWS_SES_SMTP_HOST || ''}" -e AWS_SES_SMTP_USER="${process.env.AWS_SES_SMTP_USER || ''}" -e AWS_SES_SMTP_PASS="${process.env.AWS_SES_SMTP_PASS || ''}" `;
+        const envVars = ` -e MONGO_URI="${(process.env.MONGO_URI || '').replace(/"/g, '\\"')}" -e VOYAGE_API_KEY="${process.env.VOYAGE_API_KEY || ''}" -e CLOUDFLARE_ACCOUNT_ID="${process.env.CLOUDFLARE_ACCOUNT_ID || ''}" -e CLOUDFLARE_WORKERS_AI_TOKEN="${process.env.CLOUDFLARE_WORKERS_AI_TOKEN || ''}" -e OPENAI_API_KEY="${process.env.OPENAI_API_KEY || ''}" -e ANTHROPIC_API_KEY="${process.env.ANTHROPIC_API_KEY || ''}" -e GROQ_API_KEY="${process.env.GROQ_API_KEY || ''}" -e GEMINI_API_KEY="${process.env.GEMINI_API_KEY || ''}" -e MISTRAL_API_KEY="${process.env.MISTRAL_API_KEY || ''}" -e MISTRAL_API_KEY_2="${process.env.MISTRAL_API_KEY_2 || ''}" -e TAVILY_API_KEY="${process.env.TAVILY_API_KEY || ''}" -e GITHUB_TOKEN="${process.env.GITHUB_TOKEN || ''}" -e SUPABASE_CHAT_URL="${process.env.SUPABASE_CHAT_URL || ''}" -e SUPABASE_CHAT_KEY="${process.env.SUPABASE_CHAT_KEY || ''}" -e SUPABASE_SERVICE_ROLE_KEY="${process.env.SUPABASE_SERVICE_ROLE_KEY || ''}" -e RESEND_API_KEY="${process.env.RESEND_API_KEY || ''}" -e GIPHY_API_KEY="${process.env.GIPHY_API_KEY || ''}" -e SANITY_PROJECT_ID="${process.env.SANITY_PROJECT_ID || ''}" -e SANITY_DATASET="${process.env.SANITY_DATASET || ''}" -e SANITY_API_WRITE_TOKEN="${process.env.SANITY_API_WRITE_TOKEN || ''}" -e AGORA_APP_ID="${process.env.AGORA_APP_ID || ''}" -e AGORA_APP_CERTIFICATE="${process.env.AGORA_APP_CERTIFICATE || ''}" -e RAZORPAY_KEY_ID="${process.env.RAZORPAY_KEY_ID || ''}" -e RAZORPAY_KEY_SECRET="${process.env.RAZORPAY_KEY_SECRET || ''}" -e ZOOM_CLIENT_ID="${process.env.ZOOM_CLIENT_ID || ''}" -e ZOOM_CLIENT_SECRET="${process.env.ZOOM_CLIENT_SECRET || ''}" -e WHATSAPP_PHONE_ID="${process.env.WHATSAPP_PHONE_ID || ''}" -e WHATSAPP_ACCESS_TOKEN="${process.env.WHATSAPP_ACCESS_TOKEN || ''}" -e SLACK_WEBHOOK_URL="${process.env.SLACK_WEBHOOK_URL || ''}" -e VERCEL_API_TOKEN="${process.env.VERCEL_API_TOKEN || ''}" -e NOTION_CLIENT_ID="${process.env.NOTION_CLIENT_ID || ''}" -e NOTION_CLIENT_SECRET="${process.env.NOTION_CLIENT_SECRET || ''}" -e SLACK_CLIENT_ID="${process.env.SLACK_CLIENT_ID || ''}" -e SLACK_CLIENT_SECRET="${process.env.SLACK_CLIENT_SECRET || ''}" -e AWS_ACCESS_KEY_ID="${process.env.AWS_ACCESS_KEY_ID || ''}" -e AWS_SECRET_ACCESS_KEY="${process.env.AWS_SECRET_ACCESS_KEY || ''}" -e AWS_S3_REGION="${process.env.AWS_S3_REGION || ''}" -e AWS_S3_BUCKET="${process.env.AWS_S3_BUCKET || ''}" -e AWS_S3_ERP_ACCESS_KEY="${process.env.AWS_S3_ERP_ACCESS_KEY || ''}" -e AWS_S3_ERP_SECRET_KEY="${process.env.AWS_S3_ERP_SECRET_KEY || ''}" -e AWS_S3_ERP_REGION="${process.env.AWS_S3_ERP_REGION || ''}" -e AWS_S3_ERP_BUCKET_NAME="${process.env.AWS_S3_ERP_BUCKET_NAME || ''}" -e AWS_CLOUDFRONT_ERP_DOMAIN="${process.env.AWS_CLOUDFRONT_ERP_DOMAIN || ''}" -e AWS_SES_SMTP_HOST="${process.env.AWS_SES_SMTP_HOST || ''}" -e AWS_SES_SMTP_USER="${process.env.AWS_SES_SMTP_USER || ''}" -e AWS_SES_SMTP_PASS="${process.env.AWS_SES_SMTP_PASS || ''}" -e R2_ACCOUNT_ID="${process.env.R2_ACCOUNT_ID || ''}" -e R2_ACCESS_KEY_ID="${process.env.R2_ACCESS_KEY_ID || ''}" -e R2_SECRET_ACCESS_KEY="${process.env.R2_SECRET_ACCESS_KEY || ''}" -e R2_BUCKET_NAME="${process.env.R2_BUCKET_NAME || 'classgrid-storage'}" -e R2_PUBLIC_URL="${process.env.R2_PUBLIC_URL || 'https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev'}" -e NODE_ENV="${process.env.NODE_ENV || 'production'}" -e FRONTEND_URL="${process.env.FRONTEND_URL || 'https://classgrid.in'}" -e BACKEND_URL="${process.env.BACKEND_URL || 'https://api.classgrid.in'}" `;
 
         console.log(`[Sandbox] Securely injecting credentials and running Docker container for terminal command...`);
         const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox bash /data/script.sh`;
@@ -757,7 +770,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${finalCode}\nEOF_SCRIPT`;
         await ssh.execCommand(writeCommand);
 
-        const envVars = ` -e AWS_ACCESS_KEY_ID="${process.env.AWS_ACCESS_KEY_ID || ''}" -e AWS_SECRET_ACCESS_KEY="${process.env.AWS_SECRET_ACCESS_KEY || ''}" -e AWS_S3_REGION="${process.env.AWS_S3_REGION || ''}" -e AWS_S3_BUCKET="${process.env.AWS_S3_BUCKET || ''}" -e AWS_S3_ERP_ACCESS_KEY="${process.env.AWS_S3_ERP_ACCESS_KEY || ''}" -e AWS_S3_ERP_SECRET_KEY="${process.env.AWS_S3_ERP_SECRET_KEY || ''}" -e AWS_S3_ERP_REGION="${process.env.AWS_S3_ERP_REGION || ''}" -e AWS_S3_ERP_BUCKET_NAME="${process.env.AWS_S3_ERP_BUCKET_NAME || ''}" -e AWS_CLOUDFRONT_ERP_DOMAIN="${process.env.AWS_CLOUDFRONT_ERP_DOMAIN || ''}" -e R2_ACCOUNT_ID="${process.env.R2_ACCOUNT_ID || ''}" -e R2_ACCESS_KEY_ID="${process.env.R2_ACCESS_KEY_ID || ''}" -e R2_SECRET_ACCESS_KEY="${process.env.R2_SECRET_ACCESS_KEY || ''}" -e R2_BUCKET_NAME="${process.env.R2_BUCKET_NAME || 'classgrid-storage'}" -e R2_PUBLIC_URL="${process.env.R2_PUBLIC_URL || 'https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev'}" -e AWS_SES_SMTP_HOST="${process.env.AWS_SES_SMTP_HOST || ''}" -e AWS_SES_SMTP_USER="${process.env.AWS_SES_SMTP_USER || ''}" -e AWS_SES_SMTP_PASS="${process.env.AWS_SES_SMTP_PASS || ''}" `;
+        const envVars = ` -e MONGO_URI="${(process.env.MONGO_URI || '').replace(/"/g, '\\"')}" -e VOYAGE_API_KEY="${process.env.VOYAGE_API_KEY || ''}" -e CLOUDFLARE_ACCOUNT_ID="${process.env.CLOUDFLARE_ACCOUNT_ID || ''}" -e CLOUDFLARE_WORKERS_AI_TOKEN="${process.env.CLOUDFLARE_WORKERS_AI_TOKEN || ''}" -e OPENAI_API_KEY="${process.env.OPENAI_API_KEY || ''}" -e ANTHROPIC_API_KEY="${process.env.ANTHROPIC_API_KEY || ''}" -e GROQ_API_KEY="${process.env.GROQ_API_KEY || ''}" -e GEMINI_API_KEY="${process.env.GEMINI_API_KEY || ''}" -e MISTRAL_API_KEY="${process.env.MISTRAL_API_KEY || ''}" -e MISTRAL_API_KEY_2="${process.env.MISTRAL_API_KEY_2 || ''}" -e TAVILY_API_KEY="${process.env.TAVILY_API_KEY || ''}" -e GITHUB_TOKEN="${process.env.GITHUB_TOKEN || ''}" -e SUPABASE_CHAT_URL="${process.env.SUPABASE_CHAT_URL || ''}" -e SUPABASE_CHAT_KEY="${process.env.SUPABASE_CHAT_KEY || ''}" -e SUPABASE_SERVICE_ROLE_KEY="${process.env.SUPABASE_SERVICE_ROLE_KEY || ''}" -e RESEND_API_KEY="${process.env.RESEND_API_KEY || ''}" -e GIPHY_API_KEY="${process.env.GIPHY_API_KEY || ''}" -e SANITY_PROJECT_ID="${process.env.SANITY_PROJECT_ID || ''}" -e SANITY_DATASET="${process.env.SANITY_DATASET || ''}" -e SANITY_API_WRITE_TOKEN="${process.env.SANITY_API_WRITE_TOKEN || ''}" -e AGORA_APP_ID="${process.env.AGORA_APP_ID || ''}" -e AGORA_APP_CERTIFICATE="${process.env.AGORA_APP_CERTIFICATE || ''}" -e RAZORPAY_KEY_ID="${process.env.RAZORPAY_KEY_ID || ''}" -e RAZORPAY_KEY_SECRET="${process.env.RAZORPAY_KEY_SECRET || ''}" -e ZOOM_CLIENT_ID="${process.env.ZOOM_CLIENT_ID || ''}" -e ZOOM_CLIENT_SECRET="${process.env.ZOOM_CLIENT_SECRET || ''}" -e WHATSAPP_PHONE_ID="${process.env.WHATSAPP_PHONE_ID || ''}" -e WHATSAPP_ACCESS_TOKEN="${process.env.WHATSAPP_ACCESS_TOKEN || ''}" -e SLACK_WEBHOOK_URL="${process.env.SLACK_WEBHOOK_URL || ''}" -e VERCEL_API_TOKEN="${process.env.VERCEL_API_TOKEN || ''}" -e NOTION_CLIENT_ID="${process.env.NOTION_CLIENT_ID || ''}" -e NOTION_CLIENT_SECRET="${process.env.NOTION_CLIENT_SECRET || ''}" -e SLACK_CLIENT_ID="${process.env.SLACK_CLIENT_ID || ''}" -e SLACK_CLIENT_SECRET="${process.env.SLACK_CLIENT_SECRET || ''}" -e AWS_ACCESS_KEY_ID="${process.env.AWS_ACCESS_KEY_ID || ''}" -e AWS_SECRET_ACCESS_KEY="${process.env.AWS_SECRET_ACCESS_KEY || ''}" -e AWS_S3_REGION="${process.env.AWS_S3_REGION || ''}" -e AWS_S3_BUCKET="${process.env.AWS_S3_BUCKET || ''}" -e AWS_S3_ERP_ACCESS_KEY="${process.env.AWS_S3_ERP_ACCESS_KEY || ''}" -e AWS_S3_ERP_SECRET_KEY="${process.env.AWS_S3_ERP_SECRET_KEY || ''}" -e AWS_S3_ERP_REGION="${process.env.AWS_S3_ERP_REGION || ''}" -e AWS_S3_ERP_BUCKET_NAME="${process.env.AWS_S3_ERP_BUCKET_NAME || ''}" -e AWS_CLOUDFRONT_ERP_DOMAIN="${process.env.AWS_CLOUDFRONT_ERP_DOMAIN || ''}" -e AWS_SES_SMTP_HOST="${process.env.AWS_SES_SMTP_HOST || ''}" -e AWS_SES_SMTP_USER="${process.env.AWS_SES_SMTP_USER || ''}" -e AWS_SES_SMTP_PASS="${process.env.AWS_SES_SMTP_PASS || ''}" -e R2_ACCOUNT_ID="${process.env.R2_ACCOUNT_ID || ''}" -e R2_ACCESS_KEY_ID="${process.env.R2_ACCESS_KEY_ID || ''}" -e R2_SECRET_ACCESS_KEY="${process.env.R2_SECRET_ACCESS_KEY || ''}" -e R2_BUCKET_NAME="${process.env.R2_BUCKET_NAME || 'classgrid-storage'}" -e R2_PUBLIC_URL="${process.env.R2_PUBLIC_URL || 'https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev'}" -e NODE_ENV="${process.env.NODE_ENV || 'production'}" -e FRONTEND_URL="${process.env.FRONTEND_URL || 'https://classgrid.in'}" -e BACKEND_URL="${process.env.BACKEND_URL || 'https://api.classgrid.in'}" `;
 
         console.log(`[Sandbox] Securely injecting credentials and running Docker container for ${language} script...`);
         const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox ${execCmd} /data/script.${ext}`;
@@ -998,6 +1011,54 @@ export const handleToolCall = async (name, args, context = {}) => {
         };
       } catch (e) {
         return { content: [{ type: 'text', text: `Failed to search syllabus vectors: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'manage_rag_document') {
+      const { documentType, chunkText, sourceUrl = 'ai-generated' } = args;
+      
+      try {
+        console.log(`[RAG] Generating embedding for documentType: ${documentType}`);
+        const voyageRes = await fetch("https://api.voyageai.com/v1/embeddings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${process.env.VOYAGE_API_KEY.trim()}`
+          },
+          body: JSON.stringify({
+            input: chunkText,
+            model: "voyage-3-large"
+          })
+        });
+
+        if (!voyageRes.ok) {
+          const errText = await voyageRes.text();
+          throw new Error(`Voyage AI error: ${errText}`);
+        }
+
+        const embeddingResponse = await voyageRes.json();
+        const embedding = embeddingResponse.data[0].embedding;
+
+        if (!mongoose.connection.db) {
+          throw new Error("MongoDB connection not established");
+        }
+        
+        const coll = mongoose.connection.db.collection('platform_rag_chunks');
+        
+        const result = await coll.insertOne({
+          chunkText,
+          embedding,
+          documentType,
+          sourceUrl,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+
+        return {
+          content: [{ type: 'text', text: `Successfully inserted document into RAG Knowledge Base! MongoDB Document ID: ${result.insertedId}` }]
+        };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to manage RAG document: ${e.message}` }] };
       }
     }
 
@@ -1759,8 +1820,20 @@ export const handleToolCall = async (name, args, context = {}) => {
 
       try {
         if (operation === 'list_repos') {
-          const res = await fetch(`https://api.github.com/user/repos?per_page=50&sort=updated`, { headers });
-          const data = await res.json();
+          let url = `https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,organization_member,collaborator`;
+          if (owner) {
+            url = `https://api.github.com/orgs/${owner}/repos?per_page=100&sort=updated`;
+          }
+          const res = await fetch(url, { headers });
+          let data = await res.json();
+          
+          // If org repos fail (e.g. 404 or bad credentials), fallback to user repos
+          if (data.message && owner) {
+            console.log(`[GitHub] Failed to fetch org repos for ${owner}. Falling back to user repos.`);
+            const fallbackRes = await fetch(`https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,organization_member,collaborator`, { headers });
+            data = await fallbackRes.json();
+          }
+
           if (data.message) throw new Error(data.message);
           return { content: [{ type: 'text', text: JSON.stringify(data.map(r => ({ id: r.id, full_name: r.full_name, private: r.private, html_url: r.html_url })), null, 2) }] };
         } else if (operation === 'read_file') {
