@@ -1586,7 +1586,7 @@ except Exception as e:
 
         // 4. Run the Client with Auto-Correction & Fallback Loop
         const questionText = body.question || "";
-        const isDiagramRequest = questionText.toLowerCase().includes("flowchart") || questionText.toLowerCase().includes("diagram") || questionText.toLowerCase().includes("graph") || questionText.toLowerCase().includes("mermaid");
+        const isDiagramRequest = false; // Disabled aggressive Mermaid validation to fix prompt injection bug
 
         let answer = null;
         let attempt = 1;
@@ -2410,7 +2410,17 @@ export const generateImage = async (req, res) => {
                     throw new Error(`Cloudflare AI failed: ${imageRes.status}`);
                 }
                 
-                imageBuffer = Buffer.from(await imageRes.arrayBuffer());
+                const contentType = imageRes.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    const json = await imageRes.json();
+                    if (json.result && json.result.image) {
+                        imageBuffer = Buffer.from(json.result.image, 'base64');
+                    } else {
+                        throw new Error("Invalid JSON response from Cloudflare AI: missing result.image");
+                    }
+                } else {
+                    imageBuffer = Buffer.from(await imageRes.arrayBuffer());
+                }
                 success = true;
                 break; // Break out of retry loop if successful
             } catch (err) {
