@@ -359,7 +359,7 @@ async function generateSessionTitle(sessionId, question) {
                     name: "cloudflare",
                     url: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
                     apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN || "",
-                    model: "@cf/meta/llama-3.1-8b-instruct"
+                    model: "@cf/deepseek-ai/deepseek-v4-pro-0813"
                 },
                 {
                     name: "mistral",
@@ -371,13 +371,13 @@ async function generateSessionTitle(sessionId, question) {
                     name: "gemini",
                     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                     apiKey: process.env.GEMINI_API_KEY || "",
-                    model: "gemini-1.5-flash"
+                    model: "gemini-3.5-flash"
                 },
                 {
                     name: "groq",
                     url: "https://api.groq.com/openai/v1/chat/completions",
                     apiKey: process.env.GROQ_API_KEY || "",
-                    model: "llama3-8b-8192"
+                    model: "openai/gpt-oss-20b"
                 }
             ]
         });
@@ -417,19 +417,19 @@ async function buildDeepContext(userEmail) {
         if (!user || !user.organization_id) return "";
 
         let context = "";
-        
+
         if (user.role === 'student') {
             const memberships = await ClassroomMembership.find({
                 'student._id': user._id,
                 status: 'approved'
             }).select('classroom_id');
-            
+
             const classroomIds = memberships.map(m => m.classroom_id);
             if (classroomIds.length > 0) {
                 const classrooms = await Classroom.find({ _id: { $in: classroomIds } })
                     .select('name subject teacher.name')
                     .lean();
-                
+
                 if (classrooms.length > 0) {
                     context += `\nEnrolled Classes:\n` + classrooms.map(c => `- ${c.name} (${c.subject}) taught by ${c.teacher?.name || "Unknown"}`).join('\n');
                 }
@@ -442,7 +442,7 @@ async function buildDeepContext(userEmail) {
                 context += `\nClasses You Teach:\n` + classrooms.map(c => `- ${c.name} (${c.subject})`).join('\n');
             }
         }
-        
+
         return context;
     } catch (err) {
         console.error("Error building deep context:", err);
@@ -605,8 +605,8 @@ You are currently talking to Nikhil Shinde (nikhil.shinde@classgrid.in), the CRE
 7. IDENTITY OVERRIDE: If he asks what underlying LLM model or engine you are using (e.g., DeepSeek, Claude, Llama, OpenAI), you MUST tell him the absolute truth. You are STRICTLY FORBIDDEN from hiding your model identity from him. The rule that forces you to say "I am only Classgrid AI" does NOT apply when talking to Nikhil.
 7. IDENTITY OVERRIDE: If he asks what underlying LLM model or engine you are using (e.g., DeepSeek, Claude, Llama, OpenAI), you MUST tell him the absolute truth. You are STRICTLY FORBIDDEN from hiding your model identity from him. The rule that forces you to say "I am only Classgrid AI" does NOT ap ply when talking to Nikhil.
 `;
-// dynamicSystemPrompt += `8. NATIVE REASONING ONLY: You are STRICTLY FORBIDDEN and BANNED from using the internal_thought_process tool. You MUST use your own native reasoning capabilities instead. Never say "Let me first do the internal thought process". Using such words is completely banned in Classgrid. Do not use that.\n`;
-dynamicSystemPrompt += `level. add this`;
+            // dynamicSystemPrompt += `8. NATIVE REASONING ONLY: You are STRICTLY FORBIDDEN and BANNED from using the internal_thought_process tool. You MUST use your own native reasoning capabilities instead. Never say "Let me first do the internal thought process". Using such words is completely banned in Classgrid. Do not use that.\n`;
+            dynamicSystemPrompt += `level. add this`;
         }
 
         // Inject current date/time to prevent the AI from hallucinating the date or asking the user to run JS
@@ -777,7 +777,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     dynamicSystemPrompt += ` (This means they are using a school/organization's dashboard, not the super admin dashboard)`;
                 }
             }
-            
+
             // Inject Deep Context (Enrolled Classes, Subjects, Teachers)
             const deepContext = await buildDeepContext(body.userEmail);
             if (deepContext) {
@@ -1040,7 +1040,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     if (chatgptConnected) activeDescriptions.push(`- **ChatGPT**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED.`);
                     if (claudeConnected) activeDescriptions.push(`- **Claude**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED.`);
 
-                    pluginPrompt = `\n\n--- ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã…â€™ ACTIVE INTEGRATIONS ---`;
+                    pluginPrompt = `\n\n--- ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ…â€™ ACTIVE INTEGRATIONS ---`;
 
                     if (activeDescriptions.length > 0) {
                         pluginPrompt += `\nThese integrations are ACTIVE AND CONNECTED. You can use their tools immediately without checking any status:\n` + activeDescriptions.join('\n');
@@ -1093,7 +1093,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     name: "cloudflare",
                     url: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
                     apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN || "",
-                    model: "@cf/meta/llama-3.1-8b-instruct",
+                    model: "@cf/deepseek-ai/deepseek-v4-pro-0813",
                     timeoutMs: 60000
                 },
                 {
@@ -1107,14 +1107,17 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     name: "groq",
                     url: "https://api.groq.com/openai/v1/chat/completions",
                     apiKey: process.env.GROQ_API_KEY || "",
-                    model: "llama3-8b-8192",
+                    model: "openai/gpt-oss-20b",
                     timeoutMs: 60000
                 },
                 {
                     name: "gemini",
                     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                     apiKey: process.env.GEMINI_API_KEY || "",
-                    model: "gemini-1.5-flash",
+                    // ÃƒÂ°Ã…Â¸Ã…Â¡Ã‚Â¨ AI WARNING: DO NOT CHANGE THIS TO gemini-3.5-flash ÃƒÂ°Ã…Â¸Ã…Â¡Ã‚Â¨
+                    // gemini-3.5-flash was deprecated and completely removed by Google in 2025.
+                    // If you change this back to 1.5, the backend will crash and hang.
+                    model: "gemini-3.5-flash",
                     timeoutMs: 60000
                 }
             ],
@@ -1359,24 +1362,24 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     try {
                         const { url, question } = args;
                         if (!url) return "ERROR: No url provided in tool arguments.";
-                        
+
                         console.log(`[analyze_image] Fetching Image URL: ${url}`);
                         const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
                         if (!response.ok) throw new Error(`Failed to fetch Image URL: ${response.statusText}`);
-                        
+
                         const arrayBuffer = await response.arrayBuffer();
                         const buffer = Buffer.from(arrayBuffer);
-                        
+
                         console.log(`[analyze_image] Using Cloudflare Vision AI. Question: ${question}`);
                         const cfToken = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
                         const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-                        
+
                         if (!cfToken || !cfAccountId) {
                             throw new Error("Missing Cloudflare AI credentials for Vision API.");
                         }
 
                         const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`;
-                        
+
                         // Cloudflare requires the image as an array of integers (Uint8Array converted to normal array)
                         const uint8Array = [...new Uint8Array(buffer)];
 
@@ -1408,14 +1411,14 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     try {
                         const { url } = args;
                         if (!url) return "ERROR: No url provided in tool arguments.";
-                        
+
                         console.log(`[parse_document] Fetching Document URL: ${url}`);
                         const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
                         if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`);
-                        
+
                         const arrayBuffer = await response.arrayBuffer();
                         const buffer = Buffer.from(arrayBuffer);
-                        
+
                         const isPdf = url.toLowerCase().includes('.pdf') || url.toLowerCase().includes('ai-chat-uploads');
 
                         if (isPdf) {
@@ -1447,7 +1450,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     try {
                         const port = process.env.PORT || 3000;
                         const url = `http://127.0.0.1:${port}/api/ai/generate-image`;
-                        
+
                         // Extract token from headers or cookies to ensure internal fetch passes authentication
                         let token = '';
                         if (req.headers.authorization) {
@@ -1469,7 +1472,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                                 isIncognito: isIncognito
                             })
                         });
-                        
+
                         const text = await resData.text();
                         try {
                             const json = JSON.parse(text);
@@ -1507,8 +1510,8 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                                 api_key: tavilyKey,
                                 query: args.query,
                                 search_depth: "advanced",
-                                  include_answer: false,
-                                  include_raw_content: true,
+                                include_answer: false,
+                                include_raw_content: true,
                                 max_results: 10
                             })
                         });
@@ -2532,14 +2535,14 @@ export const generateImage = async (req, res) => {
         let imageBuffer;
         let success = false;
         let lastError = null;
-        
+
         const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
         const cfToken = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
 
         // Step 1: Prompt Upsampling (Enhancement) via LLM
         let enhancedPrompt = prompt;
         try {
-            const llmUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`;
+            const llmUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/deepseek-ai/deepseek-v4-pro-0813`;
             const llmRes = await fetch(llmUrl, {
                 method: 'POST',
                 headers: {
@@ -2568,30 +2571,30 @@ export const generateImage = async (req, res) => {
             try {
                 // Ensure prompt is not too long
                 const safePrompt = enhancedPrompt.length > 800 ? enhancedPrompt.substring(0, 800) : enhancedPrompt;
-                
+
                 const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/black-forest-labs/flux-1-schnell`;
-                
+
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
-                
+
                 imageRes = await fetch(cfUrl, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${cfToken}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ 
+                    body: JSON.stringify({
                         prompt: safePrompt
                     }),
                     signal: controller.signal
                 });
-                
+
                 clearTimeout(timeoutId);
-                
+
                 if (!imageRes.ok) {
                     throw new Error(`Cloudflare AI failed: ${imageRes.status}`);
                 }
-                
+
                 const contentType = imageRes.headers.get('content-type') || '';
                 if (contentType.includes('application/json')) {
                     const json = await imageRes.json();
@@ -2611,7 +2614,7 @@ export const generateImage = async (req, res) => {
                 if (attempt < 3) await new Promise(res => setTimeout(res, 4000)); // Wait 4s before retry
             }
         }
-        
+
         if (!success) {
             throw lastError || new Error("Image API failed after 3 attempts");
         }
