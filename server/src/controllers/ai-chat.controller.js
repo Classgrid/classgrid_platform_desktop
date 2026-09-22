@@ -1091,14 +1091,14 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
         // CHANGING ANY AI MODEL IS STRICTLY BANNED BY PLATFORM POLICY.
         // NEVER CHANGE ANY AI MODEL. USING LLAMA IS STRICTLY FORBIDDEN (OTHER THAN FOR VISION).
         const client = createLLMClient({
-            timeoutMs: 60000,
+            timeoutMs: 120000,
             providers: [
                 {
                     name: "cloudflare",
                     url: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
                     apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN || "",
                     model: "@cf/deepseek-ai/deepseek-v4-pro-0813",
-                    timeoutMs: 60000
+                    timeoutMs: 120000
                 },
                 {
                     name: "mistral",
@@ -1125,7 +1125,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     timeoutMs: 60000
                 }
             ],
-            verbose: false,
+            verbose: true,
             maxToolDepth: 25,
             defaultMaxTokens: 8192,
             tools: [
@@ -1395,15 +1395,8 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                messages: [
-                                    {
-                                        role: "user",
-                                        content: [
-                                            { type: "text", text: question || "Describe this image in high detail, extracting all text and explaining visual elements." },
-                                            { type: "image", image: base64String }
-                                        ]
-                                    }
-                                ]
+                                prompt: question || "Describe this image in high detail, extracting all text and explaining visual elements.",
+                                image: base64String
                             })
                         });
 
@@ -1487,9 +1480,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                         try {
                             const json = JSON.parse(text);
                             if (json.imageUrl) {
-                                const uiString = `\n\n[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${json.imageUrl}]\n\n`;
-                                res.write(`data: ${JSON.stringify({ type: "answer", answer: uiString })}\n\n`);
-                                return `SUCCESS. The image has been securely sent to the user's screen. Just say something short like "Here is your image!". Do not output the URL.`;
+                                return `[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${json.imageUrl}]\n\nCRITICAL: You MUST immediately output this exact [IMAGE_GENERATION_COMPLETE] string to the user right now so their UI can render the image. Do not paraphrase it!`;
                             }
                             return `FAILED to generate image: ${json.error || json.message || text}`;
                         } catch (e) {
