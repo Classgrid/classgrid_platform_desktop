@@ -304,7 +304,7 @@ router.post('/admin/:examId/timetable/upload', upload.single('file'), async (req
 
         const groqResponse = await groq.chat.completions.create({
             messages: [{ role: 'user', content: prompt }],
-            model: '@cf/meta/llama-3.1-8b-instruct',
+            model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
             temperature: 0.1,
         });
 

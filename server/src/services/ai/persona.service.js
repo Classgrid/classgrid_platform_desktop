@@ -119,7 +119,7 @@ Follow this output format strictly (Valid JSON):
                 { role: "system", content: systemPrompt },
                 { role: "user", content: `STUDENT DATA:\n${JSON.stringify(dataContext, null, 2)}` }
             ],
-            model: '@cf/meta/llama-3.1-8b-instruct',
+            model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
             temperature: 0.5,
             response_format: { type: "json_object" }
         });

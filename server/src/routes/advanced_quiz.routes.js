@@ -792,7 +792,7 @@ Give a brief, clear explanation of WHY the correct answer is right. Keep it unde
 
         const completion = await groq.chat.completions.create({
             messages: [{ role: 'user', content: prompt }],
-            model: '@cf/meta/llama-3.1-8b-instruct',
+            model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
             max_tokens: 150,
             temperature: 0.3,
         });

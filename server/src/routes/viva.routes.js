@@ -253,7 +253,7 @@ router.post("/evaluate-session", isAuthenticated, async (req, res) => {
 
         const completion = await groq.chat.completions.create({
             messages: [{ role: "user", content: evaluationPrompt }],
-            model: '@cf/meta/llama-3.1-8b-instruct',
+            model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
             response_format: { type: "json_object" }
         });
 

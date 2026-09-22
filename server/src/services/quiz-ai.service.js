@@ -90,7 +90,7 @@ Example JSON:
         try {
             const completion = await groq.chat.completions.create({
                 messages: [{ role: "user", content: prompt }],
-                model: '@cf/meta/llama-3.1-8b-instruct',
+                model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
                 temperature: 0.7,
                 response_format: { type: "json_object" }
             });
@@ -172,7 +172,7 @@ ${subject.toLowerCase().includes('coding') ? 'Include code snippets in markdown 
                     { role: "system", content: "You are a professional exam paper setter for national-level competitive exams." },
                     { role: "user", content: prompt }
                 ],
-                model: '@cf/meta/llama-3.1-8b-instruct',
+                model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
                 temperature: 0.6,
                 response_format: { type: "json_object" }
             });

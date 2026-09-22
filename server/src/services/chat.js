@@ -305,7 +305,7 @@ async function getGroqReply(message, modePrompt = '') {
   try {
     const fullSystemPrompt = modePrompt ? `${SYSTEM_PROMPT()}\n\n${modePrompt}` : SYSTEM_PROMPT();
     const response = await groq.chat.completions.create({
-      model: '@cf/meta/llama-3.1-8b-instruct',
+      model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
       messages: [
         { role: 'system', content: fullSystemPrompt },
         { role: 'user', content: message },
@@ -407,7 +407,7 @@ export async function getChatReply(message, modelArg = 'groq', mode = 'chat', cl
             organization_id: context.orgId,
             userId: context.userId,
             provider: modelArg === 'gemini' ? 'gemini' : 'groq',
-            model: modelArg === 'gemini' ? 'gemini-2.5-flash' : '@cf/meta/llama-3.1-8b-instruct',
+            model: modelArg === 'gemini' ? 'gemini-2.5-flash' : '@cf/deepseek-ai/deepseek-v4-pro-0813',
             inputTokens,
             outputTokens,
             totalTokens: inputTokens + outputTokens,
@@ -471,7 +471,7 @@ export async function getChatReplyStream(message, modelArg = 'groq', mode = 'cha
 
   try {
     const stream = await groq.chat.completions.create({
-      model: '@cf/meta/llama-3.1-8b-instruct',
+      model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
       messages,
       temperature: 0.6,
       max_tokens: 1500,
@@ -547,7 +547,7 @@ export async function getVisionReply(message, base64Image, mimeType, modelArg = 
 export async function checkModelAvailability() {
   const status = {
     timestamp: new Date().toISOString(),
-    groq: { available: false, model: '@cf/meta/llama-3.1-8b-instruct', responseTime: null },
+    groq: { available: false, model: '@cf/deepseek-ai/deepseek-v4-pro-0813', responseTime: null },
     gemini: { available: false, model: 'gemini-1.5-flash', responseTime: null },
     recommendedModel: 'groq'
   };
@@ -556,7 +556,7 @@ export async function checkModelAvailability() {
   try {
     const groqStart = Date.now();
     await groq.chat.completions.create({
-      model: '@cf/meta/llama-3.1-8b-instruct',
+      model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
       messages: [{ role: 'user', content: 'ping' }],
       max_tokens: 1
     });
@@ -609,7 +609,7 @@ export async function testModels() {
 export const MODEL_CONFIG = {
   PRIMARY: {
     provider: 'Groq',
-    model: '@cf/meta/llama-3.1-8b-instruct',
+    model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
     temperature: 0.6,
     maxTokens: 1000
   },

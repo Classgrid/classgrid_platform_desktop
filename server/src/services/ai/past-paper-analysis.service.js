@@ -135,7 +135,7 @@ async function classifyTopics(paperId) {
     ).join('\n');
 
     const response = await groq.chat.completions.create({
-        model: '@cf/meta/llama-3.1-8b-instruct',
+        model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
         messages: [{
             role: 'system',
             content: `You are an academic question classifier for the subject "${paper.subject}".

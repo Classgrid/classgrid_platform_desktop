@@ -228,7 +228,7 @@ Input: ${JSON.stringify(titlesToAnalyze)}`;
 
                     const completion = await groq.chat.completions.create({
                         messages: [{ role: "user", content: prompt }],
-                        model: '@cf/meta/llama-3.1-8b-instruct',
+                        model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
                         temperature: 0.1,
                         max_tokens: 2000
                     });
@@ -543,7 +543,7 @@ router.post('/student/book-info', isAuthenticated, async (req, res) => {
 
         const completion = await groq.chat.completions.create({
             messages: [{ role: "user", content: prompt }],
-            model: '@cf/meta/llama-3.1-8b-instruct',
+            model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
             temperature: 0.5,
             max_tokens: 150
         });

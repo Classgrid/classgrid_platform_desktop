@@ -1840,7 +1840,7 @@ Content: ${text.substring(0, 10000)}
 `;
 
         const response = await groq.chat.completions.create({
-            model: '@cf/meta/llama-3.1-8b-instruct',
+            model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
             messages: [{ role: "user", content: prompt }],
             temperature: 0.3,
             max_tokens: 1000,

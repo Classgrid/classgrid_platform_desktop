@@ -142,7 +142,7 @@ CONTEXT:
 ${contextText}`;
 
         const completion = await openai.chat.completions.create({
-            model: '@cf/meta/llama-3.1-8b-instruct', // Fast and powerful enough for RAG
+            model: '@cf/deepseek-ai/deepseek-v4-pro-0813', // Fast and powerful enough for RAG
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: query }

@@ -73,7 +73,7 @@ Respond ONLY in this exact JSON format (no markdown, no code blocks):
     try {
         // Try Groq first
         const response = await groq.chat.completions.create({
-            model: '@cf/meta/llama-3.1-8b-instruct',
+            model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
             messages: [{ role: "user", content: prompt }],
             temperature: 0.3,
             max_tokens: 800,
@@ -164,7 +164,7 @@ Respond ONLY in this exact JSON format (no markdown, no code blocks):
 
     try {
         const response = await groq.chat.completions.create({
-            model: '@cf/meta/llama-3.1-8b-instruct',
+            model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
             messages: [{ role: "user", content: prompt }],
             temperature: 0.4,
             max_tokens: 2000,

@@ -120,7 +120,7 @@ INSTRUCTIONS:
 
         const completion = await groq.chat.completions.create({
             messages: [{ role: "user", content: prompt }],
-            model: '@cf/meta/llama-3.1-8b-instruct',
+            model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
             temperature: 0.7,
             max_tokens: 400
         });
