@@ -353,6 +353,9 @@ If the user asks you to make a file public, or you need to provide a public down
 
 async function generateSessionTitle(sessionId, question) {
     try {
+        // 🚨 CRITICAL SYSTEM RULE: NEVER CHANGE ANY AI MODEL 🚨
+        // USING LLAMA IS STRICTLY FORBIDDEN (OTHER THAN FOR VISION).
+        // DEEPSEEK-V4-PRO-0813 MUST BE USED.
         const client = createLLMClient({
             providers: [
                 {
@@ -1084,8 +1087,9 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
         // 3. Initialize the real LLM Client from the Classgrid SDK using the fallback hierarchy
         let accSteps = []; // hoisted here so tool wrappers can push to it
 
-        // ÃƒÂ°Ã…Â¸Ã…Â¡Ã‚Â¨ AI WARNING: DO NOT ADD NEW MODELS OR CHANGE EXISTING MODELS ÃƒÂ°Ã…Â¸Ã…Â¡Ã‚Â¨
+        // 🚨 AI WARNING: DO NOT ADD NEW MODELS OR CHANGE EXISTING MODELS 🚨
         // CHANGING ANY AI MODEL IS STRICTLY BANNED BY PLATFORM POLICY.
+        // NEVER CHANGE ANY AI MODEL. USING LLAMA IS STRICTLY FORBIDDEN (OTHER THAN FOR VISION).
         const client = createLLMClient({
             timeoutMs: 60000,
             providers: [
@@ -1380,8 +1384,9 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 
                         const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`;
 
-                        // Cloudflare requires the image as an array of integers (Uint8Array converted to normal array)
-                        const uint8Array = [...new Uint8Array(buffer)];
+                        // Cloudflare requires the image. Sending as an array of integers blows up JSON size (3MB -> 15MB).
+                        // Converting to base64 string keeps it small enough to pass the 10MB API Gateway limit!
+                        const base64String = buffer.toString('base64');
 
                         const visionResponse = await fetch(cfUrl, {
                             method: 'POST',
@@ -1393,7 +1398,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                                 messages: [
                                     { role: "user", content: question || "Describe this image in high detail, extracting all text and explaining visual elements." }
                                 ],
-                                image: uint8Array
+                                image: base64String
                             })
                         });
 

@@ -1147,7 +1147,8 @@ export const handleToolCall = async (name, args, context = {}) => {
         const { stdout, stderr } = await execPromise(command, { maxBuffer: 1024 * 1024 * 10 });
         let resultText = stdout || stderr;
         if (!resultText) resultText = "No logs found or empty output.";
-        return { content: [{ type: 'text', text: resultText.substring(resultText.length - 150000) }] }; // Keep within reasonable limits
+        // TRUNCATE TO LAST 8000 CHARS TO PREVENT CONTEXT WINDOW OVERFLOW CRASHES
+        return { content: [{ type: 'text', text: resultText.substring(resultText.length - 8000) }] };
       } catch (err) {
         return { content: [{ type: 'text', text: `Failed to read server logs: ${err.message}\nStderr: ${err.stderr || ''}` }] };
       }
