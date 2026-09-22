@@ -2261,6 +2261,59 @@ export const handleToolCall = async (name, args, context = {}) => {
       }
     }
 
+    if (name === 'read_server_logs') {
+      const { log_type, lines = 100 } = args;
+      const numLines = Math.min(lines, 500);
+      try {
+        let output = '';
+        if (log_type === 'pm2_error' || log_type === 'pm2_out') {
+          const stream = log_type === 'pm2_error' ? 'err' : 'out';
+          const { stdout, stderr } = await execPromise(`pm2 logs --${stream} --lines ${numLines} --nostream`);
+          output = stdout || stderr || 'No PM2 logs found.';
+        } else if (log_type === 'winston_error' || log_type === 'winston_combined') {
+          const fileName = log_type === 'winston_error' ? 'error.log' : 'combined.log';
+          const logPath = path.join(process.cwd(), 'logs', fileName);
+          if (!fs.existsSync(logPath)) {
+            output = `Log file ${logPath} does not exist.`;
+          } else {
+            try {
+              const { stdout } = await execPromise(`tail -n ${numLines} "${logPath}"`);
+              output = stdout || `No logs in ${fileName}.`;
+            } catch (tailErr) {
+              // Fallback for Windows or if tail fails (reads into memory, could be heavy)
+              const content = fs.readFileSync(logPath, 'utf-8');
+              const fileLines = content.split('\n');
+              output = fileLines.slice(-numLines).join('\n');
+            }
+          }
+        }
+        return { content: [{ type: 'text', text: output.substring(0, 50000) }] };
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Failed to read server logs: ${err.message}` }] };
+      }
+    }
+
+    if (name === 'aws_ses_connector') {
+      const { operation } = args;
+      try {
+        const sesClient = new SESClient({ region: process.env.AWS_REGION || 'ap-south-1' });
+        
+        if (operation === 'get_statistics') {
+          const command = new GetSendStatisticsCommand({});
+          const response = await sesClient.send(command);
+          return { content: [{ type: 'text', text: JSON.stringify(response.SendDataPoints, null, 2) }] };
+        } else if (operation === 'list_identities') {
+          const command = new ListIdentitiesCommand({ IdentityType: 'EmailAddress' });
+          const response = await sesClient.send(command);
+          return { content: [{ type: 'text', text: JSON.stringify(response.Identities, null, 2) }] };
+        } else {
+          throw new Error(`Unsupported operation: ${operation}`);
+        }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to connect to AWS SES: ${e.message}` }] };
+      }
+    }
+
     throw new Error(`Unknown tool: ${name}`);
   } catch (error) {
     console.error(`[MCP Tool Error] ${name}:`, error);
