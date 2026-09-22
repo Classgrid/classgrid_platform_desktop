@@ -1283,8 +1283,13 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
       </ReactMarkdown>
     </div>
   );
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.content === nextProps.content &&
+    prevProps.isTyping === nextProps.isTyping &&
+    prevProps.isHistorical === nextProps.isHistorical
+  );
 });
-
 export const INTEGRATIONS_LIST: any[] = [
   { id: "image", name: "Create image", description: "Visualize anything", icon: FileImage, type: "action" },
   { id: "web", name: "Web search", description: "Find real-time news and info", icon: Globe2, type: "action" },
@@ -3470,10 +3475,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               )}
 
                               {/* Old thought accordion removed — CombinedReasoningBlock above stepper handles all thought display now */}
-                              {message.content.startsWith("[IMAGE_GENERATION") ? (() => {
-                                const isQueued = message.content.startsWith("[IMAGE_GENERATION_QUEUED");
-                                const isError = message.content.startsWith("[IMAGE_GENERATION_ERROR");
-                                const isComplete = message.content.startsWith("[IMAGE_GENERATION_COMPLETE");
+                              {message.content.includes("[IMAGE_GENERATION") ? (() => {
+                                const isQueued = message.content.includes("[IMAGE_GENERATION_QUEUED");
+                                const isError = message.content.includes("[IMAGE_GENERATION_ERROR");
+                                const isComplete = message.content.includes("[IMAGE_GENERATION_COMPLETE");
                                 
                                 let prompt = "Image generation";
                                 let url = "";
