@@ -2465,7 +2465,7 @@ export const generateImage = async (req, res) => {
         // Step 1: Prompt Upsampling (Enhancement) via LLM
         let enhancedPrompt = prompt;
         try {
-            const llmUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`;
+            const llmUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/deepseek-ai/deepseek-v4-pro-0813`;
             const llmRes = await fetch(llmUrl, {
                 method: 'POST',
                 headers: {
