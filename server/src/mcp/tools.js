@@ -114,15 +114,17 @@ export const getMcpTools = () => [
   },
   {
     name: 'manage_rag_document',
-    description: 'Create or update a document in the Platform RAG Knowledge Base. The text will be vectorized using Voyage AI and stored in MongoDB Atlas.',
+    description: 'Create, read, update, delete, or list documents in the Platform RAG Knowledge Base. When creating or updating, text is vectorized using Voyage AI and stored in MongoDB.',
     inputSchema: {
       type: 'object',
       properties: {
-        documentType: { type: 'string', description: 'Type of document (e.g. "policy", "tutorial", "faq").' },
-        chunkText: { type: 'string', description: 'The actual text content to embed and store.' },
+        action: { type: 'string', description: 'One of: create, read, update, delete, list' },
+        id: { type: 'string', description: 'MongoDB Document ID (required for read, update, delete)' },
+        documentType: { type: 'string', description: 'Type of document (e.g. "policy", "tutorial", "faq"). Required for create/update.' },
+        chunkText: { type: 'string', description: 'The actual text content to embed and store. Required for create/update.' },
         sourceUrl: { type: 'string', description: 'Optional source URL or identifier.' }
       },
-      required: ['documentType', 'chunkText']
+      required: ['action']
     }
   },
   {
@@ -1015,48 +1017,78 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'manage_rag_document') {
-      const { documentType, chunkText, sourceUrl = 'ai-generated' } = args;
+      const { action, id, documentType, chunkText, sourceUrl = 'ai-generated' } = args;
       
       try {
-        console.log(`[RAG] Generating embedding for documentType: ${documentType}`);
-        const voyageRes = await fetch("https://api.voyageai.com/v1/embeddings", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${process.env.VOYAGE_API_KEY.trim()}`
-          },
-          body: JSON.stringify({
-            input: chunkText,
-            model: "voyage-3-large"
-          })
-        });
-
-        if (!voyageRes.ok) {
-          const errText = await voyageRes.text();
-          throw new Error(`Voyage AI error: ${errText}`);
-        }
-
-        const embeddingResponse = await voyageRes.json();
-        const embedding = embeddingResponse.data[0].embedding;
-
         if (!mongoose.connection.db) {
           throw new Error("MongoDB connection not established");
         }
-        
         const coll = mongoose.connection.db.collection('platform_rag_chunks');
-        
-        const result = await coll.insertOne({
-          chunkText,
-          embedding,
-          documentType,
-          sourceUrl,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
+        const { ObjectId } = mongoose.Types;
 
-        return {
-          content: [{ type: 'text', text: `Successfully inserted document into RAG Knowledge Base! MongoDB Document ID: ${result.insertedId}` }]
-        };
+        if (action === 'list') {
+          const docs = await coll.find({}, { projection: { chunkText: 1, documentType: 1, sourceUrl: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(50).toArray();
+          return { content: [{ type: 'text', text: `Found ${docs.length} RAG documents:\n` + JSON.stringify(docs, null, 2) }] };
+        }
+
+        if (action === 'read') {
+          if (!id) throw new Error("ID required for read action");
+          const doc = await coll.findOne({ _id: new ObjectId(id) }, { projection: { embedding: 0 } }); // Hide giant embedding vector
+          if (!doc) return { content: [{ type: 'text', text: `Document ${id} not found.` }] };
+          return { content: [{ type: 'text', text: JSON.stringify(doc, null, 2) }] };
+        }
+
+        if (action === 'delete') {
+          if (!id) throw new Error("ID required for delete action");
+          const result = await coll.deleteOne({ _id: new ObjectId(id) });
+          return { content: [{ type: 'text', text: result.deletedCount > 0 ? `Successfully deleted document ${id}` : `Document ${id} not found.` }] };
+        }
+
+        if (action === 'create' || action === 'update') {
+          if (!documentType || !chunkText) throw new Error("documentType and chunkText are required for create/update");
+          if (action === 'update' && !id) throw new Error("ID required for update action");
+
+          console.log(`[RAG] Generating embedding for documentType: ${documentType}`);
+          const voyageRes = await fetch("https://api.voyageai.com/v1/embeddings", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${process.env.VOYAGE_API_KEY.trim()}`
+            },
+            body: JSON.stringify({
+              input: chunkText,
+              model: "voyage-3-large"
+            })
+          });
+
+          if (!voyageRes.ok) {
+            const errText = await voyageRes.text();
+            throw new Error(`Voyage AI error: ${errText}`);
+          }
+
+          const embeddingResponse = await voyageRes.json();
+          const embedding = embeddingResponse.data[0].embedding;
+
+          if (action === 'create') {
+            const result = await coll.insertOne({
+              chunkText,
+              embedding,
+              documentType,
+              sourceUrl,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+            return { content: [{ type: 'text', text: `Successfully created RAG Document! ID: ${result.insertedId}` }] };
+          } else {
+            const result = await coll.updateOne(
+              { _id: new ObjectId(id) },
+              { $set: { chunkText, embedding, documentType, sourceUrl, updatedAt: new Date() } }
+            );
+            return { content: [{ type: 'text', text: result.matchedCount > 0 ? `Successfully updated RAG Document ${id}` : `Document ${id} not found.` }] };
+          }
+        }
+
+        throw new Error("Invalid action. Must be create, read, update, delete, or list.");
       } catch (e) {
         return { content: [{ type: 'text', text: `Failed to manage RAG document: ${e.message}` }] };
       }
