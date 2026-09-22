@@ -1450,11 +1450,20 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     try {
                         const port = process.env.PORT || 3000;
                         const url = `http://127.0.0.1:${port}/api/ai/generate-image`;
+                        
+                        // Extract token from headers or cookies to ensure internal fetch passes authentication
+                        let token = '';
+                        if (req.headers.authorization) {
+                            token = req.headers.authorization;
+                        } else if (req.cookies && (req.cookies.token || req.cookies.jwt)) {
+                            token = `Bearer ${req.cookies.token || req.cookies.jwt}`;
+                        }
+
                         const resData = await fetch(url, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'Authorization': req.headers.authorization || ''
+                                'Authorization': token
                             },
                             body: JSON.stringify({
                                 prompt: args.prompt,
@@ -1463,11 +1472,17 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                                 isIncognito: isIncognito
                             })
                         });
-                        const json = await resData.json();
-                        if (json.imageUrl) {
-                            return `[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${json.imageUrl}]`;
+                        
+                        const text = await resData.text();
+                        try {
+                            const json = JSON.parse(text);
+                            if (json.imageUrl) {
+                                return `[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${json.imageUrl}]`;
+                            }
+                            return `FAILED to generate image: ${json.error || json.message || text}`;
+                        } catch (e) {
+                            return `FAILED to generate image: Non-JSON error response from internal server.`;
                         }
-                        return `FAILED to generate image: ${json.error || 'Unknown error'}`;
                     } catch (e) {
                         return `FAILED to generate image: ${e.message}`;
                     }
