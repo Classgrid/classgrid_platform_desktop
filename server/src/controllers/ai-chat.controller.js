@@ -2462,10 +2462,38 @@ export const generateImage = async (req, res) => {
         const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
         const cfToken = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
 
+        // Step 1: Prompt Upsampling (Enhancement) via LLM
+        let enhancedPrompt = prompt;
+        try {
+            const llmUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`;
+            const llmRes = await fetch(llmUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${cfToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: "You are an expert AI image generation prompt engineer. The user will give you a short, basic idea for an image. Your job is to instantly rewrite it into a highly detailed, extremely photorealistic prompt. Describe lighting, camera angle, textures, and realism. Output ONLY the new prompt, nothing else." },
+                        { role: "user", content: prompt }
+                    ]
+                })
+            });
+            if (llmRes.ok) {
+                const llmJson = await llmRes.json();
+                if (llmJson.result && llmJson.result.response) {
+                    enhancedPrompt = llmJson.result.response.trim();
+                    console.log(`[Image Enhancement] Original: "${prompt}" -> Enhanced: "${enhancedPrompt}"`);
+                }
+            }
+        } catch (enhanceErr) {
+            console.error("Prompt enhancement failed, falling back to original prompt:", enhanceErr.message);
+        }
+
         for (let attempt = 1; attempt <= 3; attempt++) {
             try {
                 // Ensure prompt is not too long
-                const safePrompt = prompt.length > 800 ? prompt.substring(0, 800) : prompt;
+                const safePrompt = enhancedPrompt.length > 800 ? enhancedPrompt.substring(0, 800) : enhancedPrompt;
                 
                 const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/black-forest-labs/flux-1-schnell`;
                 
