@@ -27,7 +27,11 @@ RUN apt-get update && apt-get install -y \
 # Install standard data science and PDF libraries for the Agent
 RUN pip install --no-cache-dir \
     pandas numpy matplotlib seaborn openpyxl reportlab pymupdf pdfplumber pytest fpdf \
-    playwright
+    playwright cairosvg Pillow beautifulsoup4 requests pytz python-dateutil networkx \
+    scipy sympy xlrd xlwt PyPDF2 python-docx python-pptx pytesseract pydub \
+    moviepy jinja2 lxml qrcode fpdf2 pycryptodome boto3 sqlalchemy tabulate \
+    rich opencv-python-headless pdf2image lxml html5lib markdown \
+    textblob spacy nltk scikit-learn statmodels yfinance apscheduler
 
 # Create a non-root user for security (so the Agent isn't running as root inside the container)
 RUN useradd -m agent && chown -R agent:agent /data
