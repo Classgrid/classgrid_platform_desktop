@@ -1104,11 +1104,28 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
   // Preprocess AI output:
   // 1. Convert fake bullet chars to real Markdown list markers
   // 2. Remove blank lines between consecutive list items (prevents <p> wrap inside <li> = big gaps)
-  const processedContent = content
-    .replace(/^[•]\s/gm, '- ')
-    .replace(/^\s{4}[◦]\s/gm, '    - ')
-    .replace(/(^[ \t]*[-*][ \t].*)\n{2,}(?=[ \t]*[-*][ \t])/gm, '$1\n'); // collapse blank lines between bullets
+  // 3. Fix orphaned commas and strange line breaks that some models hallucinate
+  const processedContent = React.useMemo(() => {
+    let text = content
+      .replace(/^[•]\s/gm, '- ')
+      .replace(/^\s{4}[◦]\s/gm, '    - ')
+      .replace(/(^[ \t]*[-*][ \t].*)\n{2,}(?=[ \t]*[-*][ \t])/gm, '$1\n'); // collapse blank lines between bullets
 
+    // Split by code blocks to avoid messing up JSON/code formatting
+    const parts = text.split(/(```[\s\S]*?```)/g);
+    for (let i = 0; i < parts.length; i++) {
+      if (i % 2 === 0) { // Not a code block
+        // Remove newlines that isolate commas (e.g. \n,\n or \n, )
+        parts[i] = parts[i]
+          .replace(/\n+\s*,\s*\n+/g, ', ')
+          .replace(/([a-zA-Z0-9])\n+\s*,/g, '$1,')
+          .replace(/,\n+\s*([a-zA-Z0-9])/g, ', $1')
+          .replace(/\(\n+\s*/g, '(')
+          .replace(/\s*\n+\)/g, ')');
+      }
+    }
+    return parts.join('');
+  }, [content]);
   const components = React.useMemo(() => {
     return {
       ...MarkdownComponents,
