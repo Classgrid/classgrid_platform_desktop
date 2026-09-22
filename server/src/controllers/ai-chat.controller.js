@@ -379,12 +379,6 @@ async function generateSessionTitle(sessionId, question) {
                     apiKey: process.env.GROQ_API_KEY || "",
                     model: "llama3-8b-8192"
                 }
-                {
-                    name: "groq",
-                    url: "https://api.groq.com/openai/v1/chat/completions",
-                    apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b"
-                }
             ]
         });
         const answer = await client.generate({
@@ -1099,7 +1093,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     name: "cloudflare",
                     url: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
                     apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN || "",
-                    model: "@cf/deepseek-ai/deepseek-v4-pro-0813",
+                    model: "@cf/meta/llama-3.1-8b-instruct",
                     timeoutMs: 60000
                 },
                 {
@@ -1113,17 +1107,14 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     name: "groq",
                     url: "https://api.groq.com/openai/v1/chat/completions",
                     apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b",
+                    model: "llama3-8b-8192",
                     timeoutMs: 60000
                 },
                 {
                     name: "gemini",
                     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                     apiKey: process.env.GEMINI_API_KEY || "",
-                    // ÃƒÂ°Ã…Â¸Ã…Â¡Ã‚Â¨ AI WARNING: DO NOT CHANGE THIS TO gemini-3.5-flash ÃƒÂ°Ã…Â¸Ã…Â¡Ã‚Â¨
-                    // gemini-3.5-flash was deprecated and completely removed by Google in 2025.
-                    // If you change this back to 1.5, the backend will crash and hang.
-                    model: "gemini-3.5-flash",
+                    model: "gemini-1.5-flash",
                     timeoutMs: 60000
                 }
             ],
