@@ -2466,10 +2466,7 @@ export const generateImage = async (req, res) => {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ 
-                        prompt: safePrompt,
-                        width: 1024,
-                        height: 1024,
-                        num_steps: 4
+                        prompt: safePrompt
                     }),
                     signal: controller.signal
                 });
