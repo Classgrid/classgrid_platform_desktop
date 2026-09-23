@@ -43,16 +43,16 @@
 
 import PastPaper from '../../models/PastPaper.js';
 import { extractQuestionsFromImage } from './ocr-quiz.service.js';
-import Groq from 'groq-sdk';
+import OpenAI from 'openai';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
+const deepseek = new OpenAI({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
 
 /**
  * Past Paper Analysis Engine — Module 24 Extension
  * 
- * Pipeline: Image → Gemini Vision OCR → Normalize → MongoDB → Groq Analysis → Cached Results
+ * Pipeline: Image → Gemini Vision OCR → Normalize → MongoDB → DeepSeek Analysis → Cached Results
  * 
  * Supports: 2, 3, 4, 5, 7, 10 year analysis windows
  */
@@ -124,7 +124,7 @@ function normalizeText(text) {
 }
 
 // ──────────────────────────────────────────────────
-// STEP 3: AI Topic Classification (Groq Llama 3.3)
+// STEP 3: AI Topic Classification (DeepSeek)
 // ──────────────────────────────────────────────────
 async function classifyTopics(paperId) {
     const paper = await PastPaper.findById(paperId);
@@ -134,7 +134,7 @@ async function classifyTopics(paperId) {
         `Q${i + 1}: ${q.questionText.substring(0, 150)}`
     ).join('\n');
 
-    const response = await groq.chat.completions.create({
+    const response = await deepseek.chat.completions.create({
         model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
         messages: [{
             role: 'system',
