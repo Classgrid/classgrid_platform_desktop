@@ -5,7 +5,6 @@
  * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
  * =========================================================================================
  */
-
 "use client";
 
 /*
@@ -156,10 +155,12 @@ export function DangerConfirmDialog({
         });
     }, []);
 
-    // Check if a step is completed (value matches case-insensitively)
+    const normalizeString = (str: string) => { return (str || "").replace(/\s+/g, " ").trim().toLowerCase(); };
+
+    // Check if a step is completed (value matches case-insensitively and whitespace-normalized)
     const isStepComplete = (index: number) => {
-        const typedValue = stepValues[index]?.trim().toLowerCase() || "";
-        const expectedValue = confirmationSteps[index]?.value?.trim().toLowerCase() || "";
+        const typedValue = normalizeString(stepValues[index]);
+        const expectedValue = normalizeString(confirmationSteps[index]?.value);
         return typedValue === expectedValue;
     };
 
@@ -236,7 +237,7 @@ export function DangerConfirmDialog({
                                     {step.label}{" "}
                                     {!step.hideValueFromUI && (
                                         <span className="font-bold text-foreground">
-                                            &ldquo;{step.value}&rdquo;
+                                            &ldquo;{(step.value || "").replace(/\s+/g, " ").trim()}&rdquo;
                                         </span>
                                     )}
                                 </label>
