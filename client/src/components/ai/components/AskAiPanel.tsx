@@ -4422,7 +4422,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
             {isLoadingChat ? (
               <>
-                <div className="flex-1 overflow-y-auto overscroll-contain scroll-smooth chat-scrollbar [scrollbar-gutter:stable]">
+                <div className="flex-1 overflow-y-scroll overscroll-contain scroll-smooth chat-scrollbar [scrollbar-gutter:stable]">
                   <div className="max-w-[48rem] mx-auto w-full px-4 py-8">
                     <div className="flex flex-col gap-6 animate-in fade-in duration-300">
                       <div className="flex justify-end">
@@ -5008,7 +5008,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               <>
                 <div
                   ref={chatScrollRef}
-                  className="flex-1 overflow-y-auto overscroll-contain scroll-smooth chat-scrollbar [scrollbar-gutter:stable]"
+                  className="flex-1 overflow-y-scroll overscroll-contain scroll-smooth chat-scrollbar [scrollbar-gutter:stable]"
                 >
                   {panelChat}
                 </div>
