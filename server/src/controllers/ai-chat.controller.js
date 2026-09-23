@@ -395,12 +395,6 @@ async function generateSessionTitle(sessionId, question) {
                     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                     apiKey: process.env.GEMINI_API_KEY || "",
                     model: "gemini-3.5-flash"
-                },
-                {
-                    name: "groq",
-                    url: "https://api.groq.com/openai/v1/chat/completions",
-                    apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b"
                 }
             ]
         });
