@@ -242,6 +242,13 @@ export type ChatMessage = {
   hidden?: boolean;
 };
 
+export type QueuedMessage = {
+  id: string;
+  text: string;
+  attachedFiles: UIFileAttachment[];
+  pastedTexts: string[];
+};
+
 type ListItem = {
   indexLabel?: string;
   text: string;
@@ -1385,6 +1392,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const wordTypingActiveRef = useRef(false);
 
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
+  const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
 
@@ -2997,6 +3005,27 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) return;
+
+    if (thinking || submitting) {
+      // Linear Approach: Queue the message instead of sending immediately to prevent stream collisions
+      setMessageQueue(prev => [
+        ...prev,
+        {
+          id: Math.random().toString(36).substring(2, 9),
+          text: input,
+          attachedFiles: [...attachedFiles],
+          pastedTexts: [...pastedTexts],
+        }
+      ]);
+      // Clear inputs since it's safely queued
+      setInput("");
+      setAttachedFiles([]);
+      setPastedTexts([]);
+      localStorage.removeItem("askAiDraftInput");
+      localStorage.removeItem("askAiDraftFiles");
+      return;
+    }
+
     void askQuestion(input);
   }
 
