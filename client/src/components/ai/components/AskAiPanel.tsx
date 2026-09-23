@@ -7,7 +7,7 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState, useCallback, memo, useContext } from "react";
-import { CornerDownRight, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { SidebarContext, SidebarTrigger } from "@/components/marketing_ui/sidebar";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
@@ -65,6 +65,7 @@ import {
   Users,
   Video,
   Music,
+  CornerDownRight,
   type LucideIcon,
 } from "lucide-react";
 
