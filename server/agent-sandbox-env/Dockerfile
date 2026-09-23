@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
-    && npm install -g typescript playwright googleapis \
+    && npm install -g typescript playwright googleapis express mongoose mongodb axios dotenv cors \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
