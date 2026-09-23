@@ -4376,8 +4376,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           FULL-PAGE: ChatGPT-style centered layout
           ────────────────────────────────────────────────────────────────────────── */}
       {variant === "full-page" ? (
-        <div className="w-full h-full bg-background flex flex-row">
-          <div className="flex-1 min-w-0 min-h-0 relative flex flex-col h-full">
+        <div className="w-full h-full bg-background flex flex-row overflow-hidden">
+          <div className="flex-1 min-w-0 min-h-0 relative flex flex-col h-full overflow-hidden">
             {/* Sidebar toggle and Top Right Header Actions */}
             <div className="shrink-0 flex items-center justify-between px-6 pt-3 h-14">
               <SidebarTrigger />
