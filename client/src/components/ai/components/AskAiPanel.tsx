@@ -3351,6 +3351,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     onChange={(e) => setEditContent(e.target.value)}
                                     className="w-full text-[16px] leading-[24px] bg-transparent p-0 text-[#37352f] dark:text-[#F0EFED] min-h-[80px] resize-none !border-none !outline-none !ring-0 !shadow-none focus:!border-none focus:!outline-none focus:!ring-0 focus:!shadow-none hover:!border-none hover:!outline-none hover:!ring-0"
                                     autoFocus
+                                    data-no-ring="true"
                                     style={{ border: 'none', outline: 'none', boxShadow: 'none', backgroundColor: 'transparent' }}
                                   />
                                   <div className="flex justify-end gap-2">
