@@ -1168,6 +1168,16 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
               </div>
             );
           } catch (e: any) {
+            if (isTypingRef.current) {
+              return (
+                <div className="my-4 w-full h-[200px] rounded-xl border border-border bg-muted/20 animate-pulse flex items-center justify-center">
+                  <span className="text-muted-foreground text-sm flex items-center gap-2">
+                    <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                    Generating chart...
+                  </span>
+                </div>
+              );
+            }
             return (
               <div className="my-4 w-full rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-500 text-sm">
                 Failed to parse chart configuration: {e?.message}
