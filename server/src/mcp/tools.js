@@ -112,18 +112,7 @@ export const getMcpTools = () => [
       required: ['command']
     }
   },
-  {
-    name: 'internal_thought_process',
-    description: 'REQUIRED UI progress update. You MUST use this tool FIRST on every single message to plan your response, even for simple greetings. DO NOT use it more than once per request.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        title: { type: 'string', description: 'A short 3-5 word title of what you are doing (e.g. "Evaluating PDF attachment" or "Querying User Database")' },
-        details: { type: 'string', description: 'A 1-2 sentence explanation of your thought process and what you are about to do.' }
-      },
-      required: ['title', 'details']
-    }
-  },
+
   {
     name: 'manage_rag_document',
     description: 'Create, read, update, delete, or list documents in the Platform RAG Knowledge Base. When creating or updating, text is vectorized using Voyage AI and stored in MongoDB.',
