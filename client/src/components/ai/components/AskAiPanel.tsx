@@ -63,6 +63,7 @@ import {
   HardDrive,
   Users,
   Video,
+  Music,
   type LucideIcon,
 } from "lucide-react";
 
@@ -1633,6 +1634,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   function getFileIcon(mimeType: string) {
     if (mimeType.startsWith("image/")) return FileImage;
+    if (mimeType.startsWith("video/")) return Video;
+    if (mimeType.startsWith("audio/")) return Music;
     if (mimeType === "application/pdf") return FileText;
     return File;
   }
@@ -3672,6 +3675,16 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   iconBgClass = "bg-blue-100/50 dark:bg-blue-900/20";
                                   iconColorClass = "text-blue-600 dark:text-blue-400";
                                   fileTypeLabel = (extension || "DOCX").toUpperCase();
+                                } else if (att.mimeType.startsWith("video/")) {
+                                  Icon = Video;
+                                  iconBgClass = "bg-blue-100/50 dark:bg-blue-900/20";
+                                  iconColorClass = "text-blue-600 dark:text-blue-400";
+                                  fileTypeLabel = "VIDEO";
+                                } else if (att.mimeType.startsWith("audio/")) {
+                                  Icon = Music;
+                                  iconBgClass = "bg-purple-100/50 dark:bg-purple-900/20";
+                                  iconColorClass = "text-purple-600 dark:text-purple-400";
+                                  fileTypeLabel = "AUDIO";
                                 }
 
                                 if (att.name.startsWith("Pasted text")) {
