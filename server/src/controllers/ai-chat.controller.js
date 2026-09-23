@@ -581,7 +581,9 @@ export const streamAskAi = async (req, res) => {
                 if (hourNum < 12) greeting = "Good morning";
                 else if (hourNum < 17) greeting = "Good afternoon";
                 else greeting = "Good evening";
-                const fastReply = userName ? `${greeting}, ${userName}! 😊 How can I help you today?` : `${greeting}! 😊 How can I help you today?`;
+                
+                const firstName = userName ? userName.split(' ')[0] : "";
+                const fastReply = firstName ? `${greeting}, ${firstName}! 😊 How can I help you today?` : `${greeting}! 😊 How can I help you today?`;
 
                 if (!isIncognito && sessionId) {
                     saveMessage(sessionId, "assistant", fastReply, []).catch(err => console.error(err));
