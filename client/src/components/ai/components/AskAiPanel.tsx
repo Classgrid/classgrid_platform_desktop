@@ -3935,18 +3935,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         initial={{ opacity: 0, height: 0, y: -10 }}
                         animate={{ opacity: 1, height: 'auto', y: 0 }}
                         exit={{ opacity: 0, height: 0, y: -10 }}
-                        className="flex flex-col gap-0 w-full py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar overflow-hidden origin-top"
+                        className="flex flex-col gap-0 w-full py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar origin-top"
                       >
                         <AnimatePresence>
                           {messageQueue.map((msg) => (
                             <motion.div 
                               key={msg.id} 
                               layout
-                              initial={{ opacity: 0, x: -10, height: 0 }}
-                              animate={{ opacity: 1, x: 0, height: 'auto' }}
-                              exit={{ opacity: 0, x: 10, height: 0 }}
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
                               transition={{ duration: 0.2 }}
-                              className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors overflow-hidden"
+                              className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors shrink-0"
                             >
                               <div className="flex items-center gap-2 min-w-0 flex-1">
                                 <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
@@ -4539,18 +4539,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     initial={{ opacity: 0, height: 0, y: -10 }}
                                     animate={{ opacity: 1, height: 'auto', y: 0 }}
                                     exit={{ opacity: 0, height: 0, y: -10 }}
-                                    className="flex flex-col gap-0 w-full py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar overflow-hidden origin-top"
+                                    className="flex flex-col gap-0 w-full py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar origin-top"
                                   >
                                     <AnimatePresence>
                                       {messageQueue.map((msg) => (
                                         <motion.div 
                                           key={msg.id} 
                                           layout
-                                          initial={{ opacity: 0, x: -10, height: 0 }}
-                                          animate={{ opacity: 1, x: 0, height: 'auto' }}
-                                          exit={{ opacity: 0, x: 10, height: 0 }}
+                                          initial={{ opacity: 0, scale: 0.95 }}
+                                          animate={{ opacity: 1, scale: 1 }}
+                                          exit={{ opacity: 0, scale: 0.95 }}
                                           transition={{ duration: 0.2 }}
-                                          className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors overflow-hidden"
+                                          className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors shrink-0"
                                         >
                                           <div className="flex items-center gap-2 min-w-0 flex-1">
                                             <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
