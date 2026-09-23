@@ -81,6 +81,8 @@ router.get("/connect", isAuthenticated, (req, res) => {
         scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.students.readonly');
         scopes.push('https://www.googleapis.com/auth/classroom.rosters.readonly');
         scopes.push('https://www.googleapis.com/auth/classroom.announcements.readonly'); // Required for AI to read announcements
+        scopes.push('https://www.googleapis.com/auth/classroom.topics.readonly'); // Required to filter by topic
+        scopes.push('https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly'); // Required for question papers/materials
         scopes.push('https://www.googleapis.com/auth/drive.readonly'); // Required to read Classroom attachments
     }
 
