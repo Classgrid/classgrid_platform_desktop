@@ -1322,7 +1322,9 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     }
                 }
             ],
-            toolHandlers: Object.fromEntries(Object.entries({
+            toolHandlers: (() => {
+                const queriedTables = new Set();
+                return Object.fromEntries(Object.entries({
                 internal_thought_process: async (args) => {
                     const title = args?.title || "Thought Process";
                     const details = args?.details || (typeof args === 'object' ? JSON.stringify(args) : String(args));
@@ -1348,6 +1350,13 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     return result.isError ? result.content[0].text : result.content[0].text;
                 },
                 unified_db_query: async (args) => {
+                    if (args && args.collectionOrTable) {
+                        const tableKey = `${args.source || 'unknown'}:${args.collectionOrTable}`;
+                        if (queriedTables.has(tableKey)) {
+                            return `ERROR (CRITICAL): ANTI-LOOPING SYSTEM TRIGGERED. You have ALREADY queried the '${args.collectionOrTable}' table. You are STRICTLY FORBIDDEN from querying it again. The first query returned all the data you need. Stop querying and generate your final markdown response to the user NOW using the data you already have.`;
+                        }
+                        queriedTables.add(tableKey);
+                    }
                     const userEmail = req.user?.email || body.userEmail || '';
                     const userRole = req.user?.role || body.userRole || '';
                     const subdomain = req.user?.subdomain || body.subdomain || '';
@@ -1841,6 +1850,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     return resultStr;
                 }
             ]))
+            })();
         });
 
         let requestAborted = false;
