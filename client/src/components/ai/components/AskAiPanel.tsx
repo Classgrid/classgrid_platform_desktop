@@ -66,7 +66,6 @@ import {
   Video,
   Music,
   CornerDownRight,
-  Layers,
   type LucideIcon,
 } from "lucide-react";
 
@@ -1393,7 +1392,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
-  const [isQueueVisible, setIsQueueVisible] = useState(false);
   const [priorityMessage, setPriorityMessage] = useState<QueuedMessage | null>(null);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -3917,68 +3915,52 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           <>
             <AnimatePresence>
               {messageQueue.length > 0 && (
-                <motion.div layout initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, scale: 0.95}} className="flex flex-col items-start gap-2 w-full mb-2">
-                  <motion.button 
-                    type="button"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    onClick={() => setIsQueueVisible(!isQueueVisible)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background border border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-[13px] shadow-sm font-medium"
-                  >
-                    <Layers className="h-3.5 w-3.5" />
-                    {messageQueue.length} queued
-                  </motion.button>
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.98, transition: { duration: 0.15 } }}
+                  className="flex flex-col gap-0 w-full mb-1 py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar"
+                >
                   <AnimatePresence>
-                    {isQueueVisible && (
+                    {messageQueue.map((msg) => (
                       <motion.div 
-                        initial={{ opacity: 0, height: 0, y: -10 }}
-                        animate={{ opacity: 1, height: 'auto', y: 0 }}
-                        exit={{ opacity: 0, height: 0, y: -10 }}
-                        className="flex flex-col gap-0 w-full py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar overflow-hidden origin-top"
+                        key={msg.id} 
+                        layout
+                        initial={{ opacity: 0, x: -10, height: 0 }}
+                        animate={{ opacity: 1, x: 0, height: 'auto' }}
+                        exit={{ opacity: 0, x: 10, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors overflow-hidden"
                       >
-                        <AnimatePresence>
-                          {messageQueue.map((msg) => (
-                            <motion.div 
-                              key={msg.id} 
-                              layout
-                              initial={{ opacity: 0, x: -10, height: 0 }}
-                              animate={{ opacity: 1, x: 0, height: 'auto' }}
-                              exit={{ opacity: 0, x: 10, height: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors overflow-hidden"
-                            >
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
-                                <span className="text-[13px] truncate">
-                                  {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
-                                </span>
-                              </div>
-                              <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
-                                    setPriorityMessage(msg);
-                                  }}
-                                  className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                >
-                                  Send
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
-                                  className="cursor-pointer p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                  title="Cancel"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
+                          <span className="text-[13px] truncate">
+                            {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
+                          </span>
+                        </div>
+                        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // DO NOT STOP AI. Promote to priority message.
+                              setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
+                              setPriorityMessage(msg);
+                            }}
+                            className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                          >
+                            Send
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
+                            className="cursor-pointer p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            title="Cancel"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </motion.div>
-                    )}
+                    ))}
                   </AnimatePresence>
                 </motion.div>
               )}
@@ -4521,68 +4503,52 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                       <>
                         <AnimatePresence>
                           {messageQueue.length > 0 && (
-                            <motion.div layout initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, scale: 0.95}} className="flex flex-col items-start gap-2 w-full mb-2">
-                              <motion.button 
-                                type="button"
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                onClick={() => setIsQueueVisible(!isQueueVisible)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background border border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-[13px] shadow-sm font-medium"
-                              >
-                                <Layers className="h-3.5 w-3.5" />
-                                {messageQueue.length} queued
-                              </motion.button>
+                            <motion.div 
+                              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -10, scale: 0.98, transition: { duration: 0.15 } }}
+                              className="flex flex-col gap-0 w-full mb-1 py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar"
+                            >
                               <AnimatePresence>
-                                {isQueueVisible && (
+                                {messageQueue.map((msg) => (
                                   <motion.div 
-                                    initial={{ opacity: 0, height: 0, y: -10 }}
-                                    animate={{ opacity: 1, height: 'auto', y: 0 }}
-                                    exit={{ opacity: 0, height: 0, y: -10 }}
-                                    className="flex flex-col gap-0 w-full py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar overflow-hidden origin-top"
+                                    key={msg.id} 
+                                    layout
+                                    initial={{ opacity: 0, x: -10, height: 0 }}
+                                    animate={{ opacity: 1, x: 0, height: 'auto' }}
+                                    exit={{ opacity: 0, x: 10, height: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors overflow-hidden"
                                   >
-                                    <AnimatePresence>
-                                      {messageQueue.map((msg) => (
-                                        <motion.div 
-                                          key={msg.id} 
-                                          layout
-                                          initial={{ opacity: 0, x: -10, height: 0 }}
-                                          animate={{ opacity: 1, x: 0, height: 'auto' }}
-                                          exit={{ opacity: 0, x: 10, height: 0 }}
-                                          transition={{ duration: 0.2 }}
-                                          className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors overflow-hidden"
-                                        >
-                                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                                            <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
-                                            <span className="text-[13px] truncate">
-                                              {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
-                                            </span>
-                                          </div>
-                                          <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity">
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
-                                                setPriorityMessage(msg);
-                               极             }}
-                                              className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                            >
-                                              Send
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
-                                              className="cursor-pointer p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                              title="Cancel"
-                                            >
-                                              <X className="h-3.5 w-3.5" />
-                                            </button>
-                                          </div>
-                                        </motion.div>
-                                      ))}
-                                    </AnimatePresence>
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                      <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
+                                      <span className="text-[13px] truncate">
+                                        {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
+                                      </span>
+                                    </div>
+                                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          // DO NOT STOP AI. Promote to priority message.
+                                          setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
+                                          setPriorityMessage(msg);
+                                        }}
+                                        className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                      >
+                                        Send
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
+                                        className="cursor-pointer p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                        title="Cancel"
+                                      >
+                                        <X className="h-3.5 w-3.5" />
+                                      </button>
+                                    </div>
                                   </motion.div>
-                                )}
+                                ))}
                               </AnimatePresence>
                             </motion.div>
                           )}
