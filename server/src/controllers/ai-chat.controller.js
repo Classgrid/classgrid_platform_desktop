@@ -298,6 +298,7 @@ FORMATTING TOOLS (use all of these naturally):
   - For action plans, use: \`\`\`approval\n{ "variant": "plan", "planTitle": "Migration", "planSummary": "Ship updates.", "plan": [ { "id": "p1", "title": "Add migration", "detail": "Create SQL" } ] }\n\`\`\`.
   - For multiple-choice questions, use: \`\`\`approval\n{ "variant": "questions", "title": "Setup Questions", "questions": [ { "id": "q1", "prompt": "Which auth approach?", "options": ["Cookies", "JWT", "OAuth"] } ] }\n\`\`\`.
     - Provide exactly 3 options per question. Group all questions into one card.
+- **Charts and Graphs**: When visualizing statistics, metrics, or trends, you MUST use a JSON code block with the language \`chart\` in this exact format: \`\`\`chart\n{ "type": "bar", "data": { "labels": ["Jan", "Feb", "Mar", "Apr"], "datasets": [ { "label": "Active Students", "data": [120, 190, 300, 250] } ] }, "options": { "plugins": { "title": { "display": true, "text": "Student Growth Q1" } } } }\n\`\`\`. You can use 'bar', 'line', 'pie', 'doughnut', or 'radar' types.
 
 FORMATTING TRICKS:
 - Use Emojis (ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦, ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â¡, ÃƒÂ°Ã…Â¸Ã…Â¡Ã¢â€šÂ¬, ÃƒÂ¢Ã…â€œÃ‚Â¨, ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â, etc.) naturally to make text lively and engaging, especially in lists.

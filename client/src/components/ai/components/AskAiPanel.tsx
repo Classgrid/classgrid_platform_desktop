@@ -13,6 +13,7 @@ import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import { ExpandedInputModal } from './ExpandedInputModal';
 import { AiHubModal } from "./AiHubModal";
+import { AiChartRenderer } from "./AiChartRenderer";
 import { ImageGeneration, type ImageGenerationStatus } from "./ImageGeneration";
 import { DangerConfirmDialog } from '@/components/marketing_ui/danger-confirm-dialog';
 import JSON5 from 'json5';
@@ -1018,6 +1019,19 @@ const MarkdownComponents = {
     }
 
     const isMermaid = language === "mermaid" || codeString.trim().startsWith("graph ") || codeString.trim().startsWith("sequenceDiagram") || codeString.trim().startsWith("pie") || codeString.trim().startsWith("gantt") || codeString.trim().startsWith("stateDiagram") || codeString.trim().startsWith("classDiagram");
+
+    if (!inline && language === "chart") {
+      try {
+        const chartConfig = JSON5.parse(codeString);
+        return (
+           <div className="my-4 p-4 rounded-xl border border-border bg-card shadow-sm w-full">
+             <AiChartRenderer config={chartConfig} />
+           </div>
+        );
+      } catch (e) {
+        return <pre>Error parsing chart config...</pre>;
+      }
+    }
 
     if (!inline && isMermaid) {
       return <MermaidViewer chart={codeString} onRetry={onRetry} isTyping={isTyping} />;

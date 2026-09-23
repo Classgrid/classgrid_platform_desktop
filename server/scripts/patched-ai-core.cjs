@@ -163,9 +163,9 @@ async function tryProvider(provider, messages, config, temperature, maxTokens, t
     if (result.thinking) {
       if (verbose) {
         console.log(`
-\u{1F9E0} [thinking] ${provider.name.toUpperCase()}: ${result.thinking.slice(0, 200)}...`);
+\u{1F9E0} [thinking] ${provider.name.toUpperCase()}: ${String(result.thinking || "").slice(0, 200)}...`);
       }
-      onThought?.(result.thinking.trim());
+      onThought?.(typeof result.thinking === "string" ? result.thinking.trim() : String(result.thinking));
     }
     if (result.toolCalls && result.toolCalls.length > 0) {
       if (depth >= maxDepth) {
@@ -239,7 +239,16 @@ async function tryProvider(provider, messages, config, temperature, maxTokens, t
             toolResult = `Tool error: ${e instanceof Error ? e.message : String(e)}`;
           }
           onStatus?.("analyzing");
-          newMessages.push({ role: "tool", tool_call_id: call.id, content: toolResult.slice(0, 6e3) });
+          
+          let safeContent = "";
+          if (typeof toolResult === "string") {
+            safeContent = toolResult;
+          } else if (toolResult === undefined || toolResult === null) {
+            safeContent = "Success (no output returned).";
+          } else {
+            safeContent = JSON.stringify(toolResult);
+          }
+          newMessages.push({ role: "tool", tool_call_id: call.id, content: safeContent.slice(0, 6e3) });
         } else {
           newMessages.push({ role: "tool", tool_call_id: call.id, content: `Error: Tool '${toolName}' is not implemented on the server.` });
         }
