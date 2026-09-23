@@ -71,7 +71,7 @@ export const getMcpTools = () => [
         },
         limit: {
           type: 'number',
-          description: 'Maximum number of documents to return for find operations. Default is 20. Max is 50.'
+          description: 'Maximum number of documents to return for find operations. Default is 20. Max is 500.'
         }
       },
       required: ['source', 'collectionOrTable', 'operation', 'fields'],
@@ -431,8 +431,8 @@ export const handleToolCall = async (name, args, context = {}) => {
           };
         }
 
-        // Use user-specified limit, default 20, max 50
-        const queryLimit = Math.min(Math.max(1, args.limit || 20), 50);
+        // Use user-specified limit, default 20, max 500
+        const queryLimit = Math.min(Math.max(1, args.limit || 20), 500);
 
         if (operation === 'find') {
           if (actualCollectionName === 'users') {
@@ -564,7 +564,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         if (operation === 'find' || operation === 'findOne') {
-          let sbQuery = sb.from(collectionOrTable).select('*').match(query).limit(operation === 'findOne' ? 1 : 50);
+          let sbQuery = sb.from(collectionOrTable).select('*').match(query).limit(operation === 'findOne' ? 1 : (args.limit ? Math.min(args.limit, 500) : 500));
           const { data: sbData, error } = await sbQuery;
           if (error) throw error;
           result = operation === 'findOne' ? (sbData[0] || null) : sbData;
