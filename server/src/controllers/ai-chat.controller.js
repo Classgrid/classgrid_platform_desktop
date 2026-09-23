@@ -571,29 +571,7 @@ export const streamAskAi = async (req, res) => {
                 return; // SKIP THE LLM ENTIRELY!
             }
 
-            // Short-circuit for greetings — skip the LLM entirely for instant response
-            const greetWords = ["hello", "hi", "hey", "good morning", "good afternoon", "good evening", "good night", "gm", "morning"];
-            if (greetWords.some(g => cleanMsg === g || cleanMsg.startsWith(g + " ")) && (!body.fileUrls || body.fileUrls.length === 0) && cleanMsg.length < 25) {
-                const userName = body.userName || "";
-                const hourStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false });
-                const hourNum = parseInt(hourStr);
-                let greeting;
-                if (hourNum < 12) greeting = "Good morning";
-                else if (hourNum < 17) greeting = "Good afternoon";
-                else greeting = "Good evening";
-                
-                const firstName = userName ? userName.split(' ')[0] : "";
-                const fastReply = firstName ? `${greeting}, ${firstName}! 😊 How can I help you today?` : `${greeting}! 😊 How can I help you today?`;
 
-                if (!isIncognito && sessionId) {
-                    saveMessage(sessionId, "assistant", fastReply, []).catch(err => console.error(err));
-                    appendToHistory(sessionId, "assistant", fastReply).catch(err => console.error(err));
-                }
-                res.write(`data: ${JSON.stringify({ type: "answer", answer: fastReply })}\n\n`);
-                if (keepAliveInterval) clearInterval(keepAliveInterval);
-                res.end();
-                return;
-            }
 
 
 
