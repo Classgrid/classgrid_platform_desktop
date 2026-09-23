@@ -68,8 +68,8 @@ function extractResponse(data) {
     if (cleanForJsonCheck.startsWith("{") || cleanForJsonCheck.startsWith("[")) {
       try {
         const parsed = JSON.parse(cleanForJsonCheck);
-        thinking = content;
         if (Array.isArray(parsed)) {
+          thinking = content;
           const textBlocks = parsed.filter(
             (b) => (b.type === "text" || b.type === "answer") && b.text
           );
@@ -78,10 +78,23 @@ function extractResponse(data) {
           } else {
             content = "I am processing your request.";
           }
-        } else if (parsed.text) {
-          content = parsed.text;
         } else {
-          content = "I am processing your request.";
+          // Handle object (like classgrid_ai_message format)
+          if (parsed.thought || parsed.thinking || parsed.reasoning) {
+            thinking = parsed.thought || parsed.thinking || parsed.reasoning;
+          } else {
+            thinking = content; // Fallback to raw string if no thought field exists
+          }
+          
+          if (parsed.content) {
+            content = parsed.content;
+          } else if (parsed.text) {
+            content = parsed.text;
+          } else if (parsed.answer) {
+            content = parsed.answer;
+          } else {
+            content = "I am processing your request.";
+          }
         }
       } catch {
         let rawStr = cleanForJsonCheck;
