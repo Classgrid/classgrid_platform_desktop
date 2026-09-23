@@ -3382,7 +3382,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   )}
                                   
                                   {/* Hover Actions (Copy / Edit) */}
-                                  <div className="absolute -bottom-9 right-0 opacity-0 group-hover:opacity-100 transition-opacity flex flex-row items-center gap-1 z-10 pt-1">
+                                  <div className="absolute top-full right-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity flex flex-row items-center gap-1 z-50 before:absolute before:-top-4 before:left-0 before:right-0 before:h-4">
                                     <TooltipProvider delayDuration={200}>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
