@@ -16,6 +16,7 @@ import { AiHubModal } from "./AiHubModal";
 import { AiChartRenderer } from "./AiChartRenderer";
 import { ImageGeneration, type ImageGenerationStatus } from "./ImageGeneration";
 import { DangerConfirmDialog } from '@/components/marketing_ui/danger-confirm-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/marketing_ui/tooltip";
 import JSON5 from 'json5';
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
@@ -3381,27 +3382,44 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   )}
                                   
                                   {/* Hover Actions (Copy / Edit) */}
-                                  <div className="absolute -bottom-10 right-0 opacity-0 group-hover:opacity-100 transition-opacity flex flex-row items-center gap-2 z-10 pt-2">
-                                    <button
-                                      type="button"
-                                      onClick={(e) => { 
-                                        e.preventDefault(); e.stopPropagation();
-                                        setEditingMessageId(message.id); 
-                                        setEditContent(typeof message.content === 'string' ? message.content.replace(/\[Attached file:.*?\]/g, '').trim() : '');
-                                      }}
-                                      className="p-2 bg-background/95 backdrop-blur-sm border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors cursor-pointer"
-                                      title="Edit Message"
-                                    >
-                                      <Pencil className="h-4 w-4" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCopyUserMessage(typeof message.content === 'string' ? message.content.replace(/\[Attached file:.*?\]/g, '').trim() : '', message.id); }}
-                                      className="p-2 bg-background/95 backdrop-blur-sm border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors cursor-pointer"
-                                      title="Copy Message"
-                                    >
-                                      {copiedMessageId === message.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                                    </button>
+                                  <div className="absolute -bottom-9 right-0 opacity-0 group-hover:opacity-100 transition-opacity flex flex-row items-center gap-1 z-10 pt-1">
+                                    <TooltipProvider delayDuration={200}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => { 
+                                              e.preventDefault(); e.stopPropagation();
+                                              setEditingMessageId(message.id); 
+                                              setEditContent(typeof message.content === 'string' ? message.content.replace(/\[Attached file:.*?\]/g, '').trim() : '');
+                                            }}
+                                            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 cursor-pointer text-muted-foreground/60 hover:bg-muted hover:text-foreground bg-background/60 backdrop-blur-sm"
+                                          >
+                                            <Pencil className="h-3.5 w-3.5" />
+                                          </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom" sideOffset={4} className="text-xs bg-black text-white dark:bg-white dark:text-black">
+                                          Edit Message
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+
+                                    <TooltipProvider delayDuration={200}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCopyUserMessage(typeof message.content === 'string' ? message.content.replace(/\[Attached file:.*?\]/g, '').trim() : '', message.id); }}
+                                            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 cursor-pointer text-muted-foreground/60 hover:bg-muted hover:text-foreground bg-background/60 backdrop-blur-sm"
+                                          >
+                                            {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                                          </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom" sideOffset={4} className="text-xs bg-black text-white dark:bg-white dark:text-black">
+                                          Copy Message
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   </div>
                                 </>
                               )}
