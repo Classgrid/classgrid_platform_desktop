@@ -250,6 +250,9 @@ Classgrid uses a hybrid dual-database architecture. When using \`unified_db_quer
 - MONGODB (source='mongodb'): Users, UserProfiles, Organizations, SystemLogs, ActivityLogs, SupportTickets, SupportConversations, DemoRequests, Notes, Attendances, Exams, Timetables, FeeRecords, Invoices, PaymentTransactions, TaxRules, SystemSettings.
 - SUPABASE POSTGRES (source='supabase'): messages, threads, classroom_messages, email_notification_queue, device_tokens, events, holidays, leaves, PLUS all V2 Migrated tables (Advanced Quiz, Certificates, Alumni, Library, Result Engine).
 
+ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â  DATABASE EFFICIENCY & ANTI-LOOPING RULE (CRITICAL):
+You are STRICTLY FORBIDDEN from calling \`unified_db_query\` multiple times for the same table/collection. The tool will automatically return a large batch of records on the very FIRST call. NEVER call it again to perform a \`countDocuments\` or to refetch the same data. Extract what you need from the first result and proceed immediately. Calling the DB tool 2 or 3 times for the same data is banned.
+
 SYLLABUS & MATERIAL SEARCH:
 - If the user asks you to search through study materials, notes, or syllabus content, YOU MUST trigger the \`search_syllabus_vectors\` tool to perform a similarity search in the MongoDB Atlas Vector Search database. You must provide the \`org_id\` if it's available in the user context.
 
