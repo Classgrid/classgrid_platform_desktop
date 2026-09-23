@@ -4377,7 +4377,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           ────────────────────────────────────────────────────────────────────────── */}
       {variant === "full-page" ? (
         <div className="w-full h-full bg-background flex flex-row">
-          <div className="flex-1 min-w-0 relative flex flex-col h-full">
+          <div className="flex-1 min-w-0 min-h-0 relative flex flex-col h-full">
             {/* Sidebar toggle and Top Right Header Actions */}
             <div className="shrink-0 flex items-center justify-between px-6 pt-3 h-14">
               <SidebarTrigger />
