@@ -249,6 +249,8 @@ export type QueuedMessage = {
   text: string;
   attachedFiles: UIFileAttachment[];
   pastedTexts: string[];
+  isEdit?: boolean;
+  timestamp?: number;
 };
 
 type ListItem = {
@@ -2210,7 +2212,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     setPriorityMessage({ 
       id: Date.now().toString(),
       text: textToSend, 
-      timestamp: Date.now() 
+      timestamp: Date.now(),
+      isEdit: true,
+      attachedFiles: [],
+      pastedTexts: []
     });
   }
 
@@ -2507,7 +2512,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     askQuestionRef.current = askQuestion;
   }, [askQuestion]);
 
-  async function askQuestion(question: string, options?: { hidden?: boolean }) {
+  async function askQuestion(question: string, options?: { hidden?: boolean; isEdit?: boolean }) {
     if (!options?.hidden) {
       retryCountRef.current = 0;
     }
@@ -2785,6 +2790,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           userName: session?.user?.name ?? undefined,
           userEmail: session?.user?.email ?? undefined,
           userRole: session?.user?.role ?? undefined,
+          isEdit: options?.isEdit,
           subdomain: typeof window !== "undefined" ? window.location.hostname : undefined,
           userContext: userContext,
           sessionId: sessionId ?? undefined,
@@ -3090,10 +3096,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       if (priorityMessage) {
         setSubmitting(true);
         const textToSend = priorityMessage.text;
+        const isEditMsg = priorityMessage.isEdit;
         setPriorityMessage(null);
         setTimeout(() => {
           if (askQuestionRef.current) {
-            askQuestionRef.current(textToSend);
+            askQuestionRef.current(textToSend, { isEdit: isEditMsg });
           }
         }, 50); // fast fire
       }
@@ -3107,7 +3114,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
         setTimeout(() => {
           if (askQuestionRef.current) {
-            askQuestionRef.current(nextMsg.text);
+            askQuestionRef.current(nextMsg.text, { isEdit: nextMsg.isEdit });
           }
         }, 50); // fast fire
       }

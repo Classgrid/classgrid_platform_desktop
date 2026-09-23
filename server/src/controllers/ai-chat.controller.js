@@ -582,6 +582,10 @@ export const streamAskAi = async (req, res) => {
 
         let dynamicSystemPrompt = SYSTEM_PROMPT;
 
+        if (body.isEdit) {
+            dynamicSystemPrompt += `\n\nSYSTEM NOTE: The user edited their previous message to get a better answer. Please provide an improved response to this updated prompt.`;
+        }
+
         if (body.userEmail === 'nikhil.shinde@classgrid.in') {
             dynamicSystemPrompt += `\n\nEMPTY RESULTS & ANTI-LOOPING RULE (CRITICAL FOR INTEGRATIONS):
 CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google Drive, Notion, Slack, etc.) and it returns empty results (like an empty array [], "0 results found", "no assignments", or "failed"), you MUST ACCEPT THIS REALITY. 
