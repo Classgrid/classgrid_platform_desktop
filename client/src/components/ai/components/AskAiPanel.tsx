@@ -237,8 +237,6 @@ export type ChatMessage = {
   contextUrl?: string;
   contextTitle?: string;
   attachments?: AiAttachment[];
-  thought?: string;
-  tocSummary?: string;
   hidden?: boolean;
 };
 
@@ -3029,7 +3027,48 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     void askQuestion(input);
   }
 
+  // --- AI Message Queue Engine ---
+  useEffect(() => {
+    // If we are no longer thinking/submitting, and there are messages in the queue
+    if (!thinking && !submitting && messageQueue.length > 0) {
+      const nextMsg = messageQueue[0];
+      
+      // Remove it from the queue
+      setMessageQueue(prev => prev.slice(1));
+      
+      // Restore states to simulate them being in the UI
+      setInput(nextMsg.text);
+      setAttachedFiles(nextMsg.attachedFiles);
+      setPastedTexts(nextMsg.pastedTexts);
+      
+      // Fire the actual request safely after states have updated
+      setTimeout(() => {
+        if (askQuestionRef.current) {
+          askQuestionRef.current(nextMsg.text);
+        }
+      }, 50);
+    }
+  }, [thinking, submitting, messageQueue.length]);
+
   // ─── Panel content (shared between desktop sidebar and mobile bottom-sheet) ───
+  const pendingQueueUI = messageQueue.length > 0 && (
+    <div className="flex flex-col gap-2 mb-3">
+      {messageQueue.map((msg) => (
+        <div key={msg.id} className="relative self-end max-w-[85%] bg-muted/50 rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm border border-border/50 text-muted-foreground flex items-center gap-3 animate-in slide-in-from-bottom-2 fade-in-50">
+          <span className="flex-1 truncate">{msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}</span>
+          <button 
+            type="button"
+            onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
+            className="shrink-0 h-5 w-5 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
+            title="Cancel message"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+
   const panelHeader = (
     <div className={cn("flex items-center justify-between px-4 py-4", variant !== "full-page" && "border-b border-border")}>
       <div className="flex items-center gap-2">
@@ -3851,7 +3890,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             )}
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-2">
+          <>
+            {pendingQueueUI}
+            <form onSubmit={handleSubmit} className="space-y-2">
             <div className={cn(
               "group relative w-[80%] mx-auto shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
             )}>
@@ -4255,6 +4296,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               </div>
             </div>
           </form>
+          </>
         )}
       </div>
 
@@ -4385,7 +4427,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         <p>This conversation has been terminated.</p>
                       </div>
                     ) : (
-                      <form onSubmit={handleSubmit} className="space-y-2">
+                      <>
+                        {pendingQueueUI}
+                        <form onSubmit={handleSubmit} className="space-y-2">
                         <div className={cn(
                           "group relative w-full shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
                         )}>
@@ -4744,6 +4788,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                           </div>
                         </div>
                       </form>
+                      </>
                     )}
                   </div>
 
