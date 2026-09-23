@@ -48,6 +48,7 @@ import {
   UserRound,
   X,
   Plus,
+  Pencil,
   Share,
   MoreHorizontal,
   Pin,
@@ -1396,6 +1397,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const wordTypingActiveRef = useRef(false);
 
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState<string>("");
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
   const [isQueueVisible, setIsQueueVisible] = useState(true);
   const [priorityMessage, setPriorityMessage] = useState<QueuedMessage | null>(null);
@@ -2175,6 +2179,39 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   }, [bannedUntil]);
 
 
+
+  async function handleCopyUserMessage(text: string, id: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedMessageId(id);
+      setTimeout(() => setCopiedMessageId(null), 2000);
+    } catch (e) {
+      console.error("Failed to copy text", e);
+    }
+  }
+
+  function handleSendEditedMessage(messageId: string) {
+    if (!editContent.trim()) return;
+    
+    const index = messages.findIndex(m => m.id === messageId);
+    if (index === -1) {
+      setEditingMessageId(null);
+      return;
+    }
+
+    const newMessages = messages.slice(0, index);
+    setMessages(newMessages);
+    
+    setEditingMessageId(null);
+    const textToSend = editContent;
+    setEditContent("");
+
+    setPriorityMessage({ 
+      id: Date.now().toString(),
+      text: textToSend, 
+      timestamp: Date.now() 
+    });
+  }
 
   function handleClearChat() {
     setMessages([]);
@@ -3300,19 +3337,67 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                           className={cn(
                             "relative min-w-0 transition-all duration-700 msg-target-glow scroll-mt-12",
                             isUser
-                              ? "rounded-[16px] px-[14px] py-[6px] bg-[#f1f1ef] dark:bg-[#2C2C2C]"
+                              ? "group rounded-[16px] px-[14px] py-[6px] bg-[#f1f1ef] dark:bg-[#2C2C2C]"
                               : "w-full max-w-full bg-transparent text-foreground"
                           )}
                         >
                           {isUser ? (
                             <>
-                              {message.content && message.content.trim().length > 0 && (
-                                <p className="text-[16px] leading-[24px] break-words break-all whitespace-pre-wrap text-[#37352f] dark:text-[#F0EFED] cursor-text">
-                                  {(typeof message.content === 'object' && message.content !== null
-                                    ? (message.content as any).content || JSON.stringify(message.content)
-                                    : String(message.content || '')
-                                  ).replace(/\[Attached file:.*?\]/g, '').trim()}
-                                </p>
+                              {editingMessageId === message.id ? (
+                                <div className="flex flex-col gap-2 min-w-[200px] sm:min-w-[300px]">
+                                  <textarea
+                                    value={editContent}
+                                    onChange={(e) => setEditContent(e.target.value)}
+                                    className="w-full text-[16px] leading-[24px] bg-background/50 border border-muted-foreground/30 rounded-md p-2 text-[#37352f] dark:text-[#F0EFED] focus:outline-none focus:ring-1 focus:ring-primary min-h-[80px] resize-y"
+                                    autoFocus
+                                  />
+                                  <div className="flex justify-end gap-2">
+                                    <button 
+                                      onClick={() => { setEditingMessageId(null); setEditContent(""); }}
+                                      className="px-3 py-1 text-xs font-medium bg-muted text-foreground rounded-full hover:bg-muted/80 transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button 
+                                      onClick={() => handleSendEditedMessage(message.id)}
+                                      className="px-3 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors"
+                                    >
+                                      Send
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  {message.content && message.content.trim().length > 0 && (
+                                    <p className="text-[16px] leading-[24px] break-words break-all whitespace-pre-wrap text-[#37352f] dark:text-[#F0EFED] cursor-text">
+                                      {(typeof message.content === 'object' && message.content !== null
+                                        ? (message.content as any).content || JSON.stringify(message.content)
+                                        : String(message.content || '')
+                                      ).replace(/\[Attached file:.*?\]/g, '').trim()}
+                                    </p>
+                                  )}
+                                  
+                                  {/* Hover Actions (Copy / Edit) */}
+                                  <div className="absolute -left-12 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center gap-1 z-10">
+                                    <button
+                                      onClick={() => { 
+                                        setEditingMessageId(message.id); 
+                                        setEditContent(typeof message.content === 'string' ? message.content.replace(/\[Attached file:.*?\]/g, '').trim() : '');
+                                      }}
+                                      className="p-1.5 bg-background border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+                                      title="Edit Message"
+                                    >
+                                      <Pencil className="h-3 w-3" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleCopyUserMessage(typeof message.content === 'string' ? message.content.replace(/\[Attached file:.*?\]/g, '').trim() : '', message.id)}
+                                      className="p-1.5 bg-background border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+                                      title="Copy Message"
+                                    >
+                                      {copiedMessageId === message.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                    </button>
+                                  </div>
+                                </>
                               )}
                               {message.contextUrl && (
                                 <a
