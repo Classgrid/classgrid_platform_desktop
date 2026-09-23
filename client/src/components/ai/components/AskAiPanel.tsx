@@ -1393,7 +1393,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
-  const [isQueueVisible, setIsQueueVisible] = useState(false);
+  const [isQueueVisible, setIsQueueVisible] = useState(true);
   const [priorityMessage, setPriorityMessage] = useState<QueuedMessage | null>(null);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
