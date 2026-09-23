@@ -1623,7 +1623,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   }, [input, attachedFiles, lastSentDocsPath]);
 
   const MAX_FILE_SIZE = 35 * 1024 * 1024; // 35MB
-  const ACCEPTED_FILE_TYPES = "image/*,.pdf,.md,.txt,.csv,.doc,.docx,.xlsx,.pptx";
+  const ACCEPTED_FILE_TYPES = "image/*,audio/*,video/*,.pdf,.md,.txt,.csv,.doc,.docx,.xlsx,.pptx";
 
   function formatFileSize(bytes: number) {
     if (bytes < 1024) return `${bytes} B`;
