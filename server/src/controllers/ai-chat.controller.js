@@ -1303,537 +1303,537 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
             toolHandlers: (() => {
                 const queriedTables = new Map();
                 return Object.fromEntries(Object.entries({
-                internal_thought_process: async (args) => {
-                    const title = args?.title || "Thought Process";
-                    const details = args?.details || (typeof args === 'object' ? JSON.stringify(args) : String(args));
-                    const fullText = `**${title}**\n${details}`;
+                    internal_thought_process: async (args) => {
+                        const title = args?.title || "Thought Process";
+                        const details = args?.details || (typeof args === 'object' ? JSON.stringify(args) : String(args));
+                        const fullText = `**${title}**\n${details}`;
 
-                    // Fake live streaming chunk-by-chunk to the UI so it looks like it's typing
-                    for (let i = 0; i < fullText.length; i++) {
-                        try {
-                            res.write(`data: ${JSON.stringify({ type: "thought", thought: fullText[i] })}\n\n`);
-                        } catch (e) { }
-                        // Fast typing animation — 3ms per char (was 15ms)
-                        await new Promise(r => setTimeout(r, 3));
-                    }
-
-                    return "Thought logged successfully. Proceed with the next step in your workflow sequence.";
-                },
-                execute_terminal_command: async (args) => {
-                    const result = await handleToolCall('execute_terminal_command', args, { sessionId });
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                run_code: async (args) => {
-                    const result = await handleToolCall('run_code', args, { sessionId });
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                unified_db_query: async (args) => {
-                    if (args && args.collectionOrTable) {
-                        const tableKey = `${args.source || 'unknown'}:${args.collectionOrTable}`;
-                        const queryCount = queriedTables.get(tableKey) || 0;
-                        if (queryCount >= 2) {
-                            return `ERROR (CRITICAL): ANTI-LOOPING SYSTEM TRIGGERED. You have ALREADY queried the '${args.collectionOrTable}' table twice (the maximum allowed). You are STRICTLY FORBIDDEN from querying it a 3rd time. Stop querying and generate your final markdown response to the user NOW using the data you already have.`;
-                        }
-                        queriedTables.set(tableKey, queryCount + 1);
-                    }
-                    const userEmail = req.user?.email || body.userEmail || '';
-                    const userRole = req.user?.role || body.userRole || '';
-                    const subdomain = req.user?.subdomain || body.subdomain || '';
-                    const result = await handleToolCall('unified_db_query', args, { userEmail, userRole, subdomain });
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                generate_pdf: async (args) => {
-                    const result = await handleToolCall('generate_pdf', args, {});
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                upload_file_to_cdn: async (args) => {
-                    try {
-                        const buffer = Buffer.from(args.base64Data || args.base64Content, 'base64');
-                        if (buffer.length < 100) {
-                            return "FAILED to upload file: The provided base64 string is too short or empty. This usually means your script failed to generate the file correctly. Fix your script and try again.";
-                        }
-                        const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
-                        const s3Client = new S3Client({
-                            region: process.env.AWS_S3_ERP_REGION || 'eu-north-1',
-                            credentials: {
-                                accessKeyId: process.env.AWS_S3_ERP_ACCESS_KEY,
-                                secretAccessKey: process.env.AWS_S3_ERP_SECRET_KEY,
-                            }
-                        });
-                        const safeFileName = args.fileName.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
-                        const s3Key = `ai-generated/${Date.now()}-${safeFileName}`;
-                        await s3Client.send(new PutObjectCommand({
-                            Bucket: process.env.AWS_S3_ERP_BUCKET_NAME || 'erp-classgrid',
-                            Key: s3Key,
-                            Body: buffer,
-                            ContentType: args.mimeType
-                        }));
-                        const cdnDomain = process.env.AWS_CLOUDFRONT_ERP_DOMAIN || 'https://cdn.classgrid.in';
-                        const url = `${cdnDomain}/${s3Key}`;
-                        return `SUCCESS: File uploaded. Public URL: ${url}`;
-                    } catch (e) {
-                        return `FAILED to upload file: ${e.message}`;
-                    }
-                },
-                upload_sandbox_file_to_cdn: async (args) => {
-                    try {
-                        const { sandboxFilePath, mimeType } = args;
-                        if (!sandboxFilePath) return "FAILED: sandboxFilePath is required.";
-                        
-                        const fileName = sandboxFilePath.split('/').pop();
-                        // Sandbox maps /data inside docker to /home/ubuntu/sandbox_data/${sessionId} on the host
-                        const relativePath = sandboxFilePath.replace('/data/', '');
-                        const hostFilePath = `/home/ubuntu/sandbox_data/${sessionId}/${relativePath}`;
-
-                        console.log(`[upload_sandbox_file_to_cdn] Fetching file from host: ${hostFilePath}`);
-                        
-                        const { NodeSSH } = await import('node-ssh');
-                        const ssh = new NodeSSH();
-                        const isProd = process.env.NODE_ENV === 'production';
-                        await ssh.connect({
-                            host: isProd ? '172.31.6.98' : '13.63.34.197',
-                            username: 'ubuntu',
-                            ...(process.env.AGENT_SSH_KEY
-                                ? { privateKey: process.env.AGENT_SSH_KEY.replace(/\\n/g, '\n') }
-                                : { privateKeyPath: 'C:\\Users\\nikhi\\Downloads\\Nikhil.pem' })
-                        });
-
-                        const checkCmd = await ssh.execCommand(`test -f "${hostFilePath}" && echo "exists" || echo "not found"`);
-                        if (!checkCmd.stdout.includes('exists')) {
-                            ssh.dispose();
-                            return `FAILED: File ${sandboxFilePath} does not exist in the sandbox. Did your script run successfully?`;
-                        }
-
-                        const catCmd = await ssh.execCommand(`cat "${hostFilePath}" | base64 -w 0`);
-                        ssh.dispose();
-
-                        if (catCmd.stderr) {
-                            return `FAILED to read file: ${catCmd.stderr}`;
-                        }
-
-                        const buffer = Buffer.from(catCmd.stdout.replace(/\\s/g, ''), 'base64');
-                        if (buffer.length < 10) {
-                            return "FAILED to upload file: The file is empty. Your script failed to generate it correctly.";
-                        }
-
-                        const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
-                        const s3Client = new S3Client({
-                            region: process.env.AWS_S3_ERP_REGION || 'eu-north-1',
-                            credentials: {
-                                accessKeyId: process.env.AWS_S3_ERP_ACCESS_KEY,
-                                secretAccessKey: process.env.AWS_S3_ERP_SECRET_KEY,
-                            }
-                        });
-                        const safeFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
-                        const s3Key = `ai-generated/${Date.now()}-${safeFileName}`;
-                        await s3Client.send(new PutObjectCommand({
-                            Bucket: process.env.AWS_S3_ERP_BUCKET_NAME || 'erp-classgrid',
-                            Key: s3Key,
-                            Body: buffer,
-                            ContentType: mimeType
-                        }));
-                        const cdnDomain = process.env.AWS_CLOUDFRONT_ERP_DOMAIN || 'https://cdn.classgrid.in';
-                        const url = `${cdnDomain}/${s3Key}`;
-                        return `SUCCESS: File uploaded. Public URL: ${url}`;
-                    } catch (e) {
-                        return `FAILED to upload file: ${e.message}`;
-                    }
-                },
-                analyze_image: async (args) => {
-                    try {
-                        const { url, question } = args;
-                        if (!url) return "ERROR: No url provided in tool arguments.";
-
-                        console.log(`[analyze_image] Fetching Image URL: ${url}`);
-                        const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-                        if (!response.ok) throw new Error(`Failed to fetch Image URL: ${response.statusText}`);
-
-                        const arrayBuffer = await response.arrayBuffer();
-                        const buffer = Buffer.from(arrayBuffer);
-
-                        console.log(`[analyze_image] Using Cloudflare Vision AI. Question: ${question}`);
-                        const cfToken = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
-                        const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-
-                        if (!cfToken || !cfAccountId) {
-                            throw new Error("Missing Cloudflare AI credentials for Vision API.");
-                        }
-
-                        const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`;
-
-                        // Cloudflare requires the image. Sending as an array of integers blows up JSON size (3MB -> 15MB).
-                        // Converting to base64 string keeps it small enough to pass the 10MB API Gateway limit!
-                        const base64String = buffer.toString('base64');
-
-                        const visionResponse = await fetch(cfUrl, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${cfToken}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                prompt: question || "Describe this image in high detail, extracting all text and explaining visual elements.",
-                                image: base64String
-                            })
-                        });
-
-                        if (!visionResponse.ok) {
-                            throw new Error(`Cloudflare Vision AI failed: ${visionResponse.statusText}`);
-                        }
-
-                        const json = await visionResponse.json();
-                        return "VISION AI ANSWER:\n" + (json.result?.response || JSON.stringify(json.result));
-                    } catch (e) {
-                        return `FAILED to analyze image: ${e.message}`;
-                    }
-                },
-                parse_document: async (args) => {
-                    try {
-                        const { url } = args;
-                        if (!url) return "ERROR: No url provided in tool arguments.";
-
-                        console.log(`[parse_document] Fetching Document URL: ${url}`);
-                        const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-                        if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`);
-
-                        const arrayBuffer = await response.arrayBuffer();
-                        const buffer = Buffer.from(arrayBuffer);
-
-                        const isPdf = url.toLowerCase().includes('.pdf') || url.toLowerCase().includes('ai-chat-uploads');
-
-                        if (isPdf) {
+                        // Fake live streaming chunk-by-chunk to the UI so it looks like it's typing
+                        for (let i = 0; i < fullText.length; i++) {
                             try {
-                                const pdfParse = (await import('pdf-parse')).default;
-                                const data = await pdfParse(buffer);
-                                const text = data.text.trim();
-                                // If we got substantial text, it's a digital PDF, not just scanned images
-                                if (text.length > 50) {
-                                    return "DOCUMENT CONTENTS:\n" + text;
-                                } else {
-                                    return "FAILED: This PDF seems to be scanned and contains no extractable text. Please use the analyze_image tool if you need to read it via vision AI.";
-                                }
-                            } catch (err) {
-                                return `FAILED to parse PDF: ${err.message}`;
+                                res.write(`data: ${JSON.stringify({ type: "thought", thought: fullText[i] })}\n\n`);
+                            } catch (e) { }
+                            // Fast typing animation — 3ms per char (was 15ms)
+                            await new Promise(r => setTimeout(r, 3));
+                        }
+
+                        return "Thought logged successfully. Proceed with the next step in your workflow sequence.";
+                    },
+                    execute_terminal_command: async (args) => {
+                        const result = await handleToolCall('execute_terminal_command', args, { sessionId });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    run_code: async (args) => {
+                        const result = await handleToolCall('run_code', args, { sessionId });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    unified_db_query: async (args) => {
+                        if (args && args.collectionOrTable) {
+                            const tableKey = `${args.source || 'unknown'}:${args.collectionOrTable}`;
+                            const queryCount = queriedTables.get(tableKey) || 0;
+                            if (queryCount >= 2) {
+                                return `ERROR (CRITICAL): ANTI-LOOPING SYSTEM TRIGGERED. You have ALREADY queried the '${args.collectionOrTable}' table twice (the maximum allowed). You are STRICTLY FORBIDDEN from querying it a 3rd time. Stop querying and generate your final markdown response to the user NOW using the data you already have.`;
                             }
+                            queriedTables.set(tableKey, queryCount + 1);
                         }
-
-                        return "FAILED: This tool is only for PDFs. For images, use the analyze_image tool.";
-                    } catch (e) {
-                        return `FAILED to parse document: ${e.message}`;
-                    }
-                },
-                generate_pdf_from_db: async (args) => {
-                    const result = await handleToolCall('generate_pdf_from_db', args, {});
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                generate_image: async (args) => {
-                    try {
-                        const port = process.env.PORT || 3000;
-                        const url = `http://127.0.0.1:${port}/api/ai/generate-image`;
-
-                        // Extract token from headers or cookies to ensure internal fetch passes authentication
-                        let token = '';
-                        if (req.headers.authorization) {
-                            token = req.headers.authorization;
-                        } else if (req.cookies && (req.cookies.token || req.cookies.jwt)) {
-                            token = `Bearer ${req.cookies.token || req.cookies.jwt}`;
-                        }
-
-                        const resData = await fetch(url, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': token
-                            },
-                            body: JSON.stringify({
-                                prompt: args.prompt,
-                                sessionId: sessionId,
-                                userEmail: userEmail,
-                                isIncognito: isIncognito
-                            })
-                        });
-
-                        const text = await resData.text();
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userRole = req.user?.role || body.userRole || '';
+                        const subdomain = req.user?.subdomain || body.subdomain || '';
+                        const result = await handleToolCall('unified_db_query', args, { userEmail, userRole, subdomain });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    generate_pdf: async (args) => {
+                        const result = await handleToolCall('generate_pdf', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    upload_file_to_cdn: async (args) => {
                         try {
-                            const json = JSON.parse(text);
-                            if (json.imageUrl) {
-                                return `[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${json.imageUrl}]\n\nCRITICAL: You MUST immediately output this exact [IMAGE_GENERATION_COMPLETE] string to the user right now so their UI can render the image. Do not paraphrase it!`;
+                            const buffer = Buffer.from(args.base64Data || args.base64Content, 'base64');
+                            if (buffer.length < 100) {
+                                return "FAILED to upload file: The provided base64 string is too short or empty. This usually means your script failed to generate the file correctly. Fix your script and try again.";
                             }
-                            return `FAILED to generate image: ${json.error || json.message || text}`;
+                            const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
+                            const s3Client = new S3Client({
+                                region: process.env.AWS_S3_ERP_REGION || 'eu-north-1',
+                                credentials: {
+                                    accessKeyId: process.env.AWS_S3_ERP_ACCESS_KEY,
+                                    secretAccessKey: process.env.AWS_S3_ERP_SECRET_KEY,
+                                }
+                            });
+                            const safeFileName = args.fileName.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
+                            const s3Key = `ai-generated/${Date.now()}-${safeFileName}`;
+                            await s3Client.send(new PutObjectCommand({
+                                Bucket: process.env.AWS_S3_ERP_BUCKET_NAME || 'erp-classgrid',
+                                Key: s3Key,
+                                Body: buffer,
+                                ContentType: args.mimeType
+                            }));
+                            const cdnDomain = process.env.AWS_CLOUDFRONT_ERP_DOMAIN || 'https://cdn.classgrid.in';
+                            const url = `${cdnDomain}/${s3Key}`;
+                            return `SUCCESS: File uploaded. Public URL: ${url}`;
                         } catch (e) {
-                            return `FAILED to generate image: Non-JSON error response from internal server.`;
+                            return `FAILED to upload file: ${e.message}`;
                         }
-                    } catch (e) {
-                        return `FAILED to generate image: ${e.message}`;
-                    }
-                },
+                    },
+                    upload_sandbox_file_to_cdn: async (args) => {
+                        try {
+                            const { sandboxFilePath, mimeType } = args;
+                            if (!sandboxFilePath) return "FAILED: sandboxFilePath is required.";
 
-                get_timezone_time: async (args) => {
-                    try {
-                        const tz = args.timeZone || 'UTC';
-                        const now = new Date();
-                        const date = now.toLocaleDateString('en-US', { timeZone: tz, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                        const time = now.toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', timeZoneName: 'longOffset' });
-                        return `SUCCESS: The exact current time in ${tz} is ${time} on ${date} (this string includes the UTC offset, e.g. GMT+05:30). Use this offset to accurately calculate UTC times for scheduling.`;
-                    } catch (e) {
-                        return `Error getting time for ${args.timeZone}. Please ensure it is a valid IANA timezone string like 'Europe/London'.`;
-                    }
-                },
-                search_web: async (args) => {
-                    const tavilyKey = process.env.TAVILY_API_KEY?.trim();
-                    if (!tavilyKey) return "Search failed because TAVILY_API_KEY is missing.";
-                    try {
-                        const tavilyRes = await fetch("https://api.tavily.com/search", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                api_key: tavilyKey,
-                                query: args.query,
-                                search_depth: "advanced",
-                                include_answer: false,
-                                include_raw_content: true,
-                                max_results: 10
-                            })
-                        });
-                        if (!tavilyRes.ok) {
-                            const errorText = await tavilyRes.text();
-                            return `Web Search failed: ${tavilyRes.status} ${tavilyRes.statusText} - ${errorText}`;
+                            const fileName = sandboxFilePath.split('/').pop();
+                            // Sandbox maps /data inside docker to /home/ubuntu/sandbox_data/${sessionId} on the host
+                            const relativePath = sandboxFilePath.replace('/data/', '');
+                            const hostFilePath = `/home/ubuntu/sandbox_data/${sessionId}/${relativePath}`;
+
+                            console.log(`[upload_sandbox_file_to_cdn] Fetching file from host: ${hostFilePath}`);
+
+                            const { NodeSSH } = await import('node-ssh');
+                            const ssh = new NodeSSH();
+                            const isProd = process.env.NODE_ENV === 'production';
+                            await ssh.connect({
+                                host: isProd ? '172.31.6.98' : '13.63.34.197',
+                                username: 'ubuntu',
+                                ...(process.env.AGENT_SSH_KEY
+                                    ? { privateKey: process.env.AGENT_SSH_KEY.replace(/\\n/g, '\n') }
+                                    : { privateKeyPath: 'C:\\Users\\nikhi\\Downloads\\Nikhil.pem' })
+                            });
+
+                            const checkCmd = await ssh.execCommand(`test -f "${hostFilePath}" && echo "exists" || echo "not found"`);
+                            if (!checkCmd.stdout.includes('exists')) {
+                                ssh.dispose();
+                                return `FAILED: File ${sandboxFilePath} does not exist in the sandbox. Did your script run successfully?`;
+                            }
+
+                            const catCmd = await ssh.execCommand(`cat "${hostFilePath}" | base64 -w 0`);
+                            ssh.dispose();
+
+                            if (catCmd.stderr) {
+                                return `FAILED to read file: ${catCmd.stderr}`;
+                            }
+
+                            const buffer = Buffer.from(catCmd.stdout.replace(/\\s/g, ''), 'base64');
+                            if (buffer.length < 10) {
+                                return "FAILED to upload file: The file is empty. Your script failed to generate it correctly.";
+                            }
+
+                            const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
+                            const s3Client = new S3Client({
+                                region: process.env.AWS_S3_ERP_REGION || 'eu-north-1',
+                                credentials: {
+                                    accessKeyId: process.env.AWS_S3_ERP_ACCESS_KEY,
+                                    secretAccessKey: process.env.AWS_S3_ERP_SECRET_KEY,
+                                }
+                            });
+                            const safeFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
+                            const s3Key = `ai-generated/${Date.now()}-${safeFileName}`;
+                            await s3Client.send(new PutObjectCommand({
+                                Bucket: process.env.AWS_S3_ERP_BUCKET_NAME || 'erp-classgrid',
+                                Key: s3Key,
+                                Body: buffer,
+                                ContentType: mimeType
+                            }));
+                            const cdnDomain = process.env.AWS_CLOUDFRONT_ERP_DOMAIN || 'https://cdn.classgrid.in';
+                            const url = `${cdnDomain}/${s3Key}`;
+                            return `SUCCESS: File uploaded. Public URL: ${url}`;
+                        } catch (e) {
+                            return `FAILED to upload file: ${e.message}`;
                         }
-                        
-                        const searchData = await tavilyRes.json();
-                        return JSON.stringify({
-                            answer: searchData.answer || null,
-                            results: searchData.results || []
-                        });
-                    } catch (e) {
-                        return "Web Search failed: " + e;
-                    }
-                },
-                send_email: async (args) => {
-                    // Check if they tried to spoof another domain
-                    if (args.fromEmail && !args.fromEmail.endsWith('@classgrid.in')) {
-                        return "ERROR: You can only send emails from an @classgrid.in address.";
-                    }
+                    },
+                    analyze_image: async (args) => {
+                        try {
+                            const { url, question } = args;
+                            if (!url) return "ERROR: No url provided in tool arguments.";
 
-                    const isSuperAdmin = req.user?.email?.endsWith('@classgrid.in') || body.userRole === 'super_admin' || body.userRole === 'org_admin';
-                    if (!isSuperAdmin) {
-                        return "SECURITY ERROR: Access Denied. Only Admins are authorized to use the AI email sending tool.";
-                    }
+                            console.log(`[analyze_image] Fetching Image URL: ${url}`);
+                            const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+                            if (!response.ok) throw new Error(`Failed to fetch Image URL: ${response.statusText}`);
 
-                    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ EXTERNAL EMAIL SAFETY GATE ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-                    // Block AI from sending to external (non-classgrid.in) addresses
-                    // without explicit user confirmation. This prevents the AI from
-                    // autonomously emailing real people (e.g. investors, partners)
-                    // with AI-generated content that the user hasn't reviewed.
-                    const recipientEmail = (args.to || '').trim().toLowerCase();
-                    const isExternalRecipient = recipientEmail && !recipientEmail.endsWith('@classgrid.in');
+                            const arrayBuffer = await response.arrayBuffer();
+                            const buffer = Buffer.from(arrayBuffer);
 
-                    if (isExternalRecipient) {
-                        // Check if the user explicitly confirmed sending in their last message
-                        const lastUserMsg = (messages || []).filter(m => m.role === 'user').pop();
-                        const lastUserText = (lastUserMsg?.content || '').trim().toLowerCase();
-                        const confirmPatterns = [
-                            'yes', 'sure', 'send', 'go ahead', 'send it', 'confirm send',
-                            'approved', 'confirmed', 'please send', 'do send'
-                        ];
-                        const hasConfirmation = confirmPatterns.some(p => {
-                            const regex = new RegExp(`\\b${p}\\b`, 'i');
-                            return regex.test(lastUserText);
-                        });
+                            console.log(`[analyze_image] Using Cloudflare Vision AI. Question: ${question}`);
+                            const cfToken = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
+                            const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
 
-                        if (!hasConfirmation) {
-                            console.warn(`[EMAIL SAFETY] BLOCKED: AI tried to send email to external address ${recipientEmail} without user confirmation. Subject: "${args.subject}"`);
-                            return `EMAIL_DRAFT_PENDING: The email to ${recipientEmail} has NOT been sent yet. You MUST show the user a preview of this email and ask for their explicit confirmation before sending. Tell the user: "I've prepared an email draft to ${recipientEmail} with subject '${args.subject}'. Would you like me to send it, or would you like to review/edit it first?" Do NOT call send_email again until the user explicitly confirms.`;
+                            if (!cfToken || !cfAccountId) {
+                                throw new Error("Missing Cloudflare AI credentials for Vision API.");
+                            }
+
+                            const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`;
+
+                            // Cloudflare requires the image. Sending as an array of integers blows up JSON size (3MB -> 15MB).
+                            // Converting to base64 string keeps it small enough to pass the 10MB API Gateway limit!
+                            const base64String = buffer.toString('base64');
+
+                            const visionResponse = await fetch(cfUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${cfToken}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    prompt: question || "Describe this image in high detail, extracting all text and explaining visual elements.",
+                                    image: base64String
+                                })
+                            });
+
+                            if (!visionResponse.ok) {
+                                throw new Error(`Cloudflare Vision AI failed: ${visionResponse.statusText}`);
+                            }
+
+                            const json = await visionResponse.json();
+                            return "VISION AI ANSWER:\n" + (json.result?.response || JSON.stringify(json.result));
+                        } catch (e) {
+                            return `FAILED to analyze image: ${e.message}`;
                         }
-                    }
+                    },
+                    parse_document: async (args) => {
+                        try {
+                            const { url } = args;
+                            if (!url) return "ERROR: No url provided in tool arguments.";
 
-                    try {
-                        let processedAttachments = [];
-                        if (args.attachments && Array.isArray(args.attachments) && args.attachments.length > 0) {
-                            console.log(`[send_email] Processing ${args.attachments.length} attachments...`);
-                            for (const att of args.attachments) {
-                                if (att.path && att.path.startsWith('/data/')) {
-                                    console.log(`[send_email] Fetching sandbox file: ${att.path}`);
-                                    const result = await handleToolCall('execute_terminal_command', { command: `cat ${att.path} | base64 -w 0` }, { sessionId });
-                                    if (result && result.content && result.content[0] && result.content[0].text && !result.isError) {
-                                        processedAttachments.push({
-                                            filename: att.filename,
-                                            content: result.content[0].text.trim(),
-                                            encoding: 'base64'
-                                        });
-                                        console.log(`[send_email] Added sandbox attachment: ${att.filename}`);
+                            console.log(`[parse_document] Fetching Document URL: ${url}`);
+                            const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+                            if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`);
+
+                            const arrayBuffer = await response.arrayBuffer();
+                            const buffer = Buffer.from(arrayBuffer);
+
+                            const isPdf = url.toLowerCase().includes('.pdf') || url.toLowerCase().includes('ai-chat-uploads');
+
+                            if (isPdf) {
+                                try {
+                                    const pdfParse = (await import('pdf-parse')).default;
+                                    const data = await pdfParse(buffer);
+                                    const text = data.text.trim();
+                                    // If we got substantial text, it's a digital PDF, not just scanned images
+                                    if (text.length > 50) {
+                                        return "DOCUMENT CONTENTS:\n" + text;
                                     } else {
-                                        console.warn(`[send_email] Failed to read sandbox file: ${att.path}`);
+                                        return "FAILED: This PDF seems to be scanned and contains no extractable text. Please use the analyze_image tool if you need to read it via vision AI.";
                                     }
-                                } else if (att.path && (att.path.startsWith('http://') || att.path.startsWith('https://'))) {
-                                    console.log(`[send_email] Fetching CDN/URL file: ${att.path}`);
-                                    try {
-                                        const res = await fetch(att.path);
-                                        if (res.ok) {
-                                            const arrayBuffer = await res.arrayBuffer();
-                                            const buffer = Buffer.from(arrayBuffer);
+                                } catch (err) {
+                                    return `FAILED to parse PDF: ${err.message}`;
+                                }
+                            }
+
+                            return "FAILED: This tool is only for PDFs. For images, use the analyze_image tool.";
+                        } catch (e) {
+                            return `FAILED to parse document: ${e.message}`;
+                        }
+                    },
+                    generate_pdf_from_db: async (args) => {
+                        const result = await handleToolCall('generate_pdf_from_db', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    generate_image: async (args) => {
+                        try {
+                            const port = process.env.PORT || 3000;
+                            const url = `http://127.0.0.1:${port}/api/ai/generate-image`;
+
+                            // Extract token from headers or cookies to ensure internal fetch passes authentication
+                            let token = '';
+                            if (req.headers.authorization) {
+                                token = req.headers.authorization;
+                            } else if (req.cookies && (req.cookies.token || req.cookies.jwt)) {
+                                token = `Bearer ${req.cookies.token || req.cookies.jwt}`;
+                            }
+
+                            const resData = await fetch(url, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': token
+                                },
+                                body: JSON.stringify({
+                                    prompt: args.prompt,
+                                    sessionId: sessionId,
+                                    userEmail: userEmail,
+                                    isIncognito: isIncognito
+                                })
+                            });
+
+                            const text = await resData.text();
+                            try {
+                                const json = JSON.parse(text);
+                                if (json.imageUrl) {
+                                    return `[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${json.imageUrl}]\n\nCRITICAL: You MUST immediately output this exact [IMAGE_GENERATION_COMPLETE] string to the user right now so their UI can render the image. Do not paraphrase it!`;
+                                }
+                                return `FAILED to generate image: ${json.error || json.message || text}`;
+                            } catch (e) {
+                                return `FAILED to generate image: Non-JSON error response from internal server.`;
+                            }
+                        } catch (e) {
+                            return `FAILED to generate image: ${e.message}`;
+                        }
+                    },
+
+                    get_timezone_time: async (args) => {
+                        try {
+                            const tz = args.timeZone || 'UTC';
+                            const now = new Date();
+                            const date = now.toLocaleDateString('en-US', { timeZone: tz, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                            const time = now.toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', timeZoneName: 'longOffset' });
+                            return `SUCCESS: The exact current time in ${tz} is ${time} on ${date} (this string includes the UTC offset, e.g. GMT+05:30). Use this offset to accurately calculate UTC times for scheduling.`;
+                        } catch (e) {
+                            return `Error getting time for ${args.timeZone}. Please ensure it is a valid IANA timezone string like 'Europe/London'.`;
+                        }
+                    },
+                    search_web: async (args) => {
+                        const tavilyKey = process.env.TAVILY_API_KEY?.trim();
+                        if (!tavilyKey) return "Search failed because TAVILY_API_KEY is missing.";
+                        try {
+                            const tavilyRes = await fetch("https://api.tavily.com/search", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    api_key: tavilyKey,
+                                    query: args.query,
+                                    search_depth: "advanced",
+                                    include_answer: false,
+                                    include_raw_content: true,
+                                    max_results: 10
+                                })
+                            });
+                            if (!tavilyRes.ok) {
+                                const errorText = await tavilyRes.text();
+                                return `Web Search failed: ${tavilyRes.status} ${tavilyRes.statusText} - ${errorText}`;
+                            }
+
+                            const searchData = await tavilyRes.json();
+                            return JSON.stringify({
+                                answer: searchData.answer || null,
+                                results: searchData.results || []
+                            });
+                        } catch (e) {
+                            return "Web Search failed: " + e;
+                        }
+                    },
+                    send_email: async (args) => {
+                        // Check if they tried to spoof another domain
+                        if (args.fromEmail && !args.fromEmail.endsWith('@classgrid.in')) {
+                            return "ERROR: You can only send emails from an @classgrid.in address.";
+                        }
+
+                        const isSuperAdmin = req.user?.email?.endsWith('@classgrid.in') || body.userRole === 'super_admin' || body.userRole === 'org_admin';
+                        if (!isSuperAdmin) {
+                            return "SECURITY ERROR: Access Denied. Only Admins are authorized to use the AI email sending tool.";
+                        }
+
+                        // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ EXTERNAL EMAIL SAFETY GATE ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+                        // Block AI from sending to external (non-classgrid.in) addresses
+                        // without explicit user confirmation. This prevents the AI from
+                        // autonomously emailing real people (e.g. investors, partners)
+                        // with AI-generated content that the user hasn't reviewed.
+                        const recipientEmail = (args.to || '').trim().toLowerCase();
+                        const isExternalRecipient = recipientEmail && !recipientEmail.endsWith('@classgrid.in');
+
+                        if (isExternalRecipient) {
+                            // Check if the user explicitly confirmed sending in their last message
+                            const lastUserMsg = (messages || []).filter(m => m.role === 'user').pop();
+                            const lastUserText = (lastUserMsg?.content || '').trim().toLowerCase();
+                            const confirmPatterns = [
+                                'yes', 'sure', 'send', 'go ahead', 'send it', 'confirm send',
+                                'approved', 'confirmed', 'please send', 'do send'
+                            ];
+                            const hasConfirmation = confirmPatterns.some(p => {
+                                const regex = new RegExp(`\\b${p}\\b`, 'i');
+                                return regex.test(lastUserText);
+                            });
+
+                            if (!hasConfirmation) {
+                                console.warn(`[EMAIL SAFETY] BLOCKED: AI tried to send email to external address ${recipientEmail} without user confirmation. Subject: "${args.subject}"`);
+                                return `EMAIL_DRAFT_PENDING: The email to ${recipientEmail} has NOT been sent yet. You MUST show the user a preview of this email and ask for their explicit confirmation before sending. Tell the user: "I've prepared an email draft to ${recipientEmail} with subject '${args.subject}'. Would you like me to send it, or would you like to review/edit it first?" Do NOT call send_email again until the user explicitly confirms.`;
+                            }
+                        }
+
+                        try {
+                            let processedAttachments = [];
+                            if (args.attachments && Array.isArray(args.attachments) && args.attachments.length > 0) {
+                                console.log(`[send_email] Processing ${args.attachments.length} attachments...`);
+                                for (const att of args.attachments) {
+                                    if (att.path && att.path.startsWith('/data/')) {
+                                        console.log(`[send_email] Fetching sandbox file: ${att.path}`);
+                                        const result = await handleToolCall('execute_terminal_command', { command: `cat ${att.path} | base64 -w 0` }, { sessionId });
+                                        if (result && result.content && result.content[0] && result.content[0].text && !result.isError) {
                                             processedAttachments.push({
-                                                filename: att.filename || att.path.split('?')[0].split('/').pop() || 'attachment_file',
-                                                content: buffer.toString('base64'),
+                                                filename: att.filename,
+                                                content: result.content[0].text.trim(),
                                                 encoding: 'base64'
                                             });
-                                            console.log(`[send_email] Successfully fetched and base64-encoded URL attachment: ${att.filename}`);
+                                            console.log(`[send_email] Added sandbox attachment: ${att.filename}`);
                                         } else {
-                                            console.error(`[send_email] Failed to fetch URL attachment ${att.path}. Status: ${res.status} ${res.statusText}`);
+                                            console.warn(`[send_email] Failed to read sandbox file: ${att.path}`);
                                         }
-                                    } catch (err) {
-                                        console.error(`[send_email] Error fetching URL attachment ${att.path}:`, err);
+                                    } else if (att.path && (att.path.startsWith('http://') || att.path.startsWith('https://'))) {
+                                        console.log(`[send_email] Fetching CDN/URL file: ${att.path}`);
+                                        try {
+                                            const res = await fetch(att.path);
+                                            if (res.ok) {
+                                                const arrayBuffer = await res.arrayBuffer();
+                                                const buffer = Buffer.from(arrayBuffer);
+                                                processedAttachments.push({
+                                                    filename: att.filename || att.path.split('?')[0].split('/').pop() || 'attachment_file',
+                                                    content: buffer.toString('base64'),
+                                                    encoding: 'base64'
+                                                });
+                                                console.log(`[send_email] Successfully fetched and base64-encoded URL attachment: ${att.filename}`);
+                                            } else {
+                                                console.error(`[send_email] Failed to fetch URL attachment ${att.path}. Status: ${res.status} ${res.statusText}`);
+                                            }
+                                        } catch (err) {
+                                            console.error(`[send_email] Error fetching URL attachment ${att.path}:`, err);
+                                        }
+                                    } else if (att.content) {
+                                        processedAttachments.push(att);
+                                        console.log(`[send_email] Added direct content attachment: ${att.filename}`);
+                                    } else {
+                                        console.warn(`[send_email] Ignored attachment with unknown format: ${JSON.stringify(att)}`);
                                     }
-                                } else if (att.content) {
-                                    processedAttachments.push(att);
-                                    console.log(`[send_email] Added direct content attachment: ${att.filename}`);
-                                } else {
-                                    console.warn(`[send_email] Ignored attachment with unknown format: ${JSON.stringify(att)}`);
                                 }
                             }
+
+                            const emailPayload = {
+                                to: args.to,
+                                subject: args.subject,
+                                html: args.htmlBody || args.body,
+                                fromName: args.fromName,
+                                fromEmail: args.fromEmail
+                            };
+
+                            if (processedAttachments.length > 0) {
+                                emailPayload.attachments = processedAttachments;
+                            }
+
+                            const info = await sendEmail(emailPayload);
+
+                            await NotificationLog.create({
+                                type: "EMAIL",
+                                recipient: args.to,
+                                status: "SENT",
+                                providerMessageId: info?.messageId || 'unknown',
+                                metadata: { subject: args.subject, aiGenerated: true },
+                                userId: req.user?._id || null
+                            });
+
+                            return `SUCCESS: Email sent successfully to ${args.to} from ${args.fromEmail || 'default'}`;
+                        } catch (e) {
+                            return `FAILED to send email: ${e.message}`;
                         }
-
-                        const emailPayload = {
-                            to: args.to,
-                            subject: args.subject,
-                            html: args.htmlBody || args.body,
-                            fromName: args.fromName,
-                            fromEmail: args.fromEmail
-                        };
-
-                        if (processedAttachments.length > 0) {
-                            emailPayload.attachments = processedAttachments;
-                        }
-
-                        const info = await sendEmail(emailPayload);
-
-                        await NotificationLog.create({
-                            type: "EMAIL",
-                            recipient: args.to,
-                            status: "SENT",
-                            providerMessageId: info?.messageId || 'unknown',
-                            metadata: { subject: args.subject, aiGenerated: true },
-                            userId: req.user?._id || null
-                        });
-
-                        return `SUCCESS: Email sent successfully to ${args.to} from ${args.fromEmail || 'default'}`;
-                    } catch (e) {
-                        return `FAILED to send email: ${e.message}`;
-                    }
-                },
-                search_knowledge_base: async (args) => {
-                    try {
-                        const voyageKey = process.env.VOYAGE_API_KEY?.trim();
-                        if (!voyageKey) return "RAG Search failed: VOYAGE_API_KEY is missing from environment variables.";
-
-                        let PlatformRagChunk;
+                    },
+                    search_knowledge_base: async (args) => {
                         try {
-                            PlatformRagChunk = mongoose.model('PlatformRagChunk');
-                        } catch {
-                            PlatformRagChunk = mongoose.model('PlatformRagChunk', new mongoose.Schema({}, { strict: false }), 'platform_rag_chunks');
+                            const voyageKey = process.env.VOYAGE_API_KEY?.trim();
+                            if (!voyageKey) return "RAG Search failed: VOYAGE_API_KEY is missing from environment variables.";
+
+                            let PlatformRagChunk;
+                            try {
+                                PlatformRagChunk = mongoose.model('PlatformRagChunk');
+                            } catch {
+                                PlatformRagChunk = mongoose.model('PlatformRagChunk', new mongoose.Schema({}, { strict: false }), 'platform_rag_chunks');
+                            }
+
+                            const apiUrl = voyageKey.startsWith('al-') ? 'https://ai.mongodb.com/v1/embeddings' : 'https://api.voyageai.com/v1/embeddings';
+                            const embedder = new VoyageEmbedder({ apiKey: voyageKey, provider: 'voyage', apiUrl });
+                            const vectorStore = new MongoVectorStore(PlatformRagChunk, "vector_index", "embedding");
+                            const pipeline = new RagPipeline({ embedder, vectorStore });
+
+                            const result = await pipeline.retrieve(args.query, { topK: 3 });
+                            if (result.chunks.length === 0) {
+                                return "RAG Search found no relevant documents in the 'platform_rag_chunks' collection.";
+                            }
+                            return `RAG Search Results:\n\n${result.contextText}`;
+                        } catch (e) {
+                            return `RAG Search failed: ${e.message}. Note: If this fails with a MongoServerError about '$vectorSearch', it means the Atlas Vector Index hasn't been created yet.`;
                         }
+                    },
 
-                        const apiUrl = voyageKey.startsWith('al-') ? 'https://ai.mongodb.com/v1/embeddings' : 'https://api.voyageai.com/v1/embeddings';
-                        const embedder = new VoyageEmbedder({ apiKey: voyageKey, provider: 'voyage', apiUrl });
-                        const vectorStore = new MongoVectorStore(PlatformRagChunk, "vector_index", "embedding");
-                        const pipeline = new RagPipeline({ embedder, vectorStore });
-
-                        const result = await pipeline.retrieve(args.query, { topK: 3 });
-                        if (result.chunks.length === 0) {
-                            return "RAG Search found no relevant documents in the 'platform_rag_chunks' collection.";
+                    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ MCP Integration Connectors ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+                    // These handlers wire up the integration tool schemas to the actual
+                    // MCP handleToolCall function. Without these, the AI can "see" the tools
+                    // but can't execute them ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â causing "All providers failed" errors.
+                    google_workspace_connector: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('google_workspace_connector', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    microsoft_workspace_connector: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('microsoft_workspace_connector', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    slack_workspace_connector: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('slack_workspace_connector', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    github_workspace_connector: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('github_workspace_connector', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    zoom_connector: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('zoom_connector', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    notion_connector: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('notion_connector', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    vercel_connector: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('vercel_connector', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    whatsapp_business_connector: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('whatsapp_business_connector', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    read_server_logs: async (args) => {
+                        const result = await handleToolCall('read_server_logs', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    aws_ses_connector: async (args) => {
+                        const result = await handleToolCall('aws_ses_connector', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    open_integration_panel: async () => {
+                        return "UI action emitted. The integration panel has been opened for the user.";
+                    },
+                }).map(([toolName, handler]) => [
+                    toolName,
+                    async (args) => {
+                        if (toolName !== 'internal_thought_process') {
+                            accSteps.push({
+                                id: Date.now().toString(),
+                                type: 'tool',
+                                tool: toolName,
+                                title: args?.title || 'Thinking',
+                                details: args?.details || '',
+                                args: args,
+                                status: 'loading'
+                            });
+                            try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
                         }
-                        return `RAG Search Results:\n\n${result.contextText}`;
-                    } catch (e) {
-                        return `RAG Search failed: ${e.message}. Note: If this fails with a MongoServerError about '$vectorSearch', it means the Atlas Vector Index hasn't been created yet.`;
-                    }
-                },
+                        let resultStr;
+                        try { resultStr = await handler(args); } catch (err) { resultStr = "Error: " + (err.message || String(err)); }
 
-                // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ MCP Integration Connectors ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-                // These handlers wire up the integration tool schemas to the actual
-                // MCP handleToolCall function. Without these, the AI can "see" the tools
-                // but can't execute them ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â causing "All providers failed" errors.
-                google_workspace_connector: async (args) => {
-                    const userEmail = req.user?.email || body.userEmail || '';
-                    const result = await handleToolCall('google_workspace_connector', args, { userEmail });
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                microsoft_workspace_connector: async (args) => {
-                    const userEmail = req.user?.email || body.userEmail || '';
-                    const result = await handleToolCall('microsoft_workspace_connector', args, { userEmail });
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                slack_workspace_connector: async (args) => {
-                    const userEmail = req.user?.email || body.userEmail || '';
-                    const result = await handleToolCall('slack_workspace_connector', args, { userEmail });
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                github_workspace_connector: async (args) => {
-                    const userEmail = req.user?.email || body.userEmail || '';
-                    const result = await handleToolCall('github_workspace_connector', args, { userEmail });
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                zoom_connector: async (args) => {
-                    const userEmail = req.user?.email || body.userEmail || '';
-                    const result = await handleToolCall('zoom_connector', args, { userEmail });
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                notion_connector: async (args) => {
-                    const userEmail = req.user?.email || body.userEmail || '';
-                    const result = await handleToolCall('notion_connector', args, { userEmail });
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                vercel_connector: async (args) => {
-                    const userEmail = req.user?.email || body.userEmail || '';
-                    const result = await handleToolCall('vercel_connector', args, { userEmail });
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                whatsapp_business_connector: async (args) => {
-                    const userEmail = req.user?.email || body.userEmail || '';
-                    const result = await handleToolCall('whatsapp_business_connector', args, { userEmail });
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                read_server_logs: async (args) => {
-                    const result = await handleToolCall('read_server_logs', args, {});
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                aws_ses_connector: async (args) => {
-                    const result = await handleToolCall('aws_ses_connector', args, {});
-                    return result.isError ? result.content[0].text : result.content[0].text;
-                },
-                open_integration_panel: async () => {
-                    return "UI action emitted. The integration panel has been opened for the user.";
-                },
-            }).map(([toolName, handler]) => [
-                toolName,
-                async (args) => {
-                    if (toolName !== 'internal_thought_process') {
-                        accSteps.push({
-                            id: Date.now().toString(),
-                            type: 'tool',
-                            tool: toolName,
-                            title: args?.title || 'Thinking',
-                            details: args?.details || '',
-                            args: args,
-                            status: 'loading'
-                        });
-                        try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_start", tool: toolName, args })}\n\n`); } catch (e) { }
-                    }
-                    let resultStr;
-                    try { resultStr = await handler(args); } catch (err) { resultStr = "Error: " + (err.message || String(err)); }
+                        if (toolName !== 'internal_thought_process') {
+                            const step = accSteps.find(s => s.tool === toolName && s.status === 'loading');
+                            if (step) {
+                                const isErr = typeof resultStr === 'string' && (resultStr.startsWith("Error:") || resultStr.startsWith("ERROR:") || resultStr.startsWith("FAILED:"));
+                                step.status = isErr ? 'error' : 'success';
+                                step.result = resultStr;
+                            }
 
-                    if (toolName !== 'internal_thought_process') {
-                        const step = accSteps.find(s => s.tool === toolName && s.status === 'loading');
-                        if (step) {
-                            const isErr = typeof resultStr === 'string' && (resultStr.startsWith("Error:") || resultStr.startsWith("ERROR:") || resultStr.startsWith("FAILED:"));
-                            step.status = isErr ? 'error' : 'success';
-                            step.result = resultStr;
+                            try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result: resultStr })}\n\n`); } catch (e) { }
                         }
-
-                        try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "tool_result", tool: toolName, result: resultStr })}\n\n`); } catch (e) { }
+                        return resultStr;
                     }
-                    return resultStr;
-                }
-            ]))
+                ]))
             })()
         });
 
