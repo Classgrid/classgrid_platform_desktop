@@ -51,6 +51,50 @@ import { App } from "@/app/App";
 import { AppProviders } from "@/app/providers";
 import "@/styles/global.css";
 
+// Handle Vite dynamic import errors (usually happens after a new deployment when chunks change hashes)
+window.addEventListener('unhandledrejection', (event) => {
+  const isChunkLoadError = event.reason && (
+    event.reason.name === 'ChunkLoadError' ||
+    event.reason.message?.includes('Failed to fetch dynamically imported module') ||
+    event.reason.message?.includes('Importing a module script failed')
+  );
+
+  if (isChunkLoadError) {
+    console.error('Detected chunk load error. Attempting to reload the page to fetch the latest assets.');
+    
+    // Prevent infinite reload loops using sessionStorage
+    const reloadKey = 'vite_chunk_reload_flag';
+    const lastReload = sessionStorage.getItem(reloadKey);
+    const now = Date.now();
+    
+    if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+      sessionStorage.setItem(reloadKey, now.toString());
+      window.location.reload();
+    } else {
+      console.error('Already attempted to reload recently. Stopping to prevent infinite loop.');
+    }
+  }
+});
+
+// Also handle the same error if it manifests as a normal error event (e.g. MIME type error in script tag)
+window.addEventListener('error', (event) => {
+  const msg = event.message || '';
+  if (
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Importing a module script failed') ||
+    msg.includes('Expected a JavaScript-or-Wasm module script but the server responded with a MIME type of "text/html"')
+  ) {
+    const reloadKey = 'vite_chunk_reload_flag';
+    const lastReload = sessionStorage.getItem(reloadKey);
+    const now = Date.now();
+    
+    if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+      sessionStorage.setItem(reloadKey, now.toString());
+      window.location.reload();
+    }
+  }
+});
+
 // Initialize PostHog if key is available
 if (typeof window !== 'undefined' && import.meta.env.VITE_POSTHOG_KEY) {
   posthog.init(import.meta.env.VITE_POSTHOG_KEY, {

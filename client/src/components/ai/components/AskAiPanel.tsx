@@ -1138,6 +1138,23 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
         const language = match ? match[1] : "";
         const isApprovalLang = !inline && language && "approval".startsWith(language.toLowerCase());
 
+        if (language === "chart" && !inline) {
+          try {
+            const chartConfig = JSON5.parse(String(children));
+            return (
+              <div className="my-4 w-full rounded-xl border border-border bg-card p-4 shadow-sm relative z-10 overflow-hidden" data-no-ring="true">
+                <AiChartRenderer config={chartConfig} />
+              </div>
+            );
+          } catch (e) {
+            return (
+              <div className="my-4 w-full rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-500 text-sm">
+                Failed to parse chart configuration.
+              </div>
+            );
+          }
+        }
+
         if (isApprovalLang) {
           try {
             let parsedProps = JSON5.parse(String(children));
