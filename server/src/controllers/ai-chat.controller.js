@@ -217,9 +217,9 @@ If the user asks you to make a file public, or you need to provide a public down
 2. \`upload_file_to_cdn\`: Pass the base64 content to upload the file and get the public R2 URL.
 
 ### How to Upload Files to CDN (CRITICAL INSTRUCTION)
-If you generate a file (like an Excel sheet, PDF, or image) inside the sandbox and need to give the user a download link, you MUST use the native \`upload_file_to_cdn\` tool.
+If you generate a file (like an Excel sheet, PDF, or image) inside the sandbox and need to give the user a download link, you MUST use the native \`upload_sandbox_file_to_cdn\` tool.
 Do NOT write a Python script with boto3 to upload files.
-CRITICAL CDN UPLOAD WORKFLOW: You MUST do the file generation AND base64 encoding in ONE SINGLE \`run_code\` call. Your Python script must: (1) generate/process the file, (2) read the output file as bytes, (3) encode to base64, and (4) print ONLY the base64 string to stdout (nothing else). Then pass that base64 string directly to \`upload_file_to_cdn\`. Do NOT split this into multiple run_code calls. Do NOT print anything other than the raw base64 string (no labels, no prefixes, no "base64:" text). If the output is truncated, write the base64 to a file (e.g. /data/output.b64) instead and read it back.
+CRITICAL CDN UPLOAD WORKFLOW: You MUST use the \`upload_sandbox_file_to_cdn\` tool directly with the absolute path of the generated file inside the sandbox (e.g. \`/data/output.png\`). Do NOT try to read the file into base64 and print it. Just generate the file to disk using \`run_code\`, then call \`upload_sandbox_file_to_cdn\` with the path.
 Return the resulting \`cdn.classgrid.in\` URL to the user as a clickable markdown link.
 
 NEVER generate or print fake "simulated" download links (like example.com) inside your python scripts. You must actually upload it to the CDN using the tool and give the user the real \`cdn.classgrid.in\` link.
@@ -285,7 +285,6 @@ RESPONSE STYLE:
   * For Cryptography/Encryption: use 'pycryptodome'
   * For Math and Equations: use 'sympy' and 'scipy'
   ALWAYS write a Python script and import these specific libraries for these tasks!
-- CRITICAL ANTI-LOOPING RULE (HIGHEST PRIORITY - NEVER VIOLATE): You are STRICTLY LIMITED to a MAXIMUM of 3 total \`run_code\` or \`execute_terminal_command\` calls per user message. If your code fails after 3 attempts, you MUST STOP IMMEDIATELY and tell the user: "I was unable to complete this task after 3 attempts. Here is the error: [error details]." You are ABSOLUTELY FORBIDDEN from retrying more than 3 times. Do NOT try different approaches, do NOT chunk output differently, do NOT retry with smaller scripts. 3 attempts is the HARD LIMIT. Violating this rule wastes credits and is STRICTLY BANNED. If a task requires file generation + base64 encoding + CDN upload, do ALL of it in ONE single run_code call to minimize attempts.
 FORMATTING TOOLS (use all of these naturally):
 - **Bullet points & numbered lists**: Great for steps, features, tips, and most explanations.
 - **Tables**: Use for comparisons, structured data, schedules, and side-by-side info.
@@ -819,7 +818,8 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
             'internal_thought_process',
             'search_syllabus_vectors',
             'generate_image',
-            'analyze_image'
+            'analyze_image',
+            'upload_sandbox_file_to_cdn'
         ]);
         let googleConnected = false;
         let msConnected = false;
@@ -1245,6 +1245,21 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                 {
                     type: "function",
                     function: {
+                        name: "upload_sandbox_file_to_cdn",
+                        description: "Uploads a generated file (PDF, Excel, image, video, etc.) directly from the Sandbox filesystem to the Classgrid CDN and returns a public cdn.classgrid.in download URL. You MUST provide this real URL to the user, NEVER simulate it. Use this instead of base64 printing.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                sandboxFilePath: { type: "string", description: "The absolute path to the file inside the sandbox (e.g. /data/report.pdf)." },
+                                mimeType: { type: "string", description: "The MIME type (e.g. application/pdf, image/png)." }
+                            },
+                            required: ["sandboxFilePath", "mimeType"]
+                        }
+                    }
+                },
+                {
+                    type: "function",
+                    function: {
                         name: "generate_pdf",
                         description: "Generates a beautifully formatted PDF document from HTML content using Puppeteer. Returns a download URL.",
                         parameters: {
@@ -1371,6 +1386,70 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                             Key: s3Key,
                             Body: buffer,
                             ContentType: args.mimeType
+                        }));
+                        const cdnDomain = process.env.AWS_CLOUDFRONT_ERP_DOMAIN || 'https://cdn.classgrid.in';
+                        const url = `${cdnDomain}/${s3Key}`;
+                        return `SUCCESS: File uploaded. Public URL: ${url}`;
+                    } catch (e) {
+                        return `FAILED to upload file: ${e.message}`;
+                    }
+                },
+                upload_sandbox_file_to_cdn: async (args) => {
+                    try {
+                        const { sandboxFilePath, mimeType } = args;
+                        if (!sandboxFilePath) return "FAILED: sandboxFilePath is required.";
+                        
+                        const fileName = sandboxFilePath.split('/').pop();
+                        // Sandbox maps /data inside docker to /home/ubuntu/sandbox_data/${sessionId} on the host
+                        const relativePath = sandboxFilePath.replace('/data/', '');
+                        const hostFilePath = `/home/ubuntu/sandbox_data/${sessionId}/${relativePath}`;
+
+                        console.log(`[upload_sandbox_file_to_cdn] Fetching file from host: ${hostFilePath}`);
+                        
+                        const { NodeSSH } = await import('node-ssh');
+                        const ssh = new NodeSSH();
+                        const isProd = process.env.NODE_ENV === 'production';
+                        await ssh.connect({
+                            host: isProd ? '172.31.6.98' : '13.63.34.197',
+                            username: 'ubuntu',
+                            ...(process.env.AGENT_SSH_KEY
+                                ? { privateKey: process.env.AGENT_SSH_KEY.replace(/\\n/g, '\n') }
+                                : { privateKeyPath: 'C:\\Users\\nikhi\\Downloads\\Nikhil.pem' })
+                        });
+
+                        const checkCmd = await ssh.execCommand(`test -f "${hostFilePath}" && echo "exists" || echo "not found"`);
+                        if (!checkCmd.stdout.includes('exists')) {
+                            ssh.dispose();
+                            return `FAILED: File ${sandboxFilePath} does not exist in the sandbox. Did your script run successfully?`;
+                        }
+
+                        const catCmd = await ssh.execCommand(`cat "${hostFilePath}" | base64 -w 0`);
+                        ssh.dispose();
+
+                        if (catCmd.stderr) {
+                            return `FAILED to read file: ${catCmd.stderr}`;
+                        }
+
+                        const buffer = Buffer.from(catCmd.stdout.replace(/\\s/g, ''), 'base64');
+                        if (buffer.length < 10) {
+                            return "FAILED to upload file: The file is empty. Your script failed to generate it correctly.";
+                        }
+
+                        const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
+                        const s3Client = new S3Client({
+                            region: process.env.AWS_S3_ERP_REGION || 'eu-north-1',
+                            credentials: {
+                                accessKeyId: process.env.AWS_S3_ERP_ACCESS_KEY,
+                                secretAccessKey: process.env.AWS_S3_ERP_SECRET_KEY,
+                            }
+                        });
+                        const safeFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
+                        const s3Key = `ai-generated/${Date.now()}-${safeFileName}`;
+                        await s3Client.send(new PutObjectCommand({
+                            Bucket: process.env.AWS_S3_ERP_BUCKET_NAME || 'erp-classgrid',
+                            Key: s3Key,
+                            Body: buffer,
+                            ContentType: mimeType
                         }));
                         const cdnDomain = process.env.AWS_CLOUDFRONT_ERP_DOMAIN || 'https://cdn.classgrid.in';
                         const url = `${cdnDomain}/${s3Key}`;
