@@ -3881,41 +3881,48 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         ) : (
           <>
                         {messageQueue.length > 0 && (
-                          <div className="flex flex-col gap-1.5 px-2 pb-2 w-[80%] mx-auto">
-                            {messageQueue.map((msg) => (
-                              <div key={msg.id} className="group relative flex items-center gap-3 text-slate-500 dark:text-slate-400 animate-in slide-in-from-bottom-2 fade-in hover:bg-muted/40 rounded-md p-1.5 -mx-1.5 transition-colors">
-                                <CornerDownRight className="h-4 w-4 shrink-0 opacity-50" />
-                                <span className="text-[14px] truncate opacity-90 font-medium flex-1">
-                                  {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
-                                </span>
-                                
-                                {/* Hover Actions */}
-                                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
-                                  <button
-                                    onClick={() => {
-                                      // Stop current generation and send this one immediately
-                                      stopGeneration();
-                                      setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
-                                      setTimeout(() => {
-                                        if (askQuestionRef.current) {
-                                          askQuestionRef.current(msg.text, msg.attachedFiles, undefined, { hidden: false });
-                                        }
-                                      }, 100);
-                                    }}
-                                    className="text-[12px] font-medium bg-primary/10 text-primary hover:bg-primary/20 px-2.5 py-1 rounded-md transition-colors"
-                                  >
-                                    Send
-                                  </button>
-                                  <button
-                                    onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
-                                    className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:bg-muted rounded-md transition-colors"
-                                    title="Cancel"
-                                  >
-                                    <X className="h-3.5 w-3.5" />
-                                  </button>
+                          <div className="flex flex-col w-[80%] mx-auto mb-2 bg-muted/30 border border-border/50 rounded-xl overflow-hidden backdrop-blur-sm">
+                            <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border/50 bg-muted/50">
+                              Queued Messages ({messageQueue.length})
+                            </div>
+                            <div className="flex flex-col divide-y divide-border/30">
+                              {messageQueue.map((msg) => (
+                                <div key={msg.id} className="group relative flex items-center gap-3 text-slate-600 dark:text-slate-300 animate-in slide-in-from-bottom-2 fade-in hover:bg-muted/60 p-2.5 transition-colors">
+                                  <CornerDownRight className="h-4 w-4 shrink-0 opacity-50" />
+                                  <span className="text-[14px] truncate opacity-90 font-medium flex-1">
+                                    {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
+                                  </span>
+                                  
+                                  {/* Hover Actions */}
+                                  <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1.5 transition-opacity">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        // Stop current generation and send this one immediately
+                                        stopGeneration();
+                                        setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
+                                        setTimeout(() => {
+                                          if (askQuestionRef.current) {
+                                            askQuestionRef.current(msg.text, msg.attachedFiles, undefined, { hidden: false });
+                                          }
+                                        }, 100);
+                                      }}
+                                      className="text-[12px] font-semibold bg-primary/10 text-primary hover:bg-primary px-3 py-1.5 rounded-md transition-all shadow-sm"
+                                    >
+                                      Send Now
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
+                                      className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
+                                      title="Cancel"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         )}
             <form onSubmit={handleSubmit} className="space-y-2">
@@ -4455,41 +4462,48 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     ) : (
                       <>
                         {messageQueue.length > 0 && (
-                          <div className="flex flex-col gap-1.5 px-2 pb-2 w-full">
-                            {messageQueue.map((msg) => (
-                              <div key={msg.id} className="group relative flex items-center gap-3 text-slate-500 dark:text-slate-400 animate-in slide-in-from-bottom-2 fade-in hover:bg-muted/40 rounded-md p-1.5 -mx-1.5 transition-colors">
-                                <CornerDownRight className="h-4 w-4 shrink-0 opacity-50" />
-                                <span className="text-[14px] truncate opacity-90 font-medium flex-1">
-                                  {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
-                                </span>
-                                
-                                {/* Hover Actions */}
-                                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
-                                  <button
-                                    onClick={() => {
-                                      // Stop current generation and send this one immediately
-                                      stopGeneration();
-                                      setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
-                                      setTimeout(() => {
-                                        if (askQuestionRef.current) {
-                                          askQuestionRef.current(msg.text, msg.attachedFiles, undefined, { hidden: false });
-                                        }
-                                      }, 100);
-                                    }}
-                                    className="text-[12px] font-medium bg-primary/10 text-primary hover:bg-primary/20 px-2.5 py-1 rounded-md transition-colors"
-                                  >
-                                    Send
-                                  </button>
-                                  <button
-                                    onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
-                                    className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:bg-muted rounded-md transition-colors"
-                                    title="Cancel"
-                                  >
-                                    <X className="h-3.5 w-3.5" />
-                                  </button>
+                          <div className="flex flex-col w-full mb-2 bg-muted/30 border border-border/50 rounded-xl overflow-hidden backdrop-blur-sm">
+                            <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border/50 bg-muted/50">
+                              Queued Messages ({messageQueue.length})
+                            </div>
+                            <div className="flex flex-col divide-y divide-border/30">
+                              {messageQueue.map((msg) => (
+                                <div key={msg.id} className="group relative flex items-center gap-3 text-slate-600 dark:text-slate-300 animate-in slide-in-from-bottom-2 fade-in hover:bg-muted/60 p-2.5 transition-colors">
+                                  <CornerDownRight className="h-4 w-4 shrink-0 opacity-50" />
+                                  <span className="text-[14px] truncate opacity-90 font-medium flex-1">
+                                    {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
+                                  </span>
+                                  
+                                  {/* Hover Actions */}
+                                  <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1.5 transition-opacity">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        // Stop current generation and send this one immediately
+                                        stopGeneration();
+                                        setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
+                                        setTimeout(() => {
+                                          if (askQuestionRef.current) {
+                                            askQuestionRef.current(msg.text, msg.attachedFiles, undefined, { hidden: false });
+                                          }
+                                        }, 100);
+                                      }}
+                                      className="text-[12px] font-semibold bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground px-3 py-1.5 rounded-md transition-all shadow-sm"
+                                    >
+                                      Send Now
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
+                                      className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
+                                      title="Cancel"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         )}
                         <form onSubmit={handleSubmit} className="space-y-2">
