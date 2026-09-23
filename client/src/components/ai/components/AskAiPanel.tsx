@@ -2382,8 +2382,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
       // When both buffers are empty and stream is done, mark typing as finished
       if (tokenBufferRef.current.length === 0 && thoughtBufferRef.current.length === 0 && wordTypingActiveRef.current) {
-        // Check again after a small delay to make sure no more data is coming
-        if (!wordTypingActiveRef.current) return;
+        // Reset the typing active ref so the queue engine can proceed
+        wordTypingActiveRef.current = false;
       }
     }, 80); // ~12 words per second — smooth word-by-word like the sandbox
 
@@ -3035,28 +3035,25 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   // --- AI Message Queue Engine ---
   useEffect(() => {
-    // Wait for thinking, submitting, AND word-by-word typing animation to finish
+    // We check the actual React state (messages[last].typing), not the ref, because refs don't trigger re-renders
     const lastMsg = messages[messages.length - 1];
-    const isStillTyping = wordTypingActiveRef.current || lastMsg?.typing === true;
-    if (!thinking && !submitting && !isStillTyping && messageQueue.length > 0) {
+    const isTyping = lastMsg?.role === "assistant" && lastMsg.typing === true;
+    
+    // If we are fully done generating and typing, and there are messages in the queue
+    if (!thinking && !submitting && !isTyping && messageQueue.length > 0) {
       const nextMsg = messageQueue[0];
       
       // Remove it from the queue
       setMessageQueue(prev => prev.slice(1));
       
-      // Restore states to simulate them being in the UI
-      setInput(nextMsg.text);
-      setAttachedFiles(nextMsg.attachedFiles);
-      setPastedTexts(nextMsg.pastedTexts);
-      
-      // Fire the actual request safely after states have updated
+      // We don't restore state to the input box; we just fire the request directly
       setTimeout(() => {
         if (askQuestionRef.current) {
-          askQuestionRef.current(nextMsg.text);
+          askQuestionRef.current(nextMsg.text, nextMsg.attachedFiles, undefined, { hidden: false });
         }
       }, 50);
     }
-  }, [thinking, submitting, messageQueue.length, messages]);
+  }, [thinking, submitting, messages, messageQueue.length]);
 
   // ─── Panel content (shared between desktop sidebar and mobile bottom-sheet) ───
   const pendingQueueUI = null;
@@ -3886,11 +3883,37 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         {messageQueue.length > 0 && (
                           <div className="flex flex-col gap-1.5 px-2 pb-2 w-[80%] mx-auto">
                             {messageQueue.map((msg) => (
-                              <div key={msg.id} className="flex items-center gap-3 text-slate-500 dark:text-slate-400 animate-in slide-in-from-bottom-2 fade-in">
+                              <div key={msg.id} className="group relative flex items-center gap-3 text-slate-500 dark:text-slate-400 animate-in slide-in-from-bottom-2 fade-in hover:bg-muted/40 rounded-md p-1.5 -mx-1.5 transition-colors">
                                 <CornerDownRight className="h-4 w-4 shrink-0 opacity-50" />
-                                <span className="text-[14px] truncate opacity-90 font-medium">
+                                <span className="text-[14px] truncate opacity-90 font-medium flex-1">
                                   {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
                                 </span>
+                                
+                                {/* Hover Actions */}
+                                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                                  <button
+                                    onClick={() => {
+                                      // Stop current generation and send this one immediately
+                                      stopGeneration();
+                                      setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
+                                      setTimeout(() => {
+                                        if (askQuestionRef.current) {
+                                          askQuestionRef.current(msg.text, msg.attachedFiles, undefined, { hidden: false });
+                                        }
+                                      }, 100);
+                                    }}
+                                    className="text-[12px] font-medium bg-primary/10 text-primary hover:bg-primary/20 px-2.5 py-1 rounded-md transition-colors"
+                                  >
+                                    Send
+                                  </button>
+                                  <button
+                                    onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
+                                    className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:bg-muted rounded-md transition-colors"
+                                    title="Cancel"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -4434,11 +4457,37 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         {messageQueue.length > 0 && (
                           <div className="flex flex-col gap-1.5 px-2 pb-2 w-full">
                             {messageQueue.map((msg) => (
-                              <div key={msg.id} className="flex items-center gap-3 text-slate-500 dark:text-slate-400 animate-in slide-in-from-bottom-2 fade-in">
+                              <div key={msg.id} className="group relative flex items-center gap-3 text-slate-500 dark:text-slate-400 animate-in slide-in-from-bottom-2 fade-in hover:bg-muted/40 rounded-md p-1.5 -mx-1.5 transition-colors">
                                 <CornerDownRight className="h-4 w-4 shrink-0 opacity-50" />
-                                <span className="text-[14px] truncate opacity-90 font-medium">
+                                <span className="text-[14px] truncate opacity-90 font-medium flex-1">
                                   {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
                                 </span>
+                                
+                                {/* Hover Actions */}
+                                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                                  <button
+                                    onClick={() => {
+                                      // Stop current generation and send this one immediately
+                                      stopGeneration();
+                                      setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
+                                      setTimeout(() => {
+                                        if (askQuestionRef.current) {
+                                          askQuestionRef.current(msg.text, msg.attachedFiles, undefined, { hidden: false });
+                                        }
+                                      }, 100);
+                                    }}
+                                    className="text-[12px] font-medium bg-primary/10 text-primary hover:bg-primary/20 px-2.5 py-1 rounded-md transition-colors"
+                                  >
+                                    Send
+                                  </button>
+                                  <button
+                                    onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
+                                    className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:bg-muted rounded-md transition-colors"
+                                    title="Cancel"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
                               </div>
                             ))}
                           </div>
