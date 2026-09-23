@@ -21,7 +21,7 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { SESClient, GetSendStatisticsCommand, ListIdentitiesCommand } from '@aws-sdk/client-ses';
 import puppeteer from 'puppeteer';
 import Handlebars from 'handlebars';
-import { uploadBufferToR2 } from '../config/r2Client.js';
+import { uploadBufferToR2, uploadPrivateBufferToR2, getPrivateDownloadUrl } from '../config/r2Client.js';
 import { Readable } from 'stream';
 
 const execPromise = util.promisify(exec);
@@ -1325,7 +1325,8 @@ export const handleToolCall = async (name, args, context = {}) => {
           }
 
           if (buffer.length > 10 * 1024 * 1024) throw new Error("File exceeds 10MB limit. OCR/Parsing rejected.");
-          const url = await uploadBufferToR2(buffer, fileMeta.data.name, mime, `ai-temp-cache/${Date.now()}-${fileMeta.data.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`);
+          const objectKey = await uploadPrivateBufferToR2(buffer, `ai-temp-cache/${Date.now()}-${fileMeta.data.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`, mime);
+          const url = await getPrivateDownloadUrl(objectKey);
           data = { message: "File downloaded and securely staged in R2 temp cache.", url, name: fileMeta.data.name, mimeType: mime, sizeBytes: buffer.length };
         } else if (operation === 'upload_drive_file') {
           if (!args.fileUrl) throw new Error("fileUrl is required for upload_drive_file");
@@ -1520,7 +1521,8 @@ export const handleToolCall = async (name, args, context = {}) => {
           }
 
           if (buffer.length > 10 * 1024 * 1024) throw new Error("File exceeds 10MB limit. OCR/Parsing rejected.");
-          const url = await uploadBufferToR2(buffer, fileMeta.data.name, mime, `ai-temp-cache/${Date.now()}-${fileMeta.data.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`);
+          const objectKey = await uploadPrivateBufferToR2(buffer, `ai-temp-cache/${Date.now()}-${fileMeta.data.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`, mime);
+          const url = await getPrivateDownloadUrl(objectKey);
           data = { message: "Classroom file downloaded and securely staged in R2 temp cache.", url, name: fileMeta.data.name, mimeType: mime, sizeBytes: buffer.length };
         } else {
           throw new Error(`Unsupported operation: ${operation}`);
