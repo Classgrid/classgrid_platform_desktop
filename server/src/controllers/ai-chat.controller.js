@@ -251,7 +251,7 @@ Classgrid uses a hybrid dual-database architecture. When using \`unified_db_quer
 - SUPABASE POSTGRES (source='supabase'): messages, threads, classroom_messages, email_notification_queue, device_tokens, events, holidays, leaves, PLUS all V2 Migrated tables (Advanced Quiz, Certificates, Alumni, Library, Result Engine).
 
 ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â  DATABASE EFFICIENCY & ANTI-LOOPING RULE (CRITICAL):
-You are STRICTLY FORBIDDEN from calling \`unified_db_query\` multiple times for the same table/collection. The tool will automatically return a large batch of records on the very FIRST call. NEVER call it again to perform a \`countDocuments\` or to refetch the same data. Extract what you need from the first result and proceed immediately. Calling the DB tool 2 or 3 times for the same data is banned.
+You are allowed a MAXIMUM of 2 queries per table (e.g. one 'countDocuments' and one 'find'). You are STRICTLY FORBIDDEN from calling \`unified_db_query\` a 3rd time for the same table. If you query the same table 3 times, you will hit a hard backend block. Extract what you need from the first 2 queries and proceed immediately.
 
 SYLLABUS & MATERIAL SEARCH:
 - If the user asks you to search through study materials, notes, or syllabus content, YOU MUST trigger the \`search_syllabus_vectors\` tool to perform a similarity search in the MongoDB Atlas Vector Search database. You must provide the \`org_id\` if it's available in the user context.
@@ -1323,7 +1323,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                 }
             ],
             toolHandlers: (() => {
-                const queriedTables = new Set();
+                const queriedTables = new Map();
                 return Object.fromEntries(Object.entries({
                 internal_thought_process: async (args) => {
                     const title = args?.title || "Thought Process";
@@ -1352,10 +1352,11 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                 unified_db_query: async (args) => {
                     if (args && args.collectionOrTable) {
                         const tableKey = `${args.source || 'unknown'}:${args.collectionOrTable}`;
-                        if (queriedTables.has(tableKey)) {
-                            return `ERROR (CRITICAL): ANTI-LOOPING SYSTEM TRIGGERED. You have ALREADY queried the '${args.collectionOrTable}' table. You are STRICTLY FORBIDDEN from querying it again. The first query returned all the data you need. Stop querying and generate your final markdown response to the user NOW using the data you already have.`;
+                        const queryCount = queriedTables.get(tableKey) || 0;
+                        if (queryCount >= 2) {
+                            return `ERROR (CRITICAL): ANTI-LOOPING SYSTEM TRIGGERED. You have ALREADY queried the '${args.collectionOrTable}' table twice (the maximum allowed). You are STRICTLY FORBIDDEN from querying it a 3rd time. Stop querying and generate your final markdown response to the user NOW using the data you already have.`;
                         }
-                        queriedTables.add(tableKey);
+                        queriedTables.set(tableKey, queryCount + 1);
                     }
                     const userEmail = req.user?.email || body.userEmail || '';
                     const userRole = req.user?.role || body.userRole || '';
