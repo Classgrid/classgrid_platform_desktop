@@ -3054,7 +3054,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       // Fire the request after a small delay to let React finish the state update
       setTimeout(() => {
         if (askQuestionRef.current) {
-          askQuestionRef.current(nextMsg.text, nextMsg.attachedFiles, undefined, { hidden: false });
+          askQuestionRef.current(nextMsg.text);
         }
       }, 100);
     }
@@ -3886,7 +3886,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         ) : (
           <>
                         {messageQueue.length > 0 && (
-                          <div className="flex flex-col gap-0 w-[80%] mx-auto mb-1 py-2 px-2 rounded-lg bg-background border border-border/40">
+                          <div className="flex flex-col gap-0 w-[80%] mx-auto mb-1 py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto">
                             {messageQueue.map((msg) => (
                               <div key={msg.id} className="group flex items-center justify-between gap-2 py-1.5 px-1 text-muted-foreground">
                                 <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -3899,12 +3899,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      stopGeneration();
+                                      handleStop();
                                       setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
                                       setSubmitting(true);
                                       setTimeout(() => {
                                         if (askQuestionRef.current) {
-                                          askQuestionRef.current(msg.text, msg.attachedFiles, undefined, { hidden: false });
+                                          askQuestionRef.current(msg.text);
                                         }
                                       }, 100);
                                     }}
@@ -4462,7 +4462,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     ) : (
                       <>
                         {messageQueue.length > 0 && (
-                          <div className="flex flex-col gap-0 w-full mb-1 py-2 px-2 rounded-lg bg-background border border-border/40">
+                          <div className="flex flex-col gap-0 w-full mb-1 py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto">
                             {messageQueue.map((msg) => (
                               <div key={msg.id} className="group flex items-center justify-between gap-2 py-1.5 px-1 text-muted-foreground">
                                 <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -4475,12 +4475,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      stopGeneration();
+                                      handleStop();
                                       setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
                                       setSubmitting(true);
                                       setTimeout(() => {
                                         if (askQuestionRef.current) {
-                                          askQuestionRef.current(msg.text, msg.attachedFiles, undefined, { hidden: false });
+                                          askQuestionRef.current(msg.text);
                                         }
                                       }, 100);
                                     }}
