@@ -1851,7 +1851,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     return resultStr;
                 }
             ]))
-            })();
+            })()
         });
 
         let requestAborted = false;
