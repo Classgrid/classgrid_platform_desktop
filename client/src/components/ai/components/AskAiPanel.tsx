@@ -3908,14 +3908,14 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                         }
                                       }, 100);
                                     }}
-                                    className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+                                    className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                   >
                                     Send
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
-                                    className="text-muted-foreground hover:text-foreground transition-colors"
+                                    className="cursor-pointer p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                     title="Cancel"
                                   >
                                     <X className="h-3.5 w-3.5" />
@@ -4484,14 +4484,14 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                         }
                                       }, 100);
                                     }}
-                                    className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+                                    className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                   >
                                     Send
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
-                                    className="text-muted-foreground hover:text-foreground transition-colors"
+                                    className="cursor-pointer p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                     title="Cancel"
                                   >
                                     <X className="h-3.5 w-3.5" />
