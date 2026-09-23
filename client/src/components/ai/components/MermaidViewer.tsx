@@ -122,21 +122,39 @@ export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onR
         } catch (err: any) {
           // If EVEN THE REPAIR fails, then we fall back to the slow LLM retry
           if (isMounted) {
+            const errorMsg = err?.message || String(err);
+            
             if (isTyping) {
               // Ignore syntax errors while the AI is still streaming the code block
-              console.warn('Mermaid incomplete while typing:', err?.message || err);
+              console.warn('Mermaid incomplete while typing:', errorMsg);
               return;
             }
-            console.error('Mermaid render error (even after repair):', err?.message || err);
+            
+            console.error('Mermaid render error (even after repair):', errorMsg);
+            
+            // Critical: Mermaid swallows dynamic import errors, so the global unhandledrejection in main.tsx never fires.
+            // We must manually detect Vite chunk load errors here and force a reload.
+            if (errorMsg.includes('Failed to fetch dynamically imported module') || errorMsg.includes('Importing a module script failed')) {
+              console.error('Detected chunk load error in Mermaid. Attempting to reload the page to fetch the latest assets.');
+              const reloadKey = 'vite_chunk_reload_flag';
+              const lastReload = sessionStorage.getItem(reloadKey);
+              const now = Date.now();
+              if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+                sessionStorage.setItem(reloadKey, now.toString());
+                window.location.reload();
+                return;
+              }
+            }
+
             setError('Repairing diagram...');
             setLoading(false);
             if (onRetry && !localHasRetried) {
               localHasRetried = true;
-              onRetry(err?.message || "Invalid diagram syntax");
+              onRetry(errorMsg || "Invalid diagram syntax");
             }
             window.dispatchEvent(
               new CustomEvent('trigger-auto-repair', {
-                detail: { error: err?.message || err, chart }
+                detail: { error: errorMsg || err, chart }
               })
             );
           }
