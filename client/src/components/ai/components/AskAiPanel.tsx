@@ -70,13 +70,13 @@ import {
 } from "lucide-react";
 
 const CustomSlidersIcon = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
     strokeLinejoin="round"
     className={className}
   >
@@ -1030,9 +1030,9 @@ const MarkdownComponents = {
       try {
         const chartConfig = JSON5.parse(codeString);
         return (
-           <div className="my-4 p-4 rounded-xl border border-border bg-card shadow-sm w-full">
-             <AiChartRenderer config={chartConfig} />
-           </div>
+          <div className="my-4 p-4 rounded-xl border border-border bg-card shadow-sm w-full">
+            <AiChartRenderer config={chartConfig} />
+          </div>
         );
       } catch (e) {
         return <pre>Error parsing chart config...</pre>;
@@ -1573,7 +1573,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const { sessionId: routeSessionId } = useParams<{ sessionId?: string }>();
   const [localSessionId, setLocalSessionId] = useState<string | null>(null);
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
-  const [viewingPastedText, setViewingPastedText] = useState<{title: string, content: string} | null>(null);
+  const [viewingPastedText, setViewingPastedText] = useState<{ title: string, content: string } | null>(null);
   const [isExpandedBox, setIsExpandedBox] = useState(false);
 
   // Use route parameter if present (dashboard mode), otherwise fallback to local state (website floating mode)
@@ -2645,7 +2645,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     // --- INTERCEPT @Create image ---
     if (apiQuestion.trim().startsWith("@Create image")) {
       const prompt = apiQuestion.replace("@Create image", "").trim() || "A beautiful image";
-      
+
       // Update assistant message to QUEUED state
       setMessages(prev => {
         const lastMsg = prev[prev.length - 1];
@@ -2660,37 +2660,37 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         const endpoint = typeof import.meta !== "undefined" && import.meta.env
           ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in") + "/api/ai/generate-image"
           : "/api/ai/generate-image";
-          
+
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             prompt,
             sessionId: sessionId ?? undefined,
             userEmail: session?.user?.email ?? undefined,
             isIncognito: isIncognito
           })
         });
-        
+
         if (!res.ok) {
           let errorMsg = "Failed to generate image";
           try {
             const errData = await res.json();
             if (errData.error) errorMsg = errData.error;
-          } catch(e) {}
+          } catch (e) { }
           console.error("Backend returned 500 error:", errorMsg);
           throw new Error(errorMsg);
         }
-        
+
         const data = await res.json();
-        
+
         if (data.sessionId && !sessionId) {
           setSessionId(data.sessionId);
           window.history.pushState({}, "", `/superadmin/agent?session=${data.sessionId}`);
           window.dispatchEvent(new Event("agent:refresh-sessions"));
         }
-        
+
         // Preload the image before switching from QUEUED animation to COMPLETE.
         // This keeps the existing loading animation visible until the image is ready,
         // preventing a black box or broken image flash.
@@ -2702,7 +2702,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           // Safety timeout: don't wait more than 60 seconds
           setTimeout(() => resolve(), 60000);
         });
-        
+
         setMessages(prev => {
           const lastMsg = prev[prev.length - 1];
           return [
@@ -3039,7 +3039,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     // We check the actual React state (messages[last].typing), not the ref, because refs don't trigger re-renders
     const lastMsg = messages[messages.length - 1];
     const isTyping = lastMsg?.role === "assistant" && lastMsg.typing === true;
-    
+
     // If we are fully done generating and typing
     if (!thinking && !submitting && !isTyping) {
       // First check if there is a priority message
@@ -3052,15 +3052,15 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             askQuestionRef.current(textToSend);
           }
         }, 50); // fast fire
-      } 
+      }
       // Else check normal queue
       else if (messageQueue.length > 0) {
         const nextMsg = messageQueue[0];
-        
+
         // CRITICAL: Set submitting to true IMMEDIATELY so the next re-render won't cascade
         setSubmitting(true);
         setMessageQueue(prev => prev.slice(1));
-        
+
         setTimeout(() => {
           if (askQuestionRef.current) {
             askQuestionRef.current(nextMsg.text);
@@ -3221,7 +3221,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               let displayContent = typeof message.content === 'object' && message.content !== null
                 ? (message.content as any).content || JSON.stringify(message.content)
                 : String(message.content || '');
-              
+
               if (message.role === "user" && displayContent.includes("[PASTED TEXT")) {
                 const extractedPastedTexts: string[] = [];
                 const pastedTextRegex = /\[PASTED TEXT \d+\]:\n([\s\S]*?)(?=\n\n\[PASTED TEXT \d+\]:|$)/g;
@@ -3231,7 +3231,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 }
                 displayContent = displayContent.replace(/\[PASTED TEXT \d+\]:\n[\s\S]*?(?=\n\n\[PASTED TEXT \d+\]:|$)/g, "").trim();
                 message.content = displayContent;
-                
+
                 if (extractedPastedTexts.length > 0) {
                   const newAttachments = [...(message.attachments || [])];
                   extractedPastedTexts.forEach((text, i) => {
@@ -3588,19 +3588,19 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                           let loadingText = `Using ${step.tool.replace(/_/g, ' ')}...`;
 
                                           if (step.tool === 'notion_connector' && step.args?.operation) {
-                                              if (step.args.operation === 'search' && step.args.query) {
-                                                  dynamicText = `Searched Notion for "${step.args.query}"`;
-                                                  loadingText = `Searching Notion for "${step.args.query}"...`;
-                                              } else {
-                                                  dynamicText = `Successfully used Notion to ${step.args.operation.replace(/_/g, ' ')}`;
-                                                  loadingText = `Using Notion to ${step.args.operation.replace(/_/g, ' ')}...`;
-                                              }
+                                            if (step.args.operation === 'search' && step.args.query) {
+                                              dynamicText = `Searched Notion for "${step.args.query}"`;
+                                              loadingText = `Searching Notion for "${step.args.query}"...`;
+                                            } else {
+                                              dynamicText = `Successfully used Notion to ${step.args.operation.replace(/_/g, ' ')}`;
+                                              loadingText = `Using Notion to ${step.args.operation.replace(/_/g, ' ')}...`;
+                                            }
                                           } else if (step.tool === 'google_workspace_connector' && step.args?.operation) {
-                                              dynamicText = `Successfully used Google Workspace to ${step.args.operation.replace(/_/g, ' ')}`;
-                                              loadingText = `Using Google Workspace to ${step.args.operation.replace(/_/g, ' ')}...`;
+                                            dynamicText = `Successfully used Google Workspace to ${step.args.operation.replace(/_/g, ' ')}`;
+                                            loadingText = `Using Google Workspace to ${step.args.operation.replace(/_/g, ' ')}...`;
                                           } else if (step.tool === 'zoom_connector' && step.args?.operation) {
-                                              dynamicText = `Successfully used Zoom to ${step.args.operation.replace(/_/g, ' ')}`;
-                                              loadingText = `Using Zoom to ${step.args.operation.replace(/_/g, ' ')}...`;
+                                            dynamicText = `Successfully used Zoom to ${step.args.operation.replace(/_/g, ' ')}`;
+                                            loadingText = `Using Zoom to ${step.args.operation.replace(/_/g, ' ')}...`;
                                           }
 
                                           elements.push(
@@ -3624,10 +3624,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 const isQueued = message.content.includes("[IMAGE_GENERATION_QUEUED");
                                 const isError = message.content.includes("[IMAGE_GENERATION_ERROR");
                                 const isComplete = message.content.includes("[IMAGE_GENERATION_COMPLETE");
-                                
+
                                 let prompt = "Image generation";
                                 let url = "";
-                                
+
                                 if (isQueued || isError) {
                                   prompt = message.content.match(/\[IMAGE_GENERATION(?:_QUEUED|_ERROR):\s*(.*?)\]/)?.[1] || prompt;
                                 } else if (isComplete) {
@@ -3643,11 +3643,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     url = match[2];
                                   }
                                 }
-                                
+
                                 // Track whether this specific image has loaded in the browser
                                 const imgKey = `img-loaded-${message.id}`;
                                 const isImgLoaded = (window as any)[imgKey] === true;
-                                
+
                                 return (
                                   <div className="mb-2 mt-1 w-full max-w-[320px]">
                                     <ImageGeneration
@@ -3679,10 +3679,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                             <DocsImageViewer
                                               images={[{ id: `gen-${message.id}`, src: url, alt: prompt }]}
                                               renderThumbnails={(images, openImage) => (
-                                                <img 
-                                                  src={images[0].src} 
-                                                  alt={images[0].alt} 
-                                                  className="w-full h-full object-cover rounded-xl cursor-zoom-in hover:opacity-95 transition-opacity" 
+                                                <img
+                                                  src={images[0].src}
+                                                  alt={images[0].alt}
+                                                  className="w-full h-full object-cover rounded-xl cursor-zoom-in hover:opacity-95 transition-opacity"
                                                   onClick={(e) => openImage(images[0], e)}
                                                 />
                                               )}
@@ -3913,218 +3913,346 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           </div>
         ) : (
           <>
-                        {messageQueue.length > 0 && (
-                          <div className="flex flex-col gap-0 w-full mb-1 py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar">
-                            {messageQueue.map((msg) => (
-                              <div key={msg.id} className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors">
-                                <div className="flex items-center gap-2 min-w-0 flex-1">
-                                  <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
-                                  <span className="text-[13px] truncate">
-                                    {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
-                                  </span>
-                                </div>
-                                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      // DO NOT STOP AI. Promote to priority message.
-                                      setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
-                                      setPriorityMessage(msg);
-                                    }}
-                                    className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                  >
-                                    Send
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
-                                    className="cursor-pointer p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                    title="Cancel"
-                                  >
-                                    <X className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-            <form onSubmit={handleSubmit} className="space-y-2">
-            <div className={cn(
-              "group relative w-[80%] mx-auto shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
-            )}>
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept={ACCEPTED_FILE_TYPES}
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-
-              {pageContext?.path?.startsWith("/docs") && pageContext.path !== lastSentDocsPath && (
-                <div className="px-3 pt-3 pb-0">
-                  <div className="group relative inline-flex items-center gap-2.5 rounded-[10px] border border-border/80 bg-muted/40 px-3 py-2 pr-8 shadow-sm max-w-[95%]">
-                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0.5">
-                      <span className="text-[12px] font-semibold text-foreground truncate leading-tight">
-                        {pageContext.title || "Introduction"}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground/80 truncate leading-tight">
-                        https://classgrid.in{pageContext.path}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setLastSentDocsPath(pageContext.path!)}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 focus:text-foreground"
-                      title="Remove page context"
-                    >
-                      <X className="h-3 w-3" />
-                      <span className="sr-only">Remove context</span>
-                    </button>
-                  </div>
-                </div>
+            <AnimatePresence>
+              {messageQueue.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.98, transition: { duration: 0.15 } }}
+                  className="flex flex-col gap-0 w-full mb-1 py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar"
+                >
+                  <AnimatePresence>
+                    {messageQueue.map((msg) => (
+                      <motion.div 
+                        key={msg.id} 
+                        layout
+                        initial={{ opacity: 0, x: -10, height: 0 }}
+                        animate={{ opacity: 1, x: 0, height: 'auto' }}
+                        exit={{ opacity: 0, x: 10, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors overflow-hidden"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
+                          <span className="text-[13px] truncate">
+                            {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
+                          </span>
+                        </div>
+                        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // DO NOT STOP AI. Promote to priority message.
+                              setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
+                              setPriorityMessage(msg);
+                            }}
+                            className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                          >
+                            Send
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
+                            className="cursor-pointer p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            title="Cancel"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
               )}
+            </AnimatePresence>
+            <form onSubmit={handleSubmit} className="space-y-2">
+              <div className={cn(
+                "group relative w-[80%] mx-auto shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
+              )}>
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept={ACCEPTED_FILE_TYPES}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
 
-              {/* Attached file chips and Pasted Text Chip */}
-              {(attachedFiles.length > 0 || pastedTexts.length > 0) && (
-                <div className="px-3 pt-3 pb-0 flex flex-wrap gap-1.5">
-                  {pastedTexts.map((pt, idx) => (
-                    <div
-                      key={`pasted-${idx}`}
-                      className="group relative inline-flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3 py-2.5 shadow-sm max-w-[220px] transition-all cursor-pointer hover:bg-muted/60"
-                      title="Too long to show in text field"
-                      onClick={() => setEditingMode(idx)}
-                    >
-                      <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                        <FileText className="h-4 w-4 text-blue-500" />
-                      </div>
+                {pageContext?.path?.startsWith("/docs") && pageContext.path !== lastSentDocsPath && (
+                  <div className="px-3 pt-3 pb-0">
+                    <div className="group relative inline-flex items-center gap-2.5 rounded-[10px] border border-border/80 bg-muted/40 px-3 py-2 pr-8 shadow-sm max-w-[95%]">
+                      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0.5">
-                        <span className="text-[13px] font-medium text-foreground truncate leading-tight">
-                          Pasted text {pastedTexts.length > 1 ? idx + 1 : ""}
+                        <span className="text-[12px] font-semibold text-foreground truncate leading-tight">
+                          {pageContext.title || "Introduction"}
                         </span>
-                        <span className="text-[12px] text-muted-foreground truncate leading-tight">
-                          Pasted text
+                        <span className="text-[10px] text-muted-foreground/80 truncate leading-tight">
+                          https://classgrid.in{pageContext.path}
                         </span>
                       </div>
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPastedTexts(prev => prev.filter((_, i) => i !== idx));
-                        }}
-                        className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground shadow-sm transition-colors z-10 cursor-pointer"
-                        title="Remove pasted text"
+                        onClick={() => setLastSentDocsPath(pageContext.path!)}
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 focus:text-foreground"
+                        title="Remove page context"
                       >
                         <X className="h-3 w-3" />
+                        <span className="sr-only">Remove context</span>
                       </button>
                     </div>
-                  ))}
-                  {attachedFiles.map((att) => {
-                    const Icon = getFileIcon(att.type);
-                    const isImage = att.type.startsWith("image/");
-                    return (
+                  </div>
+                )}
+
+                {/* Attached file chips and Pasted Text Chip */}
+                {(attachedFiles.length > 0 || pastedTexts.length > 0) && (
+                  <div className="px-3 pt-3 pb-0 flex flex-wrap gap-1.5">
+                    {pastedTexts.map((pt, idx) => (
                       <div
-                        key={att.id}
-                        className={cn(
-                          "group relative inline-flex items-center gap-2 rounded-[10px] border px-3 py-2 pr-8 shadow-sm max-w-[200px] transition-all",
-                          att.status === "error" ? "border-red-500/50 bg-red-500/10" : "border-border/80 bg-muted/40",
-                          att.status === "uploading" ? "opacity-70 animate-pulse" : "opacity-100"
-                        )}
+                        key={`pasted-${idx}`}
+                        className="group relative inline-flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3 py-2.5 shadow-sm max-w-[220px] transition-all cursor-pointer hover:bg-muted/60"
+                        title="Too long to show in text field"
+                        onClick={() => setEditingMode(idx)}
                       >
-                        {isImage ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
-                            src={att.url || (att.file ? URL.createObjectURL(att.file) : "")}
-                            alt={att.name}
-                            className="h-6 w-6 rounded object-cover shrink-0"
-                          />
-                        ) : (
-                          <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        )}
-                        <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0">
-                          <span className="text-[11px] font-medium text-foreground truncate leading-tight">
-                            {att.name}
-                          </span>
-                          {att.status === "uploading" ? (
-                            <div className="h-1.5 w-full max-w-[80px] bg-muted-foreground/20 rounded-full overflow-hidden mt-1 mb-0.5">
-                              <motion.div
-                                initial={{ width: "0%" }}
-                                animate={{ width: "85%" }}
-                                transition={{ duration: 2.5, ease: "easeOut" }}
-                                className="h-full bg-emerald-500 rounded-full"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-[10px] text-muted-foreground/70 leading-tight">
-                              {att.status === "error" ? "Failed" : formatFileSize(att.size)}
-                            </span>
-                          )}
+                        <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                          <FileText className="h-4 w-4 text-blue-500" />
                         </div>
-
-                        {/* Allow previewing the file immediately after successful upload */}
-                        {att.status === "done" && att.url && (
-                          <button
-                            type="button"
-                            onClick={() => setPreviewFile({ name: att.name, src: att.url!, mimeType: att.type })}
-                            className="absolute inset-0 w-full h-full cursor-pointer z-10"
-                            title="Preview file"
-                          />
-                        )}
-
+                        <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0.5">
+                          <span className="text-[13px] font-medium text-foreground truncate leading-tight">
+                            Pasted text {pastedTexts.length > 1 ? idx + 1 : ""}
+                          </span>
+                          <span className="text-[12px] text-muted-foreground truncate leading-tight">
+                            Pasted text
+                          </span>
+                        </div>
                         <button
                           type="button"
-                          onClick={() => removeAttachedFile(att.id)}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors z-20 cursor-pointer"
-                          title={`Remove ${att.name}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPastedTexts(prev => prev.filter((_, i) => i !== idx));
+                          }}
+                          className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground shadow-sm transition-colors z-10 cursor-pointer"
+                          title="Remove pasted text"
                         >
                           <X className="h-3 w-3" />
                         </button>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    ))}
+                    {attachedFiles.map((att) => {
+                      const Icon = getFileIcon(att.type);
+                      const isImage = att.type.startsWith("image/");
+                      return (
+                        <div
+                          key={att.id}
+                          className={cn(
+                            "group relative inline-flex items-center gap-2 rounded-[10px] border px-3 py-2 pr-8 shadow-sm max-w-[200px] transition-all",
+                            att.status === "error" ? "border-red-500/50 bg-red-500/10" : "border-border/80 bg-muted/40",
+                            att.status === "uploading" ? "opacity-70 animate-pulse" : "opacity-100"
+                          )}
+                        >
+                          {isImage ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={att.url || (att.file ? URL.createObjectURL(att.file) : "")}
+                              alt={att.name}
+                              className="h-6 w-6 rounded object-cover shrink-0"
+                            />
+                          ) : (
+                            <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          )}
+                          <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0">
+                            <span className="text-[11px] font-medium text-foreground truncate leading-tight">
+                              {att.name}
+                            </span>
+                            {att.status === "uploading" ? (
+                              <div className="h-1.5 w-full max-w-[80px] bg-muted-foreground/20 rounded-full overflow-hidden mt-1 mb-0.5">
+                                <motion.div
+                                  initial={{ width: "0%" }}
+                                  animate={{ width: "85%" }}
+                                  transition={{ duration: 2.5, ease: "easeOut" }}
+                                  className="h-full bg-emerald-500 rounded-full"
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground/70 leading-tight">
+                                {att.status === "error" ? "Failed" : formatFileSize(att.size)}
+                              </span>
+                            )}
+                          </div>
 
-              <div className="absolute top-3 right-3 z-10">
-                {input.trim().split(/\s+/).filter(w => w.length > 0).length >= 90 && (
-                  <button
-                    type="button"
-                    onClick={() => setIsExpandedBox(!isExpandedBox)}
-                    className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer opacity-0 focus-within:opacity-100 group-hover:opacity-100"
-                    title={isExpandedBox ? "Collapse input" : "Expand input"}
-                  >
-                    {isExpandedBox ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 14h6v6" />
-                        <path d="M20 10h-6V4" />
-                        <path d="M14 10l7-7" />
-                        <path d="M3 21l7-7" />
-                      </svg>
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 10h-6V4" />
-                        <path d="M4 14h6v6" />
-                      </svg>
-                    )}
-                  </button>
+                          {/* Allow previewing the file immediately after successful upload */}
+                          {att.status === "done" && att.url && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewFile({ name: att.name, src: att.url!, mimeType: att.type })}
+                              className="absolute inset-0 w-full h-full cursor-pointer z-10"
+                              title="Preview file"
+                            />
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => removeAttachedFile(att.id)}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors z-20 cursor-pointer"
+                            title={`Remove ${att.name}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
-              </div>
 
-              {/* @ mention popover */}
-              <AnimatePresence>
-                {atMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute bottom-[100%] mb-2 left-0 w-full max-h-[350px] overflow-y-auto bg-popover rounded-2xl border border-border shadow-2xl z-50 flex flex-col p-1.5"
-                  >
-                    {(() => {
-                      const filteredIntegrations = INTEGRATIONS_LIST.filter(item => 
-                        item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) || 
+                <div className="absolute top-3 right-3 z-10">
+                  {input.trim().split(/\s+/).filter(w => w.length > 0).length >= 90 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsExpandedBox(!isExpandedBox)}
+                      className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer opacity-0 focus-within:opacity-100 group-hover:opacity-100"
+                      title={isExpandedBox ? "Collapse input" : "Expand input"}
+                    >
+                      {isExpandedBox ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4 14h6v6" />
+                          <path d="M20 10h-6V4" />
+                          <path d="M14 10l7-7" />
+                          <path d="M3 21l7-7" />
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 10h-6V4" />
+                          <path d="M4 14h6v6" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {/* @ mention popover */}
+                <AnimatePresence>
+                  {atMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute bottom-[100%] mb-2 left-0 w-full max-h-[350px] overflow-y-auto bg-popover rounded-2xl border border-border shadow-2xl z-50 flex flex-col p-1.5"
+                    >
+                      {(() => {
+                        const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
+                          item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
+                          (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
+                        );
+                        const baseItems = [
+                          { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
+                          { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
+                          { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
+                          { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
+                          { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
+                          { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
+                        ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
+                        const menuItems = [...baseItems, ...filteredIntegrations];
+
+                        return (
+                          <>
+                            {menuItems.map((item, index) => {
+                              const isSelected = index === atMenuSelectedIndex;
+                              const IconComponent = item.icon;
+                              return (
+                                <button
+                                  type="button"
+                                  key={item.id}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    if (item.action) {
+                                      item.action();
+                                    } else {
+                                      const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
+                                      const textBeforeCursor = input.slice(0, cursorPosition);
+                                      const textAfterCursor = input.slice(cursorPosition);
+                                      const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+                                      const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + item.name + ' ' + textAfterCursor;
+                                      setInput(newInput);
+                                      setTimeout(() => (inputRef.current as any)?.focus(), 0);
+                                    }
+                                    setAtMenuOpen(false);
+                                  }}
+                                  className={cn(
+                                    "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors",
+                                    isSelected ? "bg-accent" : "hover:bg-accent/50"
+                                  )}
+                                  onMouseEnter={() => setAtMenuSelectedIndex(index)}
+                                >
+                                  {item.imgUrl ? (
+                                    <img
+                                      src={item.imgUrl}
+                                      alt={item.name}
+                                      className="w-5 h-5 object-contain"
+                                      style={{ filter: item.invertInDarkMode ? 'var(--icon-invert, none)' : item.invertInLightMode ? 'var(--icon-invert-light, none)' : 'none' }}
+                                    />
+                                  ) : IconComponent ? (
+                                    <IconComponent className="w-5 h-5 text-popover-foreground/70 shrink-0" />
+                                  ) : (
+                                    <div className="w-5 h-5 shrink-0" />
+                                  )}
+                                  <div className="flex items-center gap-2 truncate">
+                                    <span className="text-[14px] text-popover-foreground font-medium whitespace-nowrap">{item.name}</span>
+                                    {item.description && (
+                                      <span className="text-[14px] text-muted-foreground truncate">{item.description}</span>
+                                    )}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                            {menuItems.length === 0 && (
+                              <div className="px-4 py-3 text-sm text-muted-foreground text-center">No results found</div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <textarea
+                  id="ask-ai-input"
+                  name="askAiQuestion"
+                  data-no-ring="true"
+                  suppressHydrationWarning
+                  ref={inputRef as any}
+                  value={input}
+                  onChange={(event) => {
+                    const val = event.target.value;
+                    setInput(val);
+                    const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
+                    if (isExpandedBox && wordCount < 90) {
+                      setIsExpandedBox(false);
+                    }
+                    if (val.length === 0) {
+                      event.target.style.height = '';
+                    } else if (!isExpandedBox || wordCount < 90) {
+                      event.target.style.height = 'auto';
+                      event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
+                    }
+
+                    // @ mention logic
+                    const cursorPosition = event.target.selectionStart;
+                    const textBeforeCursor = val.slice(0, cursorPosition);
+                    const atMatch = textBeforeCursor.match(/(?:^|\s)@(\S*)$/);
+                    if (atMatch) {
+                      setAtMenuOpen(true);
+                      setAtMenuQuery(atMatch[1]);
+                      setAtMenuSelectedIndex(0);
+                    } else {
+                      setAtMenuOpen(false);
+                    }
+                  }}
+                  onPaste={handlePaste}
+                  onKeyDown={(e) => {
+                    if (atMenuOpen) {
+                      const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
+                        item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
                         (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
                       );
                       const baseItems = [
@@ -4137,221 +4265,110 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                       ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
                       const menuItems = [...baseItems, ...filteredIntegrations];
 
-                      return (
-                        <>
-                          {menuItems.map((item, index) => {
-                            const isSelected = index === atMenuSelectedIndex;
-                            const IconComponent = item.icon;
-                            return (
-                              <button
-                                type="button"
-                                key={item.id}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  if (item.action) {
-                                    item.action();
-                                  } else {
-                                    const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
-                                    const textBeforeCursor = input.slice(0, cursorPosition);
-                                    const textAfterCursor = input.slice(cursorPosition);
-                                    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-                                    const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + item.name + ' ' + textAfterCursor;
-                                    setInput(newInput);
-                                    setTimeout(() => (inputRef.current as any)?.focus(), 0);
-                                  }
-                                  setAtMenuOpen(false);
-                                }}
-                                className={cn(
-                                  "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors",
-                                  isSelected ? "bg-accent" : "hover:bg-accent/50"
-                                )}
-                                onMouseEnter={() => setAtMenuSelectedIndex(index)}
-                              >
-                                {item.imgUrl ? (
-                                  <img 
-                                    src={item.imgUrl} 
-                                    alt={item.name} 
-                                    className="w-5 h-5 object-contain" 
-                                    style={{ filter: item.invertInDarkMode ? 'var(--icon-invert, none)' : item.invertInLightMode ? 'var(--icon-invert-light, none)' : 'none' }}
-                                  />
-                                ) : IconComponent ? (
-                                  <IconComponent className="w-5 h-5 text-popover-foreground/70 shrink-0" />
-                                ) : (
-                                  <div className="w-5 h-5 shrink-0" />
-                                )}
-                                <div className="flex items-center gap-2 truncate">
-                                  <span className="text-[14px] text-popover-foreground font-medium whitespace-nowrap">{item.name}</span>
-                                  {item.description && (
-                                    <span className="text-[14px] text-muted-foreground truncate">{item.description}</span>
-                                  )}
-                                </div>
-                              </button>
-                            );
-                          })}
-                          {menuItems.length === 0 && (
-                            <div className="px-4 py-3 text-sm text-muted-foreground text-center">No results found</div>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <textarea
-                id="ask-ai-input"
-                name="askAiQuestion"
-                data-no-ring="true"
-                suppressHydrationWarning
-                ref={inputRef as any}
-                value={input}
-                onChange={(event) => {
-                  const val = event.target.value;
-                  setInput(val);
-                  const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
-                  if (isExpandedBox && wordCount < 90) {
-                    setIsExpandedBox(false);
-                  }
-                  if (val.length === 0) {
-                    event.target.style.height = '';
-                  } else if (!isExpandedBox || wordCount < 90) {
-                    event.target.style.height = 'auto';
-                    event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
-                  }
-
-                  // @ mention logic
-                  const cursorPosition = event.target.selectionStart;
-                  const textBeforeCursor = val.slice(0, cursorPosition);
-                  const atMatch = textBeforeCursor.match(/(?:^|\s)@(\S*)$/);
-                  if (atMatch) {
-                    setAtMenuOpen(true);
-                    setAtMenuQuery(atMatch[1]);
-                    setAtMenuSelectedIndex(0);
-                  } else {
-                    setAtMenuOpen(false);
-                  }
-                }}
-                onPaste={handlePaste}
-                onKeyDown={(e) => {
-                  if (atMenuOpen) {
-                    const filteredIntegrations = INTEGRATIONS_LIST.filter(item => 
-                      item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) || 
-                      (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
-                    );
-                    const baseItems = [
-                      { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
-                      { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
-                      { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
-                      { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
-                      { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
-                      { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
-                    ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
-                    const menuItems = [...baseItems, ...filteredIntegrations];
-
-                    if (e.key === 'ArrowDown') {
-                      e.preventDefault();
-                      setAtMenuSelectedIndex(prev => (prev + 1) % menuItems.length);
-                      return;
-                    }
-                    if (e.key === 'ArrowUp') {
-                      e.preventDefault();
-                      setAtMenuSelectedIndex(prev => (prev - 1 + menuItems.length) % menuItems.length);
-                      return;
-                    }
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const selectedItem = menuItems[atMenuSelectedIndex];
-                      if (selectedItem) {
-                        if (selectedItem.action) {
-                          selectedItem.action();
-                        } else {
-                          const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
-                          const textBeforeCursor = input.slice(0, cursorPosition);
-                          const textAfterCursor = input.slice(cursorPosition);
-                          const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-                          const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + selectedItem.name + ' ' + textAfterCursor;
-                          setInput(newInput);
-                          setTimeout(() => (inputRef.current as any)?.focus(), 0);
-                        }
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        setAtMenuSelectedIndex(prev => (prev + 1) % menuItems.length);
+                        return;
                       }
-                      setAtMenuOpen(false);
-                      return;
+                      if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        setAtMenuSelectedIndex(prev => (prev - 1 + menuItems.length) % menuItems.length);
+                        return;
+                      }
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const selectedItem = menuItems[atMenuSelectedIndex];
+                        if (selectedItem) {
+                          if (selectedItem.action) {
+                            selectedItem.action();
+                          } else {
+                            const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
+                            const textBeforeCursor = input.slice(0, cursorPosition);
+                            const textAfterCursor = input.slice(cursorPosition);
+                            const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+                            const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + selectedItem.name + ' ' + textAfterCursor;
+                            setInput(newInput);
+                            setTimeout(() => (inputRef.current as any)?.focus(), 0);
+                          }
+                        }
+                        setAtMenuOpen(false);
+                        return;
+                      }
+                      if (e.key === 'Escape') {
+                        setAtMenuOpen(false);
+                        return;
+                      }
                     }
-                    if (e.key === 'Escape') {
-                      setAtMenuOpen(false);
-                      return;
-                    }
-                  }
 
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (canSubmit) {
-                      submitInput();
-                      setIsExpandedBox(false);
-                      setAtMenuOpen(false);
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      if (canSubmit) {
+                        submitInput();
+                        setIsExpandedBox(false);
+                        setAtMenuOpen(false);
+                      }
                     }
-                  }
-                }}
-                placeholder={attachedFiles.length > 0 ? "Add a message or send files..." : "Ask a question..."}
-                autoComplete="off"
-                className={cn(
-                  "w-full resize-none bg-transparent pb-12 pr-14 pl-14 text-sm text-foreground focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
-                  isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]",
-                  (pageContext?.path?.startsWith("/docs") || attachedFiles.length > 0) ? "pt-3" : "pt-4 rounded-2xl"
+                  }}
+                  placeholder={attachedFiles.length > 0 ? "Add a message or send files..." : "Ask a question..."}
+                  autoComplete="off"
+                  className={cn(
+                    "w-full resize-none bg-transparent pb-12 pr-14 pl-14 text-sm text-foreground focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                    isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]",
+                    (pageContext?.path?.startsWith("/docs") || attachedFiles.length > 0) ? "pt-3" : "pt-4 rounded-2xl"
+                  )}
+                />
+
+                {/* Bottom Left action bar: paperclip */}
+                {!isGenerating && (
+                  <div className="absolute bottom-3 left-4 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={attachedFiles.length >= 6}
+                      className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 transition-all cursor-pointer"
+                      title={attachedFiles.length >= 6 ? "Max 6 files" : "Attach file (max 35MB)"}
+                    >
+                      <Paperclip className={cn("h-4 w-4 -rotate-45", isAnyFileUploading && "opacity-50")} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsAiHubOpen(true)}
+                      className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer"
+                      title="AI Hub"
+                    >
+                      <CustomSlidersIcon className="h-4 w-4" />
+                    </button>
+                  </div>
                 )}
-              />
 
-              {/* Bottom Left action bar: paperclip */}
-              {!isGenerating && (
-                <div className="absolute bottom-3 left-4 flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={attachedFiles.length >= 6}
-                    className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 transition-all cursor-pointer"
-                    title={attachedFiles.length >= 6 ? "Max 6 files" : "Attach file (max 35MB)"}
-                  >
-                    <Paperclip className={cn("h-4 w-4 -rotate-45", isAnyFileUploading && "opacity-50")} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsAiHubOpen(true)}
-                    className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer"
-                    title="AI Hub"
-                  >
-                    <CustomSlidersIcon className="h-4 w-4" />
-                  </button>
+                {/* Bottom Right action bar: send OR stop */}
+                <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+                  {isGenerating ? (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={handleStop}
+                      className="h-8 rounded-full bg-foreground text-background hover:bg-foreground/90 px-3 text-[11px] font-medium shadow-sm transition-all active:scale-95"
+                      title="Stop generating"
+                    >
+                      <Square className="mr-1.5 h-3 w-3 fill-current opacity-80" />
+                      Stop
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      variant="ghost"
+                      size="icon"
+                      disabled={!canSubmit}
+                      className="h-8 w-8 shrink-0 rounded-full bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 transition-all shadow-sm"
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                      <span className="sr-only">Send question</span>
+                    </Button>
+                  )}
                 </div>
-              )}
-
-              {/* Bottom Right action bar: send OR stop */}
-              <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
-                {isGenerating ? (
-                  <Button
-                    type="button"
-                    variant="primary"
-                    onClick={handleStop}
-                    className="h-8 rounded-full bg-foreground text-background hover:bg-foreground/90 px-3 text-[11px] font-medium shadow-sm transition-all active:scale-95"
-                    title="Stop generating"
-                  >
-                    <Square className="mr-1.5 h-3 w-3 fill-current opacity-80" />
-                    Stop
-                  </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    variant="ghost"
-                    size="icon"
-                    disabled={!canSubmit}
-                    className="h-8 w-8 shrink-0 rounded-full bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 transition-all shadow-sm"
-                  >
-                    <ArrowUp className="h-4 w-4" />
-                    <span className="sr-only">Send question</span>
-                  </Button>
-                )}
               </div>
-            </div>
-          </form>
+            </form>
           </>
         )}
       </div>
@@ -4484,189 +4501,317 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                       </div>
                     ) : (
                       <>
-                        {messageQueue.length > 0 && (
-                          <div className="flex flex-col gap-0 w-full mb-1 py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar">
-                            {messageQueue.map((msg) => (
-                              <div key={msg.id} className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors">
-                                <div className="flex items-center gap-2 min-w-0 flex-1">
-                                  <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
-                                  <span className="text-[13px] truncate">
-                                    {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
-                                  </span>
-                                </div>
-                                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      // DO NOT STOP AI. Promote to priority message.
-                                      setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
-                                      setPriorityMessage(msg);
-                                    }}
-                                    className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        <AnimatePresence>
+                          {messageQueue.length > 0 && (
+                            <motion.div 
+                              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -10, scale: 0.98, transition: { duration: 0.15 } }}
+                              className="flex flex-col gap-0 w-full mb-1 py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar"
+                            >
+                              <AnimatePresence>
+                                {messageQueue.map((msg) => (
+                                  <motion.div 
+                                    key={msg.id} 
+                                    layout
+                                    initial={{ opacity: 0, x: -10, height: 0 }}
+                                    animate={{ opacity: 1, x: 0, height: 'auto' }}
+                                    exit={{ opacity: 0, x: 10, height: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors overflow-hidden"
                                   >
-                                    Send
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
-                                    className="cursor-pointer p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                    title="Cancel"
-                                  >
-                                    <X className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <form onSubmit={handleSubmit} className="space-y-2">
-                        <div className={cn(
-                          "group relative w-full shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
-                        )}>
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            multiple
-                            accept={ACCEPTED_FILE_TYPES}
-                            onChange={handleFileSelect}
-                            className="hidden"
-                          />
-                          {(attachedFiles.length > 0 || pastedTexts.length > 0) && (
-                            <div className="px-3 pt-3 pb-0 flex flex-wrap gap-1.5">
-                              {pastedTexts.map((pt, idx) => (
-                                <div
-                                  key={`pasted-inline-${idx}`}
-                                  className="group relative inline-flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3 py-2.5 shadow-sm max-w-[220px] transition-all cursor-pointer hover:bg-muted/60"
-                                  title="Too long to show in text field"
-                                  onClick={() => setEditingMode(idx)}
-                                >
-                                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                                    <FileText className="h-4 w-4 text-blue-500" />
-                                  </div>
-                                  <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0.5">
-                                    <span className="text-[13px] font-medium text-foreground truncate leading-tight">
-                                      Pasted text {pastedTexts.length > 1 ? idx + 1 : ""}
-                                    </span>
-                                    <span className="text-[12px] text-muted-foreground truncate leading-tight">
-                                      Pasted text
-                                    </span>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setPastedTexts(prev => prev.filter((_, i) => i !== idx));
-                                    }}
-                                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground shadow-sm transition-colors z-10 cursor-pointer"
-                                    title="Remove pasted text"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </div>
-                              ))}
-                              {attachedFiles.map((att) => {
-                                const Icon = getFileIcon(att.type);
-                                const isImage = att.type.startsWith("image/");
-                                return (
-                                  <div
-                                    key={att.id}
-                                    className={cn(
-                                      "group relative inline-flex items-center gap-2 rounded-[10px] border px-3 py-2 pr-8 shadow-sm max-w-[200px] transition-all",
-                                      att.status === "error" ? "border-red-500/50 bg-red-500/10" : "border-border/80 bg-muted/40",
-                                      att.status === "uploading" ? "opacity-70 animate-pulse" : "opacity-100"
-                                    )}
-                                  >
-                                    {isImage ? (
-                                      /* eslint-disable-next-line @next/next/no-img-element */
-                                      <img
-                                        src={att.url || (att.file ? URL.createObjectURL(att.file) : "")}
-                                        alt={att.name}
-                                        className="h-6 w-6 rounded object-cover shrink-0"
-                                      />
-                                    ) : (
-                                      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                    )}
-                                    <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0">
-                                      <span className="text-[11px] font-medium text-foreground truncate leading-tight">
-                                        {att.name}
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                      <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
+                                      <span className="text-[13px] truncate">
+                                        {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
                                       </span>
-                                      {att.status === "uploading" ? (
-                                        <div className="h-1.5 w-full max-w-[80px] bg-muted-foreground/20 rounded-full overflow-hidden mt-1 mb-0.5">
-                                          <motion.div
-                                            initial={{ width: "0%" }}
-                                            animate={{ width: "85%" }}
-                                            transition={{ duration: 2.5, ease: "easeOut" }}
-                                            className="h-full bg-emerald-500 rounded-full"
-                                          />
-                                        </div>
-                                      ) : (
-                                        <span className="text-[10px] text-muted-foreground/70 leading-tight">
-                                          {att.status === "error" ? "Failed" : formatFileSize(att.size)}
-                                        </span>
-                                      )}
                                     </div>
-
-                                    {/* Allow previewing the file immediately after successful upload */}
-                                    {att.status === "done" && att.url && (
+                                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity">
                                       <button
                                         type="button"
-                                        onClick={() => setPreviewFile({ name: att.name, src: att.url!, mimeType: att.type })}
-                                        className="absolute inset-0 w-full h-full cursor-pointer z-10"
-                                        title="Preview file"
-                                      />
-                                    )}
-
+                                        onClick={() => {
+                                          // DO NOT STOP AI. Promote to priority message.
+                                          setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
+                                          setPriorityMessage(msg);
+                                        }}
+                                        className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                      >
+                                        Send
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
+                                        className="cursor-pointer p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                        title="Cancel"
+                                      >
+                                        <X className="h-3.5 w-3.5" />
+                                      </button>
+                                    </div>
+                                  </motion.div>
+                                ))}
+                              </AnimatePresence>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        <form onSubmit={handleSubmit} className="space-y-2">
+                          <div className={cn(
+                            "group relative w-full shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
+                          )}>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              multiple
+                              accept={ACCEPTED_FILE_TYPES}
+                              onChange={handleFileSelect}
+                              className="hidden"
+                            />
+                            {(attachedFiles.length > 0 || pastedTexts.length > 0) && (
+                              <div className="px-3 pt-3 pb-0 flex flex-wrap gap-1.5">
+                                {pastedTexts.map((pt, idx) => (
+                                  <div
+                                    key={`pasted-inline-${idx}`}
+                                    className="group relative inline-flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3 py-2.5 shadow-sm max-w-[220px] transition-all cursor-pointer hover:bg-muted/60"
+                                    title="Too long to show in text field"
+                                    onClick={() => setEditingMode(idx)}
+                                  >
+                                    <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                                      <FileText className="h-4 w-4 text-blue-500" />
+                                    </div>
+                                    <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0.5">
+                                      <span className="text-[13px] font-medium text-foreground truncate leading-tight">
+                                        Pasted text {pastedTexts.length > 1 ? idx + 1 : ""}
+                                      </span>
+                                      <span className="text-[12px] text-muted-foreground truncate leading-tight">
+                                        Pasted text
+                                      </span>
+                                    </div>
                                     <button
                                       type="button"
-                                      onClick={() => removeAttachedFile(att.id)}
-                                      className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors z-20 cursor-pointer"
-                                      title={`Remove ${att.name}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPastedTexts(prev => prev.filter((_, i) => i !== idx));
+                                      }}
+                                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground shadow-sm transition-colors z-10 cursor-pointer"
+                                      title="Remove pasted text"
                                     >
                                       <X className="h-3 w-3" />
                                     </button>
                                   </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                          <div className="absolute top-3 right-3 z-10">
-                            {input.trim().split(/\s+/).filter(w => w.length > 0).length >= 90 && (
-                              <button
-                                type="button"
-                                onClick={() => setIsExpandedBox(!isExpandedBox)}
-                                className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer opacity-0 focus-within:opacity-100 group-hover:opacity-100"
-                                title={isExpandedBox ? "Collapse input" : "Expand input"}
-                              >
-                                {isExpandedBox ? (
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M4 14h6v6" />
-                                    <path d="M20 10h-6V4" />
-                                    <path d="M14 10l7-7" />
-                                    <path d="M3 21l7-7" />
-                                  </svg>
-                                ) : (
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M20 10h-6V4" />
-                                    <path d="M4 14h6v6" />
-                                  </svg>
-                                )}
-                              </button>
-                            )}
-                          </div>
+                                ))}
+                                {attachedFiles.map((att) => {
+                                  const Icon = getFileIcon(att.type);
+                                  const isImage = att.type.startsWith("image/");
+                                  return (
+                                    <div
+                                      key={att.id}
+                                      className={cn(
+                                        "group relative inline-flex items-center gap-2 rounded-[10px] border px-3 py-2 pr-8 shadow-sm max-w-[200px] transition-all",
+                                        att.status === "error" ? "border-red-500/50 bg-red-500/10" : "border-border/80 bg-muted/40",
+                                        att.status === "uploading" ? "opacity-70 animate-pulse" : "opacity-100"
+                                      )}
+                                    >
+                                      {isImage ? (
+                                        /* eslint-disable-next-line @next/next/no-img-element */
+                                        <img
+                                          src={att.url || (att.file ? URL.createObjectURL(att.file) : "")}
+                                          alt={att.name}
+                                          className="h-6 w-6 rounded object-cover shrink-0"
+                                        />
+                                      ) : (
+                                        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                      )}
+                                      <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0">
+                                        <span className="text-[11px] font-medium text-foreground truncate leading-tight">
+                                          {att.name}
+                                        </span>
+                                        {att.status === "uploading" ? (
+                                          <div className="h-1.5 w-full max-w-[80px] bg-muted-foreground/20 rounded-full overflow-hidden mt-1 mb-0.5">
+                                            <motion.div
+                                              initial={{ width: "0%" }}
+                                              animate={{ width: "85%" }}
+                                              transition={{ duration: 2.5, ease: "easeOut" }}
+                                              className="h-full bg-emerald-500 rounded-full"
+                                            />
+                                          </div>
+                                        ) : (
+                                          <span className="text-[10px] text-muted-foreground/70 leading-tight">
+                                            {att.status === "error" ? "Failed" : formatFileSize(att.size)}
+                                          </span>
+                                        )}
+                                      </div>
 
-                          {/* @ mention popover */}
-                          <AnimatePresence>
-                            {atMenuOpen && (
-                              <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.15 }}
-                                className="absolute top-[100%] mt-2 left-0 w-full max-h-[160px] overflow-y-auto bg-popover rounded-2xl border border-border shadow-2xl z-50 flex flex-col p-1.5 custom-scrollbar"
-                              >
-                                {(() => {
-                                  const filteredIntegrations = INTEGRATIONS_LIST.filter(item => 
-                                    item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) || 
+                                      {/* Allow previewing the file immediately after successful upload */}
+                                      {att.status === "done" && att.url && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setPreviewFile({ name: att.name, src: att.url!, mimeType: att.type })}
+                                          className="absolute inset-0 w-full h-full cursor-pointer z-10"
+                                          title="Preview file"
+                                        />
+                                      )}
+
+                                      <button
+                                        type="button"
+                                        onClick={() => removeAttachedFile(att.id)}
+                                        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors z-20 cursor-pointer"
+                                        title={`Remove ${att.name}`}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            <div className="absolute top-3 right-3 z-10">
+                              {input.trim().split(/\s+/).filter(w => w.length > 0).length >= 90 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setIsExpandedBox(!isExpandedBox)}
+                                  className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer opacity-0 focus-within:opacity-100 group-hover:opacity-100"
+                                  title={isExpandedBox ? "Collapse input" : "Expand input"}
+                                >
+                                  {isExpandedBox ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M4 14h6v6" />
+                                      <path d="M20 10h-6V4" />
+                                      <path d="M14 10l7-7" />
+                                      <path d="M3 21l7-7" />
+                                    </svg>
+                                  ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M20 10h-6V4" />
+                                      <path d="M4 14h6v6" />
+                                    </svg>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+
+                            {/* @ mention popover */}
+                            <AnimatePresence>
+                              {atMenuOpen && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: -10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -10 }}
+                                  transition={{ duration: 0.15 }}
+                                  className="absolute top-[100%] mt-2 left-0 w-full max-h-[160px] overflow-y-auto bg-popover rounded-2xl border border-border shadow-2xl z-50 flex flex-col p-1.5 custom-scrollbar"
+                                >
+                                  {(() => {
+                                    const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
+                                      item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
+                                      (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
+                                    );
+                                    const baseItems = [
+                                      { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
+                                      { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
+                                      { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
+                                      { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
+                                      { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
+                                      { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
+                                    ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
+                                    const menuItems = [...baseItems, ...filteredIntegrations];
+
+                                    return (
+                                      <>
+                                        {menuItems.map((item, index) => {
+                                          const isSelected = index === atMenuSelectedIndex;
+                                          const IconComponent = item.icon;
+                                          return (
+                                            <button
+                                              type="button"
+                                              key={item.id}
+                                              onClick={(e) => {
+                                                e.preventDefault();
+                                                if (item.action) {
+                                                  item.action();
+                                                } else {
+                                                  const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
+                                                  const textBeforeCursor = input.slice(0, cursorPosition);
+                                                  const textAfterCursor = input.slice(cursorPosition);
+                                                  const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+                                                  const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + item.name + ' ' + textAfterCursor;
+                                                  setInput(newInput);
+                                                  setTimeout(() => (inputRef.current as any)?.focus(), 0);
+                                                }
+                                                setAtMenuOpen(false);
+                                              }}
+                                              className={cn(
+                                                "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors",
+                                                isSelected ? "bg-accent" : "hover:bg-accent/50"
+                                              )}
+                                              onMouseEnter={() => setAtMenuSelectedIndex(index)}
+                                            >
+                                              {item.imgUrl ? (
+                                                <img
+                                                  src={item.imgUrl}
+                                                  alt={item.name}
+                                                  className="w-5 h-5 object-contain"
+                                                  style={{ filter: item.invertInDarkMode ? 'var(--icon-invert, none)' : item.invertInLightMode ? 'var(--icon-invert-light, none)' : 'none' }}
+                                                />
+                                              ) : IconComponent ? (
+                                                <IconComponent className="w-5 h-5 text-popover-foreground/70 shrink-0" />
+                                              ) : (
+                                                <div className="w-5 h-5 shrink-0" />
+                                              )}
+                                              <div className="flex items-center gap-2 truncate">
+                                                <span className="text-[14px] text-popover-foreground font-medium whitespace-nowrap">{item.name}</span>
+                                                {item.description && (
+                                                  <span className="text-[14px] text-muted-foreground truncate">{item.description}</span>
+                                                )}
+                                              </div>
+                                            </button>
+                                          );
+                                        })}
+                                        {menuItems.length === 0 && (
+                                          <div className="px-4 py-3 text-sm text-muted-foreground text-center">No results found</div>
+                                        )}
+                                      </>
+                                    );
+                                  })()}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+
+                            <textarea
+                              id="ask-ai-input"
+                              name="askAiQuestion"
+                              data-no-ring="true"
+                              suppressHydrationWarning
+                              ref={inputRef as any}
+                              value={input}
+                              onChange={(event) => {
+                                const val = event.target.value;
+                                setInput(val);
+                                const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
+                                if (isExpandedBox && wordCount < 90) {
+                                  setIsExpandedBox(false);
+                                }
+                                if (val.length === 0) {
+                                  event.target.style.height = '';
+                                } else if (!isExpandedBox || wordCount < 90) {
+                                  event.target.style.height = 'auto';
+                                  event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
+                                }
+
+                                // @ mention logic
+                                const cursorPosition = event.target.selectionStart;
+                                const textBeforeCursor = val.slice(0, cursorPosition);
+                                const atMatch = textBeforeCursor.match(/(?:^|\s)@(\S*)$/);
+                                if (atMatch) {
+                                  setAtMenuOpen(true);
+                                  setAtMenuQuery(atMatch[1]);
+                                  setAtMenuSelectedIndex(0);
+                                } else {
+                                  setAtMenuOpen(false);
+                                }
+                              }}
+                              onPaste={handlePaste}
+                              onKeyDown={(e) => {
+                                if (atMenuOpen) {
+                                  const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
+                                    item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
                                     (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
                                   );
                                   const baseItems = [
@@ -4679,205 +4824,94 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
                                   const menuItems = [...baseItems, ...filteredIntegrations];
 
-                                  return (
-                                    <>
-                                      {menuItems.map((item, index) => {
-                                        const isSelected = index === atMenuSelectedIndex;
-                                        const IconComponent = item.icon;
-                                        return (
-                                          <button
-                                            type="button"
-                                            key={item.id}
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              if (item.action) {
-                                                item.action();
-                                              } else {
-                                                const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
-                                                const textBeforeCursor = input.slice(0, cursorPosition);
-                                                const textAfterCursor = input.slice(cursorPosition);
-                                                const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-                                                const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + item.name + ' ' + textAfterCursor;
-                                                setInput(newInput);
-                                                setTimeout(() => (inputRef.current as any)?.focus(), 0);
-                                              }
-                                              setAtMenuOpen(false);
-                                            }}
-                                            className={cn(
-                                              "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors",
-                                              isSelected ? "bg-accent" : "hover:bg-accent/50"
-                                            )}
-                                            onMouseEnter={() => setAtMenuSelectedIndex(index)}
-                                          >
-                                            {item.imgUrl ? (
-                                              <img 
-                                                src={item.imgUrl} 
-                                                alt={item.name} 
-                                                className="w-5 h-5 object-contain"
-                                                style={{ filter: item.invertInDarkMode ? 'var(--icon-invert, none)' : item.invertInLightMode ? 'var(--icon-invert-light, none)' : 'none' }}
-                                              />
-                                            ) : IconComponent ? (
-                                              <IconComponent className="w-5 h-5 text-popover-foreground/70 shrink-0" />
-                                            ) : (
-                                              <div className="w-5 h-5 shrink-0" />
-                                            )}
-                                            <div className="flex items-center gap-2 truncate">
-                                              <span className="text-[14px] text-popover-foreground font-medium whitespace-nowrap">{item.name}</span>
-                                              {item.description && (
-                                                <span className="text-[14px] text-muted-foreground truncate">{item.description}</span>
-                                              )}
-                                            </div>
-                                          </button>
-                                        );
-                                      })}
-                                      {menuItems.length === 0 && (
-                                        <div className="px-4 py-3 text-sm text-muted-foreground text-center">No results found</div>
-                                      )}
-                                    </>
-                                  );
-                                })()}
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-
-                          <textarea
-                            id="ask-ai-input"
-                            name="askAiQuestion"
-                            data-no-ring="true"
-                            suppressHydrationWarning
-                            ref={inputRef as any}
-                            value={input}
-                            onChange={(event) => {
-                              const val = event.target.value;
-                              setInput(val);
-                              const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
-                              if (isExpandedBox && wordCount < 90) {
-                                setIsExpandedBox(false);
-                              }
-                              if (val.length === 0) {
-                                event.target.style.height = '';
-                              } else if (!isExpandedBox || wordCount < 90) {
-                                event.target.style.height = 'auto';
-                                event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
-                              }
-
-                              // @ mention logic
-                              const cursorPosition = event.target.selectionStart;
-                              const textBeforeCursor = val.slice(0, cursorPosition);
-                              const atMatch = textBeforeCursor.match(/(?:^|\s)@(\S*)$/);
-                              if (atMatch) {
-                                setAtMenuOpen(true);
-                                setAtMenuQuery(atMatch[1]);
-                                setAtMenuSelectedIndex(0);
-                              } else {
-                                setAtMenuOpen(false);
-                              }
-                            }}
-                            onPaste={handlePaste}
-                            onKeyDown={(e) => {
-                              if (atMenuOpen) {
-                                const filteredIntegrations = INTEGRATIONS_LIST.filter(item => 
-                                  item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) || 
-                                  (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
-                                );
-                                const baseItems = [
-                                  { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
-                                  { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
-                                  { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
-                                  { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
-                                  { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
-                                  { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
-                                ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
-                                const menuItems = [...baseItems, ...filteredIntegrations];
-
-                                if (e.key === 'ArrowDown') {
-                                  e.preventDefault();
-                                  setAtMenuSelectedIndex(prev => (prev + 1) % menuItems.length);
-                                  return;
-                                }
-                                if (e.key === 'ArrowUp') {
-                                  e.preventDefault();
-                                  setAtMenuSelectedIndex(prev => (prev - 1 + menuItems.length) % menuItems.length);
-                                  return;
-                                }
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  const selectedItem = menuItems[atMenuSelectedIndex];
-                                  if (selectedItem) {
-                                    if (selectedItem.action) {
-                                      selectedItem.action();
-                                    } else {
-                                      const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
-                                      const textBeforeCursor = input.slice(0, cursorPosition);
-                                      const textAfterCursor = input.slice(cursorPosition);
-                                      const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-                                      const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + selectedItem.name + ' ' + textAfterCursor;
-                                      setInput(newInput);
-                                      setTimeout(() => (inputRef.current as any)?.focus(), 0);
-                                    }
+                                  if (e.key === 'ArrowDown') {
+                                    e.preventDefault();
+                                    setAtMenuSelectedIndex(prev => (prev + 1) % menuItems.length);
+                                    return;
                                   }
-                                  setAtMenuOpen(false);
-                                  return;
+                                  if (e.key === 'ArrowUp') {
+                                    e.preventDefault();
+                                    setAtMenuSelectedIndex(prev => (prev - 1 + menuItems.length) % menuItems.length);
+                                    return;
+                                  }
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const selectedItem = menuItems[atMenuSelectedIndex];
+                                    if (selectedItem) {
+                                      if (selectedItem.action) {
+                                        selectedItem.action();
+                                      } else {
+                                        const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
+                                        const textBeforeCursor = input.slice(0, cursorPosition);
+                                        const textAfterCursor = input.slice(cursorPosition);
+                                        const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+                                        const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + selectedItem.name + ' ' + textAfterCursor;
+                                        setInput(newInput);
+                                        setTimeout(() => (inputRef.current as any)?.focus(), 0);
+                                      }
+                                    }
+                                    setAtMenuOpen(false);
+                                    return;
+                                  }
+                                  if (e.key === 'Escape') {
+                                    setAtMenuOpen(false);
+                                    return;
+                                  }
                                 }
-                                if (e.key === 'Escape') {
-                                  setAtMenuOpen(false);
-                                  return;
-                                }
-                              }
 
-                              if (e.key === "Enter" && !e.shiftKey) {
-                                e.preventDefault();
-                                if (canSubmit) {
-                                  submitInput();
-                                  setIsExpandedBox(false);
-                                  setAtMenuOpen(false);
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  if (canSubmit) {
+                                    submitInput();
+                                    setIsExpandedBox(false);
+                                    setAtMenuOpen(false);
+                                  }
                                 }
-                              }
-                            }}
-                            placeholder="Ask a question..."
-                            autoComplete="off"
-                            className={cn(
-                              "w-full resize-none bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl text-sm text-foreground focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
-                              isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]"
-                            )}
-                          />
+                              }}
+                              placeholder="Ask a question..."
+                              autoComplete="off"
+                              className={cn(
+                                "w-full resize-none bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl text-sm text-foreground focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                                isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]"
+                              )}
+                            />
 
-                          {/* Bottom left: paperclip */}
-                          <div className="absolute bottom-3 left-4 flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => fileInputRef.current?.click()}
-                              disabled={attachedFiles.length >= 6}
-                              className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 transition-all cursor-pointer"
-                              title={attachedFiles.length >= 6 ? "Max 6 files" : "Attach file (max 35MB)"}
-                            >
-                              <Paperclip className="h-4 w-4 -rotate-45" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setIsAiHubOpen(true)}
-                              className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer"
-                              title="AI Hub"
-                            >
-                              <CustomSlidersIcon className="h-4 w-4" />
-                            </button>
+                            {/* Bottom left: paperclip */}
+                            <div className="absolute bottom-3 left-4 flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={attachedFiles.length >= 6}
+                                className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 transition-all cursor-pointer"
+                                title={attachedFiles.length >= 6 ? "Max 6 files" : "Attach file (max 35MB)"}
+                              >
+                                <Paperclip className="h-4 w-4 -rotate-45" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setIsAiHubOpen(true)}
+                                className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer"
+                                title="AI Hub"
+                              >
+                                <CustomSlidersIcon className="h-4 w-4" />
+                              </button>
+                            </div>
+
+                            {/* Bottom right: send */}
+                            <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+                              <Button
+                                type="submit"
+                                variant="ghost"
+                                size="icon"
+                                disabled={!canSubmit}
+                                className="h-8 w-8 shrink-0 rounded-full bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 transition-all shadow-sm"
+                              >
+                                <ArrowUp className="h-4 w-4" />
+                                <span className="sr-only">Send question</span>
+                              </Button>
+                            </div>
                           </div>
-
-                          {/* Bottom right: send */}
-                          <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
-                            <Button
-                              type="submit"
-                              variant="ghost"
-                              size="icon"
-                              disabled={!canSubmit}
-                              className="h-8 w-8 shrink-0 rounded-full bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 transition-all shadow-sm"
-                            >
-                              <ArrowUp className="h-4 w-4" />
-                              <span className="sr-only">Send question</span>
-                            </Button>
-                          </div>
-                        </div>
-                      </form>
+                        </form>
                       </>
                     )}
                   </div>
@@ -4885,119 +4919,119 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   {/* Suggestion chips */}
                   {!isExpandedBox && (
                     <div className="flex flex-col items-center gap-3 mt-2">
-                    <p className="text-xs text-muted-foreground font-medium tracking-wide">
-                      Try Classgrid AI for...
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {(() => {
-                        const role = user?.role?.toLowerCase() || "";
-                        let chips: { icon: string; label: string }[] = [];
+                      <p className="text-xs text-muted-foreground font-medium tracking-wide">
+                        Try Classgrid AI for...
+                      </p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {(() => {
+                          const role = user?.role?.toLowerCase() || "";
+                          let chips: { icon: string; label: string }[] = [];
 
-                        if (role === "super_admin" || role === "superadmin" || role === "platform_owner") {
-                          chips = [
-                            { icon: "📊", label: "Analytics" },
-                            { icon: "🏢", label: "Organizations" },
-                            { icon: "💰", label: "Revenue" },
-                            { icon: "📋", label: "Leads" },
-                          ];
-                        } else if (role === "org_admin" || role === "admin" || role === "principal" || role === "director") {
-                          chips = [
-                            { icon: "👥", label: "Students" },
-                            { icon: "👨‍🏫", label: "Faculty" },
-                            { icon: "💳", label: "Fees" },
-                            { icon: "📅", label: "Attendance" },
-                          ];
-                        } else if (role.includes("admission")) {
-                          chips = [
-                            { icon: "📋", label: "Applications" },
-                            { icon: "🏅", label: "Merit Lists" },
-                            { icon: "📂", label: "Documents" },
-                            { icon: "✅", label: "Enrollment" },
-                          ];
-                        } else if (role.includes("fee") || role === "fee_manager") {
-                          chips = [
-                            { icon: "💰", label: "Payments" },
-                            { icon: "⚠️", label: "Defaulters" },
-                            { icon: "📊", label: "Fee Structure" },
-                            { icon: "📋", label: "Reports" },
-                          ];
-                        } else if (role.includes("exam") || role === "exam_controller") {
-                          chips = [
-                            { icon: "📝", label: "Exams" },
-                            { icon: "📊", label: "Results" },
-                            { icon: "🎯", label: "Grading" },
-                            { icon: "📅", label: "Schedule" },
-                          ];
-                        } else if (role.includes("library") || role === "librarian") {
-                          chips = [
-                            { icon: "📚", label: "Books" },
-                            { icon: "📖", label: "Issued" },
-                            { icon: "⏰", label: "Overdue" },
-                            { icon: "🗂️", label: "Catalog" },
-                          ];
-                        } else if (role.includes("attendance")) {
-                          chips = [
-                            { icon: "📋", label: "Today's Attendance" },
-                            { icon: "📊", label: "Reports" },
-                            { icon: "🔔", label: "Alerts" },
-                            { icon: "📈", label: "Trends" },
-                          ];
-                        } else if (role.includes("hr") || role === "hr_manager") {
-                          chips = [
-                            { icon: "👥", label: "Staff" },
-                            { icon: "💰", label: "Payroll" },
-                            { icon: "📅", label: "Leave" },
-                            { icon: "📋", label: "Recruitment" },
-                          ];
-                        } else if (role.includes("hostel") || role.includes("transport")) {
-                          chips = [
-                            { icon: "🏠", label: "Rooms" },
-                            { icon: "👥", label: "Residents" },
-                            { icon: "📝", label: "Complaints" },
-                            { icon: "🍽️", label: "Mess" },
-                          ];
-                        } else if (role === "faculty" || role === "teacher" || role === "hod" || role === "vice_principal") {
-                          chips = [
-                            { icon: "📚", label: "My Classes" },
-                            { icon: "📋", label: "Attendance" },
-                            { icon: "📊", label: "Results" },
-                            { icon: "📅", label: "Timetable" },
-                          ];
-                        } else if (role === "student") {
-                          chips = [
-                            { icon: "💳", label: "My Fees" },
-                            { icon: "📋", label: "Attendance" },
-                            { icon: "📊", label: "Results" },
-                            { icon: "📅", label: "Timetable" },
-                          ];
-                        } else {
-                          chips = [
-                            { icon: "📊", label: "Analytics" },
-                            { icon: "👥", label: "Users" },
-                            { icon: "💬", label: "Help" },
-                            { icon: "📋", label: "Reports" },
-                          ];
-                        }
+                          if (role === "super_admin" || role === "superadmin" || role === "platform_owner") {
+                            chips = [
+                              { icon: "📊", label: "Analytics" },
+                              { icon: "🏢", label: "Organizations" },
+                              { icon: "💰", label: "Revenue" },
+                              { icon: "📋", label: "Leads" },
+                            ];
+                          } else if (role === "org_admin" || role === "admin" || role === "principal" || role === "director") {
+                            chips = [
+                              { icon: "👥", label: "Students" },
+                              { icon: "👨‍🏫", label: "Faculty" },
+                              { icon: "💳", label: "Fees" },
+                              { icon: "📅", label: "Attendance" },
+                            ];
+                          } else if (role.includes("admission")) {
+                            chips = [
+                              { icon: "📋", label: "Applications" },
+                              { icon: "🏅", label: "Merit Lists" },
+                              { icon: "📂", label: "Documents" },
+                              { icon: "✅", label: "Enrollment" },
+                            ];
+                          } else if (role.includes("fee") || role === "fee_manager") {
+                            chips = [
+                              { icon: "💰", label: "Payments" },
+                              { icon: "⚠️", label: "Defaulters" },
+                              { icon: "📊", label: "Fee Structure" },
+                              { icon: "📋", label: "Reports" },
+                            ];
+                          } else if (role.includes("exam") || role === "exam_controller") {
+                            chips = [
+                              { icon: "📝", label: "Exams" },
+                              { icon: "📊", label: "Results" },
+                              { icon: "🎯", label: "Grading" },
+                              { icon: "📅", label: "Schedule" },
+                            ];
+                          } else if (role.includes("library") || role === "librarian") {
+                            chips = [
+                              { icon: "📚", label: "Books" },
+                              { icon: "📖", label: "Issued" },
+                              { icon: "⏰", label: "Overdue" },
+                              { icon: "🗂️", label: "Catalog" },
+                            ];
+                          } else if (role.includes("attendance")) {
+                            chips = [
+                              { icon: "📋", label: "Today's Attendance" },
+                              { icon: "📊", label: "Reports" },
+                              { icon: "🔔", label: "Alerts" },
+                              { icon: "📈", label: "Trends" },
+                            ];
+                          } else if (role.includes("hr") || role === "hr_manager") {
+                            chips = [
+                              { icon: "👥", label: "Staff" },
+                              { icon: "💰", label: "Payroll" },
+                              { icon: "📅", label: "Leave" },
+                              { icon: "📋", label: "Recruitment" },
+                            ];
+                          } else if (role.includes("hostel") || role.includes("transport")) {
+                            chips = [
+                              { icon: "🏠", label: "Rooms" },
+                              { icon: "👥", label: "Residents" },
+                              { icon: "📝", label: "Complaints" },
+                              { icon: "🍽️", label: "Mess" },
+                            ];
+                          } else if (role === "faculty" || role === "teacher" || role === "hod" || role === "vice_principal") {
+                            chips = [
+                              { icon: "📚", label: "My Classes" },
+                              { icon: "📋", label: "Attendance" },
+                              { icon: "📊", label: "Results" },
+                              { icon: "📅", label: "Timetable" },
+                            ];
+                          } else if (role === "student") {
+                            chips = [
+                              { icon: "💳", label: "My Fees" },
+                              { icon: "📋", label: "Attendance" },
+                              { icon: "📊", label: "Results" },
+                              { icon: "📅", label: "Timetable" },
+                            ];
+                          } else {
+                            chips = [
+                              { icon: "📊", label: "Analytics" },
+                              { icon: "👥", label: "Users" },
+                              { icon: "💬", label: "Help" },
+                              { icon: "📋", label: "Reports" },
+                            ];
+                          }
 
-                        return chips.map((chip) => (
-                          <button
-                            key={chip.label}
-                            type="button"
-                            onClick={() => {
-                              setInput(chip.label);
-                              setTimeout(() => {
-                                const el = document.getElementById("ask-ai-input") as HTMLTextAreaElement | null;
-                                if (el) el.focus();
-                              }, 50);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-border bg-card hover:bg-muted text-sm text-foreground font-medium transition-colors cursor-pointer shadow-sm hover:shadow-md"
-                          >
-                            <span>{chip.icon}</span>
-                            <span>{chip.label}</span>
-                          </button>
-                        ));
-                      })()}
-                    </div>
+                          return chips.map((chip) => (
+                            <button
+                              key={chip.label}
+                              type="button"
+                              onClick={() => {
+                                setInput(chip.label);
+                                setTimeout(() => {
+                                  const el = document.getElementById("ask-ai-input") as HTMLTextAreaElement | null;
+                                  if (el) el.focus();
+                                }, 50);
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-border bg-card hover:bg-muted text-sm text-foreground font-medium transition-colors cursor-pointer shadow-sm hover:shadow-md"
+                            >
+                              <span>{chip.icon}</span>
+                              <span>{chip.label}</span>
+                            </button>
+                          ));
+                        })()}
+                      </div>
                     </div>
                   )}
 
@@ -5188,7 +5222,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       <ExpandedInputModal
         isOpen={viewingPastedText !== null}
         onClose={() => setViewingPastedText(null)}
-        onSave={() => {}}
+        onSave={() => { }}
         value={viewingPastedText?.content || ""}
         title={viewingPastedText?.title || "Pasted text"}
         readOnly={true}
@@ -5203,9 +5237,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         isLoading={isDeletingChat}
         onConfirm={handleDeleteChat}
       />
-      <AiHubModal 
-        isOpen={isAiHubOpen} 
-        onClose={() => setIsAiHubOpen(false)} 
+      <AiHubModal
+        isOpen={isAiHubOpen}
+        onClose={() => setIsAiHubOpen(false)}
         onSendPrompt={(text) => askQuestion(text, { hidden: true })}
       />
     </>

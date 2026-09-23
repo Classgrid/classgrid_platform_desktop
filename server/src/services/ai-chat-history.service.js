@@ -78,7 +78,18 @@ export async function getHistory(sessionId, depth = DEFAULT_DEPTH) {
         // LRANGE with negative index: -safeDepth gets the last N items
         const raw = await redis.lrange(key, -safeDepth, -1);
         return raw.map(item => {
-            try { return JSON.parse(item); }
+            try { 
+                const parsed = JSON.parse(item); 
+                if (parsed && typeof parsed.content === 'string' && parsed.content.trim().startsWith('{')) {
+                    try {
+                        const inner = JSON.parse(parsed.content);
+                        if (inner && inner.classgrid_ai_message) {
+                            parsed.content = inner.content || '';
+                        }
+                    } catch {}
+                }
+                return parsed;
+            }
             catch { return null; }
         }).filter(Boolean);
 
@@ -176,7 +187,18 @@ async function getHistoryFromSupabase(sessionId, depth = DEFAULT_DEPTH) {
         if (!dbMessages) return [];
         return dbMessages
             .slice(-depth)
-            .map(m => ({ role: m.role, content: m.content || '' }));
+            .map(m => {
+                let text = m.content || '';
+                if (typeof text === 'string' && text.trim().startsWith('{')) {
+                    try {
+                        const inner = JSON.parse(text);
+                        if (inner && inner.classgrid_ai_message) {
+                            text = inner.content || '';
+                        }
+                    } catch {}
+                }
+                return { role: m.role, content: text };
+            });
     } catch (err) {
         console.error(`[ChatHistory] Supabase fallback also failed for session ${sessionId}:`, err?.message);
         return [];
