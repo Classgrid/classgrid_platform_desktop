@@ -7,7 +7,7 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState, useCallback, memo, useContext } from "react";
-import { useParams } from "react-router-dom";
+import { CornerDownRight, useParams } from "react-router-dom";
 import { SidebarContext, SidebarTrigger } from "@/components/marketing_ui/sidebar";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
@@ -3003,7 +3003,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   function submitInput() {
     if (!canSubmit) return;
 
-    if (thinking || submitting) {
+    const isTyping = messages.length > 0 && messages[messages.length - 1]?.typing === true;
+    if (thinking || submitting || isTyping) {
       // Linear Approach: Queue the message instead of sending immediately to prevent stream collisions
       setMessageQueue(prev => [
         ...prev,
@@ -3055,23 +3056,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   }, [thinking, submitting, messageQueue.length]);
 
   // ─── Panel content (shared between desktop sidebar and mobile bottom-sheet) ───
-  const pendingQueueUI = messageQueue.length > 0 && (
-    <div className="flex flex-col gap-2 mb-3">
-      {messageQueue.map((msg) => (
-        <div key={msg.id} className="relative self-end max-w-[85%] bg-muted/50 rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm border border-border/50 text-muted-foreground flex items-center gap-3 animate-in slide-in-from-bottom-2 fade-in-50">
-          <span className="flex-1 truncate">{msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}</span>
-          <button 
-            type="button"
-            onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
-            className="shrink-0 h-5 w-5 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
-            title="Cancel message"
-          >
-            <X className="h-3 w-3" />
-          </button>
-        </div>
-      ))}
-    </div>
-  );
+  const pendingQueueUI = null;
 
   const panelHeader = (
     <div className={cn("flex items-center justify-between px-4 py-4", variant !== "full-page" && "border-b border-border")}>
@@ -3895,7 +3880,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           </div>
         ) : (
           <>
-            {pendingQueueUI}
+                        {messageQueue.length > 0 && (
+                          <div className="flex flex-col gap-1.5 px-2 pb-2 w-[80%] mx-auto">
+                            {messageQueue.map((msg) => (
+                              <div key={msg.id} className="flex items-center gap-3 text-slate-500 dark:text-slate-400 animate-in slide-in-from-bottom-2 fade-in">
+                                <CornerDownRight className="h-4 w-4 shrink-0 opacity-50" />
+                                <span className="text-[14px] truncate opacity-90 font-medium">
+                                  {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
             <form onSubmit={handleSubmit} className="space-y-2">
             <div className={cn(
               "group relative w-[80%] mx-auto shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
@@ -4432,7 +4428,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                       </div>
                     ) : (
                       <>
-                        {pendingQueueUI}
+                        {messageQueue.length > 0 && (
+                          <div className="flex flex-col gap-1.5 px-2 pb-2 w-full">
+                            {messageQueue.map((msg) => (
+                              <div key={msg.id} className="flex items-center gap-3 text-slate-500 dark:text-slate-400 animate-in slide-in-from-bottom-2 fade-in">
+                                <CornerDownRight className="h-4 w-4 shrink-0 opacity-50" />
+                                <span className="text-[14px] truncate opacity-90 font-medium">
+                                  {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         <form onSubmit={handleSubmit} className="space-y-2">
                         <div className={cn(
                           "group relative w-full shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
