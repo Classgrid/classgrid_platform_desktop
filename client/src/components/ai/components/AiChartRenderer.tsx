@@ -11,7 +11,13 @@ import {
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  BarController,
+  LineController,
+  PieController,
+  DoughnutController,
+  RadarController,
+  PolarAreaController
 } from "chart.js";
 import { Chart } from "react-chartjs-2";
 import { useTheme } from "next-themes";
@@ -27,7 +33,13 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  BarController,
+  LineController,
+  PieController,
+  DoughnutController,
+  RadarController,
+  PolarAreaController
 );
 
 interface AiChartRendererProps {
