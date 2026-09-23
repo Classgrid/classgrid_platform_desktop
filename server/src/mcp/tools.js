@@ -1216,9 +1216,9 @@ export const handleToolCall = async (name, args, context = {}) => {
           throw new Error(`Unsupported Vercel operation: ${operation}`);
         }
 
-        if (vercelTeamId) {
-          endpoint += (endpoint.includes('?') ? '&' : '?') + `teamId=${vercelTeamId}`;
-        }
+        // if (vercelTeamId) {
+        //   endpoint += (endpoint.includes('?') ? '&' : '?') + `teamId=${vercelTeamId}`;
+        // }
 
         const response = await fetch(`https://api.vercel.com${endpoint}`, {
           method: 'GET',
