@@ -795,8 +795,8 @@ export const handleToolCall = async (name, args, context = {}) => {
           // Auto-inject common standard libraries to prevent AI hallucination/forgetting errors
           finalCode = "import os, sys, json, base64, math, datetime, re\n" + finalCode;
         }
-        else if (language === 'javascript') { ext = 'js'; execCmd = 'node'; }
-        else if (language === 'bash') { ext = 'sh'; execCmd = 'bash'; }
+        else if (language === 'javascript' || language === 'js' || language === 'node') { ext = 'js'; execCmd = 'node'; }
+        else if (language === 'bash' || language === 'sh' || language === 'shell') { ext = 'sh'; execCmd = 'bash'; }
         else throw new Error("Unsupported language. Use python, javascript, or bash.");
 
         // Create the directory on the host, write the file from the code string (using a heredoc to preserve exact contents),
