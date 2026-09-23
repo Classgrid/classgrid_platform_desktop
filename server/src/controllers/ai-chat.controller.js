@@ -1291,7 +1291,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     type: "function",
                     function: {
                         name: "send_email",
-                        description: "Send an email on behalf of the user using Zoho API.",
+                        description: "Send an email on behalf of the user using AWS SES.",
                         parameters: {
                             type: "object",
                             properties: {
@@ -1664,8 +1664,10 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     try {
                         let processedAttachments = [];
                         if (args.attachments && Array.isArray(args.attachments) && args.attachments.length > 0) {
+                            console.log(`[send_email] Processing ${args.attachments.length} attachments...`);
                             for (const att of args.attachments) {
                                 if (att.path && att.path.startsWith('/data/')) {
+                                    console.log(`[send_email] Fetching sandbox file: ${att.path}`);
                                     const result = await handleToolCall('execute_terminal_command', { command: `cat ${att.path} | base64 -w 0` }, { sessionId });
                                     if (result && result.content && result.content[0] && result.content[0].text && !result.isError) {
                                         processedAttachments.push({
@@ -1673,9 +1675,34 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                                             content: result.content[0].text.trim(),
                                             encoding: 'base64'
                                         });
+                                        console.log(`[send_email] Added sandbox attachment: ${att.filename}`);
+                                    } else {
+                                        console.warn(`[send_email] Failed to read sandbox file: ${att.path}`);
+                                    }
+                                } else if (att.path && (att.path.startsWith('http://') || att.path.startsWith('https://'))) {
+                                    console.log(`[send_email] Fetching CDN/URL file: ${att.path}`);
+                                    try {
+                                        const res = await fetch(att.path);
+                                        if (res.ok) {
+                                            const arrayBuffer = await res.arrayBuffer();
+                                            const buffer = Buffer.from(arrayBuffer);
+                                            processedAttachments.push({
+                                                filename: att.filename || att.path.split('?')[0].split('/').pop() || 'attachment_file',
+                                                content: buffer.toString('base64'),
+                                                encoding: 'base64'
+                                            });
+                                            console.log(`[send_email] Successfully fetched and base64-encoded URL attachment: ${att.filename}`);
+                                        } else {
+                                            console.error(`[send_email] Failed to fetch URL attachment ${att.path}. Status: ${res.status} ${res.statusText}`);
+                                        }
+                                    } catch (err) {
+                                        console.error(`[send_email] Error fetching URL attachment ${att.path}:`, err);
                                     }
                                 } else if (att.content) {
                                     processedAttachments.push(att);
+                                    console.log(`[send_email] Added direct content attachment: ${att.filename}`);
+                                } else {
+                                    console.warn(`[send_email] Ignored attachment with unknown format: ${JSON.stringify(att)}`);
                                 }
                             }
                         }
