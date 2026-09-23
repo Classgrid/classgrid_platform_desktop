@@ -3349,9 +3349,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   <textarea
                                     value={editContent}
                                     onChange={(e) => setEditContent(e.target.value)}
-                                    className="w-full text-[16px] leading-[24px] bg-transparent border-0 border-transparent focus:border-transparent focus:ring-0 ring-0 shadow-none outline-none p-0 text-[#37352f] dark:text-[#F0EFED] min-h-[80px] resize-none"
+                                    className="w-full text-[16px] leading-[24px] bg-transparent p-0 text-[#37352f] dark:text-[#F0EFED] min-h-[80px] resize-none"
                                     autoFocus
-                                    style={{ boxShadow: 'none' }}
+                                    style={{ border: 'none', outline: 'none', boxShadow: 'none', backgroundColor: 'transparent' }}
                                   />
                                   <div className="flex justify-end gap-2">
                                     <button 
