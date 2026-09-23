@@ -1595,6 +1595,11 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                                 max_results: 10
                             })
                         });
+                        if (!tavilyRes.ok) {
+                            const errorText = await tavilyRes.text();
+                            return `Web Search failed: ${tavilyRes.status} ${tavilyRes.statusText} - ${errorText}`;
+                        }
+                        
                         const searchData = await tavilyRes.json();
                         return JSON.stringify({
                             answer: searchData.answer || null,
