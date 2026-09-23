@@ -3000,8 +3000,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     }
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function submitInput() {
     if (!canSubmit) return;
 
     if (thinking || submitting) {
@@ -3025,6 +3024,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     }
 
     void askQuestion(input);
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    submitInput();
   }
 
   // --- AI Message Queue Engine ---
@@ -4230,7 +4234,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     if (canSubmit) {
-                      void askQuestion(input);
+                      submitInput();
                       setIsExpandedBox(false);
                       setAtMenuOpen(false);
                     }
@@ -4738,7 +4742,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault();
                                 if (canSubmit) {
-                                  void askQuestion(input);
+                                  submitInput();
                                   setIsExpandedBox(false);
                                   setAtMenuOpen(false);
                                 }
