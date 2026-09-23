@@ -1392,6 +1392,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
+  const [priorityMessage, setPriorityMessage] = useState<QueuedMessage | null>(null);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
 
@@ -3039,26 +3040,35 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     const lastMsg = messages[messages.length - 1];
     const isTyping = lastMsg?.role === "assistant" && lastMsg.typing === true;
     
-    // If we are fully done generating and typing, and there are messages in the queue
-    if (!thinking && !submitting && !isTyping && messageQueue.length > 0) {
-      const nextMsg = messageQueue[0];
-      
-      // CRITICAL: Set submitting to true IMMEDIATELY so the next re-render
-      // won't pass this check again and fire another queued message.
-      // This is what prevents all messages from firing at once.
-      setSubmitting(true);
-      
-      // Remove it from the queue
-      setMessageQueue(prev => prev.slice(1));
-      
-      // Fire the request after a small delay to let React finish the state update
-      setTimeout(() => {
-        if (askQuestionRef.current) {
-          askQuestionRef.current(nextMsg.text);
-        }
-      }, 100);
+    // If we are fully done generating and typing
+    if (!thinking && !submitting && !isTyping) {
+      // First check if there is a priority message
+      if (priorityMessage) {
+        setSubmitting(true);
+        const textToSend = priorityMessage.text;
+        setPriorityMessage(null);
+        setTimeout(() => {
+          if (askQuestionRef.current) {
+            askQuestionRef.current(textToSend);
+          }
+        }, 50); // fast fire
+      } 
+      // Else check normal queue
+      else if (messageQueue.length > 0) {
+        const nextMsg = messageQueue[0];
+        
+        // CRITICAL: Set submitting to true IMMEDIATELY so the next re-render won't cascade
+        setSubmitting(true);
+        setMessageQueue(prev => prev.slice(1));
+        
+        setTimeout(() => {
+          if (askQuestionRef.current) {
+            askQuestionRef.current(nextMsg.text);
+          }
+        }, 50); // fast fire
+      }
     }
-  }, [thinking, submitting, messages, messageQueue.length]);
+  }, [thinking, submitting, messages, messageQueue.length, priorityMessage]);
 
   // ─── Panel content (shared between desktop sidebar and mobile bottom-sheet) ───
   const pendingQueueUI = null;
@@ -3834,6 +3844,24 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               );
             })}
 
+            {/* Rendering priority message right after the normal messages */}
+            {priorityMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex w-full mb-6 justify-end"
+              >
+                <div className="flex flex-col gap-1.5 min-w-0 items-end max-w-[75%]">
+                  <div className="relative min-w-0 transition-all duration-700 rounded-[16px] px-[14px] py-[6px] bg-[#f1f1ef] dark:bg-[#2C2C2C] opacity-50 flex items-center gap-3">
+                    <div className="h-2 w-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.7)] animate-pulse shrink-0" />
+                    <p className="text-[16px] leading-[24px] break-words break-all whitespace-pre-wrap text-[#37352f] dark:text-[#F0EFED] cursor-text">
+                      {priorityMessage.text || (priorityMessage.attachedFiles.length > 0 ? "Attached files..." : "")}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             {/* Phase 1 gap: Show CombinedReasoningBlock shimmer when thinking but no assistant message exists yet */}
             {thinking && (!messages.length || messages[messages.length - 1]?.role !== 'assistant') && (
               <div className="pl-1 mb-2">
@@ -3899,14 +3927,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      handleStop();
+                                      // DO NOT STOP AI. Promote to priority message.
                                       setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
-                                      setSubmitting(true);
-                                      setTimeout(() => {
-                                        if (askQuestionRef.current) {
-                                          askQuestionRef.current(msg.text);
-                                        }
-                                      }, 100);
+                                      setPriorityMessage(msg);
                                     }}
                                     className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                   >
@@ -4475,14 +4498,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      handleStop();
+                                      // DO NOT STOP AI. Promote to priority message.
                                       setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
-                                      setSubmitting(true);
-                                      setTimeout(() => {
-                                        if (askQuestionRef.current) {
-                                          askQuestionRef.current(msg.text);
-                                        }
-                                      }, 100);
+                                      setPriorityMessage(msg);
                                     }}
                                     className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                   >
