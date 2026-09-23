@@ -250,7 +250,7 @@ Classgrid uses a hybrid dual-database architecture. When using \`unified_db_quer
 - MONGODB (source='mongodb'): Users, UserProfiles, Organizations, SystemLogs, ActivityLogs, SupportTickets, SupportConversations, DemoRequests, Notes, Attendances, Exams, Timetables, FeeRecords, Invoices, PaymentTransactions, TaxRules, SystemSettings.
 - SUPABASE POSTGRES (source='supabase'): messages, threads, classroom_messages, email_notification_queue, device_tokens, events, holidays, leaves, PLUS all V2 Migrated tables (Advanced Quiz, Certificates, Alumni, Library, Result Engine).
 
-ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â  DATABASE EFFICIENCY & ANTI-LOOPING RULE (CRITICAL):
+[WARNING] DATABASE EFFICIENCY & ANTI-LOOPING RULE (CRITICAL):
 You are allowed a MAXIMUM of 2 queries per table (e.g. one 'countDocuments' and one 'find'). You are STRICTLY FORBIDDEN from calling \`unified_db_query\` a 3rd time for the same table. If you query the same table 3 times, you will hit a hard backend block. Extract what you need from the first 2 queries and proceed immediately.
 
 SYLLABUS & MATERIAL SEARCH:
