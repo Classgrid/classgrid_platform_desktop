@@ -185,7 +185,7 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'list_sent_emails', 'mark_email_read', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'list_classroom_submissions', 'list_classroom_teachers', 'list_classroom_announcements', 'list_classroom_topics', 'list_classroom_materials', 'read_classroom_file'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'list_sent_emails', 'mark_email_read', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'get_classroom_coursework', 'list_classroom_submissions', 'list_classroom_teachers', 'list_classroom_announcements', 'get_classroom_announcement', 'list_classroom_topics', 'list_classroom_materials', 'read_classroom_file'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
         formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
         formTitle: { type: 'string', description: 'The title of the new form (required for create_form).' },
@@ -214,6 +214,7 @@ export const getMcpTools = () => [
         mimeType: { type: 'string', description: 'Optional. The MIME type to export as, if exporting a Google Doc (e.g. application/pdf).' },
         courseId: { type: 'string', description: 'The Classroom course ID.' },
         courseworkId: { type: 'string', description: 'The Classroom coursework/assignment ID.' },
+        announcementId: { type: 'string', description: 'The Classroom announcement ID.' },
         submissionId: { type: 'string', description: 'The Classroom submission ID.' }
       },
       required: ['operation']
@@ -1467,6 +1468,11 @@ export const handleToolCall = async (name, args, context = {}) => {
           const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
           const res = await classroom.courses.announcements.list({ courseId: args.courseId, pageSize: limit });
           data = res.data.announcements || [];
+        } else if (operation === 'get_classroom_announcement') {
+          if (!args.courseId || !args.announcementId) throw new Error("courseId and announcementId are required for get_classroom_announcement");
+          const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
+          const res = await classroom.courses.announcements.get({ courseId: args.courseId, id: args.announcementId });
+          data = res.data || {};
         } else if (operation === 'list_classroom_topics') {
           if (!args.courseId) throw new Error("courseId is required for list_classroom_topics");
           const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
@@ -1477,6 +1483,11 @@ export const handleToolCall = async (name, args, context = {}) => {
           const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
           const res = await classroom.courses.courseWork.list({ courseId: args.courseId, pageSize: limit });
           data = res.data.courseWork || [];
+        } else if (operation === 'get_classroom_coursework') {
+          if (!args.courseId || !args.courseworkId) throw new Error("courseId and courseworkId are required for get_classroom_coursework");
+          const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
+          const res = await classroom.courses.courseWork.get({ courseId: args.courseId, id: args.courseworkId });
+          data = res.data || {};
         } else if (operation === 'list_classroom_materials') {
           if (!args.courseId) throw new Error("courseId is required for list_classroom_materials");
           const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
