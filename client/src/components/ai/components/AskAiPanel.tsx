@@ -3888,7 +3888,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         {messageQueue.length > 0 && (
                           <div className="flex flex-col gap-0 w-[80%] mx-auto mb-1 py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto">
                             {messageQueue.map((msg) => (
-                              <div key={msg.id} className="group flex items-center justify-between gap-2 py-1.5 px-1 text-muted-foreground">
+                              <div key={msg.id} className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors">
                                 <div className="flex items-center gap-2 min-w-0 flex-1">
                                   <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
                                   <span className="text-[13px] truncate">
@@ -4464,7 +4464,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         {messageQueue.length > 0 && (
                           <div className="flex flex-col gap-0 w-full mb-1 py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto">
                             {messageQueue.map((msg) => (
-                              <div key={msg.id} className="group flex items-center justify-between gap-2 py-1.5 px-1 text-muted-foreground">
+                              <div key={msg.id} className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors">
                                 <div className="flex items-center gap-2 min-w-0 flex-1">
                                   <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
                                   <span className="text-[13px] truncate">
