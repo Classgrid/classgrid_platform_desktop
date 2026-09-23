@@ -1167,10 +1167,11 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                 <AiChartRenderer config={chartConfig} />
               </div>
             );
-          } catch (e) {
+          } catch (e: any) {
             return (
               <div className="my-4 w-full rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-500 text-sm">
-                Failed to parse chart configuration.
+                Failed to parse chart configuration: {e?.message}
+                <pre className="mt-2 text-xs overflow-auto max-h-[200px]">{String(children)}</pre>
               </div>
             );
           }
