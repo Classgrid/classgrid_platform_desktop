@@ -562,7 +562,11 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         if (operation === 'find' || operation === 'findOne') {
-          let sbQuery = sb.from(collectionOrTable).select('*').match(query).limit(operation === 'findOne' ? 1 : (args.limit ? Math.min(args.limit, 500) : 500));
+          // Use requested fields instead of select('*') to minimize payload size
+          const selectFields = (args.fields && Array.isArray(args.fields) && args.fields.length > 0)
+            ? args.fields.join(',')
+            : '*';
+          let sbQuery = sb.from(collectionOrTable).select(selectFields).match(query).limit(operation === 'findOne' ? 1 : (args.limit ? Math.min(args.limit, 500) : 500));
           const { data: sbData, error } = await sbQuery;
           if (error) throw error;
           result = operation === 'findOne' ? (sbData[0] || null) : sbData;

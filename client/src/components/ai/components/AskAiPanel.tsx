@@ -3005,7 +3005,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     if (!canSubmit) return;
 
     const isTyping = messages.length > 0 && messages[messages.length - 1]?.typing === true;
-    if (thinking || submitting || isTyping) {
+    if (thinking || submitting || isTyping || wordTypingActiveRef.current) {
       // Linear Approach: Queue the message instead of sending immediately to prevent stream collisions
       setMessageQueue(prev => [
         ...prev,
@@ -3035,8 +3035,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   // --- AI Message Queue Engine ---
   useEffect(() => {
-    // If we are no longer thinking/submitting, and there are messages in the queue
-    if (!thinking && !submitting && messageQueue.length > 0) {
+    // Wait for thinking, submitting, AND word-by-word typing animation to finish
+    const lastMsg = messages[messages.length - 1];
+    const isStillTyping = wordTypingActiveRef.current || lastMsg?.typing === true;
+    if (!thinking && !submitting && !isStillTyping && messageQueue.length > 0) {
       const nextMsg = messageQueue[0];
       
       // Remove it from the queue
@@ -3054,7 +3056,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         }
       }, 50);
     }
-  }, [thinking, submitting, messageQueue.length]);
+  }, [thinking, submitting, messageQueue.length, messages]);
 
   // ─── Panel content (shared between desktop sidebar and mobile bottom-sheet) ───
   const pendingQueueUI = null;
