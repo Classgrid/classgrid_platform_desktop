@@ -397,8 +397,8 @@ async function generateSessionTitle(sessionId, question) {
                     model: "gemini-3.5-flash"
                 },
                 {
-                    name: "deepseek",
-                    url: "https://api.deepseek.com/openai/v1/chat/completions",
+                    name: "groq",
+                    url: "https://api.groq.com/openai/v1/chat/completions",
                     apiKey: process.env.GROQ_API_KEY || "",
                     model: "openai/gpt-oss-20b"
                 }
@@ -1118,8 +1118,8 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     timeoutMs: 60000
                 },
                 {
-                    name: "deepseek",
-                    url: "https://api.deepseek.com/openai/v1/chat/completions",
+                    name: "groq",
+                    url: "https://api.groq.com/openai/v1/chat/completions",
                     apiKey: process.env.GROQ_API_KEY || "",
                     model: "openai/gpt-oss-20b",
                     timeoutMs: 60000

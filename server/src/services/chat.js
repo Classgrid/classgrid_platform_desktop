@@ -42,13 +42,13 @@
  */
 
 // api/services/chat.js
-import OpenAI from 'openai';
+import Groq from 'groq-sdk';
 import { GoogleGenAI } from '@google/genai';
 import accessLogger from '../config/logger.js';
 import { asyncContext } from '../utils/async-context.js';
 import AiUsageLog from '../models/AiUsageLog.js';
 
-const deepseek = new OpenAI({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
+const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
 
 const genAI = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY || process.env.Gemini_API_KEY
@@ -299,12 +299,12 @@ The student wants to know about recent classroom announcements.
 };
 
 /**
- * Get a chat reply from DeepSeek (primary model)
+ * Get a chat reply from Groq (primary model)
  */
-async function getDeepseekReply(message, modePrompt = '') {
+async function getGroqReply(message, modePrompt = '') {
   try {
     const fullSystemPrompt = modePrompt ? `${SYSTEM_PROMPT()}\n\n${modePrompt}` : SYSTEM_PROMPT();
-    const response = await deepseek.chat.completions.create({
+    const response = await groq.chat.completions.create({
       model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
       messages: [
         { role: 'system', content: fullSystemPrompt },
@@ -316,7 +316,7 @@ async function getDeepseekReply(message, modePrompt = '') {
 
     return response.choices?.[0]?.message?.content || '';
   } catch (error) {
-    console.error('DeepSeek API error:', error.message);
+    console.error('Groq API error:', error.message);
 
     // Check for specific error types that should trigger fallback
     const shouldFallback =
@@ -333,7 +333,7 @@ async function getDeepseekReply(message, modePrompt = '') {
       error.message.includes('ECONNREFUSED');
 
     if (shouldFallback) {
-      accessLogger.warn(`DeepSeek error detected (${error.status || 'unknown'}), switching to Gemini`, { provider: 'ai', model: 'deepseek' });
+      accessLogger.warn(`Groq error detected (${error.status || 'unknown'}), switching to Gemini`, { provider: 'ai', model: 'groq' });
     }
 
     throw error; // Propagate error to trigger fallback
@@ -369,12 +369,12 @@ async function getGeminiReply(message, modePrompt = '') {
 /**
  * Get a chat reply with automatic fallback routing
  * @param {string} message - User's question
- * @param {string} modelArg - Selected model (default: 'deepseek')
+ * @param {string} modelArg - Selected model (default: 'groq')
  * @param {string} mode - Academic mode: chat | explain | quiz | summary | viva
  * @param {string} classroomContext - Optional classroom data context
  * @returns {Promise<string>} AI response
  */
-export async function getChatReply(message, modelArg = 'deepseek', mode = 'chat', classroomContext = '') {
+export async function getChatReply(message, modelArg = 'groq', mode = 'chat', classroomContext = '') {
   const modePrompt = MODE_PROMPTS[mode] || '';
 
   // If classroom context is provided, prepend it to the message
@@ -391,7 +391,7 @@ export async function getChatReply(message, modelArg = 'deepseek', mode = 'chat'
     if (modelArg === 'gemini') {
       reply = await getGeminiReply(fullMessage, modePrompt);
     } else {
-      reply = await getDeepseekReply(fullMessage, modePrompt);
+      reply = await getGroqReply(fullMessage, modePrompt);
     }
 
     const responseTime = Date.now() - startTime;
@@ -406,7 +406,7 @@ export async function getChatReply(message, modelArg = 'deepseek', mode = 'chat'
         AiUsageLog.create({
             organization_id: context.orgId,
             userId: context.userId,
-            provider: modelArg === 'gemini' ? 'gemini' : 'deepseek',
+            provider: modelArg === 'gemini' ? 'gemini' : 'groq',
             model: modelArg === 'gemini' ? 'gemini-3.5-flash' : '@cf/deepseek-ai/deepseek-v4-pro-0813',
             inputTokens,
             outputTokens,
@@ -422,7 +422,7 @@ export async function getChatReply(message, modelArg = 'deepseek', mode = 'chat'
     accessLogger.error(`Selected model (${modelArg}) failed: ${error.message}`, { provider: 'ai', model: modelArg });
 
     // Fallback to Gemini ONLY if the primary default (Groq) failed
-    if (modelArg === 'deepseek') {
+    if (modelArg === 'groq') {
       try {
         accessLogger.info(`Attempting Gemini fallback...`, { provider: 'ai', fallback: true });
         const startTime = Date.now();
@@ -441,7 +441,7 @@ export async function getChatReply(message, modelArg = 'deepseek', mode = 'chat'
   }
 }
 
-export async function getChatReplyStream(message, modelArg = 'deepseek', mode = 'chat', classroomContext = '', res, history = []) {
+export async function getChatReplyStream(message, modelArg = 'groq', mode = 'chat', classroomContext = '', res, history = []) {
   const modePrompt = MODE_PROMPTS[mode] || '';
 
   const fullMessage = classroomContext
@@ -470,7 +470,7 @@ export async function getChatReplyStream(message, modelArg = 'deepseek', mode = 
   messages.push({ role: 'user', content: fullMessage });
 
   try {
-    const stream = await deepseek.chat.completions.create({
+    const stream = await groq.chat.completions.create({
       model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
       messages,
       temperature: 0.6,
@@ -549,22 +549,22 @@ export async function checkModelAvailability() {
     timestamp: new Date().toISOString(),
     groq: { available: false, model: '@cf/deepseek-ai/deepseek-v4-pro-0813', responseTime: null },
     gemini: { available: false, model: 'gemini-3.5-flash', responseTime: null },
-    recommendedModel: 'deepseek'
+    recommendedModel: 'groq'
   };
 
   // Check Groq
   try {
-    const deepseekStart = Date.now();
-    await deepseek.chat.completions.create({
+    const groqStart = Date.now();
+    await groq.chat.completions.create({
       model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
       messages: [{ role: 'user', content: 'ping' }],
       max_tokens: 1
     });
-    status.deepseek.available = true;
-    status.deepseek.responseTime = Date.now() - deepseekStart;
+    status.groq.available = true;
+    status.groq.responseTime = Date.now() - groqStart;
   } catch (error) {
-    status.deepseek.error = error.message;
-    status.deepseek.statusCode = error.status;
+    status.groq.error = error.message;
+    status.groq.statusCode = error.status;
   }
 
   // Check Gemini
@@ -578,7 +578,7 @@ export async function checkModelAvailability() {
   }
 
   // Determine recommended model
-  if (!status.deepseek.available && status.gemini.available) {
+  if (!status.groq.available && status.gemini.available) {
     status.recommendedModel = 'gemini';
   }
 
@@ -608,7 +608,7 @@ export async function testModels() {
 // Configuration constants (optional, for easy adjustments)
 export const MODEL_CONFIG = {
   PRIMARY: {
-    provider: 'DeepSeek',
+    provider: 'Groq',
     model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
     temperature: 0.6,
     maxTokens: 1000
