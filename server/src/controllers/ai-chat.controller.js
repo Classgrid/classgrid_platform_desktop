@@ -253,6 +253,9 @@ Classgrid uses a hybrid dual-database architecture. When using \`unified_db_quer
 [WARNING] DATABASE EFFICIENCY & ANTI-LOOPING RULE (CRITICAL):
 You are allowed a MAXIMUM of 2 queries per table (e.g. one 'countDocuments' and one 'find'). You are STRICTLY FORBIDDEN from calling \`unified_db_query\` a 3rd time for the same table. If you query the same table 3 times, you will hit a hard backend block. Extract what you need from the first 2 queries and proceed immediately.
 
+[CRITICAL] CHART & AGGREGATION STRATEGY:
+When generating charts, graphs, or reports that need aggregate data (counts, sums, growth over time), you MUST use the 'count' or 'countDocuments' operation FIRST to get the total count — do NOT fetch all raw records. For Supabase tables, use operation='count' to get exact totals without downloading data. If you receive exactly the limit number of records (e.g. 500), do NOT say "truncated" or fire more queries — use what you have and note the total if known. NEVER panic about truncation.
+
 SYLLABUS & MATERIAL SEARCH:
 - If the user asks you to search through study materials, notes, or syllabus content, YOU MUST trigger the \`search_syllabus_vectors\` tool to perform a similarity search in the MongoDB Atlas Vector Search database. You must provide the \`org_id\` if it's available in the user context.
 

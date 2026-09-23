@@ -561,7 +561,12 @@ export const handleToolCall = async (name, args, context = {}) => {
           };
         }
 
-        if (operation === 'find' || operation === 'findOne') {
+        if (operation === 'count' || operation === 'countDocuments') {
+          // Aggregate count operation — returns total count without fetching raw records
+          const { count, error } = await sb.from(collectionOrTable).select('*', { count: 'exact', head: true }).match(query);
+          if (error) throw error;
+          result = { total_count: count };
+        } else if (operation === 'find' || operation === 'findOne') {
           // Use requested fields instead of select('*') to minimize payload size
           const selectFields = (args.fields && Array.isArray(args.fields) && args.fields.length > 0)
             ? args.fields.join(',')
@@ -587,8 +592,11 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         const aiSafetyReplacer = (key, value) => {
-          const forbiddenKeys = ['password', 'profilePicture', 'profileBanner', 'logo', 'favicon', 'signature', 'activationToken', 'resetPasswordToken', 'payroll_config', 'preferences', 'settings', 'fee_structures', 'modules', 'theme', 'audit_logs', 'history', 'metadata', 'permissions'];
-          if (forbiddenKeys.includes(key)) return undefined;
+          const forbiddenKeys = ['password', 'profilePicture', 'profileBanner', 'logo', 'favicon', 'signature',
+            'activationToken', 'resetPasswordToken', 'payroll_config', 'preferences', 'settings',
+            'fee_structures', 'modules', 'theme', 'audit_logs', 'history', 'metadata', 'permissions',
+            'hash', 'salt', 'biometric', 'token', 'secret'];
+          if (forbiddenKeys.some(fk => key.toLowerCase().includes(fk))) return undefined;
           if (typeof value === 'string' && value.length > 500) return "[TRUNCATED HUGE STRING]";
           if (key !== "" && Array.isArray(value) && value.length > 3 && Array.isArray(result) && result.length > 2) {
             return `[Array of ${value.length} items TRUNCATED to save context]`;
@@ -598,6 +606,12 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         let outputText = JSON.stringify(result, aiSafetyReplacer, 2);
 
+
+        if (outputText.length > 10000) {
+          return {
+            content: [{ type: 'text', text: `ERROR: The result is too large (${outputText.length} bytes). The Supabase query returned too much data. Use 'count' operation for totals, request fewer fields, add filters, or reduce the limit.` }]
+          };
+        }
 
         return {
           content: [{ type: 'text', text: outputText }],
