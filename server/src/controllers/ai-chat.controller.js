@@ -1885,7 +1885,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 
                 answer = await currentClient.generate({
                     messages,
-                    maxToolDepth: 30,
+                    maxToolDepth: 50,
                     timeoutMs: isDiagramRequest && attempt === 1 ? 15000 : 300000,
                     onStatus: (status) => {
                         if (requestAborted || res.writableEnded) return;
