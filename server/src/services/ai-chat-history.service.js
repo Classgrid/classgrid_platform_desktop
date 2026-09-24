@@ -84,7 +84,26 @@ export async function getHistory(sessionId, depth = DEFAULT_DEPTH) {
                     try {
                         const inner = JSON.parse(parsed.content);
                         if (inner && inner.classgrid_ai_message) {
-                            parsed.content = inner.content || '';
+                            let contentToReturn = inner.content || '';
+                            
+                            // Safely restore truncated tool memory for the LLM without blowing up the context window
+                            if (inner.steps && Array.isArray(inner.steps) && inner.steps.length > 0) {
+                                const toolSummaries = inner.steps.map(s => {
+                                    if (!s.tool) return null;
+                                    let resExcerpt = "No result recorded";
+                                    if (typeof s.result === 'string') {
+                                        // Keep it generous enough to capture CDN links but small enough to block raw PDF dumps
+                                        resExcerpt = s.result.length > 500 ? s.result.substring(0, 500) + '...[TRUNCATED]' : s.result;
+                                    }
+                                    return `Tool Used: ${s.tool} | Result Excerpt: ${resExcerpt}`;
+                                }).filter(Boolean).join('\n');
+                                
+                                if (toolSummaries) {
+                                    contentToReturn += `\n\n[SYSTEM NOTE - YOUR BACKGROUND TOOL MEMORY FOR THIS TURN:\n${toolSummaries}\n(You actually ran these tools. Do not hallucinate that you didn't!)]`;
+                                }
+                            }
+                            
+                            parsed.content = contentToReturn;
                         }
                     } catch {}
                 }
