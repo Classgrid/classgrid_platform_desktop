@@ -185,7 +185,7 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'list_sent_emails', 'mark_email_read', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'get_classroom_coursework', 'list_classroom_submissions', 'list_classroom_teachers', 'list_classroom_announcements', 'get_classroom_announcement', 'list_classroom_topics', 'list_classroom_materials', 'read_classroom_file'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'read_email', 'list_sent_emails', 'mark_email_read', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'get_classroom_coursework', 'list_classroom_submissions', 'list_classroom_teachers', 'list_classroom_announcements', 'get_classroom_announcement', 'list_classroom_topics', 'list_classroom_materials', 'read_classroom_file'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
         query: { type: 'string', description: 'Search query for list_emails (e.g. "newer_than:1d", "is:unread").' },
         formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
@@ -207,7 +207,7 @@ export const getMcpTools = () => [
         topic: { type: 'string', description: 'The topic/title (for create_event).' },
         startTime: { type: 'string', description: 'Start time in ISO format (for create_event).' },
         endTime: { type: 'string', description: 'End time in ISO format (for create_event).' },
-        messageId: { type: 'string', description: 'The ID of the Gmail message (for mark_email_read).' },
+        messageId: { type: 'string', description: 'The ID of the Gmail message (for mark_email_read, read_email).' },
         addMeetLink: { type: 'boolean', description: 'Whether to attach a Google Meet link (for create_event).' },
         fileId: { type: 'string', description: 'The ID of the file in Google Drive or Classroom.' },
         fileUrl: { type: 'string', description: 'The public URL of the file to download and upload into Drive (for upload_drive_file).' },
@@ -1363,6 +1363,8 @@ export const handleToolCall = async (name, args, context = {}) => {
           };
           if (query) {
             listParams.q = query;
+          } else {
+            listParams.q = 'newer_than:3d';
           }
 
           const res = await gmail.users.messages.list(listParams);
@@ -1373,8 +1375,62 @@ export const handleToolCall = async (name, args, context = {}) => {
             const headers = msg.data.payload.headers;
             const subject = headers.find(h => h.name === 'Subject')?.value;
             const from = headers.find(h => h.name === 'From')?.value;
-            data.push({ id: msg.data.id, snippet: msg.data.snippet, subject, from });
+            const date = headers.find(h => h.name === 'Date')?.value || new Date(parseInt(msg.data.internalDate)).toISOString();
+            
+            let attachments = [];
+            if (msg.data.payload.parts) {
+              for (let part of msg.data.payload.parts) {
+                if (part.filename && part.filename.length > 0) {
+                  attachments.push(part.filename);
+                }
+              }
+            }
+            
+            data.push({ id: msg.data.id, snippet: msg.data.snippet, subject, from, date, attachments });
           }
+        } else if (operation === 'read_email') {
+          if (!args.messageId) throw new Error("messageId is required for read_email");
+          const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+          const msg = await gmail.users.messages.get({ userId: 'me', id: args.messageId, format: 'full' });
+          const headers = msg.data.payload.headers;
+          const subject = headers.find(h => h.name === 'Subject')?.value;
+          const from = headers.find(h => h.name === 'From')?.value;
+          const date = headers.find(h => h.name === 'Date')?.value || new Date(parseInt(msg.data.internalDate)).toISOString();
+          
+          let body = '';
+          let attachments = [];
+          
+          const decodePart = (part) => {
+            if (part.body && part.body.data) {
+                return Buffer.from(part.body.data, 'base64').toString('utf-8');
+            }
+            return '';
+          };
+          
+          if (msg.data.payload.parts) {
+            for (let part of msg.data.payload.parts) {
+               if (part.filename && part.filename.length > 0) {
+                 attachments.push(part.filename);
+               }
+               
+               if (part.mimeType === 'text/plain' || part.mimeType === 'text/html') {
+                   body += decodePart(part);
+               } else if (part.parts) {
+                   for (let subpart of part.parts) {
+                       if (subpart.filename && subpart.filename.length > 0) {
+                           attachments.push(subpart.filename);
+                       }
+                       if (subpart.mimeType === 'text/plain' || subpart.mimeType === 'text/html') {
+                           body += decodePart(subpart);
+                       }
+                   }
+               }
+            }
+          } else {
+             body = decodePart(msg.data.payload);
+          }
+          
+          data = { id: msg.data.id, subject, from, date, snippet: msg.data.snippet, attachments, body };
         } else if (operation === 'mark_email_read') {
           if (!args.messageId) throw new Error("messageId is required for mark_email_read");
           const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
