@@ -1362,7 +1362,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           
           const listParams = {
             userId: 'me',
-            maxResults: limit
+            maxResults: limit ? Math.max(limit, 25) : 25
           };
           if (query) {
             listParams.q = query;
