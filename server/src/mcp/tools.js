@@ -1362,7 +1362,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           
           const listParams = {
             userId: 'me',
-            maxResults: 500 // Hardcoded to 500 so it grabs literally everything, ignoring the AI's limit
+            maxResults: 50 // Changed to 50 to prevent the server from crashing or taking too long
           };
           if (query) {
             listParams.q = query;
