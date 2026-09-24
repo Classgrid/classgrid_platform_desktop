@@ -1757,14 +1757,18 @@ export const handleToolCall = async (name, args, context = {}) => {
             headers: { "Authorization": `Bearer ${accessToken}` }
           });
           const data = await res.json();
-          const safeData = (data.value || []).map(msg => ({
-            id: msg.id,
-            subject: msg.subject,
-            senderName: msg.sender?.emailAddress?.name || msg.from?.emailAddress?.name || 'Unknown',
-            senderEmail: msg.sender?.emailAddress?.address || msg.from?.emailAddress?.address || 'Unknown',
-            receivedDateTime: msg.receivedDateTime,
-            bodyPreview: msg.bodyPreview
-          }));
+          const safeData = (data.value || []).map(msg => {
+            const rawDate = new Date(msg.receivedDateTime);
+            const istDate = rawDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', timeZoneName: 'short' });
+            return {
+              id: msg.id,
+              subject: msg.subject,
+              senderName: msg.sender?.emailAddress?.name || msg.from?.emailAddress?.name || 'Unknown',
+              senderEmail: msg.sender?.emailAddress?.address || msg.from?.emailAddress?.address || 'Unknown',
+              receivedDateTime: istDate,
+              bodyPreview: msg.bodyPreview
+            };
+          });
           return { content: [{ type: 'text', text: JSON.stringify(safeData, null, 2) }] };
         } else if (operation === 'read_email') {
           if (!messageId) throw new Error("messageId is required for read_email");
