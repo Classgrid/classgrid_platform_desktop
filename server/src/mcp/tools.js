@@ -1378,7 +1378,9 @@ export const handleToolCall = async (name, args, context = {}) => {
             const headers = msg.data.payload.headers;
             const subject = headers.find(h => h.name === 'Subject')?.value;
             const from = headers.find(h => h.name === 'From')?.value;
-            const date = headers.find(h => h.name === 'Date')?.value || new Date(parseInt(msg.data.internalDate)).toISOString();
+            let rawDateStr = headers.find(h => h.name === 'Date')?.value;
+            let dateObj = rawDateStr ? new Date(rawDateStr) : new Date(parseInt(msg.data.internalDate));
+            const date = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', timeZoneName: 'short' });
             
             let attachments = [];
             if (msg.data.payload.parts) {
@@ -1398,7 +1400,9 @@ export const handleToolCall = async (name, args, context = {}) => {
           const headers = msg.data.payload.headers;
           const subject = headers.find(h => h.name === 'Subject')?.value;
           const from = headers.find(h => h.name === 'From')?.value;
-          const date = headers.find(h => h.name === 'Date')?.value || new Date(parseInt(msg.data.internalDate)).toISOString();
+          let rawDateStr = headers.find(h => h.name === 'Date')?.value;
+          let dateObj = rawDateStr ? new Date(rawDateStr) : new Date(parseInt(msg.data.internalDate));
+          const date = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', timeZoneName: 'short' });
           
           let body = '';
           let attachments = [];
