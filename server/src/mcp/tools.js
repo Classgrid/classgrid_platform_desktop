@@ -187,6 +187,7 @@ export const getMcpTools = () => [
       properties: {
         operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'list_sent_emails', 'mark_email_read', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'get_classroom_coursework', 'list_classroom_submissions', 'list_classroom_teachers', 'list_classroom_announcements', 'get_classroom_announcement', 'list_classroom_topics', 'list_classroom_materials', 'read_classroom_file'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
+        query: { type: 'string', description: 'Search query for list_emails (e.g. "newer_than:1d", "is:unread").' },
         formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
         formTitle: { type: 'string', description: 'The title of the new form (required for create_form).' },
         folderName: { type: 'string', description: 'The name of the new folder to create in Drive (required for create_folder).' },
@@ -242,6 +243,7 @@ export const getMcpTools = () => [
       properties: {
         operation: { type: 'string', enum: ['list_emails', 'read_email', 'list_meetings', 'create_meeting', 'send_email', 'mark_email_read', 'list_teams', 'list_channels', 'read_channel_messages', 'send_channel_message', 'create_channel', 'list_chats', 'read_chat_messages', 'send_direct_message', 'read_meeting_transcript'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
+        unreadOnly: { type: 'boolean', description: 'If true, only returns unread emails. If false or omitted, returns all emails.' },
         to: { type: 'string', description: 'Recipient email address (for send_email).' },
         subject: { type: 'string', description: 'Subject of the email or meeting (for send_email, create_meeting).' },
         body: { type: 'string', description: 'Body content (for send_email, send_channel_message, send_direct_message).' },
@@ -1254,7 +1256,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'google_workspace_connector') {
-      const { operation, limit = 10, formId, formTitle, folderName, eventTitle, eventStartTime, eventEndTime, questions } = args;
+      const { operation, limit = 10, query = '', formId, formTitle, folderName, eventTitle, eventStartTime, eventEndTime, questions } = args;
       const { userEmail = '' } = context;
 
       const user = await mongoose.models.User.findOne({ email: userEmail });
@@ -1290,6 +1292,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           const drive = google.drive({ version: 'v3', auth: oauth2Client });
           const res = await drive.files.list({
             pageSize: limit,
+            orderBy: 'modifiedTime desc',
             fields: 'nextPageToken, files(id, name, mimeType, webViewLink)',
           });
           data = res.data.files;
@@ -1353,11 +1356,16 @@ export const handleToolCall = async (name, args, context = {}) => {
           data = { message: "File successfully uploaded to Google Drive.", ...res.data };
         } else if (operation === 'list_emails') {
           const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-          const res = await gmail.users.messages.list({
+          
+          const listParams = {
             userId: 'me',
-            maxResults: limit,
-            q: 'is:unread'
-          });
+            maxResults: limit
+          };
+          if (query) {
+            listParams.q = query;
+          }
+
+          const res = await gmail.users.messages.list(listParams);
           const messages = res.data.messages || [];
           data = [];
           for (let m of messages) {
@@ -1467,7 +1475,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         } else if (operation === 'list_classroom_announcements') {
           if (!args.courseId) throw new Error("courseId is required for list_classroom_announcements");
           const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
-          const res = await classroom.courses.announcements.list({ courseId: args.courseId, pageSize: limit });
+          const res = await classroom.courses.announcements.list({ courseId: args.courseId, pageSize: limit, orderBy: 'updateTime desc' });
           data = res.data.announcements || [];
         } else if (operation === 'get_classroom_announcement') {
           if (!args.courseId || !args.announcementId) throw new Error("courseId and announcementId are required for get_classroom_announcement");
@@ -1482,7 +1490,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         } else if (operation === 'list_classroom_assignments') {
           if (!args.courseId) throw new Error("courseId is required for list_classroom_assignments");
           const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
-          const res = await classroom.courses.courseWork.list({ courseId: args.courseId, pageSize: limit });
+          const res = await classroom.courses.courseWork.list({ courseId: args.courseId, pageSize: limit, orderBy: 'updateTime desc' });
           data = res.data.courseWork || [];
         } else if (operation === 'get_classroom_coursework') {
           if (!args.courseId || !args.courseworkId) throw new Error("courseId and courseworkId are required for get_classroom_coursework");
@@ -1492,7 +1500,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         } else if (operation === 'list_classroom_materials') {
           if (!args.courseId) throw new Error("courseId is required for list_classroom_materials");
           const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
-          const res = await classroom.courses.courseWorkMaterials.list({ courseId: args.courseId, pageSize: limit });
+          const res = await classroom.courses.courseWorkMaterials.list({ courseId: args.courseId, pageSize: limit, orderBy: 'updateTime desc' });
           data = res.data.courseWorkMaterial || [];
         } else if (operation === 'list_classroom_submissions') {
           if (!args.courseId || !args.courseworkId) throw new Error("courseId and courseworkId are required for list_classroom_submissions");
@@ -1597,7 +1605,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'microsoft_workspace_connector') {
-      const { operation, limit = 10, to, subject, body, startTime, endTime, messageId } = args;
+      const { operation, limit = 10, unreadOnly, to, subject, body, startTime, endTime, messageId } = args;
       const { userEmail = '' } = context;
 
       const user = await mongoose.models.User.findOne({ email: userEmail });
@@ -1655,7 +1663,11 @@ export const handleToolCall = async (name, args, context = {}) => {
           }));
           return { content: [{ type: 'text', text: JSON.stringify(safeData, null, 2) }] };
         } else if (operation === 'list_emails') {
-          const res = await fetch(`https://graph.microsoft.com/v1.0/me/messages?$top=${limit}&$filter=isRead eq false`, {
+          let url = `https://graph.microsoft.com/v1.0/me/messages?$top=${limit}`;
+          if (unreadOnly) {
+            url += `&$filter=isRead eq false`;
+          }
+          const res = await fetch(url, {
             headers: { "Authorization": `Bearer ${accessToken}` }
           });
           const data = await res.json();
