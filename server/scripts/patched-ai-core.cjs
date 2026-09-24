@@ -141,7 +141,7 @@ async function tryProvider(provider, messages, config, temperature, maxTokens, t
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const startTime = Date.now();
-  const maxDepth = config.maxToolDepth ?? 2;
+  const maxDepth = config.maxToolDepth ?? 100;
   const allTools = [INTERNAL_THOUGHT_TOOL, ...config.tools || []];
   if (verbose) {
     console.log(`

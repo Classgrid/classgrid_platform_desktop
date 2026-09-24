@@ -24,6 +24,7 @@ import {
     getUserGeneratedImages
 } from "../services/ai-chat.service.js";
 import { getHistory, appendToHistory, invalidateHistoryCache } from "../services/ai-chat-history.service.js";
+import redis from "../config/redis.js";
 import { sendEmail } from "../services/aws-ses.service.js";
 import mongoose from "mongoose";
 import NotificationLog from "../models/NotificationLog.js";
@@ -1060,6 +1061,10 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 2. NO DUPLICATE HEADINGS: The \`generate_pdf\` tool automatically renders the \`title\` parameter as an \`<h1>\` at the top of the document. Do NOT manually add a duplicate \`<h1>\` with the title inside your HTML content.
 3. HUMANIZE LABELS: NEVER output raw backend database enum values (like "org_admin", "super_admin") in your chat responses or in PDF reports. Always map them to human-readable labels (e.g., "Organization Admin", "Super Admin") before rendering.`;
 
+        dynamicSystemPrompt += `\n\nDOCUMENT RETRIEVAL RULE:
+CRITICAL: If a user asks a specific question about a document, PDF, or image, and you do not have the exact raw text in your immediate memory, you MUST use the \`recall_session_context\` tool first to get the list of previously read file URLs. Then, you MUST use \`parse_document\` or \`analyze_image\` to fetch and read the document/image AGAIN. 
+DO NOT restart the Google Classroom search workflow (list courses, assignments, etc.) to find a file you already read earlier in the chat. Use recall_session_context to grab the URL instantly! You are STRICTLY FORBIDDEN from guessing or answering based on your general pre-trained knowledge. If you don't have the text, fetch it!`;
+
         // PERFORMANCE: Only inject full system prompt on the FIRST message of a session.
         // For subsequent messages, inject a lightweight context-only prompt since
         // the full rules are already in conversation history from the first message.
@@ -1132,6 +1137,18 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                             parameters: t.inputSchema
                         }
                     })),
+                {
+                    type: "function",
+                    function: {
+                        name: "recall_session_context",
+                        description: "Retrieves a list of all documents (PDFs) and images that were previously processed in this chat session. Use this tool when the user asks a follow-up question about a file you read earlier, so you can get its URL to read it again.",
+                        parameters: {
+                            type: "object",
+                            properties: {},
+                            required: []
+                        }
+                    }
+                },
                 {
                     type: "function",
                     function: {
@@ -1444,10 +1461,24 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                             return `FAILED to upload file: ${e.message}`;
                         }
                     },
+                    recall_session_context: async (args) => {
+                        try {
+                            const files = await redis.lrange(`ai:chat:files:${sessionId}`, 0, -1);
+                            if (!files || files.length === 0) {
+                                return "No files were processed in this session yet.";
+                            }
+                            const uniqueFiles = [...new Set(files)];
+                            return "Here are the files processed in this session:\n" + uniqueFiles.map((f, i) => `${i + 1}. ${f}`).join("\n") + "\n\nYou can now use parse_document or analyze_image on these URLs to read them again.";
+                        } catch (e) {
+                            return `FAILED to recall context: ${e.message}`;
+                        }
+                    },
                     analyze_image: async (args) => {
                         try {
                             const { url, question } = args;
                             if (!url) return "ERROR: No url provided in tool arguments.";
+
+                            try { await redis.rpush(`ai:chat:files:${sessionId}`, url); await redis.expire(`ai:chat:files:${sessionId}`, 86400); } catch(e) { console.error("Redis error", e); }
 
                             console.log(`[analyze_image] Fetching Image URL: ${url}`);
                             const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
@@ -1496,6 +1527,8 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                         try {
                             const { url } = args;
                             if (!url) return "ERROR: No url provided in tool arguments.";
+
+                            try { await redis.rpush(`ai:chat:files:${sessionId}`, url); await redis.expire(`ai:chat:files:${sessionId}`, 86400); } catch(e) { console.error("Redis error", e); }
 
                             console.log(`[parse_document] Fetching Document URL: ${url}`);
                             const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
@@ -2074,6 +2107,18 @@ export const deleteChatSession = async (req, res) => {
 const formatApprovalCard = (content) => {
     if (!content) return "";
 
+    let textToFormat = content;
+    if (typeof textToFormat === 'string' && textToFormat.trim().startsWith('{')) {
+        try {
+            const inner = JSON.parse(textToFormat);
+            if (inner && inner.classgrid_ai_message) {
+                textToFormat = inner.content || "";
+            }
+        } catch (e) {
+            // Ignore parse error, it's just normal text
+        }
+    }
+
     const replacer = (match, jsonString) => {
         try {
             const data = JSON.parse(jsonString.trim());
@@ -2105,7 +2150,7 @@ const formatApprovalCard = (content) => {
         }
     };
 
-    let processed = content.replace(/\[APPR_CARD\]([\s\S]*?)\[\/APPR_CARD\]/gi, replacer);
+    let processed = textToFormat.replace(/\[APPR_CARD\]([\s\S]*?)\[\/APPR_CARD\]/gi, replacer);
     processed = processed.replace(/```(?:appr|approval|APPR|APPROVAL)\s*\n([\s\S]*?)```/gi, replacer);
     return processed.trim();
 };
@@ -2123,7 +2168,7 @@ export const shareChatSession = async (req, res) => {
 
         let transcript = `Chat Transcript: ${session.title}\n\n`;
         transcript += `Exported on ${new Date().toLocaleString()}\n\n---\n\n`;
-        messages.forEach((msg) => {
+        messages.filter(msg => msg.role === 'user' || msg.role === 'assistant').forEach((msg) => {
             const cleanContent = formatApprovalCard(msg.content || "");
             if (cleanContent) {
                 transcript += `${msg.role === 'user' ? 'You' : 'Classgrid AI'}:\n${cleanContent}\n\n`;
@@ -2204,11 +2249,14 @@ export const createPublicShare = async (req, res) => {
                     userEmail,
                     userName,
                     session.title || "Classgrid AI Chat",
-                    messages.map(m => ({
-                        role: m.role,
-                        content: formatApprovalCard(m.content || ""),
-                        created_at: m.created_at
-                    })).filter(m => m.content),
+                    messages
+                        .filter(m => m.role === 'user' || m.role === 'assistant')
+                        .map(m => ({
+                            role: m.role,
+                            content: formatApprovalCard(m.content || ""),
+                            created_at: m.created_at
+                        }))
+                        .filter(m => m.content),
                     shareId // Pass the pre-generated ID
                 );
                 console.info(`[Chat API] ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Public share created in background: ${shareUrl} for session ${id}`);
