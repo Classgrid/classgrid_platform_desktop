@@ -1402,7 +1402,9 @@ export const handleToolCall = async (name, args, context = {}) => {
           
           const decodePart = (part) => {
             if (part.body && part.body.data) {
-                return Buffer.from(part.body.data, 'base64').toString('utf-8');
+                // Gmail uses base64url encoding, so we must replace - and _ before decoding
+                let base64 = part.body.data.replace(/-/g, '+').replace(/_/g, '/');
+                return Buffer.from(base64, 'base64').toString('utf-8');
             }
             return '';
           };
