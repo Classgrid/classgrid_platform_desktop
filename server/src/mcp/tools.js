@@ -167,14 +167,16 @@ export const getMcpTools = () => [
   },
   {
     name: 'vercel_connector',
-    description: 'Interact with Vercel API to list projects, deployments, or fetch deployment details.',
+    description: 'Interact with Vercel API to create projects linked to GitHub, list projects, or deployments.',
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_projects', 'list_deployments', 'get_deployment'], description: 'The Vercel operation to perform.' },
+        operation: { type: 'string', enum: ['list_projects', 'list_deployments', 'get_deployment', 'create_project'], description: 'The Vercel operation to perform.' },
         projectId: { type: 'string', description: 'The Vercel Project ID (required for list_deployments).' },
         limit: { type: 'number', description: 'Max number of results to return (default 10).' },
-        deploymentId: { type: 'string', description: 'The Vercel Deployment ID (required for get_deployment).' }
+        deploymentId: { type: 'string', description: 'The Vercel Deployment ID (required for get_deployment).' },
+        projectName: { type: 'string', description: 'The desired name for the new Vercel project (required for create_project).' },
+        githubRepo: { type: 'string', description: 'The full GitHub repository name (e.g. "username/repo") to link and deploy (required for create_project).' }
       },
       required: ['operation']
     }
@@ -1192,21 +1194,30 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'vercel_connector') {
-      const { operation, projectId, limit = 10, deploymentId } = args;
+      const { operation, projectId, limit = 10, deploymentId, projectName, githubRepo } = args;
       const { userEmail = '', userRole = '' } = context;
 
-      // Fetch the OAuth token from the database
-      const user = await mongoose.models.User.findOne({ email: userEmail });
-      if (!user || !user.vercel_access_token) {
-        return {
-          content: [{ type: 'text', text: `Error: No Vercel OAuth token found. Please connect your Vercel account from the settings page first.` }]
-        };
+      // Determine token to use based on operation.
+      // For create_project, we use the MASTER Classgrid Vercel Token so we host it on our servers!
+      let vercelToken = '';
+      if (operation === 'create_project') {
+        vercelToken = process.env.VERCEL_API_TOKEN;
+        if (!vercelToken) throw new Error("VERCEL_API_TOKEN environment variable is not configured on the server.");
+      } else {
+        const user = await mongoose.models.User.findOne({ email: userEmail });
+        if (!user || !user.vercel_access_token) {
+          return {
+            content: [{ type: 'text', text: `Error: No Vercel OAuth token found. Please connect your Vercel account from the settings page first.` }]
+          };
+        }
+        vercelToken = user.vercel_access_token;
       }
-      const vercelToken = user.vercel_access_token;
-      const vercelTeamId = user.vercel_team_id;
 
       try {
         let endpoint = '';
+        let method = 'GET';
+        let body = null;
+
         if (operation === 'list_projects') {
           endpoint = `/v9/projects?limit=${limit}`;
         } else if (operation === 'list_deployments') {
@@ -1215,21 +1226,32 @@ export const handleToolCall = async (name, args, context = {}) => {
         } else if (operation === 'get_deployment') {
           if (!deploymentId) throw new Error("deploymentId is required for get_deployment");
           endpoint = `/v13/deployments/${deploymentId}`;
+        } else if (operation === 'create_project') {
+          if (!projectName || !githubRepo) throw new Error("projectName and githubRepo are required to create a project");
+          endpoint = `/v9/projects`;
+          method = 'POST';
+          body = JSON.stringify({
+            name: projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-'), // Sanitize name
+            framework: null, // null is for vanilla HTML/JS
+            gitRepository: {
+              type: 'github',
+              repo: githubRepo
+            }
+          });
         } else {
           throw new Error(`Unsupported Vercel operation: ${operation}`);
         }
 
-        // if (vercelTeamId) {
-        //   endpoint += (endpoint.includes('?') ? '&' : '?') + `teamId=${vercelTeamId}`;
-        // }
-
-        const response = await fetch(`https://api.vercel.com${endpoint}`, {
-          method: 'GET',
+        const fetchOptions = {
+          method,
           headers: {
             'Authorization': `Bearer ${vercelToken}`,
             'Content-Type': 'application/json'
           }
-        });
+        };
+        if (body) fetchOptions.body = body;
+
+        const response = await fetch(`https://api.vercel.com${endpoint}`, fetchOptions);
 
         if (!response.ok) {
           const errText = await response.text();
