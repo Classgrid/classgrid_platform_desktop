@@ -7,6 +7,7 @@
  */
 
 // Triggering test deployment for GitHub Actions (Backend) and Vercel (Frontend)
+import { usageStorage } from "../utils/fetch-interceptor.js";
 import { createLLMClient } from "@classgrid/ai/core";
 import { getPresignedUploadUrl, uploadBufferToR2 } from "../config/r2Client.js";
 import { primarySupabaseClient as supabase } from "../config/supabaseClient.js";
@@ -474,6 +475,63 @@ async function buildDeepContext(userEmail) {
 }
 
 export const streamAskAi = async (req, res) => {
+    const body = req.body || {};
+
+        const userId = req.user?.id || body.userId;
+        if (userId) {
+            try {
+                const User = (await import("../models/User.js")).default;
+                const Organization = (await import("../models/Organization.js")).default;
+                const userTokens = await User.findById(userId).select("ai_tokens organization_id");
+                
+                if (userTokens && userTokens.ai_tokens) {
+                    const now = new Date();
+                    // Reset weekly tokens if date passed
+                    if (now > new Date(userTokens.ai_tokens.week_reset_date)) {
+                        userTokens.ai_tokens.used_this_week = 0;
+                        const nextWeek = new Date();
+                        nextWeek.setDate(nextWeek.getDate() + 7);
+                        userTokens.ai_tokens.week_reset_date = nextWeek;
+                        await userTokens.save();
+                    }
+                    
+                    const remaining = userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week;
+                    if (remaining <= 0) {
+                        let proAllowed = false;
+                        if (userTokens.organization_id) {
+                            const org = await Organization.findById(userTokens.organization_id).select("ai_config");
+                            if (org && org.ai_config) {
+                                if (now > new Date(org.ai_config.pro_reset_date)) {
+                                    org.ai_config.pro_used_this_period = 0;
+                                    const nextReset = new Date();
+                                    nextReset.setHours(nextReset.getHours() + 4);
+                                    org.ai_config.pro_reset_date = nextReset;
+                                    await org.save();
+                                }
+                                
+                                const proRemaining = org.ai_config.pro_pool_limit - org.ai_config.pro_used_this_period;
+                                if (proRemaining > 0) {
+                                    const roleStr = req.user?.role || body.role;
+                                    if (org.ai_config.pro_enabled_roles?.includes(roleStr) || 
+                                        org.ai_config.pro_enabled_users?.includes(userId)) {
+                                        proAllowed = true;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (!proAllowed) {
+                            res.writeHead(429, { "Content-Type": "application/json" });
+                            res.end(JSON.stringify({ error: "ai_quota_exceeded", message: "You have run out of AI tokens for this week." }));
+                            return;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Quota check error:", err);
+            }
+        }
+
     // 1. Setup Server-Sent Events (SSE) headers for Express
     res.writeHead(200, {
         "Content-Type": "text/event-stream",
@@ -486,7 +544,6 @@ export const streamAskAi = async (req, res) => {
 
     let keepAliveInterval = null;
     try {
-        const body = req.body || {};
 
         if (body.question === "__ban_check__") {
             // Frontend is just checking if they get a 403 Forbidden.
@@ -1977,6 +2034,56 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
             res.write(`data: ${JSON.stringify({ type: "session_info", sessionId })}\n\n`);
         }
 
+
+        // --- Calculate & Deduct Tokens ---
+        try {
+            const userId = req.user?.id || body.userId;
+            if (userId && answer && answer !== "[RATE_LIMITED]") {
+                const estimatedTokens = req.capturedUsage && req.capturedUsage.total_tokens ? req.capturedUsage.total_tokens : Math.ceil(((body.question || "").length + answer.length + (typeof accThought !== 'undefined' ? (accThought || "").length : 0)) / 4);
+                if (estimatedTokens > 0) {
+                    const User = (await import("../models/User.js")).default;
+                    const Organization = (await import("../models/Organization.js")).default;
+                    const userTokens = await User.findById(userId).select("ai_tokens organization_id");
+                    
+                    let deductedFromPro = false;
+                    let currentRemaining = 0;
+                    let updateType = 'free';
+
+                    if (userTokens && userTokens.organization_id) {
+                        const org = await Organization.findById(userTokens.organization_id).select("ai_config");
+                        if (org && org.ai_config) {
+                            const proRemaining = org.ai_config.pro_pool_limit - org.ai_config.pro_used_this_period;
+                            const roleStr = req.user?.role || body.role;
+                            if (proRemaining > 0 && (org.ai_config.pro_enabled_roles?.includes(roleStr) || org.ai_config.pro_enabled_users?.includes(userId))) {
+                                org.ai_config.pro_used_this_period += estimatedTokens;
+                                await org.save();
+                                deductedFromPro = true;
+                                currentRemaining = org.ai_config.pro_pool_limit - org.ai_config.pro_used_this_period;
+                                updateType = 'pro';
+                            }
+                        }
+                    }
+                    
+                    if (!deductedFromPro && userTokens && userTokens.ai_tokens) {
+                        userTokens.ai_tokens.used_this_week += estimatedTokens;
+                        await userTokens.save();
+                        currentRemaining = userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week;
+                    }
+
+                    if (currentRemaining !== 0) {
+                        const { getIO } = await import('../services/socket.service.js');
+                        const io = getIO();
+                        if (io) {
+                            io.to(userId).emit("ai_token_update", { remaining: currentRemaining, type: updateType, used: estimatedTokens });
+                        }
+                    }
+                }
+            }
+        } catch(e) {
+            console.error("Failed to deduct tokens:", e);
+        }
+        // ---------------------------------
+
         if (!answer && !res.writableEnded) {
             res.write(`data: ${JSON.stringify({ type: "answer", answer: "Failed to get an answer from the AI." })}\n\n`);
         } else if (answer === "[RATE_LIMITED]" && !res.writableEnded) {
@@ -2843,3 +2950,63 @@ export const getMyGeneratedImages = async (req, res) => {
 
 
 
+
+
+export const getMyUsage = async (req, res) => {
+    try {
+        const User = (await import("../models/User.js")).default;
+        const Organization = (await import("../models/Organization.js")).default;
+        
+        const userTokens = await User.findById(req.user.id).select("ai_tokens organization_id role");
+        if (!userTokens || !userTokens.ai_tokens) {
+            return res.json({ type: 'free', used: 0, limit: 100000, remaining: 100000 });
+        }
+        
+        // Return Pro pool if allowed
+        if (userTokens.organization_id) {
+            const org = await Organization.findById(userTokens.organization_id).select("ai_config");
+            if (org && org.ai_config) {
+                const proRemaining = org.ai_config.pro_pool_limit - org.ai_config.pro_used_this_period;
+                if (proRemaining > 0 && (org.ai_config.pro_enabled_roles?.includes(userTokens.role) || org.ai_config.pro_enabled_users?.includes(req.user.id))) {
+                    return res.json({
+                        type: 'pro',
+                        used: org.ai_config.pro_used_this_period,
+                        limit: org.ai_config.pro_pool_limit,
+                        remaining: proRemaining,
+                        resetDate: org.ai_config.pro_reset_date
+                    });
+                }
+            }
+        }
+        
+        const remaining = userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week;
+        return res.json({
+            type: 'free',
+            used: userTokens.ai_tokens.used_this_week,
+            limit: userTokens.ai_tokens.free_weekly_limit,
+            remaining,
+            resetDate: userTokens.ai_tokens.week_reset_date
+        });
+    } catch (e) {
+        console.error("Error getting AI usage:", e);
+        res.status(500).json({ error: "Failed to fetch token usage" });
+    }
+};
+
+export const getOrgUsage = async (req, res) => {
+    try {
+        const Organization = (await import("../models/Organization.js")).default;
+        const org = await Organization.findById(req.user.organization_id).select("ai_config name");
+        if (!org || !org.ai_config) {
+            return res.json({ error: "Organization AI config not found." });
+        }
+        
+        return res.json({
+            name: org.name,
+            ai_config: org.ai_config
+        });
+    } catch(e) {
+        console.error("Error getting Org usage:", e);
+        res.status(500).json({ error: "Failed to fetch org token usage" });
+    }
+};
