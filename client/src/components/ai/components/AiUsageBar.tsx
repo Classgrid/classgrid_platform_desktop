@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Sparkles, Zap, AlertTriangle } from 'lucide-react';
-import { useAuth } from '../../../context/AuthContext';
-import { getSocket } from '../../../config/socket';
+import { apiClient } from '@/lib/apiClient';
+import { getSocket } from '@/lib/socketClient';
 
 export const AiUsageBar = () => {
-    const { user, token } = useAuth();
     const [usageData, setUsageData] = useState({
         type: 'free',
         used: 0,
@@ -16,13 +15,9 @@ export const AiUsageBar = () => {
 
     const fetchUsage = async () => {
         try {
-            const API_BASE_URL = import.meta.env.VITE_API_URL || '';
-            const res = await fetch(`${API_BASE_URL}/api/ai/my-usage`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setUsageData(data);
+            const res = await apiClient.get('/api/ai/my-usage');
+            if (res.data) {
+                setUsageData(res.data);
             }
         } catch (e) {
             console.error("Failed to fetch AI usage:", e);
@@ -32,10 +27,8 @@ export const AiUsageBar = () => {
     };
 
     useEffect(() => {
-        if (token) {
-            fetchUsage();
-        }
-    }, [token]);
+        fetchUsage();
+    }, []);
 
     useEffect(() => {
         const socket = getSocket();
