@@ -179,7 +179,8 @@ export const getMcpTools = () => [
         githubRepo: { type: 'string', description: 'The full GitHub repository name (e.g. "username/repo") to link and deploy (required for create_project).' },
         envKey: { type: 'string', description: 'The name of the environment variable (required for add_env_variable).' },
         envValue: { type: 'string', description: 'The value of the environment variable (required for add_env_variable).' },
-        envTarget: { type: 'array', items: { type: 'string' }, description: 'Target environments: ["production", "preview", "development"] (required for add_env_variable).' }
+        envTarget: { type: 'array', items: { type: 'string' }, description: 'Target environments: ["production", "preview", "development"] (required for add_env_variable).' },
+        isClassgridManaged: { type: 'boolean', description: 'If true, deploys to Classgrid master Vercel account. If false, deploys to the user connected Vercel account.' }
       },
       required: ['operation']
     }
@@ -335,7 +336,8 @@ export const getMcpTools = () => [
         head: { type: 'string', description: 'The name of the branch where your changes are implemented (for create_pull_request).' },
         base: { type: 'string', description: 'The name of the branch you want the changes pulled into (for create_pull_request).' },
         issueNumber: { type: 'number', description: 'The issue or PR number (for add_issue_comment).' },
-        query: { type: 'string', description: 'Search query (for search_code).' }
+        query: { type: 'string', description: 'Search query (for search_code).' },
+        isClassgridManaged: { type: 'boolean', description: 'If true, uses Classgrid master GitHub account. If false, uses the user connected GitHub account.' }
       },
       required: ['operation']
     }
@@ -1197,20 +1199,18 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'vercel_connector') {
-      const { operation, projectId, limit = 10, deploymentId, projectName, githubRepo, envKey, envValue, envTarget } = args;
+      const { operation, projectId, limit = 10, deploymentId, projectName, githubRepo, envKey, envValue, envTarget, isClassgridManaged } = args;
       const { userEmail = '', userRole = '' } = context;
 
-      // Determine token to use based on operation.
-      // For create_project and add_env_variable, we use the MASTER Classgrid Vercel Token so we host it on our servers!
       let vercelToken = '';
-      if (operation === 'create_project' || operation === 'add_env_variable') {
+      if (isClassgridManaged) {
         vercelToken = process.env.VERCEL_API_TOKEN;
         if (!vercelToken) throw new Error("VERCEL_API_TOKEN environment variable is not configured on the server.");
       } else {
         const user = await mongoose.models.User.findOne({ email: userEmail });
         if (!user || !user.vercel_access_token) {
           return {
-            content: [{ type: 'text', text: `Error: No Vercel OAuth token found. Please connect your Vercel account from the settings page first.` }]
+            content: [{ type: 'text', text: `Error: No Vercel OAuth token found. Please ask the user to connect their Vercel account from the settings page first.` }]
           };
         }
         vercelToken = user.vercel_access_token;
@@ -2083,15 +2083,21 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'github_workspace_connector') {
-      const { operation, owner, repo, path: filePath, title, body, state = 'open', repoName, isPrivate, content, message, branch, sha, head, base, issueNumber, query } = args;
+      const { operation, owner, repo, path: filePath, title, body, state = 'open', repoName, isPrivate, content, message, branch, sha, head, base, issueNumber, query, isClassgridManaged } = args;
       const { userEmail = '' } = context;
 
-      const user = await mongoose.models.User.findOne({ email: userEmail });
-      if (!user || !user.github_access_token) {
-        return { content: [{ type: 'text', text: "Error: No GitHub account connected. Tell the user to click the Connect button in the AI Hub to link their GitHub account." }] };
+      let accessToken = '';
+      if (isClassgridManaged) {
+        accessToken = process.env.GITHUB_MASTER_TOKEN || process.env.GITHUB_TOKEN;
+        if (!accessToken) throw new Error("GITHUB_MASTER_TOKEN environment variable is not configured on the server.");
+      } else {
+        const user = await mongoose.models.User.findOne({ email: userEmail });
+        if (!user || !user.github_access_token) {
+          return { content: [{ type: 'text', text: "Error: No GitHub account connected. Tell the user to click the Connect button in the AI Hub to link their GitHub account." }] };
+        }
+        accessToken = user.github_access_token;
       }
 
-      const accessToken = user.github_access_token;
       const headers = {
         "Authorization": `Bearer ${accessToken}`,
         "Accept": "application/vnd.github.v3+json",
