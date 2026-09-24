@@ -609,7 +609,27 @@ const organizationSchema = new mongoose.Schema(
             dashboard_student: { type: Boolean, default: false },
             dashboard_faculty: { type: Boolean, default: false },
             dashboard_organization: { type: Boolean, default: false },
-            dashboard_canteen: { type: Boolean, default: false },
+                        dashboard_canteen: { type: Boolean, default: false },
+        },
+        // AI Configuration (Token Pools & Access)
+        ai_config: {
+            pro_pool_limit: { type: Number, default: 500000 },
+            pro_used_this_period: { type: Number, default: 0 },
+            pro_reset_date: { type: Date, default: () => { const d = new Date(); d.setHours(d.getHours() + 4); return d; } },
+            pro_enabled_roles: { 
+                type: [String], 
+                enum: ["org_admin", "department_admin", "faculty", "student"],
+                default: ["org_admin"] 
+            },
+            pro_enabled_users: [{ 
+                type: mongoose.Schema.Types.ObjectId, 
+                ref: 'User' 
+            }],
+            custom_api_keys: {
+                openai_key: { type: String, default: "" },
+                anthropic_key: { type: String, default: "" },
+                gemini_key: { type: String, default: "" },
+            }
         },
         // 🔄 Academic Promotion Lock — prevents concurrent promotions
         is_promoting: {

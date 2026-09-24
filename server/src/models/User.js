@@ -624,6 +624,12 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // 🤖 AI Configuration (Personal Token Pools)
+    ai_tokens: {
+        free_weekly_limit: { type: Number, default: 100000 }, 
+        used_this_week: { type: Number, default: 0 },
+        week_reset_date: { type: Date, default: () => { const d = new Date(); d.setDate(d.getDate() + 7); return d; } }
+    },
     metadata: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
