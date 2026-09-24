@@ -93,7 +93,7 @@ export async function getHistory(sessionId, depth = DEFAULT_DEPTH) {
                                     let resExcerpt = "No result recorded";
                                     if (typeof s.result === 'string') {
                                         // Keep it generous enough to capture CDN links but small enough to block raw PDF dumps
-                                        resExcerpt = s.result.length > 500 ? s.result.substring(0, 500) + '...[TRUNCATED]' : s.result;
+                                        resExcerpt = s.result.length > 5000 ? s.result.substring(0, 5000) + '...[TRUNCATED]' : s.result;
                                     }
                                     return `Tool Used: ${s.tool} | Result Excerpt: ${resExcerpt}`;
                                 }).filter(Boolean).join('\n');
