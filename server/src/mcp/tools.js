@@ -1379,7 +1379,7 @@ export const handleToolCall = async (name, args, context = {}) => {
             const subject = headers.find(h => h.name === 'Subject')?.value;
             const from = headers.find(h => h.name === 'From')?.value;
             let rawDateStr = headers.find(h => h.name === 'Date')?.value;
-            let dateObj = rawDateStr ? new Date(rawDateStr) : new Date(parseInt(msg.data.internalDate));
+            let dateObj = new Date(parseInt(msg.data.internalDate));
             const date = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', timeZoneName: 'short' });
             
             let attachments = [];
@@ -1391,7 +1391,7 @@ export const handleToolCall = async (name, args, context = {}) => {
               }
             }
             
-            data.push({ id: msg.data.id, snippet: msg.data.snippet, subject, from, date, attachments });
+            data.push({ id: msg.data.id, snippet: msg.data.snippet, subject, from, date, rawInternalDate: msg.data.internalDate, attachments });
           }
         } else if (operation === 'read_email') {
           if (!args.messageId) throw new Error("messageId is required for read_email");
@@ -1401,7 +1401,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           const subject = headers.find(h => h.name === 'Subject')?.value;
           const from = headers.find(h => h.name === 'From')?.value;
           let rawDateStr = headers.find(h => h.name === 'Date')?.value;
-          let dateObj = rawDateStr ? new Date(rawDateStr) : new Date(parseInt(msg.data.internalDate));
+          let dateObj = new Date(parseInt(msg.data.internalDate));
           const date = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', timeZoneName: 'short' });
           
           let body = '';
