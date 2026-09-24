@@ -1119,7 +1119,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                 }
             ],
             verbose: true,
-            maxToolDepth: 25,
+            maxToolDepth: 100,
             defaultMaxTokens: 8192,
             tools: [
                 ...getMcpTools()
