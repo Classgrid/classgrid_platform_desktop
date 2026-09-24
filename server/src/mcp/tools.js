@@ -185,9 +185,9 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'read_email', 'list_sent_emails', 'mark_email_read', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'get_classroom_coursework', 'list_classroom_submissions', 'list_classroom_teachers', 'list_classroom_announcements', 'get_classroom_announcement', 'list_classroom_topics', 'list_classroom_materials', 'read_classroom_file'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'read_email', 'read_email_attachment', 'list_sent_emails', 'mark_email_read', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'get_classroom_coursework', 'list_classroom_submissions', 'list_classroom_teachers', 'list_classroom_announcements', 'get_classroom_announcement', 'list_classroom_topics', 'list_classroom_materials', 'read_classroom_file'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
-        query: { type: 'string', description: 'Search query for list_emails (e.g. "newer_than:1d", "is:unread").' },
+        query: { type: 'string', description: 'Search query for list_emails or list_drive_files (e.g. "newer_than:1d", "name contains \'form\'").' },
         formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
         formTitle: { type: 'string', description: 'The title of the new form (required for create_form).' },
         folderName: { type: 'string', description: 'The name of the new folder to create in Drive (required for create_folder).' },
@@ -207,7 +207,8 @@ export const getMcpTools = () => [
         topic: { type: 'string', description: 'The topic/title (for create_event).' },
         startTime: { type: 'string', description: 'Start time in ISO format (for create_event).' },
         endTime: { type: 'string', description: 'End time in ISO format (for create_event).' },
-        messageId: { type: 'string', description: 'The ID of the Gmail message (for mark_email_read, read_email).' },
+        messageId: { type: 'string', description: 'The ID of the Gmail message (for mark_email_read, read_email, read_email_attachment).' },
+        attachmentId: { type: 'string', description: 'The ID of the Gmail attachment (for read_email_attachment).' },
         addMeetLink: { type: 'boolean', description: 'Whether to attach a Google Meet link (for create_event).' },
         fileId: { type: 'string', description: 'The ID of the file in Google Drive or Classroom.' },
         fileUrl: { type: 'string', description: 'The public URL of the file to download and upload into Drive (for upload_drive_file).' },
@@ -1290,11 +1291,13 @@ export const handleToolCall = async (name, args, context = {}) => {
           data = res.data.items;
         } else if (operation === 'list_drive_files') {
           const drive = google.drive({ version: 'v3', auth: oauth2Client });
-          const res = await drive.files.list({
+          const listParams = {
             pageSize: limit,
             orderBy: 'modifiedTime desc',
             fields: 'nextPageToken, files(id, name, mimeType, webViewLink)',
-          });
+          };
+          if (query) listParams.q = query;
+          const res = await drive.files.list(listParams);
           data = res.data.files;
         } else if (operation === 'create_folder') {
           const drive = google.drive({ version: 'v3', auth: oauth2Client });
@@ -1380,8 +1383,8 @@ export const handleToolCall = async (name, args, context = {}) => {
             let attachments = [];
             if (msg.data.payload.parts) {
               for (let part of msg.data.payload.parts) {
-                if (part.filename && part.filename.length > 0) {
-                  attachments.push(part.filename);
+                if (part.filename && part.filename.length > 0 && part.body && part.body.attachmentId) {
+                  attachments.push({ filename: part.filename, attachmentId: part.body.attachmentId });
                 }
               }
             }
@@ -1402,7 +1405,6 @@ export const handleToolCall = async (name, args, context = {}) => {
           
           const decodePart = (part) => {
             if (part.body && part.body.data) {
-                // Gmail uses base64url encoding, so we must replace - and _ before decoding
                 let base64 = part.body.data.replace(/-/g, '+').replace(/_/g, '/');
                 return Buffer.from(base64, 'base64').toString('utf-8');
             }
@@ -1410,29 +1412,51 @@ export const handleToolCall = async (name, args, context = {}) => {
           };
           
           if (msg.data.payload.parts) {
+            let plainTextPart = msg.data.payload.parts.find(p => p.mimeType === 'text/plain');
+            let htmlPart = msg.data.payload.parts.find(p => p.mimeType === 'text/html');
+            
             for (let part of msg.data.payload.parts) {
-               if (part.filename && part.filename.length > 0) {
-                 attachments.push(part.filename);
+               if (part.filename && part.filename.length > 0 && part.body && part.body.attachmentId) {
+                 attachments.push({ filename: part.filename, attachmentId: part.body.attachmentId, mimeType: part.mimeType });
                }
-               
-               if (part.mimeType === 'text/plain' || part.mimeType === 'text/html') {
-                   body += decodePart(part);
-               } else if (part.parts) {
+               if (part.parts) {
                    for (let subpart of part.parts) {
-                       if (subpart.filename && subpart.filename.length > 0) {
-                           attachments.push(subpart.filename);
+                       if (subpart.filename && subpart.filename.length > 0 && subpart.body && subpart.body.attachmentId) {
+                           attachments.push({ filename: subpart.filename, attachmentId: subpart.body.attachmentId, mimeType: subpart.mimeType });
                        }
-                       if (subpart.mimeType === 'text/plain' || subpart.mimeType === 'text/html') {
-                           body += decodePart(subpart);
-                       }
+                       if (subpart.mimeType === 'text/plain') plainTextPart = subpart;
+                       if (subpart.mimeType === 'text/html') htmlPart = subpart;
                    }
                }
             }
+            
+            if (plainTextPart) {
+                body = decodePart(plainTextPart);
+            } else if (htmlPart) {
+                body = decodePart(htmlPart).replace(/<style[^>]*>.*<\/style>/gms, '').replace(/<script[^>]*>.*<\/script>/gms, '').replace(/<[^>]*>?/gm, '\n').replace(/\n\s*\n/g, '\n');
+            }
           } else {
              body = decodePart(msg.data.payload);
+             if (msg.data.payload.mimeType === 'text/html') {
+                 body = body.replace(/<style[^>]*>.*<\/style>/gms, '').replace(/<script[^>]*>.*<\/script>/gms, '').replace(/<[^>]*>?/gm, '\n').replace(/\n\s*\n/g, '\n');
+             }
           }
           
+          if (body.length > 10000) body = body.substring(0, 10000) + '... [TRUNCATED]';
+          
           data = { id: msg.data.id, subject, from, date, snippet: msg.data.snippet, attachments, body };
+        } else if (operation === 'read_email_attachment') {
+          if (!args.messageId || !args.attachmentId) throw new Error("messageId and attachmentId are required for read_email_attachment");
+          const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+          const attachment = await gmail.users.messages.attachments.get({ userId: 'me', messageId: args.messageId, id: args.attachmentId });
+          
+          let base64 = attachment.data.data.replace(/-/g, '+').replace(/_/g, '/');
+          let buffer = Buffer.from(base64, 'base64');
+          if (buffer.length > 10 * 1024 * 1024) throw new Error("Attachment exceeds 10MB limit.");
+          
+          const objectKey = await uploadPrivateBufferToR2(buffer, `ai-temp-cache/attachment-${Date.now()}-${args.attachmentId}`, 'application/octet-stream');
+          const url = await getPrivateDownloadUrl(objectKey);
+          data = { message: "Attachment downloaded and staged in R2 temp cache.", url, sizeBytes: buffer.length };
         } else if (operation === 'mark_email_read') {
           if (!args.messageId) throw new Error("messageId is required for mark_email_read");
           const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
