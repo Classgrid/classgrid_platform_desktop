@@ -1143,9 +1143,18 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 
         
         dynamicSystemPrompt += `\n\nWEBSITE DEPLOYMENT INSTRUCTIONS:
-"DO NOT use the cloudflare_r2_connector for deploying multi-file websites, as it requires massive JSON payloads that will cause you to hang!"
-
-- Step 1: Write the HTML/CSS/JS code to the sandbox using run_code. - Step 2: Deploy the files by writing a Node.js script in the sandbox using run_code. (CRITICAL: @aws-sdk/client-s3 is NOT pre-installed! Your script MUST use child_process.execSync('npm install @aws-sdk/client-s3') before requiring it)`;
+DO NOT use the cloudflare_r2_connector tool for deploying websites — it requires massive JSON payloads that will cause you to hang!
+Instead, deploy using a Node.js script in the sandbox. Follow these steps exactly:
+- Step 1: Use run_code to write all your HTML/CSS/JS files to the sandbox (e.g. /data/index.html, /data/style.css, /data/script.js).
+- Step 2: Use run_code to write a deploy.js script in the sandbox. Your deploy.js MUST:
+  a) Install the SDK first: require('child_process').execSync('npm install @aws-sdk/client-s3');
+  b) Connect to Cloudflare R2 (NOT regular AWS S3!) using this exact code:
+     const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+     const s3Client = new S3Client({ region: 'auto', endpoint: \`https://\${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com\`, credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY } });
+  c) Read each file from disk using fs.readFileSync and upload with PutObjectCommand to Bucket: 'classgrid-storage' with Key prefix: 'websites/<chosen-name>/' (e.g. 'websites/my-portfolio/index.html').
+  d) CRITICAL WARNING: NEVER upload to the 'sites/' prefix. You MUST upload strictly to the 'websites/' prefix or the Vercel router will 404!
+- Step 3: Run the script via execute_terminal_command: node /data/deploy.js
+- The site will instantly be live at <chosen-name>.sites.classgrid.in!`;
 
         dynamicSystemPrompt += `\n\nDOCUMENT RETRIEVAL RULE:
 CRITICAL: If a user asks a specific question about a document, PDF, or image, and you do not have the exact raw text in your immediate memory, you MUST use the \`recall_session_context\` tool first to get the list of previously read file URLs. Then, you MUST use \`parse_document\` or \`analyze_image\` to fetch and read the document/image AGAIN. 
