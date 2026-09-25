@@ -130,6 +130,8 @@ import billingDemoRoutes from "../src/routes/billing-demo.routes.js";
 import billingCheckoutRoutes from "../src/routes/billing-checkout.routes.js";
 import aiIntegrationsRoutes from "../src/routes/ai-integrations.routes.js";
 import whatsappRoutes from "../src/routes/whatsapp.routes.js";
+import buildRoutes from "../src/routes/build.routes.js";
+import "../src/workers/buildWorker.js"; // Initialize BullMQ worker
 import { publicTenantRouter, orgWebsiteRouter, superAdminWebsiteRouter } from "../src/routes/org-website.routes.js";
 import extractSubdomain, { resolveTenant, getPublicTenantInfo } from "../src/middleware/subdomain-router.middleware.js";
 import { sendEmail } from "../src/services/aws-ses.service.js";
@@ -412,6 +414,7 @@ app.use("/api/support", supportRoutes);
 app.use("/api/changelog", changelogRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/build", buildRoutes);
 app.use("/api/dropdowns", dropdownRoutes);
 app.use("/api/public/tenant", publicTenantRouter);   // GET /api/public/tenant/resolve?slug=...
 app.use("/api/org-website", orgWebsiteRouter);       // Org admin CMS endpoints
