@@ -119,7 +119,8 @@ function extractResponse(data) {
 }
 
 // src/core/llm-client.ts
-var INTERNAL_THOUGHT_TOOL = {
+/*
+const INTERNAL_THOUGHT_TOOL = {
   type: "function",
   function: {
     name: "internal_thought_process",
@@ -136,13 +137,15 @@ var INTERNAL_THOUGHT_TOOL = {
     }
   }
 };
+*/
 async function tryProvider(provider, messages, config, temperature, maxTokens, timeoutMs, onStatus, onThought, depth = 0) {
   const verbose = config.verbose !== false;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const startTime = Date.now();
   const maxDepth = config.maxToolDepth ?? 100;
-  const allTools = [INTERNAL_THOUGHT_TOOL, ...config.tools || []];
+  // const allTools = [INTERNAL_THOUGHT_TOOL, ...config.tools || []];
+  const allTools = [...config.tools || []];
   if (verbose) {
     console.log(`\n🚀 [llm] Requesting answer from ${provider.name.toUpperCase()} (${provider.model})... Timeout set to: ${timeoutMs}ms`);
     console.log(`[llm-debug] Sending ${messages.length} messages. Tools count: ${allTools.length}`);
