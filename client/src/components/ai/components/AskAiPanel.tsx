@@ -14,6 +14,7 @@ import "highlight.js/styles/github-dark.css";
 import { ExpandedInputModal } from './ExpandedInputModal';
 import { AiHubModal } from "./AiHubModal";
 import { InsufficientCreditsCard } from "./InsufficientCreditsCard";
+import { WorkspacePanel } from "./workspace/WorkspacePanel";
 import ReactDOM from "react-dom";
 
 import { AiChartRenderer } from "./AiChartRenderer";
