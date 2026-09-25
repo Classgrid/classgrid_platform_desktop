@@ -1107,7 +1107,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     if (vercelConnected) {
                         const vercelName = latestUser.vercel_name ? ` (Name: ${latestUser.vercel_name})` : '';
                         const vercelEmail = latestUser.vercel_email ? `(Connected as: ${latestUser.vercel_email}${vercelName}) ` : '';
-                        activeDescriptions.push(`- **Vercel & Website Deployment**: ✓ CONNECTED. ${vercelEmail}\n  **HOW TO DEPLOY WEBSITES (CRITICAL)**:\n  **IMPORTANT: YOU ONLY BUILD VANILLA HTML/CSS/JS SITES! DO NOT BUILD REACT OR NEXT.JS OR USE BUILD STEPS!**\n  **SPEED IS CRITICAL**: You MUST call the \`run_code\` tool IMMEDIATELY. Do NOT spend time planning or thinking. Start writing code to the sandbox RIGHT AWAY.\n  **SPLIT FILES**: ALWAYS create 3 SEPARATE small files: \`index.html\` (structure only, link to style.css and script.js), \`style.css\` (all styles), and \`script.js\` (all logic). Write each file in a SEPARATE \`run_code\` call. NEVER put everything in one giant HTML file!\n  **WORKFLOW**: 1) Call \`run_code\` to write index.html → 2) Call \`run_code\` to write style.css → 3) Call \`run_code\` to write script.js → 4) Deploy immediately.\n  1. **Instant Classgrid Cloud (Cloudflare R2)**: After files are written via \`run_code\`, use the \`cloudflare_r2_connector\` with operation \`upload_website\`. Generate a unique \`siteId\` (e.g. \`school-demo-123\`). Send the sandbox files in the \`files\` array. The site instantly goes live at https://<siteId>.sites.classgrid.in!\n  2. **GitHub + Vercel (Advanced)**: After files are written via \`run_code\`, use \`github_workspace_connector\` to create repo/push code, then use \`vercel_connector\` (operation \`create_project\`) to link and deploy it. Set \`isClassgridManaged: true\` for both!`);
+                        activeDescriptions.push(`- **Vercel & Website Deployment**: ✓ CONNECTED. ${vercelEmail}\n  (See the WEBSITE DEPLOYMENT INSTRUCTIONS below for exactly how to build and deploy sites.)`);
                     } else {
                         disconnectedLinks.push(`[Vercel](/api/auth/vercel/connect)`);
                     }
@@ -1143,6 +1143,10 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 
         
         dynamicSystemPrompt += `\n\nWEBSITE DEPLOYMENT INSTRUCTIONS:
+**IMPORTANT: YOU ONLY BUILD VANILLA HTML/CSS/JS SITES! DO NOT BUILD REACT OR NEXT.JS OR USE BUILD STEPS!**
+**SPEED IS CRITICAL**: You MUST call the \`run_code\` tool IMMEDIATELY. Do NOT spend time planning or thinking. Start writing code to the sandbox RIGHT AWAY.
+**SPLIT FILES**: ALWAYS create 3 SEPARATE small files: \`index.html\` (structure only, link to style.css and script.js), \`style.css\` (all styles), and \`script.js\` (all logic). Write each file in a SEPARATE \`run_code\` call. NEVER put everything in one giant HTML file!
+
 When the user asks you to build or host a website, you must FIRST ask them two things (using your interactive question component tool, do NOT just ask in plain text):
 1. Do they want to deploy to their own personal GitHub/Vercel OR host it instantly on Classgrid cloud?
 2. What subdomain/name do they want for their site? (e.g., 'my-cool-site')
@@ -2081,7 +2085,23 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
         try {
             const userId = req.user?.id || body.userId;
             if (userId && answer && answer !== "[RATE_LIMITED]") {
-                const estimatedTokens = req.capturedUsage && req.capturedUsage.total_tokens ? req.capturedUsage.total_tokens : Math.ceil(((body.question || "").length + answer.length + (typeof accThought !== 'undefined' ? (accThought || "").length : 0)) / 4);
+                let calculatedTokens = 0;
+                try {
+                    const { encode } = await import('gpt-tokenizer');
+                    let inputTokens = 0;
+                    if (messages && Array.isArray(messages)) {
+                        for (const msg of messages) {
+                            let contentStr = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+                            inputTokens += encode(`role: ${msg.role}\ncontent: ${contentStr}`).length;
+                        }
+                    }
+                    const outputTokens = encode(`${answer || ""}\n${typeof accThought !== 'undefined' ? (accThought || "") : ""}`).length;
+                    calculatedTokens = inputTokens + outputTokens;
+                } catch(e) {
+                    console.error("Token calculation failed, falling back to math:", e);
+                    calculatedTokens = Math.ceil(((body.question || "").length + answer.length + (typeof accThought !== 'undefined' ? (accThought || "").length : 0)) / 4);
+                }
+                const estimatedTokens = req.capturedUsage && req.capturedUsage.total_tokens ? req.capturedUsage.total_tokens : calculatedTokens;
                 if (estimatedTokens > 0) {
                     const User = (await import("../models/User.js")).default;
                     const Organization = (await import("../models/Organization.js")).default;
