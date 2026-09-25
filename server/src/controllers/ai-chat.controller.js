@@ -1172,13 +1172,6 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
                     timeoutMs: 60000
                 },
                 {
-                    name: "groq",
-                    url: "https://api.groq.com/openai/v1/chat/completions",
-                    apiKey: process.env.GROQ_API_KEY || "",
-                    model: "openai/gpt-oss-20b",
-                    timeoutMs: 60000
-                },
-                {
                     name: "gemini",
                     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                     apiKey: process.env.GEMINI_API_KEY || "",
