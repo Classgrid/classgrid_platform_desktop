@@ -1,0 +1,6 @@
+const fs = require('fs');
+const file = 'c:/CLASSGRIDPLATFORM/classgrid_platoform-desktop-/server/src/controllers/ai-chat.controller.js';
+let lines = fs.readFileSync(file, 'utf-8').split('\n');
+lines[1087] = "                        activeDescriptions.push(`- **Vercel & Website Deployment**: ✓ CONNECTED. ${vercelEmail}\\n  **HOW TO DEPLOY WEBSITES (CRITICAL)**:\\n  **IMPORTANT: YOU ONLY BUILD VANILLA HTML/CSS/JS SITES! DO NOT BUILD REACT OR NEXT.JS OR USE BUILD STEPS!**\\n  1. **Instant Cloudflare R2 (Preferred)**: If the user asks to build and host a website, use the \\`cloudflare_r2_connector\\` with operation \\`upload_website\\`. Generate a unique \\`siteId\\` (e.g. \\`school-demo-123\\`). It instantly goes live at https://<siteId>.sites.classgrid.in!\\n  2. **GitHub + Vercel (Advanced)**: For multi-file HTML sites, use \\`github_workspace_connector\\` to create repo/push code, then use \\`vercel_connector\\` (operation \\`create_project\\`) to link and deploy it. Set \\`isClassgridManaged: true\\` for both to use the master Classgrid accounts!`);";
+fs.writeFileSync(file, lines.join('\n'), 'utf-8');
+console.log('Replaced successfully');

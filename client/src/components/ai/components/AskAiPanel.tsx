@@ -1481,6 +1481,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [isPinned, setIsPinned] = useState(false);
   const [showFilesPanel, setShowFilesPanel] = useState(false);
   const [isAiHubOpen, setIsAiHubOpen] = useState(false);
+  const [aiHubInitialTab, setAiHubInitialTab] = useState<string>("plugins");
 
   // @ mention state
   const [atMenuOpen, setAtMenuOpen] = useState(false);
@@ -2958,7 +2959,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         }
         throw new Error(
           typeof payload?.error === "string" && payload.error.trim().length > 0
-            ? payload.error
+            ? (payload.error === "ai_quota_exceeded" && payload.resetDate ? `${payload.error}|${payload.resetDate}` : payload.error)
             : "Unable to answer right now. Please try again."
         );
       }
@@ -3180,7 +3181,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
       setThinking(false);
       
-      if (fallback.trim() === "ai_quota_exceeded") {
+      if (fallback.trim().startsWith("ai_quota_exceeded")) {
         setMessages((prev) => {
           const lastMsg = prev[prev.length - 1];
           if (!lastMsg || lastMsg.role !== "assistant") return prev;
@@ -3962,13 +3963,15 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     </ImageGeneration>
                                   </div>
                                 );
-                              })() : message.content.trim() === "ai_quota_exceeded" ? (
+                              })() : message.content.trim().startsWith("ai_quota_exceeded") ? (
                                 <div className="mt-2 w-full flex justify-start">
                                   <InsufficientCreditsCard 
-                                    refreshDate={new Date(Date.now() + (7 * 24 * 60 * 60 * 1000))} 
+                                    refreshDate={new Date(message.content.split("|")[1] || Date.now())} 
                                     onDismiss={() => setMessages(prev => prev.filter(m => m.id !== message.id))}
-                                    onSeePlans={() => { window.location.href = '/pricing'; }}
-                                    onPurchase={() => { window.location.href = '/billing'; }}
+                                    onUpgrade={() => {
+                                      setAiHubInitialTab("upgrade");
+                                      setIsAiHubOpen(true);
+                                    }}
                                   />
                                 </div>
                               ) : (
@@ -3985,7 +3988,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               )}
                             </div>
                           )}
-                          {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && !message.content.startsWith("[IMAGE_GENERATION") && message.content.trim() !== "ai_quota_exceeded" && (
+                          {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && !message.content.startsWith("[IMAGE_GENERATION") && !message.content.trim().startsWith("ai_quota_exceeded") && (
                             <div className="pl-1 mt-3">
                               <MessageActions content={message.content} messageId={message.id} />
                             </div>
@@ -5528,6 +5531,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       <AiHubModal
         isOpen={isAiHubOpen}
         onClose={() => setIsAiHubOpen(false)}
+        initialTab={aiHubInitialTab}
         onSendPrompt={(text) => askQuestion(text, { hidden: true })}
       />
     </>

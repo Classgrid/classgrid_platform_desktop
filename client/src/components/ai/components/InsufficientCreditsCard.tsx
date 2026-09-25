@@ -4,18 +4,30 @@ import { Button } from './ui/button';
 
 export interface InsufficientCreditsCardProps {
   onDismiss: () => void;
-  onOpenAiHub: () => void;
+  onUpgrade: () => void;
+  refreshDate: Date;
 }
 
 export function InsufficientCreditsCard({
   onDismiss,
-  onOpenAiHub
+  onUpgrade,
+  refreshDate
 }: InsufficientCreditsCardProps) {
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
+    month: 'numeric',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  }).format(refreshDate);
+
   return (
     <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-sm">
       {/* Header */}
       <div className="mb-3 flex items-center gap-2">
-        <XCircle className="h-5 w-5 text-destructive" />
+        <XCircle className="h-4 w-4 text-muted-foreground" />
         <h3 className="text-base font-semibold text-card-foreground">
           Insufficient AI Credits
         </h3>
@@ -24,25 +36,26 @@ export function InsufficientCreditsCard({
       {/* Body Text */}
       <p className="mb-5 text-[15px] leading-relaxed text-muted-foreground">
         You need at least 50 AI Credits to send messages. To continue using the AI now,
-        upgrade your plan. Your baseline quota will refresh weekly.
+        purchase more AI Credits. Your plan's baseline quota will refresh on {formattedDate}.
       </p>
 
       {/* Buttons */}
       <div className="flex items-center justify-between mt-2">
         <Button
-          variant="outline"
+          variant="ghost"
           onClick={onDismiss}
+          className="text-muted-foreground hover:text-foreground h-9 px-3"
         >
           Dismiss
         </Button>
 
         <Button
-          variant="default"
-          onClick={onOpenAiHub}
-          className="gap-1.5"
+          variant="outline"
+          onClick={onUpgrade}
+          className="relative h-10 rounded-lg border-border bg-accent px-4 md:px-6 text-sm font-medium tracking-tight text-foreground/90 transition-all duration-200 hover:bg-slate-200 dark:hover:bg-accent/80 hover:border-border hover:text-foreground cursor-pointer flex items-center gap-2"
         >
           <Sparkles className="w-4 h-4" />
-          Open AI Hub
+          Purchase Credits
         </Button>
       </div>
     </div>

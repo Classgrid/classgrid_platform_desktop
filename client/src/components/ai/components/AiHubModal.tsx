@@ -27,6 +27,7 @@ interface AiHubModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSendPrompt?: (prompt: string) => void;
+  initialTab?: string;
 }
 
 const TABS = [
@@ -40,8 +41,15 @@ const TABS = [
   { id: "upgrade", label: "Upgrade", icon: ArrowUpCircle },
 ];
 
-export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
-  const [activeTab, setActiveTab] = useState("plugins");
+export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugins" }: AiHubModalProps) {
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
+
   const [selectedPlugin, setSelectedPlugin] = useState<any>(null);
   const [connectedPlugins, setConnectedPlugins] = useState<string[]>([]);
   const [isConnecting, setIsConnecting] = useState(false);

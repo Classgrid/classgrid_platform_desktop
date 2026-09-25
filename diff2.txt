@@ -1,0 +1,434 @@
+﻿diff --git a/server/src/controllers/ai-chat.controller.js b/server/src/controllers/ai-chat.controller.js
+index bf7a5bbf..94c6992f 100644
+--- a/server/src/controllers/ai-chat.controller.js
++++ b/server/src/controllers/ai-chat.controller.js
+@@ -7,6 +7,7 @@
+  */
+ 
+ // Triggering test deployment for GitHub Actions (Backend) and Vercel (Frontend)
++import { usageStorage } from "../utils/fetch-interceptor.js";
+ import { createLLMClient } from "@classgrid/ai/core";
+ import { getPresignedUploadUrl, uploadBufferToR2 } from "../config/r2Client.js";
+ import { primarySupabaseClient as supabase } from "../config/supabaseClient.js";
+@@ -474,6 +475,63 @@ async function buildDeepContext(userEmail) {
+ }
+ 
+ export const streamAskAi = async (req, res) => {
++    const body = req.body || {};
++
++        const userId = req.user?.id || body.userId;
++        if (userId) {
++            try {
++                const User = (await import("../models/User.js")).default;
++                const Organization = (await import("../models/Organization.js")).default;
++                const userTokens = await User.findById(userId).select("ai_tokens organization_id");
++                
++                if (userTokens && userTokens.ai_tokens) {
++                    const now = new Date();
++                    // Reset weekly tokens if date passed
++                    if (now > new Date(userTokens.ai_tokens.week_reset_date)) {
++                        userTokens.ai_tokens.used_this_week = 0;
++                        const nextWeek = new Date();
++                        nextWeek.setDate(nextWeek.getDate() + 7);
++                        userTokens.ai_tokens.week_reset_date = nextWeek;
++                        await userTokens.save();
++                    }
++                    
++                    const remaining = userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week;
++                    if (remaining <= 0) {
++                        let proAllowed = false;
++                        if (userTokens.organization_id) {
++                            const org = await Organization.findById(userTokens.organization_id).select("ai_config");
++                            if (org && org.ai_config) {
++                                if (now > new Date(org.ai_config.pro_reset_date)) {
++                                    org.ai_config.pro_used_this_period = 0;
++                                    const nextReset = new Date();
++                                    nextReset.setHours(nextReset.getHours() + 4);
++                                    org.ai_config.pro_reset_date = nextReset;
++                                    await org.save();
++                                }
++                                
++                                const proRemaining = org.ai_config.pro_pool_limit - org.ai_config.pro_used_this_period;
++                                if (proRemaining > 0) {
++                                    const roleStr = req.user?.role || body.role;
++                                    if (org.ai_config.pro_enabled_roles?.includes(roleStr) || 
++                                        org.ai_config.pro_enabled_users?.includes(userId)) {
++                                        proAllowed = true;
++                                    }
++                                }
++                            }
++                        }
++                        
++                        if (!proAllowed) {
++                            res.writeHead(429, { "Content-Type": "application/json" });
++                            res.end(JSON.stringify({ error: "ai_quota_exceeded", message: "You have run out of AI tokens for this week." }));
++                            return;
++                        }
++                    }
++                }
++            } catch (err) {
++                console.error("Quota check error:", err);
++            }
++        }
++
+     // 1. Setup Server-Sent Events (SSE) headers for Express
+     res.writeHead(200, {
+         "Content-Type": "text/event-stream",
+@@ -486,7 +544,6 @@ export const streamAskAi = async (req, res) => {
+ 
+     let keepAliveInterval = null;
+     try {
+-        const body = req.body || {};
+ 
+         if (body.question === "__ban_check__") {
+             // Frontend is just checking if they get a 403 Forbidden.
+@@ -502,7 +559,7 @@ export const streamAskAi = async (req, res) => {
+         // ├â╞Æ├é┬ó├â┬ó├óΓÇÜ┬¼├é┬¥├â┬ó├óΓé¼┼í├é┬¼├â╞Æ├é┬ó├â┬ó├óΓÇÜ┬¼├é┬¥├â┬ó├óΓé¼┼í├é┬¼├â╞Æ├é┬ó├â┬ó├óΓÇÜ┬¼├é┬¥├â┬ó├óΓé¼┼í├é┬¼ HISTORY: Read from Redis (hot) ├â╞Æ├é┬ó├â┬ó├óΓÇÜ┬¼├é┬á├â┬ó├óΓÇÜ┬¼├óΓÇ₧┬ó Supabase (cold). NEVER trust frontend body.history. ├â╞Æ├é┬ó├â┬ó├óΓÇÜ┬¼├é┬¥├â┬ó├óΓé¼┼í├é┬¼├â╞Æ├é┬ó├â┬ó├óΓÇÜ┬¼├é┬¥├â┬ó├óΓé¼┼í├é┬¼├â╞Æ├é┬ó├â┬ó├óΓÇÜ┬¼├é┬¥├â┬ó├óΓé¼┼í├é┬¼
+         // The frontend no longer controls chat history. The backend owns it entirely.
+         // historyDepth: how many messages to give the LLM context (default 25, max 500)
+-        const historyDepth = Math.min(parseInt(body.historyDepth, 10) || 25, 500);
++        let historyDepth = Math.min(parseInt(body.historyDepth, 10) || 25, 500);
+         let messages = [];
+ 
+         const userEmail = req.user?.email || body.userEmail || 'unknown@classgrid.in';
+@@ -522,6 +579,12 @@ export const streamAskAi = async (req, res) => {
+                 return;
+             }
+ 
++            // Inject Mistral long_term_memory if available
++            if (sessionData.long_term_memory) {
++                dynamicSystemPrompt += `\n\n<long_term_memory>\n${sessionData.long_term_memory}\n</long_term_memory>`;
++                historyDepth = Math.min(historyDepth, 5); // Prune history if memory exists
++            }
++
+             // Ownership verified, safe to load history
+             messages = await getHistory(sessionId, historyDepth);
+         }
+@@ -702,6 +765,22 @@ The sandbox is a temporary working computer where you can create, inspect, proce
+ - **Media processing:** Use FFmpeg to convert media, trim clips, extract audio/frames, and create video outputs.
+ - **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
+ You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
++
++        dynamicSystemPrompt += `\n\n--- ENVIRONMENT & INFRASTRUCTURE TOPOLOGY (CRITICAL CONTEXT) ---
++You now have GOD-MODE access to ALL 200+ environment variables via the AWS Sandbox. Any script you write using \`run_code\` can access any key simply by reading it (e.g. \`process.env.RAZORPAY_KEY_SECRET\` in Node, or \`os.environ.get('AWS_SES_SMTP_PASS')\` in Python). 
++You MUST use this context if the user asks you about the architecture or how things are connected:
++- **Backend Node.js API:** Hosted on AWS EC2 at \`https://api.classgrid.in\`
++- **Frontend App:** Hosted on Vercel at \`https://classgrid.in\`
++- **MongoDB Atlas:** Hosted at \`classgrid.sa5ww0z.mongodb.net\`
++- **Vector Search / RAG:** Handled via MongoDB Atlas AI using Voyage AI (\`VOYAGE_API_KEY\`).
++- **AWS S3 (Student Docs):** Bucket \`classgrid-student-docs-prod\` in AWS Region \`ap-south-1\`.
++- **AWS S3 (ERP & System):** Bucket \`erp-classgrid\` in AWS Region \`eu-north-1\` (Stockholm). CloudFront CDN URL: \`https://cdn.classgrid.in\`
++- **AWS SES (Emails):** STRICTLY locked to Region \`eu-north-1\` (Stockholm). DO NOT attempt to send emails from ap-south-1 (Mumbai) as per policy.
++- **AWS SNS (SMS):** Region \`ap-south-1\`. FAST2SMS is permanently banned, never use it.
++- **Cloudflare R2 (Instant Websites):** Account \`6b98bf938dfdbbc72a0b4b5a5cac1921\`. Public CDN URL: \`https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev\`
++- **Supabase (Realtime Chat):** The only active instance is \`bumxgscngzjadyozdpce\`. The old Classroom and Student instances are DECOMMISSIONED/DELETED.
++- **AI Fallback Hierarchy:** Groq is COMPLETELY DEAD. Never use it. Primary is Gemini (gemini-3.5-flash), Fallback is Mistral (mistral-small-latest).
++By understanding this topology, you can confidently write deployment scripts, database queries, and debugging commands in the sandbox knowing exactly where everything lives!`;
+         dynamicSystemPrompt += `\n\nTHINKING RULE (CRITICAL): You MUST use your own native reasoning/thinking capabilities to plan your response. Do NOT call the 'internal_thought_process' tool. Your native thinking is streamed live to the user instantly, which provides a much better experience.
+ URGENCY RULE: Your thought MUST be extremely concise. Keep it under 2 sentences!
+ IMPORTANT WORKFLOW RULE: Think briefly using your native reasoning, then immediately proceed to chain action tools (like run_code, search_web) and write your final response. Do NOT overthink.
+@@ -975,6 +1054,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
+                     if (zoomConnected) allowedConnectorNames.add('zoom_connector');
+                     if (vercelConnected) allowedConnectorNames.add('vercel_connector');
+                     if (whatsappConnected) allowedConnectorNames.add('whatsapp_business_connector');
++                    allowedConnectorNames.add('cloudflare_r2_connector');
+ 
+                     let activeDescriptions = [];
+                     let disconnectedLinks = [];
+@@ -1027,7 +1107,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
+                     if (vercelConnected) {
+                         const vercelName = latestUser.vercel_name ? ` (Name: ${latestUser.vercel_name})` : '';
+                         const vercelEmail = latestUser.vercel_email ? `(Connected as: ${latestUser.vercel_email}${vercelName}) ` : '';
+-                        activeDescriptions.push(`- **Vercel**: ├â╞Æ├é┬ó├âΓÇª├óΓé¼┼ô├â┬ó├óΓÇÜ┬¼├é┬ª CONNECTED. ${vercelEmail}Use 'vercel_connector' tool to list_projects, list_deployments, get_deployment. \n  *WHAT YOU CAN DO*: List projects, check deployment history, and view the status/details of a specific deployment.\n  *WHAT YOU CANNOT DO*: You CANNOT trigger new deployments, you CANNOT read server logs, you CANNOT delete projects, and you CANNOT manage environment variables.`);
++                        activeDescriptions.push(`- **Vercel & Website Deployment**: Γ£ô CONNECTED. ${vercelEmail}\n  (See the WEBSITE DEPLOYMENT INSTRUCTIONS below for exactly how to build and deploy sites.)`);
+                     } else {
+                         disconnectedLinks.push(`[Vercel](/api/auth/vercel/connect)`);
+                     }
+@@ -1061,6 +1141,29 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
+ 2. NO DUPLICATE HEADINGS: The \`generate_pdf\` tool automatically renders the \`title\` parameter as an \`<h1>\` at the top of the document. Do NOT manually add a duplicate \`<h1>\` with the title inside your HTML content.
+ 3. HUMANIZE LABELS: NEVER output raw backend database enum values (like "org_admin", "super_admin") in your chat responses or in PDF reports. Always map them to human-readable labels (e.g., "Organization Admin", "Super Admin") before rendering.`;
+ 
++        
++        dynamicSystemPrompt += `\n\nWEBSITE DEPLOYMENT INSTRUCTIONS:
++**IMPORTANT: YOU ONLY BUILD VANILLA HTML/CSS/JS SITES! DO NOT BUILD REACT OR NEXT.JS OR USE BUILD STEPS!**
++**SPEED IS CRITICAL**: You MUST call the \`run_code\` tool IMMEDIATELY. Do NOT spend time planning or thinking. Start writing code to the sandbox RIGHT AWAY.
++**SPLIT FILES**: ALWAYS create 3 SEPARATE small files: \`index.html\` (structure only, link to style.css and script.js), \`style.css\` (all styles), and \`script.js\` (all logic). Write each file in a SEPARATE \`run_code\` call. NEVER put everything in one giant HTML file!
++
++When the user asks you to build or host a website, you must FIRST ask them two things (using your interactive question component tool, do NOT just ask in plain text):
++1. Do they want to deploy to their own personal GitHub/Vercel OR host it instantly on Classgrid cloud?
++2. What subdomain/name do they want for their site? (e.g., 'my-cool-site')
++
++1. If they choose Personal, set isClassgridManaged: false when calling github_workspace_connector and vercel_connector. Remember to set isPrivate: false when creating the repo. When giving the live URL to the user, ALWAYS give them the primary project URL (e.g., https://<project-name>.vercel.app), NEVER give the specific commit deployment URL!
++2. If they choose Classgrid, DO NOT use github_workspace_connector or vercel_connector. Deploy using a Node.js script in the sandbox:
++   - Step 1: Use run_code to write all your HTML/CSS/JS files to the sandbox (e.g. /data/index.html, /data/style.css, /data/script.js).
++   - Step 2: Use run_code to write a deploy.js script. Your deploy.js MUST:
++     a) Install the SDK first: require('child_process').execSync('npm install @aws-sdk/client-s3');
++     b) Connect to Cloudflare R2 (NOT regular AWS S3!) using this exact code:
++        const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
++        const s3Client = new S3Client({ region: 'auto', endpoint: \`https://\${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com\`, credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY } });
++     c) Read each file from disk using fs.readFileSync and upload with PutObjectCommand to Bucket: 'classgrid-storage' with Key prefix: 'websites/<chosen-name>/' (e.g. 'websites/my-portfolio/index.html').
++     d) CRITICAL WARNING: NEVER upload to the 'sites/' prefix. You MUST upload strictly to the 'websites/' prefix or the Vercel router will 404!
++   - Step 3: Run the script via execute_terminal_command: node /data/deploy.js
++   - The site will instantly be live at <chosen-name>.sites.classgrid.in!`;
++
+         dynamicSystemPrompt += `\n\nDOCUMENT RETRIEVAL RULE:
+ CRITICAL: If a user asks a specific question about a document, PDF, or image, and you do not have the exact raw text in your immediate memory, you MUST use the \`recall_session_context\` tool first to get the list of previously read file URLs. Then, you MUST use \`parse_document\` or \`analyze_image\` to fetch and read the document/image AGAIN. 
+ DO NOT restart the Google Classroom search workflow (list courses, assignments, etc.) to find a file you already read earlier in the chat. Use recall_session_context to grab the URL instantly! You are STRICTLY FORBIDDEN from guessing or answering based on your general pre-trained knowledge. If you don't have the text, fetch it!`;
+@@ -1089,14 +1192,14 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments,
+         // CHANGING ANY AI MODEL IS STRICTLY BANNED BY PLATFORM POLICY.
+         // NEVER CHANGE ANY AI MODEL. USING LLAMA IS STRICTLY FORBIDDEN (OTHER THAN FOR VISION).
+         const client = createLLMClient({
+-            timeoutMs: 120000,
++            timeoutMs: 300000,
+             providers: [
+                 {
+                     name: "cloudflare",
+                     url: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
+                     apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN || "",
+                     model: "@cf/deepseek-ai/deepseek-v4-pro-0813",
+-                    timeoutMs: 120000
++                    timeoutMs: 300000
+                 },
+                 {
+                     name: "mistral",
+@@ -1105,13 +1208,6 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments,
+                     model: "open-mistral-nemo",
+                     timeoutMs: 60000
+                 },
+-                {
+-                    name: "groq",
+-                    url: "https://api.groq.com/openai/v1/chat/completions",
+-                    apiKey: process.env.GROQ_API_KEY || "",
+-                    model: "openai/gpt-oss-20b",
+-                    timeoutMs: 60000
+-                },
+                 {
+                     name: "gemini",
+                     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+@@ -1915,11 +2011,14 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments,
+                 accThought = "";
+                 accSteps = [];
+ 
++                console.log(`[AI-DEBUG] ===== GENERATE START ===== attempt=${attempt} question="${(body.question || '').slice(0, 100)}" messagesCount=${messages.length} timestamp=${new Date().toISOString()}`);
++                const generateStartTime = Date.now();
+                 answer = await currentClient.generate({
+                     messages,
+                     maxToolDepth: 100,
+                     timeoutMs: isDiagramRequest && attempt === 1 ? 15000 : 300000,
+                     onStatus: (status) => {
++                        console.log(`[AI-DEBUG] onStatus: "${status}" at +${((Date.now() - generateStartTime) / 1000).toFixed(1)}s`);
+                         if (requestAborted || res.writableEnded) return;
+                         const mappedLabel = status === "search web" ? "searching" : status;
+                         try { res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`); } catch (e) { }
+@@ -1936,12 +2035,18 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments,
+                     }
+                 });
+ 
++                const generateDuration = ((Date.now() - generateStartTime) / 1000).toFixed(1);
++                console.log(`[AI-DEBUG] ===== GENERATE END ===== duration=${generateDuration}s answer=${answer ? `"${String(answer).slice(0, 150)}..."` : 'NULL'} stepsCount=${accSteps.length} thoughtLength=${(accThought || '').length}`);
++                console.log(`[AI-DEBUG] accSteps tools called: ${accSteps.map(s => s.tool).join(', ') || 'NONE'}`);
++
+                 if (requestAborted) return;
+ 
+                 if (!answer) {
+                     if (accSteps.length > 0) {
++                        console.log(`[AI-DEBUG] Answer was null but ${accSteps.length} steps completed. Using fallback answer.`);
+                         answer = "I have completed the requested actions.";
+                     } else {
++                        console.error(`[AI-DEBUG] ===== CRITICAL FAILURE ===== No answer AND no steps after ${generateDuration}s. requestAborted=${requestAborted}`);
+                         throw new Error("AI generation returned null. All providers timed out or failed.");
+                     }
+                 }
+@@ -1955,6 +2060,7 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments,
+ 
+                 break; // Success
+             } catch (err) {
++                console.error(`[AI-DEBUG] ===== ATTEMPT ${attempt} ERROR ===== ${err.message || err}`);
+                 console.error(`[AI Chat] Attempt ${attempt} CRITICAL ERROR:`, err);
+                 if (attempt === maxAttempts) {
+                     if (!answer && isDiagramRequest) answer = "Failed to generate a valid diagram. Please try rephrasing your request.";
+@@ -1977,6 +2083,72 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments,
+             res.write(`data: ${JSON.stringify({ type: "session_info", sessionId })}\n\n`);
+         }
+ 
++
++        // --- Calculate & Deduct Tokens ---
++        try {
++            const userId = req.user?.id || body.userId;
++            if (userId && answer && answer !== "[RATE_LIMITED]") {
++                let calculatedTokens = 0;
++                try {
++                    const { encode } = await import('gpt-tokenizer');
++                    let inputTokens = 0;
++                    if (messages && Array.isArray(messages)) {
++                        for (const msg of messages) {
++                            let contentStr = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
++                            inputTokens += encode(`role: ${msg.role}\ncontent: ${contentStr}`).length;
++                        }
++                    }
++                    const outputTokens = encode(`${answer || ""}\n${typeof accThought !== 'undefined' ? (accThought || "") : ""}`).length;
++                    calculatedTokens = inputTokens + outputTokens;
++                } catch(e) {
++                    console.error("Token calculation failed, falling back to math:", e);
++                    calculatedTokens = Math.ceil(((body.question || "").length + answer.length + (typeof accThought !== 'undefined' ? (accThought || "").length : 0)) / 4);
++                }
++                const estimatedTokens = req.capturedUsage && req.capturedUsage.total_tokens ? req.capturedUsage.total_tokens : calculatedTokens;
++                if (estimatedTokens > 0) {
++                    const User = (await import("../models/User.js")).default;
++                    const Organization = (await import("../models/Organization.js")).default;
++                    const userTokens = await User.findById(userId).select("ai_tokens organization_id");
++                    
++                    let deductedFromPro = false;
++                    let currentRemaining = 0;
++                    let updateType = 'free';
++
++                    if (userTokens && userTokens.organization_id) {
++                        const org = await Organization.findById(userTokens.organization_id).select("ai_config");
++                        if (org && org.ai_config) {
++                            const proRemaining = org.ai_config.pro_pool_limit - org.ai_config.pro_used_this_period;
++                            const roleStr = req.user?.role || body.role;
++                            if (proRemaining > 0 && (org.ai_config.pro_enabled_roles?.includes(roleStr) || org.ai_config.pro_enabled_users?.includes(userId))) {
++                                org.ai_config.pro_used_this_period += estimatedTokens;
++                                await org.save();
++                                deductedFromPro = true;
++                                currentRemaining = org.ai_config.pro_pool_limit - org.ai_config.pro_used_this_period;
++                                updateType = 'pro';
++                            }
++                        }
++                    }
++                    
++                    if (!deductedFromPro && userTokens && userTokens.ai_tokens) {
++                        userTokens.ai_tokens.used_this_week += estimatedTokens;
++                        await userTokens.save();
++                        currentRemaining = userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week;
++                    }
++
++                    if (currentRemaining !== 0) {
++                        const { getIO } = await import('../services/socket.service.js');
++                        const io = getIO();
++                        if (io) {
++                            io.to(userId).emit("ai_token_update", { remaining: currentRemaining, type: updateType, used: estimatedTokens });
++                        }
++                    }
++                }
++            }
++        } catch(e) {
++            console.error("Failed to deduct tokens:", e);
++        }
++        // ---------------------------------
++
+         if (!answer && !res.writableEnded) {
+             res.write(`data: ${JSON.stringify({ type: "answer", answer: "Failed to get an answer from the AI." })}\n\n`);
+         } else if (answer === "[RATE_LIMITED]" && !res.writableEnded) {
+@@ -2843,3 +3015,111 @@ export const getMyGeneratedImages = async (req, res) => {
+ 
+ 
+ 
++
++
++export const deleteGeneratedImage = async (req, res) => {
++    try {
++        const userEmail = req.user?.email || req.auth?.user?.email;
++        if (!userEmail) {
++            return res.status(401).json({ error: "Unauthorized" });
++        }
++        
++        const messageId = req.params.id;
++        const { primarySupabaseClient } = await import('../config/supabaseClient.js');
++        
++        const { data: message, error } = await primarySupabaseClient
++            .from('ai_chat_messages')
++            .select('session_id')
++            .eq('id', messageId)
++            .single();
++            
++        if (!message) return res.status(404).json({ error: "Image not found" });
++        
++        const { data: session } = await primarySupabaseClient
++            .from('ai_chat_sessions')
++            .select('user_email')
++            .eq('id', message.session_id)
++            .single();
++            
++        if (!session || session.user_email !== userEmail) {
++            return res.status(403).json({ error: "Forbidden" });
++        }
++        
++        await primarySupabaseClient.from('ai_chat_messages').delete().eq('id', messageId);
++        
++        res.json({ success: true });
++    } catch (e) {
++        console.error("Error deleting image:", e);
++        res.status(500).json({ error: String(e.stack || e.message || e) });
++    }
++};
++
++export const getMyUsage = async (req, res) => {
++    try {
++        const User = (await import("../models/User.js")).default;
++        const Organization = (await import("../models/Organization.js")).default;
++        
++        const userTokens = await User.findById(req.user.id).select("ai_tokens organization_id role");
++        if (!userTokens || !userTokens.ai_tokens) {
++            return res.json({ type: 'free', used: 0, limit: 100000, remaining: 100000 });
++        }
++        
++        const freeData = {
++            used: userTokens.ai_tokens.used_this_week,
++            limit: userTokens.ai_tokens.free_weekly_limit,
++            remaining: userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week,
++            resetDate: userTokens.ai_tokens.week_reset_date
++        };
++
++        // Return Pro pool if allowed
++        if (userTokens.organization_id) {
++            const org = await Organization.findById(userTokens.organization_id).select("ai_config");
++            if (org && org.ai_config) {
++                const proRemaining = org.ai_config.pro_pool_limit - org.ai_config.pro_used_this_period;
++                if (proRemaining > 0 && (org.ai_config.pro_enabled_roles?.includes(userTokens.role) || org.ai_config.pro_enabled_users?.includes(req.user.id))) {
++                    return res.json({
++                        type: 'pro',
++                        used: org.ai_config.pro_used_this_period,
++                        limit: org.ai_config.pro_pool_limit,
++                        remaining: proRemaining,
++                        resetDate: org.ai_config.pro_reset_date,
++                        freeData
++                    });
++                }
++            }
++        }
++        
++        const remaining = userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week;
++        return res.json({
++            type: 'free',
++            used: userTokens.ai_tokens.used_this_week,
++            limit: userTokens.ai_tokens.free_weekly_limit,
++            remaining,
++            resetDate: userTokens.ai_tokens.week_reset_date,
++            freeData
++        });
++    } catch (e) {
++        console.error("Error getting AI usage:", e);
++        res.status(500).json({ error: "Failed to fetch token usage" });
++    }
++};
++
++export const getOrgUsage = async (req, res) => {
++    try {
++        const Organization = (await import("../models/Organization.js")).default;
++        const org = await Organization.findById(req.user.organization_id).select("ai_config name");
++        if (!org || !org.ai_config) {
++            return res.json({ error: "Organization AI config not found." });
++        }
++        
++        return res.json({
++            name: org.name,
++            ai_config: org.ai_config
++        });
++    } catch(e) {
++        console.error("Error getting Org usage:", e);
++        res.status(500).json({ error: "Failed to fetch org token usage" });
++    }
++};
++
++// Trigger GitHub Actions backend deployment
