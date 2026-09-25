@@ -73,6 +73,7 @@ import {
   Music,
   CornerDownRight,
   Layers,
+  ListTodo,
   type LucideIcon,
 } from "lucide-react";
 
