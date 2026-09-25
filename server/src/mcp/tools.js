@@ -186,6 +186,34 @@ export const getMcpTools = () => [
     }
   },
   {
+    name: 'cloudflare_r2_connector',
+    description: 'Upload files or entire websites (HTML/CSS/JS) to Classgrid Cloud (Cloudflare R2). This is used for instantaneous AI website hosting via sites.classgrid.in.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['upload_file', 'upload_website'], description: 'The operation to perform.' },
+        siteId: { type: 'string', description: 'Unique subdomain/ID for the website (used as the folder path in R2) (required for upload_website). This will be the subdomain prefix: e.g. <siteId>.sites.classgrid.in' },
+        files: { 
+          type: 'array', 
+          description: 'Array of files to upload (required for upload_website).',
+          items: {
+            type: 'object',
+            properties: {
+              path: { type: 'string', description: 'File path/name (e.g., index.html, css/style.css)' },
+              content: { type: 'string', description: 'The text content of the file.' },
+              contentType: { type: 'string', description: 'MIME type (e.g., text/html, text/css, application/javascript).' }
+            },
+            required: ['path', 'content', 'contentType']
+          }
+        },
+        fileKey: { type: 'string', description: 'The specific object key (required for upload_file).' },
+        fileContent: { type: 'string', description: 'The content (required for upload_file).' },
+        contentType: { type: 'string', description: 'MIME type (required for upload_file).' }
+      },
+      required: ['operation']
+    }
+  },
+  {
     name: 'google_workspace_connector',
     description: 'Interact with Google Workspace APIs (Calendar, Drive, Classroom, Gmail, Forms) using the connected user token.',
     inputSchema: {
@@ -1195,6 +1223,37 @@ export const handleToolCall = async (name, args, context = {}) => {
         throw new Error("Invalid operation for aws_ses_connector");
       } catch (e) {
         return { content: [{ type: 'text', text: `Failed AWS SES operation: ${e.message}\nNote: Make sure the IAM keys (AWS_S3_ERP_ACCESS_KEY) have SES permissions.` }] };
+      }
+    }
+    if (name === 'cloudflare_r2_connector') {
+      const { operation, siteId, files, fileKey, fileContent, contentType } = args;
+      try {
+        if (operation === 'upload_website') {
+           if (!siteId || !files || !Array.isArray(files)) throw new Error("siteId and files array are required");
+           
+           const uploadedUrls = [];
+           for (const file of files) {
+              const buffer = Buffer.from(file.content, 'utf-8');
+              const s3Key = `websites/${siteId}/${file.path.replace(/^\/+/, '')}`;
+              const url = await uploadBufferToR2(buffer, file.path, file.contentType, s3Key);
+              uploadedUrls.push({ path: file.path, url });
+           }
+           
+           return {
+             content: [{ type: 'text', text: `Successfully uploaded ${files.length} files to Classgrid Cloud R2 under websites/${siteId}/.\nThe website is now instantly live at: https://${siteId}.sites.classgrid.in\n(Make sure to tell the user their website is ready at this URL!)` }]
+           };
+        } else if (operation === 'upload_file') {
+           if (!fileKey || !fileContent || !contentType) throw new Error("fileKey, fileContent, and contentType are required");
+           const buffer = Buffer.from(fileContent, 'utf-8');
+           const url = await uploadBufferToR2(buffer, fileKey, contentType, fileKey);
+           return {
+             content: [{ type: 'text', text: `Successfully uploaded file to ${url}` }]
+           };
+        } else {
+           throw new Error(`Unsupported R2 operation: ${operation}`);
+        }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to upload to Classgrid Cloud R2: ${e.message}` }] };
       }
     }
 

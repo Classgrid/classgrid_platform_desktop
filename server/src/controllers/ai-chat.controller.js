@@ -1033,6 +1033,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     if (vercelConnected) allowedConnectorNames.add('vercel_connector');
                     if (whatsappConnected) allowedConnectorNames.add('whatsapp_business_connector');
 
+                    allowedConnectorNames.add('cloudflare_r2_connector');
                     let activeDescriptions = [];
                     let disconnectedLinks = [];
 
@@ -1084,7 +1085,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     if (vercelConnected) {
                         const vercelName = latestUser.vercel_name ? ` (Name: ${latestUser.vercel_name})` : '';
                         const vercelEmail = latestUser.vercel_email ? `(Connected as: ${latestUser.vercel_email}${vercelName}) ` : '';
-                        activeDescriptions.push(`- **Vercel**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. ${vercelEmail}Use 'vercel_connector' tool to list_projects, list_deployments, get_deployment. \n  *WHAT YOU CAN DO*: List projects, check deployment history, and view the status/details of a specific deployment.\n  *WHAT YOU CANNOT DO*: You CANNOT trigger new deployments, you CANNOT read server logs, you CANNOT delete projects, and you CANNOT manage environment variables.`);
+                        activeDescriptions.push(`- **Vercel & Website Deployment**: ✓ CONNECTED. ${vercelEmail}\n  **HOW TO DEPLOY WEBSITES (CRITICAL)**:\n  1. **Instant Cloudflare R2 (Preferred)**: If the user asks to build and host a website, use the \`cloudflare_r2_connector\` with operation \`upload_website\`. Generate a unique \`siteId\` (e.g. \`school-demo-123\`). It instantly goes live at https://<siteId>.sites.classgrid.in!\n  2. **GitHub + Vercel (Advanced)**: For full apps (Next.js, etc), use \`github_workspace_connector\` to create repo/push code, then use \`vercel_connector\` (operation \`create_project\`) to link and deploy it. Set \`isClassgridManaged: true\` for both to use the master Classgrid accounts!`);
                     } else {
                         disconnectedLinks.push(`[Vercel](/api/auth/vercel/connect)`);
                     }
@@ -1786,6 +1787,22 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
                                         console.warn(`[send_email] Ignored attachment with unknown format: ${JSON.stringify(att)}`);
                                     }
                                 }
+                            }
+
+                            // ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ IDEMPOTENCY / DEDUPE CHECK ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬
+                            // Prevent the AI from double-sending the exact same email 
+                            // (same subject and recipient) within a 5-minute window.
+                            const dedupeWindowMs = 5 * 60 * 1000;
+                            const recentLog = await NotificationLog.findOne({
+                                type: "EMAIL",
+                                recipient: args.to,
+                                "metadata.subject": args.subject,
+                                createdAt: { $gte: new Date(Date.now() - dedupeWindowMs) }
+                            });
+
+                            if (recentLog) {
+                                console.warn(`[send_email] Prevented duplicate email to ${args.to} with subject "${args.subject}"`);
+                                return `SUCCESS (DEDUPLICATED): Email was already sent to ${args.to} recently. Skipped duplicate send to prevent spam.`;
                             }
 
                             const emailPayload = {
@@ -2962,6 +2979,13 @@ export const getMyUsage = async (req, res) => {
             return res.json({ type: 'free', used: 0, limit: 100000, remaining: 100000 });
         }
         
+        const freeData = {
+            used: userTokens.ai_tokens.used_this_week,
+            limit: userTokens.ai_tokens.free_weekly_limit,
+            remaining: userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week,
+            resetDate: userTokens.ai_tokens.week_reset_date
+        };
+
         // Return Pro pool if allowed
         if (userTokens.organization_id) {
             const org = await Organization.findById(userTokens.organization_id).select("ai_config");
@@ -2973,7 +2997,8 @@ export const getMyUsage = async (req, res) => {
                         used: org.ai_config.pro_used_this_period,
                         limit: org.ai_config.pro_pool_limit,
                         remaining: proRemaining,
-                        resetDate: org.ai_config.pro_reset_date
+                        resetDate: org.ai_config.pro_reset_date,
+                        freeData
                     });
                 }
             }
@@ -2985,7 +3010,8 @@ export const getMyUsage = async (req, res) => {
             used: userTokens.ai_tokens.used_this_week,
             limit: userTokens.ai_tokens.free_weekly_limit,
             remaining,
-            resetDate: userTokens.ai_tokens.week_reset_date
+            resetDate: userTokens.ai_tokens.week_reset_date,
+            freeData
         });
     } catch (e) {
         console.error("Error getting AI usage:", e);
