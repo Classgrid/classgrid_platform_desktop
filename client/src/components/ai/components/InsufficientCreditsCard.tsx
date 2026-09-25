@@ -1,6 +1,6 @@
 import React from 'react';
 import { XCircle } from 'lucide-react';
-import { Button } from '../ui/button';
+import { Button } from './ui/button';
 
 export interface InsufficientCreditsCardProps {
   onDismiss: () => void;
