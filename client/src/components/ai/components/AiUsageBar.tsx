@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { Sparkles, Zap, AlertTriangle } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { getSocket } from '@/lib/socketClient';
 
 export const AiUsageBar = () => {
-    const [usageData, setUsageData] = useState<any>({
+    const [usageData, setUsageData] = useState({
         type: 'free',
         used: 0,
         limit: 100000,
         remaining: 100000,
-        resetDate: null,
-        freeData: null
+        resetDate: null
     });
     const [loading, setLoading] = useState(true);
 
@@ -34,34 +34,13 @@ export const AiUsageBar = () => {
         const socket = getSocket();
         if (!socket) return;
 
-        const handleTokenUpdate = (data: any) => {
-            setUsageData((prev: any) => {
-                if (data.type === 'pro' && prev.type === 'pro') {
-                    return {
-                        ...prev,
-                        used: prev.used + (data.used || 0),
-                        remaining: data.remaining
-                    };
-                } else if (data.type === 'free') {
-                    if (prev.type === 'pro' && prev.freeData) {
-                        return {
-                            ...prev,
-                            freeData: {
-                                ...prev.freeData,
-                                used: prev.freeData.used + (data.used || 0),
-                                remaining: data.remaining
-                            }
-                        };
-                    } else {
-                        return {
-                            ...prev,
-                            used: prev.used + (data.used || 0),
-                            remaining: data.remaining
-                        };
-                    }
-                }
-                return prev;
-            });
+        const handleTokenUpdate = (data) => {
+            setUsageData(prev => ({
+                ...prev,
+                type: data.type || prev.type,
+                used: prev.used + (data.used || 0),
+                remaining: data.remaining
+            }));
         };
 
         socket.on('ai_token_update', handleTokenUpdate);
@@ -75,64 +54,35 @@ export const AiUsageBar = () => {
         return Math.min(100, Math.max(0, (usageData.used / usageData.limit) * 100));
     }, [usageData]);
 
-    const percentUsedFree = useMemo(() => {
-        if (!usageData.freeData || !usageData.freeData.limit) return 0;
-        return Math.min(100, Math.max(0, (usageData.freeData.used / usageData.freeData.limit) * 100));
-    }, [usageData]);
+    const barColor = useMemo(() => {
+        if (percentUsed < 70) return 'bg-emerald-500';
+        if (percentUsed < 90) return 'bg-amber-500';
+        return 'bg-rose-500';
+    }, [percentUsed]);
 
     if (loading) return null;
 
     return (
-        <div className="w-full flex flex-col gap-4 py-4">
-            {/* Free Tier Bar (Always show) */}
-            <div className="w-full flex items-start justify-between">
-                <div className="flex flex-col gap-1 pr-6 min-w-[150px]">
-                    <span className="text-sm font-medium text-foreground">
-                        {usageData.type === 'pro' ? "Personal Limits" : "Monthly"}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                        Resets in 7 days
-                    </span>
+        <div className="w-full flex flex-col gap-1.5 px-4 py-2 border-t border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900/50">
+            <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 font-medium">
+                    {usageData.type === 'pro' ? (
+                        <><Zap size={14} className="text-amber-500" /> Org Pro Pool</>
+                    ) : (
+                        <><Sparkles size={14} className="text-indigo-500" /> Free Weekly Limits</>
+                    )}
                 </div>
-                
-                <div className="flex-1 flex items-center gap-4 mt-1">
-                    <div className="flex-1 h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
-                        <div 
-                            className="h-full bg-blue-500 rounded-full transition-all duration-500"
-                            style={{ width: `${usageData.type === 'pro' ? percentUsedFree : percentUsed}%` }}
-                        />
-                    </div>
-                    <span className="text-xs text-muted-foreground w-[60px] text-right">
-                        {Math.round(usageData.type === 'pro' ? percentUsedFree : percentUsed)}% used
-                    </span>
+                <div className="text-gray-500 dark:text-gray-500 font-medium flex items-center gap-1">
+                    {percentUsed >= 95 && <AlertTriangle size={12} className="text-rose-500" />}
+                    {usageData.remaining.toLocaleString()} tokens left
                 </div>
             </div>
-
-            {/* Pro Tier Bar (Only if they have Pro enabled) */}
-            {usageData.type === 'pro' && (
-                <div className="w-full flex items-start justify-between mt-2">
-                    <div className="flex flex-col gap-1 pr-6 min-w-[150px]">
-                        <span className="text-sm font-medium text-foreground">
-                            Org Pool
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                            Shared Pro pool
-                        </span>
-                    </div>
-                    
-                    <div className="flex-1 flex items-center gap-4 mt-1">
-                        <div className="flex-1 h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
-                            <div 
-                                className="h-full bg-purple-500 rounded-full transition-all duration-500"
-                                style={{ width: `${percentUsed}%` }}
-                            />
-                        </div>
-                        <span className="text-xs text-muted-foreground w-[60px] text-right">
-                            {Math.round(percentUsed)}% used
-                        </span>
-                    </div>
-                </div>
-            )}
+            <div className="w-full h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                <div 
+                    className={`h-full transition-all duration-500 ease-out rounded-full ${barColor}`} 
+                    style={{ width: `${percentUsed}%` }}
+                />
+            </div>
         </div>
     );
 };
