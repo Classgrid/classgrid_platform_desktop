@@ -756,11 +756,11 @@ export const handleToolCall = async (name, args, context = {}) => {
         await ssh.execCommand(writeCommand);
 
         // Dynamically inject ALL uppercase application environment variables to sandbox
-        const systemVars = ['PATH', 'HOME', 'USER', 'PWD', 'SHELL', 'SHLVL', 'LOGNAME', 'MAIL', 'TERM', 'HOSTNAME', 'LS_COLORS', 'LESSOPEN', 'LESSCLOSE', 'XDG_SESSION_ID', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'npm_config_user_agent', 'npm_lifecycle_event', 'npm_node_execpath', 'npm_package_json', 'npm_config_metrics_registry'];
+        const systemVars = ['PATH', 'HOME', 'USER', 'PWD', 'SHELL', 'SHLVL', 'LOGNAME', 'MAIL', 'TERM', 'HOSTNAME', 'LS_COLORS', 'LESSOPEN', 'LESSCLOSE', 'XDG_SESSION_ID', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'npm_config_user_agent', 'npm_lifecycle_event', 'npm_node_execpath', 'npm_package_json', 'npm_config_metrics_registry', 'AGENT_SSH_KEY'];
         let envVars = '';
         for (const [key, value] of Object.entries(process.env)) {
             if (/^[A-Z_][A-Z0-9_]*$/.test(key) && !systemVars.includes(key) && !key.startsWith('npm_')) {
-                envVars += ` -e ${key}="${(value || '').replace(/"/g, '\\"')}"`;
+                envVars += ` -e ${key}="${(value || '').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '')}"`;
             }
         }
 
@@ -857,11 +857,11 @@ export const handleToolCall = async (name, args, context = {}) => {
         await ssh.execCommand(writeCommand);
 
         // Dynamically inject ALL uppercase application environment variables to sandbox
-        const systemVars = ['PATH', 'HOME', 'USER', 'PWD', 'SHELL', 'SHLVL', 'LOGNAME', 'MAIL', 'TERM', 'HOSTNAME', 'LS_COLORS', 'LESSOPEN', 'LESSCLOSE', 'XDG_SESSION_ID', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'npm_config_user_agent', 'npm_lifecycle_event', 'npm_node_execpath', 'npm_package_json', 'npm_config_metrics_registry'];
+        const systemVars = ['PATH', 'HOME', 'USER', 'PWD', 'SHELL', 'SHLVL', 'LOGNAME', 'MAIL', 'TERM', 'HOSTNAME', 'LS_COLORS', 'LESSOPEN', 'LESSCLOSE', 'XDG_SESSION_ID', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'npm_config_user_agent', 'npm_lifecycle_event', 'npm_node_execpath', 'npm_package_json', 'npm_config_metrics_registry', 'AGENT_SSH_KEY'];
         let envVars = '';
         for (const [key, value] of Object.entries(process.env)) {
             if (/^[A-Z_][A-Z0-9_]*$/.test(key) && !systemVars.includes(key) && !key.startsWith('npm_')) {
-                envVars += ` -e ${key}="${(value || '').replace(/"/g, '\\"')}"`;
+                envVars += ` -e ${key}="${(value || '').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '')}"`;
             }
         }
 
