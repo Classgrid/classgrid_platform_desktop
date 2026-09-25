@@ -3973,7 +3973,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               )}
                             </div>
                           )}
-                          {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && !message.content.startsWith("[IMAGE_GENERATION") && (
+                          {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && !message.content.startsWith("[IMAGE_GENERATION") && message.content.trim() !== "ai_quota_exceeded" && (
                             <div className="pl-1 mt-3">
                               <MessageActions content={message.content} messageId={message.id} />
                             </div>
