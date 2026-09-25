@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Download } from "lucide-react";
+import { X, Download, Trash2 } from "lucide-react";
 
 export interface DocsViewerImage {
   id: string;
@@ -18,7 +18,7 @@ export interface DocsViewerImage {
   alt: string;
 }
 
-interface DocsImageViewerProps {
+interface AiHubImageViewerProps {
   images: DocsViewerImage[];
   /** Render function for the thumbnail grid — you control how thumbnails look */
   renderThumbnails: (images: DocsViewerImage[], openImage: (img: DocsViewerImage, event?: React.MouseEvent) => void) => React.ReactNode;
@@ -26,6 +26,8 @@ interface DocsImageViewerProps {
   defaultOpenIndex?: number;
   /** Callback when lightbox closes */
   onClose?: () => void;
+  /** Optional callback to delete the currently viewed image */
+  onDelete?: (id: string) => void;
 }
 
 /**
@@ -38,7 +40,7 @@ interface DocsImageViewerProps {
  * - Close (X) button in top-right
  * - Portaled to document.body so it escapes any parent transforms
  */
-export function DocsImageViewer({ images, renderThumbnails, defaultOpenIndex, onClose }: DocsImageViewerProps) {
+export function AiHubImageViewer({ images, renderThumbnails, defaultOpenIndex, onClose, onDelete }: AiHubImageViewerProps) {
   const [selectedImage, setSelectedImage] = useState<DocsViewerImage | null>(null);
   const thumbnailRectRef = useRef<DOMRect | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -129,6 +131,21 @@ export function DocsImageViewer({ images, renderThumbnails, defaultOpenIndex, on
               >
                 {/* ── Top Right Controls ── */}
                 <div className="absolute top-4 right-4 z-[10000] flex items-center gap-2">
+                  {onDelete && (
+                    <button
+                      className="p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-destructive text-black/60 dark:text-white/60 hover:text-white transition-all cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm("Are you sure you want to delete this image?")) {
+                          onDelete(selectedImage.id);
+                          closeImage();
+                        }
+                      }}
+                      title="Delete Image"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  )}
                   <button
                     className="p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-black/60 dark:text-white/60 transition-all cursor-pointer"
                     onClick={async (e) => {

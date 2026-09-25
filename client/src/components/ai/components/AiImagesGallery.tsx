@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { Download, ImageIcon, Loader2, Trash2 } from "lucide-react";
-import { DocsImageViewer, DocsViewerImage } from "./DocsImageViewer";
+import { AiHubImageViewer } from "./AiHubImageViewer";
+import { DocsViewerImage } from "./DocsImageViewer";
 
 interface GeneratedImage {
   id: string;
@@ -108,7 +109,7 @@ export function AiImagesGallery({ backendUrl }: AiImagesGalleryProps) {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <DocsImageViewer
+      <AiHubImageViewer
         images={allViewerImages}
         onDelete={handleDeleteImage}
         renderThumbnails={(viewerImages, openImage) => (
@@ -145,16 +146,6 @@ export function AiImagesGallery({ backendUrl }: AiImagesGalleryProps) {
                               }
                             }}
                           />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteImage(img.id);
-                            }}
-                            className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-destructive text-white rounded-md opacity-0 group-hover:opacity-100 transition-all z-20"
-                            title="Delete Image"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
                         </div>
                         <div className="px-1 text-center">
                           <p className="text-xs font-medium text-muted-foreground mt-1">
