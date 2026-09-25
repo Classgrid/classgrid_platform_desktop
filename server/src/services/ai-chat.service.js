@@ -245,33 +245,42 @@ export async function getUserGeneratedImages(userEmail) {
     if (!sessions || sessions.length === 0) return [];
 
     const sessionIds = sessions.map(s => s.id);
-
-    const { data: messages, error: messagesError } = await primarySupabaseClient
-        .from('ai_chat_messages')
-        .select('*')
-        .in('session_id', sessionIds)
-        .like('content', '%[IMAGE_GENERATION_COMPLETE:%')
-        .order('created_at', { ascending: false });
-
-    if (messagesError) {
-        console.error("Error fetching image messages:", messagesError);
-        throw messagesError;
-    }
-
     const images = [];
-    for (const msg of messages) {
-        const content = msg.content;
-        const match = content.match(/\[IMAGE_GENERATION_COMPLETE:\s*(.*?)\s*[|:]\s*(.*?)\]/);
-        if (match) {
-            images.push({
-                id: msg.id,
-                prompt: match[1].trim(),
-                url: match[2].trim(),
-                createdAt: msg.created_at,
-                sessionId: msg.session_id
-            });
+    
+    // Chunk sessionIds to prevent HeadersOverflowError (fetch failed) on huge GET requests
+    const CHUNK_SIZE = 50;
+    for (let i = 0; i < sessionIds.length; i += CHUNK_SIZE) {
+        const chunk = sessionIds.slice(i, i + CHUNK_SIZE);
+        
+        const { data: messages, error: messagesError } = await primarySupabaseClient
+            .from('ai_chat_messages')
+            .select('*')
+            .in('session_id', chunk)
+            .like('content', '%[IMAGE_GENERATION_COMPLETE:%')
+            .order('created_at', { ascending: false });
+
+        if (messagesError) {
+            console.error("Error fetching image messages chunk:", messagesError);
+            throw messagesError;
+        }
+
+        for (const msg of messages) {
+            const content = msg.content;
+            const match = content.match(/\[IMAGE_GENERATION_COMPLETE:\s*(.*?)\s*[|:]\s*(.*?)\]/);
+            if (match) {
+                images.push({
+                    id: msg.id,
+                    prompt: match[1].trim(),
+                    url: match[2].trim(),
+                    createdAt: msg.created_at,
+                    sessionId: msg.session_id
+                });
+            }
         }
     }
+
+    // Sort images globally since we fetched in chunks
+    images.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     return images;
 }
