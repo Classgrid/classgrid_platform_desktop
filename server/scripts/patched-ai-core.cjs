@@ -138,7 +138,7 @@ const INTERNAL_THOUGHT_TOOL = {
   }
 };
 */
-async function tryProvider(provider, messages, config, temperature, maxTokens, timeoutMs, onStatus, onThought, depth = 0) {
+async function tryProvider(provider, messages, config, temperature, maxTokens, timeoutMs, onStatus, onThought, onToken, depth = 0) {
   const verbose = config.verbose !== false;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -165,7 +165,8 @@ async function tryProvider(provider, messages, config, temperature, maxTokens, t
         messages,
         temperature,
         ...provider.name !== "gemini" ? { max_tokens: maxTokens } : {},
-        tools: allTools.length > 0 ? allTools : void 0
+        tools: allTools.length > 0 ? allTools : void 0,
+        ...(onToken && depth === 0 ? { stream: true } : {})
       })
     });
     console.log(`[llm-debug] Fetch completed with status ${response.status} at ${new Date().toISOString()}`);
@@ -176,7 +177,71 @@ async function tryProvider(provider, messages, config, temperature, maxTokens, t
       if (response.status === 401 || response.status === 403) return { answer: null, rateLimited: false, error: "auth_failed" };
       return { answer: null, rateLimited: false, error: `http_${response.status}` };
     }
-    const data = await response.json();
+
+    const isStreaming = onToken && depth === 0 && response.headers.get("content-type")?.includes("text/event-stream");
+    if (isStreaming && response.body) {
+      try {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullContent = "";
+        let buffer = "";
+        let isInsideThink = false;
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const raw = line.slice(6).trim();
+            if (raw === "[DONE]") break;
+            try {
+              const chunk = JSON.parse(raw);
+              const delta = chunk.choices?.[0]?.delta?.content;
+              if (delta) {
+                fullContent += delta;
+                
+                let tempDelta = delta;
+                if (tempDelta.includes("<think>")) {
+                    isInsideThink = true;
+                    tempDelta = tempDelta.replace("<think>", "");
+                }
+                if (tempDelta.includes("</think>")) {
+                    isInsideThink = false;
+                    const parts = tempDelta.split("</think>");
+                    if (parts[0]) onThought?.(parts[0]);
+                    if (parts[1]) onToken?.(parts[1]);
+                    continue;
+                }
+                
+                if (isInsideThink) {
+                    onThought?.(tempDelta);
+                } else {
+                    onToken?.(tempDelta);
+                }
+              }
+              if (chunk.choices?.[0]?.delta?.tool_calls) {
+                reader.cancel();
+                break;
+              }
+            } catch (e) { /* ignore parse error on partial chunks */ }
+          }
+        }
+        clearTimeout(timeout);
+        let finalContent = fullContent;
+        if (finalContent.includes("<think>")) {
+            finalContent = finalContent.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+        }
+        return { answer: finalContent, rateLimited: false };
+      } catch (streamErr) {
+        console.error("Stream reader error:", streamErr);
+      }
+    }
+
+    const data = await (isStreaming ? Promise.resolve(null) : response.json());
+    if (!data) return { answer: null, rateLimited: false, error: "stream_fallback" };
     const result = extractResponse(data);
     if (result.thinking) {
       if (verbose) {
@@ -311,7 +376,8 @@ function createLLMClient(config) {
       maxTokens = config.defaultMaxTokens ?? 600,
       timeoutMs = config.defaultTimeoutMs ?? 6e4,
       onStatus,
-      onThought
+      onThought,
+      onToken
     }) {
       if (config.providers.length === 0) {
         console.error("[llm] No providers configured.");
@@ -327,7 +393,8 @@ function createLLMClient(config) {
           maxTokens,
           timeoutMs,
           onStatus,
-          onThought
+          onThought,
+          onToken
         );
         if (result.answer) return result.answer;
         if (!result.rateLimited) allRateLimited = false;
