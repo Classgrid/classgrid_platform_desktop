@@ -269,7 +269,7 @@ async function tryProvider(provider, messages, config, temperature, maxTokens, t
 
       const nextMessages = [...messages, ...newMessages];
       clearTimeout(timeout);
-      return tryProvider(provider, nextMessages, config, temperature, maxTokens, timeoutMs, onStatus, onThought, hasThoughtTool ? depth : depth + 1);
+      return tryProvider(provider, nextMessages, config, temperature, maxTokens, timeoutMs, onStatus, onThought, depth + 1);
     }
     if (result.content && verbose) {
       const duration = ((Date.now() - startTime) / 1e3).toFixed(2);

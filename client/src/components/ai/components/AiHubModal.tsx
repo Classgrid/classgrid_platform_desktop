@@ -21,6 +21,7 @@ import { INTEGRATIONS_LIST } from "./AskAiPanel";
 import { Button } from "@/components/marketing_ui/button";
 import { WhatsappConfigModal } from "./WhatsappConfigModal";
 import { AiImagesGallery } from "./AiImagesGallery";
+import { AiUsageBar } from "./AiUsageBar";
 
 interface AiHubModalProps {
   isOpen: boolean;
@@ -574,6 +575,16 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt }: AiHubModalProps) {
                     </p>
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
                       <AiImagesGallery backendUrl={backendUrl} />
+                    </div>
+                  </div>
+                ) : activeTab === "usage" ? (
+                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col">
+                    <h3 className="text-2xl font-bold text-foreground mb-2">AI Usage</h3>
+                    <p className="text-sm text-muted-foreground mb-8 max-w-xl">
+                      Monitor your AI token usage and limits across your personal account and organization.
+                    </p>
+                    <div className="w-full max-w-2xl bg-card border border-border rounded-xl p-6 shadow-sm">
+                        <AiUsageBar />
                     </div>
                   </div>
                 ) : (
