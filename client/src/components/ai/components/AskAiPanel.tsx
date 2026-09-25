@@ -13,7 +13,7 @@ import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import { ExpandedInputModal } from './ExpandedInputModal';
 import { AiHubModal } from "./AiHubModal";
-import { AiUsageBar } from "./AiUsageBar";
+
 import { AiChartRenderer } from "./AiChartRenderer";
 import { ImageGeneration, type ImageGenerationStatus } from "./ImageGeneration";
 import { DangerConfirmDialog } from '@/components/marketing_ui/danger-confirm-dialog';
@@ -4003,9 +4003,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       "px-4 py-4 relative",
       "flex flex-col gap-2"
     )}>
-      <div className="pointer-events-auto w-full max-w-3xl mx-auto rounded-xl overflow-hidden">
-        <AiUsageBar />
-      </div>
+
     <div className={cn(
       "relative",
       variant === "full-page"
@@ -4466,27 +4464,25 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 />
 
                 {/* Bottom Left action bar: paperclip */}
-                {!isGenerating && (
-                  <div className="absolute bottom-3 left-4 flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={attachedFiles.length >= 6}
-                      className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 transition-all cursor-pointer"
-                      title={attachedFiles.length >= 6 ? "Max 6 files" : "Attach file (max 35MB)"}
-                    >
-                      <Paperclip className={cn("h-4 w-4 -rotate-45", isAnyFileUploading && "opacity-50")} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsAiHubOpen(true)}
-                      className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer"
-                      title="AI Hub"
-                    >
-                      <CustomSlidersIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                )}
+                <div className="absolute bottom-3 left-4 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={attachedFiles.length >= 6}
+                    className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 transition-all cursor-pointer"
+                    title={attachedFiles.length >= 6 ? "Max 6 files" : "Attach file (max 35MB)"}
+                  >
+                    <Paperclip className={cn("h-4 w-4 -rotate-45", isAnyFileUploading && "opacity-50")} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsAiHubOpen(true)}
+                    className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer"
+                    title="AI Hub"
+                  >
+                    <CustomSlidersIcon className="h-4 w-4" />
+                  </button>
+                </div>
 
                 {/* Bottom Right action bar: send OR stop */}
                 <div className="absolute bottom-3 right-3 flex items-center gap-1.5">

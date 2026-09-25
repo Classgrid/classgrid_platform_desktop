@@ -80,7 +80,22 @@ export const AiUsageBar = () => {
         return Math.min(100, Math.max(0, (usageData.freeData.used / usageData.freeData.limit) * 100));
     }, [usageData]);
 
-    if (loading) return null;
+    if (loading) {
+        return (
+            <div className="w-full flex flex-col gap-4 py-4 animate-pulse">
+                <div className="w-full flex items-start justify-between">
+                    <div className="flex flex-col gap-2 pr-6 min-w-[150px] mt-0.5">
+                        <div className="h-4 w-24 bg-muted rounded"></div>
+                        <div className="h-3 w-20 bg-muted rounded"></div>
+                    </div>
+                    <div className="flex-1 flex items-center gap-4 mt-1">
+                        <div className="flex-1 h-1.5 bg-muted rounded-full"></div>
+                        <div className="h-3 w-10 bg-muted rounded"></div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full flex flex-col gap-4 py-4">
