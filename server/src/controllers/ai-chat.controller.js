@@ -2961,6 +2961,43 @@ export const getMyGeneratedImages = async (req, res) => {
 
 
 
+export const deleteGeneratedImage = async (req, res) => {
+    try {
+        const userEmail = req.user?.email || req.auth?.user?.email;
+        if (!userEmail) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+        
+        const messageId = req.params.id;
+        const { primarySupabaseClient } = await import('../config/supabaseClient.js');
+        
+        const { data: message, error } = await primarySupabaseClient
+            .from('ai_chat_messages')
+            .select('session_id')
+            .eq('id', messageId)
+            .single();
+            
+        if (!message) return res.status(404).json({ error: "Image not found" });
+        
+        const { data: session } = await primarySupabaseClient
+            .from('ai_chat_sessions')
+            .select('user_email')
+            .eq('id', message.session_id)
+            .single();
+            
+        if (!session || session.user_email !== userEmail) {
+            return res.status(403).json({ error: "Forbidden" });
+        }
+        
+        await primarySupabaseClient.from('ai_chat_messages').delete().eq('id', messageId);
+        
+        res.json({ success: true });
+    } catch (e) {
+        console.error("Error deleting image:", e);
+        res.status(500).json({ error: String(e.stack || e.message || e) });
+    }
+};
+
 export const getMyUsage = async (req, res) => {
     try {
         const User = (await import("../models/User.js")).default;

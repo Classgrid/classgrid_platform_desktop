@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { Download, ImageIcon, Loader2 } from "lucide-react";
+import { Download, ImageIcon, Loader2, Trash2 } from "lucide-react";
 import { DocsImageViewer, DocsViewerImage } from "./DocsImageViewer";
 
 interface GeneratedImage {
@@ -40,6 +40,18 @@ export function AiImagesGallery({ backendUrl }: AiImagesGalleryProps) {
 
     fetchImages();
   }, [backendUrl]);
+
+  const handleDeleteImage = async (id: string) => {
+    try {
+      setImages(prev => prev.filter(img => img.id !== id));
+      await fetch(`${backendUrl}/api/ai/my-images/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error("Failed to delete image:", err);
+    }
+  };
 
   if (loading) {
     return (
@@ -98,6 +110,7 @@ export function AiImagesGallery({ backendUrl }: AiImagesGalleryProps) {
     <div className="space-y-8 animate-in fade-in duration-500">
       <DocsImageViewer
         images={allViewerImages}
+        onDelete={handleDeleteImage}
         renderThumbnails={(viewerImages, openImage) => (
           <div className="space-y-10">
             {Object.entries(groupedImages).map(([month, monthImages]) => (
@@ -126,9 +139,22 @@ export function AiImagesGallery({ backendUrl }: AiImagesGalleryProps) {
                               if (parent) {
                                 parent.classList.add('flex', 'items-center', 'justify-center', 'bg-muted');
                                 parent.innerHTML = '<div class="text-center p-4"><p class="text-xs text-muted-foreground font-medium">Image Expired</p><p class="text-[10px] text-muted-foreground/60 mt-1">This link is no longer active</p></div>';
+                                
+                                // Auto delete expired image
+                                handleDeleteImage(img.id);
                               }
                             }}
                           />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteImage(img.id);
+                            }}
+                            className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-destructive text-white rounded-md opacity-0 group-hover:opacity-100 transition-all z-20"
+                            title="Delete Image"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                         <div className="px-1 text-center">
                           <p className="text-xs font-medium text-muted-foreground mt-1">
