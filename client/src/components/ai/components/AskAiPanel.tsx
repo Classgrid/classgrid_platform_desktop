@@ -1243,24 +1243,6 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
               />
             );
 
-            if (parsedProps.variant === "plan") {
-              const portalTarget = document.getElementById("workspace-plan-portal");
-              return (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                  className="w-full"
-                >
-                  <div className="flex items-center gap-2 text-sm text-blue-500 bg-blue-500/10 p-3 rounded-lg border border-blue-500/20 my-2">
-                    <ListTodo className="h-4 w-4" />
-                    <span>Plan overview moved to Workspace Panel 👉</span>
-                  </div>
-                  {portalTarget ? ReactDOM.createPortal(card, portalTarget) : null}
-                </motion.div>
-              );
-            }
-
             return (
               <motion.div
                 initial={{ opacity: 0, scale: 0.98, y: 10 }}
