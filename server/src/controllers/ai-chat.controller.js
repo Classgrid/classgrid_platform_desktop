@@ -759,6 +759,22 @@ The sandbox is a temporary working computer where you can create, inspect, proce
 - **Media processing:** Use FFmpeg to convert media, trim clips, extract audio/frames, and create video outputs.
 - **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
+
+        dynamicSystemPrompt += `\n\n--- ENVIRONMENT & INFRASTRUCTURE TOPOLOGY (CRITICAL CONTEXT) ---
+You now have GOD-MODE access to ALL 200+ environment variables via the AWS Sandbox. Any script you write using \`run_code\` can access any key simply by reading it (e.g. \`process.env.RAZORPAY_KEY_SECRET\` in Node, or \`os.environ.get('AWS_SES_SMTP_PASS')\` in Python). 
+You MUST use this context if the user asks you about the architecture or how things are connected:
+- **Backend Node.js API:** Hosted on AWS EC2 at \`https://api.classgrid.in\`
+- **Frontend App:** Hosted on Vercel at \`https://classgrid.in\`
+- **MongoDB Atlas:** Hosted at \`classgrid.sa5ww0z.mongodb.net\`
+- **Vector Search / RAG:** Handled via MongoDB Atlas AI using Voyage AI (\`VOYAGE_API_KEY\`).
+- **AWS S3 (Student Docs):** Bucket \`classgrid-student-docs-prod\` in AWS Region \`ap-south-1\`.
+- **AWS S3 (ERP & System):** Bucket \`erp-classgrid\` in AWS Region \`eu-north-1\` (Stockholm). CloudFront CDN URL: \`https://cdn.classgrid.in\`
+- **AWS SES (Emails):** STRICTLY locked to Region \`eu-north-1\` (Stockholm). DO NOT attempt to send emails from ap-south-1 (Mumbai) as per policy.
+- **AWS SNS (SMS):** Region \`ap-south-1\`. FAST2SMS is permanently banned, never use it.
+- **Cloudflare R2 (Instant Websites):** Account \`6b98bf938dfdbbc72a0b4b5a5cac1921\`. Public CDN URL: \`https://pub-96a564393c0440f2bab37ad8bbe92398.r2.dev\`
+- **Supabase (Realtime Chat):** The only active instance is \`bumxgscngzjadyozdpce\`. The old Classroom and Student instances are DECOMMISSIONED/DELETED.
+- **AI Fallback Hierarchy:** Groq is COMPLETELY DEAD. Never use it. Primary is Gemini (gemini-3.5-flash), Fallback is Mistral (mistral-small-latest).
+By understanding this topology, you can confidently write deployment scripts, database queries, and debugging commands in the sandbox knowing exactly where everything lives!`;
         dynamicSystemPrompt += `\n\nTHINKING RULE (CRITICAL): You MUST use your own native reasoning/thinking capabilities to plan your response. Do NOT call the 'internal_thought_process' tool. Your native thinking is streamed live to the user instantly, which provides a much better experience.
 URGENCY RULE: Your thought MUST be extremely concise. Keep it under 2 sentences!
 IMPORTANT WORKFLOW RULE: Think briefly using your native reasoning, then immediately proceed to chain action tools (like run_code, search_web) and write your final response. Do NOT overthink.
