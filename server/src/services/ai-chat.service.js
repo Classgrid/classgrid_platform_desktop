@@ -8,6 +8,7 @@
 
 import { primarySupabaseClient } from '../config/supabaseClient.js';
 import accessLogger from '../config/logger.js';
+import OpenAI from 'openai';
 
 /**
  * Creates a new AI chat session.
@@ -67,7 +68,79 @@ export async function saveMessage(sessionId, role, content, fileUrls = []) {
         throw error;
     }
 
+    // Fire and forget the Memory Agent
+    triggerMemoryAgent(sessionId).catch(err => console.error("Memory Agent error:", err));
+
     return data;
+}
+
+/**
+ * Background worker that condenses long chat histories using Mistral Nemo.
+ * Triggers every 8 messages.
+ */
+export async function triggerMemoryAgent(sessionId) {
+    if (!sessionId) return;
+    try {
+        // 1. Fetch current messages
+        const { data: messages, error } = await primarySupabaseClient
+            .from('ai_chat_messages')
+            .select('*')
+            .eq('session_id', sessionId)
+            .order('created_at', { ascending: true });
+
+        if (error || !messages) return;
+
+        // 2. Threshold check: only run every 8 messages
+        if (messages.length < 8 || messages.length % 8 !== 0) return;
+
+        console.log(`[Memory Agent] Triggering Mistral Nemo for session ${sessionId}...`);
+
+        // 3. Format history
+        const historyText = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n');
+
+        // 4. Call Mistral Nemo via OpenAI compatible endpoint
+        const mistralKey = process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2;
+        if (!mistralKey) {
+            console.warn("[Memory Agent] Missing MISTRAL_API_KEY. Skipping.");
+            return;
+        }
+
+        const openai = new OpenAI({
+            apiKey: mistralKey,
+            baseURL: "https://api.mistral.ai/v1"
+        });
+
+        const prompt = `You are the Context Condenser Agent. Read the following chat history and generate a highly compressed, dense summary (max 300 words).
+Focus ONLY on:
+1. The core goal of the project being built.
+2. Absolute file paths of created files (e.g., /data/space-site/style.css).
+3. Key user preferences, frustrations, or explicit instructions (e.g., "NEVER use R2 connector, use Node.js script instead").
+4. Current pending tasks.
+
+CHAT HISTORY:
+${historyText}`;
+
+        const response = await openai.chat.completions.create({
+            model: "open-mistral-nemo",
+            messages: [{ role: "user", content: prompt }]
+        });
+
+        const summary = response.choices[0].message.content;
+
+        // 5. Save to database
+        const { error: updateErr } = await primarySupabaseClient
+            .from('ai_chat_sessions')
+            .update({ long_term_memory: summary })
+            .eq('id', sessionId);
+
+        if (updateErr) {
+            console.error("[Memory Agent] Error saving to DB:", updateErr);
+        } else {
+            console.log(`[Memory Agent] Successfully saved condensed memory for session ${sessionId}`);
+        }
+    } catch (error) {
+        console.error("[Memory Agent] Failed:", error);
+    }
 }
 
 /**

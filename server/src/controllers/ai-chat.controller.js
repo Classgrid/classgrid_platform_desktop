@@ -559,7 +559,7 @@ export const streamAskAi = async (req, res) => {
         // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ HISTORY: Read from Redis (hot) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Supabase (cold). NEVER trust frontend body.history. ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
         // The frontend no longer controls chat history. The backend owns it entirely.
         // historyDepth: how many messages to give the LLM context (default 25, max 500)
-        const historyDepth = Math.min(parseInt(body.historyDepth, 10) || 25, 500);
+        let historyDepth = Math.min(parseInt(body.historyDepth, 10) || 25, 500);
         let messages = [];
 
         const userEmail = req.user?.email || body.userEmail || 'unknown@classgrid.in';
@@ -577,6 +577,12 @@ export const streamAskAi = async (req, res) => {
                 res.write(`data: ${JSON.stringify({ type: "error", error: "Unauthorized. You do not have permission to view this chat." })}\n\n`);
                 res.end();
                 return;
+            }
+
+            // Inject Mistral long_term_memory if available
+            if (sessionData.long_term_memory) {
+                dynamicSystemPrompt += `\n\n<long_term_memory>\n${sessionData.long_term_memory}\n</long_term_memory>`;
+                historyDepth = Math.min(historyDepth, 5); // Prune history if memory exists
             }
 
             // Ownership verified, safe to load history
@@ -1137,11 +1143,19 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 
         
         dynamicSystemPrompt += `\n\nWEBSITE DEPLOYMENT INSTRUCTIONS:
-When the user asks you to build or host a website, you must FIRST ask them naturally if they want to deploy to their own personal GitHub/Vercel OR if they want you to host it instantly on the Classgrid cloud (zero setup required).
+When the user asks you to build or host a website, you must FIRST ask them two things (using your interactive question component tool, do NOT just ask in plain text):
+1. Do they want to deploy to their own personal GitHub/Vercel OR host it instantly on Classgrid cloud?
+2. What subdomain/name do they want for their site? (e.g., 'my-cool-site')
 
-
-1. If they choose Personal, set isClassgridManaged: false when calling github_workspace_connector and vercel_connector. Remember to set isPrivate: false when creating the repo so Vercel can read it.
-2. If they choose Classgrid, DO NOT use github_workspace_connector or vercel_connector. INSTEAD, write the code to the sandbox first so the user can see it, then use the cloudflare_r2_connector (operation: "upload_website") to directly upload the HTML/CSS to path "sites/${userEmail.split('@')[0]}/index.html". The site will instantly be live at ${userEmail.split('@')[0]}.sites.classgrid.in!`;
+1. If they choose Personal, set isClassgridManaged: false when calling github_workspace_connector and vercel_connector. Remember to set isPrivate: false when creating the repo. When giving the live URL to the user, ALWAYS give them the primary project URL (e.g., https://<project-name>.vercel.app), NEVER give the specific commit deployment URL!
+2. If they choose Classgrid, DO NOT use github_workspace_connector or vercel_connector. DO NOT use the cloudflare_r2_connector for deploying multi-file websites, as it requires massive JSON payloads that will cause you to hang!
+   - Step 1: Write the HTML/CSS/JS code to the sandbox using run_code. 
+   - Step 2: Deploy the files by writing a Node.js script in the sandbox using run_code. (CRITICAL: @aws-sdk/client-s3 is NOT pre-installed! Your script MUST use child_process.execSync('npm install @aws-sdk/client-s3') before requiring it). 
+     Use the 'fs' module to read the files you just created from the disk.
+     Create an S3Client: \`new S3Client({ region: 'auto', endpoint: \`https://\${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com\`, credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY } })\`. 
+     Upload ALL your files (index.html, style.css, script.js) to Bucket: 'classgrid-storage' with the prefix: \`websites/<chosen-name>/\`. 
+     (CRITICAL WARNING: NEVER upload to 'sites/'. You MUST upload strictly to the 'websites/' prefix or the Vercel router will 404!). 
+     Execute the script. The site will instantly be live at <chosen-name>.sites.classgrid.in!`;
 
         dynamicSystemPrompt += `\n\nDOCUMENT RETRIEVAL RULE:
 CRITICAL: If a user asks a specific question about a document, PDF, or image, and you do not have the exact raw text in your immediate memory, you MUST use the \`recall_session_context\` tool first to get the list of previously read file URLs. Then, you MUST use \`parse_document\` or \`analyze_image\` to fetch and read the document/image AGAIN. 
