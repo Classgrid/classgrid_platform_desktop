@@ -186,6 +186,7 @@ async function tryProvider(provider, messages, config, temperature, maxTokens, t
         let fullContent = "";
         let buffer = "";
         let isInsideThink = false;
+        let thinkBuffer = "";
         
         while (true) {
           const { done, value } = await reader.read();
@@ -202,24 +203,63 @@ async function tryProvider(provider, messages, config, temperature, maxTokens, t
               const delta = chunk.choices?.[0]?.delta?.content;
               if (delta) {
                 fullContent += delta;
+                thinkBuffer += delta;
                 
-                let tempDelta = delta;
-                if (tempDelta.includes("<think>")) {
-                    isInsideThink = true;
-                    tempDelta = tempDelta.replace("<think>", "");
-                }
-                if (tempDelta.includes("</think>")) {
-                    isInsideThink = false;
-                    const parts = tempDelta.split("</think>");
-                    if (parts[0]) onThought?.(parts[0]);
-                    if (parts[1]) onToken?.(parts[1]);
-                    continue;
-                }
-                
-                if (isInsideThink) {
-                    onThought?.(tempDelta);
+                if (!isInsideThink) {
+                    if (thinkBuffer.includes("<think>")) {
+                        isInsideThink = true;
+                        const parts = thinkBuffer.split("<think>");
+                        if (parts[0]) onToken?.(parts[0]);
+                        const remainingThought = parts[1];
+                        if (remainingThought) {
+                            if (remainingThought.includes("</think>")) {
+                                isInsideThink = false;
+                                const endParts = remainingThought.split("</think>");
+                                if (endParts[0]) onThought?.(endParts[0]);
+                                thinkBuffer = endParts[1] || "";
+                                if (thinkBuffer && !thinkBuffer.includes("<")) {
+                                    onToken?.(thinkBuffer);
+                                    thinkBuffer = "";
+                                }
+                            } else {
+                                onThought?.(remainingThought);
+                                thinkBuffer = "";
+                            }
+                        } else {
+                            thinkBuffer = "";
+                        }
+                    } else {
+                        if (thinkBuffer.includes("<")) {
+                            const lastOpen = thinkBuffer.lastIndexOf("<");
+                            const safe = thinkBuffer.slice(0, lastOpen);
+                            if (safe) onToken?.(safe);
+                            thinkBuffer = thinkBuffer.slice(lastOpen);
+                        } else {
+                            onToken?.(thinkBuffer);
+                            thinkBuffer = "";
+                        }
+                    }
                 } else {
-                    onToken?.(tempDelta);
+                    if (thinkBuffer.includes("</think>")) {
+                        isInsideThink = false;
+                        const parts = thinkBuffer.split("</think>");
+                        if (parts[0]) onThought?.(parts[0]);
+                        thinkBuffer = parts[1] || "";
+                        if (thinkBuffer && !thinkBuffer.includes("<")) {
+                            onToken?.(thinkBuffer);
+                            thinkBuffer = "";
+                        }
+                    } else {
+                        if (thinkBuffer.includes("<")) {
+                            const lastOpen = thinkBuffer.lastIndexOf("<");
+                            const safe = thinkBuffer.slice(0, lastOpen);
+                            if (safe) onThought?.(safe);
+                            thinkBuffer = thinkBuffer.slice(lastOpen);
+                        } else {
+                            onThought?.(thinkBuffer);
+                            thinkBuffer = "";
+                        }
+                    }
                 }
               }
               if (chunk.choices?.[0]?.delta?.tool_calls) {
@@ -229,6 +269,13 @@ async function tryProvider(provider, messages, config, temperature, maxTokens, t
             } catch (e) { /* ignore parse error on partial chunks */ }
           }
         }
+        
+        // flush anything remaining in thinkBuffer
+        if (thinkBuffer) {
+            if (isInsideThink) onThought?.(thinkBuffer);
+            else onToken?.(thinkBuffer);
+        }
+        
         clearTimeout(timeout);
         let finalContent = fullContent;
         if (finalContent.includes("<think>")) {
