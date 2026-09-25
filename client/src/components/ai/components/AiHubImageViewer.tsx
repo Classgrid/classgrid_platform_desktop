@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, Trash2 } from "lucide-react";
+import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 
 export interface DocsViewerImage {
   id: string;
@@ -44,6 +45,8 @@ export function AiHubImageViewer({ images, renderThumbnails, defaultOpenIndex, o
   const [selectedImage, setSelectedImage] = useState<DocsViewerImage | null>(null);
   const thumbnailRectRef = useRef<DOMRect | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Auto-open if defaultOpenIndex is provided
   useEffect(() => {
@@ -136,10 +139,7 @@ export function AiHubImageViewer({ images, renderThumbnails, defaultOpenIndex, o
                       className="p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-destructive text-black/60 dark:text-white/60 hover:text-white transition-all cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm("Are you sure you want to delete this image?")) {
-                          onDelete(selectedImage.id);
-                          closeImage();
-                        }
+                        setShowDeleteConfirm(true);
                       }}
                       title="Delete Image"
                     >
@@ -227,6 +227,31 @@ export function AiHubImageViewer({ images, renderThumbnails, defaultOpenIndex, o
         </AnimatePresence>,
         document.body
       )}
+
+      {/* ── Custom Delete Confirmation Dialog ── */}
+      <DangerConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete Image"
+        description="Are you sure you want to permanently delete this AI generated image? This action cannot be undone."
+        warningMessage="This image will be permanently removed from your history."
+        actionLabel="Delete"
+        isLoading={isDeleting}
+        onConfirm={async () => {
+          if (selectedImage && onDelete) {
+            setIsDeleting(true);
+            try {
+              // Note: onDelete is expected to return a Promise if it does async work.
+              // AiImagesGallery's handleDeleteImage is already async!
+              await onDelete(selectedImage.id);
+              setShowDeleteConfirm(false);
+              closeImage();
+            } finally {
+              setIsDeleting(false);
+            }
+          }
+        }}
+      />
     </>
   );
 }

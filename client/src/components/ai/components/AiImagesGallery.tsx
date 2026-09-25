@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { Download, ImageIcon, Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { AiHubImageViewer } from "./AiHubImageViewer";
 import { DocsViewerImage } from "./DocsImageViewer";
 
@@ -42,15 +43,21 @@ export function AiImagesGallery({ backendUrl }: AiImagesGalleryProps) {
     fetchImages();
   }, [backendUrl]);
 
-  const handleDeleteImage = async (id: string) => {
+  const handleDeleteImage = async (id: string, isAutoDelete = false) => {
     try {
       setImages(prev => prev.filter(img => img.id !== id));
       await fetch(`${backendUrl}/api/ai/my-images/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
+      if (!isAutoDelete) {
+        toast.success("Image deleted successfully");
+      }
     } catch (err) {
       console.error("Failed to delete image:", err);
+      if (!isAutoDelete) {
+        toast.error("Failed to delete image");
+      }
     }
   };
 
@@ -142,7 +149,7 @@ export function AiImagesGallery({ backendUrl }: AiImagesGalleryProps) {
                                 parent.innerHTML = '<div class="text-center p-4"><p class="text-xs text-muted-foreground font-medium">Image Expired</p><p class="text-[10px] text-muted-foreground/60 mt-1">This link is no longer active</p></div>';
                                 
                                 // Auto delete expired image
-                                handleDeleteImage(img.id);
+                                handleDeleteImage(img.id, true);
                               }
                             }}
                           />
