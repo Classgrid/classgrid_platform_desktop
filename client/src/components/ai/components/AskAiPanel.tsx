@@ -13,6 +13,7 @@ import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import { ExpandedInputModal } from './ExpandedInputModal';
 import { AiHubModal } from "./AiHubModal";
+import { InsufficientCreditsCard } from "./InsufficientCreditsCard";
 import ReactDOM from "react-dom";
 
 import { AiChartRenderer } from "./AiChartRenderer";
@@ -3949,7 +3950,16 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     </ImageGeneration>
                                   </div>
                                 );
-                              })() : (
+                              })() : message.content.trim() === "ai_quota_exceeded" ? (
+                                <div className="mt-2 w-full flex justify-start">
+                                  <InsufficientCreditsCard 
+                                    refreshDate={new Date(Date.now() + (7 * 24 * 60 * 60 * 1000))} 
+                                    onDismiss={() => setMessages(prev => prev.filter(m => m.id !== message.id))}
+                                    onSeePlans={() => { window.location.href = '/pricing'; }}
+                                    onPurchase={() => { window.location.href = '/billing'; }}
+                                  />
+                                </div>
+                              ) : (
                                 <AssistantMessageContent
                                   content={message.content}
                                   isTyping={message.typing}
