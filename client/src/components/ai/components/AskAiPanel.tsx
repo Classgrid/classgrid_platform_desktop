@@ -13,6 +13,7 @@ import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import { ExpandedInputModal } from './ExpandedInputModal';
 import { AiHubModal } from "./AiHubModal";
+import ReactDOM from "react-dom";
 
 import { AiChartRenderer } from "./AiChartRenderer";
 import { ImageGeneration, type ImageGenerationStatus } from "./ImageGeneration";
@@ -1117,7 +1118,7 @@ const CraftingBlock = () => {
   );
 };
 
-const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isHistorical, onRetry }: { content: string, isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean, onRetry?: (error: string) => void }) => {
+const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isHistorical, onRetry, currentStepIndex }: { content: string, isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean, onRetry?: (error: string) => void, currentStepIndex?: number }) => {
   const onApprovalActionRef = React.useRef(onApprovalAction);
   const isTypingRef = React.useRef(isTyping);
   const onRetryRef = React.useRef(onRetry);
@@ -1206,6 +1207,57 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                 });
               }
             }
+            const card = (
+              <ApprovalCard
+                {...parsedProps}
+                isHistorical={isHistorical}
+                currentStepIndex={currentStepIndex}
+                onApprove={(payload) => {
+                  if (parsedProps.variant === "plan" && parsedProps.plan && Array.isArray(parsedProps.plan)) {
+                    // Trigger Auto-Execution Sequence!
+                    if ((window as any).startAutoExecutionHack) {
+                      (window as any).startAutoExecutionHack(parsedProps.plan);
+                    }
+                  } else if (parsedProps.questions && Array.isArray(parsedProps.questions)) {
+                    const formatted = parsedProps.questions.map((q: any) => {
+                      const ans = payload?.answers?.[q.id];
+                      if (!ans || ans.trim() === "") {
+                        return `- ${q.prompt}: Skipped`;
+                      }
+                      return `- ${q.prompt}: ${ans}`;
+                    }).join("\n");
+                    onApprovalActionRef.current?.(`Here are my answers:\n${formatted}`);
+                  } else if (payload?.answers) {
+                    const formatted = Object.entries(payload.answers).map(([k, v]) => `- ${v}`).join("\n");
+                    onApprovalActionRef.current?.(`Here are my answers:\n${formatted}`);
+                  } else {
+                    onApprovalActionRef.current?.(`I approve this plan.`);
+                  }
+                }}
+                onReject={() => {
+                  onApprovalActionRef.current?.(`I want to skip this or I do not approve.`);
+                }}
+              />
+            );
+
+            if (parsedProps.variant === "plan") {
+              const portalTarget = document.getElementById("workspace-plan-portal");
+              return (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="w-full"
+                >
+                  <div className="flex items-center gap-2 text-sm text-blue-500 bg-blue-500/10 p-3 rounded-lg border border-blue-500/20 my-2">
+                    <ListTodo className="h-4 w-4" />
+                    <span>Plan overview moved to Workspace Panel 👉</span>
+                  </div>
+                  {portalTarget ? ReactDOM.createPortal(card, portalTarget) : null}
+                </motion.div>
+              );
+            }
+
             return (
               <motion.div
                 initial={{ opacity: 0, scale: 0.98, y: 10 }}
@@ -1213,30 +1265,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 className="w-full"
               >
-                <ApprovalCard
-                  {...parsedProps}
-                  isHistorical={isHistorical}
-                  onApprove={(payload) => {
-                    if (parsedProps.questions && Array.isArray(parsedProps.questions)) {
-                      const formatted = parsedProps.questions.map((q: any) => {
-                        const ans = payload?.answers?.[q.id];
-                        if (!ans || ans.trim() === "") {
-                          return `- ${q.prompt}: Skipped`;
-                        }
-                        return `- ${q.prompt}: ${ans}`;
-                      }).join("\n");
-                      onApprovalActionRef.current?.(`Here are my answers:\n${formatted}`);
-                    } else if (payload?.answers) {
-                      const formatted = Object.entries(payload.answers).map(([k, v]) => `- ${v}`).join("\n");
-                      onApprovalActionRef.current?.(`Here are my answers:\n${formatted}`);
-                    } else {
-                      onApprovalActionRef.current?.(`I approve this plan.`);
-                    }
-                  }}
-                  onReject={() => {
-                    onApprovalActionRef.current?.(`I want to skip this or I do not approve.`);
-                  }}
-                />
+                {card}
               </motion.div>
             );
           } catch (e: any) {
@@ -1410,6 +1439,25 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
 
+  // --- Auto-Execution Queue State ---
+  const [executionQueue, setExecutionQueue] = useState<any[]>([]);
+  const [currentExecutionIndex, setCurrentExecutionIndex] = useState(-1);
+  const [isExecutionPaused, setIsExecutionPaused] = useState(false);
+  const startAutoExecutionRef = useRef<(plan: any[]) => void>();
+
+  useEffect(() => {
+    startAutoExecutionRef.current = (plan: any[]) => {
+      if (!plan || plan.length === 0) return;
+      setExecutionQueue(plan);
+      setCurrentExecutionIndex(0);
+      setIsExecutionPaused(false);
+      if (askQuestionRef.current) {
+        askQuestionRef.current(`I approved the plan. Please execute Step 1: ${plan[0].title}. DO NOT execute any other steps yet.`, { hidden: true });
+      }
+    };
+    (window as any).startAutoExecutionHack = startAutoExecutionRef.current;
+  }, []);
+
   // Build TOC items from user questions
   const tocItems = useMemo(() => {
     return messages
@@ -1437,6 +1485,90 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [atMenuOpen, setAtMenuOpen] = useState(false);
   const [atMenuQuery, setAtMenuQuery] = useState("");
   const [atMenuSelectedIndex, setAtMenuSelectedIndex] = useState(0);
+
+  // Auto-open workspace panel when a plan is detected
+  const hasPlan = useMemo(() => {
+    return messages.some((m) => m.role === 'assistant' && m.content.includes('variant="plan"'));
+  }, [messages]);
+
+  // Extract latest HTML and CSS from the chat for the Workspace
+  const { latestHtml, latestCss, isExecuting } = useMemo(() => {
+    let html = "";
+    let css = "";
+    let executing = false;
+    
+    // Scan from latest to oldest
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.role === 'assistant') {
+        if (m.typing && (m.content.includes('```html') || m.content.includes('```css'))) {
+          executing = true;
+        }
+        
+        // Extract HTML
+        if (!html && m.content.includes('```html')) {
+          const match = m.content.match(/```html\n([\s\S]*?)```/);
+          if (match && match[1]) html = match[1];
+          else if (m.typing) {
+            // Unfinished block
+            const partial = m.content.split('```html\n').pop();
+            if (partial) html = partial;
+          }
+        }
+        // Extract CSS
+        if (!css && m.content.includes('```css')) {
+          const match = m.content.match(/```css\n([\s\S]*?)```/);
+          if (match && match[1]) css = match[1];
+          else if (m.typing) {
+            const partial = m.content.split('```css\n').pop();
+            if (partial) css = partial;
+          }
+        }
+        
+        // Once we find both (or at least HTML from the latest blocks), we can stop
+        if (html && css) break;
+      }
+    }
+    
+    // If we have HTML or CSS, we should consider the execution tabs available
+    if (html || css) executing = true;
+    
+    return { latestHtml: html, latestCss: css, isExecuting: executing };
+  }, [messages]);
+
+  // Watch for the latest assistant message to finish typing
+  const isAssistantTyping = useMemo(() => {
+    const lastMsg = messages[messages.length - 1];
+    return lastMsg?.role === 'assistant' && lastMsg?.typing;
+  }, [messages]);
+
+  const prevIsTypingRef = useRef(isAssistantTyping);
+
+  useEffect(() => {
+    if (prevIsTypingRef.current === true && isAssistantTyping === false) {
+       // A message just finished typing!
+       if (executionQueue.length > 0 && currentExecutionIndex >= 0 && !isExecutionPaused) {
+          if (currentExecutionIndex < executionQueue.length - 1) {
+             const nextIndex = currentExecutionIndex + 1;
+             setCurrentExecutionIndex(nextIndex);
+             if (askQuestionRef.current) {
+               askQuestionRef.current(`Step ${currentExecutionIndex + 1} complete. Now execute Step ${nextIndex + 1}: ${executionQueue[nextIndex].title}. DO NOT execute any other steps yet.`, { hidden: true });
+             }
+          } else {
+             // Finished all steps
+             setExecutionQueue([]);
+             setCurrentExecutionIndex(-1);
+          }
+       }
+    }
+    prevIsTypingRef.current = isAssistantTyping;
+  }, [isAssistantTyping, executionQueue, currentExecutionIndex, isExecutionPaused]);
+
+  useEffect(() => {
+    if (hasPlan) {
+      setShowFilesPanel(true);
+    }
+  }, [hasPlan]);
 
   // ─── Header Action Handlers ───
   const handleDirectShare = async () => {
@@ -3822,6 +3954,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   content={message.content}
                                   isTyping={message.typing}
                                   isHistorical={index < messages.length - 1}
+                                  currentStepIndex={currentExecutionIndex}
                                   onRetry={undefined}
                                   onApprovalAction={(text) => {
                                     if (!submitting) void askQuestion(text);
@@ -5213,48 +5346,20 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               </>
             )}
           </div>
-          {/* Files Panel integrated into page layout */}
+          {/* Files / Workspace Panel integrated into page layout */}
           <AnimatePresence>
             {showFilesPanel && (
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 350, opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-                className="shrink-0 h-full bg-background border-l border-border/50 flex flex-col overflow-hidden"
-              >
-                <div className="shrink-0 flex items-center justify-between px-4 pt-3 h-14">
-                  <h3 className="font-semibold text-sm">Files in chat</h3>
-                  <Button variant="ghost" size="icon" onClick={() => setShowFilesPanel(false)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 w-[350px]">
-                  {chatFiles.length === 0 ? (
-                    <div className="text-sm text-muted-foreground text-center mt-10">
-                      No files referenced yet
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      {chatFiles.map((f, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setPreviewFile({ src: f.url, name: f.name, mimeType: f.mimeType })}
-                          className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-muted transition-colors text-left cursor-pointer"
-                        >
-                          <div className="h-10 w-10 shrink-0 bg-primary/10 rounded flex items-center justify-center">
-                            <FileText className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium truncate">{f.name}</div>
-                            <div className="text-[11px] text-muted-foreground uppercase">{f.mimeType.split('/').pop()?.replace('vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'excel').replace('jpeg', 'jpg')}</div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
+              <WorkspacePanel
+                isOpen={showFilesPanel}
+                onClose={() => setShowFilesPanel(false)}
+                chatFiles={chatFiles}
+                setPreviewFile={setPreviewFile}
+                hasPlan={hasPlan}
+                isExecuting={isExecuting}
+                currentHtml={latestHtml}
+                currentCss={latestCss}
+                planNode={null} // Plan is injected via React Portal
+              />
             )}
           </AnimatePresence>
           {/* Right-side TOC showing user questions */}

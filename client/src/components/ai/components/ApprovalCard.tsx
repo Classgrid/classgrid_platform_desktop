@@ -16,7 +16,6 @@ import {
   Download,
   ListChecks,
   ListTodo,
-  Maximize2,
   MessageCircleQuestion,
   Terminal,
   X,
@@ -155,6 +154,7 @@ export interface ApprovalCardProps {
   approveLabel?: string;
   rejectLabel?: string;
   isHistorical?: boolean;
+  currentStepIndex?: number;
   onApprove?: (payload?: { answers?: Record<string, string> }) => void;
   onReject?: () => void;
   className?: string;
@@ -173,6 +173,7 @@ export function ApprovalCard({
   approveLabel,
   rejectLabel,
   isHistorical,
+  currentStepIndex = -1,
   onApprove,
   onReject,
   className,
@@ -434,17 +435,6 @@ export function ApprovalCard({
             >
               <Download className={styles.headActionIcon} strokeWidth={2} aria-hidden />
             </button>
-            <button
-              type="button"
-              className={styles.headAction}
-              aria-label="Expand plan"
-              onClick={(e) => {
-                e.preventDefault();
-                setPlanExpanded(true);
-              }}
-            >
-              <Maximize2 className={styles.headActionIcon} strokeWidth={2} aria-hidden />
-            </button>
           </div>
         )}
       </div>
@@ -607,14 +597,18 @@ export function ApprovalCard({
               <span className={styles.todoCount}>{plan.length}</span>
             </div>
             <ul className={styles.todoList}>
-              {planPreview.map((stepItem) => (
-                <li key={stepItem.id} className={styles.todoItem}>
-                  <span className={styles.todoIconWrap}>
-                    <TodoDashedIcon />
-                  </span>
-                  <span className={styles.todoLabel}>{stepItem.title}</span>
-                </li>
-              ))}
+              {planPreview.map((stepItem, idx) => {
+                const isCompleted = currentStepIndex > idx;
+                const isActive = currentStepIndex === idx;
+                return (
+                  <li key={stepItem.id} className={`${styles.todoItem} ${isCompleted ? 'opacity-50 line-through' : ''} ${isActive ? 'text-primary font-medium' : ''}`}>
+                    <span className={styles.todoIconWrap}>
+                      {isCompleted ? <ListChecks className="h-4 w-4 text-emerald-500" /> : <TodoDashedIcon />}
+                    </span>
+                    <span className={styles.todoLabel}>{stepItem.title}</span>
+                  </li>
+                );
+              })}
             </ul>
             {hasPlanMore && (
               <>
@@ -626,16 +620,21 @@ export function ApprovalCard({
                   <div className={styles.todoInner}>
                     <div className={styles.todoRest}>
                       <ul className={`${styles.todoList} ${styles.todoListFlush}`}>
-                        {planRest.map((stepItem) => (
-                          <li key={stepItem.id} className={styles.todoItem}>
-                            <span className={styles.todoIconWrap}>
-                              <TodoDashedIcon />
-                            </span>
-                            <span className={styles.todoLabel}>
-                              {stepItem.title}
-                            </span>
-                          </li>
-                        ))}
+                        {planRest.map((stepItem, i) => {
+                          const idx = previewCount + i;
+                          const isCompleted = currentStepIndex > idx;
+                          const isActive = currentStepIndex === idx;
+                          return (
+                            <li key={stepItem.id} className={`${styles.todoItem} ${isCompleted ? 'opacity-50 line-through' : ''} ${isActive ? 'text-primary font-medium' : ''}`}>
+                              <span className={styles.todoIconWrap}>
+                                {isCompleted ? <ListChecks className="h-4 w-4 text-emerald-500" /> : <TodoDashedIcon />}
+                              </span>
+                              <span className={styles.todoLabel}>
+                                {stepItem.title}
+                              </span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   </div>
