@@ -13,7 +13,7 @@ import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import { ExpandedInputModal } from './ExpandedInputModal';
 import { AiHubModal } from "./AiHubModal";
-import { AiUsageBar } from "./AiUsageBar";
+
 import { AiChartRenderer } from "./AiChartRenderer";
 import { ImageGeneration, type ImageGenerationStatus } from "./ImageGeneration";
 import { DangerConfirmDialog } from '@/components/marketing_ui/danger-confirm-dialog';
@@ -4003,9 +4003,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       "px-4 py-4 relative",
       "flex flex-col gap-2"
     )}>
-      <div className="pointer-events-auto w-full max-w-3xl mx-auto rounded-xl overflow-hidden">
-        <AiUsageBar />
-      </div>
     <div className={cn(
       "relative",
       variant === "full-page"

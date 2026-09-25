@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Sparkles, Zap, AlertTriangle } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { getSocket } from '@/lib/socketClient';
 
@@ -9,7 +8,8 @@ export const AiUsageBar = () => {
         used: 0,
         limit: 100000,
         remaining: 100000,
-        resetDate: null
+        resetDate: null,
+        freeData: null
     });
     const [loading, setLoading] = useState(true);
 

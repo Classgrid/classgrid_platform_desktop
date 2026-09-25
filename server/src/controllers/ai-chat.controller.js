@@ -1032,8 +1032,8 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     if (zoomConnected) allowedConnectorNames.add('zoom_connector');
                     if (vercelConnected) allowedConnectorNames.add('vercel_connector');
                     if (whatsappConnected) allowedConnectorNames.add('whatsapp_business_connector');
-
                     allowedConnectorNames.add('cloudflare_r2_connector');
+
                     let activeDescriptions = [];
                     let disconnectedLinks = [];
 
@@ -1085,7 +1085,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     if (vercelConnected) {
                         const vercelName = latestUser.vercel_name ? ` (Name: ${latestUser.vercel_name})` : '';
                         const vercelEmail = latestUser.vercel_email ? `(Connected as: ${latestUser.vercel_email}${vercelName}) ` : '';
-                        activeDescriptions.push(`- **Vercel & Website Deployment**: ✓ CONNECTED. ${vercelEmail}\n  **HOW TO DEPLOY WEBSITES (CRITICAL)**:\n  **IMPORTANT: YOU ONLY BUILD VANILLA HTML/CSS/JS SITES! DO NOT BUILD REACT OR NEXT.JS OR USE BUILD STEPS!**\n  1. **Instant Cloudflare R2 (Preferred)**: If the user asks to build and host a website, use the \`cloudflare_r2_connector\` with operation \`upload_website\`. Generate a unique \`siteId\` (e.g. \`school-demo-123\`). It instantly goes live at https://<siteId>.sites.classgrid.in!\n  2. **GitHub + Vercel (Advanced)**: For multi-file HTML sites, use \`github_workspace_connector\` to create repo/push code, then use \`vercel_connector\` (operation \`create_project\`) to link and deploy it. Set \`isClassgridManaged: true\` for both to use the master Classgrid accounts!`);
+                        activeDescriptions.push(`- **Vercel**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. ${vercelEmail}Use 'vercel_connector' tool to list_projects, list_deployments, get_deployment. \n  *WHAT YOU CAN DO*: List projects, check deployment history, and view the status/details of a specific deployment.\n  *WHAT YOU CANNOT DO*: You CANNOT trigger new deployments, you CANNOT read server logs, you CANNOT delete projects, and you CANNOT manage environment variables.`);
                     } else {
                         disconnectedLinks.push(`[Vercel](/api/auth/vercel/connect)`);
                     }
@@ -1118,6 +1118,14 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 1. NEVER write custom Python scripts (like using fpdf) in the sandbox to generate PDFs. You MUST ALWAYS use the built-in \`generate_pdf\` or \`generate_pdf_from_db\` tools, which use HTML and Puppeteer and support Unicode out-of-the-box.
 2. NO DUPLICATE HEADINGS: The \`generate_pdf\` tool automatically renders the \`title\` parameter as an \`<h1>\` at the top of the document. Do NOT manually add a duplicate \`<h1>\` with the title inside your HTML content.
 3. HUMANIZE LABELS: NEVER output raw backend database enum values (like "org_admin", "super_admin") in your chat responses or in PDF reports. Always map them to human-readable labels (e.g., "Organization Admin", "Super Admin") before rendering.`;
+
+        
+        dynamicSystemPrompt += `\n\nWEBSITE DEPLOYMENT INSTRUCTIONS:
+When the user asks you to build or host a website, you must FIRST ask them this question:
+"Would you like me to deploy this to your own personal GitHub and Vercel accounts (you retain full ownership, but must connect your accounts in settings), OR would you like me to host it for you instantly on the Classgrid cloud (zero setup required)?"
+
+1. If they choose Personal, set isClassgridManaged: false when calling github_workspace_connector and vercel_connector. Remember to set isPrivate: false when creating the repo so Vercel can read it.
+2. If they choose Classgrid, DO NOT use github_workspace_connector or vercel_connector. INSTEAD, use the cloudflare_r2_connector (operation: "upload_file") to directly upload the HTML/CSS to path "sites/${userEmail.split('@')[0]}/index.html". The site will instantly be live at ${userEmail.split('@')[0]}.sites.classgrid.in!`;
 
         dynamicSystemPrompt += `\n\nDOCUMENT RETRIEVAL RULE:
 CRITICAL: If a user asks a specific question about a document, PDF, or image, and you do not have the exact raw text in your immediate memory, you MUST use the \`recall_session_context\` tool first to get the list of previously read file URLs. Then, you MUST use \`parse_document\` or \`analyze_image\` to fetch and read the document/image AGAIN. 
@@ -1787,22 +1795,6 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
                                         console.warn(`[send_email] Ignored attachment with unknown format: ${JSON.stringify(att)}`);
                                     }
                                 }
-                            }
-
-                            // ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ IDEMPOTENCY / DEDUPE CHECK ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬
-                            // Prevent the AI from double-sending the exact same email 
-                            // (same subject and recipient) within a 5-minute window.
-                            const dedupeWindowMs = 5 * 60 * 1000;
-                            const recentLog = await NotificationLog.findOne({
-                                type: "EMAIL",
-                                recipient: args.to,
-                                "metadata.subject": args.subject,
-                                createdAt: { $gte: new Date(Date.now() - dedupeWindowMs) }
-                            });
-
-                            if (recentLog) {
-                                console.warn(`[send_email] Prevented duplicate email to ${args.to} with subject "${args.subject}"`);
-                                return `SUCCESS (DEDUPLICATED): Email was already sent to ${args.to} recently. Skipped duplicate send to prevent spam.`;
                             }
 
                             const emailPayload = {
@@ -3037,4 +3029,4 @@ export const getOrgUsage = async (req, res) => {
     }
 };
 
-// TRIGGER FRESH DEPLOYMENT VERCEL AND EC2 FROM CLEAN REVERT
+// Trigger GitHub Actions backend deployment
