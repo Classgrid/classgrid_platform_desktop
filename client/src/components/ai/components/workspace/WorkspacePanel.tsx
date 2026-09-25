@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { X, FileText, Code, Eye, ListTodo } from "lucide-react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 
 export type WorkspaceTab = "files" | "plan" | "code" | "preview";
 
