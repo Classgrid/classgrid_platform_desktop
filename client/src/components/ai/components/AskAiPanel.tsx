@@ -1,4 +1,5 @@
 /*
+ * // Trigger Vercel Build - Manual Reset Verified
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
  * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
