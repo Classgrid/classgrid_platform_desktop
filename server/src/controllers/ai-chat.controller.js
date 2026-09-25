@@ -1974,11 +1974,14 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
                 accThought = "";
                 accSteps = [];
 
+                console.log(`[AI-DEBUG] ===== GENERATE START ===== attempt=${attempt} question="${(body.question || '').slice(0, 100)}" messagesCount=${messages.length} timestamp=${new Date().toISOString()}`);
+                const generateStartTime = Date.now();
                 answer = await currentClient.generate({
                     messages,
                     maxToolDepth: 100,
                     timeoutMs: isDiagramRequest && attempt === 1 ? 15000 : 300000,
                     onStatus: (status) => {
+                        console.log(`[AI-DEBUG] onStatus: "${status}" at +${((Date.now() - generateStartTime) / 1000).toFixed(1)}s`);
                         if (requestAborted || res.writableEnded) return;
                         const mappedLabel = status === "search web" ? "searching" : status;
                         try { res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`); } catch (e) { }
@@ -1995,12 +1998,18 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
                     }
                 });
 
+                const generateDuration = ((Date.now() - generateStartTime) / 1000).toFixed(1);
+                console.log(`[AI-DEBUG] ===== GENERATE END ===== duration=${generateDuration}s answer=${answer ? `"${String(answer).slice(0, 150)}..."` : 'NULL'} stepsCount=${accSteps.length} thoughtLength=${(accThought || '').length}`);
+                console.log(`[AI-DEBUG] accSteps tools called: ${accSteps.map(s => s.tool).join(', ') || 'NONE'}`);
+
                 if (requestAborted) return;
 
                 if (!answer) {
                     if (accSteps.length > 0) {
+                        console.log(`[AI-DEBUG] Answer was null but ${accSteps.length} steps completed. Using fallback answer.`);
                         answer = "I have completed the requested actions.";
                     } else {
+                        console.error(`[AI-DEBUG] ===== CRITICAL FAILURE ===== No answer AND no steps after ${generateDuration}s. requestAborted=${requestAborted}`);
                         throw new Error("AI generation returned null. All providers timed out or failed.");
                     }
                 }
@@ -2014,6 +2023,7 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
 
                 break; // Success
             } catch (err) {
+                console.error(`[AI-DEBUG] ===== ATTEMPT ${attempt} ERROR ===== ${err.message || err}`);
                 console.error(`[AI Chat] Attempt ${attempt} CRITICAL ERROR:`, err);
                 if (attempt === maxAttempts) {
                     if (!answer && isDiagramRequest) answer = "Failed to generate a valid diagram. Please try rephrasing your request.";
