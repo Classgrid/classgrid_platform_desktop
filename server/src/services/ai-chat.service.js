@@ -282,5 +282,15 @@ export async function getUserGeneratedImages(userEmail) {
     // Sort images globally since we fetched in chunks
     images.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    return images;
+    // Deduplicate images by URL (in case the AI repeated the string in later messages)
+    const uniqueImages = [];
+    const seenUrls = new Set();
+    for (const img of images) {
+        if (!seenUrls.has(img.url)) {
+            seenUrls.add(img.url);
+            uniqueImages.push(img);
+        }
+    }
+
+    return uniqueImages;
 }
