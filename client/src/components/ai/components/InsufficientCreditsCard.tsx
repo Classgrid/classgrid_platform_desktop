@@ -42,9 +42,8 @@ export function InsufficientCreditsCard({
       {/* Buttons */}
       <div className="flex items-center justify-between mt-2">
         <Button
-          variant="ghost"
+          variant="outline"
           onClick={onDismiss}
-          className="text-muted-foreground hover:text-foreground h-9 px-3"
         >
           Dismiss
         </Button>
