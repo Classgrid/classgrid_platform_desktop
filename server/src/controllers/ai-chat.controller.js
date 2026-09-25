@@ -1155,14 +1155,14 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
         // CHANGING ANY AI MODEL IS STRICTLY BANNED BY PLATFORM POLICY.
         // NEVER CHANGE ANY AI MODEL. USING LLAMA IS STRICTLY FORBIDDEN (OTHER THAN FOR VISION).
         const client = createLLMClient({
-            timeoutMs: 120000,
+            timeoutMs: 300000,
             providers: [
                 {
                     name: "cloudflare",
                     url: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
                     apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN || "",
                     model: "@cf/deepseek-ai/deepseek-v4-pro-0813",
-                    timeoutMs: 120000
+                    timeoutMs: 300000
                 },
                 {
                     name: "mistral",

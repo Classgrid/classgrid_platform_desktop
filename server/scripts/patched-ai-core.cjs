@@ -144,10 +144,11 @@ async function tryProvider(provider, messages, config, temperature, maxTokens, t
   const maxDepth = config.maxToolDepth ?? 100;
   const allTools = [INTERNAL_THOUGHT_TOOL, ...config.tools || []];
   if (verbose) {
-    console.log(`
-\u{1F680} [llm] Requesting answer from ${provider.name.toUpperCase()} (${provider.model})...`);
+    console.log(`\n🚀 [llm] Requesting answer from ${provider.name.toUpperCase()} (${provider.model})... Timeout set to: ${timeoutMs}ms`);
+    console.log(`[llm-debug] Sending ${messages.length} messages. Tools count: ${allTools.length}`);
   }
   try {
+    console.log(`[llm-debug] Initiating fetch to ${provider.url} at ${new Date().toISOString()}`);
     const response = await fetch(provider.url, {
       method: "POST",
       signal: controller.signal,
@@ -164,6 +165,7 @@ async function tryProvider(provider, messages, config, temperature, maxTokens, t
         tools: allTools.length > 0 ? allTools : void 0
       })
     });
+    console.log(`[llm-debug] Fetch completed with status ${response.status} at ${new Date().toISOString()}`);
     if (!response.ok) {
       const body = await response.text().catch(() => "");
       if (verbose) console.error(`\u274C [llm:${provider.name}] HTTP ${response.status}: ${body.slice(0, 300)}`);
