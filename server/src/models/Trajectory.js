@@ -28,6 +28,9 @@ const trajectorySchema = new mongoose.Schema({
   },
   abortReason: {
     type: String,
+  },
+  deployedUrl: {
+    type: String,
   }
 }, { timestamps: true });
 

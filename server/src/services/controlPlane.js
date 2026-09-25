@@ -1,5 +1,6 @@
 import Trajectory from '../models/Trajectory.js';
 import { buildQueue } from '../queues/buildQueue.js';
+import { deployToR2 } from './deploy.js';
 
 /**
  * The Foreman Loop: Reads the trajectory, decides the next step, enqueues it, and force-stops when done.
@@ -45,6 +46,30 @@ export async function runBuild(sessionId) {
       }
 
       console.log(`[Control Plane] Enqueuing step ${trajectory.currentIndex + 1}/${MAX_STEPS}: ${step.id}`);
+
+      // DEPLOY STEP: Skip AI, call deployToR2 directly
+      if (step.id === 'deploy') {
+        console.log(`[Control Plane] Deploy step detected — uploading artifacts to R2...`);
+        try {
+          const url = await deployToR2(sessionId, trajectory.projectName);
+          console.log(`[Control Plane] Deploy complete: ${url}`);
+          await Trajectory.findOneAndUpdate(
+            { sessionId, "plan.id": "deploy" },
+            { $set: { "plan.$.status": "done" } }
+          );
+        } catch (deployErr) {
+          console.error(`[Control Plane] Deploy failed:`, deployErr);
+          await Trajectory.findOneAndUpdate(
+            { sessionId, "plan.id": "deploy" },
+            { $set: { "plan.$.status": "failed", "plan.$.error": deployErr.message } }
+          );
+        }
+        // Advance past deploy
+        trajectory = await Trajectory.findOne({ sessionId });
+        trajectory.currentIndex++;
+        await trajectory.save();
+        continue;
+      }
 
       // Enqueue ONE step for the worker
       await buildQueue.add('execute-step', {

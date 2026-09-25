@@ -54,7 +54,8 @@ router.get('/status/:sessionId', async (req, res) => {
       projectName: trajectory.projectName,
       status: trajectory.status,
       currentIndex: trajectory.currentIndex,
-      plan: trajectory.plan
+      plan: trajectory.plan,
+      deployedUrl: trajectory.deployedUrl || null
     });
   } catch (error) {
     console.error('Error fetching build status:', error);
