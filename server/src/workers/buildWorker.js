@@ -1,7 +1,7 @@
 import { Worker } from 'bullmq';
 import Trajectory from '../models/Trajectory.js';
 import Artifact from '../models/Artifact.js';
-import { generateGeminiResponse } from '../services/ai/gemini.js'; // Assuming this is your AI entry point
+import { createLLMClient } from '@classgrid/ai/core';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -16,14 +16,31 @@ export const buildWorker = new Worker('build-steps', async (job) => {
   console.log(`[Worker] Picked up job for session ${sessionId} - Step: ${stepTitle} (${stepId})`);
 
   try {
-    // 1. Call the AI for ONE step only (Stateless call)
-    // We strictly instruct it to output ONLY the required code.
+    const client = createLLMClient({
+        providers: [
+            {
+                name: "mistral",
+                url: "https://api.mistral.ai/v1/chat/completions",
+                apiKey: process.env.MISTRAL_API_KEY || "",
+                model: "mistral-large-latest"
+            },
+            {
+                name: "cloudflare",
+                url: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
+                apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN || "",
+                model: "@cf/deepseek-ai/deepseek-v4-pro-0813"
+            }
+        ]
+    });
+
     const strictPrompt = `Execute step: ${stepTitle}. Output ONLY the code for ${stepId}. Do not output any other steps, preamble, markdown formatting ticks (unless it is exactly the code block), or explanations.`;
     
     console.log(`[Worker] Calling AI for step: ${stepId}...`);
-    const codeResponse = await generateGeminiResponse([
-      { role: 'user', content: strictPrompt + (instructions ? `\n\nContext: ${instructions}` : '') }
-    ]);
+    const codeResponse = await client.generate({
+        messages: [
+            { role: "user", content: strictPrompt + (instructions ? `\n\nContext: ${instructions}` : '') }
+        ]
+    });
     
     // Clean up the code response if it includes markdown backticks
     let cleanCode = codeResponse;
