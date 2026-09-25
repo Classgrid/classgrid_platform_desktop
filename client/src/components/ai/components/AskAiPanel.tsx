@@ -3179,8 +3179,20 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         : rawMessage;
 
       setThinking(false);
-      await wait(prefersReducedMotion ? 0 : 100);
-      await typeAssistantResponse(fallback);
+      
+      if (fallback.trim() === "ai_quota_exceeded") {
+        setMessages((prev) => {
+          const lastMsg = prev[prev.length - 1];
+          if (!lastMsg || lastMsg.role !== "assistant") return prev;
+          return [
+            ...prev.slice(0, -1),
+            { ...lastMsg, content: fallback, typing: false }
+          ];
+        });
+      } else {
+        await wait(prefersReducedMotion ? 0 : 100);
+        await typeAssistantResponse(fallback);
+      }
     } finally {
       setSubmitting(false);
     }
