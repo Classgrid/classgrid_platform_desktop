@@ -5385,6 +5385,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               >
                                 <CustomSlidersIcon className="h-4 w-4" />
                               </button>
+                            </div>
+
+                            {/* Bottom right: send */}
+                            <div className="absolute bottom-3 right-3 flex items-center gap-0.5">
                               <button
                                 type="button"
                                 onClick={isRecording ? stopRecording : startRecording}
@@ -5393,10 +5397,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               >
                                 {isRecording ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-4 w-4" />}
                               </button>
-                            </div>
-
-                            {/* Bottom right: send */}
-                            <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
                               <Button
                                 type="submit"
                                 variant="ghost"
