@@ -146,3 +146,5 @@ if (hasIntegrationCallback) {
     </React.StrictMode>
   );
 }
+
+// Vercel trigger
