@@ -1893,7 +1893,7 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
                             try {
                                 PlatformRagChunk = mongoose.model('PlatformRagChunk');
                             } catch {
-                                PlatformRagChunk = mongoose.model('PlatformRagChunk', new mongoose.Schema({}, { strict: false }), 'platform_rag_chunks');
+                                PlatformRagChunk = mongoose.model('PlatformRagChunk', new mongoose.Schema({}, { strict: false }), 'rag_chunks');
                             }
 
                             const apiUrl = voyageKey.startsWith('al-') ? 'https://ai.mongodb.com/v1/embeddings' : 'https://api.voyageai.com/v1/embeddings';
@@ -1903,7 +1903,7 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
 
                             const result = await pipeline.retrieve(args.query, { topK: 3 });
                             if (result.chunks.length === 0) {
-                                return "RAG Search found no relevant documents in the 'platform_rag_chunks' collection.";
+                                return "RAG Search found no relevant documents in the 'rag_chunks' collection.";
                             }
                             return `RAG Search Results:\n\n${result.contextText}`;
                         } catch (e) {

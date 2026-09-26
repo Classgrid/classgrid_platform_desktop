@@ -1172,7 +1172,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (!mongoose.connection.db) {
           throw new Error("MongoDB connection not established");
         }
-        const coll = mongoose.connection.db.collection('platform_rag_chunks');
+        const coll = mongoose.connection.db.collection('rag_chunks');
 
         const docs = await coll.aggregate([
           {
@@ -1214,7 +1214,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (!mongoose.connection.db) {
           throw new Error("MongoDB connection not established");
         }
-        const coll = mongoose.connection.db.collection('platform_rag_chunks');
+        const coll = mongoose.connection.db.collection('rag_chunks');
         const { ObjectId } = mongoose.Types;
 
         if (action === 'list') {
