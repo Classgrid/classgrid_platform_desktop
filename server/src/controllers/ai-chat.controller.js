@@ -1890,26 +1890,41 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
                             const voyageKey = process.env.VOYAGE_API_KEY?.trim();
                             if (!voyageKey) return "RAG Search failed: VOYAGE_API_KEY is missing from environment variables.";
 
-                            let PlatformRagChunk;
-                            const colName = args.collectionName || 'rag_chunks';
-                            try {
-                                PlatformRagChunk = mongoose.model('PlatformRagChunk_' + colName);
-                            } catch {
-                                PlatformRagChunk = mongoose.model('PlatformRagChunk_' + colName, new mongoose.Schema({}, { strict: false }), colName);
-                            }
+                            const colName = args.collectionName || 'platform_rag_chunks';
 
                             const apiUrl = voyageKey.startsWith('al-') ? 'https://ai.mongodb.com/v1/embeddings' : 'https://api.voyageai.com/v1/embeddings';
-                            const embedder = new VoyageEmbedder({ apiKey: voyageKey, provider: 'voyage', apiUrl });
-                            const vectorStore = new MongoVectorStore(PlatformRagChunk, "vector_index", "embedding");
-                            const pipeline = new RagPipeline({ embedder, vectorStore });
+                            const voyageRes = await fetch(apiUrl, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${voyageKey}` },
+                                body: JSON.stringify({ input: args.query, model: "voyage-3-large" })
+                            });
+                            if (!voyageRes.ok) {
+                                const errText = await voyageRes.text();
+                                return `RAG Search failed: Voyage AI error: ${errText}`;
+                            }
+                            const embData = await voyageRes.json();
+                            const queryVector = embData.data[0].embedding;
 
-                            const result = await pipeline.retrieve(args.query, { topK: 3 });
-                            if (result.chunks.length === 0) {
+                            const coll = mongoose.connection.db.collection(colName);
+                            const docs = await coll.aggregate([
+                                { $vectorSearch: { index: 'vector_index', path: 'embedding', queryVector, numCandidates: 50, limit: 3 } },
+                                { $project: { _id: 1, chunkText: 1, text: 1, documentType: 1, sourceUrl: 1, metadata: 1, score: { $meta: 'vectorSearchScore' } } }
+                            ]).toArray();
+
+                            if (!docs || docs.length === 0) {
                                 return `RAG Search found no relevant documents in the '${colName}' collection.`;
                             }
-                            return `RAG Search Results:\n\n${result.contextText}`;
+
+                            const formatted = docs.map((doc, idx) => {
+                                const content = doc.chunkText || doc.text || 'No content';
+                                const docType = doc.documentType || (doc.metadata && doc.metadata.type) || 'unknown';
+                                const source = doc.sourceUrl || (doc.metadata && doc.metadata.source) || 'unknown';
+                                return `[Document ${idx+1}] (Score: ${doc.score.toFixed(3)})\nSource: ${source}\nType: ${docType}\nContent:\n${content}`;
+                            }).join('\n\n---\n\n');
+
+                            return `RAG Search Results:\n\n${formatted}`;
                         } catch (e) {
-                            return `RAG Search failed: ${e.message}. Note: If this fails with a MongoServerError about '$vectorSearch', it means the Atlas Vector Index hasn't been created yet.`;
+                            return `RAG Search failed: ${e.message}`;
                         }
                     },
 
