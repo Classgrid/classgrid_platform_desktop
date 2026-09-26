@@ -397,6 +397,7 @@ export const getMcpTools = () => [
       required: ['filePath']
     }
   },
+/*
   {
     name: 'transcribe_audio',
     description: 'Convert an audio file (mp3, wav) into text using Cloudflare Workers AI (Whisper).',
@@ -408,6 +409,7 @@ export const getMcpTools = () => [
       required: ['fileUrl']
     }
   }
+*/
 ];
 
 export const handleToolCall = async (name, args, context = {}) => {
@@ -423,6 +425,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       }
     }
 
+/*
     if (name === 'transcribe_audio') {
       try {
         const { fileUrl } = args;
@@ -469,6 +472,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         return { content: [{ type: 'text', text: `Error in transcribe_audio: ${e.message}` }] };
       }
     }
+*/
 
     if (name === 'unified_db_query') {
       let { source, collectionOrTable, operation, query = {}, data = {} } = args;
