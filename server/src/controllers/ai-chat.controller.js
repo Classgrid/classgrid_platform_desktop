@@ -650,7 +650,7 @@ export const streamAskAi = async (req, res) => {
             messages.push({ role: "user", content });
         }
 
-        let dynamicSystemPrompt = SYSTEM_PROMPT;
+        let dynamicSystemPrompt = SYSTEM_PROMPT + "\n\nCRITICAL AI RULE: YOU MUST ALWAYS USE RAW NODEJS SCRIPTS TO INSERT OR EDIT DOCUMENTS IN THE RAG KNOWLEDGE BASE. NEVER USE THE MANAGE_RAG TOOL.";
 
         if (body.isEdit) {
             dynamicSystemPrompt += `\n\nSYSTEM NOTE: The user edited their previous message to get a better answer. Please provide an improved response to this updated prompt.`;
