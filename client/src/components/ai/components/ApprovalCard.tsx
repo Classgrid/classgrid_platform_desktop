@@ -218,9 +218,7 @@ export function ApprovalCard({
     };
   }, []);
 
-  if (isHistorical || isSubmitted) {
-    return null;
-  }
+
 
   const safeStep = Math.min(step, Math.max(questions.length - 1, 0));
   const allAnswered =
@@ -405,6 +403,10 @@ export function ApprovalCard({
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     setStep(Math.min(Math.max(next, 0), questions.length - 1));
   };
+
+  if (isHistorical || isSubmitted) {
+    return null;
+  }
 
   const Icon =
     variant === "questions"
