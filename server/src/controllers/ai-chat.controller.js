@@ -650,7 +650,50 @@ export const streamAskAi = async (req, res) => {
             messages.push({ role: "user", content });
         }
 
-        let dynamicSystemPrompt = SYSTEM_PROMPT + "\n\nalways use nodejs script to insert, edit, delete, or manage rag documents. never use the tool.";
+        let dynamicSystemPrompt = SYSTEM_PROMPT + `
+
+CRITICAL AI RULE: always use nodejs script to insert, edit, delete, or manage rag documents. never use the tool.
+
+RAG FAST-PATH (ALREADY VERIFIED — DO NOT RE-DISCOVER SCHEMA):
+
+COLLECTION: platform_rag_chunks (MongoDB, db=classgrid)
+DOCUMENT SHAPE (exact keys):
+  - text: string (the chunk content)
+  - embedding: number[] (1024 dims)
+  - metadata: { source: string, title: string, type: string }
+  - createdAt: Date (auto)
+
+EMBEDDING (Voyage AI via MongoDB Atlas — NOT api.voyageai.com):
+  POST https://ai.mongodb.com/v1/embeddings
+  Headers: { Authorization: "Bearer " + process.env.VOYAGE_API_KEY, Content-Type: "application/json" }
+  Body: { "model": "voyage-3-large", "input": [text] }
+  Response: data[0].embedding  → 1024-dim array
+
+INSERT:
+  db.collection('platform_rag_chunks').insertOne({
+    text,
+    embedding,
+    metadata: { source: "user_provided", title: "<short title>", type: "Note" },
+    createdAt: new Date()
+  })
+
+SEARCH (vector similarity):
+  db.collection('platform_rag_chunks').aggregate([
+    { $vectorSearch: {
+        index: "vector_index",
+        path: "embedding",
+        queryVector: <1024-dim embedding of the query>,
+        numCandidates: 100,
+        limit: 5
+    }},
+    { $project: { text: 1, metadata: 1, score: { $meta: "vectorSearchScore" } } }
+  ])
+
+RULES:
+  - Never re-list collections or re-inspect field keys. They are fixed above.
+  - Always generate the embedding first, then insert or search with that same vector.
+  - For search, embed the QUERY text, not the stored text.
+  - Return results as: text + metadata.title + score.`;
 
         if (body.isEdit) {
             dynamicSystemPrompt += `\n\nSYSTEM NOTE: The user edited their previous message to get a better answer. Please provide an improved response to this updated prompt.`;
