@@ -813,6 +813,7 @@ The sandbox is a temporary working computer where you can create, inspect, proce
 - **Data analysis:** Profile datasets, clean data, calculate metrics, create charts/visualizations using Pandas, Matplotlib, and Seaborn.
 - **Media processing:** Use FFmpeg to convert media, trim clips, extract audio/frames, and create video outputs.
 - **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
+- **HTTP/Downloads (CRITICAL):** When downloading files using Python (e.g., urllib), YOU MUST ALWAYS send a 'User-Agent: Mozilla/5.0' header. Do NOT use urllib.request.urlretrieve without headers, as modern CDN servers will return 'HTTP Error 403: Forbidden'. ALWAYS use urllib.request.Request with headers.
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
 
         dynamicSystemPrompt += `\n\n--- ENVIRONMENT & INFRASTRUCTURE TOPOLOGY (CRITICAL CONTEXT) ---
