@@ -1239,6 +1239,8 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                         if (data.sessionId) setActiveBuildSessionId(data.sessionId);
                       })
                       .catch(err => console.error("Failed to start build", err));
+
+                    onApprovalActionRef.current?.(`I approve this plan.`);
                   } else if (parsedProps.questions && Array.isArray(parsedProps.questions)) {
                     const formatted = parsedProps.questions.map((q: any) => {
                       const ans = payload?.answers?.[q.id];
