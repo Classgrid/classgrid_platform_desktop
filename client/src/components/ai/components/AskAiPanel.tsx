@@ -227,11 +227,30 @@ const LiveWaveform = ({ stream }: { stream: MediaStream | null }) => {
       
       const update = () => {
         analyser.getByteFrequencyData(dataArray);
+        
+        // Calculate average volume to know if we are speaking
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += dataArray[i];
+        }
+        const avgVolume = sum / dataArray.length;
+        
         const newBars = [];
+        const time = Date.now();
+        
         for (let i = 0; i < 40; i++) {
-          const value = dataArray[i] || 0;
-          const height = 4 + (value / 255) * 20;
-          newBars.push(height);
+          if (avgVolume > 2) { // If speaking
+            // Create a dancing wave that mixes left and right smoothly
+            const wave1 = Math.sin(i * 0.3 + time * 0.005) * 8;
+            const wave2 = Math.cos(i * 0.7 - time * 0.002) * 8;
+            const noise = Math.random() * 4;
+            const boost = (avgVolume / 255) * 12;
+            const height = 4 + Math.abs(wave1 + wave2) + noise + boost;
+            newBars.push(Math.min(height, 28)); // cap at 28px
+          } else {
+            // Silence
+            newBars.push(4);
+          }
         }
         setBars(newBars);
         animationFrame = requestAnimationFrame(update);
