@@ -53,10 +53,10 @@ export function FeesDashboardRouter() {
     <InstitutionDashboardGate
       fallback={<FeesDashboardPage />}
       screens={{
-        school: <SchoolFeesDashboard />,
-        junior_college: <JuniorCollegeFeesDashboard />,
-        engineering: <EngineeringFeesDashboard />,
-        coaching: <CoachingFeesDashboard />,
+        school: <FeesDashboardPage />,
+        junior_college: <FeesDashboardPage />,
+        engineering: <FeesDashboardPage />,
+        coaching: <FeesDashboardPage />,
       }}
     />
   );

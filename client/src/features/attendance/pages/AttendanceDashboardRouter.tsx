@@ -53,10 +53,10 @@ export function AttendanceDashboardRouter() {
     <InstitutionDashboardGate
       fallback={<AttendanceDashboardPage />}
       screens={{
-        school: <SchoolAttendanceDashboard />,
-        junior_college: <JuniorCollegeAttendanceDashboard />,
-        engineering: <EngineeringAttendanceDashboard />,
-        coaching: <CoachingAttendanceDashboard />,
+        school: <AttendanceDashboardPage />,
+        junior_college: <AttendanceDashboardPage />,
+        engineering: <AttendanceDashboardPage />,
+        coaching: <AttendanceDashboardPage />,
       }}
     />
   );

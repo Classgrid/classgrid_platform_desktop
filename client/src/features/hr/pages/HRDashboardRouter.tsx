@@ -53,10 +53,10 @@ export function HRDashboardRouter() {
     <InstitutionDashboardGate
       fallback={<HrDashboardPage />}
       screens={{
-        school: <SchoolHRDashboard />,
-        junior_college: <JuniorCollegeHRDashboard />,
-        engineering: <EngineeringHRDashboard />,
-        coaching: <CoachingHRDashboard />,
+        school: <HrDashboardPage />,
+        junior_college: <HrDashboardPage />,
+        engineering: <HrDashboardPage />,
+        coaching: <HrDashboardPage />,
       }}
     />
   );

@@ -54,10 +54,10 @@ export function AdmissionDashboardRouter() {
       fallback={<AdmissionDashboardPage />}
       selectVariant={(profile) => profile.admissionProfile.dashboardVariant}
       screens={{
-        school: <SchoolAdmissionDashboard />,
-        junior_college: <JuniorCollegeAdmissionDashboard />,
-        engineering: <EngineeringAdmissionDashboard />,
-        coaching: <CoachingAdmissionDashboard />,
+        school: <AdmissionDashboardPage />,
+        junior_college: <AdmissionDashboardPage />,
+        engineering: <AdmissionDashboardPage />,
+        coaching: <AdmissionDashboardPage />,
       }}
     />
   );

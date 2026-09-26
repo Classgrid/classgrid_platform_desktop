@@ -53,10 +53,10 @@ export function LibraryDashboardRouter() {
     <InstitutionDashboardGate
       fallback={<LibraryDashboardPage />}
       screens={{
-        school: <SchoolLibraryDashboard />,
-        junior_college: <JuniorCollegeLibraryDashboard />,
-        engineering: <EngineeringLibraryDashboard />,
-        coaching: <CoachingLibraryDashboard />,
+        school: <LibraryDashboardPage />,
+        junior_college: <LibraryDashboardPage />,
+        engineering: <LibraryDashboardPage />,
+        coaching: <LibraryDashboardPage />,
       }}
     />
   );
