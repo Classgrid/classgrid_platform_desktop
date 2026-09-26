@@ -129,6 +129,18 @@ export const getMcpTools = () => [
     }
   },
   {
+    name: 'search_knowledge_base',
+    description: 'Perform a similarity vector search on the internal Platform RAG Knowledge Base in MongoDB.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'The search query.' },
+        limit: { type: 'number', description: 'Number of results to return (default 5).' }
+      },
+      required: ['query']
+    }
+  },
+  {
     name: 'search_syllabus_vectors',
     description: 'Perform similarity search on the syllabus/material pgvector database in Supabase Postgres.',
     inputSchema: {
@@ -1126,6 +1138,72 @@ export const handleToolCall = async (name, args, context = {}) => {
         };
       } catch (e) {
         return { content: [{ type: 'text', text: `Failed to search syllabus vectors: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'search_knowledge_base') {
+      try {
+        const { query, limit = 5 } = args;
+
+        if (!process.env.VOYAGE_API_KEY) {
+          return { content: [{ type: 'text', text: 'Error: VOYAGE_API_KEY is not set in environment variables.' }] };
+        }
+
+        const voyageRes = await fetch("https://ai.mongodb.com/v1/embeddings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${process.env.VOYAGE_API_KEY.trim()}`
+          },
+          body: JSON.stringify({
+            input: query,
+            model: "voyage-3-large"
+          })
+        });
+
+        if (!voyageRes.ok) {
+          const errText = await voyageRes.text();
+          throw new Error(`Voyage AI (Atlas) error: ${errText}`);
+        }
+
+        const embeddingResponse = await voyageRes.json();
+        const query_embedding = embeddingResponse.data[0].embedding;
+
+        if (!mongoose.connection.db) {
+          throw new Error("MongoDB connection not established");
+        }
+        const coll = mongoose.connection.db.collection('platform_rag_chunks');
+
+        const docs = await coll.aggregate([
+          {
+            $vectorSearch: {
+              index: 'vector_index',
+              path: 'embedding',
+              queryVector: query_embedding,
+              numCandidates: limit * 10,
+              limit: limit
+            }
+          },
+          {
+            $project: {
+              _id: 1,
+              chunkText: 1,
+              documentType: 1,
+              sourceUrl: 1,
+              score: { $meta: 'vectorSearchScore' }
+            }
+          }
+        ]).toArray();
+
+        if (!docs || docs.length === 0) {
+          return { content: [{ type: 'text', text: 'No relevant internal documents found in the Knowledge Base.' }] };
+        }
+
+        const formatted = docs.map((doc, idx) => `[Match ${idx+1}] (Score: ${doc.score.toFixed(3)})\nSource: ${doc.sourceUrl}\nType: ${doc.documentType}\nContent:\n${doc.chunkText}`).join('\n\n---\n\n');
+        
+        return { content: [{ type: 'text', text: `Found ${docs.length} matches:\n\n${formatted}` }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to search knowledge base: ${e.message}` }] };
       }
     }
 
