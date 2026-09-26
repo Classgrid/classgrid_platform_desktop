@@ -1487,7 +1487,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         if (planText) {
           return (
             <div className="prose prose-sm dark:prose-invert max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: planText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }} />
+              <ReactMarkdown
+                remarkPlugins={memoizedRemarkPlugins}
+                rehypePlugins={memoizedRehypePlugins}
+                components={components}
+              >
+                {planText}
+              </ReactMarkdown>
             </div>
           );
         }
