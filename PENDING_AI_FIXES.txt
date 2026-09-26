@@ -1,0 +1,17 @@
+Due to an unexpected Cloudflare API outage on Sept 26, we performed a hard reset on the codebase to rule out any code bugs. During this reset, we intentionally reverted the codebase, which caused us to lose two important AI backend fixes. 
+
+These fixes need to be re-applied tomorrow when the system is stable:
+
+=========================================
+FIX 1: Remove AI Fallback String
+=========================================
+File: server/src/controllers/ai-chat.controller.js
+Description: 
+The AI orchestration layer sometimes injects a canned fallback string ("I have completed the requested actions") when a tool call completes but the AI doesn't generate a natural response. This needs to be actively stripped out in the controller so that background tool executions remain completely silent to the user in the UI.
+
+=========================================
+FIX 2: Add Multimodal & File Analysis Rule to System Prompt
+=========================================
+File: server/src/controllers/ai-chat.controller.js
+Description: 
+The AI needs an explicit, high-priority instruction in its dynamic system prompt telling it that it is strictly forbidden from refusing to read files. It must be explicitly told to use its tools to analyze audio, video, zip, pptx, pdfs, and code without hesitation.
