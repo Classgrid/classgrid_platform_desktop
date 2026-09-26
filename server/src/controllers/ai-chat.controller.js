@@ -2286,7 +2286,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
         }
         // ---------------------------------
 
-        if (!answer && !res.writableEnded) {
+        if (answer == null && !res.writableEnded) {
             res.write(`data: ${JSON.stringify({ type: "answer", answer: "Failed to get an answer from the AI." })}\n\n`);
         } else if (answer === "[RATE_LIMITED]" && !res.writableEnded) {
             res.write(`data: ${JSON.stringify({ type: "answer", answer: "I'm currently experiencing high traffic and cannot process your request right now." })}\n\n`);
