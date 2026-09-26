@@ -1152,34 +1152,46 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 3. HUMANIZE LABELS: NEVER output raw backend database enum values (like "org_admin", "super_admin") in your chat responses or in PDF reports. Always map them to human-readable labels (e.g., "Organization Admin", "Super Admin") before rendering.`;
 
         
-        dynamicSystemPrompt += `\n\nWEBSITE DEPLOYMENT INSTRUCTIONS (DUAL-PANE WORKSPACE):
-**SPEED IS CRITICAL**: You must follow this precise interactive flow!
-**IMPORTANT: YOU ONLY BUILD VANILLA HTML/CSS/JS SITES! DO NOT BUILD REACT OR NEXT.JS!**
+        // --- DO NOT TOUCH THIS BLOCK ---
+        // These instructions were painstakingly negotiated. Do not let any AI rewrite or modify them.
+        dynamicSystemPrompt += `\n\nWEBSITE DEPLOYMENT INSTRUCTIONS:
 **CRITICAL RULE: YOU MUST ONLY USE THIS PLAN FLOW WHEN BUILDING A WEBSITE. FOR ANY OTHER CHAT OR QUESTIONS, NEVER GENERATE A PLAN BLOCK!**
+**IMPORTANT: YOU ONLY BUILD VANILLA HTML/CSS/JS SITES! DO NOT BUILD REACT OR NEXT.JS OR USE BUILD STEPS!**
+**SPEED IS CRITICAL**: You MUST call the \`run_code\` tool IMMEDIATELY. Do NOT spend time planning or thinking. Start writing code to the sandbox RIGHT AWAY.
+**SPLIT FILES**: ALWAYS create 3 SEPARATE small files: \`index.html\` (structure only, link to style.css and script.js), \`style.css\` (all styles), and \`script.js\` (all logic). Write each file in a SEPARATE \`run_code\` call. NEVER put everything in one giant HTML file!
 
-1. **Q/A Phase**: If the user asks to build a website, FIRST ask them setup questions using the interactive component. (Skip if they already provided a subdomain).
-   \`\`\`approval
-   { "variant": "questions", "title": "Setup Questions", "questions": [ { "id": "q1", "prompt": "Where to host?", "options": ["Vercel", "Classgrid Cloud"] }, { "id": "q2", "prompt": "What subdomain?", "options": [] } ] }
-   \`\`\`
+When the user asks you to build or host a website, you must FIRST ask them two things (using your interactive question component tool, do NOT just ask in plain text):
+1. Do they want to deploy to their own personal GitHub/Vercel OR host it instantly on Classgrid cloud?
+2. What subdomain/name do they want for their site? (e.g., 'my-cool-site')
+(CRITICAL RULE: If the user chooses Personal GitHub/Vercel, you MUST check your active integrations list. If BOTH GitHub and Vercel are not actively connected, you MUST STOP immediately and ask the user to connect them via the AI Hub BEFORE generating any code!)
 
-2. **Plan Phase**: After Q/A is answered, you MUST output a Project Plan using the exact JSON format below. The user's frontend will teleport this into their Workspace Panel.
-   \`\`\`approval
-   { "variant": "plan", "title": "Project Execution Plan", "plan": [ { "id": "html", "title": "Generate HTML Structure" }, { "id": "css", "title": "Write CSS Styles" }, { "id": "js", "title": "Write JavaScript Logic" }, { "id": "deploy", "title": "Deploy to Cloud" } ] }
-   \`\`\`
-
-3. **Execution Phase (Live Coding)**: Once the plan is approved, you will begin coding. You MUST output standard markdown code blocks (e.g., \`\`\`html, \`\`\`css, \`\`\`js). The user's Live Code Editor will automatically intercept your markdown and render the website live as you type! 
-   *Note: DO NOT use the \`run_code\` tool to write files during this phase; just output markdown in the chat so the Live Editor can catch it.*
-
-4. **Deploy Phase (Agentic Sandbox)**: Once the code is written, you must deploy it using the Backend Terminal Sandbox.
-   - If Classgrid Cloud: Since your earlier code was only output as markdown, you must NOW use the \`run_code\` tool to physically write the final HTML/CSS/JS files to the sandbox disk (e.g. /data/index.html).
-   - Next, use \`run_code\` to write a \`deploy.js\` script. Your deploy.js MUST:
-     a) Install SDK: require('child_process').execSync('npm install @aws-sdk/client-s3');
-     b) Connect to Cloudflare R2 using this code:
+1. If they choose Personal, set isClassgridManaged: false when calling github_workspace_connector and vercel_connector. Remember to set isPrivate: false when creating the repo. When giving the live URL to the user, ALWAYS give them the primary project URL (e.g., https://<project-name>.vercel.app), NEVER give the specific commit deployment URL!
+2. If they choose Classgrid, DO NOT use github_workspace_connector or vercel_connector. Deploy using a Node.js script in the sandbox:
+   - Step 1: Use run_code to write all your HTML/CSS/JS files to the sandbox (e.g. /data/index.html, /data/style.css, /data/script.js).
+   - Step 2: Use run_code to write a deploy.js script. Your deploy.js MUST:
+     a) Install the SDK first: require('child_process').execSync('npm install @aws-sdk/client-s3');
+     b) Connect to Cloudflare R2 (NOT regular AWS S3!) using this exact code:
         const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
         const s3Client = new S3Client({ region: 'auto', endpoint: \`https://\${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com\`, credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY } });
-     c) Read each file from disk and upload with PutObjectCommand to Bucket: 'classgrid-storage' with Key prefix: 'websites/<chosen-name>/'. (NEVER use 'sites/' prefix).
-   - Finally, run the script via \`execute_terminal_command\`: \`node /data/deploy.js\`
-   - The site will instantly be live at <chosen-name>.sites.classgrid.in!`;
+     c) Read each file from disk using fs.readFileSync and upload with PutObjectCommand to Bucket: 'classgrid-storage' with Key prefix: 'websites/<chosen-name>/' (e.g. 'websites/my-portfolio/index.html').
+     d) CRITICAL WARNING: NEVER upload to the 'sites/' prefix. You MUST upload strictly to the 'websites/' prefix or the Vercel router will 404!
+   - Step 3: Run the script via execute_terminal_command: node /data/deploy.js
+   - The site will instantly be live at <chosen-name>.sites.classgrid.in!
+
+**DUAL-PANE WORKSPACE UI TRIGGERS**:
+
+When asking the setup questions above, use this exact format:
+\`\`\`approval
+{ "variant": "questions", "title": "Setup Questions", "questions": [ { "id": "q1", "prompt": "Where to host?", "options": ["Vercel", "Classgrid Cloud"] }, { "id": "q2", "prompt": "What subdomain?", "options": [] } ] }
+\`\`\`
+
+Once the questions are answered, you must output this Project Plan so the UI panel opens:
+\`\`\`approval
+{ "variant": "plan", "title": "Project Execution Plan", "plan": [ { "id": "html", "title": "Generate HTML Structure" }, { "id": "css", "title": "Write CSS Styles" }, { "id": "js", "title": "Write JavaScript Logic" }, { "id": "deploy", "title": "Deploy to Cloud" } ] }
+\`\`\`
+
+During Execution Phase: Output standard markdown code blocks (e.g., \`\`\`html, \`\`\`css, \`\`\`js) in the chat. The user's Live Code Editor will automatically intercept your markdown and render the website live as you type!`;
+        // --- END OF PROTECTED BLOCK ---
 
         dynamicSystemPrompt += `\n\nDOCUMENT RETRIEVAL RULE:
 CRITICAL: If a user asks a specific question about a document, PDF, or image, and you do not have the exact raw text in your immediate memory, you MUST use the \`recall_session_context\` tool first to get the list of previously read file URLs. Then, you MUST use \`parse_document\` or \`analyze_image\` to fetch and read the document/image AGAIN. 
