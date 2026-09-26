@@ -1649,7 +1649,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
         if (blob.size === 0 || recordingTime < 1) {
           setRecordingTime(0);
-          toast.error("Voice note too short");
           return;
         }
         
