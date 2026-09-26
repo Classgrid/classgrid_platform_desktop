@@ -15,6 +15,19 @@ interface WorkspacePanelProps {
   planNode?: React.ReactNode;
   currentHtml?: string;
   currentCss?: string;
+  currentJs?: string;
+}
+
+// Simple debounce hook for smooth iframe updates
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = React.useState<T>(value);
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
 }
 
 export function WorkspacePanel({
@@ -27,7 +40,13 @@ export function WorkspacePanel({
   planNode,
   currentHtml = "",
   currentCss = "",
+  currentJs = "",
 }: WorkspacePanelProps) {
+  // Debounce the code for iframe rendering (300ms) to avoid browser freeze
+  const debouncedHtml = useDebounce(currentHtml, 300);
+  const debouncedCss = useDebounce(currentCss, 300);
+  const debouncedJs = useDebounce(currentJs, 300);
+
   // Determine which tabs to show based on state
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("files");
 
@@ -167,18 +186,22 @@ export function WorkspacePanel({
           <div className="p-4 h-full flex flex-col gap-4">
             <div className="flex-1 overflow-auto rounded-lg bg-[#1e1e1e] p-4 text-xs font-mono text-gray-300">
               <div className="text-gray-500 mb-2 select-none">// index.html</div>
-              <pre><code>{currentHtml || "<!-- Waiting for code... -->"}</code></pre>
+              <pre><code>{currentHtml || "<!-- Waiting for HTML... -->"}</code></pre>
             </div>
             <div className="flex-1 overflow-auto rounded-lg bg-[#1e1e1e] p-4 text-xs font-mono text-gray-300">
               <div className="text-gray-500 mb-2 select-none">/* style.css */</div>
               <pre><code>{currentCss || "/* Waiting for CSS... */"}</code></pre>
+            </div>
+            <div className="flex-1 overflow-auto rounded-lg bg-[#1e1e1e] p-4 text-xs font-mono text-gray-300">
+              <div className="text-gray-500 mb-2 select-none">// script.js</div>
+              <pre><code>{currentJs || "// Waiting for JS..."}</code></pre>
             </div>
           </div>
         )}
 
         {activeTab === "preview" && (
           <div className="h-full w-full bg-white relative">
-            {!currentHtml && !currentCss ? (
+            {!debouncedHtml && !debouncedCss && !debouncedJs ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">
                 Waiting for rendering...
               </div>
@@ -196,11 +219,18 @@ export function WorkspacePanel({
                         /* Base resets */
                         body { margin: 0; font-family: system-ui, sans-serif; }
                         * { box-sizing: border-box; }
-                        ${currentCss}
+                        ${debouncedCss}
                       </style>
                     </head>
                     <body>
-                      ${currentHtml}
+                      ${debouncedHtml}
+                      <script>
+                        try {
+                          ${debouncedJs}
+                        } catch(e) {
+                          console.error("Live Preview JS Error:", e);
+                        }
+                      </script>
                     </body>
                   </html>
                 `}

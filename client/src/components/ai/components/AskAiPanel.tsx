@@ -1503,17 +1503,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     return null;
   }, [messages]);
 
-  // Extract latest HTML and CSS from the chat for the Workspace
-  const { latestHtml, latestCss, isExecuting } = useMemo(() => {
+  // Extract latest HTML, CSS, and JS from the chat for the Workspace
+  const { latestHtml, latestCss, latestJs, isExecuting } = useMemo(() => {
     let html = "";
     let css = "";
+    let js = "";
     let executing = false;
     
     // Scan from latest to oldest
     for (let i = messages.length - 1; i >= 0; i--) {
       const m = messages[i];
       if (m.role === 'assistant') {
-        if (m.typing && (m.content.includes('```html') || m.content.includes('```css'))) {
+        if (m.typing && (m.content.includes('```html') || m.content.includes('```css') || m.content.includes('```javascript') || m.content.includes('```js'))) {
           executing = true;
         }
         
@@ -1536,16 +1537,28 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             if (partial) css = partial;
           }
         }
+        // Extract JS
+        if (!js && (m.content.includes('```javascript') || m.content.includes('```js'))) {
+          let match = m.content.match(/```javascript\n([\s\S]*?)```/);
+          if (!match) match = m.content.match(/```js\n([\s\S]*?)```/);
+          if (match && match[1]) js = match[1];
+          else if (m.typing) {
+            const partial = m.content.includes('```javascript') 
+              ? m.content.split('```javascript\n').pop() 
+              : m.content.split('```js\n').pop();
+            if (partial) js = partial;
+          }
+        }
         
-        // Once we find both (or at least HTML from the latest blocks), we can stop
-        if (html && css) break;
+        // Once we find all 3 (or at least HTML from the latest blocks), we can stop
+        if (html && css && js) break;
       }
     }
     
-    // If we have HTML or CSS, we should consider the execution tabs available
-    if (html || css) executing = true;
+    // If we have HTML or CSS or JS, we should consider the execution tabs available
+    if (html || css || js) executing = true;
     
-    return { latestHtml: html, latestCss: css, isExecuting: executing };
+    return { latestHtml: html, latestCss: css, latestJs: js, isExecuting: executing };
   }, [messages]);
 
   // Watch for the latest assistant message to finish typing
@@ -5378,6 +5391,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 isExecuting={isExecuting}
                 currentHtml={latestHtml}
                 currentCss={latestCss}
+                currentJs={latestJs}
                 planNode={planNode}
               />
             )}
