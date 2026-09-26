@@ -249,8 +249,8 @@ export function WaveformPlayer({ url, fallbackDurationSeconds, fileName }: Wavef
         {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
       </button>
 
-      <div className="flex-1 flex flex-col justify-center min-w-[120px]">
-        <div ref={containerRef} className={waveformFailed ? 'hidden' : 'w-full opacity-90'} />
+      <div className="flex-1 flex flex-col justify-center min-w-0 overflow-hidden">
+        <div ref={containerRef} className={waveformFailed ? 'hidden' : 'w-full opacity-90 overflow-hidden'} />
         {waveformFailed && (
           <div className="h-7 flex items-center gap-1 opacity-70">
             {Array.from({ length: 28 }).map((_, index) => (
