@@ -203,6 +203,63 @@ async function checkAiUploadRateLimit(_count: number): Promise<{ allowed: boolea
 }
 async function recordAiFilesSent(_count: number): Promise<void> { }
 
+const LiveWaveform = ({ stream }: { stream: MediaStream | null }) => {
+  const [bars, setBars] = useState<number[]>(Array(40).fill(4));
+  
+  useEffect(() => {
+    if (!stream) {
+      setBars(Array(40).fill(4));
+      return;
+    }
+    
+    let audioCtx: AudioContext;
+    let analyser: AnalyserNode;
+    let dataArray: Uint8Array;
+    let animationFrame: number;
+    
+    try {
+      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      const source = audioCtx.createMediaStreamSource(stream);
+      source.connect(analyser);
+      analyser.fftSize = 128;
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+      
+      const update = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const newBars = [];
+        for (let i = 0; i < 40; i++) {
+          const value = dataArray[i] || 0;
+          const height = 4 + (value / 255) * 20;
+          newBars.push(height);
+        }
+        setBars(newBars);
+        animationFrame = requestAnimationFrame(update);
+      };
+      update();
+    } catch(e) {
+      console.error(e);
+    }
+    
+    return () => {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      if (audioCtx) audioCtx.close().catch(()=>{});
+    };
+  }, [stream]);
+
+  return (
+    <div className="flex-1 flex items-center justify-start gap-[3px] overflow-hidden px-2 h-8">
+      {bars.map((height, i) => (
+        <div 
+          key={i} 
+          className="w-1 bg-foreground rounded-full shrink-0" 
+          style={{ height: \`\${height}px\`, opacity: height > 5 ? 0.8 : 0.4 }} 
+        />
+      ))}
+    </div>
+  );
+};
+
 type AskAiPanelProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -1452,6 +1509,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [micStream, setMicStream] = useState<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -1632,6 +1690,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setMicStream(stream);
       const mimeType = getSupportedAudioMimeType();
       const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       mediaRecorderRef.current = mediaRecorder;
@@ -1642,6 +1701,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       };
 
       mediaRecorder.onstop = async () => {
+        setMicStream(null);
         const recordedMimeType = mediaRecorder.mimeType || "audio/webm";
         const blob = new Blob(audioChunksRef.current, { type: recordedMimeType });
         mediaRecorderRef.current = null;
@@ -4774,16 +4834,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                             <span className="text-sm font-mono mr-3 text-foreground shrink-0">
                               {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
                             </span>
-                            <div className="flex-1 flex items-center justify-start gap-1 overflow-hidden px-2">
-                              {[...Array(Math.max(5, recordingTime * 2))].map((_, i) => {
-                                const height = 4 + Math.abs(Math.sin(i * 0.5) * 8 + Math.cos(i * 0.2) * 6);
-                                return (
-                                  <div key={i} className="w-1 bg-foreground rounded-full shrink-0 opacity-60" style={{ height: `${height}px` }} />
-                                );
-                              })}
-                            </div>
-                          </>
-                        ) : (
+                              <LiveWaveform stream={micStream} />
+                            </>
+                          ) : (
                           <>
                             <Spinner className="w-4 h-4 mr-3 opacity-50" />
                             <div className="flex-1 flex items-center justify-start gap-1 overflow-hidden px-2 opacity-50">
@@ -5388,14 +5441,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                       <span className="text-sm font-mono mr-3 text-foreground shrink-0">
                                         {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
                                       </span>
-                                      <div className="flex-1 flex items-center justify-start gap-1 overflow-hidden px-2">
-                                        {[...Array(Math.max(5, recordingTime * 2))].map((_, i) => {
-                                          const height = 4 + Math.abs(Math.sin(i * 0.5) * 8 + Math.cos(i * 0.2) * 6);
-                                          return (
-                                            <div key={i} className="w-1 bg-foreground rounded-full shrink-0 opacity-60" style={{ height: `${height}px` }} />
-                                          );
-                                        })}
-                                      </div>
+                                      <LiveWaveform stream={micStream} />
                                     </>
                                   ) : (
                                     <>
