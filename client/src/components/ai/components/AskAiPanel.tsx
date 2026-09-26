@@ -2030,7 +2030,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     }
   }, [input, attachedFiles, lastSentDocsPath]);
 
-  const MAX_FILE_SIZE = 35 * 1024 * 1024; // 35MB
+  const MAX_FILE_SIZE = 150 * 1024 * 1024; // 150MB
   const ACCEPTED_FILE_TYPES = "image/*,audio/*,video/*,.pdf,.md,.txt,.csv,.doc,.docx,.xlsx,.pptx";
 
   function formatFileSize(bytes: number) {
@@ -2059,7 +2059,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
     for (const f of newFiles) {
       if (f.size > MAX_FILE_SIZE) {
-        toast.error(`"${f.name}" is too large (${formatFileSize(f.size)}).`, { description: "Limit: 6 files Â· 35MB each" });
+        toast.error(`"${f.name}" is too large (${formatFileSize(f.size)}).`, { description: "Limit: 6 files • 150MB each" });
         return;
       }
     }
