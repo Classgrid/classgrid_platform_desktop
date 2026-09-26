@@ -204,11 +204,11 @@ async function checkAiUploadRateLimit(_count: number): Promise<{ allowed: boolea
 async function recordAiFilesSent(_count: number): Promise<void> { }
 
 const LiveWaveform = ({ stream }: { stream: MediaStream | null }) => {
-  const [bars, setBars] = useState<number[]>(Array(40).fill(4));
+  const [bars, setBars] = useState<number[]>(Array(100).fill(4));
   
   useEffect(() => {
     if (!stream) {
-      setBars(Array(40).fill(4));
+      setBars(Array(100).fill(4));
       return;
     }
     
@@ -238,7 +238,7 @@ const LiveWaveform = ({ stream }: { stream: MediaStream | null }) => {
         const newBars = [];
         const time = Date.now();
         
-        for (let i = 0; i < 40; i++) {
+        for (let i = 0; i < 100; i++) {
           if (avgVolume > 2) { // If speaking
             // Create a dancing wave that mixes left and right smoothly
             const wave1 = Math.sin(i * 0.3 + time * 0.005) * 8;
@@ -4846,7 +4846,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   />
 
                   {(isRecording || isTranscribing) && (
-                      <div className="absolute left-14 right-32 top-4 flex items-center pointer-events-none z-10">
+                      <div className="absolute left-14 right-4 top-4 flex items-center pointer-events-none z-10">
                         {isRecording ? (
                           <>
                             <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
@@ -5453,7 +5453,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 />
 
                             {(isRecording || isTranscribing) && (
-                                <div className="absolute left-14 right-32 top-4 flex items-center pointer-events-none z-10">
+                                <div className="absolute left-14 right-4 top-4 flex items-center pointer-events-none z-10">
                                   {isRecording ? (
                                     <>
                                       <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
