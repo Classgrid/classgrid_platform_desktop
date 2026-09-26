@@ -1707,7 +1707,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         mediaRecorderRef.current = null;
         stream.getTracks().forEach(track => track.stop());
 
-        if (blob.size === 0 || recordingTime < 1) {
+        if (blob.size < 500) { // If the blob is extremely small, it's an empty recording
           setRecordingTime(0);
           return;
         }
