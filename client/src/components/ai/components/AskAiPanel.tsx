@@ -3968,7 +3968,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   content={message.content}
                                   isTyping={message.typing}
                                   isHistorical={index < messages.length - 1}
-                                  currentStepIndex={currentExecutionIndex}
+                                  currentStepIndex={-1}
                                   onRetry={undefined}
                                   onApprovalAction={(text) => {
                                     if (!submitting) void askQuestion(text);
