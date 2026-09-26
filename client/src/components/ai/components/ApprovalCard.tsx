@@ -232,7 +232,7 @@ export function ApprovalCard({
     setQAnimate(animate && !reduce);
   };
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (variant !== "questions") {
       qMeasured.current = false;
       setQViewportH(undefined);

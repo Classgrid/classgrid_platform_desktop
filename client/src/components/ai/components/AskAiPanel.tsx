@@ -1196,7 +1196,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
             if (parsedProps.variant === "survey" || parsedProps.variant === "questions" || parsedProps.questions) {
               parsedProps.variant = "questions";
               if (Array.isArray(parsedProps.questions)) {
-                parsedProps.questions = parsedProps.questions.map((q: any) => {
+                parsedProps.questions = parsedProps.questions.map((q: any, qIdx: number) => {
                   const prompt = q.prompt || q.question || q.title || "Question";
                   let options = q.options || [];
                   if (options.length > 0 && typeof options[0] === 'object') {
@@ -1204,7 +1204,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                   }
                   return {
                     ...q,
-                    id: q.id || Math.random().toString(36).substring(7),
+                    id: q.id || `q-${qIdx}`,
                     prompt,
                     options
                   };
