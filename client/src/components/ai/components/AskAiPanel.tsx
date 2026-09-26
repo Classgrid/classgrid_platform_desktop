@@ -4846,7 +4846,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   />
 
                   {(isRecording || isTranscribing) && (
-                      <div className="absolute inset-x-14 top-4 flex items-center pointer-events-none z-10">
+                      <div className="absolute left-14 right-32 top-4 flex items-center pointer-events-none z-10">
                         {isRecording ? (
                           <>
                             <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
@@ -5453,7 +5453,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 />
 
                             {(isRecording || isTranscribing) && (
-                                <div className="absolute inset-x-14 top-4 flex items-center pointer-events-none z-10">
+                                <div className="absolute left-14 right-32 top-4 flex items-center pointer-events-none z-10">
                                   {isRecording ? (
                                     <>
                                       <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
