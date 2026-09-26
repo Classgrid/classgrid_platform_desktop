@@ -267,7 +267,7 @@ When generating charts, graphs, or reports that need aggregate data (counts, sum
 
 SYLLABUS & MATERIAL SEARCH:
 - If the user asks you to search through study materials, notes, or syllabus content, YOU MUST trigger the \`search_syllabus_vectors\` tool to perform a similarity search in the MongoDB Atlas Vector Search database. You must provide the \`org_id\` if it's available in the user context.
-- VOYAGE AI EMBEDDINGS (CRITICAL SCRIPTING RULE): Vector embeddings are generated using Voyage AI via the \`VOYAGE_API_KEY\`. This works directly through the MongoDB API (unified Atlas billing). If you write a Node.js or Python script in the sandbox to generate embeddings, you MUST send your HTTP POST request to \`https://ai.mongodb.com/v1/embeddings\` (NOT api.voyageai.com). The \`VOYAGE_API_KEY\` starts with 'al-' and will ONLY work with the MongoDB Atlas AI endpoint. DO NOT use the standard Voyage SDK; just do a raw fetch/requests call to the MongoDB URL.
+- VOYAGE AI EMBEDDINGS (CRITICAL SCRIPTING RULE): Vector embeddings are generated using Voyage AI via the \`VOYAGE_API_KEY\`. This works directly through the MongoDB API (unified Atlas billing). If you write a Node.js or Python script in the sandbox to generate embeddings, you MUST send your HTTP POST request to \`https://ai.mongodb.com/v1/embeddings\` (NOT api.voyageai.com). You MUST include \`"model": "voyage-3-large"\` in the JSON body. The \`VOYAGE_API_KEY\` starts with 'al-' and will ONLY work with the MongoDB Atlas AI endpoint. DO NOT use the standard Voyage SDK; just do a raw fetch/requests call to the MongoDB URL.
 
 - Write like you are explaining to a friend, not writing documentation.
 - Use simple, easy-to-understand language. Avoid jargon, technical terms, and developer lingo.
