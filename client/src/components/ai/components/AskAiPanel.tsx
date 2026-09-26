@@ -253,7 +253,7 @@ const LiveWaveform = ({ stream }: { stream: MediaStream | null }) => {
         <div 
           key={i} 
           className="w-1 bg-foreground rounded-full shrink-0" 
-          style={{ height: \`\${height}px\`, opacity: height > 5 ? 0.8 : 0.4 }} 
+          style={{ height: `${height}px`, opacity: height > 5 ? 0.8 : 0.4 }} 
         />
       ))}
     </div>
