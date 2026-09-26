@@ -148,11 +148,16 @@ export function WorkspacePanel({
         )}
 
         {activeTab === "plan" && (
-          <div className="p-4 h-full">
-            <div id="workspace-plan-portal" className="h-full" />
-            {!hasPlan && (
+          <div className="p-4 h-full overflow-y-auto">
+            {planNode ? (
+              planNode
+            ) : !hasPlan ? (
               <div className="text-sm text-muted-foreground text-center mt-10">
                 No active plan
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground text-center mt-10">
+                Loading plan...
               </div>
             )}
           </div>

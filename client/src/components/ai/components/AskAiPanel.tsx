@@ -1218,10 +1218,22 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                 currentStepIndex={currentStepIndex}
                 onApprove={(payload) => {
                   if (parsedProps.variant === "plan" && parsedProps.plan && Array.isArray(parsedProps.plan)) {
-                    // Trigger Auto-Execution Sequence!
-                    if ((window as any).startAutoExecutionHack) {
-                      (window as any).startAutoExecutionHack(parsedProps.plan);
-                    }
+                    // Phase 1: Send the approved plan to the real Backend Control Plane!
+                    const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
+                      ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
+                      : "";
+                    const projectName = "website-" + Math.random().toString(36).substring(7);
+                    
+                    fetch(`${endpointPrefix}/api/build/start`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      credentials: "include",
+                      body: JSON.stringify({
+                        sessionId: typeof sessionId !== 'undefined' ? sessionId : (pageContext?.sessionId || "default"),
+                        projectName,
+                        plan: parsedProps.plan
+                      })
+                    }).catch(err => console.error("Failed to start build", err));
                   } else if (parsedProps.questions && Array.isArray(parsedProps.questions)) {
                     const formatted = parsedProps.questions.map((q: any) => {
                       const ans = payload?.answers?.[q.id];
@@ -1271,6 +1283,9 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
               </div>
             );
           }
+        }
+        if (!inline && content.includes('"variant": "plan"') && typeof children === "string" && (className?.includes("language-html") || className?.includes("language-css") || className?.includes("language-js") || className?.includes("language-javascript"))) {
+          return null; // Hide code blocks in chat, they are shown in WorkspacePanel
         }
         return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current, onRetryRef.current);
       },
@@ -1425,25 +1440,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
 
-  // --- Auto-Execution Queue State ---
-  const [executionQueue, setExecutionQueue] = useState<any[]>([]);
-  const [currentExecutionIndex, setCurrentExecutionIndex] = useState(-1);
-  const [isExecutionPaused, setIsExecutionPaused] = useState(false);
-  const startAutoExecutionRef = useRef<(plan: any[]) => void>();
-
-  useEffect(() => {
-    startAutoExecutionRef.current = (plan: any[]) => {
-      if (!plan || plan.length === 0) return;
-      setExecutionQueue(plan);
-      setCurrentExecutionIndex(0);
-      setIsExecutionPaused(false);
-      if (askQuestionRef.current) {
-        askQuestionRef.current(`I approved the plan. Please execute Step 1: ${plan[0].title}. DO NOT execute any other steps yet.`, { hidden: true });
-      }
-    };
-    (window as any).startAutoExecutionHack = startAutoExecutionRef.current;
-  }, []);
-
+  // --- Auto-Execution Queue State (Removed: Now handled by Backend Control Plane) ---
   // Build TOC items from user questions
   const tocItems = useMemo(() => {
     return messages
@@ -1475,7 +1472,29 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   // Auto-open workspace panel when a plan is detected
   const hasPlan = useMemo(() => {
-    return messages.some((m) => m.role === 'assistant' && m.content.includes('variant="plan"'));
+    return messages.some((m) => m.role === 'assistant' && (m.content.includes('"variant": "plan"') || m.content.includes('"variant":"plan"') || m.content.includes("'variant': 'plan'") || m.content.includes('variant="plan"')));
+  }, [messages]);
+
+  // Extract plan text content from messages to show in WorkspacePanel
+  const planNode = useMemo(() => {
+    // Find the message that contains the plan
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.role === 'assistant' && (m.content.includes('"variant": "plan"') || m.content.includes('"variant":"plan"') || m.content.includes("'variant': 'plan'") || m.content.includes('variant="plan"'))) {
+        // Extract the text BEFORE the ```approval block (the plan explanation)
+        const approvalIndex = m.content.indexOf('```approval');
+        const planText = approvalIndex > 0 ? m.content.substring(0, approvalIndex).trim() : '';
+        if (planText) {
+          return (
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <div dangerouslySetInnerHTML={{ __html: planText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }} />
+            </div>
+          );
+        }
+        break;
+      }
+    }
+    return null;
   }, [messages]);
 
   // Extract latest HTML and CSS from the chat for the Workspace
@@ -1532,24 +1551,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const prevIsTypingRef = useRef(isAssistantTyping);
 
   useEffect(() => {
-    if (prevIsTypingRef.current === true && isAssistantTyping === false) {
-       // A message just finished typing!
-       if (executionQueue.length > 0 && currentExecutionIndex >= 0 && !isExecutionPaused) {
-          if (currentExecutionIndex < executionQueue.length - 1) {
-             const nextIndex = currentExecutionIndex + 1;
-             setCurrentExecutionIndex(nextIndex);
-             if (askQuestionRef.current) {
-               askQuestionRef.current(`Step ${currentExecutionIndex + 1} complete. Now execute Step ${nextIndex + 1}: ${executionQueue[nextIndex].title}. DO NOT execute any other steps yet.`, { hidden: true });
-             }
-          } else {
-             // Finished all steps
-             setExecutionQueue([]);
-             setCurrentExecutionIndex(-1);
-          }
-       }
-    }
     prevIsTypingRef.current = isAssistantTyping;
-  }, [isAssistantTyping, executionQueue, currentExecutionIndex, isExecutionPaused]);
+  }, [isAssistantTyping]);
 
   useEffect(() => {
     if (hasPlan) {
@@ -5369,7 +5372,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 isExecuting={isExecuting}
                 currentHtml={latestHtml}
                 currentCss={latestCss}
-                planNode={null} // Plan is injected via React Portal
+                planNode={planNode}
               />
             )}
           </AnimatePresence>
