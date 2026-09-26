@@ -724,6 +724,8 @@ You are currently talking to Nikhil Shinde (nikhil.shinde@classgrid.in), the CRE
 
         dynamicSystemPrompt += `\n\nDUPLICATE EMAIL PREVENTION RULE:\nCRITICAL: BEFORE calling 'send_email' or sending an email via 'microsoft_workspace_connector'/'google_workspace_connector', you MUST FIRST cross-check if the email was already sent in the last 15 minutes to prevent spam. For native send_email, use the 'check_email_logs' tool. For Outlook/Google, use 'list_sent_emails' operation. If the email was already sent, DO NOT SEND IT AGAIN. Simply tell the user 'I already sent this email.'`;
 
+        dynamicSystemPrompt += `\n\nFILE ANALYSIS & MULTIMODAL RULE (CRITICAL):\nIf you have a tool available to analyze or read uploaded files, you are COMPLETELY FREE to use it. You MUST NOT skip or refuse to read ANY kind of file (including audio, video, zip files, pptx, pdf, images, code, and everything else). You are NOT limited to PDFs or photos. If a user asks you to read or analyze a file, use your tools to read it immediately. DO NOT say "I cannot read audio/video/zip" — you MUST use your tools to extract and process the data!`;
+
         dynamicSystemPrompt += `\n\n--- DATABASE ACCESS RULES (CRITICAL) ---
 You have direct read/write access to the Classgrid backend databases via the \`unified_db_query\` tool. 
 If the user asks you to check tickets, read logs, view user data, provision a school, or perform ANY administrative task, YOU MUST USE THE \`unified_db_query\` TOOL to fetch the real data.
@@ -2160,8 +2162,8 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
 
                 if (!answer) {
                     if (accSteps.length > 0) {
-                        console.log(`[AI-DEBUG] Answer was null but ${accSteps.length} steps completed. Using fallback answer.`);
-                        answer = "I have completed the requested actions.";
+                        console.log(`[AI-DEBUG] Answer was null but ${accSteps.length} steps completed. Keeping answer silent.`);
+                        answer = "";
                     } else {
                         console.error(`[AI-DEBUG] ===== CRITICAL FAILURE ===== No answer AND no steps after ${generateDuration}s. requestAborted=${requestAborted}`);
                         throw new Error("AI generation returned null. All providers timed out or failed.");
