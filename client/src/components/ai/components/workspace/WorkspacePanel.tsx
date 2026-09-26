@@ -247,15 +247,15 @@ export function WorkspacePanel({
           <div className="p-4 h-full flex flex-col gap-4">
             <div className="flex-1 overflow-auto rounded-lg bg-[#1e1e1e] p-4 text-xs font-mono text-gray-300">
               <div className="text-gray-500 mb-2 select-none">// index.html</div>
-              <pre><code>{currentHtml || "<!-- Waiting for HTML... -->"}</code></pre>
+              <pre><code>{debouncedHtml || "<!-- Waiting for HTML... -->"}</code></pre>
             </div>
             <div className="flex-1 overflow-auto rounded-lg bg-[#1e1e1e] p-4 text-xs font-mono text-gray-300">
               <div className="text-gray-500 mb-2 select-none">/* style.css */</div>
-              <pre><code>{currentCss || "/* Waiting for CSS... */"}</code></pre>
+              <pre><code>{debouncedCss || "/* Waiting for CSS... */"}</code></pre>
             </div>
             <div className="flex-1 overflow-auto rounded-lg bg-[#1e1e1e] p-4 text-xs font-mono text-gray-300">
               <div className="text-gray-500 mb-2 select-none">// script.js</div>
-              <pre><code>{currentJs || "// Waiting for JS..."}</code></pre>
+              <pre><code>{debouncedJs || "// Waiting for JS..."}</code></pre>
             </div>
           </div>
         )}

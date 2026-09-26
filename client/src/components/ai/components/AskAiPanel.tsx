@@ -1483,8 +1483,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     return messages.some((m) => m.role === 'assistant' && (m.content.includes('"variant": "plan"') || m.content.includes('"variant":"plan"') || m.content.includes("'variant': 'plan'") || m.content.includes('variant="plan"')));
   }, [messages]);
 
-  // Extract plan steps from the JSON to render the checklist in WorkspacePanel
-  const planSteps = useMemo(() => {
+  // Extract plan steps string first to prevent new array recreation on every token
+  const planStepsString = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       const m = messages[i];
       if (m.role === 'assistant' && m.content.includes('```approval')) {
@@ -1493,7 +1493,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           try {
             const parsed = typeof JSON5 !== 'undefined' ? JSON5.parse(match[1]) : JSON.parse(match[1]);
             if (parsed.variant === "plan" && Array.isArray(parsed.plan)) {
-              return parsed.plan;
+              return JSON.stringify(parsed.plan);
             }
           } catch (e) { }
         }
@@ -1502,31 +1502,38 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     return null;
   }, [messages]);
 
-  // Extract plan text content from messages to show in WorkspacePanel
-  const planNode = useMemo(() => {
+  // Only parse and return a new array when the underlying JSON string actually changes
+  const planSteps = useMemo(() => {
+    return planStepsString ? JSON.parse(planStepsString) : null;
+  }, [planStepsString]);
+
+  // Extract plan text as a string first
+  const planText = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       const m = messages[i];
       if (m.role === 'assistant' && (m.content.includes('"variant": "plan"') || m.content.includes('"variant":"plan"') || m.content.includes("'variant': 'plan'") || m.content.includes('variant="plan"'))) {
         const approvalIndex = m.content.indexOf('```approval');
-        const planText = approvalIndex > 0 ? m.content.substring(0, approvalIndex).trim() : '';
-        if (planText) {
-          return (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <ReactMarkdown
-                remarkPlugins={memoizedRemarkPlugins}
-                rehypePlugins={memoizedRehypePlugins}
-                components={MarkdownComponents}
-              >
-                {planText}
-              </ReactMarkdown>
-            </div>
-          );
-        }
-        break;
+        return approvalIndex > 0 ? m.content.substring(0, approvalIndex).trim() : '';
       }
     }
-    return null;
+    return '';
   }, [messages]);
+
+  // Only re-render the heavy ReactMarkdown tree when the planText string actually changes
+  const planNode = useMemo(() => {
+    if (!planText) return null;
+    return (
+      <div className="prose prose-sm dark:prose-invert max-w-none">
+        <ReactMarkdown
+          remarkPlugins={memoizedRemarkPlugins}
+          rehypePlugins={memoizedRehypePlugins}
+          components={MarkdownComponents}
+        >
+          {planText}
+        </ReactMarkdown>
+      </div>
+    );
+  }, [planText]);
 
   // Extract latest HTML, CSS, and JS from the chat for the Workspace
   const { latestHtml, latestCss, latestJs, isExecuting } = useMemo(() => {
