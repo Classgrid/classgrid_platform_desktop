@@ -77,7 +77,7 @@ import path from 'path';
  * transcribeAudio
  * Converts audio file to text using Cloudflare Workers AI Whisper Large v3 Turbo
  */
-export const transcribeAudio = async (buffer, originalName) => {
+export const transcribeAudio = async (buffer, mimetype = 'audio/webm') => {
     try {
         const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
         const cfToken = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
@@ -87,12 +87,13 @@ export const transcribeAudio = async (buffer, originalName) => {
         }
 
         const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/openai/whisper-large-v3-turbo`;
+        const cleanMime = mimetype.split(';')[0]; // e.g. 'audio/webm' instead of 'audio/webm;codecs=opus'
 
         const response = await fetch(cfUrl, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${cfToken}`,
-                'Content-Type': 'application/octet-stream'
+                'Content-Type': cleanMime
             },
             body: buffer
         });

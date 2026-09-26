@@ -161,7 +161,7 @@ router.post('/send', isAuthenticated, upload.single('audio'), async (req, res) =
         const storageContext = await getVoiceStorageContext(thread, threadId);
 
         // 1. Transcribe AI instantly
-        const transcription = await transcribeAudio(file.buffer, file.originalname);
+        const transcription = await transcribeAudio(file.buffer, file.mimetype || 'audio/webm');
 
         // 2. Upload voice note to Cloudflare R2 under org/chat/audio folders
         const storagePath = buildVoiceStoragePath(file, storageContext);
@@ -210,7 +210,7 @@ router.post('/transcribe', isAuthenticated, upload.single('audio'), async (req, 
         const file = req.file;
         if (!file) return res.status(400).json({ error: "No audio file provided" });
 
-        const transcription = await transcribeAudio(file.buffer, file.originalname);
+        const transcription = await transcribeAudio(file.buffer, file.mimetype || 'audio/webm');
 
         res.status(200).json({ 
             success: true, 
