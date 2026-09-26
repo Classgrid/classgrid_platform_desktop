@@ -1233,7 +1233,12 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                         projectName,
                         plan: parsedProps.plan
                       })
-                    }).catch(err => console.error("Failed to start build", err));
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                      if (data.sessionId) setActiveBuildSessionId(data.sessionId);
+                    })
+                    .catch(err => console.error("Failed to start build", err));
                   } else if (parsedProps.questions && Array.isArray(parsedProps.questions)) {
                     const formatted = parsedProps.questions.map((q: any) => {
                       const ans = payload?.answers?.[q.id];
@@ -1469,19 +1474,39 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [atMenuOpen, setAtMenuOpen] = useState(false);
   const [atMenuQuery, setAtMenuQuery] = useState("");
   const [atMenuSelectedIndex, setAtMenuSelectedIndex] = useState(0);
+  
+  // Track the active build session for polling live step status
+  const [activeBuildSessionId, setActiveBuildSessionId] = useState<string | null>(null);
 
   // Auto-open workspace panel when a plan is detected
   const hasPlan = useMemo(() => {
     return messages.some((m) => m.role === 'assistant' && (m.content.includes('"variant": "plan"') || m.content.includes('"variant":"plan"') || m.content.includes("'variant': 'plan'") || m.content.includes('variant="plan"')));
   }, [messages]);
 
+  // Extract plan steps from the JSON to render the checklist in WorkspacePanel
+  const planSteps = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.role === 'assistant' && m.content.includes('```approval')) {
+        const match = m.content.match(/```approval\n([\s\S]*?)```/);
+        if (match && match[1]) {
+          try {
+            const parsed = typeof JSON5 !== 'undefined' ? JSON5.parse(match[1]) : JSON.parse(match[1]);
+            if (parsed.variant === "plan" && Array.isArray(parsed.plan)) {
+              return parsed.plan;
+            }
+          } catch(e) {}
+        }
+      }
+    }
+    return null;
+  }, [messages]);
+
   // Extract plan text content from messages to show in WorkspacePanel
   const planNode = useMemo(() => {
-    // Find the message that contains the plan
     for (let i = messages.length - 1; i >= 0; i--) {
       const m = messages[i];
       if (m.role === 'assistant' && (m.content.includes('"variant": "plan"') || m.content.includes('"variant":"plan"') || m.content.includes("'variant': 'plan'") || m.content.includes('variant="plan"'))) {
-        // Extract the text BEFORE the ```approval block (the plan explanation)
         const approvalIndex = m.content.indexOf('```approval');
         const planText = approvalIndex > 0 ? m.content.substring(0, approvalIndex).trim() : '';
         if (planText) {
@@ -5393,6 +5418,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 currentCss={latestCss}
                 currentJs={latestJs}
                 planNode={planNode}
+                planSteps={planSteps}
+                activeBuildSessionId={activeBuildSessionId}
               />
             )}
           </AnimatePresence>

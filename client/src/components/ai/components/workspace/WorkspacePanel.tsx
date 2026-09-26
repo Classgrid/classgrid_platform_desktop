@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, FileText, Code, Eye, ListTodo } from "lucide-react";
+import { X, FileText, Code, Eye, ListTodo, CheckCircle2, Circle, Loader2, XCircle, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 
@@ -16,6 +16,8 @@ interface WorkspacePanelProps {
   currentHtml?: string;
   currentCss?: string;
   currentJs?: string;
+  planSteps?: any[];
+  activeBuildSessionId?: string | null;
 }
 
 // Simple debounce hook for smooth iframe updates
@@ -41,6 +43,8 @@ export function WorkspacePanel({
   currentHtml = "",
   currentCss = "",
   currentJs = "",
+  planSteps,
+  activeBuildSessionId,
 }: WorkspacePanelProps) {
   // Debounce the code for iframe rendering (300ms) to avoid browser freeze
   const debouncedHtml = useDebounce(currentHtml, 300);
@@ -49,6 +53,24 @@ export function WorkspacePanel({
 
   // Determine which tabs to show based on state
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("files");
+  const [buildStatus, setBuildStatus] = useState<any>(null);
+
+  // Poll backend for real-time trajectory status
+  React.useEffect(() => {
+    if (!activeBuildSessionId) return;
+    const interval = setInterval(() => {
+      const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
+        ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
+        : "";
+      fetch(`${endpointPrefix}/api/build/status/${activeBuildSessionId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (!data.error) setBuildStatus(data);
+        })
+        .catch(e => console.error("Polling error", e));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeBuildSessionId]);
 
   // Auto-switch to plan if a plan exists and we were on files
   React.useEffect(() => {
@@ -168,15 +190,54 @@ export function WorkspacePanel({
 
         {activeTab === "plan" && (
           <div className="p-4 h-full overflow-y-auto">
-            {planNode ? (
-              planNode
-            ) : !hasPlan ? (
+            {planNode && <div className="mb-6">{planNode}</div>}
+            
+            {planSteps && (
+              <div className="space-y-3 mt-4">
+                <h3 className="text-sm font-semibold text-foreground/80 mb-4">Execution Steps</h3>
+                {planSteps.map((step, idx) => {
+                  // Merge status from the backend if available
+                  const liveStep = buildStatus?.plan?.find((s: any) => s.id === step.id) || step;
+                  const status = liveStep.status || 'pending';
+                  
+                  return (
+                    <div key={idx} className="flex items-start gap-3 p-3 rounded-md bg-muted/30 border border-border/50">
+                      {status === 'done' ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                      ) : status === 'running' ? (
+                        <Loader2 className="w-5 h-5 text-blue-500 animate-spin shrink-0 mt-0.5" />
+                      ) : status === 'failed' ? (
+                        <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-muted-foreground/50 shrink-0 mt-0.5" />
+                      )}
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm font-medium ${status === 'done' ? 'text-foreground/70 line-through' : 'text-foreground'}`}>
+                          {step.title}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {buildStatus?.deployedUrl && buildStatus.status === 'done' && (
+                  <div className="mt-6 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex flex-col items-center justify-center gap-3">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                    <div className="text-center">
+                      <div className="font-medium text-emerald-500">Deployment Successful!</div>
+                      <a href={buildStatus.deployedUrl} target="_blank" rel="noopener noreferrer" className="text-xs mt-1 text-emerald-500/80 hover:text-emerald-500 underline flex items-center justify-center gap-1">
+                        {buildStatus.deployedUrl} <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {!planNode && !planSteps && !hasPlan && (
               <div className="text-sm text-muted-foreground text-center mt-10">
                 No active plan
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground text-center mt-10">
-                Loading plan...
               </div>
             )}
           </div>
