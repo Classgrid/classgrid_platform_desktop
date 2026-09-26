@@ -214,7 +214,7 @@ export function WorkspacePanel({
                       
                       <div className="flex-1 min-w-0">
                         <div className={`text-sm font-medium ${status === 'done' ? 'text-foreground/70 line-through' : 'text-foreground'}`}>
-                          {step.title}
+                          {typeof step.title === 'object' ? JSON.stringify(step.title) : String(step.title || "")}
                         </div>
                       </div>
                     </div>

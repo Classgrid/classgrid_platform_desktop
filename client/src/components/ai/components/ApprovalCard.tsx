@@ -141,6 +141,19 @@ function TodoDashedIcon() {
   );
 }
 
+function safeRender(val: any): React.ReactNode {
+  if (val == null) return null;
+  if (typeof val === "object") {
+    try {
+      return JSON.stringify(val);
+    } catch {
+      return "[Object]";
+    }
+  }
+  return String(val);
+}
+
+
 export interface ApprovalCardProps {
   variant?: ApprovalVariant;
   questions?: ApprovalQuestion[];
@@ -425,7 +438,7 @@ export function ApprovalCard({
           <Icon className={styles.iconSvg} aria-hidden />
         </span>
         <div className={styles.headText}>
-          <div className={styles.title}>{resolvedTitle}</div>
+          <div className={styles.title}>{safeRender(resolvedTitle)}</div>
         </div>
         {variant === "plan" && (
           <div className={styles.headActions}>
@@ -465,11 +478,11 @@ export function ApprovalCard({
                   data-active={active ? "true" : undefined}
                   aria-hidden={active ? undefined : true}
                 >
-                  <div className={styles.qPrompt}>{q.prompt}</div>
+                  <div className={styles.qPrompt}>{safeRender(q.prompt)}</div>
                   <div
                     className={styles.options}
                     role="radiogroup"
-                    aria-label={q.prompt}
+                    aria-label={String(q.prompt)}
                   >
                     {q.options.map((opt, oi) => {
                       const selected =
@@ -493,7 +506,7 @@ export function ApprovalCard({
                           <span className={styles.key} aria-hidden>
                             {letter}
                           </span>
-                          {opt}
+                          {safeRender(opt)}
                         </button>
                       );
                     })}
@@ -575,16 +588,16 @@ export function ApprovalCard({
 
       {variant === "command" && (
         <div className={styles.cmdBlock}>
-          <div className={styles.cwd}>{cwd}</div>
-          <pre className={styles.cmd}>{command}</pre>
+          <div className={styles.cwd}>{safeRender(cwd)}</div>
+          <pre className={styles.cmd}>{safeRender(command)}</pre>
         </div>
       )}
 
       {variant === "plan" && (
         <>
           <div className={styles.planIntro}>
-            <div className={styles.planHeadline}>{planTitle}</div>
-            {planSummary && <div className={styles.planSummary}>{planSummary}</div>}
+            <div className={styles.planHeadline}>{safeRender(planTitle)}</div>
+            {planSummary && <div className={styles.planSummary}>{safeRender(planSummary)}</div>}
           </div>
           <div className={styles.todoWell}>
             <div className={styles.todoHead}>
@@ -607,7 +620,7 @@ export function ApprovalCard({
                     <span className={styles.todoIconWrap}>
                       {isCompleted ? <ListChecks className="h-4 w-4 text-emerald-500" /> : <TodoDashedIcon />}
                     </span>
-                    <span className={styles.todoLabel}>{stepItem.title}</span>
+                    <span className={styles.todoLabel}>{safeRender(stepItem.title)}</span>
                   </li>
                 );
               })}
@@ -632,7 +645,7 @@ export function ApprovalCard({
                                 {isCompleted ? <ListChecks className="h-4 w-4 text-emerald-500" /> : <TodoDashedIcon />}
                               </span>
                               <span className={styles.todoLabel}>
-                                {stepItem.title}
+                                {safeRender(stepItem.title)}
                               </span>
                             </li>
                           );
@@ -800,7 +813,7 @@ export function ApprovalCard({
               handleReject();
             }}
           >
-            {resolvedReject}
+            {safeRender(resolvedReject)}
           </button>
           <button
             type="button"
@@ -811,7 +824,7 @@ export function ApprovalCard({
               handleApprove();
             }}
           >
-            {resolvedApprove}
+            {safeRender(resolvedApprove)}
             <CornerDownLeft
               className={styles.btnSubmitIcon}
               size={12}
