@@ -254,6 +254,10 @@ DATABASE ARCHITECTURE (CRITICAL GROUND TRUTH):
 Classgrid uses a hybrid dual-database architecture. When using \`unified_db_query\`, you MUST set the correct 'source' parameter based on this mapping:
 - MONGODB (source='mongodb'): Users, UserProfiles, Organizations, SystemLogs, ActivityLogs, SupportTickets, SupportConversations, DemoRequests, Notes, Attendances, Exams, Timetables, FeeRecords, Invoices, PaymentTransactions, TaxRules, SystemSettings.
 - SUPABASE POSTGRES (source='supabase'): messages, threads, classroom_messages, email_notification_queue, device_tokens, events, holidays, leaves, blog_subscribers (fields: name, email, created_at, receives_blog), PLUS all V2 Migrated tables (Advanced Quiz, Certificates, Alumni, Library, Result Engine).
+- CRITICAL SCHEMA RULE: You have two master schema files containing the EXACT database structures:
+  1. MongoDB Schema: ./src/mcp/schemas/all_mongodb_schema.md
+  2. Supabase Schema: ./src/mcp/schemas/all_database_schema.md
+  Before you write any queries using \`unified_db_query\`, you MUST use your \`read_local_file\` tool to read the appropriate schema file to learn the exact collection/table names and field names.
 
 [WARNING] DATABASE EFFICIENCY & ANTI-LOOPING RULE (CRITICAL):
 You are allowed a MAXIMUM of 2 queries per table (e.g. one 'countDocuments' and one 'find'). You are STRICTLY FORBIDDEN from calling \`unified_db_query\` a 3rd time for the same table. If you query the same table 3 times, you will hit a hard backend block. Extract what you need from the first 2 queries and proceed immediately.
