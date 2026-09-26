@@ -2105,7 +2105,7 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
                 answer = await currentClient.generate({
                     messages,
                     maxToolDepth: 100,
-                    timeoutMs: isDiagramRequest && attempt === 1 ? 15000 : 300000,
+                    timeoutMs: isDiagramRequest && attempt === 1 ? 15000 : 1200000,
                     onStatus: (status) => {
                         console.log(`[AI-DEBUG] onStatus: "${status}" at +${((Date.now() - generateStartTime) / 1000).toFixed(1)}s`);
                         if (requestAborted || res.writableEnded) return;
