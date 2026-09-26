@@ -2794,7 +2794,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               }
               if (finalAnswer) {
                 console.log("updating state with tocSummary:", finalAnswer);
-                setMessages(prev => prev.map(m => m.id === userMsgId ? { ...m, tocSummary: finalAnswer.trim().replace(/^["']|["']$/g, '') } : m));
+                const safeAnswer = typeof finalAnswer === 'string' ? finalAnswer : String(finalAnswer || '');
+                setMessages(prev => prev.map(m => m.id === userMsgId ? { ...m, tocSummary: safeAnswer.trim().replace(/^["']|["']$/g, '') } : m));
               } else {
                 console.log("background summary finished but finalAnswer was empty");
               }
