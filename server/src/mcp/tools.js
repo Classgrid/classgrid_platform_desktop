@@ -396,6 +396,17 @@ export const getMcpTools = () => [
       },
       required: ['filePath']
     }
+  },
+  {
+    name: 'transcribe_audio',
+    description: 'Convert an audio file (mp3, wav) into text using Cloudflare Workers AI (Whisper).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        fileUrl: { type: 'string', description: 'The public URL of the audio file to transcribe.' }
+      },
+      required: ['fileUrl']
+    }
   }
 ];
 
@@ -409,6 +420,51 @@ export const handleToolCall = async (name, args, context = {}) => {
         return { content: [{ type: 'text', text: content }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error reading file: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'transcribe_audio') {
+      try {
+        const { fileUrl } = args;
+        const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+        const cfToken = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
+        
+        if (!cfAccountId || !cfToken) {
+          return { content: [{ type: 'text', text: 'Error: Cloudflare credentials are not configured on the server.' }] };
+        }
+
+        // Fetch the audio file
+        const audioResponse = await fetch(fileUrl);
+        if (!audioResponse.ok) {
+          return { content: [{ type: 'text', text: `Error: Failed to fetch audio file from URL. Status: ${audioResponse.status}` }] };
+        }
+        const audioBuffer = await audioResponse.arrayBuffer();
+
+        // Send to Cloudflare Workers AI Whisper
+        const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/openai/whisper-large-v3-turbo`;
+        const aiResponse = await fetch(cfUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${cfToken}`,
+            'Content-Type': 'application/octet-stream'
+          },
+          body: audioBuffer
+        });
+
+        if (!aiResponse.ok) {
+          const errText = await aiResponse.text();
+          return { content: [{ type: 'text', text: `Error from Cloudflare API: ${aiResponse.status} - ${errText}` }] };
+        }
+
+        const aiResult = await aiResponse.json();
+        
+        if (aiResult.success && aiResult.result && aiResult.result.text) {
+          return { content: [{ type: 'text', text: aiResult.result.text }] };
+        } else {
+          return { content: [{ type: 'text', text: `Transcription failed or returned unexpected format: ${JSON.stringify(aiResult)}` }] };
+        }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error in transcribe_audio: ${e.message}` }] };
       }
     }
 
