@@ -2027,6 +2027,10 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                         const result = await handleToolCall('github_workspace_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
+                    transcribe_audio: async (args) => {
+                        const result = await handleToolCall('transcribe_audio', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
                     zoom_connector: async (args) => {
                         const userEmail = req.user?.email || body.userEmail || '';
                         const result = await handleToolCall('zoom_connector', args, { userEmail });
