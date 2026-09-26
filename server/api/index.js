@@ -12,7 +12,7 @@
  * 🚨 NAMING CONVENTION RULE 🚨
  * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
  * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
- * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * 3.df NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
  * ─────────────────────────────────────────────────────────
  */
 
@@ -268,9 +268,9 @@ app.use((req, res, next) => {
 app.get("/", (req, res, next) => {
   const host = req.hostname || "";
   if (host === "api.classgrid.in" || host.startsWith("api.localhost") || host === "localhost") {
-    return res.json({ 
-      name: "Ultimate Classgrid API", 
-      version: "3.0.0", 
+    return res.json({
+      name: "Ultimate Classgrid API",
+      version: "3.0.0",
       message: "Welcome to the Classgrid API! Documentation is available at https://classgrid.in/docs"
     });
   }
@@ -491,9 +491,9 @@ app.get("*", async (req, res) => {
   if (req.path === "/") {
     const host = req.hostname || "";
     if (host === "api.classgrid.in" || host.startsWith("api.localhost") || (!isProduction && host === "localhost")) {
-      return res.json({ 
-        name: "Ultimate Classgrid API", 
-        version: "3.0.0", 
+      return res.json({
+        name: "Ultimate Classgrid API",
+        version: "3.0.0",
         message: "Welcome to the Classgrid API! Documentation is available at https://classgrid.in/docs"
       });
     }
