@@ -4661,38 +4661,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     )}
                   </AnimatePresence>
 
-                  {isRecording ? (
-                     <div className={cn("w-full flex items-center bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl transition-all duration-300", isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]")}>
-                        <div className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse mr-3 shrink-0" />
-                        <span className="text-sm font-mono mr-3 text-foreground shrink-0">
-                          {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
-                        </span>
-                        <div className="flex-1 flex items-center justify-start gap-1 overflow-x-auto no-scrollbar px-2" style={{ scrollbarWidth: 'none' }}>
-                          {[...Array(Math.max(5, recordingTime * 2))].map((_, i) => {
-                            const height = 4 + Math.abs(Math.sin(i * 0.5) * 8 + Math.cos(i * 0.2) * 6);
-                            return (
-                              <div key={i} className="w-1 bg-foreground rounded-full shrink-0 opacity-60" style={{ height: `${height}px` }} />
-                            );
-                          })}
-                          <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth' })} />
-                        </div>
-                     </div>
-                  ) : isTranscribing ? (
-                     <div className={cn("w-full flex items-center bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl transition-all duration-300 opacity-50", isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]")}>
-                        <Spinner className="w-4 h-4 mr-3" />
-                        <div className="flex-1 flex items-center justify-start gap-1 overflow-hidden px-2">
-                          {[...Array(20)].map((_, i) => (
-                            <div key={i} className="w-1 bg-foreground rounded-full shrink-0" style={{ height: `${4 + (i%3)*4}px` }} />
-                          ))}
-                        </div>
-                     </div>
-                  ) : (
-                    <textarea
+                  <textarea
                     id="ask-ai-input"
                     name="askAiQuestion"
                     data-no-ring="true"
                     suppressHydrationWarning
                     ref={inputRef as any}
+                    disabled={isRecording || isTranscribing}
                     value={input}
                     onChange={(event) => {
                       const val = event.target.value;
@@ -4784,11 +4759,41 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     placeholder={attachedFiles.length > 0 ? "Add a message or send files..." : "Ask a question..."}
                     autoComplete="off"
                     className={cn(
-                      "w-full resize-none bg-transparent pb-12 pr-14 pl-14 text-sm text-foreground focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                      "w-full resize-none bg-transparent pb-12 pr-14 pl-14 text-sm focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                      (isRecording || isTranscribing) ? "text-transparent placeholder:text-transparent" : "text-foreground",
                       isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]",
                       (pageContext?.path?.startsWith("/docs") || attachedFiles.length > 0) ? "pt-3" : "pt-4 rounded-2xl"
                     )}
                   />
+
+                  {(isRecording || isTranscribing) && (
+                      <div className="absolute inset-x-14 top-4 flex items-center pointer-events-none z-10">
+                        {isRecording ? (
+                          <>
+                            <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
+                            <span className="text-sm font-mono mr-3 text-foreground shrink-0">
+                              {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+                            </span>
+                            <div className="flex-1 flex items-center justify-start gap-1 overflow-hidden px-2">
+                              {[...Array(Math.max(5, recordingTime * 2))].map((_, i) => {
+                                const height = 4 + Math.abs(Math.sin(i * 0.5) * 8 + Math.cos(i * 0.2) * 6);
+                                return (
+                                  <div key={i} className="w-1 bg-foreground rounded-full shrink-0 opacity-60" style={{ height: `${height}px` }} />
+                                );
+                              })}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Spinner className="w-4 h-4 mr-3 opacity-50" />
+                            <div className="flex-1 flex items-center justify-start gap-1 overflow-hidden px-2 opacity-50">
+                              {[...Array(20)].map((_, i) => (
+                                <div key={i} className="w-1 bg-foreground rounded-full shrink-0" style={{ height: `${4 + (i%3)*4}px` }} />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
                   )}
 
                   {/* Bottom Left action bar: paperclip and AI Hub */}
@@ -4819,7 +4824,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     <button
                       type="button"
                       onClick={isRecording ? stopRecording : startRecording}
-                      className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${isRecording ? "text-primary bg-primary/10 hover:bg-primary/20" : "text-muted-foreground hover:text-foreground hover:bg-muted/80"}`}
+                      className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${isRecording ? "text-foreground bg-muted hover:bg-muted/80" : "text-muted-foreground hover:text-foreground hover:bg-muted/80"}`}
                       title={isRecording ? "Stop dictation" : "Dictate"}
                     >
                       {isRecording ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-4 w-4" />}
@@ -5271,39 +5276,14 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               )}
                             </AnimatePresence>
 
-                            {isRecording ? (
-                               <div className={cn("w-full flex items-center bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl transition-all duration-300", isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]")}>
-                                  <div className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse mr-3 shrink-0" />
-                                  <span className="text-sm font-mono mr-3 text-foreground shrink-0">
-                                    {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
-                                  </span>
-                                  <div className="flex-1 flex items-center justify-start gap-1 overflow-x-auto no-scrollbar px-2" style={{ scrollbarWidth: 'none' }}>
-                                    {[...Array(Math.max(5, recordingTime * 2))].map((_, i) => {
-                                      const height = 4 + Math.abs(Math.sin(i * 0.5) * 8 + Math.cos(i * 0.2) * 6);
-                                      return (
-                                        <div key={i} className="w-1 bg-foreground rounded-full shrink-0 opacity-60" style={{ height: `${height}px` }} />
-                                      );
-                                    })}
-                                    <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth' })} />
-                                  </div>
-                               </div>
-                            ) : isTranscribing ? (
-                               <div className={cn("w-full flex items-center bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl transition-all duration-300 opacity-50", isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]")}>
-                                  <Spinner className="w-4 h-4 mr-3" />
-                                  <div className="flex-1 flex items-center justify-start gap-1 overflow-hidden px-2">
-                                    {[...Array(20)].map((_, i) => (
-                                      <div key={i} className="w-1 bg-foreground rounded-full shrink-0" style={{ height: `${4 + (i%3)*4}px` }} />
-                                    ))}
-                                  </div>
-                               </div>
-                            ) : (
-                                <textarea
-                                  id="ask-ai-input"
-                                  name="askAiQuestion"
-                                  data-no-ring="true"
-                                  suppressHydrationWarning
-                                  ref={inputRef as any}
-                                  value={input}
+                            <textarea
+                              id="ask-ai-input"
+                              name="askAiQuestion"
+                              data-no-ring="true"
+                              suppressHydrationWarning
+                              ref={inputRef as any}
+                              disabled={isRecording || isTranscribing}
+                              value={input}
                                   onChange={(event) => {
                                     const val = event.target.value;
                                     setInput(val);
@@ -5394,10 +5374,40 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   placeholder="Ask a question..."
                                   autoComplete="off"
                                   className={cn(
-                                    "w-full resize-none bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl text-sm text-foreground focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                                    "w-full resize-none bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl text-sm focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                                    (isRecording || isTranscribing) ? "text-transparent placeholder:text-transparent" : "text-foreground",
                                     isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]"
                                   )}
                                 />
+
+                            {(isRecording || isTranscribing) && (
+                                <div className="absolute inset-x-14 top-4 flex items-center pointer-events-none z-10">
+                                  {isRecording ? (
+                                    <>
+                                      <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
+                                      <span className="text-sm font-mono mr-3 text-foreground shrink-0">
+                                        {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+                                      </span>
+                                      <div className="flex-1 flex items-center justify-start gap-1 overflow-hidden px-2">
+                                        {[...Array(Math.max(5, recordingTime * 2))].map((_, i) => {
+                                          const height = 4 + Math.abs(Math.sin(i * 0.5) * 8 + Math.cos(i * 0.2) * 6);
+                                          return (
+                                            <div key={i} className="w-1 bg-foreground rounded-full shrink-0 opacity-60" style={{ height: `${height}px` }} />
+                                          );
+                                        })}
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Spinner className="w-4 h-4 mr-3 opacity-50" />
+                                      <div className="flex-1 flex items-center justify-start gap-1 overflow-hidden px-2 opacity-50">
+                                        {[...Array(20)].map((_, i) => (
+                                          <div key={i} className="w-1 bg-foreground rounded-full shrink-0" style={{ height: `${4 + (i%3)*4}px` }} />
+                                        ))}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
                             )}
 
                             {/* Bottom left: paperclip */}
@@ -5426,7 +5436,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               <button
                                 type="button"
                                 onClick={isRecording ? stopRecording : startRecording}
-                                className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${isRecording ? "text-primary bg-primary/10 hover:bg-primary/20" : "text-muted-foreground hover:text-foreground hover:bg-muted/80"}`}
+                                className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${isRecording ? "text-foreground bg-muted hover:bg-muted/80" : "text-muted-foreground hover:text-foreground hover:bg-muted/80"}`}
                                 title={isRecording ? "Stop dictation" : "Dictate"}
                               >
                                 {isRecording ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-4 w-4" />}
