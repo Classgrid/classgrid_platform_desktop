@@ -1190,8 +1190,10 @@ export const handleToolCall = async (name, args, context = {}) => {
             $project: {
               _id: 1,
               chunkText: 1,
+              text: 1,
               documentType: 1,
               sourceUrl: 1,
+              metadata: 1,
               score: { $meta: 'vectorSearchScore' }
             }
           }
@@ -1201,7 +1203,12 @@ export const handleToolCall = async (name, args, context = {}) => {
           return { content: [{ type: 'text', text: 'No relevant internal documents found in the Knowledge Base.' }] };
         }
 
-        const formatted = docs.map((doc, idx) => `[Match ${idx+1}] (Score: ${doc.score.toFixed(3)})\nSource: ${doc.sourceUrl}\nType: ${doc.documentType}\nContent:\n${doc.chunkText}`).join('\n\n---\n\n');
+        const formatted = docs.map((doc, idx) => {
+          const content = doc.chunkText || doc.text || 'No content';
+          const docType = doc.documentType || (doc.metadata && doc.metadata.type) || 'unknown';
+          const source = doc.sourceUrl || (doc.metadata && doc.metadata.source) || 'unknown';
+          return `[Match ${idx+1}] (Score: ${doc.score.toFixed(3)})\nSource: ${source}\nType: ${docType}\nContent:\n${content}`;
+        }).join('\n\n---\n\n');
         
         return { content: [{ type: 'text', text: `Found ${docs.length} matches:\n\n${formatted}` }] };
       } catch (e) {
