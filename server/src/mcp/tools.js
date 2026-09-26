@@ -123,7 +123,8 @@ export const getMcpTools = () => [
         id: { type: 'string', description: 'MongoDB Document ID (required for read, update, delete)' },
         documentType: { type: 'string', description: 'Type of document (e.g. "policy", "tutorial", "faq"). Required for create/update.' },
         chunkText: { type: 'string', description: 'The actual text content to embed and store. Required for create/update.' },
-        sourceUrl: { type: 'string', description: 'Optional source URL or identifier.' }
+        sourceUrl: { type: 'string', description: 'Optional source URL or identifier.' },
+        collectionName: { type: 'string', description: 'The collection to manage (e.g. platform_rag_chunks, rag_chunks). Defaults to platform_rag_chunks.' }
       },
       required: ['action']
     }
@@ -135,7 +136,8 @@ export const getMcpTools = () => [
       type: 'object',
       properties: {
         query: { type: 'string', description: 'The search query.' },
-        limit: { type: 'number', description: 'Number of results to return (default 5).' }
+        limit: { type: 'number', description: 'Number of results to return (default 5).' },
+        collectionName: { type: 'string', description: 'The collection to search (e.g. platform_rag_chunks, rag_chunks). Defaults to platform_rag_chunks.' }
       },
       required: ['query']
     }
@@ -1143,7 +1145,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
     if (name === 'search_knowledge_base') {
       try {
-        const { query, limit = 5 } = args;
+        const { query, limit = 5, collectionName = 'platform_rag_chunks' } = args;
 
         if (!process.env.VOYAGE_API_KEY) {
           return { content: [{ type: 'text', text: 'Error: VOYAGE_API_KEY is not set in environment variables.' }] };
@@ -1172,7 +1174,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (!mongoose.connection.db) {
           throw new Error("MongoDB connection not established");
         }
-        const coll = mongoose.connection.db.collection('rag_chunks');
+        const coll = mongoose.connection.db.collection(collectionName);
 
         const docs = await coll.aggregate([
           {
@@ -1208,13 +1210,13 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     if (name === 'manage_rag_document') {
-      const { action, id, documentType, chunkText, sourceUrl = 'ai-generated' } = args;
+      const { action, id, documentType, chunkText, sourceUrl = 'ai-generated', collectionName = 'platform_rag_chunks' } = args;
       
       try {
         if (!mongoose.connection.db) {
           throw new Error("MongoDB connection not established");
         }
-        const coll = mongoose.connection.db.collection('rag_chunks');
+        const coll = mongoose.connection.db.collection(collectionName);
         const { ObjectId } = mongoose.Types;
 
         if (action === 'list') {
