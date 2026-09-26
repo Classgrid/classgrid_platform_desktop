@@ -232,6 +232,8 @@ export function ApprovalCard({
     setQAnimate(animate && !reduce);
   };
 
+  const questionsHash = JSON.stringify(questions);
+
   useEffect(() => {
     if (variant !== "questions") {
       qMeasured.current = false;
@@ -243,13 +245,13 @@ export function ApprovalCard({
     const animate = qMeasured.current;
     qMeasured.current = true;
     syncQuestionSlide(animate);
-  }, [variant, safeStep, questions, answers]);
+  }, [variant, safeStep, questionsHash, answers]);
 
   useEffect(() => {
     if (variant !== "questions") return;
     const id = requestAnimationFrame(() => syncQuestionSlide(qMeasured.current));
     return () => cancelAnimationFrame(id);
-  }, [variant, safeStep, questions]);
+  }, [variant, safeStep, questionsHash]);
 
   const previewCount = Math.max(0, planPreviewCount);
   const planPreview = plan.slice(0, previewCount);
