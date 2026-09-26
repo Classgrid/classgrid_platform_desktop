@@ -371,6 +371,17 @@ export const getMcpTools = () => [
       },
       required: ['operation']
     }
+  },
+  {
+    name: 'read_local_file',
+    description: 'Read the contents of a local file on the server. Useful for reading artifact files or schema files.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        filePath: { type: 'string', description: 'The absolute path to the file.' }
+      },
+      required: ['filePath']
+    }
   }
 ];
 
@@ -378,6 +389,15 @@ export const handleToolCall = async (name, args, context = {}) => {
   const { userEmail = 'unknown@classgrid.in', userRole = '', subdomain = '', sessionId = 'default' } = context;
 
   try {
+    if (name === 'read_local_file') {
+      try {
+        const content = fs.readFileSync(args.filePath, 'utf8');
+        return { content: [{ type: 'text', text: content }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error reading file: ${e.message}` }] };
+      }
+    }
+
     if (name === 'unified_db_query') {
       let { source, collectionOrTable, operation, query = {}, data = {} } = args;
       const { userEmail = '', userRole = '', subdomain = '' } = context;

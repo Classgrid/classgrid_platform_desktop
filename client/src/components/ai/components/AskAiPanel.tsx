@@ -1223,7 +1223,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                       ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
                       : "";
                     const projectName = "website-" + Math.random().toString(36).substring(7);
-                    
+
                     fetch(`${endpointPrefix}/api/build/start`, {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
@@ -1234,11 +1234,11 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                         plan: parsedProps.plan
                       })
                     })
-                    .then(r => r.json())
-                    .then(data => {
-                      if (data.sessionId) setActiveBuildSessionId(data.sessionId);
-                    })
-                    .catch(err => console.error("Failed to start build", err));
+                      .then(r => r.json())
+                      .then(data => {
+                        if (data.sessionId) setActiveBuildSessionId(data.sessionId);
+                      })
+                      .catch(err => console.error("Failed to start build", err));
                   } else if (parsedProps.questions && Array.isArray(parsedProps.questions)) {
                     const formatted = parsedProps.questions.map((q: any) => {
                       const ans = payload?.answers?.[q.id];
@@ -1474,7 +1474,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [atMenuOpen, setAtMenuOpen] = useState(false);
   const [atMenuQuery, setAtMenuQuery] = useState("");
   const [atMenuSelectedIndex, setAtMenuSelectedIndex] = useState(0);
-  
+
   // Track the active build session for polling live step status
   const [activeBuildSessionId, setActiveBuildSessionId] = useState<string | null>(null);
 
@@ -1495,7 +1495,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             if (parsed.variant === "plan" && Array.isArray(parsed.plan)) {
               return parsed.plan;
             }
-          } catch(e) {}
+          } catch (e) { }
         }
       }
     }
@@ -1534,7 +1534,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     let css = "";
     let js = "";
     let executing = false;
-    
+
     // Scan from latest to oldest
     for (let i = messages.length - 1; i >= 0; i--) {
       const m = messages[i];
@@ -1542,7 +1542,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         if (m.typing && (m.content.includes('```html') || m.content.includes('```css') || m.content.includes('```javascript') || m.content.includes('```js'))) {
           executing = true;
         }
-        
+
         // Extract HTML
         if (!html && m.content.includes('```html')) {
           const match = m.content.match(/```html\n([\s\S]*?)```/);
@@ -1568,21 +1568,21 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           if (!match) match = m.content.match(/```js\n([\s\S]*?)```/);
           if (match && match[1]) js = match[1];
           else if (m.typing) {
-            const partial = m.content.includes('```javascript') 
-              ? m.content.split('```javascript\n').pop() 
+            const partial = m.content.includes('```javascript')
+              ? m.content.split('```javascript\n').pop()
               : m.content.split('```js\n').pop();
             if (partial) js = partial;
           }
         }
-        
+
         // Once we find all 3 (or at least HTML from the latest blocks), we can stop
         if (html && css && js) break;
       }
     }
-    
+
     // If we have HTML or CSS or JS, we should consider the execution tabs available
     if (html || css || js) executing = true;
-    
+
     return { latestHtml: html, latestCss: css, latestJs: js, isExecuting: executing };
   }, [messages]);
 
@@ -2362,7 +2362,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   function handleSendEditedMessage(messageId: string) {
     if (!editContent.trim()) return;
-    
+
     const index = messages.findIndex(m => m.id === messageId);
     if (index === -1) {
       setEditingMessageId(null);
@@ -2371,14 +2371,14 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
     const newMessages = messages.slice(0, index);
     setMessages(newMessages);
-    
+
     setEditingMessageId(null);
     const textToSend = editContent;
     setEditContent("");
 
-    setPriorityMessage({ 
+    setPriorityMessage({
       id: Date.now().toString(),
-      text: textToSend, 
+      text: textToSend,
       timestamp: Date.now(),
       isEdit: true,
       attachedFiles: [],
@@ -3213,7 +3213,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         : rawMessage;
 
       setThinking(false);
-      
+
       if (fallback.trim().startsWith("ai_quota_exceeded")) {
         setMessages((prev) => {
           const lastMsg = prev[prev.length - 1];
@@ -3542,14 +3542,14 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     style={{ border: 'none', outline: 'none', boxShadow: 'none', backgroundColor: 'transparent' }}
                                   />
                                   <div className="flex justify-end gap-2">
-                                    <button 
+                                    <button
                                       type="button"
                                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingMessageId(null); setEditContent(""); }}
                                       className="px-4 py-1.5 text-[13px] font-medium bg-background text-foreground rounded-full border border-border hover:bg-muted transition-colors shadow-sm cursor-pointer"
                                     >
                                       Cancel
                                     </button>
-                                    <button 
+                                    <button
                                       type="button"
                                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSendEditedMessage(message.id); }}
                                       className="px-4 py-1.5 text-[13px] font-medium bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
@@ -3568,7 +3568,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                       ).replace(/\[Attached file:.*?\]/g, '').trim()}
                                     </p>
                                   )}
-                                  
+
                                   {/* Hover Actions (Copy / Edit) */}
                                   <div className="absolute top-full right-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity flex flex-row items-center gap-1 z-50 before:absolute before:-top-4 before:left-0 before:right-0 before:h-4">
                                     <TooltipProvider delayDuration={200}>
@@ -3576,9 +3576,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                         <TooltipTrigger asChild>
                                           <button
                                             type="button"
-                                            onClick={(e) => { 
+                                            onClick={(e) => {
                                               e.preventDefault(); e.stopPropagation();
-                                              setEditingMessageId(message.id); 
+                                              setEditingMessageId(message.id);
                                               setEditContent(typeof message.content === 'string' ? message.content.replace(/\[Attached file:.*?\]/g, '').trim() : '');
                                             }}
                                             className="flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 cursor-pointer text-muted-foreground/60 hover:bg-muted hover:text-foreground bg-background/60 backdrop-blur-sm"
@@ -3998,8 +3998,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 );
                               })() : message.content.trim().startsWith("ai_quota_exceeded") ? (
                                 <div className="mt-2 w-full flex justify-start">
-                                  <InsufficientCreditsCard 
-                                    refreshDate={new Date(message.content.split("|")[1] || Date.now())} 
+                                  <InsufficientCreditsCard
+                                    refreshDate={new Date(message.content.split("|")[1] || Date.now())}
                                     onDismiss={() => setMessages(prev => prev.filter(m => m.id !== message.id))}
                                     onUpgrade={() => {
                                       setAiHubInitialTab("upgrade");
@@ -4195,287 +4195,398 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       "flex flex-col gap-2"
     )}>
 
-    <div className={cn(
-      "relative",
-      variant === "full-page"
-        ? "absolute bottom-0 left-0 right-0 z-10 pointer-events-none"
-        : "border-t border-border"
-    )}>
-      <AnimatePresence>
-        {showScrollButton && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute left-0 right-0 -top-12 flex justify-center z-20 pointer-events-auto"
-          >
-            <button
-              type="button"
-              onClick={scrollToBottom}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-background border border-border shadow-md text-muted-foreground hover:text-foreground cursor-pointer"
+      <div className={cn(
+        "relative",
+        variant === "full-page"
+          ? "absolute bottom-0 left-0 right-0 z-10 pointer-events-none"
+          : "border-t border-border"
+      )}>
+        <AnimatePresence>
+          {showScrollButton && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="absolute left-0 right-0 -top-12 flex justify-center z-20 pointer-events-auto"
             >
-              <ArrowDown className="h-4 w-4" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <button
+                type="button"
+                onClick={scrollToBottom}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-background border border-border shadow-md text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <ArrowDown className="h-4 w-4" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      <div className={cn(variant === "full-page" && "relative max-w-[52rem] mx-auto w-full pointer-events-auto")}>
+        <div className={cn(variant === "full-page" && "relative max-w-[52rem] mx-auto w-full pointer-events-auto")}>
 
-        {isTerminated ? (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm font-medium text-red-500">
-            <p>This conversation has been terminated.</p>
-            {countdown && (
-              <p className="mt-1 text-xs text-red-400">
-                Access resumes in: <span className="font-mono font-bold">{countdown}</span>
-              </p>
-            )}
-          </div>
-        ) : (
-          <>
-            <AnimatePresence>
-              {messageQueue.length > 0 && (
-                <motion.div layout initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, scale: 0.95}} className="flex flex-col items-start gap-2 w-full mb-2">
-                  <motion.button 
-                    type="button"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    onClick={() => setIsQueueVisible(!isQueueVisible)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background border border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-[13px] shadow-sm font-medium"
-                  >
-                    <Layers className="h-3.5 w-3.5" />
-                    {messageQueue.length} queued
-                  </motion.button>
-                  <AnimatePresence>
-                    {isQueueVisible && (
-                      <motion.div 
-                        initial={{ opacity: 0, height: 0, y: -10 }}
-                        animate={{ opacity: 1, height: 'auto', y: 0 }}
-                        exit={{ opacity: 0, height: 0, y: -10 }}
-                        className="flex flex-col gap-0 w-full py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar origin-top"
-                      >
-                        <AnimatePresence>
-                          {messageQueue.map((msg) => (
-                            <motion.div 
-                              key={msg.id} 
-                              layout
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.95 }}
-                              transition={{ duration: 0.2 }}
-                              className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors shrink-0"
-                            >
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
-                                <span className="text-[13px] truncate">
-                                  {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
-                                </span>
-                              </div>
-                              <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
-                                    setPriorityMessage(msg);
-                                  }}
-                                  className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                >
-                                  Send
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
-                                  className="cursor-pointer p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                  title="Cancel"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
+          {isTerminated ? (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm font-medium text-red-500">
+              <p>This conversation has been terminated.</p>
+              {countdown && (
+                <p className="mt-1 text-xs text-red-400">
+                  Access resumes in: <span className="font-mono font-bold">{countdown}</span>
+                </p>
               )}
-            </AnimatePresence>
-            <form onSubmit={handleSubmit} className="space-y-2">
-              <div className={cn(
-                "group relative w-[80%] mx-auto shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
-              )}>
-                {/* Hidden file input */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept={ACCEPTED_FILE_TYPES}
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-
-                {pageContext?.path?.startsWith("/docs") && pageContext.path !== lastSentDocsPath && (
-                  <div className="px-3 pt-3 pb-0">
-                    <div className="group relative inline-flex items-center gap-2.5 rounded-[10px] border border-border/80 bg-muted/40 px-3 py-2 pr-8 shadow-sm max-w-[95%]">
-                      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0.5">
-                        <span className="text-[12px] font-semibold text-foreground truncate leading-tight">
-                          {pageContext.title || "Introduction"}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground/80 truncate leading-tight">
-                          https://classgrid.in{pageContext.path}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setLastSentDocsPath(pageContext.path!)}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 focus:text-foreground"
-                        title="Remove page context"
-                      >
-                        <X className="h-3 w-3" />
-                        <span className="sr-only">Remove context</span>
-                      </button>
-                    </div>
-                  </div>
+            </div>
+          ) : (
+            <>
+              <AnimatePresence>
+                {messageQueue.length > 0 && (
+                  <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="flex flex-col items-start gap-2 w-full mb-2">
+                    <motion.button
+                      type="button"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      onClick={() => setIsQueueVisible(!isQueueVisible)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background border border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-[13px] shadow-sm font-medium"
+                    >
+                      <Layers className="h-3.5 w-3.5" />
+                      {messageQueue.length} queued
+                    </motion.button>
+                    <AnimatePresence>
+                      {isQueueVisible && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0, y: -10 }}
+                          animate={{ opacity: 1, height: 'auto', y: 0 }}
+                          exit={{ opacity: 0, height: 0, y: -10 }}
+                          className="flex flex-col gap-0 w-full py-2 px-2 rounded-lg bg-background border border-border/40 max-h-[200px] overflow-y-auto chat-scrollbar origin-top"
+                        >
+                          <AnimatePresence>
+                            {messageQueue.map((msg) => (
+                              <motion.div
+                                key={msg.id}
+                                layout
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
+                                className="group flex items-center justify-between gap-2 py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground cursor-default transition-colors shrink-0"
+                              >
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
+                                  <span className="text-[13px] truncate">
+                                    {msg.text || (msg.attachedFiles.length > 0 ? "Attached files..." : "Pending...")}
+                                  </span>
+                                </div>
+                                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
+                                      setPriorityMessage(msg);
+                                    }}
+                                    className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                  >
+                                    Send
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setMessageQueue(prev => prev.filter(m => m.id !== msg.id))}
+                                    className="cursor-pointer p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                    title="Cancel"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
                 )}
+              </AnimatePresence>
+              <form onSubmit={handleSubmit} className="space-y-2">
+                <div className={cn(
+                  "group relative w-[80%] mx-auto shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
+                )}>
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept={ACCEPTED_FILE_TYPES}
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
 
-                {/* Attached file chips and Pasted Text Chip */}
-                {(attachedFiles.length > 0 || pastedTexts.length > 0) && (
-                  <div className="px-3 pt-3 pb-0 flex flex-wrap gap-1.5">
-                    {pastedTexts.map((pt, idx) => (
-                      <div
-                        key={`pasted-${idx}`}
-                        className="group relative inline-flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3 py-2.5 shadow-sm max-w-[220px] transition-all cursor-pointer hover:bg-muted/60"
-                        title="Too long to show in text field"
-                        onClick={() => setEditingMode(idx)}
-                      >
-                        <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                          <FileText className="h-4 w-4 text-blue-500" />
-                        </div>
+                  {pageContext?.path?.startsWith("/docs") && pageContext.path !== lastSentDocsPath && (
+                    <div className="px-3 pt-3 pb-0">
+                      <div className="group relative inline-flex items-center gap-2.5 rounded-[10px] border border-border/80 bg-muted/40 px-3 py-2 pr-8 shadow-sm max-w-[95%]">
+                        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                         <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0.5">
-                          <span className="text-[13px] font-medium text-foreground truncate leading-tight">
-                            Pasted text {pastedTexts.length > 1 ? idx + 1 : ""}
+                          <span className="text-[12px] font-semibold text-foreground truncate leading-tight">
+                            {pageContext.title || "Introduction"}
                           </span>
-                          <span className="text-[12px] text-muted-foreground truncate leading-tight">
-                            Pasted text
+                          <span className="text-[10px] text-muted-foreground/80 truncate leading-tight">
+                            https://classgrid.in{pageContext.path}
                           </span>
                         </div>
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPastedTexts(prev => prev.filter((_, i) => i !== idx));
-                          }}
-                          className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground shadow-sm transition-colors z-10 cursor-pointer"
-                          title="Remove pasted text"
+                          onClick={() => setLastSentDocsPath(pageContext.path!)}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 focus:text-foreground"
+                          title="Remove page context"
                         >
                           <X className="h-3 w-3" />
+                          <span className="sr-only">Remove context</span>
                         </button>
                       </div>
-                    ))}
-                    {attachedFiles.map((att) => {
-                      const Icon = getFileIcon(att.type);
-                      const isImage = att.type.startsWith("image/");
-                      return (
+                    </div>
+                  )}
+
+                  {/* Attached file chips and Pasted Text Chip */}
+                  {(attachedFiles.length > 0 || pastedTexts.length > 0) && (
+                    <div className="px-3 pt-3 pb-0 flex flex-wrap gap-1.5">
+                      {pastedTexts.map((pt, idx) => (
                         <div
-                          key={att.id}
-                          className={cn(
-                            "group relative inline-flex items-center gap-2 rounded-[10px] border px-3 py-2 pr-8 shadow-sm max-w-[200px] transition-all",
-                            att.status === "error" ? "border-red-500/50 bg-red-500/10" : "border-border/80 bg-muted/40",
-                            att.status === "uploading" ? "opacity-70 animate-pulse" : "opacity-100"
-                          )}
+                          key={`pasted-${idx}`}
+                          className="group relative inline-flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3 py-2.5 shadow-sm max-w-[220px] transition-all cursor-pointer hover:bg-muted/60"
+                          title="Too long to show in text field"
+                          onClick={() => setEditingMode(idx)}
                         >
-                          {isImage ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={att.url || (att.file ? URL.createObjectURL(att.file) : "")}
-                              alt={att.name}
-                              className="h-6 w-6 rounded object-cover shrink-0"
-                            />
-                          ) : (
-                            <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                          )}
-                          <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0">
-                            <span className="text-[11px] font-medium text-foreground truncate leading-tight">
-                              {att.name}
-                            </span>
-                            {att.status === "uploading" ? (
-                              <div className="h-1.5 w-full max-w-[80px] bg-muted-foreground/20 rounded-full overflow-hidden mt-1 mb-0.5">
-                                <motion.div
-                                  initial={{ width: "0%" }}
-                                  animate={{ width: "85%" }}
-                                  transition={{ duration: 2.5, ease: "easeOut" }}
-                                  className="h-full bg-emerald-500 rounded-full"
-                                />
-                              </div>
-                            ) : (
-                              <span className="text-[10px] text-muted-foreground/70 leading-tight">
-                                {att.status === "error" ? "Failed" : formatFileSize(att.size)}
-                              </span>
-                            )}
+                          <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                            <FileText className="h-4 w-4 text-blue-500" />
                           </div>
-
-                          {/* Allow previewing the file immediately after successful upload */}
-                          {att.status === "done" && att.url && (
-                            <button
-                              type="button"
-                              onClick={() => setPreviewFile({ name: att.name, src: att.url!, mimeType: att.type })}
-                              className="absolute inset-0 w-full h-full cursor-pointer z-10"
-                              title="Preview file"
-                            />
-                          )}
-
+                          <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0.5">
+                            <span className="text-[13px] font-medium text-foreground truncate leading-tight">
+                              Pasted text {pastedTexts.length > 1 ? idx + 1 : ""}
+                            </span>
+                            <span className="text-[12px] text-muted-foreground truncate leading-tight">
+                              Pasted text
+                            </span>
+                          </div>
                           <button
                             type="button"
-                            onClick={() => removeAttachedFile(att.id)}
-                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors z-20 cursor-pointer"
-                            title={`Remove ${att.name}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPastedTexts(prev => prev.filter((_, i) => i !== idx));
+                            }}
+                            className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground shadow-sm transition-colors z-10 cursor-pointer"
+                            title="Remove pasted text"
                           >
                             <X className="h-3 w-3" />
                           </button>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      ))}
+                      {attachedFiles.map((att) => {
+                        const Icon = getFileIcon(att.type);
+                        const isImage = att.type.startsWith("image/");
+                        return (
+                          <div
+                            key={att.id}
+                            className={cn(
+                              "group relative inline-flex items-center gap-2 rounded-[10px] border px-3 py-2 pr-8 shadow-sm max-w-[200px] transition-all",
+                              att.status === "error" ? "border-red-500/50 bg-red-500/10" : "border-border/80 bg-muted/40",
+                              att.status === "uploading" ? "opacity-70 animate-pulse" : "opacity-100"
+                            )}
+                          >
+                            {isImage ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={att.url || (att.file ? URL.createObjectURL(att.file) : "")}
+                                alt={att.name}
+                                className="h-6 w-6 rounded object-cover shrink-0"
+                              />
+                            ) : (
+                              <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            )}
+                            <div className="flex flex-col min-w-0 overflow-hidden text-left gap-0">
+                              <span className="text-[11px] font-medium text-foreground truncate leading-tight">
+                                {att.name}
+                              </span>
+                              {att.status === "uploading" ? (
+                                <div className="h-1.5 w-full max-w-[80px] bg-muted-foreground/20 rounded-full overflow-hidden mt-1 mb-0.5">
+                                  <motion.div
+                                    initial={{ width: "0%" }}
+                                    animate={{ width: "85%" }}
+                                    transition={{ duration: 2.5, ease: "easeOut" }}
+                                    className="h-full bg-emerald-500 rounded-full"
+                                  />
+                                </div>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground/70 leading-tight">
+                                  {att.status === "error" ? "Failed" : formatFileSize(att.size)}
+                                </span>
+                              )}
+                            </div>
 
-                <div className="absolute top-3 right-3 z-10">
-                  {input.trim().split(/\s+/).filter(w => w.length > 0).length >= 90 && (
-                    <button
-                      type="button"
-                      onClick={() => setIsExpandedBox(!isExpandedBox)}
-                      className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer opacity-0 focus-within:opacity-100 group-hover:opacity-100"
-                      title={isExpandedBox ? "Collapse input" : "Expand input"}
-                    >
-                      {isExpandedBox ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M4 14h6v6" />
-                          <path d="M20 10h-6V4" />
-                          <path d="M14 10l7-7" />
-                          <path d="M3 21l7-7" />
-                        </svg>
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M20 10h-6V4" />
-                          <path d="M4 14h6v6" />
-                        </svg>
-                      )}
-                    </button>
+                            {/* Allow previewing the file immediately after successful upload */}
+                            {att.status === "done" && att.url && (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewFile({ name: att.name, src: att.url!, mimeType: att.type })}
+                                className="absolute inset-0 w-full h-full cursor-pointer z-10"
+                                title="Preview file"
+                              />
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => removeAttachedFile(att.id)}
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors z-20 cursor-pointer"
+                              title={`Remove ${att.name}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
-                </div>
 
-                {/* @ mention popover */}
-                <AnimatePresence>
-                  {atMenuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute bottom-[100%] mb-2 left-0 w-full max-h-[350px] overflow-y-auto bg-popover rounded-2xl border border-border shadow-2xl z-50 flex flex-col p-1.5"
-                    >
-                      {(() => {
+                  <div className="absolute top-3 right-3 z-10">
+                    {input.trim().split(/\s+/).filter(w => w.length > 0).length >= 90 && (
+                      <button
+                        type="button"
+                        onClick={() => setIsExpandedBox(!isExpandedBox)}
+                        className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer opacity-0 focus-within:opacity-100 group-hover:opacity-100"
+                        title={isExpandedBox ? "Collapse input" : "Expand input"}
+                      >
+                        {isExpandedBox ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 14h6v6" />
+                            <path d="M20 10h-6V4" />
+                            <path d="M14 10l7-7" />
+                            <path d="M3 21l7-7" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 10h-6V4" />
+                            <path d="M4 14h6v6" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* @ mention popover */}
+                  <AnimatePresence>
+                    {atMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute bottom-[100%] mb-2 left-0 w-full max-h-[350px] overflow-y-auto bg-popover rounded-2xl border border-border shadow-2xl z-50 flex flex-col p-1.5"
+                      >
+                        {(() => {
+                          const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
+                            item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
+                            (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
+                          );
+                          const baseItems = [
+                            { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
+                            { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
+                            { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
+                            { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
+                            { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
+                            { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
+                          ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
+                          const menuItems = [...baseItems, ...filteredIntegrations];
+
+                          return (
+                            <>
+                              {menuItems.map((item, index) => {
+                                const isSelected = index === atMenuSelectedIndex;
+                                const IconComponent = item.icon;
+                                return (
+                                  <button
+                                    type="button"
+                                    key={item.id}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      if (item.action) {
+                                        item.action();
+                                      } else {
+                                        const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
+                                        const textBeforeCursor = input.slice(0, cursorPosition);
+                                        const textAfterCursor = input.slice(cursorPosition);
+                                        const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+                                        const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + item.name + ' ' + textAfterCursor;
+                                        setInput(newInput);
+                                        setTimeout(() => (inputRef.current as any)?.focus(), 0);
+                                      }
+                                      setAtMenuOpen(false);
+                                    }}
+                                    className={cn(
+                                      "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors",
+                                      isSelected ? "bg-accent" : "hover:bg-accent/50"
+                                    )}
+                                    onMouseEnter={() => setAtMenuSelectedIndex(index)}
+                                  >
+                                    {item.imgUrl ? (
+                                      <img
+                                        src={item.imgUrl}
+                                        alt={item.name}
+                                        className="w-5 h-5 object-contain"
+                                        style={{ filter: item.invertInDarkMode ? 'var(--icon-invert, none)' : item.invertInLightMode ? 'var(--icon-invert-light, none)' : 'none' }}
+                                      />
+                                    ) : IconComponent ? (
+                                      <IconComponent className="w-5 h-5 text-popover-foreground/70 shrink-0" />
+                                    ) : (
+                                      <div className="w-5 h-5 shrink-0" />
+                                    )}
+                                    <div className="flex items-center gap-2 truncate">
+                                      <span className="text-[14px] text-popover-foreground font-medium whitespace-nowrap">{item.name}</span>
+                                      {item.description && (
+                                        <span className="text-[14px] text-muted-foreground truncate">{item.description}</span>
+                                      )}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                              {menuItems.length === 0 && (
+                                <div className="px-4 py-3 text-sm text-muted-foreground text-center">No results found</div>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <textarea
+                    id="ask-ai-input"
+                    name="askAiQuestion"
+                    data-no-ring="true"
+                    suppressHydrationWarning
+                    ref={inputRef as any}
+                    value={input}
+                    onChange={(event) => {
+                      const val = event.target.value;
+                      setInput(val);
+                      const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
+                      if (isExpandedBox && wordCount < 90) {
+                        setIsExpandedBox(false);
+                      }
+                      if (val.length === 0) {
+                        event.target.style.height = '';
+                      } else if (!isExpandedBox || wordCount < 90) {
+                        event.target.style.height = 'auto';
+                        event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
+                      }
+
+                      // @ mention logic
+                      const cursorPosition = event.target.selectionStart;
+                      const textBeforeCursor = val.slice(0, cursorPosition);
+                      const atMatch = textBeforeCursor.match(/(?:^|\s)@(\S*)$/);
+                      if (atMatch) {
+                        setAtMenuOpen(true);
+                        setAtMenuQuery(atMatch[1]);
+                        setAtMenuSelectedIndex(0);
+                      } else {
+                        setAtMenuOpen(false);
+                      }
+                    }}
+                    onPaste={handlePaste}
+                    onKeyDown={(e) => {
+                      if (atMenuOpen) {
                         const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
                           item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
                           (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
@@ -4490,226 +4601,115 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
                         const menuItems = [...baseItems, ...filteredIntegrations];
 
-                        return (
-                          <>
-                            {menuItems.map((item, index) => {
-                              const isSelected = index === atMenuSelectedIndex;
-                              const IconComponent = item.icon;
-                              return (
-                                <button
-                                  type="button"
-                                  key={item.id}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    if (item.action) {
-                                      item.action();
-                                    } else {
-                                      const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
-                                      const textBeforeCursor = input.slice(0, cursorPosition);
-                                      const textAfterCursor = input.slice(cursorPosition);
-                                      const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-                                      const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + item.name + ' ' + textAfterCursor;
-                                      setInput(newInput);
-                                      setTimeout(() => (inputRef.current as any)?.focus(), 0);
-                                    }
-                                    setAtMenuOpen(false);
-                                  }}
-                                  className={cn(
-                                    "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors",
-                                    isSelected ? "bg-accent" : "hover:bg-accent/50"
-                                  )}
-                                  onMouseEnter={() => setAtMenuSelectedIndex(index)}
-                                >
-                                  {item.imgUrl ? (
-                                    <img
-                                      src={item.imgUrl}
-                                      alt={item.name}
-                                      className="w-5 h-5 object-contain"
-                                      style={{ filter: item.invertInDarkMode ? 'var(--icon-invert, none)' : item.invertInLightMode ? 'var(--icon-invert-light, none)' : 'none' }}
-                                    />
-                                  ) : IconComponent ? (
-                                    <IconComponent className="w-5 h-5 text-popover-foreground/70 shrink-0" />
-                                  ) : (
-                                    <div className="w-5 h-5 shrink-0" />
-                                  )}
-                                  <div className="flex items-center gap-2 truncate">
-                                    <span className="text-[14px] text-popover-foreground font-medium whitespace-nowrap">{item.name}</span>
-                                    {item.description && (
-                                      <span className="text-[14px] text-muted-foreground truncate">{item.description}</span>
-                                    )}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                            {menuItems.length === 0 && (
-                              <div className="px-4 py-3 text-sm text-muted-foreground text-center">No results found</div>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <textarea
-                  id="ask-ai-input"
-                  name="askAiQuestion"
-                  data-no-ring="true"
-                  suppressHydrationWarning
-                  ref={inputRef as any}
-                  value={input}
-                  onChange={(event) => {
-                    const val = event.target.value;
-                    setInput(val);
-                    const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
-                    if (isExpandedBox && wordCount < 90) {
-                      setIsExpandedBox(false);
-                    }
-                    if (val.length === 0) {
-                      event.target.style.height = '';
-                    } else if (!isExpandedBox || wordCount < 90) {
-                      event.target.style.height = 'auto';
-                      event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
-                    }
-
-                    // @ mention logic
-                    const cursorPosition = event.target.selectionStart;
-                    const textBeforeCursor = val.slice(0, cursorPosition);
-                    const atMatch = textBeforeCursor.match(/(?:^|\s)@(\S*)$/);
-                    if (atMatch) {
-                      setAtMenuOpen(true);
-                      setAtMenuQuery(atMatch[1]);
-                      setAtMenuSelectedIndex(0);
-                    } else {
-                      setAtMenuOpen(false);
-                    }
-                  }}
-                  onPaste={handlePaste}
-                  onKeyDown={(e) => {
-                    if (atMenuOpen) {
-                      const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
-                        item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
-                        (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
-                      );
-                      const baseItems = [
-                        { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
-                        { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
-                        { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
-                        { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
-                        { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
-                        { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
-                      ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
-                      const menuItems = [...baseItems, ...filteredIntegrations];
-
-                      if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        setAtMenuSelectedIndex(prev => (prev + 1) % menuItems.length);
-                        return;
-                      }
-                      if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        setAtMenuSelectedIndex(prev => (prev - 1 + menuItems.length) % menuItems.length);
-                        return;
-                      }
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        const selectedItem = menuItems[atMenuSelectedIndex];
-                        if (selectedItem) {
-                          if (selectedItem.action) {
-                            selectedItem.action();
-                          } else {
-                            const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
-                            const textBeforeCursor = input.slice(0, cursorPosition);
-                            const textAfterCursor = input.slice(cursorPosition);
-                            const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-                            const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + selectedItem.name + ' ' + textAfterCursor;
-                            setInput(newInput);
-                            setTimeout(() => (inputRef.current as any)?.focus(), 0);
-                          }
+                        if (e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          setAtMenuSelectedIndex(prev => (prev + 1) % menuItems.length);
+                          return;
                         }
-                        setAtMenuOpen(false);
-                        return;
+                        if (e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          setAtMenuSelectedIndex(prev => (prev - 1 + menuItems.length) % menuItems.length);
+                          return;
+                        }
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const selectedItem = menuItems[atMenuSelectedIndex];
+                          if (selectedItem) {
+                            if (selectedItem.action) {
+                              selectedItem.action();
+                            } else {
+                              const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
+                              const textBeforeCursor = input.slice(0, cursorPosition);
+                              const textAfterCursor = input.slice(cursorPosition);
+                              const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+                              const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + selectedItem.name + ' ' + textAfterCursor;
+                              setInput(newInput);
+                              setTimeout(() => (inputRef.current as any)?.focus(), 0);
+                            }
+                          }
+                          setAtMenuOpen(false);
+                          return;
+                        }
+                        if (e.key === 'Escape') {
+                          setAtMenuOpen(false);
+                          return;
+                        }
                       }
-                      if (e.key === 'Escape') {
-                        setAtMenuOpen(false);
-                        return;
-                      }
-                    }
 
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      if (canSubmit) {
-                        submitInput();
-                        setIsExpandedBox(false);
-                        setAtMenuOpen(false);
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        if (canSubmit) {
+                          submitInput();
+                          setIsExpandedBox(false);
+                          setAtMenuOpen(false);
+                        }
                       }
-                    }
-                  }}
-                  placeholder={attachedFiles.length > 0 ? "Add a message or send files..." : "Ask a question..."}
-                  autoComplete="off"
-                  className={cn(
-                    "w-full resize-none bg-transparent pb-12 pr-14 pl-14 text-sm text-foreground focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
-                    isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]",
-                    (pageContext?.path?.startsWith("/docs") || attachedFiles.length > 0) ? "pt-3" : "pt-4 rounded-2xl"
-                  )}
-                />
+                    }}
+                    placeholder={attachedFiles.length > 0 ? "Add a message or send files..." : "Ask a question..."}
+                    autoComplete="off"
+                    className={cn(
+                      "w-full resize-none bg-transparent pb-12 pr-14 pl-14 text-sm text-foreground focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                      isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]",
+                      (pageContext?.path?.startsWith("/docs") || attachedFiles.length > 0) ? "pt-3" : "pt-4 rounded-2xl"
+                    )}
+                  />
 
-                {/* Bottom Left action bar: paperclip and AI Hub */}
-                <div className="absolute bottom-3 left-4 flex items-center gap-1">
-                  {!isGenerating && (
+                  {/* Bottom Left action bar: paperclip and AI Hub */}
+                  <div className="absolute bottom-3 left-4 flex items-center gap-1">
+                    {!isGenerating && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={attachedFiles.length >= 6}
+                        className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 transition-all cursor-pointer"
+                        title={attachedFiles.length >= 6 ? "Max 6 files" : "Attach file (max 35MB)"}
+                      >
+                        <Paperclip className={cn("h-4 w-4 -rotate-45", isAnyFileUploading && "opacity-50")} />
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={attachedFiles.length >= 6}
-                      className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 transition-all cursor-pointer"
-                      title={attachedFiles.length >= 6 ? "Max 6 files" : "Attach file (max 35MB)"}
+                      onClick={() => setIsAiHubOpen(true)}
+                      className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer"
+                      title="AI Hub"
                     >
-                      <Paperclip className={cn("h-4 w-4 -rotate-45", isAnyFileUploading && "opacity-50")} />
+                      <CustomSlidersIcon className="h-4 w-4" />
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setIsAiHubOpen(true)}
-                    className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all cursor-pointer"
-                    title="AI Hub"
-                  >
-                    <CustomSlidersIcon className="h-4 w-4" />
-                  </button>
-                </div>
+                  </div>
 
-                {/* Bottom Right action bar: send OR stop */}
-                <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
-                  {isGenerating ? (
-                    <Button
-                      type="button"
-                      variant="primary"
-                      onClick={handleStop}
-                      className="h-8 rounded-full bg-foreground text-background hover:bg-foreground/90 px-3 text-[11px] font-medium shadow-sm transition-all active:scale-95"
-                      title="Stop generating"
-                    >
-                      <Square className="mr-1.5 h-3 w-3 fill-current opacity-80" />
-                      Stop
-                    </Button>
-                  ) : (
-                    <Button
-                      type="submit"
-                      variant="ghost"
-                      size="icon"
-                      disabled={!canSubmit}
-                      className="h-8 w-8 shrink-0 rounded-full bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 transition-all shadow-sm"
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                      <span className="sr-only">Send question</span>
-                    </Button>
-                  )}
+                  {/* Bottom Right action bar: send OR stop */}
+                  <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+                    {isGenerating ? (
+                      <Button
+                        type="button"
+                        variant="primary"
+                        onClick={handleStop}
+                        className="h-8 rounded-full bg-foreground text-background hover:bg-foreground/90 px-3 text-[11px] font-medium shadow-sm transition-all active:scale-95"
+                        title="Stop generating"
+                      >
+                        <Square className="mr-1.5 h-3 w-3 fill-current opacity-80" />
+                        Stop
+                      </Button>
+                    ) : (
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="icon"
+                        disabled={!canSubmit}
+                        className="h-8 w-8 shrink-0 rounded-full bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 transition-all shadow-sm"
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                        <span className="sr-only">Send question</span>
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </form>
-          </>
-        )}
+              </form>
+            </>
+          )}
+        </div>
       </div>
     </div>
-  </div>
   );
 
   return (
@@ -4839,8 +4839,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                       <>
                         <AnimatePresence>
                           {messageQueue.length > 0 && (
-                            <motion.div layout initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, scale: 0.95}} className="flex flex-col items-start gap-2 w-full mb-2">
-                              <motion.button 
+                            <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="flex flex-col items-start gap-2 w-full mb-2">
+                              <motion.button
                                 type="button"
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -4853,7 +4853,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               </motion.button>
                               <AnimatePresence>
                                 {isQueueVisible && (
-                                  <motion.div 
+                                  <motion.div
                                     initial={{ opacity: 0, height: 0, y: -10 }}
                                     animate={{ opacity: 1, height: 'auto', y: 0 }}
                                     exit={{ opacity: 0, height: 0, y: -10 }}
@@ -4861,8 +4861,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   >
                                     <AnimatePresence>
                                       {messageQueue.map((msg) => (
-                                        <motion.div 
-                                          key={msg.id} 
+                                        <motion.div
+                                          key={msg.id}
                                           layout
                                           initial={{ opacity: 0, scale: 0.95 }}
                                           animate={{ opacity: 1, scale: 1 }}
@@ -4882,7 +4882,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                               onClick={() => {
                                                 setMessageQueue(prev => prev.filter(m => m.id !== msg.id));
                                                 setPriorityMessage(msg);
-                               极             }}
+                                              }}
                                               className="text-[12px] cursor-pointer px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                             >
                                               Send
