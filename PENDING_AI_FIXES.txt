@@ -6,12 +6,26 @@ These fixes need to be re-applied tomorrow when the system is stable:
 FIX 1: Remove AI Fallback String
 =========================================
 File: server/src/controllers/ai-chat.controller.js
-Description: 
-The AI orchestration layer sometimes injects a canned fallback string ("I have completed the requested actions") when a tool call completes but the AI doesn't generate a natural response. This needs to be actively stripped out in the controller so that background tool executions remain completely silent to the user in the UI.
+Description: Strip out the "I have completed the requested actions" fallback string.
+
+Code to inject (around line 2140 inside `streamAskAi` before sending the response):
+```javascript
+        // -------------------------------------------------------------
+        // STRIP OUT FALLBACK STRING FOR TOOL-ONLY TURNS
+        // -------------------------------------------------------------
+        if (llmResponseText.trim() === "I have completed the requested actions." ||
+            llmResponseText.trim() === "I have executed the requested tool.") {
+            llmResponseText = ""; // Make it totally silent
+        }
+```
 
 =========================================
 FIX 2: Add Multimodal & File Analysis Rule to System Prompt
 =========================================
 File: server/src/controllers/ai-chat.controller.js
-Description: 
-The AI needs an explicit, high-priority instruction in its dynamic system prompt telling it that it is strictly forbidden from refusing to read files. It must be explicitly told to use its tools to analyze audio, video, zip, pptx, pdfs, and code without hesitation.
+Description: Add explicit file analysis rule.
+
+Code to inject (around line 726, inside `buildSystemPrompt`):
+```javascript
+        dynamicSystemPrompt += `\n\nFILE ANALYSIS & MULTIMODAL RULE (CRITICAL):\nIf you have a tool available to analyze or read uploaded files, you are COMPLETELY FREE to use it. You MUST NOT skip or refuse to read ANY kind of file (including audio, video, zip files, pptx, pdf, images, code, and everything else). You are NOT limited to PDFs or photos. If a user asks you to read or analyze a file, use your tools to read it immediately. DO NOT say "I cannot read audio/video/zip" — you MUST use your tools to extract and process the data!`;
+```
