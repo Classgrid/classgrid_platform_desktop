@@ -397,19 +397,17 @@ export const getMcpTools = () => [
       required: ['filePath']
     }
   },
-/*
   {
     name: 'transcribe_audio',
-    description: 'Convert an audio file (mp3, wav) into text using Cloudflare Workers AI (Whisper).',
+    description: 'Convert an audio file (mp3, wav, webm) into text. STRICT RULE: NEVER pass a video file (.mp4) directly to this tool. If you have a video, you MUST first use run_code to extract it to .mp3 using ffmpeg, upload the mp3 to the CDN, and ONLY pass the new .mp3 URL to this tool!',
     inputSchema: {
       type: 'object',
       properties: {
-        fileUrl: { type: 'string', description: 'The public URL of the audio file to transcribe.' }
+        fileUrl: { type: 'string', description: 'The public URL of the pure audio file to transcribe.' }
       },
       required: ['fileUrl']
     }
   }
-*/
 ];
 
 export const handleToolCall = async (name, args, context = {}) => {
@@ -425,7 +423,6 @@ export const handleToolCall = async (name, args, context = {}) => {
       }
     }
 
-/*
     if (name === 'transcribe_audio') {
       try {
         const { fileUrl } = args;
@@ -472,7 +469,6 @@ export const handleToolCall = async (name, args, context = {}) => {
         return { content: [{ type: 'text', text: `Error in transcribe_audio: ${e.message}` }] };
       }
     }
-*/
 
     if (name === 'unified_db_query') {
       let { source, collectionOrTable, operation, query = {}, data = {} } = args;
