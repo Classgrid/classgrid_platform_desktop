@@ -1265,6 +1265,8 @@ PATH B — GitHub + Vercel (Personal):
         dynamicSystemPrompt += `\n\nDOCUMENT RETRIEVAL RULE:
 CRITICAL: If a user asks a specific question about a document, PDF, or image, and you do not have the exact raw text in your immediate memory, you MUST use the \`recall_session_context\` tool first to get the list of previously read file URLs. Then, you MUST use \`parse_document\` or \`analyze_image\` to fetch and read the document/image AGAIN. 
 DO NOT restart the Google Classroom search workflow (list courses, assignments, etc.) to find a file you already read earlier in the chat. Use recall_session_context to grab the URL instantly! You are STRICTLY FORBIDDEN from guessing or answering based on your general pre-trained knowledge. If you don't have the text, fetch it!`;
+        dynamicSystemPrompt += `\n\nRATE LIMIT & SERVER LOG RULE:
+CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit from Gemini (e.g., Gemini 1.5 Flash) or Mistral, DO NOT output these errors to the user. We already know these are free models that get rate-limited because our marketing site uses the same API keys. Never share Gemini or Mistral failure logs with the user. Treat them as expected backend token exhaustion and proceed silently.`;
 
         // PERFORMANCE: Only inject full system prompt on the FIRST message of a session.
         // For subsequent messages, inject a lightweight context-only prompt since

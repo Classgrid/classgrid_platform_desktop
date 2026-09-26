@@ -438,6 +438,8 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (!audioResponse.ok) {
           return { content: [{ type: 'text', text: `Error: Failed to fetch audio file from URL. Status: ${audioResponse.status}` }] };
         }
+        const mimeType = audioResponse.headers.get('content-type') || 'audio/webm';
+        const cleanMime = mimeType.split(';')[0];
         const audioBuffer = await audioResponse.arrayBuffer();
 
         // Send to Cloudflare Workers AI Whisper
@@ -446,7 +448,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${cfToken}`,
-            'Content-Type': 'application/octet-stream'
+            'Content-Type': cleanMime
           },
           body: audioBuffer
         });
