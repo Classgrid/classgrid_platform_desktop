@@ -113,7 +113,7 @@ export const getMcpTools = () => [
     }
   },
 
-  {
+  /* {
     name: 'manage_rag_document',
     description: 'Create, read, update, delete, or list documents in the Platform RAG Knowledge Base. When creating or updating, text is vectorized using Voyage AI and stored in MongoDB.',
     inputSchema: {
@@ -128,7 +128,7 @@ export const getMcpTools = () => [
       },
       required: ['action']
     }
-  },
+  }, */
   {
     name: 'search_knowledge_base',
     description: 'Perform a similarity vector search on the internal Platform RAG Knowledge Base in MongoDB.',
