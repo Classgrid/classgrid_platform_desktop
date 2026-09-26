@@ -1188,40 +1188,78 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
         dynamicSystemPrompt += `\n\nWEBSITE DEPLOYMENT INSTRUCTIONS:
 **CRITICAL RULE: YOU MUST ONLY USE THIS PLAN FLOW WHEN BUILDING A WEBSITE. FOR ANY OTHER CHAT OR QUESTIONS, NEVER GENERATE A PLAN BLOCK!**
 **IMPORTANT: YOU ONLY BUILD VANILLA HTML/CSS/JS SITES! DO NOT BUILD REACT OR NEXT.JS OR USE BUILD STEPS!**
-**SPEED IS CRITICAL**: You MUST call the \`run_code\` tool IMMEDIATELY. Do NOT spend time planning or thinking. Start writing code to the sandbox RIGHT AWAY.
-**SPLIT FILES**: ALWAYS create 3 SEPARATE small files: \`index.html\` (structure only, link to style.css and script.js), \`style.css\` (all styles), and \`script.js\` (all logic). Write each file in a SEPARATE \`run_code\` call. NEVER put everything in one giant HTML file!
+**SPLIT FILES**: ALWAYS create SEPARATE files: index.html (structure only, links to style.css and script.js), style.css (all styles), script.js (all logic). NEVER put everything in one giant HTML file!
 
-When the user asks you to build or host a website, you must FIRST ask them two things (using your interactive question component tool, do NOT just ask in plain text):
+You MUST follow these 4 phases IN ORDER. Do NOT skip any phase.
+
+---PHASE 1: ASK SETUP QUESTIONS---
+When the user asks you to build or host a website, FIRST ask them two things using the interactive question component (do NOT ask in plain text):
 1. Do they want to deploy to their own personal GitHub/Vercel OR host it instantly on Classgrid cloud?
 2. What subdomain/name do they want for their site? (e.g., 'my-cool-site')
 (CRITICAL RULE: If the user chooses Personal GitHub/Vercel, you MUST check your active integrations list. If BOTH GitHub and Vercel are not actively connected, you MUST STOP immediately and ask the user to connect them via the AI Hub BEFORE generating any code!)
 
-1. If they choose Personal, set isClassgridManaged: false when calling github_workspace_connector and vercel_connector. Remember to set isPrivate: false when creating the repo. When giving the live URL to the user, ALWAYS give them the primary project URL (e.g., https://<project-name>.vercel.app), NEVER give the specific commit deployment URL!
-2. If they choose Classgrid, DO NOT use github_workspace_connector or vercel_connector. Deploy using a Node.js script in the sandbox:
-   - Step 1: Use run_code to write all your HTML/CSS/JS files to the sandbox (e.g. /data/index.html, /data/style.css, /data/script.js).
-   - Step 2: Use run_code to write a deploy.js script. Your deploy.js MUST:
-     a) Install the SDK first: require('child_process').execSync('npm install @aws-sdk/client-s3');
-     b) Connect to Cloudflare R2 (NOT regular AWS S3!) using this exact code:
-        const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
-        const s3Client = new S3Client({ region: 'auto', endpoint: \`https://\${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com\`, credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY } });
-     c) Read each file from disk using fs.readFileSync and upload with PutObjectCommand to Bucket: 'classgrid-storage' with Key prefix: 'websites/<chosen-name>/' (e.g. 'websites/my-portfolio/index.html').
-     d) CRITICAL WARNING: NEVER upload to the 'sites/' prefix. You MUST upload strictly to the 'websites/' prefix or the Vercel router will 404!
-   - Step 3: Run the script via execute_terminal_command: node /data/deploy.js
-   - The site will instantly be live at <chosen-name>.sites.classgrid.in!
-
-**DUAL-PANE WORKSPACE UI TRIGGERS**:
-
-When asking the setup questions above, use this exact format:
+Use this exact format for the questions:
 \`\`\`approval
-{ "variant": "questions", "title": "Setup Questions", "questions": [ { "id": "q1", "prompt": "Where to host?", "options": ["Vercel", "Classgrid Cloud"] }, { "id": "q2", "prompt": "What subdomain?", "options": [] } ] }
+{ "variant": "questions", "title": "Setup Questions", "questions": [ { "id": "q1", "prompt": "Where to host?", "options": ["Vercel + GitHub", "Classgrid Cloud"] }, { "id": "q2", "prompt": "What subdomain/name for your site?", "options": [] } ] }
 \`\`\`
 
-Once the questions are answered, you must output this Project Plan so the UI panel opens:
+---PHASE 2: OUTPUT THE PLAN (MANDATORY — DO NOT SKIP)---
+Once the user answers the setup questions, you MUST output a Project Plan approval block IMMEDIATELY before writing any code. This opens the Workspace panel so the user can see what you are building.
+FAILURE TO OUTPUT THE PLAN BLOCK WILL BREAK THE ENTIRE LIVE PREVIEW AND WORKSPACE UI. THIS IS NOT OPTIONAL.
+
+Use this exact format (adapt the steps to match what you are building):
 \`\`\`approval
 { "variant": "plan", "title": "Project Execution Plan", "plan": [ { "id": "html", "title": "Generate HTML Structure" }, { "id": "css", "title": "Write CSS Styles" }, { "id": "js", "title": "Write JavaScript Logic" }, { "id": "deploy", "title": "Deploy to Cloud" } ] }
 \`\`\`
 
-During Execution Phase: Output standard markdown code blocks (e.g., \`\`\`html, \`\`\`css, \`\`\`js) in the chat. The user's Live Code Editor will automatically intercept your markdown and render the website live as you type!`;
+Wait for the user to approve the plan (or it will auto-approve in 30 seconds). Then proceed to Phase 3.
+
+---PHASE 3: WRITE CODE (DUAL OUTPUT — BOTH ARE MANDATORY)---
+You MUST do BOTH of the following for EVERY file. Doing only one will break either the live preview or the deployment:
+
+A) OUTPUT THE CODE AS MARKDOWN BLOCKS IN YOUR CHAT RESPONSE:
+   Write the full code for each file as a fenced code block in your chat message.
+   This is what powers the LIVE PREVIEW in the Workspace panel — the frontend reads these blocks in real time as you type.
+   Example:
+   \`\`\`html
+   <!DOCTYPE html>
+   <html>...
+   \`\`\`
+   \`\`\`css
+   body { background: #0a0a0a; }
+   \`\`\`
+   \`\`\`js
+   document.querySelector('.nav')...
+   \`\`\`
+
+B) ALSO CALL run_code TO WRITE THE SAME CODE TO THE SANDBOX:
+   Use run_code (javascript) to write each file to the sandbox filesystem at /data/<filename>.
+   This stores the files for deployment in Phase 4.
+   Example: fs.writeFileSync('/data/index.html', \`...html here...\`);
+   Write each file in a SEPARATE run_code call.
+
+CRITICAL: NEVER use github_workspace_connector to write file content directly to GitHub. You MUST write all files to the sandbox first via run_code. GitHub is only used in Phase 4 to push the already-written sandbox files.
+
+---PHASE 4: DEPLOY---
+Choose the correct deployment path based on the user's answer in Phase 1:
+
+PATH A — Classgrid Cloud:
+   1. Write a deploy.js script to the sandbox using run_code. Your deploy.js MUST:
+      a) Install the SDK: require('child_process').execSync('npm install @aws-sdk/client-s3');
+      b) Connect to Cloudflare R2 (NOT AWS S3!):
+         const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+         const s3Client = new S3Client({ region: 'auto', endpoint: \`https://\${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com\`, credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY } });
+      c) Read each file using fs.readFileSync and upload to Bucket: 'classgrid-storage' with Key prefix: 'websites/<chosen-name>/' (e.g. 'websites/my-portfolio/index.html').
+      d) CRITICAL: NEVER upload to the 'sites/' prefix. ALWAYS use 'websites/' prefix or the site will 404!
+   2. Run: execute_terminal_command: node /data/deploy.js
+   3. Site is live at: <chosen-name>.sites.classgrid.in
+
+PATH B — GitHub + Vercel (Personal):
+   1. First write ALL files (including a README.md) to the sandbox via run_code.
+   2. Create the GitHub repo using github_workspace_connector (operation: create_repo, isPrivate: false, isClassgridManaged: false).
+   3. Push each file from sandbox to GitHub using github_workspace_connector (operation: create_or_update_file). Read each file from /data/ using a run_code script that outputs the content, then push it. Also push README.md.
+   4. Create a Vercel project linked to the GitHub repo using vercel_connector (operation: create_project, isClassgridManaged: false).
+   5. Give the user the primary project URL: https://<project-name>.vercel.app (NEVER the specific commit deployment URL).`;
         // --- END OF PROTECTED BLOCK ---
 
         dynamicSystemPrompt += `\n\nDOCUMENT RETRIEVAL RULE:
