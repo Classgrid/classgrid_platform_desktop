@@ -200,4 +200,27 @@ router.post('/send', isAuthenticated, upload.single('audio'), async (req, res) =
     }
 });
 
+
+/**
+ * POST /api/voice/transcribe
+ * Transcribes audio for dictation (Ask AI Panel) without broadcasting a message
+ */
+router.post('/transcribe', isAuthenticated, upload.single('audio'), async (req, res) => {
+    try {
+        const file = req.file;
+        if (!file) return res.status(400).json({ error: "No audio file provided" });
+
+        const transcription = await transcribeAudio(file.buffer, file.originalname);
+
+        res.status(200).json({ 
+            success: true, 
+            text: transcription 
+        });
+
+    } catch (err) {
+        console.error("[Voice Transcribe Route] Error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 export default router;

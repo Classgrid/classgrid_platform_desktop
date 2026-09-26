@@ -240,7 +240,7 @@ export function WaveformPlayer({ url, fallbackDurationSeconds, fileName }: Wavef
   };
 
   return (
-    <div className="flex items-center gap-3 p-2 rounded-3xl bg-background/90 backdrop-blur-sm border border-border w-full max-w-[300px] min-w-[260px] shadow-sm">
+    <div className="flex items-center gap-3 p-2 rounded-3xl bg-background/90 backdrop-blur-sm border border-border w-full max-w-[300px] min-w-0 shadow-sm">
       <button
         onClick={togglePlay}
         disabled={!canControl}

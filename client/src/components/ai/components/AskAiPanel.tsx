@@ -48,6 +48,7 @@ import {
   Search,
   Sparkles,
   Square,
+  Mic,
   ThumbsDown,
   ThumbsUp,
   Trash2,
@@ -1447,6 +1448,15 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
 
+  // --- Voice Dictation State ---
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+
   // --- Auto-Execution Queue State (Removed: Now handled by Backend Control Plane) ---
   // Build TOC items from user questions
   const tocItems = useMemo(() => {
@@ -1612,6 +1622,98 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setShowFilesPanel(true);
     }
   }, [hasPlan]);
+
+  // ─── Voice Dictation Methods ───
+  const getSupportedAudioMimeType = () => {
+    if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") return undefined;
+    return ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"].find((mimeType) => MediaRecorder.isTypeSupported(mimeType));
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = getSupportedAudioMimeType();
+      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const recordedMimeType = mediaRecorder.mimeType || "audio/webm";
+        const blob = new Blob(audioChunksRef.current, { type: recordedMimeType });
+        mediaRecorderRef.current = null;
+        stream.getTracks().forEach(track => track.stop());
+
+        if (blob.size === 0 || recordingTime < 1) {
+          setRecordingTime(0);
+          toast.error("Voice note too short");
+          return;
+        }
+        
+        setIsTranscribing(true);
+        try {
+          const formData = new FormData();
+          const ext = recordedMimeType.includes('mp4') ? 'mp4' : recordedMimeType.includes('ogg') ? 'ogg' : 'webm';
+          formData.append('audio', new File([blob], `dictation.${ext}`, { type: recordedMimeType }));
+          
+          const endpoint = typeof import.meta !== "undefined" && import.meta.env
+            ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in") + "/api/voice/transcribe"
+            : "/api/voice/transcribe";
+            
+          const res = await fetch(endpoint, {
+            method: "POST",
+            body: formData,
+            credentials: "include"
+          });
+          
+          const data = await res.json();
+          if (data.success && data.text) {
+             setInput(prev => prev ? prev + " " + data.text : data.text);
+             setTimeout(() => {
+                if (inputRef.current) {
+                  inputRef.current.style.height = 'auto';
+                  inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 180)}px`;
+                }
+             }, 100);
+          } else {
+             toast.error("Failed to transcribe audio");
+          }
+        } catch (err) {
+          toast.error("Error transcribing audio");
+        } finally {
+          setIsTranscribing(false);
+          setRecordingTime(0);
+        }
+      };
+
+      mediaRecorder.start(1000);
+      setIsRecording(true);
+      setRecordingTime(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error("Error accessing mic", err);
+      toast.error("Microphone access denied");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      if (mediaRecorderRef.current.state === "recording") {
+        try { mediaRecorderRef.current.requestData(); } catch (e) { }
+      }
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    }
+  };
 
   // ─── Header Action Handlers ───
   const handleDirectShare = async () => {
@@ -5135,107 +5237,134 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               )}
                             </AnimatePresence>
 
-                            <textarea
-                              id="ask-ai-input"
-                              name="askAiQuestion"
-                              data-no-ring="true"
-                              suppressHydrationWarning
-                              ref={inputRef as any}
-                              value={input}
-                              onChange={(event) => {
-                                const val = event.target.value;
-                                setInput(val);
-                                const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
-                                if (isExpandedBox && wordCount < 90) {
-                                  setIsExpandedBox(false);
-                                }
-                                if (val.length === 0) {
-                                  event.target.style.height = '';
-                                } else if (!isExpandedBox || wordCount < 90) {
-                                  event.target.style.height = 'auto';
-                                  event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
-                                }
-
-                                // @ mention logic
-                                const cursorPosition = event.target.selectionStart;
-                                const textBeforeCursor = val.slice(0, cursorPosition);
-                                const atMatch = textBeforeCursor.match(/(?:^|\s)@(\S*)$/);
-                                if (atMatch) {
-                                  setAtMenuOpen(true);
-                                  setAtMenuQuery(atMatch[1]);
-                                  setAtMenuSelectedIndex(0);
-                                } else {
-                                  setAtMenuOpen(false);
-                                }
-                              }}
-                              onPaste={handlePaste}
-                              onKeyDown={(e) => {
-                                if (atMenuOpen) {
-                                  const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
-                                    item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
-                                    (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
-                                  );
-                                  const baseItems = [
-                                    { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
-                                    { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
-                                    { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
-                                    { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
-                                    { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
-                                    { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
-                                  ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
-                                  const menuItems = [...baseItems, ...filteredIntegrations];
-
-                                  if (e.key === 'ArrowDown') {
-                                    e.preventDefault();
-                                    setAtMenuSelectedIndex(prev => (prev + 1) % menuItems.length);
-                                    return;
-                                  }
-                                  if (e.key === 'ArrowUp') {
-                                    e.preventDefault();
-                                    setAtMenuSelectedIndex(prev => (prev - 1 + menuItems.length) % menuItems.length);
-                                    return;
-                                  }
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    const selectedItem = menuItems[atMenuSelectedIndex];
-                                    if (selectedItem) {
-                                      if (selectedItem.action) {
-                                        selectedItem.action();
-                                      } else {
-                                        const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
-                                        const textBeforeCursor = input.slice(0, cursorPosition);
-                                        const textAfterCursor = input.slice(cursorPosition);
-                                        const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-                                        const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + selectedItem.name + ' ' + textAfterCursor;
-                                        setInput(newInput);
-                                        setTimeout(() => (inputRef.current as any)?.focus(), 0);
+                            {isRecording ? (
+                               <div className="w-full flex items-center px-4 py-4 min-h-[56px] rounded-2xl bg-transparent animate-in fade-in">
+                                  <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse mr-3 shrink-0" />
+                                  <span className="text-sm font-mono mr-3 text-foreground shrink-0">
+                                    {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+                                  </span>
+                                  <div className="flex-1 flex items-center justify-start gap-1 overflow-x-auto no-scrollbar px-2" style={{ scrollbarWidth: 'none' }}>
+                                    {[...Array(Math.max(5, recordingTime * 2))].map((_, i) => {
+                                      const height = 4 + Math.abs(Math.sin(i * 0.5) * 8 + Math.cos(i * 0.2) * 6);
+                                      return (
+                                        <div key={i} className="w-1 bg-foreground rounded-full shrink-0 opacity-60" style={{ height: `${height}px` }} />
+                                      );
+                                    })}
+                                    <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth' })} />
+                                  </div>
+                               </div>
+                            ) : isTranscribing ? (
+                               <div className="w-full flex items-center px-4 py-4 min-h-[56px] rounded-2xl bg-transparent animate-in fade-in opacity-50">
+                                  <Spinner className="w-4 h-4 mr-3" />
+                                  <div className="flex-1 flex items-center justify-start gap-1 overflow-hidden px-2">
+                                    {[...Array(20)].map((_, i) => (
+                                      <div key={i} className="w-1 bg-foreground rounded-full shrink-0" style={{ height: `${4 + (i%3)*4}px` }} />
+                                    ))}
+                                  </div>
+                               </div>
+                            ) : (
+                                <textarea
+                                  id="ask-ai-input"
+                                  name="askAiQuestion"
+                                  data-no-ring="true"
+                                  suppressHydrationWarning
+                                  ref={inputRef as any}
+                                  value={input}
+                                  onChange={(event) => {
+                                    const val = event.target.value;
+                                    setInput(val);
+                                    const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
+                                    if (isExpandedBox && wordCount < 90) {
+                                      setIsExpandedBox(false);
+                                    }
+                                    if (val.length === 0) {
+                                      event.target.style.height = '';
+                                    } else if (!isExpandedBox || wordCount < 90) {
+                                      event.target.style.height = 'auto';
+                                      event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
+                                    }
+  
+                                    // @ mention logic
+                                    const cursorPosition = event.target.selectionStart;
+                                    const textBeforeCursor = val.slice(0, cursorPosition);
+                                    const atMatch = textBeforeCursor.match(/(?:^|\s)@(\S*)$/);
+                                    if (atMatch) {
+                                      setAtMenuOpen(true);
+                                      setAtMenuQuery(atMatch[1]);
+                                      setAtMenuSelectedIndex(0);
+                                    } else {
+                                      setAtMenuOpen(false);
+                                    }
+                                  }}
+                                  onPaste={handlePaste}
+                                  onKeyDown={(e) => {
+                                    if (atMenuOpen) {
+                                      const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
+                                        item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
+                                        (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
+                                      );
+                                      const baseItems = [
+                                        { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
+                                        { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
+                                        { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
+                                        { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
+                                        { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
+                                        { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
+                                      ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
+                                      const menuItems = [...baseItems, ...filteredIntegrations];
+  
+                                      if (e.key === 'ArrowDown') {
+                                        e.preventDefault();
+                                        setAtMenuSelectedIndex(prev => (prev + 1) % menuItems.length);
+                                        return;
+                                      }
+                                      if (e.key === 'ArrowUp') {
+                                        e.preventDefault();
+                                        setAtMenuSelectedIndex(prev => (prev - 1 + menuItems.length) % menuItems.length);
+                                        return;
+                                      }
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        const selectedItem = menuItems[atMenuSelectedIndex];
+                                        if (selectedItem) {
+                                          if (selectedItem.action) {
+                                            selectedItem.action();
+                                          } else {
+                                            const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
+                                            const textBeforeCursor = input.slice(0, cursorPosition);
+                                            const textAfterCursor = input.slice(cursorPosition);
+                                            const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+                                            const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + selectedItem.name + ' ' + textAfterCursor;
+                                            setInput(newInput);
+                                            setTimeout(() => (inputRef.current as any)?.focus(), 0);
+                                          }
+                                        }
+                                        setAtMenuOpen(false);
+                                        return;
+                                      }
+                                      if (e.key === 'Escape') {
+                                        setAtMenuOpen(false);
+                                        return;
                                       }
                                     }
-                                    setAtMenuOpen(false);
-                                    return;
-                                  }
-                                  if (e.key === 'Escape') {
-                                    setAtMenuOpen(false);
-                                    return;
-                                  }
-                                }
-
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                  e.preventDefault();
-                                  if (canSubmit) {
-                                    submitInput();
-                                    setIsExpandedBox(false);
-                                    setAtMenuOpen(false);
-                                  }
-                                }
-                              }}
-                              placeholder="Ask a question..."
-                              autoComplete="off"
-                              className={cn(
-                                "w-full resize-none bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl text-sm text-foreground focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
-                                isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]"
-                              )}
-                            />
+  
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      if (canSubmit) {
+                                        submitInput();
+                                        setIsExpandedBox(false);
+                                        setAtMenuOpen(false);
+                                      }
+                                    }
+                                  }}
+                                  placeholder="Ask a question..."
+                                  autoComplete="off"
+                                  className={cn(
+                                    "w-full resize-none bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl text-sm text-foreground focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                                    isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]"
+                                  )}
+                                />
+                            )}
 
                             {/* Bottom left: paperclip */}
                             <div className="absolute bottom-3 left-4 flex items-center gap-1">
@@ -5255,6 +5384,14 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 title="AI Hub"
                               >
                                 <CustomSlidersIcon className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={isRecording ? stopRecording : startRecording}
+                                className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${isRecording ? "text-red-500 bg-red-500/10 hover:bg-red-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted/80"}`}
+                                title={isRecording ? "Stop dictation" : "Dictate"}
+                              >
+                                {isRecording ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-4 w-4" />}
                               </button>
                             </div>
 
