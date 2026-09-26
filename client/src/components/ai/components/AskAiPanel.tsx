@@ -5238,8 +5238,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                             </AnimatePresence>
 
                             {isRecording ? (
-                               <div className="w-full flex items-center px-4 py-4 min-h-[56px] rounded-2xl bg-transparent animate-in fade-in">
-                                  <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse mr-3 shrink-0" />
+                               <div className={cn("w-full flex items-center bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl transition-all duration-300", isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]")}>
+                                  <div className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse mr-3 shrink-0" />
                                   <span className="text-sm font-mono mr-3 text-foreground shrink-0">
                                     {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
                                   </span>
@@ -5254,7 +5254,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   </div>
                                </div>
                             ) : isTranscribing ? (
-                               <div className="w-full flex items-center px-4 py-4 min-h-[56px] rounded-2xl bg-transparent animate-in fade-in opacity-50">
+                               <div className={cn("w-full flex items-center bg-transparent pb-12 pr-14 pl-14 pt-4 rounded-2xl transition-all duration-300 opacity-50", isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]")}>
                                   <Spinner className="w-4 h-4 mr-3" />
                                   <div className="flex-1 flex items-center justify-start gap-1 overflow-hidden px-2">
                                     {[...Array(20)].map((_, i) => (
@@ -5392,7 +5392,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               <button
                                 type="button"
                                 onClick={isRecording ? stopRecording : startRecording}
-                                className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${isRecording ? "text-red-500 bg-red-500/10 hover:bg-red-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted/80"}`}
+                                className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${isRecording ? "text-primary bg-primary/10 hover:bg-primary/20" : "text-muted-foreground hover:text-foreground hover:bg-muted/80"}`}
                                 title={isRecording ? "Stop dictation" : "Dictate"}
                               >
                                 {isRecording ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-4 w-4" />}
