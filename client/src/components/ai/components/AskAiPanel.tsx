@@ -1515,7 +1515,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               <ReactMarkdown
                 remarkPlugins={memoizedRemarkPlugins}
                 rehypePlugins={memoizedRehypePlugins}
-                components={components}
+                components={MarkdownComponents}
               >
                 {planText}
               </ReactMarkdown>
