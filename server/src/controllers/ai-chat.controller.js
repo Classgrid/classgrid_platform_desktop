@@ -1219,11 +1219,11 @@ Use this exact format (adapt the steps to match what you are building):
 Wait for the user to approve the plan (or it will auto-approve in 30 seconds). Then proceed to Phase 3.
 
 ---PHASE 3: WRITE CODE---
-You MUST write all code using the `run_code` tool. 
+You MUST write all code using the \`run_code\` tool. 
 
 CALL run_code TO WRITE CODE TO THE SANDBOX:
 Use run_code (javascript) to write each file to the sandbox filesystem at /data/<filename>.
-Example: fs.writeFileSync('/data/index.html', \`...html here...\`);
+Example: fs.writeFileSync('/data/index.html', \\\`...html here...\\\`);
 Write each file in a SEPARATE run_code call.
 
 Do NOT output markdown code blocks in your chat response. The Workspace panel will automatically stream the live code from the sandbox while run_code is executing.
