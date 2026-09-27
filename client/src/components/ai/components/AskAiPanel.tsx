@@ -4163,7 +4163,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   currentStepIndex={-1}
                                   onRetry={undefined}
                                   onApprovalAction={(text) => {
-                                    if (!submitting) void askQuestion(text);
+                                    // Use ref to bypass the stale closure issue inside AssistantMessageContent's memo
+                                    askQuestionRef.current?.(text);
                                   }}
                                 />
                               )}
