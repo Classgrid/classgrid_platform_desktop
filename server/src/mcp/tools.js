@@ -873,7 +873,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         console.log(`[Sandbox] Securely injecting credentials and running Docker container for terminal command...`);
-        const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox bash /data/script.sh`;
+        const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data classgrid-ai-sandbox bash /data/script.sh`;
         const result = await ssh.execCommand(dockerCommand);
 
         console.log(`\n=================================================`);
@@ -974,7 +974,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         console.log(`[Sandbox] Securely injecting credentials and running Docker container for ${language} script...`);
-        const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data my-agent-sandbox ${execCmd} /data/script.${ext}`;
+        const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data classgrid-ai-sandbox ${execCmd} /data/script.${ext}`;
         const result = await ssh.execCommand(dockerCommand);
 
         console.log(`\n=================================================`);
