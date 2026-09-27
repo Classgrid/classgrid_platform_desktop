@@ -1198,7 +1198,7 @@ const CraftingBlock = () => {
   );
 };
 
-const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isHistorical, onRetry, currentStepIndex }: { content: string, isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean, onRetry?: (error: string) => void, currentStepIndex?: number }) => {
+const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isHistorical, onRetry, currentStepIndex, setActiveBuildSessionId }: { content: string, isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean, onRetry?: (error: string) => void, currentStepIndex?: number, setActiveBuildSessionId?: (id: string) => void }) => {
   const onApprovalActionRef = React.useRef(onApprovalAction);
   const isTypingRef = React.useRef(isTyping);
   const onRetryRef = React.useRef(onRetry);
@@ -1231,8 +1231,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
           .replace(/(?:\r?\n)+\s*\/\s*(?:\r?\n)+/g, ' / ')
           .replace(/(\S)(?:\r?\n)+\s*\//g, '$1 /')
           .replace(/\/\s*(?:\r?\n)+\s*(\S)/g, '/ $1')
-          .replace(/\(\s*(?:\r?\n)+\s*/g, '(')
-          .replace(/\s*(?:\r?\n)+\s*\)/g, ')');
+          .replace(/\(([^)]+)\)/g, (match, inner) => `(${inner.replace(/\s*(?:\r?\n)+\s*/g, ' ').trim()})`);
       }
     }
     return parts.join('');
@@ -1312,7 +1311,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                     })
                       .then(r => r.json())
                       .then(data => {
-                        if (data.sessionId) setActiveBuildSessionId(data.sessionId);
+                        if (data.sessionId && setActiveBuildSessionId) setActiveBuildSessionId(data.sessionId);
                       })
                       .catch(err => console.error("Failed to start build", err));
 
