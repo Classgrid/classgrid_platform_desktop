@@ -1388,20 +1388,6 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                 {
                     type: "function",
                     function: {
-                        name: "send_intermediate_update",
-                        description: "Use this to send a message to the user MID-TASK (e.g. 'I have read 4 images, moving on to the next...'). This streams the message to the user but keeps your execution loop alive so you can immediately call more tools right after.",
-                        parameters: {
-                            type: "object",
-                            properties: {
-                                message: { type: "string", description: "The text message to show the user." }
-                            },
-                            required: ["message"]
-                        }
-                    }
-                },
-                {
-                    type: "function",
-                    function: {
                         name: "analyze_image",
                         description: "Analyzes an image URL (.jpg, .png) using the Cloudflare Vision AI model. NEVER use terminal OCR for images, ALWAYS use this tool. You must pass the image URL and the user's specific question about the image.",
                         parameters: {
@@ -1695,13 +1681,6 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                         } catch (e) {
                             return `FAILED to recall context: ${e.message}`;
                         }
-                    },
-                    send_intermediate_update: async (args) => {
-                        const { message } = args;
-                        // The SDK already handles streaming this tool call name/args to the UI 
-                        // if we want it to, but returning the message explicitly ensures the LLM sees it.
-                        console.log(`[intermediate_update] AI says: ${message}`);
-                        return `Update successfully sent to user. You may now continue with your next tool call or final answer.`;
                     },
                     analyze_image: async (args) => {
                         try {
