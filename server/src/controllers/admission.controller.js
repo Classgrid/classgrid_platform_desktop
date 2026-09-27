@@ -2,7 +2,7 @@
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
  * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
- * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
+ * The ffffrontend is hosted 100% on Vercel. EC2 is only for the backend.
  * =========================================================================================
  */
 
@@ -46,9 +46,9 @@ import AdmissionApplication from "../models/AdmissionApplication.js";
 import CETAllotment from "../models/CETAllotment.js";
 import AdmissionOTP from "../models/AdmissionOTP.js";
 import { sendEmail } from "../services/aws-ses.service.js";
-import { 
-    getAdmissionFeeReceiptHtml, 
-    getAdmissionFeeReceiptPlainText 
+import {
+    getAdmissionFeeReceiptHtml,
+    getAdmissionFeeReceiptPlainText
 } from "../services/email-templates.service.js";
 import jwt from "jsonwebtoken";
 import connectDB from "../../config/db.js";
@@ -145,10 +145,10 @@ export const importCETAllotments = async (req, res) => {
             const workbook = xlsx.read(buffer, { type: "buffer" });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
-            
+
             // Expected headers: en_number, candidate_name, merit_number, mht_cet_score, gender, category, candidature_type, etc.
             const rawData = xlsx.utils.sheet_to_json(worksheet);
-            
+
             parsedAllotments = rawData.map(row => {
                 // Map possible header variations
                 return {
@@ -182,22 +182,22 @@ export const importCETAllotments = async (req, res) => {
             }
 
             const cleanEN = item.en_number.toString().trim().toUpperCase();
-            
+
             // Validate EN Checksum and Institute Code match
             const checksumResult = validateENNumber(cleanEN, instituteCode);
             if (!checksumResult.valid) {
-                 invalidRows.push({ item, error: checksumResult.error });
-                 continue;
+                invalidRows.push({ item, error: checksumResult.error });
+                continue;
             }
 
             validOps.push({
                 updateOne: {
                     filter: { organization_id: orgId, cap_round, en_number: cleanEN },
-                    update: { 
-                        ...item, 
+                    update: {
+                        ...item,
                         en_number: cleanEN,
-                        organization_id: orgId, 
-                        cap_round 
+                        organization_id: orgId,
+                        cap_round
                     },
                     upsert: true,
                 },
@@ -238,7 +238,7 @@ export const importCETAllotments = async (req, res) => {
             }
         }
 
-        res.json({ 
+        res.json({
             success: true,
             message: `Successfully processed file. Imported ${validOps.length} allotments. Failed: ${invalidRows.length}.${autoFlaggedUpgrades.length > 0 ? ` ⚠️ ${autoFlaggedUpgrades.length} potential upgrade(s) detected.` : ""}`,
             imported_count: validOps.length,
@@ -282,16 +282,16 @@ export const validateEN = async (req, res) => {
             .sort({ cap_round: -1 });
 
         if (!allotment) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 error: "No active allotment found for this EN number.",
                 hint: "Ensure you are entering the correct number and that the allotment is for this institute."
             });
         }
 
-        res.json({ 
-            message: "Allotment found.", 
+        res.json({
+            message: "Allotment found.",
             candidate_name: allotment.candidate_name,
-            branch: allotment.branch_name 
+            branch: allotment.branch_name
         });
     } catch (err) {
         res.status(500).json({ error: "Validation failed" });
@@ -307,7 +307,7 @@ export const sendENOTP = async (req, res) => {
         const { en_number, email, organization_id } = req.body;
 
         const org = await Organization.findById(organization_id).select("admission_config").lean();
-        
+
         // 1. Checksum Check
         const checksumResult = validateENNumber(en_number, getEngineeringInstituteCode(org));
         if (!checksumResult.valid) {
@@ -375,7 +375,7 @@ export const verifyENOTP = async (req, res) => {
 
         // OTP Valid. Find or Create Application
         let application = await AdmissionApplication.findOne({ organization_id, en_number });
-        
+
         if (!application) {
             const allotment = await CETAllotment.findOne({ organization_id, en_number }).sort({ cap_round: -1 });
             application = await AdmissionApplication.create({
@@ -397,18 +397,18 @@ export const verifyENOTP = async (req, res) => {
 
         // Issue Admission Session Token
         const token = jwt.sign(
-            { 
-                application_id: application._id, 
-                en_number: application.en_number, 
+            {
+                application_id: application._id,
+                en_number: application.en_number,
                 organization_id,
-                role: "admission_candidate" 
+                role: "admission_candidate"
             },
             JWT_SECRET,
             { expiresIn: "24h" }
         );
 
-        res.json({ 
-            message: "Authentication successful.", 
+        res.json({
+            message: "Authentication successful.",
             token,
             application_id: application._id,
             status: application.status
@@ -476,10 +476,10 @@ export const verifyEmailOTP = async (req, res) => {
         await connectDB();
         const { email, otp, organization_id } = req.body;
 
-        const record = await AdmissionOTP.findOne({ 
-            organization_id, 
+        const record = await AdmissionOTP.findOne({
+            organization_id,
             email,
-            purpose: "email_validation" 
+            purpose: "email_validation"
         }).sort({ createdAt: -1 });
 
         if (!record || record.otp !== otp || record.expires_at < new Date()) {
@@ -526,7 +526,7 @@ export const verifyPhoneOTP = async (req, res) => {
         // 2.5 Block Engineering / Diploma Direct Apply (Must go through CET Validation)
         const structureType = resolveStructureType(org);
         if (isCETStructureType(structureType)) {
-            return res.status(403).json({ 
+            return res.status(403).json({
                 error: "Engineering/Diploma admissions are managed strictly through CET profile validation.",
                 hint: "Use the authentic CET portal flow: /api/admission/cet/validate-en"
             });
@@ -534,7 +534,7 @@ export const verifyPhoneOTP = async (req, res) => {
 
         // 3. Check for Duplicates (Active applications only)
         const duplicate = await checkDuplicate(organization_id, { phone });
-        
+
         // If an application already exists under this phone, return it
         let application = duplicate;
 
@@ -552,11 +552,11 @@ export const verifyPhoneOTP = async (req, res) => {
 
         // 4. Issue Admission Session Token
         const token = jwt.sign(
-            { 
-                application_id: application._id, 
-                phone: application.phone, 
+            {
+                application_id: application._id,
+                phone: application.phone,
                 organization_id,
-                role: "admission_candidate" 
+                role: "admission_candidate"
             },
             JWT_SECRET,
             { expiresIn: "24h" }
@@ -598,7 +598,7 @@ export const saveApplicationDraft = async (req, res) => {
             const aadhar = form_data?.student_aadhar;
             const duplicate = await checkDuplicate(application.organization_id, { full_name, dob, aadhar });
             if (duplicate && duplicate._id.toString() !== application_id) {
-                return res.status(409).json({ 
+                return res.status(409).json({
                     error: "An application with this Name, Date of Birth, or Aadhaar already exists.",
                     duplicate_found: true
                 });
@@ -623,16 +623,16 @@ export const saveApplicationDraft = async (req, res) => {
 import { z } from "zod";
 
 const admissionSubmitSchema = z.object({
-  full_name: z.string().min(1, "Full name is required"),
-  dob: z.date({ required_error: "Date of Birth is required" }),
-  form_data: z.object({
-    parent_details: z.object({
-       father_name: z.string().optional(),
-       father_aadhaar: z.string().optional(),
-       mother_name: z.string().optional(),
-       mother_aadhaar: z.string().optional(),
+    full_name: z.string().min(1, "Full name is required"),
+    dob: z.date({ required_error: "Date of Birth is required" }),
+    form_data: z.object({
+        parent_details: z.object({
+            father_name: z.string().optional(),
+            father_aadhaar: z.string().optional(),
+            mother_name: z.string().optional(),
+            mother_aadhaar: z.string().optional(),
+        }).optional(),
     }).optional(),
-  }).optional(),
 });
 
 /**
@@ -655,7 +655,7 @@ export const submitApplication = async (req, res) => {
                 form_data: application.form_data,
             });
         } catch (validationError) {
-             return res.status(400).json({ error: "Incomplete application details.", details: validationError.errors });
+            return res.status(400).json({ error: "Incomplete application details.", details: validationError.errors });
         }
 
         const { allowed, reason } = await checkTransitionGates(
@@ -684,7 +684,7 @@ export const submitApplication = async (req, res) => {
                 verified_main_email: verified_main_email,
                 is_email_verified: true
             };
-            
+
             await AdmissionOTP.deleteOne({ _id: verifiedToken._id });
         }
         // ---------------------------
@@ -790,9 +790,9 @@ export const uploadAdmissionDoc = async (req, res) => {
                 const issueTimestamp = new Date(issueDate).getTime();
                 const cutoffTimestamp = new Date().getTime() - (validityLimit * 24 * 60 * 60 * 1000);
                 if (issueTimestamp < cutoffTimestamp) {
-                    return res.status(400).json({ 
-                        success: false, 
-                        message: `Document has expired. Maximum validity for ${docName} is ${validityLimit} days.` 
+                    return res.status(400).json({
+                        success: false,
+                        message: `Document has expired. Maximum validity for ${docName} is ${validityLimit} days.`
                     });
                 }
             }
@@ -910,7 +910,7 @@ export const verifyAdmissionDoc = async (req, res) => {
 export const getDocViewLink = async (req, res) => {
     try {
         const { path } = req.query; // e.g. "admissions/org_id/app_id/uuid.pdf"
-        
+
         if (!path) {
             return res.status(400).json({ success: false, message: "Path is required" });
         }
@@ -923,7 +923,7 @@ export const getDocViewLink = async (req, res) => {
         }
 
         const signedUrl = await storageService.getSignedUrl(path);
-        
+
         if (!signedUrl) {
             return res.status(404).json({ success: false, message: "Could not generate link or file missing" });
         }
@@ -953,7 +953,7 @@ export const initiateFeePayment = async (req, res) => {
 
         // 1. Fetch Organization Config to get Fee Structure ID
         const org = await Organization.findById(organization_id);
-        
+
         // 🏁 Day 17: Scholarship Check
         const feeStructureId = scholarshipService.calculateFeeStructure(application, org);
 
@@ -1251,9 +1251,9 @@ export const adminEnrollStudent = async (req, res) => {
         await session.commitTransaction();
         emitSeatBroadcast(orgId, "SEAT_ALLOCATED", allocation);
 
-        res.json({ 
-            success: true, 
-            message: "Student enrolled successfully", 
+        res.json({
+            success: true,
+            message: "Student enrolled successfully",
             vacancy_left: allocation?.vacancy ?? null
         });
 
@@ -1336,7 +1336,7 @@ export const withdrawApplication = async (req, res) => {
         if (application.fee_paid && feeConfig?.refund_policy?.enabled) {
             const rules = feeConfig.refund_policy.rules || [];
             const sessionStart = feeConfig.session_start_date;
-            
+
             if (sessionStart) {
                 const now = new Date();
                 const diffTime = (new Date(sessionStart)) - now;
@@ -1382,14 +1382,14 @@ export const withdrawApplication = async (req, res) => {
 export const importScholarships = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "Please upload a CSV/Excel file." });
-        
+
         const orgId = req.user.organization_id;
         const result = await scholarshipService.processScholarshipImport(orgId, req.file.buffer);
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             message: `Processed ${result.successCount} updates.`,
-            errors: result.errors 
+            errors: result.errors
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1425,7 +1425,7 @@ export const applyForAdmission = async (req, res) => {
         }
 
         const structureType = resolveStructureType(org) || "custom";
-        
+
         // --- 1.2 Edge Case 4: Application Edit Window Enforcement (with per-student override) ---
         const editableUntil = org.admission_config?.enrollment_config?.editable_until;
         if (editableUntil && new Date() > new Date(editableUntil)) {
@@ -1438,7 +1438,7 @@ export const applyForAdmission = async (req, res) => {
                 });
             }
         }
-        
+
         // --- 1.5 Track Isolation Gate ---
         // Engineering and Diploma (all variants) must use the CET allotment flow.
         // Allowing them through the portal apply endpoint would create orphaned
@@ -1450,7 +1450,7 @@ export const applyForAdmission = async (req, res) => {
                 structure_type: structureType
             });
         }
-        
+
         let strategy;
         try {
             strategy = getResolvedAdmissionStrategy(org);
@@ -1518,7 +1518,7 @@ export const applyForAdmission = async (req, res) => {
             try {
                 const { generateAdmissionPrintout } = await import("../services/admissions/admission-printout.service.js");
                 const printoutUrl = await generateAdmissionPrintout(application, org);
-                
+
                 application.printout_generated = true;
                 application.printout_url = printoutUrl;
                 await application.save();
@@ -1894,7 +1894,7 @@ export const fullEnrollStudent = async (req, res) => {
             });
         }
         const isEmailTrusted = Boolean(verifiedAdmissionEmail) || isDeskEnrollment;
-        
+
         // Password is set directly at the desk by the student (they are physically present)
         if (!password) {
             await session.abortTransaction();
@@ -1922,7 +1922,7 @@ export const fullEnrollStudent = async (req, res) => {
             }
             newUser.category = application.category;
             newUser.admission_type = application.en_number ? "CAP" : "Direct";
-            
+
             if (isCollege) {
                 if (application.form_data?.abc_id) newUser.abc_id = application.form_data.abc_id;
                 if (application.form_data?.anti_ragging_undertaking_no) newUser.anti_ragging_undertaking_no = application.form_data.anti_ragging_undertaking_no;
@@ -2100,7 +2100,7 @@ export const allotDivisionForCET = async (req, res) => {
         if (roll_number) {
             application.form_data.assigned_roll_number = roll_number;
         }
-        
+
         application.stage_history.push({
             status: application.status,
             changed_by: req.user._id,
