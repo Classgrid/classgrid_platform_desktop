@@ -88,6 +88,20 @@ export const getMcpTools = () => [
       required: ['prompt']
     }
   },
+  /*
+  {
+    name: 'edit_image',
+    description: 'Edits an existing image based on a prompt (Image-to-Image). Use this when the user asks to modify, apply a style, or edit an image they uploaded. DO NOT use this to generate a new image from scratch.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        imageUrl: { type: 'string', description: 'The absolute URL of the original image to edit.' },
+        prompt: { type: 'string', description: 'The highly detailed prompt describing how the image should be edited.' }
+      },
+      required: ['imageUrl', 'prompt']
+    }
+  },
+  */
   {
     name: 'run_code',
     description: 'Execute Python or JavaScript code securely in the AWS EC2 Docker Sandbox. Use this for calculations, data analysis, or executing scripts. CRITICAL: DO NOT use this tool to generate PDFs (no ReportLab). ALWAYS use the native generate_pdf tool instead.',
