@@ -470,60 +470,60 @@ async function buildDeepContext(userEmail) {
 export const streamAskAi = async (req, res) => {
     const body = req.body || {};
 
-        const userId = req.user?.id || body.userId;
-        if (userId) {
-            try {
-                const User = (await import("../models/User.js")).default;
-                const Organization = (await import("../models/Organization.js")).default;
-                const userTokens = await User.findById(userId).select("ai_tokens organization_id");
-                
-                if (userTokens && userTokens.ai_tokens) {
-                    const now = new Date();
-                    // Reset weekly tokens if date passed
-                    if (now > new Date(userTokens.ai_tokens.week_reset_date)) {
-                        userTokens.ai_tokens.used_this_week = 0;
-                        const nextWeek = new Date();
-                        nextWeek.setDate(nextWeek.getDate() + 7);
-                        userTokens.ai_tokens.week_reset_date = nextWeek;
-                        await userTokens.save();
-                    }
-                    
-                    const remaining = userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week;
-                    if (remaining <= 0) {
-                        let proAllowed = false;
-                        if (userTokens.organization_id) {
-                            const org = await Organization.findById(userTokens.organization_id).select("ai_config");
-                            if (org && org.ai_config) {
-                                if (now > new Date(org.ai_config.pro_reset_date)) {
-                                    org.ai_config.pro_used_this_period = 0;
-                                    const nextReset = new Date();
-                                    nextReset.setHours(nextReset.getHours() + 4);
-                                    org.ai_config.pro_reset_date = nextReset;
-                                    await org.save();
-                                }
-                                
-                                const proRemaining = org.ai_config.pro_pool_limit - org.ai_config.pro_used_this_period;
-                                if (proRemaining > 0) {
-                                    const roleStr = req.user?.role || body.role;
-                                    if (org.ai_config.pro_enabled_roles?.includes(roleStr) || 
-                                        org.ai_config.pro_enabled_users?.includes(userId)) {
-                                        proAllowed = true;
-                                    }
+    const userId = req.user?.id || body.userId;
+    if (userId) {
+        try {
+            const User = (await import("../models/User.js")).default;
+            const Organization = (await import("../models/Organization.js")).default;
+            const userTokens = await User.findById(userId).select("ai_tokens organization_id");
+
+            if (userTokens && userTokens.ai_tokens) {
+                const now = new Date();
+                // Reset weekly tokens if date passed
+                if (now > new Date(userTokens.ai_tokens.week_reset_date)) {
+                    userTokens.ai_tokens.used_this_week = 0;
+                    const nextWeek = new Date();
+                    nextWeek.setDate(nextWeek.getDate() + 7);
+                    userTokens.ai_tokens.week_reset_date = nextWeek;
+                    await userTokens.save();
+                }
+
+                const remaining = userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week;
+                if (remaining <= 0) {
+                    let proAllowed = false;
+                    if (userTokens.organization_id) {
+                        const org = await Organization.findById(userTokens.organization_id).select("ai_config");
+                        if (org && org.ai_config) {
+                            if (now > new Date(org.ai_config.pro_reset_date)) {
+                                org.ai_config.pro_used_this_period = 0;
+                                const nextReset = new Date();
+                                nextReset.setHours(nextReset.getHours() + 4);
+                                org.ai_config.pro_reset_date = nextReset;
+                                await org.save();
+                            }
+
+                            const proRemaining = org.ai_config.pro_pool_limit - org.ai_config.pro_used_this_period;
+                            if (proRemaining > 0) {
+                                const roleStr = req.user?.role || body.role;
+                                if (org.ai_config.pro_enabled_roles?.includes(roleStr) ||
+                                    org.ai_config.pro_enabled_users?.includes(userId)) {
+                                    proAllowed = true;
                                 }
                             }
                         }
-                        
-                        if (!proAllowed) {
-                            res.writeHead(429, { "Content-Type": "application/json" });
-                            res.end(JSON.stringify({ error: "ai_quota_exceeded", message: "You have run out of AI tokens for this week.", resetDate: userTokens.ai_tokens.week_reset_date }));
-                            return;
-                        }
+                    }
+
+                    if (!proAllowed) {
+                        res.writeHead(429, { "Content-Type": "application/json" });
+                        res.end(JSON.stringify({ error: "ai_quota_exceeded", message: "You have run out of AI tokens for this week.", resetDate: userTokens.ai_tokens.week_reset_date }));
+                        return;
                     }
                 }
-            } catch (err) {
-                console.error("Quota check error:", err);
             }
+        } catch (err) {
+            console.error("Quota check error:", err);
         }
+    }
 
     // 1. Setup Server-Sent Events (SSE) headers for Express
     res.writeHead(200, {
@@ -1194,7 +1194,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 2. NO DUPLICATE HEADINGS: The \`generate_pdf\` tool automatically renders the \`title\` parameter as an \`<h1>\` at the top of the document. Do NOT manually add a duplicate \`<h1>\` with the title inside your HTML content.
 3. HUMANIZE LABELS: NEVER output raw backend database enum values (like "org_admin", "super_admin") in your chat responses or in PDF reports. Always map them to human-readable labels (e.g., "Organization Admin", "Super Admin") before rendering.`;
 
-        
+
         // --- DO NOT TOUCH THIS BLOCK ---
         // These instructions were painstakingly negotiated. Do not let any AI rewrite or modify them.
         dynamicSystemPrompt += `\n\nWEBSITE DEPLOYMENT INSTRUCTIONS:
@@ -1687,7 +1687,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                             const { url, question } = args;
                             if (!url) return "ERROR: No url provided in tool arguments.";
 
-                            try { await redis.rpush(`ai:chat:files:${sessionId}`, url); await redis.expire(`ai:chat:files:${sessionId}`, 86400); } catch(e) { console.error("Redis error", e); }
+                            try { await redis.rpush(`ai:chat:files:${sessionId}`, url); await redis.expire(`ai:chat:files:${sessionId}`, 86400); } catch (e) { console.error("Redis error", e); }
 
                             console.log(`[analyze_image] Fetching Image URL: ${url}`);
                             const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
@@ -1737,7 +1737,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                             const { url } = args;
                             if (!url) return "ERROR: No url provided in tool arguments.";
 
-                            try { await redis.rpush(`ai:chat:files:${sessionId}`, url); await redis.expire(`ai:chat:files:${sessionId}`, 86400); } catch(e) { console.error("Redis error", e); }
+                            try { await redis.rpush(`ai:chat:files:${sessionId}`, url); await redis.expire(`ai:chat:files:${sessionId}`, 86400); } catch (e) { console.error("Redis error", e); }
 
                             console.log(`[parse_document] Fetching Document URL: ${url}`);
                             const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
@@ -2047,7 +2047,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                                 const content = doc.chunkText || doc.text || 'No content';
                                 const docType = doc.documentType || (doc.metadata && doc.metadata.type) || 'unknown';
                                 const source = doc.sourceUrl || (doc.metadata && doc.metadata.source) || 'unknown';
-                                return `[Document ${idx+1}] (Score: ${doc.score.toFixed(3)})\nSource: ${source}\nType: ${docType}\nContent:\n${content}`;
+                                return `[Document ${idx + 1}] (Score: ${doc.score.toFixed(3)})\nSource: ${source}\nType: ${docType}\nContent:\n${content}`;
                             }).join('\n\n---\n\n');
 
                             return `RAG Search Results:\n\n${formatted}`;
@@ -2279,7 +2279,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     }
                     const outputTokens = encode(`${answer || ""}\n${typeof accThought !== 'undefined' ? (accThought || "") : ""}`).length;
                     calculatedTokens = inputTokens + outputTokens;
-                } catch(e) {
+                } catch (e) {
                     console.error("Token calculation failed, falling back to math:", e);
                     calculatedTokens = Math.ceil(((body.question || "").length + answer.length + (typeof accThought !== 'undefined' ? (accThought || "").length : 0)) / 4);
                 }
@@ -2288,7 +2288,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     const User = (await import("../models/User.js")).default;
                     const Organization = (await import("../models/Organization.js")).default;
                     const userTokens = await User.findById(userId).select("ai_tokens organization_id");
-                    
+
                     let deductedFromPro = false;
                     let currentRemaining = 0;
                     let updateType = 'free';
@@ -2299,26 +2299,26 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                             const proRemaining = org.ai_config.pro_pool_limit - org.ai_config.pro_used_this_period;
                             // FIX: Only trust req.user.role to prevent body spoofing
                             const roleStr = req.user?.role;
-                            
+
                             // FIX: Ensure pro pool actually has enough tokens for this request to prevent negative balance
                             if (proRemaining >= estimatedTokens && (org.ai_config.pro_enabled_roles?.includes(roleStr) || org.ai_config.pro_enabled_users?.includes(userId))) {
                                 // FIX: Use atomic $inc and {new: true} to get the true post-update remaining balance
                                 const updatedOrg = await Organization.findByIdAndUpdate(userTokens.organization_id, {
                                     $inc: { "ai_config.pro_used_this_period": estimatedTokens }
                                 }, { new: true });
-                                
+
                                 deductedFromPro = true;
                                 currentRemaining = updatedOrg.ai_config.pro_pool_limit - updatedOrg.ai_config.pro_used_this_period;
                                 updateType = 'pro';
                             }
                         }
                     }
-                    
+
                     if (!deductedFromPro && userTokens && userTokens.ai_tokens) {
                         const freeRemaining = userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week;
                         // FIX: Clamp the deduction to the remaining balance so we never go negative
                         const deduction = Math.max(0, Math.min(estimatedTokens, freeRemaining));
-                        
+
                         if (deduction > 0) {
                             // FIX: Use atomic $inc and {new: true} to get the true post-update remaining balance
                             const updatedUser = await User.findByIdAndUpdate(userId, {
@@ -2340,7 +2340,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     }
                 }
             }
-        } catch(e) {
+        } catch (e) {
             console.error("Failed to deduct tokens:", e);
         }
         // ---------------------------------
@@ -3221,30 +3221,30 @@ export const deleteGeneratedImage = async (req, res) => {
         if (!userEmail) {
             return res.status(401).json({ error: "Unauthorized" });
         }
-        
+
         const messageId = req.params.id;
         const { primarySupabaseClient } = await import('../config/supabaseClient.js');
-        
+
         const { data: message, error } = await primarySupabaseClient
             .from('ai_chat_messages')
             .select('session_id')
             .eq('id', messageId)
             .single();
-            
+
         if (!message) return res.status(404).json({ error: "Image not found" });
-        
+
         const { data: session } = await primarySupabaseClient
             .from('ai_chat_sessions')
             .select('user_email')
             .eq('id', message.session_id)
             .single();
-            
+
         if (!session || session.user_email !== userEmail) {
             return res.status(403).json({ error: "Forbidden" });
         }
-        
+
         await primarySupabaseClient.from('ai_chat_messages').delete().eq('id', messageId);
-        
+
         res.json({ success: true });
     } catch (e) {
         console.error("Error deleting image:", e);
@@ -3256,12 +3256,12 @@ export const getMyUsage = async (req, res) => {
     try {
         const User = (await import("../models/User.js")).default;
         const Organization = (await import("../models/Organization.js")).default;
-        
+
         const userTokens = await User.findById(req.user.id).select("ai_tokens organization_id role");
         if (!userTokens || !userTokens.ai_tokens) {
             return res.json({ type: 'free', used: 0, limit: 100000, remaining: 100000 });
         }
-        
+
         const freeData = {
             used: userTokens.ai_tokens.used_this_week,
             limit: userTokens.ai_tokens.free_weekly_limit,
@@ -3286,7 +3286,7 @@ export const getMyUsage = async (req, res) => {
                 }
             }
         }
-        
+
         const remaining = userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week;
         return res.json({
             type: 'free',
@@ -3309,12 +3309,12 @@ export const getOrgUsage = async (req, res) => {
         if (!org || !org.ai_config) {
             return res.json({ error: "Organization AI config not found." });
         }
-        
+
         return res.json({
             name: org.name,
             ai_config: org.ai_config
         });
-    } catch(e) {
+    } catch (e) {
         console.error("Error getting Org usage:", e);
         res.status(500).json({ error: "Failed to fetch org token usage" });
     }
@@ -3322,4 +3322,4 @@ export const getOrgUsage = async (req, res) => {
 
 // Trigger GitHub Actions backend deployment 2
 
-// Vercel trigger
+// Vercel triggerdjvnsd
