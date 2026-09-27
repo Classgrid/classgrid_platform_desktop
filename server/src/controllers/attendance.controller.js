@@ -1,7 +1,7 @@
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
- * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
+ * NO FROfdfNTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
  * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
  * =========================================================================================
  */
@@ -60,11 +60,11 @@ export async function submitDailyAttendanceController(req, res) {
         const { hierarchyId, date, sessionType, studentRecordsArray } = req.body;
 
         const result = await coreService.submitDailyAttendance(
-            hierarchyId, 
-            date, 
-            sessionType, 
-            studentRecordsArray, 
-            facultyId, 
+            hierarchyId,
+            date,
+            sessionType,
+            studentRecordsArray,
+            facultyId,
             orgId
         );
         return res.status(200).json({ success: true, data: result });
@@ -95,10 +95,10 @@ export async function getStudentAttendancePercentageController(req, res) {
         const { startDate, endDate } = req.query;
 
         const result = await analyticsService.getStudentAttendancePercentage(
-            studentId, 
-            hierarchyId, 
-            startDate, 
-            endDate, 
+            studentId,
+            hierarchyId,
+            startDate,
+            endDate,
             orgId
         );
         return res.status(200).json({ success: true, data: result });
@@ -129,11 +129,11 @@ export async function applyLeaveController(req, res) {
         const { hierarchyId, startDate, endDate, reason } = req.body;
 
         const result = await leaveWorkflowService.applyForLeave(
-            studentId, 
-            hierarchyId, 
-            orgId, 
-            startDate, 
-            endDate, 
+            studentId,
+            hierarchyId,
+            orgId,
+            startDate,
+            endDate,
             reason
         );
         return res.status(200).json({ success: true, data: result });
@@ -174,10 +174,10 @@ export async function processLeaveController(req, res) {
         const { status, remarks } = req.body;
 
         const result = await leaveWorkflowService.processLeaveRequest(
-            leaveRequestId, 
-            status, 
-            approvedBy, 
-            remarks, 
+            leaveRequestId,
+            status,
+            approvedBy,
+            remarks,
             orgId
         );
         return res.status(200).json({ success: true, data: result });
