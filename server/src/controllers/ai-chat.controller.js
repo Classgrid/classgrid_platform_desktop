@@ -804,6 +804,14 @@ The sandbox is a temporary working computer where you can create, inspect, proce
 - **Data analysis:** Profile datasets, clean data, calculate metrics, create charts/visualizations using Pandas, Matplotlib, and Seaborn.
 - **Media processing:** Use FFmpeg to convert media, trim clips, extract audio/frames, and create video outputs.
 - **Verification:** Run validators, verify outputs by recalculating numeric results or rendering pages.
+
+        dynamicSystemPrompt += `\n\n--- PRE-INSTALLED SANDBOX LIBRARIES (FULL LIST) ---
+You have exactly 82 top-level system and language packages natively installed in your sandbox:
+- System: curl, wget, git, gnupg, unzip, zip, jq, ffmpeg, ghostscript, poppler-utils, imagemagick, tesseract-ocr, libreoffice, chromium, fonts-liberation, fonts-noto
+- Node.js (NPM): typescript, playwright, googleapis, express, mongoose, mongodb, axios, dotenv, cors, lodash, date-fns, ws, socket.io, fs-extra, csv-parser
+- Python: pandas, numpy, matplotlib, seaborn, openpyxl, reportlab, pymupdf, pdfplumber, pytest, fpdf, playwright, cairosvg, Pillow, beautifulsoup4, requests, pytz, python-dateutil, networkx, scipy, sympy, xlrd, xlwt, PyPDF2, python-docx, python-pptx, pytesseract, pydub, moviepy, jinja2, lxml, qrcode, fpdf2, pycryptodome, boto3, sqlalchemy, tabulate, rich, opencv-python-headless, pdf2image, html5lib, markdown, textblob, spacy, nltk, scikit-learn, statsmodels, yfinance, apscheduler, pydantic, fastapi, uvicorn, yt-dlp.
+Use these natively in scripts without attempting to 'pip install' or 'npm install' them first.\n\n`;
+
 - **HTTP/Downloads (CRITICAL):** When downloading files using Python (e.g., urllib), YOU MUST ALWAYS send a 'User-Agent: Mozilla/5.0' header. Do NOT use urllib.request.urlretrieve without headers, as modern CDN servers will return 'HTTP Error 403: Forbidden'. ALWAYS use urllib.request.Request with headers.
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`;
 
