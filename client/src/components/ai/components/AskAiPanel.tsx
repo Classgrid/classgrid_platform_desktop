@@ -4814,26 +4814,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     )}
                   />
 
-                  {(isRecording || isTranscribing) && (
+                  {isRecording && (
                       <div className="absolute left-14 right-4 top-4 flex items-center pointer-events-none z-10">
-                        {isRecording ? (
-                          <>
-                            <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
-                            <span className="text-sm font-mono mr-3 text-foreground shrink-0">
-                              {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
-                            </span>
-                              <LiveWaveform stream={micStream} />
-                            </>
-                          ) : (
-                          <>
-                            <Spinner className="w-4 h-4 mr-3 opacity-50" />
-                            <div className="flex-1 flex items-center justify-start gap-1 overflow-hidden px-2 opacity-50">
-                              {[...Array(20)].map((_, i) => (
-                                <div key={i} className="w-1 bg-foreground rounded-full shrink-0" style={{ height: `${4 + (i%3)*4}px` }} />
-                              ))}
-                            </div>
-                          </>
-                        )}
+                        <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
+                        <span className="text-sm font-mono mr-3 text-foreground shrink-0">
+                          {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+                        </span>
+                        <LiveWaveform stream={micStream} />
                       </div>
                   )}
 
@@ -4865,10 +4852,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     <button
                       type="button"
                       onClick={isRecording ? stopRecording : startRecording}
-                      className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${isRecording ? "text-foreground bg-muted hover:bg-muted/80" : "text-muted-foreground hover:text-foreground hover:bg-muted/80"}`}
-                      title={isRecording ? "Stop dictation" : "Dictate"}
+                      disabled={isTranscribing}
+                      className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-all ${isTranscribing ? "opacity-50 cursor-not-allowed text-foreground bg-muted" : "cursor-pointer " + (isRecording ? "text-foreground bg-muted hover:bg-muted/80" : "text-muted-foreground hover:text-foreground hover:bg-muted/80")}`}
+                      title={isTranscribing ? "Transcribing..." : isRecording ? "Stop dictation" : "Dictate"}
                     >
-                      {isRecording ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-4 w-4" />}
+                      {isTranscribing ? <Spinner className="h-4 w-4" /> : isRecording ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-4 w-4" />}
                     </button>
                     {isGenerating ? (
                       <Button
@@ -5421,26 +5409,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   )}
                                 />
 
-                            {(isRecording || isTranscribing) && (
+                            {isRecording && (
                                 <div className="absolute left-14 right-4 top-4 flex items-center pointer-events-none z-10">
-                                  {isRecording ? (
-                                    <>
-                                      <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
-                                      <span className="text-sm font-mono mr-3 text-foreground shrink-0">
-                                        {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
-                                      </span>
-                                      <LiveWaveform stream={micStream} />
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Spinner className="w-4 h-4 mr-3 opacity-50" />
-                                      <div className="flex-1 flex items-center justify-start gap-1 overflow-hidden px-2 opacity-50">
-                                        {[...Array(20)].map((_, i) => (
-                                          <div key={i} className="w-1 bg-foreground rounded-full shrink-0" style={{ height: `${4 + (i%3)*4}px` }} />
-                                        ))}
-                                      </div>
-                                    </>
-                                  )}
+                                  <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
+                                  <span className="text-sm font-mono mr-3 text-foreground shrink-0">
+                                    {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+                                  </span>
+                                  <LiveWaveform stream={micStream} />
                                 </div>
                             )}
 
@@ -5470,10 +5445,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               <button
                                 type="button"
                                 onClick={isRecording ? stopRecording : startRecording}
-                                className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-all cursor-pointer ${isRecording ? "text-foreground bg-muted hover:bg-muted/80" : "text-muted-foreground hover:text-foreground hover:bg-muted/80"}`}
-                                title={isRecording ? "Stop dictation" : "Dictate"}
+                                disabled={isTranscribing}
+                                className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center transition-all ${isTranscribing ? "opacity-50 cursor-not-allowed text-foreground bg-muted" : "cursor-pointer " + (isRecording ? "text-foreground bg-muted hover:bg-muted/80" : "text-muted-foreground hover:text-foreground hover:bg-muted/80")}`}
+                                title={isTranscribing ? "Transcribing..." : isRecording ? "Stop dictation" : "Dictate"}
                               >
-                                {isRecording ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-4 w-4" />}
+                                {isTranscribing ? <Spinner className="h-4 w-4" /> : isRecording ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-4 w-4" />}
                               </button>
                               <Button
                                 type="submit"
