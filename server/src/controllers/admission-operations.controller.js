@@ -2,7 +2,7 @@
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
  * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
- * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
+ * Thefdgdg frontend is hosted 100% on Vercel. EC2 is only for the backend.
  * =========================================================================================
  */
 
@@ -170,7 +170,7 @@ export const getApplicationsList = async (req, res) => {
 
         if (hierarchy_id) query.hierarchy_id = hierarchy_id;
         if (status) query.status = status;
-        
+
         if (search) {
             query.$or = [
                 { full_name: { $regex: search, $options: "i" } },
@@ -580,9 +580,9 @@ export const parentLogin = async (req, res) => {
             ],
             is_deleted: false
         })
-        .select("_id full_name status organization_id hierarchy_id createdAt")
-        .populate("organization_id", "name")
-        .lean();
+            .select("_id full_name status organization_id hierarchy_id createdAt")
+            .populate("organization_id", "name")
+            .lean();
 
         if (applications.length === 0) {
             return res.status(404).json({ error: "No applications found for this phone number." });
@@ -1210,11 +1210,11 @@ export const updateApplicationStage = async (req, res) => {
 
         // ── Auto email notification on stage change ──
         const STAGE_TRIGGER_MAP = {
-            verified:     "DOCUMENTS_VERIFIED",
-            fee_pending:  "FEE_PAYMENT_PENDING",
-            selected:     "SELECTED",
-            waitlisted:   "WAITLISTED",
-            enrolled:     "ENROLLED",
+            verified: "DOCUMENTS_VERIFIED",
+            fee_pending: "FEE_PAYMENT_PENDING",
+            selected: "SELECTED",
+            waitlisted: "WAITLISTED",
+            enrolled: "ENROLLED",
             under_verification: "APPLICATION_UNDER_REVIEW",
         };
         const trigger = STAGE_TRIGGER_MAP[status];
@@ -1260,7 +1260,7 @@ export const bulkVerifyApplications = async (req, res) => {
 
         const updateResult = await AdmissionApplication.updateMany(
             { _id: { $in: application_ids }, organization_id: orgId },
-            { 
+            {
                 $set: { status: "verified" },
                 $push: {
                     stage_history: {
@@ -1316,7 +1316,7 @@ export const bulkSelectApplications = async (req, res) => {
 
         const updateResult = await AdmissionApplication.updateMany(
             { _id: { $in: application_ids }, organization_id: orgId },
-            { 
+            {
                 $set: { status: "fee_pending", is_called: true },
                 $push: {
                     stage_history: {
@@ -1411,7 +1411,7 @@ export const reportRLA = async (req, res) => {
         allotment.rla_status = "reported";
         allotment.reported_at = new Date();
         allotment.reported_to_officer = req.user._id;
-        
+
         allotment.audit_log.push({
             action: "RLA_REPORTED",
             performed_by: req.user._id,
@@ -1449,7 +1449,7 @@ export const requestNOC = async (req, res) => {
         // Logic: Mark the student as leaving, release their seat locally.
         allotment.rla_status = "upgraded";
         allotment.status = "upgraded_to_other";
-        
+
         allotment.noc_details = {
             issued: true,
             issued_at: new Date(),
@@ -1525,14 +1525,14 @@ export const advanceAdmissionRound = async (req, res) => {
     try {
         await connectDB();
         const organization_id = req.user.organization_id;
-        
+
         const org = await Organization.findById(organization_id);
         if (!org) {
             return res.status(404).json({ error: "Organization not found" });
         }
 
         const admissionRound = org.admission_config?.admission_round || { current_round: 1, max_rounds: 3, round_history: [] };
-        
+
         if (admissionRound.current_round >= admissionRound.max_rounds) {
             return res.status(400).json({ error: "Maximum number of rounds reached." });
         }
@@ -1609,7 +1609,7 @@ export const unlockStudentEditWindow = async (req, res) => {
         }
 
         if (application.edit_lock_override?.unlocked) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: "Application is already unlocked.",
                 unlocked_at: application.edit_lock_override.unlocked_at
             });
