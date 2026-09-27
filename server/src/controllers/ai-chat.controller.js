@@ -1810,7 +1810,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     edit_image: async (args) => {
                         try {
                             const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-                            const cfToken = process.env.CLOUDFLARE_API_TOKEN;
+                            const cfToken = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
                             if (!cfAccountId || !cfToken) return "Error: Cloudflare credentials missing.";
 
                             // Fetch the original image
