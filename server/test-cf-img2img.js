@@ -22,10 +22,10 @@ async function testImg2Img() {
     const arrayBuffer = await imgRes.arrayBuffer();
     const imageArray = [...new Uint8Array(arrayBuffer)];
     
-    console.log(`Successfully fetched image. Size: ${imageArray.length} bytes.`);
-    console.log("2. Sending request to Cloudflare @cf/runwayml/stable-diffusion-v1-5-img2img...");
+    console.log(`Successfully fetched image. Size: ${imageArray.length} bytes`);
+    console.log("2. Sending request to Cloudflare @cf/stabilityai/stable-diffusion-xl-base-1.0...");
 
-    const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/runwayml/stable-diffusion-v1-5-img2img`;
+    const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/stabilityai/stable-diffusion-xl-base-1.0`;
     
     const startTime = Date.now();
     const cfApiRes = await fetch(cfUrl, {
@@ -37,9 +37,9 @@ async function testImg2Img() {
         body: JSON.stringify({ 
             prompt: "Make it look like a futuristic cyberpunk city, neon lights", 
             image: imageArray, 
-            strength: 0.5, 
-            guidance: 7.5, 
-            num_steps: 20 
+            strength: 0.5,
+            guidance: 7.5,
+            num_steps: 20
         })
     });
 
