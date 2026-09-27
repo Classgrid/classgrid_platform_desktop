@@ -989,6 +989,39 @@ export const handleToolCall = async (name, args, context = {}) => {
       }
     }
 
+export async function readSandboxFiles(sessionId) {
+  const ssh = new NodeSSH();
+  const isProd = process.env.NODE_ENV === 'production';
+  await ssh.connect({
+    host: isProd ? '172.31.6.98' : '13.63.34.197',
+    username: 'ubuntu',
+    ...(process.env.AGENT_SSH_KEY
+      ? { privateKey: process.env.AGENT_SSH_KEY.replace(/\\n/g, '\n') }
+      : { privateKeyPath: 'C:\\Users\\nikhi\\Downloads\\Nikhil.pem' })
+  });
+
+  try {
+    const dir = `/home/ubuntu/sandbox_data/${sessionId}`;
+    // List files, excluding the script.* files we use to execute
+    const { stdout } = await ssh.execCommand(`ls -1 ${dir} 2>/dev/null | grep -v '^script\\.'`);
+    const filenames = stdout.split('\n').map(f => f.trim()).filter(Boolean);
+
+    const files = {};
+    for (const name of filenames) {
+      // Only read text files we care about (html, css, js, json, svg, md, txt)
+      if (!/\.(html|css|js|json|svg|md|txt)$/i.test(name)) continue;
+      const { stdout: content } = await ssh.execCommand(`cat ${dir}/${name}`);
+      files[name] = content;
+    }
+    return files;
+  } catch (err) {
+    console.error("Failed to read sandbox files via SSH:", err);
+    return {};
+  } finally {
+    ssh.dispose();
+  }
+}
+
     if (name === 'generate_pdf') {
       let { content = '', title, rawData } = args;
 

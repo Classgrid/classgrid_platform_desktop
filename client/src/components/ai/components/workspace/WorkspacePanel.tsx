@@ -18,6 +18,7 @@ interface WorkspacePanelProps {
   currentJs?: string;
   planSteps?: any[];
   activeBuildSessionId?: string | null;
+  sandboxFiles?: Record<string, string>;
 }
 
 // Simple debounce hook for smooth iframe updates
@@ -45,6 +46,7 @@ export function WorkspacePanel({
   currentJs = "",
   planSteps,
   activeBuildSessionId,
+  sandboxFiles = {},
 }: WorkspacePanelProps) {
   // Debounce the code for iframe rendering (300ms) to avoid browser freeze
   const debouncedHtml = useDebounce(currentHtml, 300);
@@ -54,6 +56,7 @@ export function WorkspacePanel({
   // Determine which tabs to show based on state
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("files");
   const [buildStatus, setBuildStatus] = useState<any>(null);
+  const [selectedFile, setSelectedFile] = useState<string>("index.html");
 
   // Poll backend for real-time trajectory status
   React.useEffect(() => {
@@ -244,18 +247,30 @@ export function WorkspacePanel({
         )}
 
         {activeTab === "code" && (
-          <div className="p-4 h-full flex flex-col gap-4">
-            <div className="flex-1 overflow-auto rounded-lg bg-[#1e1e1e] p-4 text-xs font-mono text-gray-300">
-              <div className="text-gray-500 mb-2 select-none">// index.html</div>
-              <pre><code>{debouncedHtml || "<!-- Waiting for HTML... -->"}</code></pre>
+          <div className="flex h-full">
+            {/* File tree sidebar */}
+            <div className="w-40 shrink-0 border-r border-border/50 overflow-y-auto p-2">
+              {Object.keys(sandboxFiles).length === 0 ? (
+                <div className="text-xs text-muted-foreground p-2">No files yet</div>
+              ) : (
+                Object.keys(sandboxFiles).sort().map((name) => (
+                  <button
+                    key={name}
+                    onClick={() => setSelectedFile(name)}
+                    className={`w-full text-left px-2 py-1.5 rounded text-xs font-mono flex items-center gap-1.5 ${
+                      selectedFile === name ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                    }`}
+                  >
+                    <FileText className="h-3.5 w-3.5 shrink-0" />
+                    {name}
+                  </button>
+                ))
+              )}
             </div>
-            <div className="flex-1 overflow-auto rounded-lg bg-[#1e1e1e] p-4 text-xs font-mono text-gray-300">
-              <div className="text-gray-500 mb-2 select-none">/* style.css */</div>
-              <pre><code>{debouncedCss || "/* Waiting for CSS... */"}</code></pre>
-            </div>
-            <div className="flex-1 overflow-auto rounded-lg bg-[#1e1e1e] p-4 text-xs font-mono text-gray-300">
-              <div className="text-gray-500 mb-2 select-none">// script.js</div>
-              <pre><code>{debouncedJs || "// Waiting for JS..."}</code></pre>
+            {/* Selected file code */}
+            <div className="flex-1 overflow-auto bg-[#1e1e1e] p-4 text-xs font-mono text-gray-300">
+              <div className="text-gray-500 mb-2 select-none">// {selectedFile || "select a file"}</div>
+              <pre><code>{sandboxFiles[selectedFile] || "// Select a file to view its code"}</code></pre>
             </div>
           </div>
         )}

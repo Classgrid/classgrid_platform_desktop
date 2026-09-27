@@ -1522,6 +1522,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [priorityMessage, setPriorityMessage] = useState<QueuedMessage | null>(null);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
+  const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
 
   // --- Voice Dictation State ---
   const [isRecording, setIsRecording] = useState(false);
@@ -1623,63 +1624,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     );
   }, [planText]);
 
-  // Extract latest HTML, CSS, and JS from the chat for the Workspace
-  const { latestHtml, latestCss, latestJs, isExecuting } = useMemo(() => {
-    let html = "";
-    let css = "";
-    let js = "";
-    let executing = false;
-
-    // Scan from latest to oldest
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const m = messages[i];
-      if (m.role === 'assistant') {
-        if (m.typing && (m.content.includes('```html') || m.content.includes('```css') || m.content.includes('```javascript') || m.content.includes('```js'))) {
-          executing = true;
-        }
-
-        // Extract HTML
-        if (!html && m.content.includes('```html')) {
-          const match = m.content.match(/```html\n([\s\S]*?)```/);
-          if (match && match[1]) html = match[1];
-          else if (m.typing) {
-            // Unfinished block
-            const partial = m.content.split('```html\n').pop();
-            if (partial) html = partial;
-          }
-        }
-        // Extract CSS
-        if (!css && m.content.includes('```css')) {
-          const match = m.content.match(/```css\n([\s\S]*?)```/);
-          if (match && match[1]) css = match[1];
-          else if (m.typing) {
-            const partial = m.content.split('```css\n').pop();
-            if (partial) css = partial;
-          }
-        }
-        // Extract JS
-        if (!js && (m.content.includes('```javascript') || m.content.includes('```js'))) {
-          let match = m.content.match(/```javascript\n([\s\S]*?)```/);
-          if (!match) match = m.content.match(/```js\n([\s\S]*?)```/);
-          if (match && match[1]) js = match[1];
-          else if (m.typing) {
-            const partial = m.content.includes('```javascript')
-              ? m.content.split('```javascript\n').pop()
-              : m.content.split('```js\n').pop();
-            if (partial) js = partial;
-          }
-        }
-
-        // Once we find all 3 (or at least HTML from the latest blocks), we can stop
-        if (html && css && js) break;
-      }
-    }
-
-    // If we have HTML or CSS or JS, we should consider the execution tabs available
-    if (html || css || js) executing = true;
-
-    return { latestHtml: html, latestCss: css, latestJs: js, isExecuting: executing };
-  }, [messages]);
+  // Derive preview sources from the sandbox file stream (single source of truth)
+  const latestHtml = sandboxFiles["index.html"] || "";
+  const latestCss = sandboxFiles["style.css"] || "";
+  const latestJs = sandboxFiles["script.js"] || "";
+  const isExecuting = Object.keys(sandboxFiles).length > 0;
 
   // Watch for the latest assistant message to finish typing
   const isAssistantTyping = useMemo(() => {
@@ -3258,6 +3207,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     return prev;
                   });
                 }
+              } else if (event.type === "file_update") {
+                setSandboxFiles(prev => ({ ...prev, ...(event.files || {}) }));
               } else if (event.type === "tool_start") {
                 if (event.tool === "open_integration_panel") {
                   setIsAiHubOpen(true);
@@ -5668,6 +5619,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 setPreviewFile={setPreviewFile}
                 hasPlan={hasPlan}
                 isExecuting={isExecuting}
+                sandboxFiles={sandboxFiles}
                 currentHtml={latestHtml}
                 currentCss={latestCss}
                 currentJs={latestJs}

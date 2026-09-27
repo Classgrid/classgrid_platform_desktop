@@ -30,7 +30,7 @@ import redis from "../config/redis.js";
 import { sendEmail } from "../services/aws-ses.service.js";
 import mongoose from "mongoose";
 import NotificationLog from "../models/NotificationLog.js";
-import { getMcpTools, handleToolCall } from "../mcp/tools.js";
+import { getMcpTools, handleToolCall, readSandboxFiles } from "../mcp/tools.js";
 import { RagPipeline, MongoVectorStore, VoyageEmbedder } from "@classgrid/ai/rag";
 import Note from "../models/Note.js";
 import User from "../models/User.js";
@@ -1548,7 +1548,21 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     },
                     run_code: async (args) => {
                         const result = await handleToolCall('run_code', args, { sessionId });
-                        return result.isError ? result.content[0].text : result.content[0].text;
+                        const text = result.isError ? result.content[0].text : result.content[0].text;
+
+                        // After execution, read back any website files the sandbox wrote
+                        try {
+                            const files = await readSandboxFiles(sessionId);
+                            if (files && Object.keys(files).length > 0) {
+                                if (!res.writableEnded) {
+                                    res.write(`data: ${JSON.stringify({ type: "file_update", files })}\n\n`);
+                                }
+                            }
+                        } catch (e) {
+                            console.error("[file_update] Failed to read sandbox files:", e);
+                        }
+
+                        return text;
                     },
                     unified_db_query: async (args) => {
                         if (args && args.collectionOrTable) {
