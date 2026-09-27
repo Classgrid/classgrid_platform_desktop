@@ -1692,7 +1692,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         try {
           const formData = new FormData();
           const ext = recordedMimeType.includes('mp4') ? 'mp4' : recordedMimeType.includes('ogg') ? 'ogg' : 'webm';
-          formData.append('audio', new File([blob], `dictation.${ext}`, { type: recordedMimeType }));
+          formData.append('audio', new window.File([blob], `dictation.${ext}`, { type: recordedMimeType }));
           
           const endpoint = typeof import.meta !== "undefined" && import.meta.env
             ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in") + "/api/voice/transcribe"
