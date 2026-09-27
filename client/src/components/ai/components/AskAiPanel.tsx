@@ -1311,7 +1311,9 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                     })
                       .then(r => r.json())
                       .then(data => {
-                        if (data.sessionId && setActiveBuildSessionId) setActiveBuildSessionId(data.sessionId);
+                        if (data.sessionId) {
+                           window.dispatchEvent(new CustomEvent('classgrid-build-session', { detail: data.sessionId }));
+                        }
                       })
                       .catch(err => console.error("Failed to start build", err));
 
@@ -1565,6 +1567,14 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   // Track the active build session for polling live step status
   const [activeBuildSessionId, setActiveBuildSessionId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const handleBuildSession = (e: any) => {
+      if (e.detail) setActiveBuildSessionId(e.detail);
+    };
+    window.addEventListener('classgrid-build-session', handleBuildSession);
+    return () => window.removeEventListener('classgrid-build-session', handleBuildSession);
+  }, []);
 
   // Auto-open workspace panel when a plan is detected
   const hasPlan = useMemo(() => {
