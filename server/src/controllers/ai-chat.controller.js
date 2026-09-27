@@ -1218,29 +1218,15 @@ Use this exact format (adapt the steps to match what you are building):
 
 Wait for the user to approve the plan (or it will auto-approve in 30 seconds). Then proceed to Phase 3.
 
----PHASE 3: WRITE CODE (DUAL OUTPUT — BOTH ARE MANDATORY)---
-You MUST do BOTH of the following for EVERY file. Doing only one will break either the live preview or the deployment:
+---PHASE 3: WRITE CODE---
+You MUST write all code using the `run_code` tool. 
 
-A) OUTPUT THE CODE AS MARKDOWN BLOCKS IN YOUR CHAT RESPONSE:
-   Write the full code for each file as a fenced code block in your chat message.
-   This is what powers the LIVE PREVIEW in the Workspace panel — the frontend reads these blocks in real time as you type.
-   Example:
-   \`\`\`html
-   <!DOCTYPE html>
-   <html>...
-   \`\`\`
-   \`\`\`css
-   body { background: #0a0a0a; }
-   \`\`\`
-   \`\`\`js
-   document.querySelector('.nav')...
-   \`\`\`
+CALL run_code TO WRITE CODE TO THE SANDBOX:
+Use run_code (javascript) to write each file to the sandbox filesystem at /data/<filename>.
+Example: fs.writeFileSync('/data/index.html', \`...html here...\`);
+Write each file in a SEPARATE run_code call.
 
-B) ALSO CALL run_code TO WRITE THE SAME CODE TO THE SANDBOX:
-   Use run_code (javascript) to write each file to the sandbox filesystem at /data/<filename>.
-   This stores the files for deployment in Phase 4.
-   Example: fs.writeFileSync('/data/index.html', \`...html here...\`);
-   Write each file in a SEPARATE run_code call.
+Do NOT output markdown code blocks in your chat response. The Workspace panel will automatically stream the live code from the sandbox while run_code is executing.
 
 CRITICAL: NEVER use github_workspace_connector to write file content directly to GitHub. You MUST write all files to the sandbox first via run_code. GitHub is only used in Phase 4 to push the already-written sandbox files.
 
