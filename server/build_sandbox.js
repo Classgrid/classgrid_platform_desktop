@@ -1,11 +1,10 @@
 import { NodeSSH } from 'node-ssh';
 import dotenv from 'dotenv';
-import fs from 'fs';
 dotenv.config();
 
-async function buildSandbox() {
+async function cleanupAndBuild() {
     const ssh = new NodeSSH();
-    console.log("Connecting to EC2 Sandbox Environment...");
+    console.log("Connecting to EC2...");
     
     try {
         await ssh.connect({
@@ -16,16 +15,23 @@ async function buildSandbox() {
                 : { password: process.env.AGENT_PASSWORD })
         });
         
-        console.log("Connected! Updating Dockerfile on EC2...");
+        console.log("Connected! Checking disk space...");
+        const { stdout: df1 } = await ssh.execCommand('df -h /');
+        console.log(df1);
         
-        const dockerfileContent = fs.readFileSync('agent-sandbox-env/Dockerfile', 'utf8');
+        console.log("Cleaning up unused Docker data to free up space...");
+        await ssh.execCommand('docker system prune -a --volumes -f');
         
-        const b64 = Buffer.from(dockerfileContent).toString('base64');
-        const updateCmd = `echo "${b64}" | base64 -d > agent-sandbox-env/Dockerfile`;
-        await ssh.execCommand(updateCmd);
+        console.log("Disk space after cleanup:");
+        const { stdout: df2 } = await ssh.execCommand('df -h /');
+        console.log(df2);
         
-        console.log("Building Docker image. This may take 5-10 minutes...");
-        const command = `cd agent-sandbox-env && docker build -t classgrid-ai-sandbox .`;
+        console.log("Uploading latest Dockerfile to EC2...");
+        await ssh.putFile('agent-sandbox-env/Dockerfile', 'agent-sandbox-env/Dockerfile');
+        console.log("Upload complete!");
+        
+        console.log("Re-running Docker build with no-cache...");
+        const command = `docker builder prune -a -f && cd agent-sandbox-env && docker build --no-cache -t classgrid-ai-sandbox .`;
         
         const result = await ssh.execCommand(command, {
             onStdout(chunk) {
@@ -45,4 +51,4 @@ async function buildSandbox() {
     }
 }
 
-buildSandbox();
+cleanupAndBuild();

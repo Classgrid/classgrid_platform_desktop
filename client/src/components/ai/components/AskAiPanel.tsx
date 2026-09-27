@@ -1111,7 +1111,7 @@ const MarkdownComponents = {
       return <span className={!inline ? "block mb-4" : ""}>{codeString}</span>;
     }
 
-    const isMermaid = language === "mermaid" || codeString.trim().startsWith("graph ") || codeString.trim().startsWith("sequenceDiagram") || codeString.trim().startsWith("pie") || codeString.trim().startsWith("gantt") || codeString.trim().startsWith("stateDiagram") || codeString.trim().startsWith("classDiagram");
+    const isMermaid = language === "mermaid";
 
     if (!inline && language === "chart") {
       try {
