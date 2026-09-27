@@ -1788,7 +1788,8 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                                     prompt: args.prompt,
                                     sessionId: sessionId,
                                     userEmail: userEmail,
-                                    isIncognito: isIncognito
+                                    isIncognito: isIncognito,
+                                    isInternalCall: true
                                 })
                             });
 
@@ -3163,7 +3164,9 @@ export const generateImage = async (req, res) => {
 
         let activeSessionId = sessionId;
 
-        if (!isIncognito) {
+        const isInternalCall = req.body.isInternalCall === true;
+
+        if (!isIncognito && !isInternalCall) {
             if (!activeSessionId && userEmail) {
                 const newSession = await createSession(userEmail, prompt.substring(0, 50));
                 if (newSession) {
