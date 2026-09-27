@@ -1318,7 +1318,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                 }
             ],
             verbose: true,
-            maxToolDepth: 100,
+            maxToolDepth: 1000,
             defaultMaxTokens: 8192,
             tools: [
                 ...getMcpTools()
