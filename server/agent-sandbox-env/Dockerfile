@@ -38,5 +38,8 @@ RUN pip install --no-cache-dir \
 RUN useradd -m agent && chown -R agent:agent /data
 USER agent
 
+# Install Playwright browsers for the agent user
+RUN playwright install chromium
+
 # The default command just keeps it ready for bash execution
 CMD ["/bin/bash"]
