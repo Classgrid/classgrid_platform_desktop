@@ -1796,7 +1796,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                             try {
                                 const json = JSON.parse(text);
                                 if (json.imageUrl) {
-                                    return `[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${json.imageUrl}]\n\nCRITICAL: You MUST immediately output this exact [IMAGE_GENERATION_COMPLETE] string to the user right now so their UI can render the image. Do not paraphrase it!`;
+                                    return `[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${json.imageUrl}]\n\nCRITICAL: You MUST immediately output this exact [IMAGE_GENERATION_COMPLETE] string to the user right now so their UI can render the image. DO NOT use Markdown image syntax like ![alt](url) to display it! Just output the raw string.`;
                                 }
                                 return `FAILED to generate image: ${json.error || json.message || text}`;
                             } catch (e) {
@@ -1804,6 +1804,48 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                             }
                         } catch (e) {
                             return `FAILED to generate image: ${e.message}`;
+                        }
+                    },
+
+                    edit_image: async (args) => {
+                        try {
+                            const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+                            const cfToken = process.env.CLOUDFLARE_API_TOKEN;
+                            if (!cfAccountId || !cfToken) return "Error: Cloudflare credentials missing.";
+
+                            // Fetch the original image
+                            const imgRes = await fetch(args.imageUrl);
+                            if (!imgRes.ok) return `Error fetching original image: ${imgRes.status}`;
+                            const arrayBuffer = await imgRes.arrayBuffer();
+                            const imageArray = [...new Uint8Array(arrayBuffer)];
+
+                            // Call Cloudflare img2img
+                            const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/runwayml/stable-diffusion-v1-5-img2img`;
+                            const cfApiRes = await fetch(cfUrl, {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${cfToken}`, 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ prompt: args.prompt, image: imageArray, strength: 0.5, guidance: 7.5, num_steps: 20 })
+                            });
+
+                            if (!cfApiRes.ok) {
+                                const errTxt = await cfApiRes.text();
+                                return `Cloudflare API Error: ${cfApiRes.status} ${errTxt}`;
+                            }
+
+                            // Cloudflare returns binary image
+                            const buffer = await cfApiRes.arrayBuffer();
+                            const nodeBuffer = Buffer.from(buffer);
+                            
+                            const r2Url = await uploadBufferToR2(
+                                nodeBuffer,
+                                `edited-${Date.now()}.jpg`,
+                                'image/jpeg',
+                                `ai-edited/image-${Date.now()}.jpg`
+                            );
+
+                            return `[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${r2Url}]\n\nCRITICAL: You MUST immediately output this exact [IMAGE_GENERATION_COMPLETE] string to the user right now. DO NOT use Markdown image syntax like ![alt](url)! Just output the raw string.`;
+                        } catch (e) {
+                            return `Error: ${e.message}`;
                         }
                     },
 

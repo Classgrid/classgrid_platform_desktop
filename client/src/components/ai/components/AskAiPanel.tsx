@@ -1698,11 +1698,19 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in") + "/api/voice/transcribe"
             : "/api/voice/transcribe";
             
+          const token = localStorage.getItem("token");
           const res = await fetch(endpoint, {
             method: "POST",
             body: formData,
-            credentials: "include"
+            credentials: "include",
+            headers: token ? { "Authorization": `Bearer ${token}` } : {}
           });
+          
+          if (!res.ok) {
+            const errorText = await res.text().catch(() => "");
+            console.error("Transcription API error:", res.status, errorText);
+            throw new Error(`API error: ${res.status}`);
+          }
           
           const data = await res.json();
           if (data.success && data.text) {
@@ -1717,6 +1725,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
              toast.error("Failed to transcribe audio");
           }
         } catch (err) {
+          console.error("Transcription fetch error:", err);
           toast.error("Error transcribing audio");
         } finally {
           setIsTranscribing(false);
