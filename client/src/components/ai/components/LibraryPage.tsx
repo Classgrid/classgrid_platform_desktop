@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Upload, Search, FileImage, FileVideo, FileText, File as FileIcon, FileQuestion, MessageSquare, Download, Trash2, MoreVertical, X, Filter, SortDesc, Loader2 } from 'lucide-react';
+import { Upload, Search, FileImage, FileVideo, FileText, File as FileIcon, FileQuestion, MessageSquare, Download, Trash2, MoreVertical, X, Filter, SortDesc, Loader2, CalendarIcon } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/marketing_ui/popover';
+import { Calendar } from '@/components/marketing_ui/nikhil_calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/marketing_ui/select';
+import { Button } from '@/components/marketing_ui/button';
+import { Skeleton } from '@/components/marketing_ui/skeleton';
+import { getSocket } from '@/lib/socketClient';
 import FilePreviewModal from './FilePreviewModal';
 import { DocsImageViewer } from './DocsImageViewer';
 
@@ -33,7 +40,7 @@ export function LibraryPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedFileToPreview, setSelectedFileToPreview] = useState<LibraryFile | null>(null);
-  const [dateFilter, setDateFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState<Date | undefined>();
 
   const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
     ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
@@ -64,6 +71,20 @@ export function LibraryPage() {
 
   useEffect(() => {
     fetchLibrary();
+  }, [fetchLibrary]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    
+    const handleLibraryUpdate = () => {
+      fetchLibrary();
+    };
+
+    socket.on('ai_library_updated', handleLibraryUpdate);
+    return () => {
+      socket.off('ai_library_updated', handleLibraryUpdate);
+    };
   }, [fetchLibrary]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -154,7 +175,7 @@ export function LibraryPage() {
 
   const filteredFiles = files.filter(f => {
     const matchesSearch = f.original_name.toLowerCase().includes(search.toLowerCase());
-    const matchesDate = dateFilter ? f.created_at.startsWith(dateFilter) : true;
+    const matchesDate = dateFilter ? f.created_at.startsWith(format(dateFilter, "yyyy-MM-dd")) : true;
     return matchesSearch && matchesDate;
   });
 
@@ -256,31 +277,66 @@ export function LibraryPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">Date:</span>
-            <input 
-              type="date" 
-              value={dateFilter}
-              onChange={e => setDateFilter(e.target.value)}
-              className="bg-accent/50 hover:bg-accent border border-border/50 text-sm rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer"
-            />
-            <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">Sort by:</span>
-            <select
-              value={sort}
-              onChange={e => setSort(e.target.value as any)}
-              className="bg-accent/50 hover:bg-accent border border-border/50 text-sm rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer"
-            >
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-              <option value="largest">Largest first</option>
-            </select>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">Date:</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={`h-9 justify-start text-left font-normal w-[140px] bg-accent/50 hover:bg-accent border-border/50 ${!dateFilter && "text-muted-foreground"}`}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateFilter ? format(dateFilter, "PP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateFilter}
+                    onSelect={setDateFilter}
+                    initialFocus
+                    captionLayout="dropdown-buttons"
+                    fromYear={2020}
+                    toYear={2030}
+                  />
+                  {dateFilter && (
+                    <div className="p-2 border-t border-border">
+                      <Button variant="ghost" size="sm" className="w-full justify-center" onClick={() => setDateFilter(undefined)}>
+                        Clear Selection
+                      </Button>
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">Sort by:</span>
+              <Select value={sort} onValueChange={(val: any) => setSort(val)}>
+                <SelectTrigger className="w-[140px] h-9 bg-accent/50 hover:bg-accent border-border/50">
+                  <SelectValue placeholder="Sort order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest first</SelectItem>
+                  <SelectItem value="oldest">Oldest first</SelectItem>
+                  <SelectItem value="largest">Largest first</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
         {/* Grid */}
         {isLoading ? (
-          <div className="flex justify-center items-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 xl:columns-6 gap-4 space-y-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+              <div key={i} className="flex flex-col gap-2 break-inside-avoid w-full">
+                <Skeleton className={`w-full rounded-2xl ${i % 3 === 0 ? 'h-64' : i % 2 === 0 ? 'h-48' : 'h-32'}`} />
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-1/3" />
+              </div>
+            ))}
           </div>
         ) : filteredFiles.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">

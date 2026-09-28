@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { apiClient as api } from "@/lib/apiClient";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
+import { getSocket } from "@/lib/socketClient";
 
 type ScheduleStatus = "pending" | "sent" | "failed" | "cancelled";
 
@@ -25,27 +26,43 @@ export const SchedulePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | ScheduleStatus>("all");
 
-  const fetchSchedules = async () => {
-    setLoading(true);
+  const fetchSchedules = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
-      const response = await api.get(`/ai/schedules?status=${filter}`);
+      const response = await api.get(`/api/ai/schedules?status=${filter}`);
       if (response.data?.success) {
         setSchedules(response.data.schedules);
       }
     } catch (error) {
       toast.error("Failed to load schedules");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSchedules();
+    fetchSchedules(true);
+  }, [filter]);
+
+  // Live WebSocket Sync
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleScheduleUpdate = () => {
+      // Fetch live seamlessly without showing loading skeletons
+      fetchSchedules(false);
+    };
+
+    socket.on("ai:schedule_updated", handleScheduleUpdate);
+    return () => {
+      socket.off("ai:schedule_updated", handleScheduleUpdate);
+    };
   }, [filter]);
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await api.delete(`/ai/schedules/${id}`);
+      const response = await api.delete(`/api/ai/schedules/${id}`);
       if (response.data?.success) {
         toast.success("Schedule deleted");
         setSchedules(schedules.filter(s => s._id !== id));
@@ -78,17 +95,13 @@ export const SchedulePage: React.FC = () => {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-primary" />
+            <Calendar className="w-6 h-6" />
             Scheduled Tasks
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Emails and tasks scheduled by your AI Assistant
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchSchedules} disabled={loading}>
-          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
       </div>
 
       <div className="flex gap-2 mb-6 border-b border-border/50 pb-4">
@@ -114,7 +127,7 @@ export const SchedulePage: React.FC = () => {
           ))}
         </div>
       ) : schedules.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border/60 rounded-2xl bg-muted/20">
+        <div className="flex flex-col items-center justify-center py-20 text-center">
           <Calendar className="w-12 h-12 text-muted-foreground/50 mb-4" />
           <h3 className="text-lg font-semibold text-foreground">No scheduled tasks</h3>
           <p className="text-muted-foreground mt-2 max-w-sm">
@@ -122,11 +135,11 @@ export const SchedulePage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col">
           {schedules.map((schedule) => (
             <div 
               key={schedule._id} 
-              className="bg-card border border-border/50 rounded-xl p-5 shadow-sm transition-all hover:shadow-md flex flex-col group relative"
+              className="py-5 border-b border-border/40 last:border-0 flex flex-col group relative"
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-2">
