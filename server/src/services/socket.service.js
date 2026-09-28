@@ -137,6 +137,7 @@ export const initSocket = (server) => {
 
         // Join personal room for private direct messages
         socket.join(`${orgId}:${socket.userId}`);
+        socket.join(socket.userId.toString());
 
         socket.on("join_classroom", (classroomId) => {
             const roomName = `${orgId}:${classroomId}`;
