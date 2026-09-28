@@ -17,6 +17,7 @@ import { AiHubModal } from "./AiHubModal";
 import { InsufficientCreditsCard } from "./InsufficientCreditsCard";
 import { WorkspacePanel } from "./workspace/WorkspacePanel";
 import { SchedulePage } from "./SchedulePage";
+import { ScheduleDetailPage } from "./ScheduleDetailPage";
 import { LibraryPage } from "./LibraryPage";
 import ReactDOM from "react-dom";
 
@@ -1907,7 +1908,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   }, [tocItems]);
 
   const [thinkingLabel, setThinkingLabel] = useState("Thinking");
-  const { sessionId: routeSessionId } = useParams<{ sessionId?: string }>();
+  const params = useParams<{ sessionId?: string; "*"?: string }>();
+  const routeSessionId = params.sessionId;
+  const detailId = params["*"] || undefined;
   const [localSessionId, setLocalSessionId] = useState<string | null>(null);
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
   const [viewingPastedText, setViewingPastedText] = useState<{ title: string, content: string } | null>(null);
@@ -2439,7 +2442,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       if (agentIndex !== -1) {
         const baseAgentPath = pathParts.slice(0, agentIndex + 1).join('/');
         const expectedPath = sessionId ? `${baseAgentPath}/${sessionId}` : baseAgentPath;
-        if (currentPath !== expectedPath) {
+        if (currentPath !== expectedPath && !currentPath.startsWith(expectedPath + '/')) {
           window.history.replaceState(null, "", expectedPath);
         }
       }
@@ -4984,7 +4987,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
             {sessionId === "schedule" ? (
               <div className="flex-1 overflow-y-auto">
-                <SchedulePage />
+                {detailId ? <ScheduleDetailPage /> : <SchedulePage />}
               </div>
             ) : sessionId === "library" ? (
               <div className="flex-1 overflow-y-auto">

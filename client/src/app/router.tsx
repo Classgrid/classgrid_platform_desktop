@@ -289,6 +289,7 @@ export function AppRouter() {
           <Route path="/superadmin/dashboard" element={<Navigate to="/superadmin/agent" replace />} />
           <Route path="/superadmin/agent" element={<DashboardHomePage />} />
           <Route path="/superadmin/agent/:sessionId" element={<DashboardHomePage />} />
+          <Route path="/superadmin/agent/:sessionId/*" element={<DashboardHomePage />} />
           <Route path="/superadmin/agent-reviews" element={<AgentReviewsPage />} />
           <Route path="/superadmin/analytics" element={<AnalyticsPage />} />
           <Route path="/superadmin/audit-logs" element={<AuditLogsPage />} />
@@ -373,6 +374,7 @@ export function AppRouter() {
           <Route path="/org/admin/dashboard" element={<Navigate to="/org/admin/agent" replace />} />
           <Route path="/org/admin/agent" element={<OrgAdminDashboard />} />
           <Route path="/org/admin/agent/:sessionId" element={<OrgAdminDashboard />} />
+          <Route path="/org/admin/agent/:sessionId/*" element={<OrgAdminDashboard />} />
           <Route path="/org/admin/usage" element={<UsagePage />} />
           <Route path="/org/admin/billing" element={<OrgAdminBillingPage />} />
           <Route path="/org/admin/members" element={<MembersPage />} />
@@ -410,6 +412,7 @@ export function AppRouter() {
           <Route path="/dept/admissions/dashboard" element={<Navigate to="/dept/admissions/agent" replace />} />
           <Route path="/dept/admissions/agent" element={<AdmissionDashboardRouter />} />
           <Route path="/dept/admissions/agent/:sessionId" element={<AdmissionDashboardRouter />} />
+          <Route path="/dept/admissions/agent/:sessionId/*" element={<AdmissionDashboardRouter />} />
           <Route path="/dept/admissions/applications" element={<AllApplicationsPage />} />
           <Route path="/dept/admissions/applications/:id" element={<ApplicationDetailsPage />} />
           <Route path="/dept/admissions/new" element={<NewApplicationPage />} />
@@ -435,37 +438,44 @@ export function AppRouter() {
           <Route path="/dept/fees/dashboard" element={<Navigate to="/dept/fees/agent" replace />} />
           <Route path="/dept/fees/agent" element={<FeesDashboardRouter />} />
           <Route path="/dept/fees/agent/:sessionId" element={<FeesDashboardRouter />} />
+          <Route path="/dept/fees/agent/:sessionId/*" element={<FeesDashboardRouter />} />
 
           {/* 5. Examination Department Dashboard */}
           <Route path="/dept/exams/dashboard" element={<Navigate to="/dept/exams/agent" replace />} />
           <Route path="/dept/exams/agent" element={<ExamsDashboardRouter />} />
           <Route path="/dept/exams/agent/:sessionId" element={<ExamsDashboardRouter />} />
+          <Route path="/dept/exams/agent/:sessionId/*" element={<ExamsDashboardRouter />} />
           <Route path="/dept/exams/results" element={<ResultsProcessingPage />} />
 
           {/* 6. Library Department Dashboard */}
           <Route path="/dept/library/dashboard" element={<Navigate to="/dept/library/agent" replace />} />
           <Route path="/dept/library/agent" element={<LibraryDashboardRouter />} />
           <Route path="/dept/library/agent/:sessionId" element={<LibraryDashboardRouter />} />
+          <Route path="/dept/library/agent/:sessionId/*" element={<LibraryDashboardRouter />} />
 
           {/* 7. Attendance Department Dashboard */}
           <Route path="/dept/attendance/dashboard" element={<Navigate to="/dept/attendance/agent" replace />} />
           <Route path="/dept/attendance/agent" element={<AttendanceDashboardRouter />} />
           <Route path="/dept/attendance/agent/:sessionId" element={<AttendanceDashboardRouter />} />
+          <Route path="/dept/attendance/agent/:sessionId/*" element={<AttendanceDashboardRouter />} />
 
           {/* 8. HR & Payroll Department Dashboard */}
           <Route path="/dept/hr/dashboard" element={<Navigate to="/dept/hr/agent" replace />} />
           <Route path="/dept/hr/agent" element={<HRDashboardRouter />} />
           <Route path="/dept/hr/agent/:sessionId" element={<HRDashboardRouter />} />
+          <Route path="/dept/hr/agent/:sessionId/*" element={<HRDashboardRouter />} />
 
           {/* 9. Hostel & Transport Dashboard */}
           <Route path="/dept/hostel/dashboard" element={<Navigate to="/dept/hostel/agent" replace />} />
           <Route path="/dept/hostel/agent" element={<HostelDashboardPage />} />
           <Route path="/dept/hostel/agent/:sessionId" element={<HostelDashboardPage />} />
+          <Route path="/dept/hostel/agent/:sessionId/*" element={<HostelDashboardPage />} />
 
           {/* 10. Faculty Dashboard */}
           <Route path="/faculty/dashboard" element={<Navigate to="/faculty/agent" replace />} />
           <Route path="/faculty/agent" element={<FacultyHomePage />} />
           <Route path="/faculty/agent/:sessionId" element={<FacultyHomePage />} />
+          <Route path="/faculty/agent/:sessionId/*" element={<FacultyHomePage />} />
           <Route path="/faculty/work" element={<FacultyWorkPage />} />
           <Route path="/exam/grading" element={<ExamGradingPage />} />
 
@@ -473,6 +483,7 @@ export function AppRouter() {
           <Route path="/student/dashboard" element={<Navigate to="/student/agent" replace />} />
           <Route path="/student/agent" element={<StudentHomePage />} />
           <Route path="/student/agent/:sessionId" element={<StudentHomePage />} />
+          <Route path="/student/agent/:sessionId/*" element={<StudentHomePage />} />
           <Route path="/student/work" element={<StudentWorkPage />} />
 
           {/* ── Common pages ── */}
