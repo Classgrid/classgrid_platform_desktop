@@ -2250,7 +2250,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         if (prefillPrompt) {
           sessionStorage.removeItem("agent:schedule_prompt");
           if (askQuestionRef.current) {
-            askQuestionRef.current(prefillPrompt);
+            askQuestionRef.current(prefillPrompt, { explicitSessionId: null });
           }
         }
       }, 100);
@@ -2845,7 +2845,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     askQuestionRef.current = askQuestion;
   }, [askQuestion]);
 
-  async function askQuestion(question: string, options?: { hidden?: boolean; isEdit?: boolean }) {
+  async function askQuestion(question: string, options?: { hidden?: boolean; isEdit?: boolean; explicitSessionId?: string | null }) {
     if (!options?.hidden) {
       retryCountRef.current = 0;
     }
@@ -3127,7 +3127,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           isEdit: options?.isEdit,
           subdomain: typeof window !== "undefined" ? window.location.hostname : undefined,
           userContext: userContext,
-          sessionId: sessionId ?? undefined,
+          sessionId: (options && options.explicitSessionId !== undefined) ? (options.explicitSessionId ?? undefined) : (sessionId ?? undefined),
           isIncognito: isIncognito,
           fileUrls: uploadedAttachments.length > 0 ? uploadedAttachments.map(a => a.url) : [],
           attachments: uploadedAttachments.length > 0 ? uploadedAttachments.map(a => ({ url: a.url, name: a.name, mimeType: a.mimeType })) : undefined,

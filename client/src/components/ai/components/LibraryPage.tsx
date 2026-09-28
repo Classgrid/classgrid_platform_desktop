@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/marketing_ui/button';
 import { Skeleton } from '@/components/marketing_ui/skeleton';
 import { NikhilTimeCalendar } from '@/components/marketing_ui/nikhil_time_calendar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/marketing_ui/dropdown-menu';
 import { getSocket } from '@/lib/socketClient';
 import FilePreviewModal from './FilePreviewModal';
 import { DocsImageViewer } from './DocsImageViewer';
@@ -349,54 +350,48 @@ export function LibraryPage() {
                     getFileIcon(file.file_type)
                   )}
                   
-                  {/* Hover Overlay Actions */}
-                  <div 
-                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-4 cursor-pointer"
-                    onClick={() => setSelectedFileToPreview(file)}
-                  >
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleAskAI(file.cdn_url, file.original_name); }}
-                      className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors"
-                      title="Ask AI"
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                    </button>
-                    <a 
-                      href={file.cdn_url} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors"
-                      title="Download"
-                    >
-                      <Download className="w-4 h-4" />
-                    </a>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setDeleteId(file._id); }}
-                      className="p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-full backdrop-blur-md transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-
                   {/* Source Badge */}
                   {file.source === 'generated' && (
-                    <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                    <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm z-10">
                       AI Generated
                     </div>
                   )}
                 </div>
 
                 {/* Info Area */}
-                <div className="p-3 bg-background border-t border-border/50">
-                  <p className="text-sm font-medium truncate mb-1" title={file.original_name}>
-                    {file.original_name}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{formatBytes(file.size_bytes)}</span>
-                    <span>{new Date(file.created_at).toLocaleDateString()}</span>
+                <div className="p-3 bg-background border-t border-border/50 flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate mb-1" title={file.original_name}>
+                      {file.original_name}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{formatBytes(file.size_bytes)}</span>
+                      <span>•</span>
+                      <span>{new Date(file.created_at).toLocaleDateString()}</span>
+                    </div>
                   </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors -mt-1 -mr-1">
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAskAI(file.cdn_url, file.original_name); }} className="cursor-pointer">
+                        <MessageSquare className="w-4 h-4 mr-2" /> Ask Agent
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); window.open(file.cdn_url, '_blank'); }} className="cursor-pointer">
+                        <Download className="w-4 h-4 mr-2" /> Download
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={(e) => { e.stopPropagation(); setDeleteId(file._id); }} 
+                        className="text-red-500 focus:text-red-500 focus:bg-red-500/10 cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))}
@@ -406,8 +401,8 @@ export function LibraryPage() {
 
       {/* Delete Confirmation Modal */}
       {deleteId && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-background border border-border/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setDeleteId(null)}>
+          <div className="bg-background border border-border/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold mb-2">Delete file?</h3>
             <p className="text-sm text-muted-foreground mb-6">
               This will permanently delete the file and free up your storage quota. This action cannot be undone.

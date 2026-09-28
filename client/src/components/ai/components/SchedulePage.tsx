@@ -192,7 +192,7 @@ export const SchedulePage: React.FC = () => {
         <input
           type="text"
           placeholder="Schedule a task..."
-          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none border-none focus:ring-0 focus-visible:ring-0 focus:outline-none"
           value={taskInput}
           onChange={(e) => setTaskInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleScheduleInputSubmit()}
