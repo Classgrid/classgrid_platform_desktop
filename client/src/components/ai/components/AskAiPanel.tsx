@@ -193,7 +193,7 @@ async function getPresignedUrlForAskAiFile(name: string, type: string, size: num
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ fileName: name, mimeType: type })
+      body: JSON.stringify({ fileName: name, mimeType: type, size: size })
     });
     return await res.json();
   } catch (err) {
