@@ -1527,6 +1527,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
+  const [completedPlanSteps, setCompletedPlanSteps] = useState<string[]>([]);
 
   // --- Voice Dictation State ---
   const [isRecording, setIsRecording] = useState(false);
@@ -3260,6 +3261,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 }
               } else if (event.type === "file_update") {
                 setSandboxFiles(prev => ({ ...prev, ...(event.files || {}) }));
+              } else if (event.type === "plan_step_update") {
+                // Track completed plan steps from backend SSE events
+                const completedSteps = event.completedSteps || [];
+                setCompletedPlanSteps((prev: string[]) => {
+                  const updated = new Set([...prev, ...completedSteps]);
+                  return Array.from(updated);
+                });
               } else if (event.type === "tool_start") {
                 if (event.tool === "open_integration_panel") {
                   setIsAiHubOpen(true);
@@ -4941,7 +4949,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           FULL-PAGE: ChatGPT-style centered layout
           ────────────────────────────────────────────────────────────────────────── */}
       {variant === "full-page" ? (
-        <div className="w-full h-[100dvh] bg-background flex flex-row overflow-hidden">
+        <div className="w-full h-[100dvh] bg-background dark:bg-black flex flex-row overflow-hidden">
           <div className="flex-1 min-w-0 min-h-0 relative flex flex-col h-full overflow-hidden">
             {/* Sidebar toggle and Top Right Header Actions */}
             <div className="shrink-0 flex items-center justify-between px-6 pt-3 h-14">
@@ -5027,7 +5035,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     </div>
                   </div>
                 </div>
-                <div className="shrink-0 bg-background pt-2 pb-6 px-4 md:px-8 max-w-4xl w-full mx-auto">
+                <div className="shrink-0 bg-background dark:bg-black pt-2 pb-6 px-4 md:px-8 max-w-4xl w-full mx-auto">
                   {panelInput}
                 </div>
               </>
@@ -5127,7 +5135,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                         </AnimatePresence>
                         <form onSubmit={handleSubmit} className="space-y-2">
                           <div className={cn(
-                            "group relative w-full shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
+                            "group relative w-full shadow-sm rounded-2xl border border-border bg-background dark:bg-black focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
                           )}>
                             <input
                               ref={fileInputRef}
@@ -5639,7 +5647,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 >
                   {panelChat}
                 </div>
-                <div className="shrink-0 bg-background pt-2 pb-6 px-4 md:px-8 max-w-4xl w-full mx-auto">
+                <div className="shrink-0 bg-background dark:bg-black pt-2 pb-6 px-4 md:px-8 max-w-4xl w-full mx-auto">
                   {panelInput}
                 </div>
               </>
@@ -5661,6 +5669,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 currentJs={latestJs}
                 planNode={planNode}
                 planSteps={planSteps}
+                completedPlanSteps={completedPlanSteps}
                 activeBuildSessionId={activeBuildSessionId}
               />
             )}
