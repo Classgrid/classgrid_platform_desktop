@@ -19,6 +19,7 @@ import { Button } from "@/components/marketing_ui/button";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
+import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
 import { toast } from "sonner";
 import { apiClient as api } from "@/lib/apiClient";
 
@@ -193,17 +194,10 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 pb-16 overflow-y-auto h-full">
 
-      {/* ── INLINE BREADCRUMB ── */}
-      <div className="flex items-center gap-2 text-sm mb-6">
-        <span 
-          className="text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-          onClick={() => navigate(backPath)}
-        >
-          Schedules
-        </span>
-        <span className="text-muted-foreground/50">/</span>
-        <span className="text-foreground font-medium truncate max-w-[300px]">{schedule.title}</span>
-      </div>
+      <PageBreadcrumbs items={[
+        { label: "Schedules", onClick: () => navigate(backPath) },
+        { label: schedule.title || "Schedule Details" }
+      ]} />
 
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-border pb-6 mb-8">
