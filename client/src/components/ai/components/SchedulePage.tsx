@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
-import { Calendar, Trash2, CheckCircle2, Clock, XCircle, AlertCircle, Plus, Search, Send, Mail, Bell, FileText, BarChart3, BookOpen, GraduationCap, ArrowRight, Video, Presentation, MonitorPlay } from "lucide-react";
+import { Calendar, Trash2, CheckCircle2, Clock, XCircle, AlertCircle, Plus, Search, Send, Mail, Bell, FileText, BarChart3, BookOpen, GraduationCap, ArrowRight, Video, Presentation, MonitorPlay, Link2, Copy, ExternalLink } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
 import { toast } from "sonner";
@@ -9,14 +9,6 @@ import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { getSocket } from "@/lib/socketClient";
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogClose
-} from "@/components/marketing_ui/dialog";
 
 type ScheduleStatus = "pending" | "sent" | "failed" | "cancelled";
 
@@ -125,7 +117,7 @@ const INTEGRATION_SUGGESTIONS: ScheduleSuggestion[] = [
     prompt: "Schedule an event on my Google Calendar for [Date/Time] about [Topic]."
   },
   {
-    icon: <BookOpen className="w-5 h-5 text-orange-500" />,
+    icon: <img src="/logo.png" alt="Classgrid" className="w-5 h-5 object-contain" />,
     title: "Classgrid Classroom",
     description: "Schedule a live class or assignment in Classgrid",
     prompt: "Schedule a live class in my Classgrid Classroom for [Date/Time] about [Topic]."
@@ -137,7 +129,6 @@ export const SchedulePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | ScheduleStatus>("all");
   const [taskInput, setTaskInput] = useState("");
-  const [selectedSchedule, setSelectedSchedule] = useState<AiSchedule | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -147,6 +138,7 @@ export const SchedulePage: React.FC = () => {
   const baseAgentPath = agentIndex !== -1
     ? pathParts.slice(0, agentIndex + 1).join('/')
     : location.pathname;
+  const scheduleBasePath = `${baseAgentPath}/schedule`;
 
   const fetchSchedules = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -227,7 +219,7 @@ export const SchedulePage: React.FC = () => {
   const getStatusBadge = (status: ScheduleStatus) => {
     switch (status) {
       case "pending": return <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">Pending</Badge>;
-      case "sent": return <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">Sent</Badge>;
+      case "sent": return <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">Completed</Badge>;
       case "failed": return <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">Failed</Badge>;
       case "cancelled": return <Badge variant="secondary" className="bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-400">Cancelled</Badge>;
     }
@@ -289,7 +281,7 @@ export const SchedulePage: React.FC = () => {
         <>
           {/* Filter Tabs */}
           <div className="flex gap-2 mb-4">
-            {["all", "pending", "sent", "failed"].map((f) => (
+            {(["all", "pending", "sent"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f as any)}
@@ -299,7 +291,7 @@ export const SchedulePage: React.FC = () => {
                     : "text-muted-foreground hover:bg-muted/60"
                 }`}
               >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
+                {f === "all" ? "All" : f === "pending" ? "Pending" : "Completed"}
               </button>
             ))}
           </div>
@@ -308,15 +300,15 @@ export const SchedulePage: React.FC = () => {
           <div className="flex flex-col mb-8">
             {schedules.map((schedule) => (
               <div 
-                key={schedule._id} 
-                className="py-4 border-b border-border/30 last:border-0 flex items-start gap-3 group relative"
-              >
+                  key={schedule._id} 
+                  className="py-4 border-b border-border/30 last:border-0 flex items-start gap-3 group relative"
+                >
                 <div className="w-10 h-10 rounded-lg bg-muted/50 dark:bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
                   {getStatusIcon(schedule.status)}
                 </div>
                 <div 
                   className="flex-1 min-w-0 cursor-pointer"
-                  onClick={() => setSelectedSchedule(schedule)}
+                  onClick={() => navigate(`${scheduleBasePath}/${schedule._id}`)}
                 >
                   <div className="flex items-center gap-2 mb-0.5">
                     <h3 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{schedule.title}</h3>
@@ -331,6 +323,19 @@ export const SchedulePage: React.FC = () => {
                     {format(new Date(schedule.scheduled_at), "EEEE, MMM d, yyyy 'at' h:mm a")}
                   </span>
                 </div>
+                {/* Copy link button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const url = `${window.location.origin}${scheduleBasePath}/${schedule._id}`;
+                    navigator.clipboard.writeText(url);
+                    toast.success("Schedule link copied!");
+                  }}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                  title="Copy schedule link"
+                >
+                  <Link2 className="w-4 h-4" />
+                </button>
                 <DangerConfirmDialog
                   title="Delete Schedule?"
                   description="Are you sure you want to cancel and delete this scheduled task? This cannot be undone."
@@ -393,75 +398,6 @@ export const SchedulePage: React.FC = () => {
         </div>
       </div>
 
-      <Dialog open={!!selectedSchedule} onOpenChange={(open) => !open && setSelectedSchedule(null)}>
-        <DialogContent className="sm:max-w-[550px] bg-background dark:bg-[#111111] border-border/40 p-0 overflow-hidden">
-          <div className="p-6">
-            <DialogHeader className="mb-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <DialogTitle className="text-xl font-bold mb-1.5">{selectedSchedule?.title}</DialogTitle>
-                  <DialogDescription className="text-sm">
-                    {selectedSchedule?.description || "No description provided."}
-                  </DialogDescription>
-                </div>
-                {selectedSchedule && getStatusBadge(selectedSchedule.status)}
-              </div>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              {/* Scheduled Time */}
-              <div className="flex items-center gap-3 text-sm bg-muted/40 dark:bg-white/5 p-3 rounded-xl border border-border/40">
-                <Calendar className="w-4 h-4 shrink-0 text-primary" />
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">Scheduled For</p>
-                  <p className="font-medium text-foreground text-sm">
-                    {selectedSchedule?.scheduled_at && format(new Date(selectedSchedule.scheduled_at), "EEEE, MMMM d, yyyy 'at' h:mm a")}
-                  </p>
-                </div>
-              </div>
-
-              {/* Created At */}
-              <div className="flex items-center gap-3 text-sm bg-muted/40 dark:bg-white/5 p-3 rounded-xl border border-border/40">
-                <Clock className="w-4 h-4 shrink-0 text-muted-foreground" />
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">Created</p>
-                  <p className="font-medium text-foreground text-sm">
-                    {(selectedSchedule?.createdAt || selectedSchedule?.created_at) && format(new Date(selectedSchedule.createdAt || selectedSchedule.created_at), "MMM d, yyyy 'at' h:mm a")}
-                  </p>
-                </div>
-              </div>
-
-              {/* Summary */}
-              {(selectedSchedule?.summary || selectedSchedule?.email_subject) && (
-                <div className="border border-border/40 rounded-xl overflow-hidden">
-                  <div className="bg-muted/40 dark:bg-white/5 px-4 py-3">
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Summary</h4>
-                    <p className="text-sm font-medium text-foreground">{selectedSchedule.summary || selectedSchedule.email_subject}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Information */}
-              {(selectedSchedule?.action_info || selectedSchedule?.email_body) && (
-                <div className="border border-border/40 rounded-xl overflow-hidden">
-                  <div className="px-4 py-4 max-h-[250px] overflow-y-auto">
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Details & Information</h4>
-                    {selectedSchedule.action_info ? (
-                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{selectedSchedule.action_info}</p>
-                    ) : (
-                      <div 
-                        className="text-sm prose prose-sm dark:prose-invert max-w-none text-foreground"
-                        dangerouslySetInnerHTML={{ __html: selectedSchedule.email_body || "" }} 
-                      />
-                    )}
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

@@ -438,6 +438,24 @@ export const getMcpTools = () => [
       },
       required: ['title', 'scheduled_at', 'email_subject', 'email_body', 'summary', 'action_info']
     }
+  },
+  {
+    name: 'update_schedule',
+    description: 'Update an existing schedule (e.g. change the time, title, or email content).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        schedule_id: { type: 'string', description: 'The ID of the schedule to update' },
+        title: { type: 'string', description: 'New title' },
+        description: { type: 'string', description: 'New description' },
+        summary: { type: 'string', description: 'New summary' },
+        action_info: { type: 'string', description: 'New action info' },
+        scheduled_at: { type: 'string', description: 'New ISO 8601 datetime string' },
+        email_subject: { type: 'string', description: 'New email subject' },
+        email_body: { type: 'string', description: 'New HTML email body' }
+      },
+      required: ['schedule_id']
+    }
   }
 ];
 
@@ -449,10 +467,11 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
         const User = (await import('../models/User.js')).default;
-        const user = await User.findOne({ email: userEmail }).select('_id organization_id');
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const user = await User.findOne({ email: finalUserEmail }).select('_id organization_id');
         
         const schedule = await AiSchedule.create({
-          user_email: userEmail,
+          user_email: finalUserEmail,
           user_id: user?._id,
           organization_id: user?.organization_id,
           title: args.title,
@@ -468,6 +487,37 @@ export const handleToolCall = async (name, args, context = {}) => {
         return { content: [{ type: 'text', text: `Successfully scheduled task "${args.title}" for ${args.scheduled_at}. The user will receive an email at that time.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error creating schedule: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'update_schedule') {
+      try {
+        const AiSchedule = (await import('../models/AiSchedule.js')).default;
+        const User = (await import('../models/User.js')).default;
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        
+        const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
+        if (!schedule) {
+          return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
+        }
+
+        if (args.title) schedule.title = args.title;
+        if (args.description) schedule.description = args.description;
+        if (args.summary) schedule.summary = args.summary;
+        if (args.action_info) schedule.action_info = args.action_info;
+        if (args.scheduled_at) schedule.scheduled_at = new Date(args.scheduled_at);
+        if (args.email_subject) schedule.email_subject = args.email_subject;
+        if (args.email_body) schedule.email_body = args.email_body;
+
+        // If it was cancelled or failed, they might want to reschedule it to pending
+        if (args.scheduled_at && schedule.status !== 'pending') {
+          schedule.status = 'pending';
+        }
+
+        await schedule.save();
+        return { content: [{ type: 'text', text: `Successfully updated schedule "${schedule.title}".` }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error updating schedule: ${e.message}` }] };
       }
     }
 
