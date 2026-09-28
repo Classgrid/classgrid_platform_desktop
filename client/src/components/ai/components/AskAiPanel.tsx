@@ -2244,6 +2244,15 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setTimeout(() => {
         const input = document.getElementById("ai-chat-input");
         if (input) input.focus();
+
+        // Check if there is a pre-filled prompt waiting to be auto-sent
+        const prefillPrompt = sessionStorage.getItem("agent:schedule_prompt");
+        if (prefillPrompt) {
+          sessionStorage.removeItem("agent:schedule_prompt");
+          if (askQuestionRef.current) {
+            askQuestionRef.current(prefillPrompt);
+          }
+        }
       }, 100);
     };
 
