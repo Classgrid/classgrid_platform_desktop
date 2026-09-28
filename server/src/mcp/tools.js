@@ -543,6 +543,16 @@ export const getMcpTools = () => [
 export const handleToolCall = async (name, args, context = {}) => {
   const { userEmail = 'unknown@classgrid.in', userRole = '', subdomain = '', sessionId = 'default' } = context;
 
+  const emitScheduleUpdate = async (userId, scheduleId) => {
+    if (!userId) return;
+    try {
+      const { getIO } = await import('../services/socket.service.js');
+      getIO().to(userId.toString()).emit('ai:schedule_updated', { schedule_id: scheduleId });
+    } catch (err) {
+      console.error("Failed to emit ai:schedule_updated:", err);
+    }
+  };
+
   try {
     if (name === 'create_schedule') {
       try {
@@ -565,6 +575,8 @@ export const handleToolCall = async (name, args, context = {}) => {
           status: 'pending'
         });
         
+        await emitScheduleUpdate(user?._id, schedule._id);
+        
         return { content: [{ type: 'text', text: `Successfully scheduled task "${args.title}" for ${args.scheduled_at}. The user will receive an email at that time. IMPORTANT: The schedule_id is ${schedule._id}. Save this ID if you need to update or delete it later.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error creating schedule: ${e.message}` }] };
@@ -586,6 +598,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           if (schedule.status !== 'pending') schedule.status = 'pending';
         }
         await schedule.save();
+        await emitScheduleUpdate(schedule.user_id, schedule._id);
         return { content: [{ type: 'text', text: `Successfully updated schedule execution time.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error updating schedule time: ${e.message}` }] };
@@ -604,6 +617,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         if (args.title) schedule.title = args.title;
         await schedule.save();
+        await emitScheduleUpdate(schedule.user_id, schedule._id);
         return { content: [{ type: 'text', text: `Successfully updated schedule title.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error updating schedule title: ${e.message}` }] };
@@ -622,6 +636,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         if (args.email_subject) schedule.email_subject = args.email_subject;
         await schedule.save();
+        await emitScheduleUpdate(schedule.user_id, schedule._id);
         return { content: [{ type: 'text', text: `Successfully updated schedule email subject.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error updating schedule email subject: ${e.message}` }] };
@@ -640,6 +655,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         if (args.email_body) schedule.email_body = args.email_body;
         await schedule.save();
+        await emitScheduleUpdate(schedule.user_id, schedule._id);
         return { content: [{ type: 'text', text: `Successfully updated schedule email body.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error updating schedule email body: ${e.message}` }] };
@@ -658,6 +674,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         if (args.summary) schedule.summary = args.summary;
         await schedule.save();
+        await emitScheduleUpdate(schedule.user_id, schedule._id);
         return { content: [{ type: 'text', text: `Successfully updated schedule summary.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error updating schedule summary: ${e.message}` }] };
@@ -680,6 +697,7 @@ export const handleToolCall = async (name, args, context = {}) => {
            schedule.email_body = schedule.email_body.replace(/<a[^>]*>(.*?)<\/a>/ig, "");
         }
         await schedule.save();
+        await emitScheduleUpdate(schedule.user_id, schedule._id);
         return { content: [{ type: 'text', text: `Successfully deleted attachment from schedule.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error deleting schedule attachment: ${e.message}` }] };
@@ -712,6 +730,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         await AiSchedule.deleteOne({ _id: args.schedule_id });
+        await emitScheduleUpdate(schedule.user_id, args.schedule_id);
         return { content: [{ type: 'text', text: `Successfully deleted schedule ${args.schedule_id}.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error deleting schedule: ${e.message}` }] };
