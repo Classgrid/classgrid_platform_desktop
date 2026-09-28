@@ -16,6 +16,8 @@ import { ExpandedInputModal } from './ExpandedInputModal';
 import { AiHubModal } from "./AiHubModal";
 import { InsufficientCreditsCard } from "./InsufficientCreditsCard";
 import { WorkspacePanel } from "./workspace/WorkspacePanel";
+import { SchedulePage } from "./SchedulePage";
+import { LibraryPage } from "./LibraryPage";
 import ReactDOM from "react-dom";
 
 import { AiChartRenderer } from "./AiChartRenderer";
@@ -4952,7 +4954,15 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               )}
             </div>
 
-            {isLoadingChat ? (
+            {sessionId === "schedule" ? (
+              <div className="flex-1 overflow-y-auto">
+                <SchedulePage />
+              </div>
+            ) : sessionId === "library" ? (
+              <div className="flex-1 overflow-y-auto">
+                <LibraryPage />
+              </div>
+            ) : isLoadingChat ? (
               <>
                 <div className="flex-1 overflow-y-scroll overscroll-contain scroll-smooth chat-scrollbar [scrollbar-gutter:stable]">
                   <div className="max-w-[48rem] mx-auto w-full px-4 py-8">
