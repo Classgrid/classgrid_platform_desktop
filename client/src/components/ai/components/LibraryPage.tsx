@@ -208,7 +208,8 @@ export function LibraryPage() {
     <div className="flex flex-col h-full bg-background text-foreground overflow-y-auto">
       {/* Header */}
       <div className="px-6 py-8 border-b border-border/50 sticky top-0 bg-background/95 backdrop-blur z-10">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="max-w-6xl mx-auto w-full">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight mb-2">Library</h1>
             <p className="text-muted-foreground text-sm">Manage your uploaded and AI-generated files.</p>
@@ -315,8 +316,6 @@ export function LibraryPage() {
                 <SelectContent>
                   <SelectItem value="newest">Newest first</SelectItem>
                   <SelectItem value="oldest">Oldest first</SelectItem>
-                  <SelectItem value="largest">Largest first</SelectItem>
-                </SelectContent>
               </Select>
             </div>
           </div>
@@ -324,7 +323,7 @@ export function LibraryPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 pt-6">
+      <div className="flex-1 p-6 pt-6 max-w-6xl mx-auto w-full">
 
         {/* Grid */}
         {isLoading ? (

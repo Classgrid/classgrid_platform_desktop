@@ -469,14 +469,14 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
               </div>
             </div>
 
-          </div>
-          
-          {/* ── FIXED BOTTOM DELETE BUTTON ── */}
-          <div className="mt-4 pt-4 border-t border-border/40">
-            <Button onClick={() => setDeleteOpen(true)} variant="destructive" className="w-full h-11 rounded-xl text-sm font-bold">
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Schedule
-            </Button>
+            {/* ── BOTTOM DELETE BUTTON ── */}
+            <div className="mt-4 pt-4 border-t border-border/40">
+              <Button onClick={() => setDeleteOpen(true)} variant="destructive" className="w-full h-11 rounded-xl text-sm font-bold">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Schedule
+              </Button>
+            </div>
+
           </div>
         </div>
       </div>
