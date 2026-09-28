@@ -3720,7 +3720,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     <button
                                       type="button"
                                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSendEditedMessage(message.id); }}
-                                      className="px-4 py-1.5 text-[13px] font-medium bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
+                                      className="px-4 py-1.5 text-[13px] font-medium bg-foreground text-background rounded-full hover:bg-foreground/90 transition-colors shadow-sm cursor-pointer"
                                     >
                                       Send
                                     </button>
@@ -4872,7 +4872,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     {isGenerating ? (
                       <Button
                         type="button"
-                        variant="primary"
+                        variant="ghost"
                         onClick={handleStop}
                         className="h-8 rounded-full bg-foreground text-background hover:bg-foreground/90 px-3 text-[11px] font-medium shadow-sm transition-all active:scale-95"
                         title="Stop generating"

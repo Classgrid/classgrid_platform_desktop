@@ -14,12 +14,13 @@ cron.schedule('* * * * *', async () => {
 
     for (const schedule of pendingSchedules) {
       try {
-        await sendEmail(
-          schedule.user_email,
-          schedule.email_subject,
-          schedule.email_body,
-          'agent@classgrid.in'
-        );
+        await sendEmail({
+          to: schedule.user_email,
+          subject: schedule.email_subject,
+          html: schedule.email_body,
+          fromEmail: 'agent@classgrid.in',
+          fromName: 'Classgrid AI'
+        });
         
         schedule.status = 'sent';
         schedule.sent_at = new Date();
