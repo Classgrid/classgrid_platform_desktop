@@ -444,6 +444,8 @@ export const getMcpTools = () => [
         email_body: { type: 'string', description: 'Full beautiful HTML email body with inline CSS to send at scheduled time' }
       },
       required: ['title', 'scheduled_at', 'email_subject', 'email_body', 'summary', 'action_info']
+    }
+  },
   {
     name: 'edit_schedule_time',
     description: 'Update the execution time of an existing schedule.',
