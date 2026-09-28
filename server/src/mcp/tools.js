@@ -421,6 +421,21 @@ export const getMcpTools = () => [
       },
       required: ['fileUrl']
     }
+  },
+  {
+    name: 'create_schedule',
+    description: 'Schedule an email reminder or task for a specific date and time. Use this when the user mentions a future event, exam, task, or deadline they want to be reminded about. Always pre-write a full HTML email body.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Short title of the scheduled task (e.g. "Exam Reminder")' },
+        description: { type: 'string', description: 'What the reminder is about' },
+        scheduled_at: { type: 'string', description: 'ISO 8601 datetime string for when to send the email (e.g. 2026-10-06T10:00:00.000Z)' },
+        email_subject: { type: 'string', description: 'Subject line for the email' },
+        email_body: { type: 'string', description: 'Full beautiful HTML email body with inline CSS to send at scheduled time' }
+      },
+      required: ['title', 'scheduled_at', 'email_subject', 'email_body']
+    }
   }
 ];
 
@@ -428,6 +443,30 @@ export const handleToolCall = async (name, args, context = {}) => {
   const { userEmail = 'unknown@classgrid.in', userRole = '', subdomain = '', sessionId = 'default' } = context;
 
   try {
+    if (name === 'create_schedule') {
+      try {
+        const AiSchedule = (await import('../models/AiSchedule.js')).default;
+        const User = (await import('../models/User.js')).default;
+        const user = await User.findOne({ email: userEmail }).select('_id organization_id');
+        
+        const schedule = await AiSchedule.create({
+          user_email: userEmail,
+          user_id: user?._id,
+          organization_id: user?.organization_id,
+          title: args.title,
+          description: args.description || '',
+          scheduled_at: new Date(args.scheduled_at),
+          email_subject: args.email_subject,
+          email_body: args.email_body,
+          status: 'pending'
+        });
+        
+        return { content: [{ type: 'text', text: `Successfully scheduled task "${args.title}" for ${args.scheduled_at}. The user will receive an email at that time.` }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error creating schedule: ${e.message}` }] };
+      }
+    }
+
     if (name === 'read_local_file') {
       try {
         const content = fs.readFileSync(args.filePath, 'utf8');

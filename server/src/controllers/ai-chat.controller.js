@@ -43,6 +43,7 @@ import User from "../models/User.js";
 import Organization from "../models/Organization.js";
 import Classroom from "../models/Classroom.js";
 import ClassroomMembership from "../models/ClassroomMembership.js";
+import AiSchedule from "../models/AiSchedule.js";
 import { ROLE_DEFINITIONS } from "../utils/roles.js";
 
 const uniqueDashboards = [...new Set(Object.values(ROLE_DEFINITIONS).map(r => r.dashboard))];
@@ -226,6 +227,18 @@ Sequence pattern: \`internal_thought_process\` -> \`search_knowledge_base\` -> \
 If the user asks you to make a file public, or you need to provide a public download link to a file you generated, follow this EXACT sequence:
 \`internal_thought_process\`: "I need to upload the generated file to the public CDN bucket so it can be safely linked."
 2. \`upload_file_to_cdn\`: Pass the base64 content to upload the file and get the public R2 URL.
+
+--- WORKFLOW 8: SCHEDULING A TASK OR REMINDER ---
+If the user mentions a future event, exam, task, deadline, or says things like "remind me", "don't let me forget", "I have [X] on [date]", follow this EXACT sequence:
+1. \`internal_thought_process\`: "The user wants to schedule a reminder. I will create a scheduled email for this."
+2. \`create_schedule\`: Call with the title, scheduled_at (ISO string in UTC), a beautiful HTML email_body pre-written for the user, and the email_subject.
+3. Confirm to the user: "✅ Done! I've scheduled a reminder for [date/time]. You'll receive an email at that time."
+
+CRITICAL SCHEDULE RULES:
+- Always infer the correct date from context. If user says "Monday", calculate the next upcoming Monday.
+- Convert all times to UTC ISO 8601 format (e.g. 2026-10-06T10:00:00.000Z).
+- Pre-write the FULL beautiful HTML email body — do NOT leave it generic.
+- NEVER ask the user to confirm the schedule tool call. Just do it.
 
 ### How to Upload Files to CDN (CRITICAL INSTRUCTION)
 If you generate a file (like an Excel sheet, PDF, or image) inside the sandbox and need to give the user a download link, you MUST use the native \`upload_sandbox_file_to_cdn\` tool.
@@ -464,6 +477,25 @@ async function buildDeepContext(userEmail) {
             if (classrooms.length > 0) {
                 context += `\nClasses You Teach:\n` + classrooms.map(c => `- ${c.name} (${c.subject})`).join('\n');
             }
+        }
+
+        // Fetch pending schedules for today or upcoming to remind the user
+        const now = new Date();
+        const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+        const endOfTomorrow = new Date(now.setHours(23, 59, 59, 999));
+        endOfTomorrow.setDate(endOfTomorrow.getDate() + 1);
+
+        const upcomingSchedules = await AiSchedule.find({
+            user_email: userEmail,
+            status: "pending",
+            scheduled_at: { $gte: startOfDay, $lte: endOfTomorrow }
+        }).sort({ scheduled_at: 1 }).limit(10).lean();
+
+        if (upcomingSchedules.length > 0) {
+            context += `\nYour Upcoming Scheduled Tasks & Reminders (Today & Tomorrow):\n` + upcomingSchedules.map(s => {
+                const dateStr = new Date(s.scheduled_at).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
+                return `- ${dateStr}: ${s.title} (Details: ${s.description || "N/A"})`;
+            }).join('\n');
         }
 
         return context;

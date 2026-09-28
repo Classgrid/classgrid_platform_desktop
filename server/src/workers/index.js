@@ -46,6 +46,7 @@ import './email-provisioning.worker.js';
 // Import other workers here as they are created
 import './chat-persistence.worker.js';
 import './attendance.worker.js';
+import './ai-schedule.worker.js';
 import { initCronJobs } from './cleanup.worker.js';
 
 import { initAdmissionCronJobs } from './admission-deadline-checker.cron.js';
