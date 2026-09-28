@@ -74,15 +74,15 @@ router.get("/connect", isAuthenticated, (req, res) => {
         scopes.push('https://www.googleapis.com/auth/calendar.events');
     }
     if (service === 'classroom' || service === 'all') {
-        scopes.push('https://www.googleapis.com/auth/classroom.courses.readonly');
-        scopes.push('https://www.googleapis.com/auth/classroom.coursework.me.readonly');
+        scopes.push('https://www.googleapis.com/auth/classroom.courses');
+        scopes.push('https://www.googleapis.com/auth/classroom.coursework.me');
         scopes.push('https://www.googleapis.com/auth/classroom.coursework.students');
-        scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.me.readonly');
-        scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.students.readonly');
-        scopes.push('https://www.googleapis.com/auth/classroom.rosters.readonly');
-        scopes.push('https://www.googleapis.com/auth/classroom.announcements.readonly'); // Required for AI to read announcements
-        scopes.push('https://www.googleapis.com/auth/classroom.topics.readonly'); // Required to filter by topic
-        scopes.push('https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly'); // Required for question papers/materials
+        scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.me');
+        scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.students');
+        scopes.push('https://www.googleapis.com/auth/classroom.rosters');
+        scopes.push('https://www.googleapis.com/auth/classroom.announcements'); // Required for AI to post announcements
+        scopes.push('https://www.googleapis.com/auth/classroom.topics'); // Required to filter/create topics
+        scopes.push('https://www.googleapis.com/auth/classroom.courseworkmaterials'); // Required for question papers/materials
         scopes.push('https://www.googleapis.com/auth/drive.readonly'); // Required to read Classroom attachments
     }
 
@@ -93,6 +93,7 @@ router.get("/connect", isAuthenticated, (req, res) => {
 
     if (service === 'gmail' || service === 'all') {
         scopes.push('https://www.googleapis.com/auth/gmail.modify');
+        scopes.push('https://www.googleapis.com/auth/gmail.send');
     }
 
     if (service === 'forms' || service === 'all') {
