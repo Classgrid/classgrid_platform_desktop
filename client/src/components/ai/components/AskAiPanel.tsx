@@ -2249,7 +2249,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
     const handleLoadChat = async (e: any) => {
       const id = e.detail?.sessionId;
-      if (!id) return;
+      if (!id || id === "schedule" || id === "library") return;
 
       setMessages([]);
       setSessionId(id);
@@ -2330,7 +2330,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   // Sync chat when routeSessionId changes
   useEffect(() => {
-    if (!routeSessionId) return;
+    if (!routeSessionId || routeSessionId === "schedule" || routeSessionId === "library") return;
 
     const loadRouteSession = async () => {
       setMessages([]);
