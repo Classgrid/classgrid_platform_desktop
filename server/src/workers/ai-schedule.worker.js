@@ -29,7 +29,7 @@ cron.schedule('* * * * *', async () => {
       } catch (err) {
         console.error(`[AiSchedule Worker] Failed to send schedule ${schedule._id}:`, err);
         schedule.status = 'failed';
-        schedule.error_message = err.message;
+        schedule.error_message = (err.message || "") + " | " + String(err) + (err.stack ? `\nStack: ${err.stack}` : "");
         await schedule.save();
       }
     }
