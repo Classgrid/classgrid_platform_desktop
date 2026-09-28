@@ -4,7 +4,7 @@ import { Calendar, Trash2, CheckCircle2, Clock, XCircle, AlertCircle, RefreshCw 
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import api from "@/lib/apiClient";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 
@@ -98,7 +98,7 @@ export const SchedulePage: React.FC = () => {
             onClick={() => setFilter(f as any)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
               filter === f 
-                ? "bg-primary text-primary-foreground" 
+                ? "bg-[#2C2C2C] text-[#F0EFED] dark:bg-[#F0EFED] dark:text-[#2C2C2C] hover:opacity-90 shadow-sm" 
                 : "bg-muted/50 text-muted-foreground hover:bg-muted"
             }`}
           >
