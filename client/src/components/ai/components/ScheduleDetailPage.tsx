@@ -77,28 +77,48 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
     : pathParts.slice(0, -1).join("/") || "/";
 
   useEffect(() => {
-    const fetchSchedule = async () => {
-      setLoading(true);
+    let interval: NodeJS.Timeout;
+
+    const fetchSchedule = async (isInitial = true) => {
+      if (isInitial) setLoading(true);
       try {
         const res = await api.get(`/api/ai/schedules/${id}`);
         if (res.data?.success) {
           setSchedule(res.data.schedule);
-          if (res.data.schedule.scheduled_at) {
+          if (isInitial && res.data.schedule.scheduled_at) {
             setSelectedDate(new Date(res.data.schedule.scheduled_at));
           }
-        } else {
+          
+          // Stop polling if status is no longer pending
+          if (res.data.schedule.status !== 'pending' && interval) {
+            clearInterval(interval);
+          }
+        } else if (isInitial) {
           toast.error("Schedule not found");
           navigate(backPath);
         }
       } catch {
-        toast.error("Failed to load schedule");
-        navigate(backPath);
+        if (isInitial) {
+          toast.error("Failed to load schedule");
+          navigate(backPath);
+        }
       } finally {
-        setLoading(false);
+        if (isInitial) setLoading(false);
       }
     };
-    if (id) fetchSchedule();
-  }, [id]);
+
+    if (id) {
+      fetchSchedule(true);
+      // Poll every 3 seconds while waiting for execution
+      interval = setInterval(() => {
+        fetchSchedule(false);
+      }, 3000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [id, navigate, backPath]);
 
   const handleDelete = async () => {
     if (!id) return;
@@ -416,9 +436,9 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
                           ) : isFailed ? (
                             <>
                               <p className="text-sm font-semibold text-red-500">Failed ✗</p>
-                              {schedule.error_message && (
+                              {(schedule.error_message || "Execution failed. Worker caught an error.") && (
                                 <p className="text-[11px] text-red-400 mt-1 max-w-[200px] leading-tight">
-                                  {schedule.error_message}
+                                  {schedule.error_message || "Execution failed. Worker caught an error."}
                                 </p>
                               )}
                             </>
