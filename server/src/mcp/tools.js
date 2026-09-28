@@ -249,7 +249,7 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'read_email', 'read_email_attachment', 'list_sent_emails', 'mark_email_read', 'send_email', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'get_classroom_coursework', 'create_classroom_assignment', 'list_classroom_submissions', 'list_classroom_teachers', 'list_classroom_announcements', 'get_classroom_announcement', 'list_classroom_topics', 'list_classroom_materials', 'read_classroom_file'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'read_email', 'read_email_attachment', 'list_sent_emails', 'mark_email_read', 'send_email', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'get_classroom_coursework', 'create_classroom_assignment', 'create_classroom_announcement', 'list_classroom_submissions', 'list_classroom_teachers', 'list_classroom_announcements', 'get_classroom_announcement', 'list_classroom_topics', 'list_classroom_materials', 'read_classroom_file'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
         query: { type: 'string', description: 'Search query for list_emails or list_drive_files (e.g. "newer_than:1d", "name contains \'form\'").' },
         formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
@@ -286,7 +286,8 @@ export const getMcpTools = () => [
         subject: { type: 'string', description: 'Email subject (for send_email).' },
         body: { type: 'string', description: 'Email body content (for send_email).' },
         title: { type: 'string', description: 'Assignment title (for create_classroom_assignment).' },
-        description: { type: 'string', description: 'Assignment description (for create_classroom_assignment).' }
+        description: { type: 'string', description: 'Assignment/Announcement description text (for create_classroom_assignment or create_classroom_announcement).' },
+        link: { type: 'string', description: 'Optional URL to attach as material (for create_classroom_assignment or create_classroom_announcement).' }
       },
       required: ['operation']
     }
@@ -2033,16 +2034,25 @@ export const handleToolCall = async (name, args, context = {}) => {
         } else if (operation === 'create_classroom_assignment') {
           if (!args.courseId || !args.title) throw new Error("courseId and title are required for create_classroom_assignment");
           const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
-          const res = await classroom.courses.courseWork.create({
-            courseId: args.courseId,
-            requestBody: {
-              title: args.title,
-              description: args.description || '',
-              workType: 'ASSIGNMENT',
-              state: 'PUBLISHED',
-            }
-          });
+          const requestBody = {
+            title: args.title,
+            description: args.description || '',
+            workType: 'ASSIGNMENT',
+            state: 'PUBLISHED',
+          };
+          if (args.link) requestBody.materials = [{ link: { url: args.link } }];
+          const res = await classroom.courses.courseWork.create({ courseId: args.courseId, requestBody });
           data = { message: "Assignment created successfully!", coursework: res.data };
+        } else if (operation === 'create_classroom_announcement') {
+          if (!args.courseId || !args.description) throw new Error("courseId and description are required for create_classroom_announcement");
+          const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
+          const requestBody = {
+            text: args.description,
+            state: 'PUBLISHED',
+          };
+          if (args.link) requestBody.materials = [{ link: { url: args.link } }];
+          const res = await classroom.courses.announcements.create({ courseId: args.courseId, requestBody });
+          data = { message: "Announcement created successfully!", announcement: res.data };
         } else if (operation === 'get_classroom_coursework') {
           if (!args.courseId || !args.courseworkId) throw new Error("courseId and courseworkId are required for get_classroom_coursework");
           const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
