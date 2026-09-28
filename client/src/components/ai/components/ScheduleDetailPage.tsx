@@ -68,6 +68,7 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
   const [schedule, setSchedule] = useState<AiSchedule | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -124,12 +125,16 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
 
   const handleDelete = async () => {
     if (!id) return;
+    setIsDeleting(true);
     try {
       await api.delete(`/api/ai/schedules/${id}`);
       toast.success("Schedule deleted");
       navigate(backPath);
     } catch {
       toast.error("Failed to delete schedule");
+    } finally {
+      setIsDeleting(false);
+      setDeleteOpen(false);
     }
   };
 
@@ -467,16 +472,21 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
                   })()}
                 </div>
               </div>
+              
+              {/* ── DELETE BUTTON (Matching LeadDetailsPage Pattern) ── */}
+              <div className="p-5 border-t border-red-500/20 bg-red-50/30 dark:bg-red-950/10">
+                <Button 
+                  onClick={() => setDeleteOpen(true)} 
+                  variant="destructive" 
+                  className="w-full h-12 rounded-xl text-sm font-bold"
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {isDeleting ? "Deleting..." : "Delete Schedule"}
+                </Button>
+              </div>
             </div>
 
-          </div>
-
-          {/* ── BOTTOM DELETE BUTTON ── */}
-          <div className="shrink-0 mt-4 pt-4 border-t border-border/40">
-            <Button onClick={() => setDeleteOpen(true)} variant="destructive" className="w-full h-11 rounded-xl text-sm font-bold">
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Schedule
-            </Button>
           </div>
         </div>
       </div>
@@ -489,6 +499,7 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
         warningMessage="This action cannot be undone."
         actionLabel="Delete Schedule"
         cancelLabel="Cancel"
+        isLoading={isDeleting}
         onConfirm={handleDelete}
         variant="danger"
       />
