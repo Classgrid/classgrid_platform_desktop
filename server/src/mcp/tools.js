@@ -287,7 +287,8 @@ export const getMcpTools = () => [
         body: { type: 'string', description: 'Email body content (for send_email).' },
         title: { type: 'string', description: 'Assignment title (for create_classroom_assignment).' },
         description: { type: 'string', description: 'Assignment/Announcement description text (for create_classroom_assignment or create_classroom_announcement).' },
-        link: { type: 'string', description: 'Optional URL to attach as material (for create_classroom_assignment or create_classroom_announcement).' }
+        link: { type: 'string', description: 'Optional URL to attach as material (for create_classroom_assignment or create_classroom_announcement).' },
+        driveFileId: { type: 'string', description: 'Optional Google Drive File ID to attach as material (for create_classroom_assignment or create_classroom_announcement). Use upload_drive_file first if the file is not yet in Drive.' }
       },
       required: ['operation']
     }
@@ -2040,7 +2041,12 @@ export const handleToolCall = async (name, args, context = {}) => {
             workType: 'ASSIGNMENT',
             state: 'PUBLISHED',
           };
-          if (args.link) requestBody.materials = [{ link: { url: args.link } }];
+          
+          requestBody.materials = [];
+          if (args.link) requestBody.materials.push({ link: { url: args.link } });
+          if (args.driveFileId) requestBody.materials.push({ driveFile: { driveFile: { id: args.driveFileId } } });
+          if (requestBody.materials.length === 0) delete requestBody.materials;
+          
           const res = await classroom.courses.courseWork.create({ courseId: args.courseId, requestBody });
           data = { message: "Assignment created successfully!", coursework: res.data };
         } else if (operation === 'create_classroom_announcement') {
@@ -2050,7 +2056,12 @@ export const handleToolCall = async (name, args, context = {}) => {
             text: args.description,
             state: 'PUBLISHED',
           };
-          if (args.link) requestBody.materials = [{ link: { url: args.link } }];
+          
+          requestBody.materials = [];
+          if (args.link) requestBody.materials.push({ link: { url: args.link } });
+          if (args.driveFileId) requestBody.materials.push({ driveFile: { driveFile: { id: args.driveFileId } } });
+          if (requestBody.materials.length === 0) delete requestBody.materials;
+          
           const res = await classroom.courses.announcements.create({ courseId: args.courseId, requestBody });
           data = { message: "Announcement created successfully!", announcement: res.data };
         } else if (operation === 'get_classroom_coursework') {
