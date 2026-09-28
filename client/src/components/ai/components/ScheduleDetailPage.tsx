@@ -210,7 +210,6 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
         <div className="flex flex-col">
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{schedule.title}</h1>
-            {getStatusBadge(schedule.status)}
           </div>
           {schedule.description && (
             <p className="text-muted-foreground mt-1 text-sm">{schedule.description}</p>
@@ -250,9 +249,6 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
                       : "—"}
                   </span>
                 </div>
-              </Field>
-              <Field label="Status">
-                {getStatusBadge(schedule.status)}
               </Field>
               <Field label="Schedule ID" value={`#${schedule._id.slice(-8).toUpperCase()}`} />
             </div>

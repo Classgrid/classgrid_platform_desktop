@@ -424,11 +424,11 @@ export const getMcpTools = () => [
   },
   {
     name: 'create_schedule',
-    description: 'Schedule an email reminder or task for a specific date and time. Use this when the user mentions a future event, exam, task, or deadline they want to be reminded about. Always pre-write a full HTML email body. CRITICAL: The title and description MUST be highly specific to the context (e.g. "Payment Reminder: Fall Semester Tuition Fee - $1500" instead of "Fee Reminder"). DO NOT use generic names. You MUST also provide a summary and action_info for the schedule card display (these are SEPARATE from the email content).',
+    description: 'Schedule an email reminder or task for a specific date and time. Use this when the user mentions a future event, exam, task, or deadline they want to be reminded about. Always pre-write a full HTML email body. CRITICAL: The title MUST be a very short 2-4 word summary (e.g. "Fee Reminder", "Gmail Review"). Do NOT make the title a long sentence. Put all the highly specific details and context into the description and summary instead. You MUST also provide a summary and action_info for the schedule card display (these are SEPARATE from the email content).',
     inputSchema: {
       type: 'object',
       properties: {
-        title: { type: 'string', description: 'Highly specific title of the scheduled task including names, amounts, or context (e.g. "Math 101 Midterm Exam Reminder")' },
+        title: { type: 'string', description: 'Very short 2-4 word title for the schedule (e.g. "Math Midterm" or "Gmail Review").' },
         description: { type: 'string', description: 'Detailed summary of what the reminder is about, including all provided context and information.' },
         summary: { type: 'string', description: 'A short one-line summary shown on the schedule card (e.g. "Reminder to pay ₹15,000 tuition fee before Oct 5"). This is NOT the email subject — it is for UI display only.' },
         action_info: { type: 'string', description: 'Detailed plain-text information shown when the user clicks the schedule card. Include all relevant details like amounts, dates, links, names, instructions. This is NOT the email body — it is for UI display only.' },
