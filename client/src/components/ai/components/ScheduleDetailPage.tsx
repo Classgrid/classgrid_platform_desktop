@@ -414,7 +414,14 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
                           ) : isCompleted ? (
                             <p className="text-sm font-semibold text-emerald-500">Done ✓</p>
                           ) : isFailed ? (
-                            <p className="text-sm font-semibold text-red-500">Failed ✗</p>
+                            <>
+                              <p className="text-sm font-semibold text-red-500">Failed ✗</p>
+                              {schedule.error_message && (
+                                <p className="text-[11px] text-red-400 mt-1 max-w-[200px] leading-tight">
+                                  {schedule.error_message}
+                                </p>
+                              )}
+                            </>
                           ) : (
                             <p className="text-sm text-muted-foreground">Awaiting execution…</p>
                           )}
