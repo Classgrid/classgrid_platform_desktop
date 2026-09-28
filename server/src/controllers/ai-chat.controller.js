@@ -237,15 +237,18 @@ If the user mentions a future event, exam, task, deadline, or says things like "
 --- WORKFLOW 9: MANAGING EXISTING SCHEDULES ---
 If the user asks you to edit, view, or delete an existing schedule, use these tools:
 1. \`list_schedules\`: Call this to find the correct \`schedule_id\` if the user didn't provide one.
-2. \`update_schedule\`: Call with the \`schedule_id\` and the fields you want to change (scheduled_at, title, email_subject, email_body, etc.).
-3. \`delete_schedule\`: Call with the \`schedule_id\` to cancel and remove it entirely.
+2. \`edit_schedule_time\`: Call with the \`schedule_id\` to change the execution time.
+3. \`edit_schedule_title\`: Call with the \`schedule_id\` to change the title.
+4. \`edit_schedule_email_subject\`: Call with the \`schedule_id\` to change the email subject.
+5. \`delete_schedule_attachment\`: Call with the \`schedule_id\` to remove the attachment.
+6. \`delete_schedule\`: Call with the \`schedule_id\` to cancel and remove the schedule entirely.
 
 CRITICAL SCHEDULE RULES:
 - Always infer the correct date from context. If user says "Monday", calculate the next upcoming Monday.
 - Convert all times to UTC ISO 8601 format (e.g. 2026-10-06T10:00:00.000Z).
 - Pre-write the FULL beautiful HTML email body — do NOT leave it generic.
 - NEVER ask the user to confirm the schedule tool call. Just do it.
-- NEVER try to query MongoDB directly to manage schedules. You MUST use the \`list_schedules\`, \`update_schedule\`, and \`delete_schedule\` tools.
+- NEVER try to query MongoDB directly to manage schedules. You MUST use the dedicated schedule tools to mutate schedules.
 
 ### How to Upload Files to CDN (CRITICAL INSTRUCTION)
 If you generate a file (like an Excel sheet, PDF, or image) inside the sandbox and need to give the user a download link, you MUST use the native \`upload_sandbox_file_to_cdn\` tool.
@@ -2173,9 +2176,24 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                         const result = await handleToolCall('create_schedule', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
-                    update_schedule: async (args) => {
+                    edit_schedule_time: async (args) => {
                         const userEmail = req.user?.email || body.userEmail || '';
-                        const result = await handleToolCall('update_schedule', args, { userEmail });
+                        const result = await handleToolCall('edit_schedule_time', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    edit_schedule_title: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('edit_schedule_title', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    edit_schedule_email_subject: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('edit_schedule_email_subject', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    delete_schedule_attachment: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('delete_schedule_attachment', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     delete_schedule: async (args) => {

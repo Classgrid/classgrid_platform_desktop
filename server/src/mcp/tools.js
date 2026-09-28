@@ -444,22 +444,49 @@ export const getMcpTools = () => [
         email_body: { type: 'string', description: 'Full beautiful HTML email body with inline CSS to send at scheduled time' }
       },
       required: ['title', 'scheduled_at', 'email_subject', 'email_body', 'summary', 'action_info']
-    }
-  },
   {
-    name: 'update_schedule',
-    description: 'Update an existing schedule (e.g. change the time, title, or email content).',
+    name: 'edit_schedule_time',
+    description: 'Update the execution time of an existing schedule.',
     inputSchema: {
       type: 'object',
       properties: {
         schedule_id: { type: 'string', description: 'The ID of the schedule to update' },
-        title: { type: 'string', description: 'New title' },
-        description: { type: 'string', description: 'New description' },
-        summary: { type: 'string', description: 'New summary' },
-        action_info: { type: 'string', description: 'New action info' },
-        scheduled_at: { type: 'string', description: 'New ISO 8601 datetime string' },
-        email_subject: { type: 'string', description: 'New email subject' },
-        email_body: { type: 'string', description: 'New HTML email body' }
+        scheduled_at: { type: 'string', description: 'New ISO 8601 datetime string in UTC' }
+      },
+      required: ['schedule_id', 'scheduled_at']
+    }
+  },
+  {
+    name: 'edit_schedule_title',
+    description: 'Update the title of an existing schedule.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        schedule_id: { type: 'string', description: 'The ID of the schedule to update' },
+        title: { type: 'string', description: 'New title for the schedule' }
+      },
+      required: ['schedule_id', 'title']
+    }
+  },
+  {
+    name: 'edit_schedule_email_subject',
+    description: 'Update the email subject of an existing schedule.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        schedule_id: { type: 'string', description: 'The ID of the schedule to update' },
+        email_subject: { type: 'string', description: 'New email subject' }
+      },
+      required: ['schedule_id', 'email_subject']
+    }
+  },
+  {
+    name: 'delete_schedule_attachment',
+    description: 'Delete/remove the attachment from an existing schedule.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        schedule_id: { type: 'string', description: 'The ID of the schedule to modify' }
       },
       required: ['schedule_id']
     }
@@ -518,10 +545,30 @@ export const handleToolCall = async (name, args, context = {}) => {
       }
     }
 
-    if (name === 'update_schedule') {
+    if (name === 'edit_schedule_time') {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
-        const User = (await import('../models/User.js')).default;
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        
+        const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
+        if (!schedule) {
+          return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
+        }
+
+        if (args.scheduled_at) {
+          schedule.scheduled_at = new Date(args.scheduled_at);
+          if (schedule.status !== 'pending') schedule.status = 'pending';
+        }
+        await schedule.save();
+        return { content: [{ type: 'text', text: `Successfully updated schedule execution time.` }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error updating schedule time: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'edit_schedule_title') {
+      try {
+        const AiSchedule = (await import('../models/AiSchedule.js')).default;
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
         
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
@@ -530,22 +577,50 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         if (args.title) schedule.title = args.title;
-        if (args.description) schedule.description = args.description;
-        if (args.summary) schedule.summary = args.summary;
-        if (args.action_info) schedule.action_info = args.action_info;
-        if (args.scheduled_at) schedule.scheduled_at = new Date(args.scheduled_at);
-        if (args.email_subject) schedule.email_subject = args.email_subject;
-        if (args.email_body) schedule.email_body = args.email_body;
+        await schedule.save();
+        return { content: [{ type: 'text', text: `Successfully updated schedule title.` }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error updating schedule title: ${e.message}` }] };
+      }
+    }
 
-        // If it was cancelled or failed, they might want to reschedule it to pending
-        if (args.scheduled_at && schedule.status !== 'pending') {
-          schedule.status = 'pending';
+    if (name === 'edit_schedule_email_subject') {
+      try {
+        const AiSchedule = (await import('../models/AiSchedule.js')).default;
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        
+        const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
+        if (!schedule) {
+          return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
         }
 
+        if (args.email_subject) schedule.email_subject = args.email_subject;
         await schedule.save();
-        return { content: [{ type: 'text', text: `Successfully updated schedule "${schedule.title}".` }] };
+        return { content: [{ type: 'text', text: `Successfully updated schedule email subject.` }] };
       } catch (e) {
-        return { content: [{ type: 'text', text: `Error updating schedule: ${e.message}` }] };
+        return { content: [{ type: 'text', text: `Error updating schedule email subject: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'delete_schedule_attachment') {
+      try {
+        const AiSchedule = (await import('../models/AiSchedule.js')).default;
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        
+        const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
+        if (!schedule) {
+          return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
+        }
+
+        // We remove attachments by stripping hrefs from the body or wiping the attachment_url if it existed.
+        // For our schema, we'll strip out <a> tags that link to files from the body.
+        if (schedule.email_body) {
+           schedule.email_body = schedule.email_body.replace(/<a[^>]*>(.*?)<\/a>/ig, "");
+        }
+        await schedule.save();
+        return { content: [{ type: 'text', text: `Successfully deleted attachment from schedule.` }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error deleting schedule attachment: ${e.message}` }] };
       }
     }
 
