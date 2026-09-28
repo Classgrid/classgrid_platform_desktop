@@ -419,11 +419,11 @@ export const SchedulePage: React.FC = () => {
               {(selectedSchedule?.email_subject || selectedSchedule?.email_body) && (
                 <div className="border border-border/40 rounded-xl overflow-hidden">
                   <div className="bg-muted/40 dark:bg-white/5 px-4 py-3 border-b border-border/40">
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Email Subject</h4>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Summary</h4>
                     <p className="text-sm font-medium text-foreground">{selectedSchedule?.email_subject}</p>
                   </div>
                   <div className="px-4 py-4 max-h-[300px] overflow-y-auto">
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Email Body</h4>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Action Information</h4>
                     <div 
                       className="text-sm prose prose-sm dark:prose-invert max-w-none text-foreground"
                       dangerouslySetInnerHTML={{ __html: selectedSchedule?.email_body || "" }} 
