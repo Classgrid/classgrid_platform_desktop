@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Upload, Search, FileImage, FileVideo, FileText, FileAudio, File as FileIcon, FileQuestion, MessageSquare, Download, Trash2, MoreVertical, X, Filter, SortDesc, Loader2, CalendarIcon } from 'lucide-react';
+import { Upload, Search, FileImage, FileVideo, FileText, FileAudio, File as FileIcon, FileQuestion, MessageSquare, Download, Trash2, MoreVertical, X, Filter, SortDesc, Loader2, CalendarIcon, Music } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/marketing_ui/popover';
@@ -23,6 +23,7 @@ interface LibraryFile {
   file_type: 'image' | 'video' | 'pdf' | 'pptx' | 'doc' | 'audio' | 'other';
   size_bytes: number;
   source: 'uploaded' | 'generated';
+  thumbnail_url?: string;
   created_at: string;
 }
 
@@ -387,18 +388,12 @@ export function LibraryPage() {
                         </div>
                       ) : isAudio ? (
                         <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-4">
-                          <div className="w-20 h-20 drop-shadow-lg shrink-0 transition-transform group-hover:scale-105">
-                            <svg width="100%" height="100%" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-                              <defs>
-                                <linearGradient id="audioGradient2" x1="10%" y1="90%" x2="90%" y2="10%">
-                                  <stop offset="0%" stopColor="#0359b5" />
-                                  <stop offset="40%" stopColor="#0681df" />
-                                  <stop offset="100%" stopColor="#14e3b7" />
-                                </linearGradient>
-                              </defs>
-                              <circle cx="60" cy="60" r="60" fill="url(#audioGradient2)" />
-                              <path d="M78.5 28.5L46.5 37.5C45.2 37.9 44.2 39.1 44.2 40.5V74.2C41.7 72.2 38.6 71 35.2 71C26.8 71 20 77.8 20 86.2C20 94.6 26.8 101.4 35.2 101.4C43.6 101.4 50.4 94.6 50.4 86.2V51.8L76.8 44.4V65.8C74.3 63.8 71.2 62.6 67.8 62.6C59.4 62.6 52.6 69.4 52.6 77.8C52.6 86.2 59.4 93 67.8 93C76.2 93 83 86.2 83 77.8V31.5C83 29.5 81 27.8 78.5 28.5Z" fill="white" />
-                            </svg>
+                          <div className="w-20 h-20 shrink-0 rounded-2xl overflow-hidden border border-border/50 bg-muted/50 flex items-center justify-center transition-transform group-hover:scale-105">
+                            {(file as any).thumbnail_url ? (
+                              <img src={(file as any).thumbnail_url} alt="Cover" className="w-full h-full object-cover" />
+                            ) : (
+                              <Music className="w-8 h-8 text-muted-foreground/70" />
+                            )}
                           </div>
                           <audio 
                             src={file.cdn_url} 
