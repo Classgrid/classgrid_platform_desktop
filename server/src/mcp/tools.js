@@ -474,6 +474,16 @@ export const getMcpTools = () => [
       },
       required: ['schedule_id']
     }
+  },
+  {
+    name: 'list_schedules',
+    description: 'List all existing AI schedules for the user. Use this to find schedule_ids for updating or deleting.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', description: 'Optional. Filter by status (pending, sent, failed, cancelled).' }
+      }
+    }
   }
 ];
 
@@ -502,7 +512,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           status: 'pending'
         });
         
-        return { content: [{ type: 'text', text: `Successfully scheduled task "${args.title}" for ${args.scheduled_at}. The user will receive an email at that time.` }] };
+        return { content: [{ type: 'text', text: `Successfully scheduled task "${args.title}" for ${args.scheduled_at}. The user will receive an email at that time. IMPORTANT: The schedule_id is ${schedule._id}. Save this ID if you need to update or delete it later.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error creating schedule: ${e.message}` }] };
       }
@@ -536,6 +546,19 @@ export const handleToolCall = async (name, args, context = {}) => {
         return { content: [{ type: 'text', text: `Successfully updated schedule "${schedule.title}".` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error updating schedule: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'list_schedules') {
+      try {
+        const AiSchedule = (await import('../models/AiSchedule.js')).default;
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        let query = { user_email: finalUserEmail };
+        if (args.status) query.status = args.status;
+        const schedules = await AiSchedule.find(query).sort({ scheduled_at: -1 });
+        return { content: [{ type: 'text', text: JSON.stringify(schedules, null, 2) }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error listing schedules: ${e.message}` }] };
       }
     }
 

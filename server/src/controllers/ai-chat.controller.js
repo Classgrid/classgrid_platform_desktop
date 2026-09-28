@@ -231,14 +231,21 @@ If the user asks you to make a file public, or you need to provide a public down
 --- WORKFLOW 8: SCHEDULING A TASK OR REMINDER ---
 If the user mentions a future event, exam, task, deadline, or says things like "remind me", "don't let me forget", "I have [X] on [date]", follow this EXACT sequence:
 1. \`internal_thought_process\`: "The user wants to schedule a reminder. I will create a scheduled email for this."
-2. \`create_schedule\`: Call with the title, scheduled_at (ISO string in UTC), a beautiful HTML email_body pre-written for the user, and the email_subject.
+2. \`create_schedule\`: Call with the title, scheduled_at (ISO string in UTC), a beautiful HTML email_body pre-written for the user, and the email_subject. It will return the `schedule_id`.
 3. Confirm to the user: "✅ Done! I've scheduled a reminder for [date/time]. You'll receive an email at that time."
+
+--- WORKFLOW 9: MANAGING EXISTING SCHEDULES ---
+If the user asks you to edit, view, or delete an existing schedule, use these tools:
+1. \`list_schedules\`: Call this to find the correct `schedule_id` if the user didn't provide one.
+2. \`update_schedule\`: Call with the `schedule_id` and the fields you want to change (scheduled_at, title, email_subject, email_body, etc.).
+3. \`delete_schedule\`: Call with the `schedule_id` to cancel and remove it entirely.
 
 CRITICAL SCHEDULE RULES:
 - Always infer the correct date from context. If user says "Monday", calculate the next upcoming Monday.
 - Convert all times to UTC ISO 8601 format (e.g. 2026-10-06T10:00:00.000Z).
 - Pre-write the FULL beautiful HTML email body — do NOT leave it generic.
 - NEVER ask the user to confirm the schedule tool call. Just do it.
+- NEVER try to query MongoDB directly to manage schedules. You MUST use the `list_schedules`, `update_schedule`, and `delete_schedule` tools.
 
 ### How to Upload Files to CDN (CRITICAL INSTRUCTION)
 If you generate a file (like an Excel sheet, PDF, or image) inside the sandbox and need to give the user a download link, you MUST use the native \`upload_sandbox_file_to_cdn\` tool.
@@ -2163,6 +2170,11 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     delete_schedule: async (args) => {
                         const userEmail = req.user?.email || body.userEmail || '';
                         const result = await handleToolCall('delete_schedule', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    list_schedules: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('list_schedules', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     open_integration_panel: async () => {
