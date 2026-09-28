@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Calendar, Trash2, CheckCircle2, Clock, XCircle, AlertCircle, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/marketing_ui/button";
+import { Badge } from "@/components/marketing_ui/badge";
 import { toast } from "sonner";
 import api from "@/lib/api";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 
 type ScheduleStatus = "pending" | "sent" | "failed" | "cancelled";
