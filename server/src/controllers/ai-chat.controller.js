@@ -1662,7 +1662,46 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                             }));
                             const cdnDomain = process.env.AWS_CLOUDFRONT_ERP_DOMAIN || 'https://cdn.classgrid.in';
                             const url = `${cdnDomain}/${s3Key}`;
-                            return `SUCCESS: File uploaded. Public URL: ${url}`;
+
+                            // Automatically add to AI Library
+                            try {
+                                const AiLibraryFile = (await import('../models/AiLibraryFile.js')).default;
+                                const { getIO } = await import('../services/socket.service.js');
+                                
+                                function getFileType(mt) {
+                                  if (!mt) return 'other';
+                                  if (mt.startsWith('image/')) return 'image';
+                                  if (mt.startsWith('video/')) return 'video';
+                                  if (mt.startsWith('audio/')) return 'audio';
+                                  if (mt === 'application/pdf') return 'pdf';
+                                  if (mt.includes('presentation') || mt.includes('powerpoint')) return 'pptx';
+                                  if (mt.includes('word') || mt.includes('document')) return 'doc';
+                                  if (mt.includes('spreadsheet') || mt.includes('excel') || mt.includes('csv')) return 'sheet';
+                                  return 'other';
+                                }
+
+                                const libraryFile = new AiLibraryFile({
+                                  user_email: req.user?.email || body.userEmail || '',
+                                  user_id: req.user?._id || null,
+                                  organization_id: req.user?.organization_id || null,
+                                  original_name: safeFileName,
+                                  file_key: s3Key,
+                                  cdn_url: url,
+                                  mime_type: args.mimeType,
+                                  file_type: getFileType(args.mimeType),
+                                  size_bytes: buffer.length,
+                                  source: 'ai_generated'
+                                });
+                                await libraryFile.save();
+
+                                if (req.user && req.user._id) {
+                                    getIO().to(req.user._id.toString()).emit("ai_library_updated");
+                                }
+                            } catch (libErr) {
+                                console.error("Error saving generated file to AI Library:", libErr);
+                            }
+
+                            return `SUCCESS: File uploaded and added to the user's AI Library. Public URL: ${url}`;
                         } catch (e) {
                             return `FAILED to upload file: ${e.message}`;
                         }
@@ -1726,7 +1765,46 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                             }));
                             const cdnDomain = process.env.AWS_CLOUDFRONT_ERP_DOMAIN || 'https://cdn.classgrid.in';
                             const url = `${cdnDomain}/${s3Key}`;
-                            return `SUCCESS: File uploaded. Public URL: ${url}`;
+
+                            // Automatically add to AI Library
+                            try {
+                                const AiLibraryFile = (await import('../models/AiLibraryFile.js')).default;
+                                const { getIO } = await import('../services/socket.service.js');
+                                
+                                function getFileType(mt) {
+                                  if (!mt) return 'other';
+                                  if (mt.startsWith('image/')) return 'image';
+                                  if (mt.startsWith('video/')) return 'video';
+                                  if (mt.startsWith('audio/')) return 'audio';
+                                  if (mt === 'application/pdf') return 'pdf';
+                                  if (mt.includes('presentation') || mt.includes('powerpoint')) return 'pptx';
+                                  if (mt.includes('word') || mt.includes('document')) return 'doc';
+                                  if (mt.includes('spreadsheet') || mt.includes('excel') || mt.includes('csv')) return 'sheet';
+                                  return 'other';
+                                }
+
+                                const libraryFile = new AiLibraryFile({
+                                  user_email: req.user?.email || body.userEmail || '',
+                                  user_id: req.user?._id || null,
+                                  organization_id: req.user?.organization_id || null,
+                                  original_name: fileName,
+                                  file_key: s3Key,
+                                  cdn_url: url,
+                                  mime_type: mimeType,
+                                  file_type: getFileType(mimeType),
+                                  size_bytes: buffer.length,
+                                  source: 'ai_generated'
+                                });
+                                await libraryFile.save();
+
+                                if (req.user && req.user._id) {
+                                    getIO().to(req.user._id.toString()).emit("ai_library_updated");
+                                }
+                            } catch (libErr) {
+                                console.error("Error saving generated file to AI Library:", libErr);
+                            }
+
+                            return `SUCCESS: File uploaded and added to the user's AI Library. Public URL: ${url}`;
                         } catch (e) {
                             return `FAILED to upload file: ${e.message}`;
                         }

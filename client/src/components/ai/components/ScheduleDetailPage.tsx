@@ -22,6 +22,7 @@ import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calend
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink } from "@/components/marketing_ui/breadcrumb";
 import { toast } from "sonner";
 import { apiClient as api } from "@/lib/apiClient";
+import { getSocket } from "@/lib/socketClient";
 
 type ScheduleStatus = "pending" | "sent" | "failed" | "cancelled";
 
@@ -80,8 +81,6 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
     : pathParts.slice(0, -1).join("/") || "/";
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-
     const fetchSchedule = async (isInitial = true) => {
       if (isInitial) setLoading(true);
       try {
@@ -90,11 +89,6 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
           setSchedule(res.data.schedule);
           if (isInitial && res.data.schedule.scheduled_at) {
             setSelectedDate(new Date(res.data.schedule.scheduled_at));
-          }
-
-          // Stop polling if status is no longer pending
-          if (res.data.schedule.status !== 'pending' && interval) {
-            clearInterval(interval);
           }
         } else if (isInitial) {
           toast.error("Schedule not found");
@@ -112,15 +106,22 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
 
     if (id) {
       fetchSchedule(true);
-      // Poll every 3 seconds while waiting for execution
-      interval = setInterval(() => {
-        fetchSchedule(false);
-      }, 3000);
+      
+      const socket = getSocket();
+      const handleScheduleUpdate = (data: any) => {
+        if (data.schedule_id === id || data._id === id) {
+          fetchSchedule(false);
+        } else if (!data.schedule_id && !data._id) {
+          // Fallback if ID wasn't provided in the event
+          fetchSchedule(false);
+        }
+      };
+      
+      socket.on("ai:schedule_updated", handleScheduleUpdate);
+      return () => {
+        socket.off("ai:schedule_updated", handleScheduleUpdate);
+      };
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
   }, [id, navigate, backPath]);
 
   const handleDelete = async () => {
