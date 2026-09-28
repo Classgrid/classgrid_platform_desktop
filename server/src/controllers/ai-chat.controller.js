@@ -242,8 +242,10 @@ If the user asks you to edit, view, or delete an existing schedule, use these to
 4. \`edit_schedule_email_subject\`: Call with the \`schedule_id\` to change the email subject.
 5. \`edit_schedule_email_body\`: Call with the \`schedule_id\` to completely rewrite the HTML email body.
 6. \`edit_schedule_summary\`: Call with the \`schedule_id\` to change the internal summary.
-7. \`delete_schedule_attachment\`: Call with the \`schedule_id\` to remove the attachment.
-8. \`delete_schedule\`: Call with the \`schedule_id\` to cancel and remove the schedule entirely.
+7. \`edit_schedule_description\`: Call with the \`schedule_id\` to change the description/notes.
+8. \`edit_schedule_action_info\`: Call with the \`schedule_id\` to change the action info.
+9. \`delete_schedule_attachment\`: Call with the \`schedule_id\` to remove the attachment.
+10. \`delete_schedule\`: Call with the \`schedule_id\` to cancel and remove the schedule entirely.
 
 CRITICAL SCHEDULE RULES:
 - Always infer the correct date from context. If user says "Monday", calculate the next upcoming Monday.
@@ -2279,6 +2281,16 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     edit_schedule_summary: async (args) => {
                         const userEmail = req.user?.email || body.userEmail || '';
                         const result = await handleToolCall('edit_schedule_summary', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    edit_schedule_description: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('edit_schedule_description', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    edit_schedule_action_info: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('edit_schedule_action_info', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     delete_schedule_attachment: async (args) => {

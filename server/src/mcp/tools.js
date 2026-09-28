@@ -507,6 +507,30 @@ export const getMcpTools = () => [
     }
   },
   {
+    name: 'edit_schedule_description',
+    description: 'Update the description/notes of an existing schedule.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        schedule_id: { type: 'string', description: 'The ID of the schedule to update' },
+        description: { type: 'string', description: 'New description' }
+      },
+      required: ['schedule_id', 'description']
+    }
+  },
+  {
+    name: 'edit_schedule_action_info',
+    description: 'Update the action info of an existing schedule.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        schedule_id: { type: 'string', description: 'The ID of the schedule to update' },
+        action_info: { type: 'string', description: 'New action info' }
+      },
+      required: ['schedule_id', 'action_info']
+    }
+  },
+  {
     name: 'delete_schedule_attachment',
     description: 'Delete/remove the attachment from an existing schedule.',
     inputSchema: {
@@ -678,6 +702,44 @@ export const handleToolCall = async (name, args, context = {}) => {
         return { content: [{ type: 'text', text: `Successfully updated schedule summary.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error updating schedule summary: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'edit_schedule_description') {
+      try {
+        const AiSchedule = (await import('../models/AiSchedule.js')).default;
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        
+        const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
+        if (!schedule) {
+          return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
+        }
+
+        if (args.description) schedule.description = args.description;
+        await schedule.save();
+        await emitScheduleUpdate(schedule.user_id, schedule._id);
+        return { content: [{ type: 'text', text: `Successfully updated schedule description.` }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error updating schedule description: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'edit_schedule_action_info') {
+      try {
+        const AiSchedule = (await import('../models/AiSchedule.js')).default;
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        
+        const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
+        if (!schedule) {
+          return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
+        }
+
+        if (args.action_info) schedule.action_info = args.action_info;
+        await schedule.save();
+        await emitScheduleUpdate(schedule.user_id, schedule._id);
+        return { content: [{ type: 'text', text: `Successfully updated schedule action info.` }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error updating schedule action info: ${e.message}` }] };
       }
     }
 
