@@ -483,6 +483,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
               <SidebarMenuButton 
                 tooltip="New Chat" 
                 onClick={handleNewChat}
+                isActive={!activeSessionId}
                 render={
                   <div className="flex items-center gap-3 w-full cursor-pointer">
                     <SquarePen size={20} />
@@ -605,6 +606,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
             <SidebarMenuItem>
               <SidebarMenuButton 
                 onClick={handleNewChat}
+                isActive={!activeSessionId}
                 render={
                   <div className="flex items-center gap-3 w-full cursor-pointer">
                     <SquarePen size={20} />
