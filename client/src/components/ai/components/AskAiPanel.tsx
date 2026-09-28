@@ -4502,7 +4502,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               </AnimatePresence>
               <form onSubmit={handleSubmit} className="space-y-2">
                 <div className={cn(
-                  "group relative w-[80%] mx-auto shadow-sm rounded-2xl border border-border bg-background focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
+                  "group relative w-[80%] mx-auto shadow-sm rounded-2xl border border-border !bg-white dark:!bg-[#0f0f0f] focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
                 )}>
                   {/* Hidden file input */}
                   <input
