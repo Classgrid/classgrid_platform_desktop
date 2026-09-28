@@ -323,6 +323,7 @@ export function LibraryPage() {
           </div>
         </div>
       </div>
+    </div>
 
       {/* Main Content */}
       <div className="flex-1 p-6 pt-6 max-w-6xl mx-auto w-full">
