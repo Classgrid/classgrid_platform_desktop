@@ -4947,7 +4947,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             <div className="shrink-0 flex items-center justify-between px-6 pt-3 h-14">
               <SidebarTrigger />
 
-              {messages.length > 0 && sessionId && (
+              {messages.length > 0 && sessionId && sessionId !== "schedule" && sessionId !== "library" && (
                 <div className="flex items-center gap-1 text-muted-foreground">
                   {/* Direct Share Button */}
                   <button
