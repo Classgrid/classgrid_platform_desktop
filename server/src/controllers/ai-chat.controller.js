@@ -627,6 +627,17 @@ export const streamAskAi = async (req, res) => {
             messages = await getHistory(sessionId, historyDepth);
         }
 
+        // --- INJECT SCHEDULE CONTEXT ---
+        if (body.scheduleContext) {
+            dynamicSystemPrompt += `\n\n<schedule_context>\nThis conversation was triggered by a Scheduled Task firing. Here is the metadata for this schedule:\n`;
+            if (body.scheduleContext.schedule_id) dynamicSystemPrompt += `Schedule ID: ${body.scheduleContext.schedule_id}\n`;
+            if (body.scheduleContext.title) dynamicSystemPrompt += `Title: ${body.scheduleContext.title}\n`;
+            if (body.scheduleContext.scheduled_at) dynamicSystemPrompt += `Scheduled Time: ${body.scheduleContext.scheduled_at}\n`;
+            if (body.scheduleContext.summary) dynamicSystemPrompt += `Summary: ${body.scheduleContext.summary}\n`;
+            if (body.scheduleContext.action_info) dynamicSystemPrompt += `Action Info: ${body.scheduleContext.action_info}\n`;
+            dynamicSystemPrompt += `</schedule_context>\n\nYou can use the list_schedules, update_schedule, and delete_schedule tools to manage this schedule.`;
+        }
+
         // 2a. If not incognito and no session exists, create one
         if (!isIncognito && !sessionId && body.question) {
             const title = body.question.length > 50 ? body.question.substring(0, 47) + "..." : body.question;
