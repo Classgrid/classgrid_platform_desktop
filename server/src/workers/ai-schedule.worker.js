@@ -17,9 +17,7 @@ cron.schedule('* * * * *', async () => {
         await sendEmail({
           to: schedule.user_email,
           subject: schedule.email_subject,
-          html: schedule.email_body,
-          fromEmail: 'agent@classgrid.in',
-          fromName: 'Classgrid AI'
+          html: schedule.email_body
         });
         
         schedule.status = 'sent';
