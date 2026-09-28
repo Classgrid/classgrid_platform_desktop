@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { format } from "date-fns";
-import { Calendar, Trash2, CheckCircle2, Clock, XCircle, AlertCircle, RefreshCw } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
+import { Calendar, Trash2, CheckCircle2, Clock, XCircle, AlertCircle, Plus, Search, Send, Mail, Bell, FileText, BarChart3, BookOpen, GraduationCap, ArrowRight } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { apiClient as api } from "@/lib/apiClient";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { getSocket } from "@/lib/socketClient";
+import { useNavigate, useLocation } from "react-router-dom";
 
 type ScheduleStatus = "pending" | "sent" | "failed" | "cancelled";
 
@@ -21,10 +22,66 @@ interface AiSchedule {
   created_at: string;
 }
 
+interface ScheduleSuggestion {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  prompt: string;
+}
+
+const SCHEDULE_SUGGESTIONS: ScheduleSuggestion[] = [
+  {
+    icon: <Mail className="w-5 h-5 text-blue-500" />,
+    title: "Daily summary email",
+    description: "Get a daily email with your assignments, attendance, and upcoming deadlines",
+    prompt: "Schedule a daily summary email for me every morning at 8 AM with my pending assignments, attendance status, and any upcoming deadlines for the week."
+  },
+  {
+    icon: <Bell className="w-5 h-5 text-amber-500" />,
+    title: "Assignment deadline reminder",
+    description: "Get reminders before your assignment deadlines so you never miss one",
+    prompt: "Remind me 1 day before every assignment deadline. Send me an email with the assignment name, subject, and due date."
+  },
+  {
+    icon: <BarChart3 className="w-5 h-5 text-violet-500" />,
+    title: "Weekly progress report",
+    description: "Receive a weekly report summarizing your academic progress and attendance",
+    prompt: "Schedule a weekly progress report email every Sunday at 6 PM summarizing my attendance percentage, completed assignments, and upcoming exams for the next week."
+  },
+  {
+    icon: <BookOpen className="w-5 h-5 text-emerald-500" />,
+    title: "Exam prep reminders",
+    description: "Get study reminders a few days before each exam with key topics",
+    prompt: "Remind me 3 days before every exam. Include the exam name, subject, syllabus topics, and suggested study resources."
+  },
+  {
+    icon: <FileText className="w-5 h-5 text-rose-500" />,
+    title: "Fee payment reminder",
+    description: "Never miss a fee payment deadline with timely reminders",
+    prompt: "Schedule a reminder email 3 days before my next fee payment due date with the amount, due date, and payment link."
+  },
+  {
+    icon: <GraduationCap className="w-5 h-5 text-cyan-500" />,
+    title: "Class schedule briefing",
+    description: "Get your daily class timetable emailed to you every morning",
+    prompt: "Send me my class timetable every morning at 7:30 AM with the subject, teacher name, and room number for each class."
+  }
+];
+
 export const SchedulePage: React.FC = () => {
   const [schedules, setSchedules] = useState<AiSchedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | ScheduleStatus>("all");
+  const [taskInput, setTaskInput] = useState("");
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const pathParts = location.pathname.split('/');
+  const agentIndex = pathParts.indexOf('agent');
+  const baseAgentPath = agentIndex !== -1
+    ? pathParts.slice(0, agentIndex + 1).join('/')
+    : location.pathname;
 
   const fetchSchedules = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -50,7 +107,6 @@ export const SchedulePage: React.FC = () => {
     if (!socket) return;
 
     const handleScheduleUpdate = () => {
-      // Fetch live seamlessly without showing loading skeletons
       fetchSchedules(false);
     };
 
@@ -72,10 +128,32 @@ export const SchedulePage: React.FC = () => {
     }
   };
 
+  const navigateToNewChatWithPrompt = (prompt: string) => {
+    // Store the prompt in sessionStorage so AskAiPanel can pick it up
+    sessionStorage.setItem("agent:schedule_prompt", prompt);
+    navigate(baseAgentPath);
+    window.dispatchEvent(new Event("agent:new-chat"));
+    // Focus input and set the text after a brief delay
+    setTimeout(() => {
+      const input = document.getElementById("ai-chat-input") as HTMLTextAreaElement;
+      if (input) {
+        input.value = prompt;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.focus();
+      }
+    }, 200);
+  };
+
+  const handleScheduleInputSubmit = () => {
+    if (!taskInput.trim()) return;
+    navigateToNewChatWithPrompt(taskInput.trim());
+    setTaskInput("");
+  };
+
   const getStatusIcon = (status: ScheduleStatus) => {
     switch (status) {
       case "pending": return <Clock className="w-4 h-4 text-blue-500" />;
-      case "sent": return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+      case "sent": return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
       case "failed": return <AlertCircle className="w-4 h-4 text-red-500" />;
       case "cancelled": return <XCircle className="w-4 h-4 text-slate-500" />;
     }
@@ -84,106 +162,152 @@ export const SchedulePage: React.FC = () => {
   const getStatusBadge = (status: ScheduleStatus) => {
     switch (status) {
       case "pending": return <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">Pending</Badge>;
-      case "sent": return <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">Sent</Badge>;
+      case "sent": return <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">Sent</Badge>;
       case "failed": return <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">Failed</Badge>;
       case "cancelled": return <Badge variant="secondary" className="bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-400">Cancelled</Badge>;
     }
   };
 
+  const activeCount = schedules.filter(s => s.status === "pending").length;
+
   return (
-    <div className="h-full flex flex-col bg-background relative z-10 p-6 md:p-8 max-w-5xl mx-auto w-full overflow-y-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Calendar className="w-6 h-6" />
-            Scheduled Tasks
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Emails and tasks scheduled by your AI Assistant
-          </p>
-        </div>
+    <div className="h-full flex flex-col bg-background relative z-10 p-6 md:p-8 max-w-3xl mx-auto w-full overflow-y-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-2xl font-bold tracking-tight">Scheduled</h1>
+        {activeCount > 0 && (
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2C2C2C] dark:bg-[#F0EFED] text-[#F0EFED] dark:text-[#2C2C2C] text-xs font-medium">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            {activeCount} Active
+          </div>
+        )}
+      </div>
+      <p className="text-muted-foreground text-sm mb-6">
+        Ask Classgrid AI to schedule tasks, set reminders, or monitor for updates.
+      </p>
+
+      {/* Schedule Input Bar */}
+      <div className="flex items-center gap-2 mb-8 bg-muted/40 dark:bg-white/5 border border-border/60 rounded-2xl px-4 py-2.5 focus-within:border-foreground/20 transition-colors">
+        <Plus className="w-5 h-5 text-muted-foreground shrink-0" />
+        <input
+          type="text"
+          placeholder="Schedule a task..."
+          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+          value={taskInput}
+          onChange={(e) => setTaskInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleScheduleInputSubmit()}
+        />
+        <button
+          onClick={handleScheduleInputSubmit}
+          disabled={!taskInput.trim()}
+          className="w-8 h-8 rounded-full flex items-center justify-center bg-[#2C2C2C] dark:bg-[#F0EFED] text-[#F0EFED] dark:text-[#2C2C2C] disabled:opacity-30 transition-opacity cursor-pointer"
+        >
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
 
-      <div className="flex gap-2 mb-6 border-b border-border/50 pb-4">
-        {["all", "pending", "sent", "failed"].map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f as any)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              filter === f 
-                ? "bg-[#2C2C2C] text-[#F0EFED] dark:bg-[#F0EFED] dark:text-[#2C2C2C] hover:opacity-90 shadow-sm" 
-                : "bg-muted/50 text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
-          </button>
-        ))}
-      </div>
-
+      {/* Active Schedules */}
       {loading ? (
-        <div className="space-y-4">
+        <div className="space-y-3 mb-8">
           {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-[120px] w-full rounded-xl" />
+            <div key={i} className="flex items-center gap-3 py-3">
+              <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-[60%]" />
+                <Skeleton className="h-3 w-[40%]" />
+              </div>
+            </div>
           ))}
         </div>
-      ) : schedules.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Calendar className="w-12 h-12 text-muted-foreground/50 mb-4" />
-          <h3 className="text-lg font-semibold text-foreground">No scheduled tasks</h3>
-          <p className="text-muted-foreground mt-2 max-w-sm">
-            You don't have any tasks scheduled. Ask the AI to remind you about something or schedule an email!
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col">
-          {schedules.map((schedule) => (
-            <div 
-              key={schedule._id} 
-              className="py-5 border-b border-border/40 last:border-0 flex flex-col group relative"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex items-center gap-2">
+      ) : schedules.length > 0 ? (
+        <>
+          {/* Filter Tabs */}
+          <div className="flex gap-2 mb-4">
+            {["all", "pending", "sent", "failed"].map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f as any)}
+                className={`px-3.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                  filter === f 
+                    ? "bg-[#2C2C2C] text-[#F0EFED] dark:bg-[#F0EFED] dark:text-[#2C2C2C] shadow-sm" 
+                    : "text-muted-foreground hover:bg-muted/60"
+                }`}
+              >
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          {/* Schedule List */}
+          <div className="flex flex-col mb-8">
+            {schedules.map((schedule) => (
+              <div 
+                key={schedule._id} 
+                className="py-4 border-b border-border/30 last:border-0 flex items-start gap-3 group relative"
+              >
+                <div className="w-10 h-10 rounded-lg bg-muted/50 dark:bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
                   {getStatusIcon(schedule.status)}
-                  {getStatusBadge(schedule.status)}
                 </div>
-                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h3 className="font-semibold text-sm truncate">{schedule.title}</h3>
+                    {getStatusBadge(schedule.status)}
+                  </div>
+                  {schedule.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-1 mb-1">
+                      {schedule.description}
+                    </p>
+                  )}
+                  <span className="text-xs text-muted-foreground/70">
+                    {schedule.status === "pending" 
+                      ? `Next run ${formatDistanceToNow(new Date(schedule.scheduled_at), { addSuffix: true })}`
+                      : format(new Date(schedule.scheduled_at), "MMM d, yyyy 'at' h:mm a")
+                    }
+                  </span>
+                  {schedule.error_message && (
+                    <p className="text-xs text-red-500 mt-1 truncate">{schedule.error_message}</p>
+                  )}
+                </div>
                 <DangerConfirmDialog
                   title="Delete Schedule?"
                   description="Are you sure you want to cancel and delete this scheduled task? This cannot be undone."
                   onConfirm={() => handleDelete(schedule._id)}
                 >
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity absolute right-4 top-4"
-                  >
+                  <button className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
                     <Trash2 className="w-4 h-4" />
-                  </Button>
+                  </button>
                 </DangerConfirmDialog>
               </div>
+            ))}
+          </div>
+        </>
+      ) : null}
 
-              <h3 className="font-semibold text-lg line-clamp-1 mb-1 pr-8">{schedule.title}</h3>
-              {schedule.description && (
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">
-                  {schedule.description}
-                </p>
-              )}
-
-              <div className="mt-auto pt-4 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <Calendar className="w-3.5 h-3.5" />
-                  {format(new Date(schedule.scheduled_at), "MMM d, yyyy 'at' h:mm a")}
-                </span>
-                {schedule.error_message && (
-                  <span className="text-red-500 truncate max-w-[120px]" title={schedule.error_message}>
-                    {schedule.error_message}
-                  </span>
-                )}
+      {/* Recommended Section - always shown */}
+      <div className="mt-auto">
+        {!loading && schedules.length === 0 && (
+          <div className="border-b border-border/20 mb-6 pb-2" />
+        )}
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Recommended</h3>
+        <div className="flex flex-col">
+          {SCHEDULE_SUGGESTIONS.map((suggestion, idx) => (
+            <button
+              key={idx}
+              onClick={() => navigateToNewChatWithPrompt(suggestion.prompt)}
+              className="flex items-center gap-3.5 py-3.5 border-b border-border/20 last:border-0 group/item hover:bg-muted/30 -mx-2 px-2 rounded-lg transition-colors text-left cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-lg bg-muted/40 dark:bg-white/5 flex items-center justify-center shrink-0">
+                {suggestion.icon}
               </div>
-            </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-semibold text-foreground">{suggestion.title}</h4>
+                <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{suggestion.description}</p>
+              </div>
+              <Plus className="w-5 h-5 text-muted-foreground/50 group-hover/item:text-foreground transition-colors shrink-0" />
+            </button>
           ))}
         </div>
-      )}
+      </div>
     </div>
   );
 };

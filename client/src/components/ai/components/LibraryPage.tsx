@@ -7,6 +7,7 @@ import { Calendar } from '@/components/marketing_ui/nikhil_calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/marketing_ui/select';
 import { Button } from '@/components/marketing_ui/button';
 import { Skeleton } from '@/components/marketing_ui/skeleton';
+import { NikhilTimeCalendar } from '@/components/marketing_ui/nikhil_time_calendar';
 import { getSocket } from '@/lib/socketClient';
 import FilePreviewModal from './FilePreviewModal';
 import { DocsImageViewer } from './DocsImageViewer';
@@ -222,7 +223,7 @@ export function LibraryPage() {
         </div>
 
         {/* Quota Bar */}
-        <div className="mt-8 flex flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <div className="flex justify-between items-end">
             <span className="text-sm font-medium">Storage Usage</span>
             <span className="text-xs text-muted-foreground">
@@ -242,7 +243,7 @@ export function LibraryPage() {
 
         {/* Upload Progress */}
         {isUploading && (
-          <div className="mt-4 p-3 bg-accent/50 rounded-xl border border-border/50 flex items-center gap-3">
+          <div className="p-3 bg-accent/50 rounded-xl border border-border/50 flex items-center gap-3">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             <div className="flex-1">
               <div className="flex justify-between items-center mb-1">
@@ -255,12 +256,8 @@ export function LibraryPage() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 p-6">
         {/* Filters & Sort */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
           <div className="flex items-center gap-1 overflow-x-auto pb-2 sm:pb-0 hide-scrollbar">
             {['all', 'image', 'video', 'pdf', 'doc'].map(tab => (
               <button
@@ -280,35 +277,20 @@ export function LibraryPage() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground whitespace-nowrap">Date:</span>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={`h-9 justify-start text-left font-normal w-[140px] bg-accent/50 hover:bg-accent border-border/50 ${!dateFilter && "text-muted-foreground"}`}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateFilter ? format(dateFilter, "PP") : <span>Pick a date</span>}
+              <div className="flex items-center gap-1">
+                <NikhilTimeCalendar
+                  value={dateFilter}
+                  onChange={setDateFilter}
+                  placeholder="Pick a date"
+                  className="h-9 w-[150px] bg-accent/50 hover:bg-accent border-border/50"
+                  showTime={false}
+                />
+                {dateFilter && (
+                  <Button variant="ghost" size="icon" onClick={() => setDateFilter(undefined)} className="h-9 w-9 text-muted-foreground hover:text-destructive shrink-0">
+                    <X className="h-4 w-4" />
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end" sideOffset={8}>
-                  <Calendar
-                    mode="single"
-                    selected={dateFilter}
-                    onSelect={setDateFilter}
-                    initialFocus
-                    captionLayout="dropdown"
-                    fromYear={2020}
-                    toYear={2030}
-                  />
-                  {dateFilter && (
-                    <div className="p-2 border-t border-border">
-                      <Button variant="ghost" size="sm" className="w-full justify-center" onClick={() => setDateFilter(undefined)}>
-                        Clear Selection
-                      </Button>
-                    </div>
-                  )}
-                </PopoverContent>
-              </Popover>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -326,6 +308,10 @@ export function LibraryPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 p-6 pt-6">
 
         {/* Grid */}
         {isLoading ? (
