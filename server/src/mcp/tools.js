@@ -456,6 +456,17 @@ export const getMcpTools = () => [
       },
       required: ['schedule_id']
     }
+  },
+  {
+    name: 'delete_schedule',
+    description: 'Delete a schedule from the database permanently.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        schedule_id: { type: 'string', description: 'The MongoDB ObjectId of the schedule to delete.' }
+      },
+      required: ['schedule_id']
+    }
   }
 ];
 
@@ -518,6 +529,25 @@ export const handleToolCall = async (name, args, context = {}) => {
         return { content: [{ type: 'text', text: `Successfully updated schedule "${schedule.title}".` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error updating schedule: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'delete_schedule') {
+      try {
+        const AiSchedule = (await import('../models/AiSchedule.js')).default;
+        if (!args.schedule_id) throw new Error("schedule_id is required");
+        
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
+        
+        if (!schedule) {
+          return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission to delete it.` }] };
+        }
+
+        await AiSchedule.deleteOne({ _id: args.schedule_id });
+        return { content: [{ type: 'text', text: `Successfully deleted schedule ${args.schedule_id}.` }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error deleting schedule: ${e.message}` }] };
       }
     }
 
