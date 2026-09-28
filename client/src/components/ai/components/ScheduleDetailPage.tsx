@@ -174,6 +174,18 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 pb-16 overflow-y-auto h-full">
 
+      {/* ── BREADCRUMB HEADER ── */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+        <span 
+          className="cursor-pointer hover:text-foreground transition-colors"
+          onClick={() => navigate(backPath)}
+        >
+          Schedules
+        </span>
+        <span>/</span>
+        <span className="text-foreground font-medium">Schedule Details</span>
+      </div>
+
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-border pb-6 mb-8">
         <div className="flex flex-col">
@@ -285,26 +297,7 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
             </SectionCard>
           )}
 
-          {/* CALENDAR FOR RESCHEDULING */}
-          {schedule.status === "pending" && (
-            <SectionCard title="Reschedule Task" subtitle="Change the scheduled date and time">
-              <div className="flex flex-col gap-4">
-                <NikhilTimeCalendar 
-                  value={selectedDate} 
-                  onChange={setSelectedDate} 
-                />
-                <div className="flex items-center gap-3 mt-2">
-                  <Button 
-                    variant="default" 
-                    onClick={handleUpdateSchedule}
-                    disabled={isUpdating || !selectedDate || selectedDate.getTime() === new Date(schedule.scheduled_at).getTime()}
-                  >
-                    {isUpdating ? "Saving..." : "Update Schedule"}
-                  </Button>
-                </div>
-              </div>
-            </SectionCard>
-          )}
+
 
           {/* DESCRIPTION */}
           {schedule.description && (
