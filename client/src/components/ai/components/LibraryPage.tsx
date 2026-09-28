@@ -290,13 +290,13 @@ export function LibraryPage() {
                     {dateFilter ? format(dateFilter, "PP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0" align="end" sideOffset={8}>
                   <Calendar
                     mode="single"
                     selected={dateFilter}
                     onSelect={setDateFilter}
                     initialFocus
-                    captionLayout="dropdown-buttons"
+                    captionLayout="dropdown"
                     fromYear={2020}
                     toYear={2030}
                   />
