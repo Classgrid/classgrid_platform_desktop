@@ -249,7 +249,7 @@ export const getMcpTools = () => [
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'read_email', 'read_email_attachment', 'list_sent_emails', 'mark_email_read', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'get_classroom_coursework', 'list_classroom_submissions', 'list_classroom_teachers', 'list_classroom_announcements', 'get_classroom_announcement', 'list_classroom_topics', 'list_classroom_materials', 'read_classroom_file'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_events', 'list_drive_files', 'list_emails', 'read_email', 'read_email_attachment', 'list_sent_emails', 'mark_email_read', 'send_email', 'get_form', 'list_form_responses', 'create_form', 'create_event', 'create_folder', 'read_drive_file', 'upload_drive_file', 'list_classroom_courses', 'list_classroom_assignments', 'get_classroom_coursework', 'create_classroom_assignment', 'list_classroom_submissions', 'list_classroom_teachers', 'list_classroom_announcements', 'get_classroom_announcement', 'list_classroom_topics', 'list_classroom_materials', 'read_classroom_file'], description: 'The operation to perform.' },
         limit: { type: 'number', description: 'Max results to return.' },
         query: { type: 'string', description: 'Search query for list_emails or list_drive_files (e.g. "newer_than:1d", "name contains \'form\'").' },
         formId: { type: 'string', description: 'The ID of the Google Form (required for get_form and list_form_responses).' },
@@ -281,7 +281,12 @@ export const getMcpTools = () => [
         courseId: { type: 'string', description: 'The Classroom course ID.' },
         courseworkId: { type: 'string', description: 'The Classroom coursework/assignment ID.' },
         announcementId: { type: 'string', description: 'The Classroom announcement ID.' },
-        submissionId: { type: 'string', description: 'The Classroom submission ID.' }
+        submissionId: { type: 'string', description: 'The Classroom submission ID.' },
+        to: { type: 'string', description: 'Recipient email address (for send_email).' },
+        subject: { type: 'string', description: 'Email subject (for send_email).' },
+        body: { type: 'string', description: 'Email body content (for send_email).' },
+        title: { type: 'string', description: 'Assignment title (for create_classroom_assignment).' },
+        description: { type: 'string', description: 'Assignment description (for create_classroom_assignment).' }
       },
       required: ['operation']
     }

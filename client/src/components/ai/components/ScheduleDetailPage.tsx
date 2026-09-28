@@ -339,8 +339,8 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
         </div>
 
         {/* RIGHT SIDEBAR (col-span-4) */}
-        <div className="xl:col-span-4 space-y-6">
-          <div className="sticky top-6 space-y-6 max-h-[calc(100vh-120px)] overflow-y-auto pr-1">
+        <div className="xl:col-span-4 sticky top-6 h-[calc(100vh-120px)] flex flex-col">
+          <div className="flex-1 overflow-y-auto pr-1 space-y-6 pb-2">
 
             {/* STATUS CARD */}
             <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
@@ -469,14 +469,14 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
               </div>
             </div>
 
-            {/* ── BOTTOM DELETE BUTTON ── */}
-            <div className="mt-4 pt-4 border-t border-border/40">
-              <Button onClick={() => setDeleteOpen(true)} variant="destructive" className="w-full h-11 rounded-xl text-sm font-bold">
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Schedule
-              </Button>
-            </div>
+          </div>
 
+          {/* ── BOTTOM DELETE BUTTON ── */}
+          <div className="shrink-0 mt-4 pt-4 border-t border-border/40">
+            <Button onClick={() => setDeleteOpen(true)} variant="destructive" className="w-full h-11 rounded-xl text-sm font-bold">
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Schedule
+            </Button>
           </div>
         </div>
       </div>
