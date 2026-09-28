@@ -4949,7 +4949,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           FULL-PAGE: ChatGPT-style centered layout
           ────────────────────────────────────────────────────────────────────────── */}
       {variant === "full-page" ? (
-        <div className="w-full h-[100dvh] bg-background dark:bg-black flex flex-row overflow-hidden">
+        <div className="w-full h-[100dvh] bg-sidebar flex flex-row overflow-hidden">
           <div className="flex-1 min-w-0 min-h-0 relative flex flex-col h-full overflow-hidden">
             {/* Sidebar toggle and Top Right Header Actions */}
             <div className="shrink-0 flex items-center justify-between px-6 pt-3 h-14">
@@ -5035,7 +5035,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     </div>
                   </div>
                 </div>
-                <div className="shrink-0 bg-background dark:bg-black pt-2 pb-6 px-4 md:px-8 max-w-4xl w-full mx-auto">
+                <div className="shrink-0 bg-sidebar pt-2 pb-6 px-4 md:px-8 max-w-4xl w-full mx-auto">
                   {panelInput}
                 </div>
               </>
@@ -5647,7 +5647,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 >
                   {panelChat}
                 </div>
-                <div className="shrink-0 bg-background dark:bg-black pt-2 pb-6 px-4 md:px-8 max-w-4xl w-full mx-auto">
+                <div className="shrink-0 bg-sidebar pt-2 pb-6 px-4 md:px-8 max-w-4xl w-full mx-auto">
                   {panelInput}
                 </div>
               </>
