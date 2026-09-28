@@ -2407,6 +2407,44 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                 saveMessage(sessionId, "assistant", savedContent, []).catch(err => console.error("Failed to save assistant message:", err));
                 appendToHistory(sessionId, "assistant", savedContent).catch(err => console.error("Failed to append assistant reply to Redis:", err));
             }
+
+            // Extract AI-created file links (PDFs, Excel, etc.) from the CDN and save to Library
+            if (answer && typeof answer === 'string') {
+                const urlRegex = /(https?:\/\/[^\s<)"']+\.(pdf|zip|xlsx|xls|csv|docx|doc|pptx|ppt))/gi;
+                let match;
+                while ((match = urlRegex.exec(answer)) !== null) {
+                    const fileUrl = match[1];
+                    const extension = match[2].toLowerCase();
+                    const fileName = `Generated ${extension.toUpperCase()} File - ${new Date().toLocaleDateString()}`;
+                    
+                    let fileType = 'other';
+                    if (extension === 'pdf') fileType = 'pdf';
+                    else if (['xlsx', 'xls', 'csv'].includes(extension)) fileType = 'doc';
+                    else if (['docx', 'doc'].includes(extension)) fileType = 'doc';
+                    else if (['pptx', 'ppt'].includes(extension)) fileType = 'pptx';
+
+                    if (req.user && (req.user.email || req.user.id)) {
+                        try {
+                            const AiLibraryFile = (await import('../models/AiLibraryFile.js')).default;
+                            await AiLibraryFile.create({
+                                user_email: req.user.email || "unknown@classgrid.in",
+                                user_id: req.user.id || req.user._id,
+                                organization_id: req.user.organization_id || null,
+                                original_name: fileName,
+                                file_key: null,
+                                cdn_url: fileUrl,
+                                mime_type: `application/${extension}`,
+                                file_type: fileType,
+                                size_bytes: 0,
+                                source: 'generated'
+                            });
+                        } catch (libErr) {
+                            console.error("Failed to save AI generated CDN link to AiLibraryFile:", libErr);
+                        }
+                    }
+                }
+            }
+
             res.write(`data: ${JSON.stringify({ type: "answer", answer })}\n\n`);
         }
 
@@ -2496,7 +2534,7 @@ export const uploadChatImage = async (req, res) => {
                     organization_id: req.user.organization_id || null,
                     original_name: fileName,
                     file_key: fileKey,
-                    cdn_url: result.fileUrl,
+                    cdn_url: result.publicUrl,
                     mime_type: mimeType,
                     file_type: fileType,
                     size_bytes: size || 0,
