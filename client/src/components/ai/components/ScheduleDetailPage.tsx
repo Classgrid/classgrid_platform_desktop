@@ -340,48 +340,83 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
                   {/* vertical line */}
                   <div className="absolute left-[7px] top-1.5 bottom-1.5 w-px bg-border" />
 
-                  {/* Created */}
-                  <div className="relative pb-5">
-                    <div className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-background z-10" />
-                    <p className="text-xs font-medium text-muted-foreground">Created</p>
-                    <p className="text-sm font-semibold text-foreground">
-                      {createdDateStr ? format(new Date(createdDateStr), "dd MMM yyyy") : "—"}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {createdDateStr ? format(new Date(createdDateStr), "hh:mm a") : ""}
-                    </p>
-                  </div>
+                  {(() => {
+                    const history = (schedule as any).reschedule_history || [];
+                    const originalDate = history.length > 0 ? history[0].previous_date : schedule.scheduled_at;
+                    const isCompleted = schedule.status === "sent";
+                    const isFailed = schedule.status === "failed";
 
-                  {/* Reschedule history entries */}
-                  {(schedule as any).reschedule_history?.map((entry: any, i: number) => (
-                    <div key={i} className="relative pb-5">
-                      <div className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-amber-500 border-2 border-background z-10" />
-                      <p className="text-xs font-medium text-muted-foreground">Rescheduled</p>
-                      <p className="text-sm font-semibold text-foreground">
-                        {format(new Date(entry.previous_date), "dd MMM yyyy")}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {format(new Date(entry.previous_date), "hh:mm a")} → moved on {format(new Date(entry.rescheduled_at), "dd MMM, hh:mm a")}
-                      </p>
-                    </div>
-                  ))}
+                    return (
+                      <>
+                        {/* Step 1: Created */}
+                        <div className="relative pb-5">
+                          <div className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-background z-10" />
+                          <p className="text-xs font-medium text-muted-foreground">Created</p>
+                          <p className="text-sm font-semibold text-foreground">
+                            {createdDateStr ? format(new Date(createdDateStr), "dd MMM yyyy") : "\u2014"}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {createdDateStr ? format(new Date(createdDateStr), "hh:mm a") : ""}
+                          </p>
+                        </div>
 
-                  {/* Current Scheduled Date */}
-                  <div className="relative">
-                    <div className={`absolute -left-6 top-1 w-3.5 h-3.5 rounded-full border-2 border-background z-10 ${
-                      schedule.status === "sent" ? "bg-emerald-500" : 
-                      schedule.status === "failed" ? "bg-red-500" : "bg-blue-500"
-                    }`} />
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {schedule.status === "sent" ? "Completed" : schedule.status === "failed" ? "Failed" : "Scheduled For"}
-                    </p>
-                    <p className="text-sm font-semibold text-foreground">
-                      {format(new Date(schedule.scheduled_at), "dd MMM yyyy")}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {format(new Date(schedule.scheduled_at), "hh:mm a")} · IST
-                    </p>
-                  </div>
+                        {/* Step 2: Original Scheduled Date */}
+                        <div className="relative pb-5">
+                          <div className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-blue-500 border-2 border-background z-10" />
+                          <p className="text-xs font-medium text-muted-foreground">Scheduled</p>
+                          <p className="text-sm font-semibold text-foreground">
+                            {format(new Date(originalDate), "dd MMM yyyy")}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {format(new Date(originalDate), "hh:mm a")} \u00b7 IST
+                          </p>
+                        </div>
+
+                        {/* Step 3+: Each reschedule */}
+                        {history.map((entry: any, i: number) => {
+                          const newDate = i + 1 < history.length ? history[i + 1].previous_date : schedule.scheduled_at;
+                          return (
+                            <div key={i} className="relative pb-5">
+                              <div className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-amber-500 border-2 border-background z-10" />
+                              <p className="text-xs font-medium text-muted-foreground">Rescheduled</p>
+                              <p className="text-sm font-semibold text-foreground">
+                                {format(new Date(newDate), "dd MMM yyyy")}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {format(new Date(newDate), "hh:mm a")} \u00b7 moved on {format(new Date(entry.rescheduled_at), "dd MMM, hh:mm a")}
+                              </p>
+                            </div>
+                          );
+                        })}
+
+                        {/* Final Step: Completed / Failed / Pending */}
+                        <div className="relative">
+                          <div className={`absolute -left-6 top-1 w-3.5 h-3.5 rounded-full border-2 border-background z-10 ${
+                            isCompleted ? "bg-emerald-500" : isFailed ? "bg-red-500" : "bg-muted-foreground/30"
+                          }`} />
+                          <p className="text-xs font-medium text-muted-foreground">
+                            {isCompleted ? "Completed" : isFailed ? "Failed" : "Pending"}
+                          </p>
+                          {isCompleted && (schedule as any).sent_at ? (
+                            <>
+                              <p className="text-sm font-semibold text-foreground">
+                                {format(new Date((schedule as any).sent_at), "dd MMM yyyy")}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {format(new Date((schedule as any).sent_at), "hh:mm a")} \u00b7 IST
+                              </p>
+                            </>
+                          ) : isCompleted ? (
+                            <p className="text-sm font-semibold text-emerald-500">Done \u2713</p>
+                          ) : isFailed ? (
+                            <p className="text-sm font-semibold text-red-500">Failed \u2717</p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Awaiting execution\u2026</p>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
