@@ -89,8 +89,8 @@ router.get("/connect", isAuthenticated, (req, res) => {
         scopes.push('https://www.googleapis.com/auth/classroom.courses');
         scopes.push('https://www.googleapis.com/auth/classroom.coursework.me');
         scopes.push('https://www.googleapis.com/auth/classroom.coursework.students');
-        scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.me');
-        scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.students');
+        scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.me.readonly');
+        scopes.push('https://www.googleapis.com/auth/classroom.student-submissions.students.readonly');
         scopes.push('https://www.googleapis.com/auth/classroom.rosters');
         scopes.push('https://www.googleapis.com/auth/classroom.announcements');
         scopes.push('https://www.googleapis.com/auth/classroom.topics');
