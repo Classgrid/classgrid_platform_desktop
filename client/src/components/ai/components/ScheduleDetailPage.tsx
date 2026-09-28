@@ -21,7 +21,6 @@ import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-di
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { toast } from "sonner";
 import { apiClient as api } from "@/lib/apiClient";
-import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
 
 type ScheduleStatus = "pending" | "sent" | "failed" | "cancelled";
 
@@ -174,11 +173,17 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 pb-16 overflow-y-auto h-full">
 
-      {/* ── BREADCRUMB (renders in top bar like OrgDetailsPage) ── */}
-      <PageBreadcrumbs items={[
-        { label: "Schedules", href: backPath },
-        { label: schedule.title }
-      ]} />
+      {/* ── INLINE BREADCRUMB ── */}
+      <div className="flex items-center gap-2 text-sm mb-6">
+        <span 
+          className="text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+          onClick={() => navigate(backPath)}
+        >
+          Schedules
+        </span>
+        <span className="text-muted-foreground/50">/</span>
+        <span className="text-foreground font-medium truncate max-w-[300px]">{schedule.title}</span>
+      </div>
 
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-border pb-6 mb-8">
@@ -353,7 +358,7 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
                           <div className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-background z-10" />
                           <p className="text-xs font-medium text-muted-foreground">Created</p>
                           <p className="text-sm font-semibold text-foreground">
-                            {createdDateStr ? format(new Date(createdDateStr), "dd MMM yyyy") : "\u2014"}
+                            {createdDateStr ? format(new Date(createdDateStr), "dd MMM yyyy") : "—"}
                           </p>
                           <p className="text-[11px] text-muted-foreground">
                             {createdDateStr ? format(new Date(createdDateStr), "hh:mm a") : ""}
@@ -368,7 +373,7 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
                             {format(new Date(originalDate), "dd MMM yyyy")}
                           </p>
                           <p className="text-[11px] text-muted-foreground">
-                            {format(new Date(originalDate), "hh:mm a")} \u00b7 IST
+                            {format(new Date(originalDate), "hh:mm a")} · IST
                           </p>
                         </div>
 
@@ -383,7 +388,7 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
                                 {format(new Date(newDate), "dd MMM yyyy")}
                               </p>
                               <p className="text-[11px] text-muted-foreground">
-                                {format(new Date(newDate), "hh:mm a")} \u00b7 moved on {format(new Date(entry.rescheduled_at), "dd MMM, hh:mm a")}
+                                {format(new Date(newDate), "hh:mm a")} · moved on {format(new Date(entry.rescheduled_at), "dd MMM, hh:mm a")}
                               </p>
                             </div>
                           );
@@ -403,15 +408,15 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
                                 {format(new Date((schedule as any).sent_at), "dd MMM yyyy")}
                               </p>
                               <p className="text-[11px] text-muted-foreground">
-                                {format(new Date((schedule as any).sent_at), "hh:mm a")} \u00b7 IST
+                                {format(new Date((schedule as any).sent_at), "hh:mm a")} · IST
                               </p>
                             </>
                           ) : isCompleted ? (
-                            <p className="text-sm font-semibold text-emerald-500">Done \u2713</p>
+                            <p className="text-sm font-semibold text-emerald-500">Done ✓</p>
                           ) : isFailed ? (
-                            <p className="text-sm font-semibold text-red-500">Failed \u2717</p>
+                            <p className="text-sm font-semibold text-red-500">Failed ✗</p>
                           ) : (
-                            <p className="text-sm text-muted-foreground">Awaiting execution\u2026</p>
+                            <p className="text-sm text-muted-foreground">Awaiting execution…</p>
                           )}
                         </div>
                       </>
