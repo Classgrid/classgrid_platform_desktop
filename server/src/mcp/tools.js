@@ -424,12 +424,12 @@ export const getMcpTools = () => [
   },
   {
     name: 'create_schedule',
-    description: 'Schedule an email reminder or task for a specific date and time. Use this when the user mentions a future event, exam, task, or deadline they want to be reminded about. Always pre-write a full HTML email body.',
+    description: 'Schedule an email reminder or task for a specific date and time. Use this when the user mentions a future event, exam, task, or deadline they want to be reminded about. Always pre-write a full HTML email body. CRITICAL: The title and description MUST be highly specific to the context (e.g. "Payment Reminder: Fall Semester Tuition Fee - $1500" instead of "Fee Reminder"). DO NOT use generic names.',
     inputSchema: {
       type: 'object',
       properties: {
-        title: { type: 'string', description: 'Short title of the scheduled task (e.g. "Exam Reminder")' },
-        description: { type: 'string', description: 'What the reminder is about' },
+        title: { type: 'string', description: 'Highly specific title of the scheduled task including names, amounts, or context (e.g. "Math 101 Midterm Exam Reminder")' },
+        description: { type: 'string', description: 'Detailed summary of what the reminder is about, including all provided context and information.' },
         scheduled_at: { type: 'string', description: 'ISO 8601 datetime string for when to send the email (e.g. 2026-10-06T10:00:00.000Z)' },
         email_subject: { type: 'string', description: 'Subject line for the email' },
         email_body: { type: 'string', description: 'Full beautiful HTML email body with inline CSS to send at scheduled time' }
