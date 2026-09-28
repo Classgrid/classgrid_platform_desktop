@@ -26,6 +26,8 @@ interface AiSchedule {
   description: string;
   summary?: string;
   action_info?: string;
+  email_subject?: string;
+  email_body?: string;
   scheduled_at: string;
   status: ScheduleStatus;
   error_message?: string;
@@ -430,21 +432,28 @@ export const SchedulePage: React.FC = () => {
               </div>
 
               {/* Summary */}
-              {selectedSchedule?.summary && (
+              {(selectedSchedule?.summary || selectedSchedule?.email_subject) && (
                 <div className="border border-border/40 rounded-xl overflow-hidden">
                   <div className="bg-muted/40 dark:bg-white/5 px-4 py-3">
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Summary</h4>
-                    <p className="text-sm font-medium text-foreground">{selectedSchedule.summary}</p>
+                    <p className="text-sm font-medium text-foreground">{selectedSchedule.summary || selectedSchedule.email_subject}</p>
                   </div>
                 </div>
               )}
 
               {/* Action Information */}
-              {selectedSchedule?.action_info && (
+              {(selectedSchedule?.action_info || selectedSchedule?.email_body) && (
                 <div className="border border-border/40 rounded-xl overflow-hidden">
                   <div className="px-4 py-4 max-h-[250px] overflow-y-auto">
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Details & Information</h4>
-                    <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{selectedSchedule.action_info}</p>
+                    {selectedSchedule.action_info ? (
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{selectedSchedule.action_info}</p>
+                    ) : (
+                      <div 
+                        className="text-sm prose prose-sm dark:prose-invert max-w-none text-foreground"
+                        dangerouslySetInnerHTML={{ __html: selectedSchedule.email_body || "" }} 
+                      />
+                    )}
                   </div>
                 </div>
               )}
