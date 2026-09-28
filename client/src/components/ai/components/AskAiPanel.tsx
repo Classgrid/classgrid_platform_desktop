@@ -4987,7 +4987,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
             {sessionId === "schedule" ? (
               <div className="flex-1 overflow-y-auto">
-                {detailId ? <ScheduleDetailPage /> : <SchedulePage />}
+                {detailId ? <ScheduleDetailPage id={detailId} /> : <SchedulePage />}
               </div>
             ) : sessionId === "library" ? (
               <div className="flex-1 overflow-y-auto">

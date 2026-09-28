@@ -59,8 +59,9 @@ const SectionCard = ({ title, subtitle, children }: { title: string; subtitle?: 
   </div>
 );
 
-export const ScheduleDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) => {
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = propId || paramId;
   const navigate = useNavigate();
   const location = useLocation();
 
