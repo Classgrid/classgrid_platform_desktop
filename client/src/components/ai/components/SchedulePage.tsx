@@ -70,22 +70,46 @@ const SCHEDULE_SUGGESTIONS: ScheduleSuggestion[] = [
 
 const INTEGRATION_SUGGESTIONS: ScheduleSuggestion[] = [
   {
-    icon: <Video className="w-5 h-5 text-blue-500" />,
+    icon: <img src="https://cdn.classgrid.in/classgrid_intgration/Google_Meet_icon_(2026).svg" alt="Google Meet" className="w-5 h-5 object-contain" />,
     title: "Google Meet",
     description: "Schedule a Google Meet and automatically invite participants",
     prompt: "Schedule a Google Meet for [Date/Time] about [Topic] and invite [Emails]."
   },
   {
-    icon: <MonitorPlay className="w-5 h-5 text-blue-500" />,
+    icon: <img src="https://cdn.classgrid.in/classgrid_intgration/zoom-communications-icon_(1).svg" alt="Zoom" className="w-5 h-5 object-contain" />,
     title: "Zoom Meeting",
     description: "Create a Zoom meeting link and share it with your class",
     prompt: "Schedule a Zoom meeting for [Date/Time] about [Topic] and send the link to my class."
   },
   {
-    icon: <Presentation className="w-5 h-5 text-green-500" />,
+    icon: <img src="https://cdn.classgrid.in/classgrid_intgration/Google_Classroom_Logo.svg" alt="Google Classroom" className="w-5 h-5 object-contain" />,
     title: "Google Classroom",
     description: "Post an announcement or assignment directly to Google Classroom",
     prompt: "Post an announcement in my Google Classroom about [Topic]."
+  },
+  {
+    icon: <img src="https://cdn.classgrid.in/classgrid_intgration/slack-new-logo-logo-svgrepo-com.svg" alt="Slack" className="w-5 h-5 object-contain" />,
+    title: "Slack",
+    description: "Schedule an automated message to a Slack channel",
+    prompt: "Schedule a message to my Slack #general channel every Monday morning."
+  },
+  {
+    icon: <img src="https://cdn.classgrid.in/classgrid_intgration/whatsapp-svgrepo-com_(1).svg" alt="WhatsApp" className="w-5 h-5 object-contain" />,
+    title: "WhatsApp Business",
+    description: "Schedule a WhatsApp broadcast to students or parents",
+    prompt: "Schedule a WhatsApp reminder to all parents 1 day before the fee deadline."
+  },
+  {
+    icon: <img src="https://cdn.classgrid.in/classgrid_intgration/microsoft-teams-svgrepo-com.svg" alt="Microsoft Teams" className="w-5 h-5 object-contain" />,
+    title: "Microsoft Teams",
+    description: "Schedule a message or meeting in Microsoft Teams",
+    prompt: "Schedule a Teams meeting for [Date/Time] and invite the team."
+  },
+  {
+    icon: <img src="https://cdn.classgrid.in/classgrid_intgration/Google_Calendar_icon_(2026).svg" alt="Google Calendar" className="w-5 h-5 object-contain" />,
+    title: "Google Calendar",
+    description: "Add an event directly to your Google Calendar",
+    prompt: "Schedule an event on my Google Calendar for [Date/Time] about [Topic]."
   },
   {
     icon: <BookOpen className="w-5 h-5 text-orange-500" />,
