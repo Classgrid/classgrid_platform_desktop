@@ -242,6 +242,7 @@ export const SchedulePage: React.FC = () => {
         <Plus className="w-5 h-5 text-muted-foreground shrink-0" />
         <input
           type="text"
+          data-no-ring="true"
           placeholder="Schedule a task..."
           className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none border-none focus:ring-0 focus-visible:ring-0 focus:outline-none"
           value={taskInput}

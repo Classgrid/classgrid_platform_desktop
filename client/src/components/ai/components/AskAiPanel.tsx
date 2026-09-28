@@ -2245,6 +2245,25 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         const input = document.getElementById("ai-chat-input");
         if (input) input.focus();
 
+        // Check if there is an attached file waiting to be added
+        const attachUrl = sessionStorage.getItem("agent:attach_file_url");
+        const attachName = sessionStorage.getItem("agent:attach_file_name");
+        
+        if (attachUrl) {
+          sessionStorage.removeItem("agent:attach_file_url");
+          sessionStorage.removeItem("agent:attach_file_name");
+          
+          const newFile: UIFileAttachment = {
+            id: Math.random().toString(36).substring(7),
+            name: attachName || attachUrl.split('/').pop() || "attached_file",
+            size: 0,
+            type: attachUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? "image/jpeg" : attachUrl.match(/\.pdf$/i) ? "application/pdf" : "application/octet-stream",
+            status: "done",
+            url: attachUrl
+          };
+          setAttachedFiles([newFile]);
+        }
+
         // Check if there is a pre-filled prompt waiting to be auto-sent
         const prefillPrompt = sessionStorage.getItem("agent:schedule_prompt");
         if (prefillPrompt) {

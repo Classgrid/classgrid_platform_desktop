@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { getSocket } from '@/lib/socketClient';
 import FilePreviewModal from './FilePreviewModal';
 import { DocsImageViewer } from './DocsImageViewer';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface LibraryFile {
   _id: string;
@@ -43,6 +44,14 @@ export function LibraryPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedFileToPreview, setSelectedFileToPreview] = useState<LibraryFile | null>(null);
   const [dateFilter, setDateFilter] = useState<Date | undefined>();
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pathParts = location.pathname.split('/');
+  const agentIndex = pathParts.indexOf('agent');
+  const baseAgentPath = agentIndex !== -1
+    ? pathParts.slice(0, agentIndex + 1).join('/')
+    : location.pathname;
 
   const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
     ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
@@ -160,10 +169,10 @@ export function LibraryPage() {
   };
 
   const handleAskAI = (fileUrl: string, fileName: string) => {
-    // Send to Chat via event
-    window.dispatchEvent(new CustomEvent("agent:attach-file", {
-      detail: { url: fileUrl, name: fileName }
-    }));
+    sessionStorage.setItem("agent:attach_file_url", fileUrl);
+    sessionStorage.setItem("agent:attach_file_name", fileName);
+    navigate(baseAgentPath);
+    window.dispatchEvent(new Event("agent:new-chat"));
   };
 
   const formatBytes = (bytes: number, decimals = 2) => {
