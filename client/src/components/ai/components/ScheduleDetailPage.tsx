@@ -285,13 +285,13 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
                   onChange={setSelectedDate} 
                 />
                 <div className="flex items-center gap-3 mt-2">
-                  <Button 
-                    variant="default" 
+                  <button 
                     onClick={handleUpdateSchedule}
                     disabled={isUpdating || !selectedDate || selectedDate.getTime() === new Date(schedule.scheduled_at).getTime()}
+                    className="h-10 px-4 rounded-xl text-sm font-medium flex items-center justify-center bg-[#2C2C2C] text-[#F0EFED] dark:bg-[#F0EFED] dark:text-[#2C2C2C] disabled:opacity-50 transition-opacity cursor-pointer"
                   >
                     {isUpdating ? "Saving..." : "Update Schedule"}
-                  </Button>
+                  </button>
                 </div>
               </div>
             </SectionCard>
