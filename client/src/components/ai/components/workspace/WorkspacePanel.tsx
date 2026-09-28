@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { X, FileText, Code, Eye, ListTodo, CheckCircle2, Circle, Loader2, XCircle, ExternalLink } from "lucide-react";
+import { X, FileText, Code, Eye, ListTodo, CheckCircle2, Circle, Loader2, XCircle, ExternalLink, Folder, FolderOpen, ChevronRight, ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
+import hljs from "highlight.js";
+import "highlight.js/styles/github-dark.css";
 
 export type WorkspaceTab = "files" | "plan" | "code" | "preview";
 
@@ -17,9 +19,127 @@ interface WorkspacePanelProps {
   currentCss?: string;
   currentJs?: string;
   planSteps?: any[];
+  completedPlanSteps?: string[];
   activeBuildSessionId?: string | null;
   sandboxFiles?: Record<string, string>;
 }
+
+type TreeNode = {
+  name: string;
+  type: "file" | "folder";
+  path: string;
+  children?: Record<string, TreeNode>;
+};
+
+function buildFileTree(files: Record<string, string>): TreeNode[] {
+  const root: Record<string, TreeNode> = {};
+
+  Object.keys(files).forEach((filePath) => {
+    // Treat paths that might have leading slashes properly (e.g. /css/style.css)
+    const parts = filePath.replace(/^\//, "").split("/");
+    let currentLevel = root;
+    let currentPath = "";
+
+    parts.forEach((part, index) => {
+      currentPath += (currentPath ? "/" : "") + part;
+      if (!currentLevel[part]) {
+        currentLevel[part] = {
+          name: part,
+          type: index === parts.length - 1 ? "file" : "folder",
+          path: currentPath,
+          children: index === parts.length - 1 ? undefined : {},
+        };
+      }
+      if (index < parts.length - 1) {
+        currentLevel = currentLevel[part].children!;
+      }
+    });
+  });
+
+  const sortNodes = (nodes: TreeNode[]): TreeNode[] => {
+    return nodes.sort((a, b) => {
+      if (a.type === b.type) return a.name.localeCompare(b.name);
+      return a.type === "folder" ? -1 : 1;
+    });
+  };
+
+  const convertToArray = (obj: Record<string, TreeNode>): TreeNode[] => {
+    const arr = Object.values(obj);
+    arr.forEach((node) => {
+      if (node.children) {
+        node.children = convertToArray(node.children) as any;
+      }
+    });
+    return sortNodes(arr);
+  };
+
+  return convertToArray(root);
+}
+
+const FileTreeNode = ({
+  node,
+  selectedFile,
+  onSelect,
+  level = 0,
+}: {
+  node: TreeNode;
+  selectedFile: string;
+  onSelect: (path: string) => void;
+  level?: number;
+}) => {
+  const [isOpen, setIsOpen] = useState(true);
+  const isSelected = selectedFile === node.path || selectedFile === `/${node.path}`;
+
+  if (node.type === "folder") {
+    return (
+      <div className="w-full">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full text-left px-2 py-1.5 hover:bg-white/5 rounded text-[13px] flex items-center gap-1.5 text-gray-300 transition-colors"
+          style={{ paddingLeft: `${level * 12 + 8}px` }}
+        >
+          {isOpen ? (
+            <ChevronDown className="h-3 w-3 shrink-0 text-gray-500" />
+          ) : (
+            <ChevronRight className="h-3 w-3 shrink-0 text-gray-500" />
+          )}
+          {isOpen ? (
+            <FolderOpen className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+          ) : (
+            <Folder className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+          )}
+          <span className="truncate">{node.name}</span>
+        </button>
+        {isOpen && node.children && (
+          <div className="flex flex-col">
+            {(node.children as any as TreeNode[]).map((child) => (
+              <FileTreeNode
+                key={child.path}
+                node={child}
+                selectedFile={selectedFile}
+                onSelect={onSelect}
+                level={level + 1}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => onSelect(node.path)}
+      className={`w-full text-left py-1.5 pr-2 rounded text-[13px] flex items-center gap-2 transition-colors ${
+        isSelected ? "bg-blue-500/10 text-blue-400" : "text-gray-400 hover:bg-white/5 hover:text-gray-300"
+      }`}
+      style={{ paddingLeft: `${level * 12 + 24}px` }}
+    >
+      <FileText className={`h-3.5 w-3.5 shrink-0 ${isSelected ? "text-blue-400" : "text-gray-500"}`} />
+      <span className="truncate">{node.name}</span>
+    </button>
+  );
+};
 
 // Simple debounce hook for smooth iframe updates
 function useDebounce<T>(value: T, delay: number): T {
@@ -45,6 +165,7 @@ export function WorkspacePanel({
   currentCss = "",
   currentJs = "",
   planSteps,
+  completedPlanSteps,
   activeBuildSessionId,
   sandboxFiles = {},
 }: WorkspacePanelProps) {
@@ -57,6 +178,20 @@ export function WorkspacePanel({
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("files");
   const [buildStatus, setBuildStatus] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<string>("index.html");
+
+  const highlightedCode = React.useMemo(() => {
+    const code = sandboxFiles[selectedFile] || "// Select a file to view its code";
+    const extension = selectedFile.split('.').pop() || 'text';
+    const language = extension === 'js' ? 'javascript' : extension === 'html' ? 'xml' : extension;
+    try {
+      if (hljs.getLanguage(language)) {
+        return hljs.highlight(code, { language }).value;
+      }
+      return hljs.highlightAuto(code).value;
+    } catch (e) {
+      return code; // Fallback to raw text
+    }
+  }, [sandboxFiles, selectedFile]);
 
   // Poll backend for real-time trajectory status
   React.useEffect(() => {
@@ -88,6 +223,27 @@ export function WorkspacePanel({
       setActiveTab("preview");
     }
   }, [isExecuting]);
+
+  const previewSrcDoc = React.useMemo(() => {
+    let html = debouncedHtml;
+    // Inject CSS
+    if (debouncedCss) {
+      if (/<link\s+[^>]*href=["'](?:\.\/)?style\.css["'][^>]*>/i.test(html)) {
+        html = html.replace(/<link\s+[^>]*href=["'](?:\.\/)?style\.css["'][^>]*>/i, `<style>\n${debouncedCss}\n</style>`);
+      } else {
+        html = html.replace(/<\/head>/i, `<style>\n${debouncedCss}\n</style>\n</head>`);
+      }
+    }
+    // Inject JS
+    if (debouncedJs) {
+      if (/<script\s+[^>]*src=["'](?:\.\/)?script\.js["'][^>]*><\/script>/i.test(html)) {
+        html = html.replace(/<script\s+[^>]*src=["'](?:\.\/)?script\.js["'][^>]*><\/script>/i, `<script>\ntry {\n${debouncedJs}\n} catch(e) { console.error(e); }\n</script>`);
+      } else {
+        html = html.replace(/<\/body>/i, `<script>\ntry {\n${debouncedJs}\n} catch(e) { console.error(e); }\n</script>\n</body>`);
+      }
+    }
+    return html;
+  }, [debouncedHtml, debouncedCss, debouncedJs]);
 
   if (!isOpen) return null;
 
@@ -199,9 +355,11 @@ export function WorkspacePanel({
               <div className="space-y-3 mt-4">
                 <h3 className="text-sm font-semibold text-foreground/80 mb-4">Execution Steps</h3>
                 {planSteps.map((step, idx) => {
-                  // Merge status from the backend if available
+                  // Use completedPlanSteps from frontend state directly
+                  // Fallback to buildStatus polling for legacy compatibility
                   const liveStep = buildStatus?.plan?.find((s: any) => s.id === step.id) || step;
-                  const status = liveStep.status || 'pending';
+                  const isDone = completedPlanSteps?.includes(step.id) || liveStep.status === 'done';
+                  const status = isDone ? 'done' : (liveStep.status || 'pending');
                   
                   return (
                     <div key={idx} className="flex items-start gap-3 p-3 rounded-md bg-muted/30 border border-border/50">
@@ -249,67 +407,60 @@ export function WorkspacePanel({
         {activeTab === "code" && (
           <div className="flex h-full">
             {/* File tree sidebar */}
-            <div className="w-40 shrink-0 border-r border-border/50 overflow-y-auto p-2">
+            <div className="w-48 shrink-0 bg-[#f4f4f5] dark:bg-[#111111] border-r border-black/10 dark:border-white/[0.08] overflow-y-auto py-3 px-2 flex flex-col gap-0.5">
+              <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest px-2 mb-2 select-none">Project Files</div>
               {Object.keys(sandboxFiles).length === 0 ? (
                 <div className="text-xs text-muted-foreground p-2">No files yet</div>
               ) : (
-                Object.keys(sandboxFiles).sort().map((name) => (
-                  <button
-                    key={name}
-                    onClick={() => setSelectedFile(name)}
-                    className={`w-full text-left px-2 py-1.5 rounded text-xs font-mono flex items-center gap-1.5 ${
-                      selectedFile === name ? "bg-primary/10 text-primary" : "hover:bg-muted"
-                    }`}
-                  >
-                    <FileText className="h-3.5 w-3.5 shrink-0" />
-                    {name}
-                  </button>
+                buildFileTree(sandboxFiles).map((node) => (
+                  <FileTreeNode
+                    key={node.path}
+                    node={node}
+                    selectedFile={selectedFile}
+                    onSelect={setSelectedFile}
+                  />
                 ))
               )}
             </div>
             {/* Selected file code */}
-            <div className="flex-1 overflow-auto bg-[#1e1e1e] p-4 text-xs font-mono text-gray-300">
-              <div className="text-gray-500 mb-2 select-none">// {selectedFile || "select a file"}</div>
-              <pre><code>{sandboxFiles[selectedFile] || "// Select a file to view its code"}</code></pre>
+            <div className="flex-1 overflow-auto bg-white dark:bg-[#000000] text-xs font-mono text-gray-700 dark:text-gray-300 relative flex flex-col">
+              <div className="flex items-center px-4 py-2.5 border-b border-black/10 dark:border-white/[0.08] bg-[#f4f4f5] dark:bg-[#111111] text-gray-500 dark:text-gray-400 shrink-0 select-none">
+                <FileText className="h-3.5 w-3.5 mr-2 text-gray-500" />
+                {selectedFile || "No file selected"}
+              </div>
+              <div className="flex-1 flex overflow-auto min-h-0 relative">
+                <div className="w-12 shrink-0 bg-white dark:bg-[#000000] border-r border-black/10 dark:border-white/[0.08] flex flex-col items-end pt-4 pb-4 select-none text-gray-400 dark:text-[#404040]">
+                  {((sandboxFiles[selectedFile] || "").match(/\n/g) || []).concat('').map((_, i) => (
+                    <div key={i} className="px-3 leading-[22px]">{i + 1}</div>
+                  ))}
+                </div>
+                <div className="flex-1 min-w-0 pt-4 pb-4 px-4 overflow-auto">
+                  <pre className="m-0 bg-transparent p-0"><code 
+                    className={`hljs language-${selectedFile.split('.').pop()} !bg-transparent !p-0 block leading-[22px]`} 
+                    dangerouslySetInnerHTML={{ __html: highlightedCode }} 
+                  /></pre>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
         {activeTab === "preview" && (
           <div className="h-full w-full bg-white relative">
-            {!debouncedHtml && !debouncedCss && !debouncedJs ? (
+            {isExecuting ? (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <div className="text-sm">Building Preview...</div>
+              </div>
+            ) : !debouncedHtml ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">
                 Waiting for rendering...
               </div>
             ) : (
               <iframe
                 className="w-full h-full border-0"
-                sandbox="allow-scripts allow-same-origin"
-                srcDoc={`
-                  <!DOCTYPE html>
-                  <html>
-                    <head>
-                      <meta charset="utf-8">
-                      <meta name="viewport" content="width=device-width, initial-scale=1">
-                      <style>
-                        /* Base resets */
-                        body { margin: 0; font-family: system-ui, sans-serif; }
-                        * { box-sizing: border-box; }
-                        ${debouncedCss}
-                      </style>
-                    </head>
-                    <body>
-                      ${debouncedHtml}
-                      <script>
-                        try {
-                          ${debouncedJs}
-                        } catch(e) {
-                          console.error("Live Preview JS Error:", e);
-                        }
-                      </script>
-                    </body>
-                  </html>
-                `}
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                srcDoc={previewSrcDoc}
               />
             )}
           </div>
