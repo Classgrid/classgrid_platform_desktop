@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
-import { Calendar, Trash2, CheckCircle2, Clock, XCircle, AlertCircle, Plus, Search, Send, Mail, Bell, FileText, BarChart3, BookOpen, GraduationCap, ArrowRight } from "lucide-react";
+import { Calendar, Trash2, CheckCircle2, Clock, XCircle, AlertCircle, Plus, Search, Send, Mail, Bell, FileText, BarChart3, BookOpen, GraduationCap, ArrowRight, Video, Presentation, MonitorPlay } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
 import { toast } from "sonner";
@@ -65,6 +65,33 @@ const SCHEDULE_SUGGESTIONS: ScheduleSuggestion[] = [
     title: "Class schedule briefing",
     description: "Get your daily class timetable emailed to you every morning",
     prompt: "Send me my class timetable every morning at 7:30 AM with the subject, teacher name, and room number for each class."
+  }
+];
+
+const INTEGRATION_SUGGESTIONS: ScheduleSuggestion[] = [
+  {
+    icon: <Video className="w-5 h-5 text-blue-500" />,
+    title: "Google Meet",
+    description: "Schedule a Google Meet and automatically invite participants",
+    prompt: "Schedule a Google Meet for [Date/Time] about [Topic] and invite [Emails]."
+  },
+  {
+    icon: <MonitorPlay className="w-5 h-5 text-blue-500" />,
+    title: "Zoom Meeting",
+    description: "Create a Zoom meeting link and share it with your class",
+    prompt: "Schedule a Zoom meeting for [Date/Time] about [Topic] and send the link to my class."
+  },
+  {
+    icon: <Presentation className="w-5 h-5 text-green-500" />,
+    title: "Google Classroom",
+    description: "Post an announcement or assignment directly to Google Classroom",
+    prompt: "Post an announcement in my Google Classroom about [Topic]."
+  },
+  {
+    icon: <BookOpen className="w-5 h-5 text-orange-500" />,
+    title: "Classgrid Classroom",
+    description: "Schedule a live class or assignment in Classgrid",
+    prompt: "Schedule a live class in my Classgrid Classroom for [Date/Time] about [Topic]."
   }
 ];
 
@@ -291,6 +318,27 @@ export const SchedulePage: React.FC = () => {
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Recommended</h3>
         <div className="flex flex-col">
           {SCHEDULE_SUGGESTIONS.map((suggestion, idx) => (
+            <button
+              key={idx}
+              onClick={() => navigateToNewChatWithPrompt(suggestion.prompt)}
+              className="flex items-center gap-3.5 py-3.5 border-b border-border/20 last:border-0 group/item hover:bg-muted/30 -mx-2 px-2 rounded-lg transition-colors text-left cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-lg bg-muted/40 dark:bg-white/5 flex items-center justify-center shrink-0">
+                {suggestion.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-semibold text-foreground">{suggestion.title}</h4>
+                <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{suggestion.description}</p>
+              </div>
+              <Plus className="w-5 h-5 text-muted-foreground/50 group-hover/item:text-foreground transition-colors shrink-0" />
+            </button>
+          ))}
+        </div>
+
+        {/* Integrations Section */}
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 mt-8">Integrations</h3>
+        <div className="flex flex-col">
+          {INTEGRATION_SUGGESTIONS.map((suggestion, idx) => (
             <button
               key={idx}
               onClick={() => navigateToNewChatWithPrompt(suggestion.prompt)}
