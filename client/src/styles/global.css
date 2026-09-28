@@ -101,7 +101,7 @@
 @layer base {
   :root {
     --radius: 0.75rem;
-    --background: #ffffff;
+    --background: #fafafa;
     --foreground: #000000;
     --card: #fafafa;
     --card-foreground: #000000;
