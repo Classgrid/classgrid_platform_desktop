@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Upload, Search, FileImage, FileVideo, FileText, File as FileIcon, FileQuestion, MessageSquare, Download, Trash2, MoreVertical, X, Filter, SortDesc, Loader2, CalendarIcon } from 'lucide-react';
+import { Upload, Search, FileImage, FileVideo, FileText, FileAudio, File as FileIcon, FileQuestion, MessageSquare, Download, Trash2, MoreVertical, X, Filter, SortDesc, Loader2, CalendarIcon } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/marketing_ui/popover';
@@ -20,7 +20,7 @@ interface LibraryFile {
   original_name: string;
   cdn_url: string;
   mime_type: string;
-  file_type: 'image' | 'video' | 'pdf' | 'pptx' | 'doc' | 'other';
+  file_type: 'image' | 'video' | 'pdf' | 'pptx' | 'doc' | 'audio' | 'other';
   size_bytes: number;
   source: 'uploaded' | 'generated';
   created_at: string;
@@ -36,7 +36,7 @@ export function LibraryPage() {
   const [files, setFiles] = useState<LibraryFile[]>([]);
   const [quota, setQuota] = useState<Quota>({ used_bytes: 0, max_bytes: 629145600, percentage: 0 });
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'image' | 'video' | 'pdf' | 'doc'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'image' | 'video' | 'pdf' | 'doc' | 'audio'>('all');
   const [sort, setSort] = useState<'newest' | 'oldest' | 'largest'>('newest');
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -198,6 +198,7 @@ export function LibraryPage() {
       case 'pdf': return <FileText className="w-8 h-8 text-red-500" />;
       case 'doc': return <FileIcon className="w-8 h-8 text-blue-600" />;
       case 'pptx': return <FileIcon className="w-8 h-8 text-orange-500" />;
+      case 'audio': return <FileAudio className="w-8 h-8 text-emerald-500" />;
       default: return <FileQuestion className="w-8 h-8 text-gray-500" />;
     }
   };
@@ -270,7 +271,7 @@ export function LibraryPage() {
         {/* Filters & Sort */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
           <div className="flex items-center gap-1 overflow-x-auto pb-2 sm:pb-0 hide-scrollbar">
-            {['all', 'image', 'video', 'pdf', 'doc'].map(tab => (
+            {['all', 'image', 'video', 'pdf', 'doc', 'audio'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
@@ -350,14 +351,52 @@ export function LibraryPage() {
             {filteredFiles.map(file => (
               <div 
                 key={file._id} 
-                className="group relative bg-accent/20 border border-border/50 rounded-2xl overflow-hidden hover:border-border transition-colors flex flex-col shadow-sm break-inside-avoid w-full"
+                className="group relative bg-accent/20 border border-border/50 rounded-2xl overflow-hidden hover:border-border transition-colors flex flex-col shadow-sm break-inside-avoid w-full cursor-pointer"
+                onClick={() => setSelectedFileToPreview(file)}
               >
                 {/* Preview Area */}
-                <div className={`w-full bg-accent/30 flex items-center justify-center relative overflow-hidden ${file.file_type !== 'image' ? 'aspect-square' : ''}`}>
+                <div className={`w-full bg-accent/30 flex items-center justify-center relative overflow-hidden ${file.file_type === 'image' ? '' : file.file_type === 'audio' ? 'p-4' : 'aspect-square'}`}>
                   {file.file_type === 'image' ? (
                     <img src={file.cdn_url} alt={file.original_name} className="w-full h-auto object-cover block" />
+                  ) : file.file_type === 'video' ? (
+                    <video 
+                      src={file.cdn_url} 
+                      className="w-full h-full object-cover" 
+                      muted 
+                      preload="metadata"
+                      onMouseEnter={(e) => { try { (e.target as HTMLVideoElement).play(); } catch {} }}
+                      onMouseLeave={(e) => { try { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; } catch {} }}
+                    />
+                  ) : file.file_type === 'pdf' ? (
+                    <div className="w-full h-full relative">
+                      <iframe 
+                        src={`${file.cdn_url}#toolbar=0&navpanes=0&scrollbar=0`} 
+                        className="w-full h-full pointer-events-none" 
+                        title={file.original_name}
+                        style={{ border: 'none' }}
+                      />
+                      <div className="absolute bottom-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase">PDF</div>
+                    </div>
+                  ) : file.file_type === 'audio' ? (
+                    <div className="w-full flex flex-col items-center gap-3 py-2">
+                      <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                        <FileAudio className="w-7 h-7 text-emerald-500" />
+                      </div>
+                      <audio 
+                        src={file.cdn_url} 
+                        controls 
+                        preload="metadata" 
+                        className="w-full h-8 opacity-80"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
                   ) : (
-                    getFileIcon(file.file_type)
+                    <div className="flex flex-col items-center gap-2">
+                      {getFileIcon(file.file_type)}
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-accent px-2 py-0.5 rounded">
+                        {file.original_name.split('.').pop()?.toUpperCase() || 'FILE'}
+                      </span>
+                    </div>
                   )}
                   
                   {/* Source Badge */}

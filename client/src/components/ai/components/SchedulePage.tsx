@@ -328,9 +328,6 @@ export const SchedulePage: React.FC = () => {
                   <span className="text-xs text-muted-foreground/70">
                     {format(new Date(schedule.scheduled_at), "EEEE, MMM d, yyyy 'at' h:mm a")}
                   </span>
-                  {schedule.error_message && (
-                    <p className="text-xs text-red-500 mt-1 truncate">{schedule.error_message}</p>
-                  )}
                 </div>
                 <DangerConfirmDialog
                   title="Delete Schedule?"
@@ -452,16 +449,6 @@ export const SchedulePage: React.FC = () => {
                 </div>
               )}
 
-              {/* Error */}
-              {selectedSchedule?.error_message && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
-                  <div>
-                    <h4 className="text-sm font-semibold text-red-500 mb-1">Error Details</h4>
-                    <p className="text-xs text-red-500/80">{selectedSchedule.error_message}</p>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </DialogContent>

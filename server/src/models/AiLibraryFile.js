@@ -8,7 +8,7 @@ const aiLibraryFileSchema = new mongoose.Schema({
   file_key: { type: String }, // R2 key or null for generated
   cdn_url: { type: String, required: true },
   mime_type: { type: String },
-  file_type: { type: String, enum: ['image', 'video', 'pdf', 'pptx', 'doc', 'other'], default: 'other' },
+  file_type: { type: String, enum: ['image', 'video', 'pdf', 'pptx', 'doc', 'audio', 'other'], default: 'other' },
   size_bytes: { type: Number, default: 0 },
   source: { type: String, enum: ['uploaded', 'generated'], default: 'uploaded' },
   thumbnail_url: { type: String },
