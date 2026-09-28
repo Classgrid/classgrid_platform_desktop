@@ -69,6 +69,7 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Derive back path from URL
   const pathParts = location.pathname.split("/");
@@ -228,7 +229,26 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
             </p>
           )}
         </div>
+        <div className="mt-4 sm:mt-0 flex shrink-0">
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            onClick={() => setDeleteOpen(true)}
+            className="w-full sm:w-auto"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete Schedule
+          </Button>
+        </div>
       </div>
+      
+      <DangerConfirmDialog 
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Schedule"
+        description="Are you sure you want to permanently delete this schedule? This action cannot be undone."
+        onConfirm={handleDelete}
+      />
 
       {/* ── 12-COLUMN GRID ── */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
