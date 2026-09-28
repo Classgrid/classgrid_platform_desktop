@@ -19,7 +19,7 @@ import { Button } from "@/components/marketing_ui/button";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
-import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink } from "@/components/marketing_ui/breadcrumb";
 import { toast } from "sonner";
 import { apiClient as api } from "@/lib/apiClient";
 
@@ -194,10 +194,24 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 pb-16 overflow-y-auto h-full">
 
-      <PageBreadcrumbs items={[
-        { label: "Schedules", onClick: () => navigate(backPath) },
-        { label: schedule.title || "Schedule Details" }
-      ]} />
+      {/* ── INLINE NATIVE BREADCRUMB ── */}
+      <div className="mb-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <div role="button" tabIndex={0} onClick={() => navigate(backPath)} className="hover:text-foreground cursor-pointer bg-transparent border-none p-0 inline-flex">
+                  Schedules
+                </div>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{schedule.title || "Schedule Details"}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
 
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-border pb-6 mb-8">
