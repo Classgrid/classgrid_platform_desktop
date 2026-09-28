@@ -487,12 +487,6 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
         title="Delete Schedule?"
         description="Are you sure you want to cancel and permanently delete this scheduled task?"
         warningMessage="This action cannot be undone."
-        confirmationSteps={[
-          {
-            label: "To confirm, type",
-            value: "delete",
-          }
-        ]}
         actionLabel="Delete Schedule"
         cancelLabel="Cancel"
         onConfirm={handleDelete}
