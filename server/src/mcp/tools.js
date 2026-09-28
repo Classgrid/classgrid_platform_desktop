@@ -424,17 +424,19 @@ export const getMcpTools = () => [
   },
   {
     name: 'create_schedule',
-    description: 'Schedule an email reminder or task for a specific date and time. Use this when the user mentions a future event, exam, task, or deadline they want to be reminded about. Always pre-write a full HTML email body. CRITICAL: The title and description MUST be highly specific to the context (e.g. "Payment Reminder: Fall Semester Tuition Fee - $1500" instead of "Fee Reminder"). DO NOT use generic names.',
+    description: 'Schedule an email reminder or task for a specific date and time. Use this when the user mentions a future event, exam, task, or deadline they want to be reminded about. Always pre-write a full HTML email body. CRITICAL: The title and description MUST be highly specific to the context (e.g. "Payment Reminder: Fall Semester Tuition Fee - $1500" instead of "Fee Reminder"). DO NOT use generic names. You MUST also provide a summary and action_info for the schedule card display (these are SEPARATE from the email content).',
     inputSchema: {
       type: 'object',
       properties: {
         title: { type: 'string', description: 'Highly specific title of the scheduled task including names, amounts, or context (e.g. "Math 101 Midterm Exam Reminder")' },
         description: { type: 'string', description: 'Detailed summary of what the reminder is about, including all provided context and information.' },
+        summary: { type: 'string', description: 'A short one-line summary shown on the schedule card (e.g. "Reminder to pay ₹15,000 tuition fee before Oct 5"). This is NOT the email subject — it is for UI display only.' },
+        action_info: { type: 'string', description: 'Detailed plain-text information shown when the user clicks the schedule card. Include all relevant details like amounts, dates, links, names, instructions. This is NOT the email body — it is for UI display only.' },
         scheduled_at: { type: 'string', description: 'ISO 8601 datetime string for when to send the email (e.g. 2026-10-06T10:00:00.000Z)' },
-        email_subject: { type: 'string', description: 'Subject line for the email' },
+        email_subject: { type: 'string', description: 'Subject line for the email that will be sent' },
         email_body: { type: 'string', description: 'Full beautiful HTML email body with inline CSS to send at scheduled time' }
       },
-      required: ['title', 'scheduled_at', 'email_subject', 'email_body']
+      required: ['title', 'scheduled_at', 'email_subject', 'email_body', 'summary', 'action_info']
     }
   }
 ];
@@ -455,6 +457,8 @@ export const handleToolCall = async (name, args, context = {}) => {
           organization_id: user?.organization_id,
           title: args.title,
           description: args.description || '',
+          summary: args.summary || '',
+          action_info: args.action_info || '',
           scheduled_at: new Date(args.scheduled_at),
           email_subject: args.email_subject,
           email_body: args.email_body,

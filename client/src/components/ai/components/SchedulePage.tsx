@@ -24,12 +24,13 @@ interface AiSchedule {
   _id: string;
   title: string;
   description: string;
+  summary?: string;
+  action_info?: string;
   scheduled_at: string;
   status: ScheduleStatus;
   error_message?: string;
-  email_subject?: string;
-  email_body?: string;
   created_at: string;
+  createdAt?: string;
 }
 
 interface ScheduleSuggestion {
@@ -396,10 +397,10 @@ export const SchedulePage: React.FC = () => {
       <Dialog open={!!selectedSchedule} onOpenChange={(open) => !open && setSelectedSchedule(null)}>
         <DialogContent className="sm:max-w-[550px] bg-background dark:bg-[#111111] border-border/40 p-0 overflow-hidden">
           <div className="p-6">
-            <DialogHeader className="mb-6">
+            <DialogHeader className="mb-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <DialogTitle className="text-xl font-bold mb-2">{selectedSchedule?.title}</DialogTitle>
+                  <DialogTitle className="text-xl font-bold mb-1.5">{selectedSchedule?.title}</DialogTitle>
                   <DialogDescription className="text-sm">
                     {selectedSchedule?.description || "No description provided."}
                   </DialogDescription>
@@ -408,30 +409,50 @@ export const SchedulePage: React.FC = () => {
               </div>
             </DialogHeader>
 
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 text-sm text-muted-foreground bg-muted/40 dark:bg-white/5 p-3 rounded-xl border border-border/40">
-                <Clock className="w-4 h-4 shrink-0 text-primary" />
-                <span>
-                  {selectedSchedule?.scheduled_at && format(new Date(selectedSchedule.scheduled_at), "EEEE, MMMM d, yyyy 'at' h:mm a")}
-                </span>
+            <div className="space-y-4">
+              {/* Scheduled Time */}
+              <div className="flex items-center gap-3 text-sm bg-muted/40 dark:bg-white/5 p-3 rounded-xl border border-border/40">
+                <Calendar className="w-4 h-4 shrink-0 text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Scheduled For</p>
+                  <p className="font-medium text-foreground text-sm">
+                    {selectedSchedule?.scheduled_at && format(new Date(selectedSchedule.scheduled_at), "EEEE, MMMM d, yyyy 'at' h:mm a")}
+                  </p>
+                </div>
               </div>
 
-              {(selectedSchedule?.email_subject || selectedSchedule?.email_body) && (
+              {/* Created At */}
+              <div className="flex items-center gap-3 text-sm bg-muted/40 dark:bg-white/5 p-3 rounded-xl border border-border/40">
+                <Clock className="w-4 h-4 shrink-0 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Created</p>
+                  <p className="font-medium text-foreground text-sm">
+                    {(selectedSchedule?.createdAt || selectedSchedule?.created_at) && format(new Date(selectedSchedule.createdAt || selectedSchedule.created_at), "MMM d, yyyy 'at' h:mm a")}
+                  </p>
+                </div>
+              </div>
+
+              {/* Summary */}
+              {selectedSchedule?.summary && (
                 <div className="border border-border/40 rounded-xl overflow-hidden">
-                  <div className="bg-muted/40 dark:bg-white/5 px-4 py-3 border-b border-border/40">
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Summary</h4>
-                    <p className="text-sm font-medium text-foreground">{selectedSchedule?.email_subject}</p>
-                  </div>
-                  <div className="px-4 py-4 max-h-[300px] overflow-y-auto">
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Action Information</h4>
-                    <div 
-                      className="text-sm prose prose-sm dark:prose-invert max-w-none text-foreground"
-                      dangerouslySetInnerHTML={{ __html: selectedSchedule?.email_body || "" }} 
-                    />
+                  <div className="bg-muted/40 dark:bg-white/5 px-4 py-3">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Summary</h4>
+                    <p className="text-sm font-medium text-foreground">{selectedSchedule.summary}</p>
                   </div>
                 </div>
               )}
 
+              {/* Action Information */}
+              {selectedSchedule?.action_info && (
+                <div className="border border-border/40 rounded-xl overflow-hidden">
+                  <div className="px-4 py-4 max-h-[250px] overflow-y-auto">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Details & Information</h4>
+                    <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{selectedSchedule.action_info}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error */}
               {selectedSchedule?.error_message && (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />

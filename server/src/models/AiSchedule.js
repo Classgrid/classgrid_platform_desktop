@@ -6,6 +6,8 @@ const aiScheduleSchema = new mongoose.Schema({
   organization_id: { type: String },
   title: { type: String, required: true },
   description: { type: String },
+  summary: { type: String },
+  action_info: { type: String },
   scheduled_at: { type: Date, required: true },
   email_subject: { type: String, required: true },
   email_body: { type: String, required: true },
