@@ -355,57 +355,67 @@ export function LibraryPage() {
                 onClick={() => setSelectedFileToPreview(file)}
               >
                 {/* Preview Area */}
-                <div className={`w-full bg-accent/30 flex items-center justify-center relative overflow-hidden ${file.file_type === 'image' ? '' : file.file_type === 'audio' ? 'p-4' : 'aspect-square'}`}>
-                  {file.file_type === 'image' ? (
-                    <img src={file.cdn_url} alt={file.original_name} className="w-full h-auto object-cover block" />
-                  ) : file.file_type === 'video' ? (
-                    <video 
-                      src={file.cdn_url} 
-                      className="w-full h-full object-cover" 
-                      muted 
-                      preload="metadata"
-                      onMouseEnter={(e) => { try { (e.target as HTMLVideoElement).play(); } catch {} }}
-                      onMouseLeave={(e) => { try { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; } catch {} }}
-                    />
-                  ) : file.file_type === 'pdf' ? (
-                    <div className="w-full h-full relative">
-                      <iframe 
-                        src={`${file.cdn_url}#toolbar=0&navpanes=0&scrollbar=0`} 
-                        className="w-full h-full pointer-events-none" 
-                        title={file.original_name}
-                        style={{ border: 'none' }}
-                      />
-                      <div className="absolute bottom-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase">PDF</div>
-                    </div>
-                  ) : file.file_type === 'audio' ? (
-                    <div className="w-full flex flex-col items-center gap-3 py-2">
-                      <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center">
-                        <FileAudio className="w-7 h-7 text-emerald-500" />
-                      </div>
-                      <audio 
-                        src={file.cdn_url} 
-                        controls 
-                        preload="metadata" 
-                        className="w-full h-8 opacity-80"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2">
-                      {getFileIcon(file.file_type)}
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-accent px-2 py-0.5 rounded">
-                        {file.original_name.split('.').pop()?.toUpperCase() || 'FILE'}
-                      </span>
-                    </div>
-                  )}
+                {(() => {
+                  const ext = file.original_name.split('.').pop()?.toLowerCase() || '';
+                  const isAudio = file.file_type === 'audio' || file.mime_type?.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'm4a'].includes(ext);
+                  const isVideo = file.file_type === 'video' || file.mime_type?.startsWith('video/') || ['mp4', 'webm', 'mov'].includes(ext);
+                  const isPdf = file.file_type === 'pdf' || file.mime_type === 'application/pdf' || ext === 'pdf';
+                  const isImage = file.file_type === 'image' || file.mime_type?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
                   
-                  {/* Source Badge */}
-                  {file.source === 'generated' && (
-                    <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm z-10">
-                      AI Generated
+                  return (
+                    <div className={`w-full bg-accent/30 flex items-center justify-center relative overflow-hidden ${isImage ? '' : isAudio ? 'p-4' : 'aspect-square'}`}>
+                      {isImage ? (
+                        <img src={file.cdn_url} alt={file.original_name} className="w-full h-auto object-cover block" />
+                      ) : isVideo ? (
+                        <video 
+                          src={file.cdn_url} 
+                          className="w-full h-full object-cover" 
+                          muted 
+                          preload="metadata"
+                          onMouseEnter={(e) => { try { (e.target as HTMLVideoElement).play(); } catch {} }}
+                          onMouseLeave={(e) => { try { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; } catch {} }}
+                        />
+                      ) : isPdf ? (
+                        <div className="w-full h-full relative">
+                          <iframe 
+                            src={`${file.cdn_url}#toolbar=0&navpanes=0&scrollbar=0`} 
+                            className="w-full h-full pointer-events-none" 
+                            title={file.original_name}
+                            style={{ border: 'none' }}
+                          />
+                          <div className="absolute bottom-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase">PDF</div>
+                        </div>
+                      ) : isAudio ? (
+                        <div className="w-full flex flex-col items-center gap-3 py-2">
+                          <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                            <FileAudio className="w-7 h-7 text-emerald-500" />
+                          </div>
+                          <audio 
+                            src={file.cdn_url} 
+                            controls 
+                            preload="metadata" 
+                            className="w-full h-8 opacity-80"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          {getFileIcon(file.file_type)}
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-accent px-2 py-0.5 rounded">
+                            {ext.toUpperCase() || 'FILE'}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Source Badge */}
+                      {file.source === 'generated' && (
+                        <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm z-10">
+                          AI Generated
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  );
+                })()}
 
                 {/* Info Area */}
                 <div className="p-3 bg-background border-t border-border/50 flex justify-between items-start gap-2">
