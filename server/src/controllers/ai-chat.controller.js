@@ -2523,6 +2523,7 @@ export const uploadChatImage = async (req, res) => {
                 const AiLibraryFile = (await import('../models/AiLibraryFile.js')).default;
                 const fileType = mimeType.startsWith('image/') ? 'image' 
                                : mimeType.startsWith('video/') ? 'video' 
+                               : mimeType.startsWith('audio/') ? 'audio'
                                : mimeType.includes('pdf') ? 'pdf' 
                                : mimeType.includes('presentation') || mimeType.includes('powerpoint') || mimeType.includes('pptx') ? 'pptx' 
                                : mimeType.includes('document') || mimeType.includes('word') || mimeType.includes('docx') ? 'doc' 

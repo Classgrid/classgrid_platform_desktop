@@ -9,6 +9,7 @@ function getFileType(mimeType) {
   if (!mimeType) return 'other';
   if (mimeType.startsWith('image/')) return 'image';
   if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType.startsWith('audio/')) return 'audio';
   if (mimeType === 'application/pdf') return 'pdf';
   if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return 'pptx';
   if (mimeType.includes('word') || mimeType.includes('document')) return 'doc';
