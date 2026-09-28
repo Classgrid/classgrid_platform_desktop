@@ -316,6 +316,8 @@ export function LibraryPage() {
                 <SelectContent>
                   <SelectItem value="newest">Newest first</SelectItem>
                   <SelectItem value="oldest">Oldest first</SelectItem>
+                  <SelectItem value="largest">Largest first</SelectItem>
+                </SelectContent>
               </Select>
             </div>
           </div>
