@@ -9,6 +9,7 @@ import { Button } from '@/components/marketing_ui/button';
 import { Skeleton } from '@/components/marketing_ui/skeleton';
 import { NikhilTimeCalendar } from '@/components/marketing_ui/nikhil_time_calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/marketing_ui/dropdown-menu';
+import { DangerConfirmDialog } from '@/components/marketing_ui/danger-confirm-dialog';
 import { getSocket } from '@/lib/socketClient';
 import FilePreviewModal from './FilePreviewModal';
 import { DocsImageViewer } from './DocsImageViewer';
@@ -408,34 +409,20 @@ export function LibraryPage() {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {deleteId && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setDeleteId(null)}>
-          <div className="bg-background border border-border/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-2">Delete file?</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              This will permanently delete the file and free up your storage quota. This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button 
-                onClick={() => setDeleteId(null)}
-                className="px-4 py-2 rounded-xl text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
-                disabled={isDeleting}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => handleDelete(deleteId)}
-                className="px-4 py-2 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors flex items-center gap-2 disabled:opacity-50"
-                disabled={isDeleting}
-              >
-                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DangerConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => {
+          if (!open) setDeleteId(null);
+        }}
+        title="Delete File"
+        description="Are you sure you want to permanently delete this file? This action cannot be undone."
+        warningMessage="This file will be permanently removed from your library and storage quota."
+        actionLabel="Delete"
+        isLoading={isDeleting}
+        onConfirm={() => {
+          if (deleteId) handleDelete(deleteId);
+        }}
+      />
 
       {/* File Previews */}
       {selectedFileToPreview && selectedFileToPreview.file_type !== 'image' && (
