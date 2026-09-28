@@ -9,6 +9,14 @@ import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { getSocket } from "@/lib/socketClient";
 import { useNavigate, useLocation } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose
+} from "@/components/marketing_ui/dialog";
 
 type ScheduleStatus = "pending" | "sent" | "failed" | "cancelled";
 
@@ -19,6 +27,8 @@ interface AiSchedule {
   scheduled_at: string;
   status: ScheduleStatus;
   error_message?: string;
+  email_subject?: string;
+  email_body?: string;
   created_at: string;
 }
 
@@ -124,6 +134,7 @@ export const SchedulePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | ScheduleStatus>("all");
   const [taskInput, setTaskInput] = useState("");
+  const [selectedSchedule, setSelectedSchedule] = useState<AiSchedule | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -300,9 +311,12 @@ export const SchedulePage: React.FC = () => {
                 <div className="w-10 h-10 rounded-lg bg-muted/50 dark:bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
                   {getStatusIcon(schedule.status)}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div 
+                  className="flex-1 min-w-0 cursor-pointer"
+                  onClick={() => setSelectedSchedule(schedule)}
+                >
                   <div className="flex items-center gap-2 mb-0.5">
-                    <h3 className="font-semibold text-sm truncate">{schedule.title}</h3>
+                    <h3 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{schedule.title}</h3>
                     {getStatusBadge(schedule.status)}
                   </div>
                   {schedule.description && (
@@ -311,10 +325,7 @@ export const SchedulePage: React.FC = () => {
                     </p>
                   )}
                   <span className="text-xs text-muted-foreground/70">
-                    {schedule.status === "pending" 
-                      ? `Next run ${formatDistanceToNow(new Date(schedule.scheduled_at), { addSuffix: true })}`
-                      : format(new Date(schedule.scheduled_at), "MMM d, yyyy 'at' h:mm a")
-                    }
+                    {format(new Date(schedule.scheduled_at), "EEEE, MMM d, yyyy 'at' h:mm a")}
                   </span>
                   {schedule.error_message && (
                     <p className="text-xs text-red-500 mt-1 truncate">{schedule.error_message}</p>

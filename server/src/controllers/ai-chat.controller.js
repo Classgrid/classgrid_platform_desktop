@@ -2530,7 +2530,7 @@ export const uploadChatImage = async (req, res) => {
 
                 await AiLibraryFile.create({
                     user_email: req.user.email || "unknown@classgrid.in",
-                    user_id: req.user.id || req.user._id,
+                    user_id: req.user._id,
                     organization_id: req.user.organization_id || null,
                     original_name: fileName,
                     file_key: fileKey,
@@ -2540,8 +2540,9 @@ export const uploadChatImage = async (req, res) => {
                     size_bytes: size || 0,
                     source: 'uploaded'
                 });
+                console.log(`[AI Library] ✅ Chat upload saved to Library: "${fileName}" for user ${req.user.email}`);
             } catch (libErr) {
-                console.error("Failed to save to AiLibraryFile:", libErr);
+                console.error("[AI Library] ❌ Failed to save chat upload to AiLibraryFile:", libErr.message, libErr);
             }
         }
 
