@@ -1689,6 +1689,16 @@ export const handleToolCall = async (name, args, context = {}) => {
       }
 
       try {
+        const decodeGoogleId = (id) => {
+            if (!id) return id;
+            if (/^\d+$/.test(id)) return id;
+            try { const dec = Buffer.from(id, 'base64').toString('utf-8'); return /^\d+$/.test(dec) ? dec : id; } catch(e) { return id; }
+        };
+        args.courseId = decodeGoogleId(args.courseId);
+        args.courseworkId = decodeGoogleId(args.courseworkId);
+        args.announcementId = decodeGoogleId(args.announcementId);
+        args.submissionId = decodeGoogleId(args.submissionId);
+
         const { google } = await import('googleapis');
         const oauth2Client = new google.auth.OAuth2(
           process.env.GOOGLE_CLIENT_ID,
@@ -1893,6 +1903,25 @@ export const handleToolCall = async (name, args, context = {}) => {
             requestBody: { removeLabelIds: ['UNREAD'] }
           });
           data = { message: "Email marked as read successfully." };
+        } else if (operation === 'send_email') {
+          if (!args.to || !args.subject || !args.body) throw new Error("to, subject, and body are required for send_email");
+          const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+          const utf8Subject = `=?utf-8?B?${Buffer.from(args.subject).toString('base64')}?=`;
+          const messageParts = [
+            `To: ${args.to}`,
+            `Subject: ${utf8Subject}`,
+            `MIME-Version: 1.0`,
+            `Content-Type: text/html; charset=utf-8`,
+            '',
+            args.body,
+          ];
+          const message = messageParts.join('\n');
+          const encodedMessage = Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+          await gmail.users.messages.send({
+            userId: 'me',
+            requestBody: { raw: encodedMessage }
+          });
+          data = { message: "Email sent successfully!" };
         } else if (operation === 'get_form') {
           if (!args.formId) throw new Error("formId is required for get_form");
           const forms = google.forms({ version: 'v1', auth: oauth2Client });
@@ -2001,6 +2030,19 @@ export const handleToolCall = async (name, args, context = {}) => {
           const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
           const res = await classroom.courses.courseWork.list({ courseId: args.courseId, pageSize: limit, orderBy: 'updateTime desc' });
           data = res.data.courseWork || [];
+        } else if (operation === 'create_classroom_assignment') {
+          if (!args.courseId || !args.title) throw new Error("courseId and title are required for create_classroom_assignment");
+          const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
+          const res = await classroom.courses.courseWork.create({
+            courseId: args.courseId,
+            requestBody: {
+              title: args.title,
+              description: args.description || '',
+              workType: 'ASSIGNMENT',
+              state: 'PUBLISHED',
+            }
+          });
+          data = { message: "Assignment created successfully!", coursework: res.data };
         } else if (operation === 'get_classroom_coursework') {
           if (!args.courseId || !args.courseworkId) throw new Error("courseId and courseworkId are required for get_classroom_coursework");
           const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
