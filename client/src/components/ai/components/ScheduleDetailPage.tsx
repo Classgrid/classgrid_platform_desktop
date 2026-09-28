@@ -70,6 +70,7 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Derive back path from URL
   const pathParts = location.pathname.split("/");
@@ -90,7 +91,7 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
           if (isInitial && res.data.schedule.scheduled_at) {
             setSelectedDate(new Date(res.data.schedule.scheduled_at));
           }
-          
+
           // Stop polling if status is no longer pending
           if (res.data.schedule.status !== 'pending' && interval) {
             clearInterval(interval);
@@ -146,11 +147,11 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
     if (!schedule || !selectedDate) return;
     try {
       setIsUpdating(true);
-      
+
       const res = await api.put(`/api/ai/schedules/${schedule._id}`, {
         scheduled_at: selectedDate.toISOString(),
       });
-      
+
       if (res.data.success && res.data.schedule) {
         setSchedule(res.data.schedule);
         toast.success("Schedule updated successfully");
@@ -241,14 +242,6 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
           </Button>
         </div>
       </div>
-      
-      <DangerConfirmDialog 
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Delete Schedule"
-        description="Are you sure you want to permanently delete this schedule? This action cannot be undone."
-        onConfirm={handleDelete}
-      />
 
       {/* ── 12-COLUMN GRID ── */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
@@ -317,12 +310,12 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
           {schedule.status === "pending" && (
             <SectionCard title="Reschedule Task" subtitle="Change the scheduled date and time">
               <div className="flex flex-col gap-4">
-                <NikhilTimeCalendar 
-                  value={selectedDate} 
-                  onChange={setSelectedDate} 
+                <NikhilTimeCalendar
+                  value={selectedDate}
+                  onChange={setSelectedDate}
                 />
                 <div className="flex items-center gap-3 mt-2">
-                  <button 
+                  <button
                     onClick={handleUpdateSchedule}
                     disabled={isUpdating || !selectedDate || selectedDate.getTime() === new Date(schedule.scheduled_at).getTime()}
                     className="h-10 px-4 rounded-xl text-sm font-medium flex items-center justify-center bg-[#2C2C2C] text-[#F0EFED] dark:bg-[#F0EFED] dark:text-[#2C2C2C] disabled:opacity-50 transition-opacity cursor-pointer"
@@ -440,9 +433,8 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
 
                         {/* Final Step: Completed / Failed / Pending */}
                         <div className="relative">
-                          <div className={`absolute -left-6 top-1 w-3.5 h-3.5 rounded-full border-2 border-background z-10 ${
-                            isCompleted ? "bg-emerald-500" : isFailed ? "bg-red-500" : "bg-muted-foreground/30"
-                          }`} />
+                          <div className={`absolute -left-6 top-1 w-3.5 h-3.5 rounded-full border-2 border-background z-10 ${isCompleted ? "bg-emerald-500" : isFailed ? "bg-red-500" : "bg-muted-foreground/30"
+                            }`} />
                           <p className="text-xs font-medium text-muted-foreground">
                             {isCompleted ? "Completed" : isFailed ? "Failed" : "Pending"}
                           </p>
@@ -479,21 +471,27 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
 
             {/* DELETE */}
             <div className="border-t border-border/40 pt-4">
-              <DangerConfirmDialog
-                title="Delete Schedule?"
-                description="Are you sure you want to cancel and delete this scheduled task? This cannot be undone."
-                onConfirm={handleDelete}
-              >
-                <Button variant="destructive" className="w-full h-11 rounded-xl text-sm font-bold">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Schedule
-                </Button>
-              </DangerConfirmDialog>
+              <Button onClick={() => setDeleteOpen(true)} variant="destructive" className="w-full h-11 rounded-xl text-sm font-bold">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Schedule
+              </Button>
             </div>
 
           </div>
         </div>
       </div>
+
+      <DangerConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Schedule?"
+        description="Are you sure you want to cancel and permanently delete this scheduled task?"
+        warningMessage="This action cannot be undone."
+        actionLabel="Delete Schedule"
+        cancelLabel="Cancel"
+        onConfirm={handleDelete}
+        variant="danger"
+      />
     </div>
   );
 };
