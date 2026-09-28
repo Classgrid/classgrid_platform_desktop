@@ -4,7 +4,7 @@ import { Calendar, Trash2, CheckCircle2, Clock, XCircle, AlertCircle, RefreshCw 
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
 import { toast } from "sonner";
-import api from "@/lib/apiClient";
+import { apiClient as api } from "@/lib/apiClient";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 
