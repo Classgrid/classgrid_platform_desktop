@@ -386,9 +386,19 @@ export function LibraryPage() {
                           <div className="absolute bottom-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase">PDF</div>
                         </div>
                       ) : isAudio ? (
-                        <div className="w-full flex flex-col items-center gap-3 py-2">
-                          <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center">
-                            <FileAudio className="w-7 h-7 text-emerald-500" />
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-4">
+                          <div className="w-20 h-20 drop-shadow-lg shrink-0 transition-transform group-hover:scale-105">
+                            <svg width="100%" height="100%" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                              <defs>
+                                <linearGradient id="audioGradient2" x1="10%" y1="90%" x2="90%" y2="10%">
+                                  <stop offset="0%" stopColor="#0359b5" />
+                                  <stop offset="40%" stopColor="#0681df" />
+                                  <stop offset="100%" stopColor="#14e3b7" />
+                                </linearGradient>
+                              </defs>
+                              <circle cx="60" cy="60" r="60" fill="url(#audioGradient2)" />
+                              <path d="M78.5 28.5L46.5 37.5C45.2 37.9 44.2 39.1 44.2 40.5V74.2C41.7 72.2 38.6 71 35.2 71C26.8 71 20 77.8 20 86.2C20 94.6 26.8 101.4 35.2 101.4C43.6 101.4 50.4 94.6 50.4 86.2V51.8L76.8 44.4V65.8C74.3 63.8 71.2 62.6 67.8 62.6C59.4 62.6 52.6 69.4 52.6 77.8C52.6 86.2 59.4 93 67.8 93C76.2 93 83 86.2 83 77.8V31.5C83 29.5 81 27.8 78.5 28.5Z" fill="white" />
+                            </svg>
                           </div>
                           <audio 
                             src={file.cdn_url} 
