@@ -17,7 +17,11 @@ const aiScheduleSchema = new mongoose.Schema({
     default: 'pending' 
   },
   sent_at: { type: Date },
-  error_message: { type: String }
+  error_message: { type: String },
+  reschedule_history: [{
+    previous_date: Date,
+    rescheduled_at: { type: Date, default: Date.now }
+  }]
 }, { timestamps: true });
 
 const AiSchedule = mongoose.model('AiSchedule', aiScheduleSchema);

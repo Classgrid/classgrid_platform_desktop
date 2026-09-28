@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import {
-  ArrowLeft,
   Calendar,
   Clock,
   Mail,
@@ -22,6 +21,7 @@ import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-di
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { toast } from "sonner";
 import { apiClient as api } from "@/lib/apiClient";
+import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
 
 type ScheduleStatus = "pending" | "sent" | "failed" | "cancelled";
 
@@ -174,36 +174,24 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 pb-16 overflow-y-auto h-full">
 
-      {/* ── BREADCRUMB HEADER ── */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-        <span 
-          className="cursor-pointer hover:text-foreground transition-colors"
-          onClick={() => navigate(backPath)}
-        >
-          Schedules
-        </span>
-        <span>/</span>
-        <span className="text-foreground font-medium">Schedule Details</span>
-      </div>
+      {/* ── BREADCRUMB (renders in top bar like OrgDetailsPage) ── */}
+      <PageBreadcrumbs items={[
+        { label: "Schedules", href: backPath },
+        { label: schedule.title }
+      ]} />
 
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-border pb-6 mb-8">
         <div className="flex flex-col">
           <div className="flex items-center gap-3 mb-1">
-            <button
-              onClick={() => navigate(backPath)}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{schedule.title}</h1>
             {getStatusBadge(schedule.status)}
           </div>
           {schedule.description && (
-            <p className="text-muted-foreground mt-1 text-sm pl-9">{schedule.description}</p>
+            <p className="text-muted-foreground mt-1 text-sm">{schedule.description}</p>
           )}
           {createdDateStr && (
-            <p className="text-muted-foreground text-xs mt-1 pl-9">
+            <p className="text-muted-foreground text-xs mt-1">
               Created on {format(new Date(createdDateStr), "dd MMM yyyy, hh:mm a")}
             </p>
           )}
@@ -310,7 +298,7 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
 
         {/* RIGHT SIDEBAR (col-span-4) */}
         <div className="xl:col-span-4 space-y-6">
-          <div className="sticky top-6 space-y-6">
+          <div className="sticky top-6 space-y-6 max-h-[calc(100vh-120px)] overflow-y-auto pr-1">
 
             {/* STATUS CARD */}
             <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
@@ -342,29 +330,58 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
               </div>
             </div>
 
-            {/* TIMELINE CARD */}
+            {/* TIMELINE CARD — vertical stepper */}
             <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
               <div className="bg-muted/30 px-5 py-4 border-b">
                 <h2 className="font-semibold text-card-foreground text-sm uppercase tracking-wide">Timeline</h2>
               </div>
-              <div className="p-5 space-y-4">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground block mb-1">Created</label>
-                  <p className="text-sm font-medium text-foreground">
-                    {createdDateStr ? format(new Date(createdDateStr), "dd MMM yyyy") : "—"}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {createdDateStr ? format(new Date(createdDateStr), "hh:mm a") : ""}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground block mb-1">Scheduled For</label>
-                  <p className="text-sm font-medium text-foreground">
-                    {format(new Date(schedule.scheduled_at), "dd MMM yyyy")}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {format(new Date(schedule.scheduled_at), "hh:mm a")} · IST
-                  </p>
+              <div className="p-5">
+                <div className="relative pl-6">
+                  {/* vertical line */}
+                  <div className="absolute left-[7px] top-1.5 bottom-1.5 w-px bg-border" />
+
+                  {/* Created */}
+                  <div className="relative pb-5">
+                    <div className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-background z-10" />
+                    <p className="text-xs font-medium text-muted-foreground">Created</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {createdDateStr ? format(new Date(createdDateStr), "dd MMM yyyy") : "—"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {createdDateStr ? format(new Date(createdDateStr), "hh:mm a") : ""}
+                    </p>
+                  </div>
+
+                  {/* Reschedule history entries */}
+                  {(schedule as any).reschedule_history?.map((entry: any, i: number) => (
+                    <div key={i} className="relative pb-5">
+                      <div className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-amber-500 border-2 border-background z-10" />
+                      <p className="text-xs font-medium text-muted-foreground">Rescheduled</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {format(new Date(entry.previous_date), "dd MMM yyyy")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {format(new Date(entry.previous_date), "hh:mm a")} → moved on {format(new Date(entry.rescheduled_at), "dd MMM, hh:mm a")}
+                      </p>
+                    </div>
+                  ))}
+
+                  {/* Current Scheduled Date */}
+                  <div className="relative">
+                    <div className={`absolute -left-6 top-1 w-3.5 h-3.5 rounded-full border-2 border-background z-10 ${
+                      schedule.status === "sent" ? "bg-emerald-500" : 
+                      schedule.status === "failed" ? "bg-red-500" : "bg-blue-500"
+                    }`} />
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {schedule.status === "sent" ? "Completed" : schedule.status === "failed" ? "Failed" : "Scheduled For"}
+                    </p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {format(new Date(schedule.scheduled_at), "dd MMM yyyy")}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {format(new Date(schedule.scheduled_at), "hh:mm a")} · IST
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

@@ -65,6 +65,13 @@ export const updateSchedule = async (req, res) => {
     }
     
     if (scheduled_at) {
+      if (schedule.scheduled_at && schedule.scheduled_at.getTime() !== new Date(scheduled_at).getTime()) {
+        schedule.reschedule_history = schedule.reschedule_history || [];
+        schedule.reschedule_history.push({
+          previous_date: schedule.scheduled_at,
+          rescheduled_at: new Date()
+        });
+      }
       schedule.scheduled_at = new Date(scheduled_at);
       if (schedule.status !== 'pending') schedule.status = 'pending';
     }
