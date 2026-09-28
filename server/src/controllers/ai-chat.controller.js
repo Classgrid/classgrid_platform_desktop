@@ -2470,13 +2470,43 @@ export const getChatSessionMessages = async (req, res) => {
 
 export const uploadChatImage = async (req, res) => {
     try {
-        const { fileName, mimeType } = req.body;
+        const { fileName, mimeType, size } = req.body;
         if (!fileName || !mimeType) {
             return res.status(400).json({ error: "fileName and mimeType required" });
         }
 
         const safeFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const result = await getPresignedUploadUrl(fileName, mimeType, 3600, `ai-chat-uploads/${Date.now()}-${safeFileName}`);
+        const fileKey = `ai-chat-uploads/${Date.now()}-${safeFileName}`;
+        const result = await getPresignedUploadUrl(fileName, mimeType, 3600, fileKey);
+
+        // Save to AI Library so it shows up in the unified Library tab
+        if (req.user && (req.user.email || req.user.id)) {
+            try {
+                const AiLibraryFile = (await import('../models/AiLibraryFile.js')).default;
+                const fileType = mimeType.startsWith('image/') ? 'image' 
+                               : mimeType.startsWith('video/') ? 'video' 
+                               : mimeType.includes('pdf') ? 'pdf' 
+                               : mimeType.includes('presentation') || mimeType.includes('powerpoint') || mimeType.includes('pptx') ? 'pptx' 
+                               : mimeType.includes('document') || mimeType.includes('word') || mimeType.includes('docx') ? 'doc' 
+                               : 'other';
+
+                await AiLibraryFile.create({
+                    user_email: req.user.email || "unknown@classgrid.in",
+                    user_id: req.user.id || req.user._id,
+                    organization_id: req.user.organization_id || null,
+                    original_name: fileName,
+                    file_key: fileKey,
+                    cdn_url: result.fileUrl,
+                    mime_type: mimeType,
+                    file_type: fileType,
+                    size_bytes: size || 0,
+                    source: 'uploaded'
+                });
+            } catch (libErr) {
+                console.error("Failed to save to AiLibraryFile:", libErr);
+            }
+        }
+
         res.json(result);
     } catch (e) {
         console.error("Error generating presigned URL for AI chat:", e);

@@ -792,6 +792,11 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         let outputText = JSON.stringify(result, aiSafetyReplacer, 2);
 
+        if (outputText === "[]" || outputText === "{}" || outputText === "null" || outputText === "undefined") {
+          return {
+            content: [{ type: 'text', text: `QUERY RESULT: []\n(Note to AI: The database returned no records matching your query. DO NOT loop or continuously retry the same query. Stop tool execution and tell the user directly that no data was found for their request.)` }]
+          };
+        }
 
         if (outputText.length > 10000) {
           return {
