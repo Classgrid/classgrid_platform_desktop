@@ -229,17 +229,6 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
             </p>
           )}
         </div>
-        <div className="mt-4 sm:mt-0 flex shrink-0">
-          <Button 
-            variant="destructive" 
-            size="sm" 
-            onClick={() => setDeleteOpen(true)}
-            className="w-full sm:w-auto"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Delete Schedule
-          </Button>
-        </div>
       </div>
 
       <DangerConfirmDialog
@@ -480,14 +469,14 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
               </div>
             </div>
 
-            {/* DELETE */}
-            <div className="border-t border-border/40 pt-4">
-              <Button onClick={() => setDeleteOpen(true)} variant="destructive" className="w-full h-11 rounded-xl text-sm font-bold">
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Schedule
-              </Button>
-            </div>
-
+          </div>
+          
+          {/* ── FIXED BOTTOM DELETE BUTTON ── */}
+          <div className="mt-4 pt-4 border-t border-border/40">
+            <Button onClick={() => setDeleteOpen(true)} variant="destructive" className="w-full h-11 rounded-xl text-sm font-bold">
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Schedule
+            </Button>
           </div>
         </div>
       </div>
@@ -498,6 +487,12 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
         title="Delete Schedule?"
         description="Are you sure you want to cancel and permanently delete this scheduled task?"
         warningMessage="This action cannot be undone."
+        confirmationSteps={[
+          {
+            label: "To confirm, type",
+            value: "delete",
+          }
+        ]}
         actionLabel="Delete Schedule"
         cancelLabel="Cancel"
         onConfirm={handleDelete}
