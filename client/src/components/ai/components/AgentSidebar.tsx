@@ -8,7 +8,7 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
-import { MessageSquare, Plus, Search, Pin, MoreHorizontal, Pencil, Trash2, Share, Copy, Mail, Check, Link2, FileText, ExternalLink, X, Loader2, SquarePen } from "lucide-react";
+import { MessageSquare, Plus, Search, Pin, MoreHorizontal, Pencil, Trash2, Share, Copy, Mail, Check, Link2, FileText, ExternalLink, X, Loader2, SquarePen, Calendar, Library } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from "@/components/marketing_ui/sidebar";
@@ -486,7 +486,31 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 render={
                   <div className="flex items-center gap-3 w-full cursor-pointer">
                     <SquarePen size={20} />
-                    <span className="truncate">New Chat</span>
+                    <span className="truncate font-medium">New Chat</span>
+                  </div>
+                }
+              />
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                tooltip="Schedule"
+                render={
+                  <div className="flex items-center gap-3 w-full cursor-pointer">
+                    <Calendar size={20} />
+                    <span className="truncate font-medium">Schedule</span>
+                  </div>
+                }
+              />
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                tooltip="Library"
+                render={
+                  <div className="flex items-center gap-3 w-full cursor-pointer">
+                    <Library size={20} />
+                    <span className="truncate font-medium">Library</span>
                   </div>
                 }
               />
@@ -577,13 +601,41 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
       ) : (
       <SidebarGroup className="pt-1">
         <div className="px-2 pb-3 mb-3 border-b border-border/50">
-          <Button
-            onClick={handleNewChat}
-            className="w-full justify-start gap-2 h-9 px-3 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="font-medium text-sm">New Chat</span>
-          </Button>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                onClick={handleNewChat}
+                render={
+                  <div className="flex items-center gap-3 w-full cursor-pointer">
+                    <SquarePen size={20} />
+                    <span className="font-medium text-sm">New Chat</span>
+                  </div>
+                }
+              />
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                render={
+                  <div className="flex items-center gap-3 w-full cursor-pointer">
+                    <Calendar size={20} />
+                    <span className="font-medium text-sm">Schedule</span>
+                  </div>
+                }
+              />
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                render={
+                  <div className="flex items-center gap-3 w-full cursor-pointer">
+                    <Library size={20} />
+                    <span className="font-medium text-sm">Library</span>
+                  </div>
+                }
+              />
+            </SidebarMenuItem>
+          </SidebarMenu>
         </div>
 
         <SidebarGroupContent>
