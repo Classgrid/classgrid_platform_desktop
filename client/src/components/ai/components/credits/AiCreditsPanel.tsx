@@ -60,45 +60,51 @@ export function AiCreditsPanel() {
           </div>
         )}
 
-        {/* Credit Usage Progress */}
-        <div className="w-full flex items-start justify-between bg-card border border-border rounded-xl p-6 shadow-sm mb-6">
-            <div className="flex flex-col gap-1 pr-6 min-w-[150px]">
-                <span className="text-sm font-medium text-foreground">
-                    Weekly Usage Limit
-                </span>
-                <span className="text-xs text-muted-foreground">
-                    Resets every Sunday
-                </span>
-                <div className="mt-2 text-xs text-muted-foreground">
-                  <span className="font-semibold text-foreground">{formatNumber(consumed)}</span> / {formatNumber(totalLimit)} tokens
-                </div>
+        {/* AWS Style Purchased Credits Block */}
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-6 border-b border-border gap-4">
+            <div>
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-emerald-500" />
+                Purchased Credits Details
+              </h3>
             </div>
-            
-            <div className="flex-1 flex items-center gap-4 mt-1">
-                <div className="flex-1 h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
-                    <div 
-                        className="h-full bg-blue-500 rounded-full transition-all duration-500"
-                        style={{ width: `${usagePercent}%` }}
-                    />
-                </div>
-                <span className="text-xs text-muted-foreground w-[60px] text-right">
-                    {Math.round(usagePercent)}% used
-                </span>
+            <div className="flex items-center gap-2 text-sm bg-emerald-500/10 text-emerald-600 px-3 py-1.5 rounded-full font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Active
             </div>
-        </div>
-
-        {/* Balances */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-muted/30 border border-border rounded-xl p-5 flex flex-col items-start justify-center">
-            <div className="text-sm font-medium text-muted-foreground">Purchased Credits</div>
-            <div className="text-3xl font-bold text-foreground mt-1">{formatNumber(purchasedCredits)}</div>
-            <div className="text-xs text-muted-foreground mt-1">Never expires</div>
           </div>
-          <div className="bg-muted/30 border border-border rounded-xl p-5 flex flex-col items-start justify-center">
-            <div className="text-sm font-medium text-muted-foreground">Free Weekly Limit</div>
-            <div className="text-3xl font-bold text-foreground mt-1">{formatNumber(totalLimit)}</div>
-            <div className="text-xs text-muted-foreground mt-1">Resets every Sunday</div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+              <div className="text-sm text-muted-foreground mb-1">Status</div>
+              <div className="font-medium text-emerald-500">Active</div>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground mb-1">Issued credit amount</div>
+              <div className="font-semibold text-xl">{formatNumber(purchasedCredits)}</div>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground mb-1">Start date</div>
+              <div className="font-medium">{filteredHistory?.length > 0 ? format(new Date(filteredHistory[filteredHistory.length - 1].createdAt), "MMM dd, yyyy") : "-"}</div>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground mb-1">Expiration date</div>
+              <div className="font-medium">Never</div>
+            </div>
           </div>
+          
+          {purchasedCredits > 0 && (
+            <div className="mt-8 pt-6 border-t border-border">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Amount remaining</span>
+                <span className="font-semibold">{formatNumber(purchasedCredits)} Credits</span>
+              </div>
+              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full w-full" />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Transaction History Table */}
@@ -121,6 +127,7 @@ export function AiCreditsPanel() {
                   date={dateFilter}
                   setDate={setDateFilter}
                   placeholder="Select Date"
+                  showTime={false}
                 />
               </div>
             </div>
