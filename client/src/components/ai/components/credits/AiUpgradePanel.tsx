@@ -77,21 +77,21 @@ export function AiUpgradePanel() {
                   Enter Amount (₹100 - ₹10,000)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-lg">₹</span>
-                  <input 
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-lg z-10">₹</span>
+                  <Input 
                     type="number"
                     min={100}
                     max={10000}
                     value={customAmountStr}
                     onChange={(e) => setCustomAmountStr(e.target.value)}
-                    className="w-full h-14 pl-9 pr-4 text-xl font-bold bg-background border-2 border-border focus:border-amber-500 rounded-lg outline-none transition-colors"
+                    className="w-full h-14 pl-9 pr-4 text-xl font-bold rounded-lg"
                   />
                 </div>
                 
                 <div className="mt-6 p-4 bg-muted border border-border rounded-lg flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">You will receive:</span>
                   <span className="text-lg font-bold text-foreground flex items-center gap-1.5">
-                    <Zap className="w-5 h-5 text-amber-500" />
+                    <Wallet className="w-5 h-5 text-muted-foreground" />
                     {formatNumber(expectedTokens)} Credits
                   </span>
                 </div>
@@ -102,14 +102,14 @@ export function AiUpgradePanel() {
                 )}
               </div>
 
-              <div className="flex justify-end pt-2 border-t border-border/50">
+              <div className="flex justify-end pt-4 mt-2">
                 <Button 
-                  variant="secondary"
+                  variant="ghost"
                   onClick={handleTopUp} 
                   disabled={!isValidAmount || topUpMutation.isPending}
-                  className="min-w-[200px] h-11 text-base"
+                  className="w-full text-muted-foreground hover:text-foreground"
                 >
-                  {topUpMutation.isPending ? "Processing..." : "Proceed to Checkout"}
+                  {topUpMutation.isPending ? "Processing..." : "Purchase Credits"}
                 </Button>
               </div>
             </div>

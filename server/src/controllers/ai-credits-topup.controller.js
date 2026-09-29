@@ -63,9 +63,8 @@ export const createTopupOrder = async (req, res) => {
         // Track in standard Billing Collections (for Phase 21 Dashboard visibility)
         paymentOrder = await PaymentOrder.create({
             organizationId,
-            referenceId: `ai_topup_${Date.now()}`,
-            paymentFlow: "platform_payment",
-            merchantType: "platform",
+            paymentFlow: "CLASSGRID_SUBSCRIPTION",
+            merchantType: "CLASSGRID",
             amountPaise: amountPaise,
             currency: "INR",
             providerOrderId: providerOrder.id,
@@ -97,13 +96,13 @@ export const createTopupOrder = async (req, res) => {
             organization_id: organizationId,
             paymentOrderId: paymentOrder._id,
             paymentAttemptId: paymentAttempt._id,
-            referenceId: paymentOrder.referenceId,
-            referenceModel: "AiCreditTransaction", // Placeholder until success webhook creates the actual AiCreditTransaction
+            referenceId: paymentOrder._id,
+            referenceModel: "SaasInvoice", // Placeholder until success webhook creates the actual AiCreditTransaction
             razorpay_order_id: providerOrder.id,
             amountPaise: amountPaise,
             currency: "INR",
             razorpay_key_id: process.env.RAZORPAY_KEY_ID, // Platform Key
-            payment_type: "AI_TOPUP",
+            payment_type: "saas_invoice",
             return_url: "close_window",
             clientIp: req.ip,
             userAgent: String(req.headers["user-agent"] || "").slice(0, 300),
