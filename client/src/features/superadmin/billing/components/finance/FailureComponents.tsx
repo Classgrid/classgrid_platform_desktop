@@ -303,14 +303,15 @@ export const FailedPaymentTable: React.FC<{
     {
       key: "customer",
       header: "Customer",
-      width: "w-[200px]",
+      width: "w-[300px]",
       render: (_: any, fail: any) => {
         const name = fail.userName || "Unknown";
         const initial = name.charAt(0).toUpperCase();
+        const picture = fail.profilePicture || fail.userId?.profilePicture || fail.user?.profilePicture;
         return (
           <div className="flex items-center gap-3 py-1">
-            {fail.profilePicture ? (
-              <img src={fail.profilePicture} alt={name} className="h-8 w-8 rounded-full object-cover border border-border flex-shrink-0" />
+            {picture ? (
+              <img src={picture} alt={name} className="h-8 w-8 rounded-full object-cover border border-border flex-shrink-0" />
             ) : (
               <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-medium text-xs">
                 {name?.substring(0, 2).toUpperCase() || "??"}
@@ -320,7 +321,7 @@ export const FailedPaymentTable: React.FC<{
               <span className="font-medium text-sm text-foreground truncate transition-colors" title={name}>
                 {name}
               </span>
-              <span className="text-muted-foreground text-xs truncate">
+              <span className="text-muted-foreground text-xs truncate" title={fail.userEmail}>
                 {fail.userEmail || "No email"}
               </span>
             </div>
