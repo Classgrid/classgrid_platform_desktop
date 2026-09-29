@@ -102,6 +102,8 @@ export const TransactionTable: React.FC<{
             <TableRow>
               <TableHead>Date</TableHead>
               <TableHead>Organization</TableHead>
+              <TableHead>Org ID</TableHead>
+              <TableHead>User ID</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Status</TableHead>
@@ -117,8 +119,14 @@ export const TransactionTable: React.FC<{
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
-                    {tx.organization?.name || tx.orgId}
+                    {tx.organization?.name || tx.orgId || tx.organizationName || "Unknown"}
                   </div>
+                </TableCell>
+                <TableCell className="font-mono text-xs text-muted-foreground">
+                  {tx.orgId || tx.organizationId || "N/A"}
+                </TableCell>
+                <TableCell className="font-mono text-xs text-muted-foreground">
+                  {tx.userId || tx.payer?.id || "N/A"}
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className="font-mono text-xs uppercase bg-muted/50">{tx.type}</Badge>
@@ -138,7 +146,7 @@ export const TransactionTable: React.FC<{
             ))}
             {transactions?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
                   No transactions found matching the criteria.
                 </TableCell>
               </TableRow>

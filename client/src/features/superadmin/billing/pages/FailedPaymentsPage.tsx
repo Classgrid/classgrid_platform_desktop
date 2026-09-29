@@ -1,36 +1,79 @@
+/*
+ * =========================================================================================
+ * 🚨 CRITICAL AI & SYSTEM RULE 🚨
+ * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
+ * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
+ * =========================================================================================
+ */
+
+/**
+ * ==============================================================================
+ * 🚨 AI AGENT WARNING: BREADCRUMB POLICY 🚨
+ * ==============================================================================
+ * NEVER hardcode "Super Admin Dashboard /" as a breadcrumb on any deep dive page.
+ * Deep dive pages or sub-pages MUST accurately reflect the actual parent pages 
+ * they were opened from (e.g., Organizations / [Name] / Configuration / ...).
+ * DO NOT use generic dashboard text for breadcrumbs.
+ * ==============================================================================
+ */
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FailedPaymentsTable, FailedPaymentsOverview } from '../components/finance/FailureComponents';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/marketing_ui/card';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/marketing_ui/select';
+import { SuperadminFilterBar } from '../../components/SuperadminFilterBar';
+import { OrganizationSelector, OrganizationTypeFilter } from '../components/shared/BillingFilterComponents';
 
 const FailedPaymentsPage = () => {
   const navigate = useNavigate();
   const [filterType, setFilterType] = useState('ALL');
+  const [searchInput, setSearchInput] = useState('');
+  const [organizationId, setOrganizationId] = useState('');
+  const [organizationType, setOrganizationType] = useState('ALL');
+
+  const filters = {
+    status: filterType !== 'ALL' ? filterType : undefined,
+    organizationId: organizationId || undefined,
+    organizationType: organizationType !== 'ALL' ? organizationType : undefined,
+    search: searchInput || undefined,
+  };
 
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
-      <div className="flex justify-between items-center p-6 border-b border-border bg-card">
+      <div className="p-6 border-b border-border bg-card">
         <h2 className="text-xl font-semibold tracking-tight">Failed Payments Triage</h2>
-        <div className="flex gap-2 items-center">
-          <Select value={filterType} onValueChange={(value) => value && setFilterType(value)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Failures" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Failures</SelectItem>
-              <SelectItem value="UNRESOLVED">Unresolved</SelectItem>
-              <SelectItem value="RESOLVED">Resolved</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="p-6 space-y-6">
-        <p className="text-sm text-muted-foreground">
+        <p className="mt-1 text-sm text-muted-foreground">
           Triage and recover failed payment attempts. Never automatically retry a charge; generate a new secure checkout link instead.
         </p>
+      </div>
 
+      <div className="w-full relative z-50 p-6 pb-0">
+        <SuperadminFilterBar
+          searchQuery={searchInput}
+          onSearchChange={setSearchInput}
+          searchPlaceholder="Search failed payments, or organization..."
+        >
+          <div className="w-full md:w-[180px] xl:w-[200px]">
+            <OrganizationSelector selectedId={organizationId} onSelect={setOrganizationId} />
+          </div>
+          <div className="w-full md:w-[160px] xl:w-[180px]">
+            <OrganizationTypeFilter value={organizationType} onChange={setOrganizationType} />
+          </div>
+          <div className="w-full md:w-[160px] xl:w-[160px]">
+            <Select value={filterType} onValueChange={(value) => value && setFilterType(value)}>
+              <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Failures</SelectItem>
+                <SelectItem value="UNRESOLVED">Unresolved</SelectItem>
+                <SelectItem value="RESOLVED">Resolved</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </SuperadminFilterBar>
+      </div>
+
+      <div className="p-6 pt-0 space-y-6 mt-4">
         <FailedPaymentsOverview />
 
         <Card>
@@ -40,7 +83,7 @@ const FailedPaymentsPage = () => {
           </CardHeader>
           <CardContent className="p-0">
             <FailedPaymentsTable 
-              filterType={filterType} 
+              filters={filters} 
               onViewDetail={(id) => navigate(`/super-admin/billing/failed-payments/${id}`)} 
             />
           </CardContent>

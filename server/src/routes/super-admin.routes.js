@@ -1947,13 +1947,22 @@ router.get("/system-metrics", async (req, res) => {
 router.get("/transactions", async (req, res) => {
     try {
         const PlatformTransaction = (await import("../models/PlatformTransaction.js")).default;
-        const { orgId, status, type, page = 1, limit = 50 } = req.query;
+        const { orgId, organizationId, status, type, search, page = 1, limit = 50 } = req.query;
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         const filter = {};
-        if (orgId) filter.organizationId = orgId;
-        if (status) filter.status = status;
-        if (type) filter.type = type;
+        if (orgId || organizationId) filter.organizationId = orgId || organizationId;
+        if (status && status !== "ALL") filter.status = status;
+        if (type && type !== "ALL") filter.type = type;
+        if (search) {
+            filter.$or = [
+                { razorpayPaymentId: new RegExp(search, "i") },
+                { razorpayOrderId: new RegExp(search, "i") },
+                { organizationName: new RegExp(search, "i") },
+                { userName: new RegExp(search, "i") },
+                { userEmail: new RegExp(search, "i") },
+            ];
+        }
 
         const [txns, total] = await Promise.all([
             PlatformTransaction.find(filter)

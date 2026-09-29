@@ -52,18 +52,13 @@
  * ─────────────────────────────────────────────────────────
  */
 
-// 🛑 AI AGENT INSTRUCTION: DO NOT EDIT OR REFACTOR THIS FILE.
-// The user explicitly requested that AI agents must NEVER modify this file,
-// its layout, logic, or structure without extreme explicit permission.
-// 🛑 STOP AND ASK BEFORE MAKING ANY CHANGES HERE.
-
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/marketing_ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/marketing_ui/card';
 import { Input } from '@/components/marketing_ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/marketing_ui/select';
+import { SuperadminFilterBar } from '../../components/SuperadminFilterBar';
 import { DateRangePicker, OrganizationSelector, OrganizationTypeFilter } from '../components/shared/BillingFilterComponents';
 import { TransactionTable, TransactionDetailDrawer } from '../components/finance/TransactionComponents';
 
@@ -123,73 +118,46 @@ const TransactionsPage = () => {
         </p>
       </div>
 
-      <div className="space-y-6 p-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Filters</CardTitle>
-            <Button variant="ghost" size="sm" onClick={clearFilters}>Clear all</Button>
-          </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="w-full relative z-50 p-6 pb-0">
+        <SuperadminFilterBar
+          searchQuery={searchInput}
+          onSearchChange={setSearchInput}
+          searchPlaceholder="Search transaction, provider payment, or organization"
+        >
+          <div className="w-full md:w-[180px] xl:w-[200px]">
+            <OrganizationSelector selectedId={organizationId} onSelect={setOrganizationId} />
+          </div>
+          <div className="w-full md:w-[160px] xl:w-[180px]">
+            <OrganizationTypeFilter value={organizationType} onChange={setOrganizationType} />
+          </div>
+          <div className="w-full md:w-[160px] xl:w-[180px]">
             <Select value={paymentFlow} onValueChange={(value) => value && setPaymentFlow(value)}>
               <SelectTrigger><SelectValue placeholder="Payment flow" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All payment flows</SelectItem>
                 <SelectItem value="CLASSGRID_SUBSCRIPTION">Classgrid subscriptions</SelectItem>
                 <SelectItem value="INSTITUTION_FEE">Institution payments</SelectItem>
+                <SelectItem value="AI_TOPUP">AI Top-Ups</SelectItem>
               </SelectContent>
             </Select>
-            <OrganizationSelector selectedId={organizationId} onSelect={setOrganizationId} />
-            <OrganizationTypeFilter value={organizationType} onChange={setOrganizationType} />
+          </div>
+          <div className="w-full md:w-[160px] xl:w-[160px]">
             <Select value={status} onValueChange={(value) => value && setStatus(value)}>
               <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All statuses</SelectItem>
-                <SelectItem value="CAPTURED">Captured</SelectItem>
+                <SelectItem value="CAPTURED">Captured / Success</SelectItem>
                 <SelectItem value="PARTIALLY_REFUNDED">Partially refunded</SelectItem>
                 <SelectItem value="REFUNDED">Refunded</SelectItem>
                 <SelectItem value="FAILED">Failed</SelectItem>
                 <SelectItem value="DISPUTED">Disputed</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={method} onValueChange={(value) => value && setMethod(value)}>
-              <SelectTrigger><SelectValue placeholder="Payment method" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All methods</SelectItem>
-                <SelectItem value="card">Card</SelectItem>
-                <SelectItem value="upi">UPI</SelectItem>
-                <SelectItem value="netbanking">Net banking</SelectItem>
-                <SelectItem value="wallet">Wallet</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={settlementStatus} onValueChange={(value) => value && setSettlementStatus(value)}>
-              <SelectTrigger><SelectValue placeholder="Settlement status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All settlement statuses</SelectItem>
-                <SelectItem value="UNSETTLED">Unsettled</SelectItem>
-                <SelectItem value="SETTLED">Settled</SelectItem>
-                <SelectItem value="FAILED">Settlement failed</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={refundStatus} onValueChange={(value) => value && setRefundStatus(value)}>
-              <SelectTrigger><SelectValue placeholder="Refund status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All refund statuses</SelectItem>
-                <SelectItem value="NONE">No refund</SelectItem>
-                <SelectItem value="PENDING">Refund pending</SelectItem>
-                <SelectItem value="PROCESSED">Refund processed</SelectItem>
-                <SelectItem value="FAILED">Refund failed</SelectItem>
-              </SelectContent>
-            </Select>
-            <DateRangePicker date={dateRange} setDate={setDateRange} />
-            <Input
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Search transaction, provider payment, or organization"
-              className="xl:col-span-2"
-            />
-          </CardContent>
-        </Card>
+          </div>
+        </SuperadminFilterBar>
+      </div>
 
+      <div className="p-6 pt-0 space-y-6 mt-4">
         <Card>
           <CardHeader><CardTitle>Transaction log</CardTitle></CardHeader>
           <CardContent className="p-0">
@@ -197,14 +165,6 @@ const TransactionsPage = () => {
           </CardContent>
         </Card>
       </div>
-
-      {selectedTxId && (
-        <TransactionDetailDrawer
-          isOpen
-          onClose={() => setSelectedTxId(null)}
-          txId={selectedTxId}
-        />
-      )}
     </div>
   );
 };

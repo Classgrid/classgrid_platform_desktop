@@ -294,11 +294,11 @@ export const DiagnosticExportDialog: React.FC<{ failureId: string }> = ({ failur
 // 27. FailedPaymentTable
 export const FailedPaymentTable: React.FC<{
   onResolve: (failureId: string) => void;
-  filterType?: string;
-}> = ({ onResolve, filterType = 'ALL' }) => {
-  const { data: failures, isLoading, error } = useFailedPaymentsList({
-    status: filterType === 'ALL' ? undefined : filterType,
-  });
+  filters?: any;
+}> = ({ onResolve, filters }) => {
+  const { data: failures, isLoading, error } = useFailedPaymentsList(filters);
+
+
 
   return (
     <div className="rounded-md border bg-card">
@@ -308,6 +308,8 @@ export const FailedPaymentTable: React.FC<{
             <TableRow>
               <TableHead>Date</TableHead>
               <TableHead>Organization</TableHead>
+              <TableHead>Org ID</TableHead>
+              <TableHead>User ID</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Error Stage</TableHead>
               <TableHead className="text-right">Action</TableHead>
@@ -322,8 +324,14 @@ export const FailedPaymentTable: React.FC<{
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
-                    {fail.organization?.name || fail.orgId}
+                    {fail.organization?.name || fail.orgId || fail.organizationName || "Unknown"}
                   </div>
+                </TableCell>
+                <TableCell className="font-mono text-xs text-muted-foreground">
+                  {fail.orgId || fail.organizationId || "N/A"}
+                </TableCell>
+                <TableCell className="font-mono text-xs text-muted-foreground">
+                  {fail.userId || fail.payer?.id || "N/A"}
                 </TableCell>
                 <TableCell className="font-medium text-destructive">
                   <MoneyDisplay amountPaise={fail.amountPaise} />
@@ -340,7 +348,7 @@ export const FailedPaymentTable: React.FC<{
             ))}
             {failures?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
                   No active payment failures found.
                 </TableCell>
               </TableRow>
@@ -620,10 +628,10 @@ export const FailureDetailDrawer: React.FC<{
 };
 
 export const FailedPaymentsTable: React.FC<{
-  filterType?: string;
+  filters?: any;
   onViewDetail: (failureId: string) => void;
-}> = ({ filterType, onViewDetail }) => (
-  <FailedPaymentTable filterType={filterType} onResolve={onViewDetail} />
+}> = ({ filters, onViewDetail }) => (
+  <FailedPaymentTable filters={filters} onResolve={onViewDetail} />
 );
 
 export const FailedPaymentDetailDrawer = FailureDetailDrawer;

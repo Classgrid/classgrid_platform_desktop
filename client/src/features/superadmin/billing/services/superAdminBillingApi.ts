@@ -79,7 +79,7 @@ const normalizeFailure = (failure: any) => ({
   id: failure.id || failure._id,
   orgId: failure.organizationId?._id || failure.organizationId,
   organization: typeof failure.organizationId === "object" ? failure.organizationId : undefined,
-  amountPaise: failure.amountPaise || failure.paymentOrderId?.amountPaise || 0,
+  amountPaise: (failure.amount ? failure.amount * 100 : 0) || failure.amountPaise || failure.paymentOrderId?.amountPaise || 0,
   stage: failure.failureStage,
   reason: failure.errorDescription || failure.errorReason || failure.errorCode,
   status: failure.resolved ? "RESOLVED" : "UNRESOLVED",
@@ -300,7 +300,7 @@ export const fetchInvoiceDeliveryHistory = (invoiceId: string) =>
 
 // Failed payments
 export const fetchFailedPayments = async (filters: any = {}) => {
-  const failures = await request<any[]>({ method: "GET", url: `${BILLING_BASE}/failed-payments`, params: filters });
+  const failures = await request<any[]>({ method: "GET", url: `/api/super-admin/transactions`, params: { ...filters, status: 'failed' } });
   return failures.map(normalizeFailure).filter((failure) => {
     if (!filters.status || filters.status === "ALL") return true;
     return failure.status === filters.status;
@@ -309,7 +309,7 @@ export const fetchFailedPayments = async (filters: any = {}) => {
 export const fetchFailureOverview = () =>
   request<any>({ method: "GET", url: `${BILLING_BASE}/failed-payments/overview` });
 export const fetchFailedPaymentDetail = (failureId: string) =>
-  request<any>({ method: "GET", url: `${BILLING_BASE}/failed-payments/${failureId}` }).then(normalizeFailure);
+  request<any>({ method: "GET", url: `/api/super-admin/transactions/${failureId}` }).then(normalizeFailure);
 export const generatePaymentLink = (failureId: string, payload: any) =>
   request<any>({ method: "POST", url: `${BILLING_BASE}/failed-payments/${failureId}/generate-payment-link`, data: payload });
 export const retryFailureWebhook = (failureId: string) =>
