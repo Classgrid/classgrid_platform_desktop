@@ -1,5 +1,5 @@
-import User from "../../models/User.js";
-import AiCreditTransaction from "../../models/AiCreditTransaction.js";
+import User from "../models/User.js";
+import AiCreditTransaction from "../models/AiCreditTransaction.js";
 
 /**
  * PHASE 13: End User AI Credits Controller
