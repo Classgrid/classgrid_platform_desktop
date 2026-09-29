@@ -20,8 +20,16 @@ export default function FailedPaymentDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[400px] items-center justify-center">
-        <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="space-y-6">
+        <div>
+          <div className="h-8 w-64 bg-muted animate-pulse rounded-md"></div>
+          <div className="h-4 w-96 bg-muted animate-pulse rounded-md mt-2"></div>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="h-[250px] bg-muted animate-pulse rounded-xl"></div>
+          <div className="h-[250px] bg-muted animate-pulse rounded-xl"></div>
+          <div className="h-[200px] bg-muted animate-pulse rounded-xl"></div>
+        </div>
       </div>
     );
   }
@@ -39,9 +47,6 @@ export default function FailedPaymentDetailsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Failed Payment Details</h1>
           <p className="text-sm text-muted-foreground">
