@@ -58,6 +58,8 @@
 // 🛑 STOP AND ASK BEFORE MAKING ANY CHANGES HERE.
 
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/marketing_ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/marketing_ui/card';
 import { Input } from '@/components/marketing_ui/input';
@@ -68,6 +70,7 @@ import { TransactionTable, TransactionDetailDrawer } from '../components/finance
 type DateRange = { from: Date; to?: Date };
 
 const TransactionsPage = () => {
+  const navigate = useNavigate();
   const [paymentFlow, setPaymentFlow] = useState('ALL');
   const [organizationId, setOrganizationId] = useState('');
   const [organizationType, setOrganizationType] = useState('ALL');
@@ -190,7 +193,7 @@ const TransactionsPage = () => {
         <Card>
           <CardHeader><CardTitle>Transaction log</CardTitle></CardHeader>
           <CardContent className="p-0">
-            <TransactionTable filters={filters} onViewDetail={setSelectedTxId} />
+            <TransactionTable filters={filters} onViewDetail={(id) => navigate(`/super-admin/billing/transactions/${id}`)} />
           </CardContent>
         </Card>
       </div>

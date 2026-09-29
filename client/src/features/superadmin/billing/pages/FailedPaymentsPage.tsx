@@ -1,65 +1,12 @@
-/*
- * =========================================================================================
- * 🚨 CRITICAL AI & SYSTEM RULE 🚨
- * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
- * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
- * =========================================================================================
- */
-
-/**
- * ==============================================================================
- * 🚨 AI AGENT WARNING: BREADCRUMB POLICY 🚨
- * ==============================================================================
- * NEVER hardcode "Super Admin Dashboard /" as a breadcrumb on any deep dive page.
- * Deep dive pages or sub-pages MUST accurately reflect the actual parent pages 
- * they were opened from (e.g., Organizations / [Name] / Configuration / ...).
- * DO NOT use generic dashboard text for breadcrumbs.
- * ==============================================================================
- */
-
-/*
- * =========================================================================================
- * STRICT SECURITY POLICY:
- * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
- * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
- * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
- * =========================================================================================
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
- * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
- * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
- * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
- * ─────────────────────────────────────────────────────────
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 NAMING CONVENTION RULE 🚨
- * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
- * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
- * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
- * ─────────────────────────────────────────────────────────
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 HOSTING & ARCHITECTURE RULE 🚨
- * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
- * 2. FRONTEND IS HOSTED ON VERCEL
- * ─────────────────────────────────────────────────────────
- */
-
 import React, { useState } from 'react';
-import { FailedPaymentsTable, FailedPaymentDetailDrawer, FailedPaymentsOverview } from '../components/finance/FailureComponents';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../../components/marketing_ui/card';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../../../components/marketing_ui/select';
+import { useNavigate } from 'react-router-dom';
+import { FailedPaymentsTable, FailedPaymentsOverview } from '../components/finance/FailureComponents';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/marketing_ui/card';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/marketing_ui/select';
 
 const FailedPaymentsPage = () => {
+  const navigate = useNavigate();
   const [filterType, setFilterType] = useState('ALL');
-  const [selectedFailureId, setSelectedFailureId] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
@@ -84,12 +31,8 @@ const FailedPaymentsPage = () => {
           Triage and recover failed payment attempts. Never automatically retry a charge; generate a new secure checkout link instead.
         </p>
 
-
-
-        {/* Overview Stats */}
         <FailedPaymentsOverview />
 
-        {/* Log Table */}
         <Card>
           <CardHeader>
             <CardTitle>Failed Transaction Log</CardTitle>
@@ -98,19 +41,11 @@ const FailedPaymentsPage = () => {
           <CardContent className="p-0">
             <FailedPaymentsTable 
               filterType={filterType} 
-              onViewDetail={setSelectedFailureId} 
+              onViewDetail={(id) => navigate(`/super-admin/billing/failed-payments/${id}`)} 
             />
           </CardContent>
         </Card>
       </div>
-
-      {selectedFailureId && (
-        <FailedPaymentDetailDrawer 
-          isOpen={!!selectedFailureId} 
-          onClose={() => setSelectedFailureId(null)} 
-          failureId={selectedFailureId} 
-        />
-      )}
     </div>
   );
 };

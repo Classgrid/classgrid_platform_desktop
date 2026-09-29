@@ -44,7 +44,18 @@ const aiCreditTransactionSchema = new mongoose.Schema(
         metadata: {
             type: mongoose.Schema.Types.Mixed,
             default: {},
-        }
+        },
+        userName: { type: String, default: "" },
+        userEmail: { type: String, default: "" },
+        userMobile: { type: String, default: "" },
+        userRole: { type: String, default: "" },
+        organizationName: { type: String, default: "" },
+        paymentMethod: { type: String, default: "" },
+        networkIp: { type: String, default: "" },
+        vpnConnected: { type: Boolean, default: false },
+        country: { type: String, default: "" },
+        networkId: { type: String, default: "" },
+        paymentTime: { type: Date, default: null }
     },
     {
         timestamps: true, // Auto-adds createdAt and updatedAt

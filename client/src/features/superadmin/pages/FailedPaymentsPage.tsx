@@ -66,6 +66,8 @@ import { DataTable } from "@/components/marketing_ui/data-table";
 
 import { apiClient } from "@/lib/apiClient";
 import { formatDate } from "@/utils/dateUtils";
+import { getSocket } from "@/lib/socketClient";
+import { useEffect } from "react";
 
 
 const INR = (n: number) =>
@@ -86,6 +88,23 @@ export function FailedPaymentsPage() {
         .then((r) => r.data),
     staleTime: 60_000,
   });
+
+
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    
+    const handler = () => refetch();
+    
+    socket.on("failed_payment_received", handler);
+    socket.on("platform_transactions_updated", handler);
+
+    return () => {
+      socket.off("failed_payment_received", handler);
+      socket.off("platform_transactions_updated", handler);
+    };
+  }, [refetch]);
 
   const txns: any[] = data?.data ?? [];
   const total: number = data?.total ?? 0;

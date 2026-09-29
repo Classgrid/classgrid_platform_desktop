@@ -53,9 +53,21 @@ const platformTransactionSchema = new mongoose.Schema(
     organizationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
-      required: true,
+      required: false,
     },
     organizationName: { type: String, default: "" }, // denormalized for fast reads
+    paymentFlow: { type: String, enum: ["subscription", "ai_topup", "other"], default: "subscription" },
+    userName: { type: String, default: "" },
+    userEmail: { type: String, default: "" },
+    userMobile: { type: String, default: "" },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    userRole: { type: String, default: "" },
+    paymentMethod: { type: String, default: "" },
+    networkIp: { type: String, default: "" },
+    vpnConnected: { type: Boolean, default: false },
+    country: { type: String, default: "" },
+    networkId: { type: String, default: "" },
+    paymentTime: { type: Date, default: null },
 
     // Who processed this (super_admin user or "system" for automated)
     processedBy: {

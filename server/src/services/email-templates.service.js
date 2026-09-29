@@ -2669,3 +2669,257 @@ export const getVettingApprovedHtml = ({ assigneeName, institutionName, dashboar
     </div>
   `; 
 };
+
+export const erpBaseTemplate = ({ content, title = "Notification", orgName = "Institution" }) => {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title} - ${orgName}</title>
+  <style>
+    :root {
+      --bg: #f9fafb;
+      --card-bg: #ffffff;
+      --text: #111827;
+      --text-muted: #4b5563;
+      --border: #e5e7eb;
+      --btn-bg: #111827;
+      --btn-text: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111827;
+        --card-bg: #1f2937;
+        --text: #f9fafb;
+        --text-muted: #9ca3af;
+        --border: #374151;
+        --btn-bg: #ffffff;
+        --btn-text: #111827;
+      }
+    }
+    body, html {
+      margin: 0; padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper {
+      padding: 40px 20px;
+      width: 100%;
+      background-color: var(--bg);
+      box-sizing: border-box;
+    }
+    .card {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .content {
+      padding: 32px;
+      line-height: 1.6;
+      font-size: 15px;
+      color: var(--text);
+    }
+    .footer {
+      padding: 24px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    h2 {
+      margin-top: 0;
+      color: var(--text);
+    }
+    p {
+      margin: 0 0 16px;
+    }
+    ul {
+      margin: 0 0 16px 20px;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    .btn {
+      display: inline-block;
+      background-color: var(--btn-bg);
+      color: var(--btn-text) !important;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: 600;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    .text-muted {
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <div class="content">
+        ${content}
+      </div>
+      <div class="footer">
+        <p>Regards,<br><strong>${orgName}</strong><br>ERP Administration Team</p>
+        <p>This is an automated email. Please do not reply.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+};
+
+export const getFailedPaymentEmailHtml = (amountInr, errorDescription, paymentId, orgName = "Classgrid") => {
+  const content = `
+    <h2 style="color: #dc2626;">Payment Failed</h2>
+    <p>We attempted to process your payment of <strong>₹${amountInr}</strong>, but unfortunately, it failed.</p>
+    <p><strong>Reason:</strong> ${errorDescription || "Action Required"}</p>
+    <div style="background-color: var(--bg); padding: 15px; border-radius: 6px; margin: 20px 0; border: 1px solid var(--border);">
+      <p style="margin: 0; font-size: 14px; color: var(--text-muted);">Payment ID: ${paymentId}</p>
+      <p style="margin: 5px 0 0; font-size: 14px; color: var(--text-muted);">Date: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST</p>
+    </div>
+    <p class="text-muted" style="margin-top: 20px;">
+      In case your money has been debited, it will be credited to your bank account within 5-7 business days.
+    </p>
+    <p class="text-muted" style="margin-top: 10px;">
+      For any order related queries, please reach out to our support team.
+    </p>
+  `;
+  return erpBaseTemplate({ content, title: "Payment Failed", orgName });
+};
+
+export const erpBaseTemplate = ({ content, title = "Notification", orgName = "Institution" }) => {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title} - ${orgName}</title>
+  <style>
+    :root {
+      --bg: #f9fafb;
+      --card-bg: #ffffff;
+      --text: #111827;
+      --text-muted: #4b5563;
+      --border: #e5e7eb;
+      --btn-bg: #111827;
+      --btn-text: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111827;
+        --card-bg: #1f2937;
+        --text: #f9fafb;
+        --text-muted: #9ca3af;
+        --border: #374151;
+        --btn-bg: #ffffff;
+        --btn-text: #111827;
+      }
+    }
+    body, html {
+      margin: 0; padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper {
+      padding: 40px 20px;
+      width: 100%;
+      background-color: var(--bg);
+      box-sizing: border-box;
+    }
+    .card {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .content {
+      padding: 32px;
+      line-height: 1.6;
+      font-size: 15px;
+      color: var(--text);
+    }
+    .footer {
+      padding: 24px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    h2 {
+      margin-top: 0;
+      color: var(--text);
+    }
+    p {
+      margin: 0 0 16px;
+    }
+    ul {
+      margin: 0 0 16px 20px;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    .btn {
+      display: inline-block;
+      background-color: var(--btn-bg);
+      color: var(--btn-text) !important;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: 600;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    .text-muted {
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <div class="content">
+        ${content}
+      </div>
+      <div class="footer">
+        <p>Regards,<br><strong>${orgName}</strong><br>ERP Administration Team</p>
+        <p>This is an automated email. Please do not reply.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+};
+
+export const getFailedPaymentEmailHtml = (amountInr, errorDescription, paymentId, orgName = "Classgrid") => {
+  const content = `
+    <h2 style="color: #dc2626;">Payment Failed</h2>
+    <p>We attempted to process your payment of <strong>₹${amountInr}</strong>, but unfortunately, it failed.</p>
+    <p><strong>Reason:</strong> ${errorDescription || "Action Required"}</p>
+    <div style="background-color: var(--bg); padding: 15px; border-radius: 6px; margin: 20px 0; border: 1px solid var(--border);">
+      <p style="margin: 0; font-size: 14px; color: var(--text-muted);">Payment ID: ${paymentId}</p>
+      <p style="margin: 5px 0 0; font-size: 14px; color: var(--text-muted);">Date: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST</p>
+    </div>
+    <p class="text-muted" style="margin-top: 20px;">
+      In case your money has been debited, it will be credited to your bank account within 5-7 business days.
+    </p>
+    <p class="text-muted" style="margin-top: 10px;">
+      For any order related queries, please reach out to our support team.
+    </p>
+  `;
+  return erpBaseTemplate({ content, title: "Payment Failed", orgName });
+};

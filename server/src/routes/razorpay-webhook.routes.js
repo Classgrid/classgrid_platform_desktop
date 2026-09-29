@@ -534,6 +534,9 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     const CREDITS_PER_INR = 5000;
                     const creditsAdded = Math.floor(amountInr * CREDITS_PER_INR);
 
+                    const User = (await import("../models/User.js")).default;
+                    const user = await User.findById(userId).populate("organization_id");
+                    
                     await AiCreditTransaction.create({
                         userId: userId,
                         orgId: organizationId,
@@ -542,16 +545,43 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                         razorpay_payment_id: paymentId,
                         razorpay_order_id: orderId,
                         type: "topup",
-                        status: "success"
+                        status: "success",
+                        userName: user?.name || "Unknown",
+                        userEmail: paymentEntity.email || user?.email || "",
+                        userMobile: paymentEntity.contact || user?.phoneNumber || "",
+                        userRole: user?.role || "",
+                        organizationName: user?.organization_id?.name || "",
+                        paymentMethod: paymentEntity.method || "",
+                        paymentTime: paymentEntity.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
                     });
 
-                    const User = (await import("../models/User.js")).default;
                     await User.findByIdAndUpdate(userId, {
                         $inc: { "ai_tokens.ai_credits_balance": creditsAdded }
                     });
 
                     const PaymentOrder = (await import("../models/PaymentOrder.js")).default;
                     await PaymentOrder.findOneAndUpdate({ providerOrderId: orderId }, { status: "PAID" });
+
+                    const PlatformTransaction = (await import("../models/PlatformTransaction.js")).default;
+                    await PlatformTransaction.create({
+                        organizationId: organizationId || null,
+                        organizationName: user?.organization_id?.name || "",
+                        type: "razorpay",
+                        paymentFlow: "ai_topup",
+                        amount: amountInr,
+                        currency,
+                        status: "success",
+                        razorpayOrderId: orderId,
+                        razorpayPaymentId: paymentId,
+                        note: "AI Top-Up Purchase",
+                        userName: user?.name || "Unknown",
+                        userEmail: paymentEntity.email || user?.email || "",
+                        userMobile: paymentEntity.contact || user?.phoneNumber || "",
+                        userId: userId,
+                        userRole: user?.role || "",
+                        paymentMethod: paymentEntity.method || "",
+                        paymentTime: paymentEntity.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
+                    });
 
                     const PaymentTransaction = (await import("../models/PaymentTransaction.js")).default;
                     await PaymentTransaction.create({
@@ -620,6 +650,84 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     razorpayPaymentId: paymentId,
                     note: `FAILED: ${error_code} — ${error_description}`,
                 });
+
+                // NEW LOGIC FOR FAILED PAYMENTS DASHBOARD & EMAIL
+                try {
+                    const PaymentOrder = (await import("../models/PaymentOrder.js")).default;
+                    const PaymentAttempt = (await import("../models/PaymentAttempt.js")).default;
+                    const PaymentFailure = (await import("../models/PaymentFailure.js")).default;
+                    
+                    if (orderId && organizationId) {
+                        const pOrder = await PaymentOrder.findOne({ providerOrderId: orderId });
+                        if (pOrder) {
+                            let attempt = await PaymentAttempt.findOne({ paymentOrderId: pOrder._id }).sort({ createdAt: -1 });
+                            
+                            if (!attempt) {
+                                attempt = await PaymentAttempt.create({
+                                    paymentOrderId: pOrder._id,
+                                    organizationId,
+                                    amountPaise: amount,
+                                    providerPaymentId: paymentId,
+                                    stage: "VERIFICATION"
+                                });
+                            } else if (!attempt.providerPaymentId) {
+                                attempt.providerPaymentId = paymentId;
+                                attempt.stage = "VERIFICATION";
+                                await attempt.save();
+                            }
+                            
+                            let responsibility = "UNKNOWN";
+                            if (paymentEntity.error_source === "customer") responsibility = "USER_ACTION_REQUIRED";
+                            else if (paymentEntity.error_source === "gateway" || paymentEntity.error_source === "bank") responsibility = "BANK_DECLINE";
+
+                            const failure = await PaymentFailure.create({
+                                paymentAttemptId: attempt._id,
+                                paymentOrderId: pOrder._id,
+                                organizationId,
+                                failureStage: "WEBHOOK",
+                                errorCode: error_code,
+                                errorDescription: error_description,
+                                errorSource: paymentEntity.error_source || null,
+                                errorStep: paymentEntity.error_step || null,
+                                errorReason: paymentEntity.error_reason || null,
+                                responsibility
+                            });
+
+                            try {
+                                const { getIO } = await import("../services/socket.service.js");
+                                const io = getIO();
+                                io.emit("failed_payment_received", {
+                                    failureId: failure._id,
+                                    amountPaise: amount,
+                                    organizationId
+                                });
+                                io.emit("platform_transactions_updated");
+                            } catch (err) {
+                                console.error("[Razorpay Webhook] WebSocket emit failed");
+                            }
+                        }
+                    }
+
+                    const payerEmail = paymentEntity.email;
+                    if (payerEmail) {
+                        const { sendEmail } = await import("../services/aws-ses.service.js");
+                        const { getFailedPaymentEmailHtml } = await import("../services/email-templates.service.js");
+                        
+                        const html = getFailedPaymentEmailHtml(amountInr, error_description, paymentId);
+                        
+                        await sendEmail({
+                            to: payerEmail,
+                            subject: \`Payment Failed - \${error_description || "Action Required"}\`,
+                            html,
+                            fromName: "Classgrid Billing",
+                            fromEmail: "billing@classgrid.in"
+                        });
+                        console.log(\`[Razorpay Webhook] ✅ Sent failure email to \${payerEmail}\`);
+                    }
+                } catch (err) {
+                    console.error("[Razorpay Webhook] Failed to process PaymentFailure or email:", err);
+                }
+
 
                 // RULE 6 ENFORCEMENT: Audit Log
                 const { logAdminAction } = await import("../services/auditLog.service.js");
