@@ -96,21 +96,12 @@ export function AiCreditsPanel() {
                       Credit details <span className="text-sm font-normal text-muted-foreground ml-2">ID: {pool.creditId}</span>
                     </h3>
                   </div>
-                  <div className={cn(
-                    "flex items-center gap-2 text-sm px-3 py-1.5 rounded-full font-medium",
-                    pool.status === "Active" 
-                      ? "bg-emerald-500/10 text-emerald-600" 
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    {pool.status === "Active" && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
-                    {pool.status}
-                  </div>
                 </div>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-8">
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Status</div>
-                    <div className="font-medium text-emerald-500">{pool.status}</div>
+                    <div className="font-medium text-foreground">{pool.status}</div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Start date</div>
