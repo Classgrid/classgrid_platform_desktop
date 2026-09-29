@@ -97,7 +97,10 @@ import { LogoutPage } from "@/features/auth/pages/LogoutPage";
 import { SystemHealthPage } from "@/features/superadmin/pages/SystemHealthPage";
 import { FeatureFlagsPage } from "@/features/superadmin/pages/FeatureFlagsPage";
 import TransactionsPage from "@/features/superadmin/billing/pages/TransactionsPage";
+import TransactionDetailsPage from "@/features/superadmin/billing/pages/TransactionDetailsPage";
 import FailedPaymentsPage from "@/features/superadmin/billing/pages/FailedPaymentsPage";
+import FraudLogsPage from "@/features/superadmin/billing/pages/FraudLogsPage";
+import FailedPaymentDetailsPage from "@/features/superadmin/billing/pages/FailedPaymentDetailsPage";
 import { BillingShell } from "@/features/superadmin/billing/components/shared/BillingShell";
 import { RollbackPage } from "@/features/superadmin/pages/RollbackPage";
 import { ContentModerationPage } from "@/features/superadmin/pages/ContentModerationPage";
@@ -308,7 +311,10 @@ export function AppRouter() {
             <Route path="plans" element={<PlansAndBillingPage />} />
             <Route path="revenue" element={<RevenuePage />} />
             <Route path="transactions" element={<TransactionsPage />} />
+            <Route path="transactions/:id" element={<TransactionDetailsPage />} />
             <Route path="failed-payments" element={<FailedPaymentsPage />} />
+            <Route path="failed-payments/:id" element={<FailedPaymentDetailsPage />} />
+            <Route path="fraud-logs" element={<FraudLogsPage />} />
           </Route>
           <Route path="/superadmin/billing" element={<Navigate to="/super-admin/billing/plans" replace />} />
           <Route path="/superadmin/billing/plans" element={<Navigate to="/super-admin/billing/plans" replace />} />
