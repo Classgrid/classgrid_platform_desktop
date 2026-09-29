@@ -1,4 +1,6 @@
-import User from "../../models/User.js";
+const fs = require('fs');
+
+const usersContent = `import User from "../../models/User.js";
 import AiCreditTransaction from "../../models/AiCreditTransaction.js";
 import { primarySupabaseClient as supabase } from "../../config/supabaseClient.js";
 import mongoose from "mongoose";
@@ -109,3 +111,7 @@ export const getUserAiDetail = async (req, res) => {
         res.status(500).json({ success: false, error: "Failed to fetch user details" });
     }
 };
+`;
+
+fs.writeFileSync('c:/CLASSGRIDPLATFORM/classgrid_platoform-desktop-/server/src/controllers/super-admin/ai-usage-users.controller.js', usersContent);
+console.log('Created users controller');

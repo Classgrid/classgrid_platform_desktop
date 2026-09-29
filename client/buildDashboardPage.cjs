@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+const fs = require('fs');
+
+const pageContent = `import React, { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
 import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
@@ -86,7 +88,7 @@ export function AiUsageDashboardPage() {
       <div className="flex items-center text-sm text-muted-foreground mb-6 bg-muted/30 p-2 rounded-lg w-fit border border-border/50">
         <button 
           onClick={() => handleNavigateUp("root")}
-          className={`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md ${!path.orgId ? "bg-background shadow-sm text-foreground" : ""}`}
+          className={\`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md \${!path.orgId ? "bg-background shadow-sm text-foreground" : ""}\`}
         >
           <Home className="h-4 w-4 mr-1.5" /> All Organizations
         </button>
@@ -96,7 +98,7 @@ export function AiUsageDashboardPage() {
             <ChevronRight className="h-4 w-4 mx-1 opacity-50" />
             <button 
               onClick={() => handleNavigateUp("org")}
-              className={`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md ${!path.role ? "bg-background shadow-sm text-foreground" : ""}`}
+              className={\`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md \${!path.role ? "bg-background shadow-sm text-foreground" : ""}\`}
             >
               <Building className="h-4 w-4 mr-1.5" /> {path.orgName}
             </button>
@@ -108,7 +110,7 @@ export function AiUsageDashboardPage() {
             <ChevronRight className="h-4 w-4 mx-1 opacity-50" />
             <button 
               onClick={() => handleNavigateUp("role")}
-              className={`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md ${!path.userId ? "bg-background shadow-sm text-foreground" : ""}`}
+              className={\`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md \${!path.userId ? "bg-background shadow-sm text-foreground" : ""}\`}
             >
               <Shield className="h-4 w-4 mr-1.5" /> {path.role}
             </button>
@@ -227,7 +229,7 @@ export function AiUsageDashboardPage() {
                       stroke="none"
                     >
                       {pieData.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                        <Cell key={\`cell-\${index}\`} fill={entry.color} />
                       ))}
                     </Pie>
                     <RechartsTooltip 
@@ -259,7 +261,7 @@ export function AiUsageDashboardPage() {
               <FolderIcon
                 key={org.id}
                 label={org.name}
-                subtitle={`${formatNumber(org.totalUsage || 0)} Credits`}
+                subtitle={\`\${formatNumber(org.totalUsage || 0)} Credits\`}
                 badge={org.isBlocked ? "BLOCKED" : 0}
                 icon={Building}
                 onClick={() => setPath({ orgId: org.id, orgName: org.name })}
@@ -286,7 +288,7 @@ export function AiUsageDashboardPage() {
                 <FolderIcon
                   key={roleGroup.roleName}
                   label={roleGroup.roleName.toUpperCase()}
-                  subtitle={`${roleGroup.userCount} users • ${formatNumber(roleGroup.totalUsage || 0)} Credits`}
+                  subtitle={\`\${roleGroup.userCount} users • \${formatNumber(roleGroup.totalUsage || 0)} Credits\`}
                   badge={roleGroup.userCount}
                   icon={Shield}
                   onClick={() => setPath({ ...path, role: roleGroup.roleName })}
@@ -316,7 +318,7 @@ export function AiUsageDashboardPage() {
               <FolderIcon
                 key={user.id}
                 label={user.name || user.email}
-                subtitle={`${formatNumber(user.totalUsage || 0)} Credits`}
+                subtitle={\`\${formatNumber(user.totalUsage || 0)} Credits\`}
                 badge={user.isBlocked ? "BLOCKED" : 0}
                 icon={UserIcon}
                 onClick={() => setPath({ ...path, userId: user.id, userName: user.name || user.email })}
@@ -363,3 +365,7 @@ export function AiUsageDashboardPage() {
     </div>
   );
 }
+`;
+
+fs.writeFileSync('c:/CLASSGRIDPLATFORM/classgrid_platoform-desktop-/client/src/features/superadmin/pages/AiUsageDashboardPage.tsx', pageContent);
+console.log('Created dashboard page');

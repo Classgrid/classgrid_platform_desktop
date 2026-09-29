@@ -1,4 +1,6 @@
-import Organization from "../../models/Organization.js";
+const fs = require('fs');
+
+const globalContent = `import Organization from "../../models/Organization.js";
 import User from "../../models/User.js";
 import AiCreditTransaction from "../../models/AiCreditTransaction.js";
 import { primarySupabaseClient as supabase } from "../../config/supabaseClient.js";
@@ -78,7 +80,7 @@ export const getGlobalStats = async (req, res) => {
 
         const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
         const realTrend = Array.from({ length: daysInMonth }, (_, i) => {
-            const d = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
+            const d = \`\${targetYear}-\${String(targetMonth).padStart(2, '0')}-\${String(i + 1).padStart(2, '0')}\`;
             return {
                 date: d,
                 credits: trendMap[d] || 0
@@ -106,3 +108,7 @@ export const getGlobalStats = async (req, res) => {
 export const getModelBreakdown = async (req, res) => {
     res.status(200).json({ success: true, data: [] });
 };
+`;
+
+fs.writeFileSync('c:/CLASSGRIDPLATFORM/classgrid_platoform-desktop-/server/src/controllers/super-admin/ai-usage-global.controller.js', globalContent);
+console.log('Created global controller');

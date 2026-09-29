@@ -1,4 +1,6 @@
-import Organization from "../../models/Organization.js";
+const fs = require('fs');
+
+const orgsContent = `import Organization from "../../models/Organization.js";
 import User from "../../models/User.js";
 import AiCreditTransaction from "../../models/AiCreditTransaction.js";
 import { primarySupabaseClient as supabase } from "../../config/supabaseClient.js";
@@ -137,3 +139,7 @@ export const getOrgAiDetail = async (req, res) => {
         res.status(500).json({ success: false, error: "Failed to fetch organization details" });
     }
 };
+`;
+
+fs.writeFileSync('c:/CLASSGRIDPLATFORM/classgrid_platoform-desktop-/server/src/controllers/super-admin/ai-usage-orgs.controller.js', orgsContent);
+console.log('Created orgs controller');
