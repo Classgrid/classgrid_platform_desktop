@@ -631,6 +631,7 @@ const userSchema = new mongoose.Schema(
       week_reset_date: { type: Date, default: () => { const d = new Date(); d.setDate(d.getDate() + 7); return d; } },
       is_ai_blocked: { type: Boolean, default: false },
       ai_credits_balance: { type: Number, default: 0 },
+      total_ai_credits_purchased: { type: Number, default: 0 },
       ai_credits_start_date: { type: Date, default: null },
       ai_credits_end_date: { type: Date, default: null },
       ai_image_free_weekly_limit: { type: Number, default: 20 },

@@ -75,44 +75,61 @@ export function AiCreditsPanel() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">Status</div>
-              <div className="font-medium text-emerald-500">Active</div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">Issued credit amount</div>
-              <div className="font-semibold text-xl">{formatNumber(purchasedCredits)}</div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">Start date</div>
-              <div className="font-medium">
-                {balance?.ai_credits_start_date 
-                  ? format(new Date(balance.ai_credits_start_date), "MMM dd, yyyy") 
-                  : "-"}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">Expiration date</div>
-              <div className="font-medium">
-                {balance?.ai_credits_end_date 
-                  ? format(new Date(balance.ai_credits_end_date), "MMM dd, yyyy") 
-                  : "Never"}
-              </div>
-            </div>
-          </div>
-          
-          {purchasedCredits > 0 && (
-            <div className="mt-8 pt-6 border-t border-border">
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Amount remaining</span>
-                <span className="font-semibold">{formatNumber(purchasedCredits)} Credits</span>
-              </div>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full w-full" />
-              </div>
-            </div>
-          )}
+          {(() => {
+            const issuedAmount = balance?.total_ai_credits_purchased || 0;
+            const remainingAmount = purchasedCredits;
+            const usedAmount = Math.max(0, issuedAmount - remainingAmount);
+            const percentUsed = issuedAmount > 0 ? (usedAmount / issuedAmount) * 100 : 0;
+            
+            return (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Status</div>
+                    <div className="font-medium text-emerald-500">Active</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Issued credit amount</div>
+                    <div className="font-semibold text-xl">{formatNumber(issuedAmount)}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Start date</div>
+                    <div className="font-medium">
+                      {balance?.ai_credits_start_date 
+                        ? format(new Date(balance.ai_credits_start_date), "MMM dd, yyyy") 
+                        : "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Expiration date</div>
+                    <div className="font-medium">
+                      {balance?.ai_credits_end_date 
+                        ? format(new Date(balance.ai_credits_end_date), "MMM dd, yyyy") 
+                        : "Never"}
+                    </div>
+                  </div>
+                </div>
+                
+                {issuedAmount > 0 && (
+                  <div className="mt-8 pt-6 border-t border-border">
+                    <div className="flex justify-between text-sm mb-3">
+                      <div className="flex gap-4">
+                        <span className="text-muted-foreground">Amount Used: <strong className="text-foreground">{formatNumber(usedAmount)}</strong></span>
+                        <span className="text-muted-foreground">Amount Remaining: <strong className="text-foreground">{formatNumber(remainingAmount)}</strong></span>
+                      </div>
+                      <span className="font-medium text-muted-foreground">{Math.round(percentUsed)}% Used</span>
+                    </div>
+                    <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                        style={{ width: `${percentUsed}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* Transaction History Table */}
