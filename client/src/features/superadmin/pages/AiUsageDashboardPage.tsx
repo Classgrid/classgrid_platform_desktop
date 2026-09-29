@@ -68,6 +68,20 @@ const FolderIcon = ({ label, subtitle, onClick, badge, icon: Icon = Building }: 
     </div>
   </button>
 );
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-1 z-50">
+        <span className="font-semibold text-foreground flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].payload.fill || payload[0].color }} />
+          {payload[0].name}
+        </span>
+        <span className="text-muted-foreground">{Math.round(payload[0].value)}% Usage</span>
+      </div>
+    );
+  }
+  return null;
+};
 
 export function AiUsageDashboardPage() {
   const [path, setPath] = useState<PathState>({});
@@ -262,10 +276,7 @@ export function AiUsageDashboardPage() {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <RechartsTooltip 
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                      formatter={(value: any, name: any) => [name, '']}
-                    />
+                    <RechartsTooltip content={<CustomTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
