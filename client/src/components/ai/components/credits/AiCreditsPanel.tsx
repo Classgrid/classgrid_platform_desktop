@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useMyAiBalance, useMyAiHistory } from "@/components/ai/queries/useAiCredits";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, cn } from "@/lib/utils";
 import { Wallet, Search, Calendar as CalendarIcon, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { Progress } from "@/components/marketing_ui/progress";
