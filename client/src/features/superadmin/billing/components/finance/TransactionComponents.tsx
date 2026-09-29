@@ -64,6 +64,7 @@ import { format } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger } from '@/components/marketing_ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/marketing_ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/marketing_ui/dropdown-menu';
+import { DataTable } from '@/components/marketing_ui/data-table';
 
 // 24. TransactionStatusBadge
 export const TransactionStatusBadge: React.FC<{ status: string }> = ({ status }) => {
@@ -94,67 +95,83 @@ export const TransactionTable: React.FC<{
 }> = ({ onViewDetail, filters }) => {
   const { data: transactions, isLoading, error } = useTransactions(filters);
 
+  const columns = [
+    {
+      key: "paymentId",
+      header: "Payment ID",
+      render: (_: any, tx: any) => (
+        <div>
+          <div className="font-mono text-sm">{tx.razorpayPaymentId || tx.id || "N/A"}</div>
+          <div className="text-xs text-muted-foreground mt-1 uppercase">{tx.paymentMethod || "UNKNOWN"}</div>
+        </div>
+      ),
+    },
+    {
+      key: "organization",
+      header: "Organization",
+      render: (_: any, tx: any) => (
+        <div>
+          <div className="flex items-center gap-1.5 font-medium">
+            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+            {tx.organization?.name || tx.orgId || tx.organizationName || "Unknown"}
+          </div>
+          <div className="font-mono text-xs text-muted-foreground mt-1">Org ID: {tx.orgId || tx.organizationId || "N/A"}</div>
+        </div>
+      ),
+    },
+    {
+      key: "customer",
+      header: "Customer Detail",
+      render: (_: any, tx: any) => (
+        <div>
+          <div className="font-medium text-sm">{tx.userMobile || "No Mobile"}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{tx.userEmail || "No Email"}</div>
+          <div className="font-mono text-[10px] text-muted-foreground mt-0.5">UID: {tx.userId || tx.payer?.id || "N/A"}</div>
+        </div>
+      ),
+    },
+    {
+      key: "date",
+      header: "Created on",
+      render: (_: any, tx: any) => <span className="whitespace-nowrap text-sm text-muted-foreground">{format(new Date(tx.createdAt), 'EEE MMM dd, h:mma')}</span>,
+    },
+    {
+      key: "type",
+      header: "Type",
+      render: (_: any, tx: any) => <Badge variant="outline" className="font-mono text-xs uppercase bg-muted/50">{tx.type}</Badge>,
+    },
+    {
+      key: "amount",
+      header: "Amount",
+      render: (_: any, tx: any) => <span className="font-medium"><MoneyDisplay amountPaise={tx.amountPaise} /></span>,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (_: any, tx: any) => <TransactionStatusBadge status={tx.status} />,
+    },
+    {
+      key: "actions",
+      header: "Reference",
+      render: (_: any, tx: any) => (
+        <div className="text-right">
+          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onViewDetail(tx.id); }} className="h-8 gap-1">
+            Details <ArrowRightCircle className="w-3 h-3" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="rounded-md border bg-card">
-      <AsyncBillingState loading={isLoading} error={error} skeletonType="table">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Organization</TableHead>
-              <TableHead>Org ID</TableHead>
-              <TableHead>User ID</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Reference</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions?.map((tx: any) => (
-              <TableRow key={tx.id}>
-                <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-                  {format(new Date(tx.createdAt), 'dd MMM yyyy, HH:mm')}
-                </TableCell>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    {tx.organization?.name || tx.orgId || tx.organizationName || "Unknown"}
-                  </div>
-                </TableCell>
-                <TableCell className="font-mono text-xs text-muted-foreground">
-                  {tx.orgId || tx.organizationId || "N/A"}
-                </TableCell>
-                <TableCell className="font-mono text-xs text-muted-foreground">
-                  {tx.userId || tx.payer?.id || "N/A"}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="font-mono text-xs uppercase bg-muted/50">{tx.type}</Badge>
-                </TableCell>
-                <TableCell className="font-medium">
-                  <MoneyDisplay amountPaise={tx.amountPaise} />
-                </TableCell>
-                <TableCell>
-                  <TransactionStatusBadge status={tx.status} />
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="sm" onClick={() => onViewDetail(tx.id)} className="h-8 gap-1">
-                    Details <ArrowRightCircle className="w-3 h-3" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {transactions?.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
-                  No transactions found matching the criteria.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </AsyncBillingState>
-    </div>
+    <AsyncBillingState loading={isLoading} error={error} skeletonType="table">
+      <DataTable 
+        columns={columns} 
+        rows={transactions || []} 
+        emptyMessage="No transactions found matching the criteria."
+        onRowClick={(row) => onViewDetail(row.id)}
+      />
+    </AsyncBillingState>
   );
 };
 

@@ -66,6 +66,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/marketing
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/marketing_ui/select';
 import { Building2, AlertTriangle, ArrowRightCircle, Terminal, Clock, StickyNote, Link as LinkIcon, UserPlus, CheckCircle, Download, MailWarning } from 'lucide-react';
 import { MoneyDisplay, AsyncBillingState } from '../shared/BillingStateComponents';
+import { DataTable } from '@/components/marketing_ui/data-table';
 import { 
   useFailedPaymentsList, 
   useFailedPaymentDetail, 
@@ -298,65 +299,83 @@ export const FailedPaymentTable: React.FC<{
 }> = ({ onResolve, filters }) => {
   const { data: failures, isLoading, error } = useFailedPaymentsList(filters);
 
-
+  const columns = [
+    {
+      key: "paymentId",
+      header: "Payment ID",
+      render: (_: any, fail: any) => (
+        <div>
+          <div className="font-mono text-sm">{fail.providerTxId || fail.razorpayPaymentId || "N/A"}</div>
+          <div className="text-xs text-muted-foreground mt-1 uppercase">{fail.paymentMethod?.type || fail.paymentMethod || "UNKNOWN"}</div>
+        </div>
+      ),
+    },
+    {
+      key: "organization",
+      header: "Organization",
+      render: (_: any, fail: any) => (
+        <div>
+          <div className="flex items-center gap-1.5 font-medium">
+            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+            {fail.organization?.name || fail.orgId || fail.organizationName || "Unknown"}
+          </div>
+          <div className="font-mono text-xs text-muted-foreground mt-1">Org ID: {fail.orgId || fail.organizationId || "N/A"}</div>
+        </div>
+      ),
+    },
+    {
+      key: "customer",
+      header: "Customer Detail",
+      render: (_: any, fail: any) => (
+        <div>
+          <div className="font-medium text-sm">{fail.userMobile || "No Mobile"}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{fail.userEmail || "No Email"}</div>
+          <div className="font-mono text-[10px] text-muted-foreground mt-0.5">UID: {fail.userId || fail.payer?.id || "N/A"}</div>
+        </div>
+      ),
+    },
+    {
+      key: "date",
+      header: "Created on",
+      render: (_: any, fail: any) => <span className="whitespace-nowrap text-sm text-muted-foreground">{format(new Date(fail.createdAt), 'EEE MMM dd, h:mma')}</span>,
+    },
+    {
+      key: "amount",
+      header: "Amount",
+      render: (_: any, fail: any) => <span className="font-medium"><MoneyDisplay amountPaise={fail.amountPaise} /></span>,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (_: any, fail: any) => (
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2 py-1 text-xs font-medium text-red-500">
+          <AlertTriangle className="h-3.5 w-3.5" />
+          {fail.reason || fail.stage || "FAILED"}
+        </div>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Action",
+      render: (_: any, fail: any) => (
+        <div className="text-right">
+          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onResolve(fail.id); }} className="h-8 gap-1">
+            Investigate <ArrowRightCircle className="w-3 h-3" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="rounded-md border bg-card">
-      <AsyncBillingState loading={isLoading} error={error} skeletonType="table">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Organization</TableHead>
-              <TableHead>Org ID</TableHead>
-              <TableHead>User ID</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Error Stage</TableHead>
-              <TableHead className="text-right">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {failures?.map((fail: any) => (
-              <TableRow key={fail.id}>
-                <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-                  {format(new Date(fail.createdAt), 'dd MMM yyyy, HH:mm')}
-                </TableCell>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    {fail.organization?.name || fail.orgId || fail.organizationName || "Unknown"}
-                  </div>
-                </TableCell>
-                <TableCell className="font-mono text-xs text-muted-foreground">
-                  {fail.orgId || fail.organizationId || "N/A"}
-                </TableCell>
-                <TableCell className="font-mono text-xs text-muted-foreground">
-                  {fail.userId || fail.payer?.id || "N/A"}
-                </TableCell>
-                <TableCell className="font-medium text-destructive">
-                  <MoneyDisplay amountPaise={fail.amountPaise} />
-                </TableCell>
-                <TableCell>
-                  <FailureStageBadge stage={fail.stage || 'UNKNOWN'} />
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="sm" onClick={() => onResolve(fail.id)} className="h-8 gap-1">
-                    Investigate <ArrowRightCircle className="w-3 h-3" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {failures?.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
-                  No active payment failures found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </AsyncBillingState>
-    </div>
+    <AsyncBillingState loading={isLoading} error={error} skeletonType="table">
+      <DataTable 
+        columns={columns} 
+        rows={failures || []} 
+        emptyMessage="No active payment failures found."
+        onRowClick={(row) => onResolve(row.id)}
+      />
+    </AsyncBillingState>
   );
 };
 

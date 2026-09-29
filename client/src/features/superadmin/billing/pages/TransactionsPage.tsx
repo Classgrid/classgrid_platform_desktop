@@ -59,8 +59,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/marketing
 import { Input } from '@/components/marketing_ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/marketing_ui/select';
 import { SuperadminFilterBar } from '../../components/SuperadminFilterBar';
-import { DateRangePicker, OrganizationSelector, OrganizationTypeFilter } from '../components/shared/BillingFilterComponents';
+import { OrganizationSelector, OrganizationTypeFilter } from '../components/shared/BillingFilterComponents';
 import { TransactionTable, TransactionDetailDrawer } from '../components/finance/TransactionComponents';
+import { NikhilTimeCalendar } from '@/components/marketing_ui/nikhil_time_calendar';
+import { X } from 'lucide-react';
 
 type DateRange = { from: Date; to?: Date };
 
@@ -73,7 +75,8 @@ const TransactionsPage = () => {
   const [method, setMethod] = useState('ALL');
   const [settlementStatus, setSettlementStatus] = useState('ALL');
   const [refundStatus, setRefundStatus] = useState('ALL');
-  const [dateRange, setDateRange] = useState<DateRange>();
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateType, setDateType] = useState('createdAt');
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
@@ -91,8 +94,8 @@ const TransactionsPage = () => {
     method: method !== 'ALL' ? method : undefined,
     settlementStatus: settlementStatus !== 'ALL' ? settlementStatus : undefined,
     refundStatus: refundStatus !== 'ALL' ? refundStatus : undefined,
-    startDate: dateRange?.from.toISOString(),
-    endDate: dateRange?.to?.toISOString(),
+    startDate: dateFrom ? dateFrom.toISOString() : undefined,
+    endDate: dateFrom ? (() => { const e = new Date(dateFrom); e.setHours(23, 59, 59, 999); return e.toISOString(); })() : undefined,
     search: search || undefined,
   };
 
@@ -104,7 +107,7 @@ const TransactionsPage = () => {
     setMethod('ALL');
     setSettlementStatus('ALL');
     setRefundStatus('ALL');
-    setDateRange(undefined);
+    setDateFrom(undefined);
     setSearchInput('');
     setSearch('');
   };
@@ -153,6 +156,28 @@ const TransactionsPage = () => {
                 <SelectItem value="DISPUTED">Disputed</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="w-[180px] max-w-[180px] overflow-hidden relative">
+            <NikhilTimeCalendar
+              value={dateFrom}
+              onChange={setDateFrom}
+              placeholder="Select Date"
+              popDirection="down"
+              showTime={false}
+              className="h-9 w-full pr-8"
+              dateType={dateType}
+              onDateTypeChange={setDateType}
+            />
+            {dateFrom && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent bg-background"
+                title="Clear date"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         </SuperadminFilterBar>
       </div>

@@ -1947,7 +1947,7 @@ router.get("/system-metrics", async (req, res) => {
 router.get("/transactions", async (req, res) => {
     try {
         const PlatformTransaction = (await import("../models/PlatformTransaction.js")).default;
-        const { orgId, organizationId, status, type, search, page = 1, limit = 50 } = req.query;
+        const { orgId, organizationId, status, type, search, startDate, endDate, page = 1, limit = 50 } = req.query;
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         const filter = {};
@@ -1962,6 +1962,12 @@ router.get("/transactions", async (req, res) => {
                 { userName: new RegExp(search, "i") },
                 { userEmail: new RegExp(search, "i") },
             ];
+        }
+
+        if (startDate || endDate) {
+            filter.createdAt = {};
+            if (startDate) filter.createdAt.$gte = new Date(startDate);
+            if (endDate) filter.createdAt.$lte = new Date(endDate);
         }
 
         const [txns, total] = await Promise.all([

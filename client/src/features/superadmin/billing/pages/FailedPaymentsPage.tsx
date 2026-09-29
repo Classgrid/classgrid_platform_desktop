@@ -24,6 +24,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/marketing
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/marketing_ui/select';
 import { SuperadminFilterBar } from '../../components/SuperadminFilterBar';
 import { OrganizationSelector, OrganizationTypeFilter } from '../components/shared/BillingFilterComponents';
+import { NikhilTimeCalendar } from '@/components/marketing_ui/nikhil_time_calendar';
+import { X } from 'lucide-react';
 
 const FailedPaymentsPage = () => {
   const navigate = useNavigate();
@@ -31,11 +33,14 @@ const FailedPaymentsPage = () => {
   const [searchInput, setSearchInput] = useState('');
   const [organizationId, setOrganizationId] = useState('');
   const [organizationType, setOrganizationType] = useState('ALL');
-
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateType, setDateType] = useState('createdAt');
   const filters = {
     status: filterType !== 'ALL' ? filterType : undefined,
     organizationId: organizationId || undefined,
     organizationType: organizationType !== 'ALL' ? organizationType : undefined,
+    startDate: dateFrom ? dateFrom.toISOString() : undefined,
+    endDate: dateFrom ? (() => { const e = new Date(dateFrom); e.setHours(23, 59, 59, 999); return e.toISOString(); })() : undefined,
     search: searchInput || undefined,
   };
 
@@ -69,6 +74,28 @@ const FailedPaymentsPage = () => {
                 <SelectItem value="RESOLVED">Resolved</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="w-[180px] max-w-[180px] overflow-hidden relative">
+            <NikhilTimeCalendar
+              value={dateFrom}
+              onChange={setDateFrom}
+              placeholder="Select Date"
+              popDirection="down"
+              showTime={false}
+              className="h-9 w-full pr-8"
+              dateType={dateType}
+              onDateTypeChange={setDateType}
+            />
+            {dateFrom && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent bg-background"
+                title="Clear date"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         </SuperadminFilterBar>
       </div>
