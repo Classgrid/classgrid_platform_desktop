@@ -87,6 +87,7 @@ import billingRevenueRoutes from "./super-admin/billing-revenue.routes.js";
 import billingSubscriptionRoutes from "./super-admin/billing-subscription.routes.js";
 import billingTransactionsRoutes from "./super-admin/billing-transactions.routes.js";
 import billingExportsRoutes from "./super-admin/billing-exports.routes.js";
+import aiUsageRoutes from "./super-admin/ai-usage.routes.js";
 import { requireSuperAdminBillingAccess } from "../middlewares/billingPermissions.js";
 import { validateBillingRequest } from "../middlewares/billingValidation.js";
 
@@ -97,6 +98,7 @@ const PRIMARY_SUPER_ADMIN_EMAIL = (process.env.SUPER_ADMIN_EMAIL || "support@cla
 router.use(isAuthenticated, requireRole("super_admin"));
 
 router.use("/notifications-sys", notificationRoutes);
+router.use("/ai-usage", aiUsageRoutes);
 
 // Canonical contract. Authentication, billing permission, and validation apply
 // to both canonical routes and the temporary backward-compatible aliases.

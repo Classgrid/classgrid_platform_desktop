@@ -31,6 +31,27 @@ router.post('/start', async (req, res) => {
       console.error(`Background build failed for session ${sessionId}:`, err);
     });
 
+    // Schedule watchdog alarms for each step using BullMQ
+    try {
+      const { alarmQueue } = await import('../queues/alarmQueue.js');
+      let baseDelay = 40000; // 40 seconds for the first step
+      for (let i = 0; i < plan.length; i++) {
+        const step = plan[i];
+        const stepId = step.id || step.title.toLowerCase().replace(/\s+/g, '-');
+        await alarmQueue.add('watchdog-alarm', {
+          sessionId,
+          stepId,
+          userEmail: req.user?.email || 'unknown',
+          contextString: '' // Could add context if needed
+        }, {
+          delay: baseDelay + (i * 30000) // Increase delay for subsequent steps
+        });
+      }
+      console.log(`[Build] Scheduled ${plan.length} watchdog alarms for session ${sessionId}`);
+    } catch (alarmErr) {
+      console.error("[Build] Failed to schedule watchdog alarms:", alarmErr);
+    }
+
     res.json({ sessionId, status: "started" });
   } catch (error) {
     console.error('Error starting build:', error);

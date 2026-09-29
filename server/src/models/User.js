@@ -174,7 +174,7 @@ const userSchema = new mongoose.Schema(
       default: null,
       alias: "abcId",
     },
-    
+
     anti_ragging_undertaking_no: {
       type: String,
       default: null,
@@ -417,9 +417,9 @@ const userSchema = new mongoose.Schema(
 
     // ðŸ—‘ï¸ Cleared Chat Threads (Thread ID -> Cleared At Timestamp)
     cleared_chat_threads: {
-        type: Map,
-        of: Date,
-        default: {}
+      type: Map,
+      of: Date,
+      default: {}
     },
 
     // ðŸ”” In-App notification preferences (Bell icon inbox)
@@ -626,9 +626,14 @@ const userSchema = new mongoose.Schema(
     },
     // 🤖 AI Configuration (Personal Token Pools)
     ai_tokens: {
-        free_weekly_limit: { type: Number, default: 100000 }, 
-        used_this_week: { type: Number, default: 0 },
-        week_reset_date: { type: Date, default: () => { const d = new Date(); d.setDate(d.getDate() + 7); return d; } }
+      free_weekly_limit: { type: Number, default: 100000 },
+      used_this_week: { type: Number, default: 0 },
+      week_reset_date: { type: Date, default: () => { const d = new Date(); d.setDate(d.getDate() + 7); return d; } },
+      is_ai_blocked: { type: Boolean, default: false },
+      ai_credits_balance: { type: Number, default: 0 },
+      ai_image_free_weekly_limit: { type: Number, default: 20 },
+      ai_image_free_weekly_used: { type: Number, default: 0 },
+      total_ai_tokens_used: { type: Number, default: 0 }
     },
     metadata: {
       type: mongoose.Schema.Types.Mixed,
@@ -654,7 +659,7 @@ userSchema.index(
 );
 
 // ðŸ›¡ï¸ Auto-verify all @classgrid.in emails
-userSchema.pre('save', async function() {
+userSchema.pre('save', async function () {
   if (this.email && this.email.toLowerCase().endsWith('@classgrid.in')) {
     this.isEmailVerified = true;
     this.verification_status = 'verified';
@@ -663,11 +668,11 @@ userSchema.pre('save', async function() {
 
 // ðŸ”„ Auto-sync newly created users to Supabase blog_subscribers
 // Track isNew before save fires (isNew becomes false after save)
-userSchema.pre('save', async function() {
+userSchema.pre('save', async function () {
   this.$wasNew = this.isNew;
 });
 
-userSchema.post('save', function(doc) {
+userSchema.post('save', function (doc) {
   // Only trigger on initial document creation, not on updates
   if (doc.$wasNew) {
     syncUserToBlogSubscribers(doc.email, doc.name).catch(console.error);

@@ -134,8 +134,6 @@ import { OnboardingWizardPage } from "@/features/auth/pages/OnboardingWizardPage
 import NewRoleWelcomePage from "@/features/auth/pages/NewRoleWelcomePage";
 import { CheckoutPage } from "@/features/billing-portal/pages/CheckoutPage";
 import { StudentBillingPortalPage } from "@/features/billing-portal/pages/StudentBillingPortalPage";
-import { BillingLandingPage } from "@/features/billing-portal/pages/BillingLandingPage";
-
 import { StudentHomePage } from "@/features/student/pages/StudentHomePage";
 import { StudentWorkPage } from "@/features/student/pages/StudentWorkPage";
 import { FacultyHomePage } from "@/features/faculty/pages/FacultyHomePage";
@@ -193,6 +191,7 @@ import { OrgAdminLayout } from "@/components/layout/OrgAdminLayout";
 import { DynamicRoleLayout } from "@/components/layout/DynamicRoleLayout";
 import { ComingSoonPage } from "@/features/system/pages/ComingSoonPage";
 import { AgentReviewsPage } from "@/features/superadmin/pages/AgentReviewsPage";
+import { AiUsageDashboardPage } from "@/features/superadmin/pages/AiUsageDashboardPage";
 import { PlatformHubPage } from "@/features/system/pages/PlatformHubPage";
 
 
@@ -220,11 +219,9 @@ export function AppRouter() {
   if (isBilling) {
     return (
       <Routes>
-        {/* Landing page for billing.classgrid.in root — allows Razorpay scanner to verify the domain */}
-        <Route path="/" element={<BillingLandingPage />} />
+        <Route path="/" element={<Navigate to="/checkout" replace />} />
         <Route path="/checkout" element={<CheckoutPage />} />
-        {/* Fallback: any unknown billing path shows the landing page */}
-        <Route path="*" element={<BillingLandingPage />} />
+        <Route path="*" element={<Navigate to="/checkout" replace />} />
       </Routes>
     );
   }
@@ -291,6 +288,7 @@ export function AppRouter() {
           <Route path="/superadmin/agent/:sessionId" element={<DashboardHomePage />} />
           <Route path="/superadmin/agent/:sessionId/*" element={<DashboardHomePage />} />
           <Route path="/superadmin/agent-reviews" element={<AgentReviewsPage />} />
+          <Route path="/superadmin/ai-usage" element={<AiUsageDashboardPage />} />
           <Route path="/superadmin/analytics" element={<AnalyticsPage />} />
           <Route path="/superadmin/audit-logs" element={<AuditLogsPage />} />
 

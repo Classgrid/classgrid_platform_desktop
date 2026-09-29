@@ -986,6 +986,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
         let allowedConnectorNames = new Set([
             'unified_db_query',
             'run_code',
+            'read_sandbox_file',
             'execute_terminal_command',
             'internal_thought_process',
             'search_syllabus_vectors',
@@ -1603,6 +1604,10 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                         const result = await handleToolCall('execute_terminal_command', args, { sessionId });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
+                    read_sandbox_file: async (args) => {
+                        const result = await handleToolCall('read_sandbox_file', args, { sessionId });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
                     run_code: async (args) => {
                         const result = await handleToolCall('run_code', args, { sessionId });
                         const text = result.isError ? result.content[0].text : result.content[0].text;
@@ -1613,6 +1618,35 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                             if (files && Object.keys(files).length > 0) {
                                 if (!res.writableEnded) {
                                     res.write(`data: ${JSON.stringify({ type: "file_update", files })}\n\n`);
+                                }
+
+                                // Detect which plan step was completed based on files written
+                                const fileNames = Object.keys(files);
+                                const completedSteps = [];
+                                if (fileNames.some(f => /\.html$/i.test(f))) completedSteps.push('html');
+                                if (fileNames.some(f => /\.css$/i.test(f))) completedSteps.push('css');
+                                if (fileNames.some(f => /\.js$/i.test(f) && !/deploy\.js$/i.test(f))) completedSteps.push('js');
+                                if (fileNames.some(f => /deploy\.js$/i.test(f))) completedSteps.push('deploy');
+
+                                // Send plan step update to frontend so checkmarks update in real-time
+                                if (completedSteps.length > 0 && !res.writableEnded) {
+                                    res.write(`data: ${JSON.stringify({ type: "plan_step_update", completedSteps })}\n\n`);
+                                    
+                                    // Update Trajectory in DB so alarm worker knows it's done
+                                    try {
+                                        const Trajectory = (await import('../models/Trajectory.js')).default;
+                                        const bulkOps = completedSteps.map(stepId => ({
+                                            updateOne: {
+                                                filter: { sessionId, "plan.id": stepId },
+                                                update: { $set: { "plan.$.status": "done" } }
+                                            }
+                                        }));
+                                        if (bulkOps.length > 0) {
+                                            await Trajectory.bulkWrite(bulkOps);
+                                        }
+                                    } catch (dbErr) {
+                                        console.error("[file_update] Failed to update trajectory:", dbErr);
+                                    }
                                 }
                             }
                         } catch (e) {

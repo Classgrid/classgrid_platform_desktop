@@ -516,6 +516,63 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                 }
 
                 // ── Marketplace Order Payment ──
+                // ── AI Top-Up Payment ──
+                else if (paymentType === "AI_TOPUP") {
+                    const userId = notes?.user_id;
+                    if (!userId) {
+                        console.error("[Razorpay Webhook] AI Top-Up missing user_id");
+                        break;
+                    }
+
+                    const AiCreditTransaction = (await import("../models/AiCreditTransaction.js")).default;
+                    const existing = await AiCreditTransaction.findOne({ razorpay_payment_id: paymentId });
+                    if (existing) {
+                        console.log(`[Razorpay Webhook] Duplicate AI Top-Up payment ${paymentId}, skipping`);
+                        break;
+                    }
+
+                    const CREDITS_PER_INR = 5000;
+                    const creditsAdded = Math.floor(amountInr * CREDITS_PER_INR);
+
+                    await AiCreditTransaction.create({
+                        userId: userId,
+                        orgId: organizationId,
+                        amount_inr: amountInr,
+                        credits_added: creditsAdded,
+                        razorpay_payment_id: paymentId,
+                        razorpay_order_id: orderId,
+                        type: "topup",
+                        status: "success"
+                    });
+
+                    const User = (await import("../models/User.js")).default;
+                    await User.findByIdAndUpdate(userId, {
+                        $inc: { "ai_tokens.ai_credits_balance": creditsAdded }
+                    });
+
+                    const PaymentOrder = (await import("../models/PaymentOrder.js")).default;
+                    await PaymentOrder.findOneAndUpdate({ providerOrderId: orderId }, { status: "PAID" });
+
+                    const PaymentTransaction = (await import("../models/PaymentTransaction.js")).default;
+                    await PaymentTransaction.create({
+                        organizationId: organizationId || null,
+                        amountCapturedPaise: amount,
+                        feePaise: fee || 0,
+                        taxPaise: tax || 0,
+                        currency,
+                        status: "CAPTURED",
+                        capturedAt: new Date(),
+                        providerPaymentId: paymentId,
+                        providerOrderId: orderId,
+                        merchantType: "CLASSGRID",
+                        paymentFlow: "AI_TOPUP",
+                        sourceIp: req.ip || req.connection.remoteAddress,
+                        method: paymentEntity.method || "card"
+                    });
+
+                    console.log(`[Razorpay Webhook] ✅ AI Top-Up successful! ${creditsAdded} credits added to User ${userId}`);
+                }
+
                 else if (paymentType === "marketplace_order") {
                     console.log(`[Razorpay Webhook] ✅ Marketplace order received (No-op as marketplace is direct file access)`);
                 }

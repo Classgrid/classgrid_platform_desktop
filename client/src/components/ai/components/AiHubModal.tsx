@@ -22,6 +22,8 @@ import { Button } from "@/components/marketing_ui/button";
 import { WhatsappConfigModal } from "./WhatsappConfigModal";
 import { AiImagesGallery } from "./AiImagesGallery";
 import { AiUsageBar } from "./AiUsageBar";
+import { AiCreditsPanel } from "./AiCreditsPanel";
+import { AiUpgradePanel } from "./AiUpgradePanel";
 
 interface AiHubModalProps {
   isOpen: boolean;
@@ -594,6 +596,14 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
                     <div className="w-full max-w-2xl bg-card border border-border rounded-xl p-6 shadow-sm">
                         <AiUsageBar />
                     </div>
+                  </div>
+                ) : activeTab === "credits" ? (
+                  <div className="h-full flex-1 -m-8">
+                    <AiCreditsPanel />
+                  </div>
+                ) : activeTab === "upgrade" ? (
+                  <div className="h-full flex-1 -m-8">
+                    <AiUpgradePanel />
                   </div>
                 ) : (
                   <>

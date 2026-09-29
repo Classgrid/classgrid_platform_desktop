@@ -101,4 +101,12 @@ router.get("/shared/:shareId", getPublicShare);
 // R2 Image Upload for Chat
 router.post("/upload", isAuthenticated, uploadChatImage);
 
+import aiTopUpRoutes from "./ai-topup.routes.js";
+import aiCreditsRoutes from "./ai-credits.routes.js";
+
+// Top-up Routes
+router.use("/topup", aiTopUpRoutes);
+// Credits Routes
+router.use("/credits", aiCreditsRoutes);
+
 export default router;

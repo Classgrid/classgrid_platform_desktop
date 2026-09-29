@@ -116,6 +116,18 @@ export const getMcpTools = () => [
   },
 
   {
+    name: 'read_sandbox_file',
+    description: 'Read the contents of a file from the AWS EC2 Docker Sandbox filesystem. Use this to read back files you previously wrote using run_code (e.g., to push them to GitHub or verify their contents). The file path should be relative to /data/ (e.g., "index.html" or "css/style.css").',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        filePath: { type: 'string', description: 'The file path relative to /data/ (e.g., "index.html", "css/style.css", "deploy.js").' }
+      },
+      required: ['filePath']
+    }
+  },
+
+  {
     name: 'execute_terminal_command',
     description: 'Executes a native bash/terminal command directly on the host computer. You can use this to run curl, tesseract, Python, or system utilities.',
     inputSchema: {
@@ -1376,6 +1388,38 @@ export const handleToolCall = async (name, args, context = {}) => {
         };
       } catch (e) {
         return { content: [{ type: 'text', text: `Failed to connect to AWS Sandbox: ${e.message}` }] };
+      }
+    }
+
+    if (name === 'read_sandbox_file') {
+      const { filePath } = args;
+      const { sessionId = 'default' } = context;
+
+      console.log(`\n[SANDBOX] Reading file: /data/${filePath} for session: ${sessionId}`);
+
+      try {
+        const ssh = new NodeSSH();
+        const isProd = process.env.NODE_ENV === 'production';
+        await ssh.connect({
+          host: isProd ? '172.31.6.98' : '13.63.34.197',
+          username: 'ubuntu',
+          ...(process.env.AGENT_SSH_KEY
+            ? { privateKey: process.env.AGENT_SSH_KEY.replace(/\\n/g, '\n') }
+            : { privateKeyPath: 'C:\\Users\\nikhi\\Downloads\\Nikhil.pem' })
+        });
+
+        const fullPath = `/home/ubuntu/sandbox_data/${sessionId}/${filePath}`;
+        const { stdout, stderr } = await ssh.execCommand(`cat ${fullPath}`);
+        ssh.dispose();
+
+        if (stderr && stderr.includes('No such file')) {
+          return { content: [{ type: 'text', text: `File not found: /data/${filePath}. Available files can be listed with read_sandbox_file using filePath: "." to list directory.` }] };
+        }
+
+        console.log(`[SANDBOX] Successfully read file: ${filePath} (${stdout.length} bytes)`);
+        return { content: [{ type: 'text', text: stdout }] };
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Failed to read sandbox file: ${e.message}` }] };
       }
     }
 
@@ -3205,8 +3249,8 @@ export async function readSandboxFiles(sessionId) {
 
   try {
     const dir = `/home/ubuntu/sandbox_data/${sessionId}`;
-    // List files, excluding the script.* files we use to execute
-    const { stdout } = await ssh.execCommand(`ls -1 ${dir} 2>/dev/null | grep -v '^script\\.'`);
+    // Recursively find ALL files (including subdirectories like css/, js/), excluding script.* execution files
+    const { stdout } = await ssh.execCommand(`find ${dir} -type f ! -name 'script.*' -printf '%P\\n' 2>/dev/null`);
     const filenames = stdout.split('\n').map(f => f.trim()).filter(Boolean);
 
     const files = {};
@@ -3224,3 +3268,4 @@ export async function readSandboxFiles(sessionId) {
     ssh.dispose();
   }
 }
+

@@ -292,6 +292,8 @@ export function ApprovalCard({
   const canContinue = true;
 
   const handleApprove = (nextAnswers?: Record<string, string>) => {
+    if (isSubmitted) return;
+    cancelAutoApprove();
     if (variant === "questions") {
       const a = nextAnswers ?? answers;
       if (safeStep < questions.length - 1) {
@@ -307,6 +309,8 @@ export function ApprovalCard({
   };
 
   const handleReject = () => {
+    if (isSubmitted) return;
+    cancelAutoApprove();
     if (variant === "questions") {
       if (safeStep < questions.length - 1) {
         goToStep(safeStep + 1);

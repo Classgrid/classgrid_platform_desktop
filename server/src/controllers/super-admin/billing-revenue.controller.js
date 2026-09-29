@@ -55,7 +55,7 @@ import { logAdminAction } from "../../services/auditLog.service.js";
 const getBaseRevenueMatch = (filters) => {
     const match = {
         status: "CAPTURED",
-        paymentFlow: "CLASSGRID_SUBSCRIPTION",
+        paymentFlow: { $in: ["CLASSGRID_SUBSCRIPTION", "AI_TOPUP"] },
         merchantType: "CLASSGRID",
     };
     if (filters.startDate && filters.endDate) {

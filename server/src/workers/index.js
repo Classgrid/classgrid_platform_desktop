@@ -42,6 +42,7 @@
  */
 
 import './email-provisioning.worker.js';
+import './alarmWorker.js';
 
 // Import other workers here as they are created
 import './chat-persistence.worker.js';

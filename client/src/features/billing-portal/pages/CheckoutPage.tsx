@@ -59,6 +59,7 @@ function formatCountdown(seconds: number) {
 export function CheckoutPage() {
   const location = useLocation();
   const [token, setToken] = useState<string | null>(null);
+  const [returnUrl, setReturnUrl] = useState<string | null>(null);
   // "email_step" = show name+email first, "otp_step" = OTP sent, show OTP input
   const [step, setStep] = useState<"loading" | "email_step" | "otp_step" | "invalid" | "success">("loading");
   const [otp, setOtp] = useState("");
@@ -128,7 +129,7 @@ export function CheckoutPage() {
       // No token = fresh visit → show Name + Email form first
       const emailParam = searchParams.get("email");
       if (emailParam) setPayerEmail(emailParam);
-      setStep("email_step");
+      setStep("invalid");
     }
       
     return () => {
@@ -233,6 +234,9 @@ export function CheckoutPage() {
               txnId: confirmRes.data?.data?.providerPaymentId || response.razorpay_payment_id,
               paidAt: now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' - ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
             });
+            if (return_url) {
+              setReturnUrl(return_url);
+            }
             setStep("success");
           } catch (confirmError: any) {
             console.error("Confirmation error", confirmError);
@@ -402,7 +406,18 @@ export function CheckoutPage() {
               )}
 
               <p className="text-muted-foreground text-sm leading-relaxed">
-                A confirmation email has been sent. You can now close this tab.
+                A confirmation email has been sent.
+              </p>
+              {returnUrl ? (
+                <a href={returnUrl} className="mt-4 flex w-full items-center justify-center rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-white transition-all hover:bg-emerald-600">
+                  Return to Dashboard
+                </a>
+              ) : (
+                <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                  You can now close this tab.
+                </p>
+              )}
+              <p className="hidden">
               </p>
             </div>
 

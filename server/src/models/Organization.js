@@ -613,8 +613,10 @@ const organizationSchema = new mongoose.Schema(
         },
         // AI Configuration (Token Pools & Access)
         ai_config: {
+            is_ai_blocked: { type: Boolean, default: false },
             pro_pool_limit: { type: Number, default: 500000 },
             pro_used_this_period: { type: Number, default: 0 },
+            total_ai_tokens_used: { type: Number, default: 0 },
             pro_reset_date: { type: Date, default: () => { const d = new Date(); d.setHours(d.getHours() + 4); return d; } },
             pro_enabled_roles: { 
                 type: [String], 
