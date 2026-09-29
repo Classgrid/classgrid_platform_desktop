@@ -106,7 +106,7 @@ export function AiUpgradePanel() {
                 <Button 
                   onClick={handleTopUp} 
                   disabled={!isValidAmount || topUpMutation.isPending}
-                  className="bg-amber-500 hover:bg-amber-600 text-white min-w-[200px] h-11 text-base shadow-lg shadow-amber-500/20"
+                  className="min-w-[200px] h-11 text-base"
                 >
                   {topUpMutation.isPending ? "Processing..." : "Proceed to Checkout"}
                 </Button>
