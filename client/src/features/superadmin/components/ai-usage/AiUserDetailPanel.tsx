@@ -17,7 +17,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
 
   if (!userDetail) return null;
 
-  const isBlocked = userDetail.ai_tokens?.ai_access_blocked;
+  const isBlocked = userDetail.ai_Credits?.ai_access_blocked;
 
   const handleToggleBlock = () => {
     blockUserMutation.mutate({ userId: userDetail._id, blocked: !isBlocked });
@@ -35,17 +35,17 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
       <Card className="md:col-span-2">
         <CardHeader>
           <CardTitle>Usage Overview</CardTitle>
-          <CardDescription>Lifetime token consumption & balance</CardDescription>
+          <CardDescription>Lifetime credit consumption & balance</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-muted/30 p-4 rounded-lg border border-border/50">
-              <div className="text-sm text-muted-foreground mb-1">Total Tokens Consumed</div>
-              <div className="text-2xl font-bold text-blue-600">{formatNumber(userDetail.ai_tokens?.ai_tokens_consumed || 0)}</div>
+              <div className="text-sm text-muted-foreground mb-1">Total Credits Consumed</div>
+              <div className="text-2xl font-bold text-blue-600">{formatNumber(userDetail.ai_Credits?.ai_Credits_consumed || 0)}</div>
             </div>
             <div className="bg-muted/30 p-4 rounded-lg border border-border/50">
               <div className="text-sm text-muted-foreground mb-1">Available Credits</div>
-              <div className="text-2xl font-bold text-emerald-600">{formatNumber(userDetail.ai_tokens?.ai_credits_balance || 0)}</div>
+              <div className="text-2xl font-bold text-emerald-600">{formatNumber(userDetail.ai_Credits?.ai_credits_balance || 0)}</div>
             </div>
           </div>
 

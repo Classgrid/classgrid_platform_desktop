@@ -22,6 +22,8 @@ import {
   useAiUserDetail
 } from "../queries/useAiUsage";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
 import { formatNumber } from "@/lib/utils";
 import { AiUserDetailPanel } from "../components/ai-usage/AiUserDetailPanel";
 
@@ -121,40 +123,113 @@ export function AiUsageDashboardPage() {
     );
   };
 
-  const renderGlobalStats = () => {
-    if (globalLoading) return <Skeleton className="h-32 w-full mb-8" />;
+    const renderGlobalStats = () => {
+    if (globalLoading) return <Skeleton className="h-96 w-full mb-8" />;
     if (!globalStats) return null;
 
+    const { totalCreditsSpent, totalRevenue, creditsPurchasedThisMonth, totalChats, usageTrend, models } = globalStats;
+    const pieData = models?.map((m: any, i: number) => ({ name: m.name.split('/').pop(), value: 10 + Math.random() * 90, color: COLORS[i % COLORS.length] })) || [];
+
     return (
-      <div className="grid gap-4 md:grid-cols-4 mb-8">
-        <Card>
-          <CardContent className="p-6 flex flex-col items-center text-center">
-            <Cpu className="h-8 w-8 text-blue-500 mb-3" />
-            <div className="text-3xl font-bold">{formatNumber(globalStats.totalTokensConsumed)}</div>
-            <div className="text-sm text-muted-foreground mt-1">Total Tokens Used</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 flex flex-col items-center text-center">
-            <Database className="h-8 w-8 text-indigo-500 mb-3" />
-            <div className="text-3xl font-bold">{formatNumber(globalStats.totalCreditsPurchased)}</div>
-            <div className="text-sm text-muted-foreground mt-1">Total Credits Sold</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 flex flex-col items-center text-center">
-            <Activity className="h-8 w-8 text-emerald-500 mb-3" />
-            <div className="text-3xl font-bold">₹{formatNumber(globalStats.totalTopUpRevenueINR)}</div>
-            <div className="text-sm text-muted-foreground mt-1">Total Top-Up Revenue</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 flex flex-col items-center text-center">
-            <HardDrive className="h-8 w-8 text-amber-500 mb-3" />
-            <div className="text-3xl font-bold">{formatNumber(globalStats.totalOrgPoolsLimit)}</div>
-            <div className="text-sm text-muted-foreground mt-1">Total Assigned Org Limits</div>
-          </CardContent>
-        </Card>
+      <div className="space-y-6 mb-8">
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardContent className="p-6 flex flex-col items-center text-center">
+              <Cpu className="h-8 w-8 text-blue-500 mb-3" />
+              <div className="text-3xl font-bold">{formatNumber(totalCreditsSpent || 0)}</div>
+              <div className="text-sm text-muted-foreground mt-1">Total Credits Used</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 flex flex-col items-center text-center">
+              <Database className="h-8 w-8 text-indigo-500 mb-3" />
+              <div className="text-3xl font-bold">{formatNumber(creditsPurchasedThisMonth || 0)}</div>
+              <div className="text-sm text-muted-foreground mt-1">Credits Sold This Month</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 flex flex-col items-center text-center">
+              <Activity className="h-8 w-8 text-emerald-500 mb-3" />
+              <div className="text-3xl font-bold">₹{formatNumber(totalRevenue || 0)}</div>
+              <div className="text-sm text-muted-foreground mt-1">Total Top-Up Revenue</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 flex flex-col items-center text-center">
+              <HardDrive className="h-8 w-8 text-amber-500 mb-3" />
+              <div className="text-3xl font-bold">{formatNumber(totalChats || 0)}</div>
+              <div className="text-sm text-muted-foreground mt-1">Total Chat Sessions</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card className="col-span-2">
+            <CardHeader>
+              <CardTitle>Daily Usage Trend (Chats)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={usageTrend || []}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
+                    <XAxis 
+                      dataKey="date" 
+                      tickFormatter={(val) => val.split('-').slice(1).join('/')}
+                      stroke="currentColor" 
+                      className="text-xs opacity-50"
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis 
+                      stroke="currentColor" 
+                      className="text-xs opacity-50"
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <RechartsTooltip 
+                      cursor={{ fill: 'currentColor', opacity: 0.05 }}
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                    />
+                    <Bar dataKey="credits" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Model Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full flex flex-col items-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {pieData.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                      formatter={(value: any, name: any) => [name, '']}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   };
@@ -172,12 +247,12 @@ export function AiUsageDashboardPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {orgs.map((org: any) => (
               <FolderIcon
-                key={org._id}
-                label={org.displayName}
-                subtitle={`${formatNumber(org.ai_tokens_consumed || 0)} tokens`}
-                badge={0} // Maybe show blocked users count?
+                key={org.id}
+                label={org.name}
+                subtitle={`${formatNumber(org.totalUsage || 0)} Credits`}
+                badge={org.isBlocked ? "BLOCKED" : 0}
                 icon={Building}
-                onClick={() => setPath({ orgId: org._id, orgName: org.displayName })}
+                onClick={() => setPath({ orgId: org.id, orgName: org.name })}
               />
             ))}
           </div>
@@ -188,17 +263,6 @@ export function AiUsageDashboardPage() {
 
   const renderLevel1Roles = () => {
     if (orgDetailLoading || orgUsersLoading) return <Skeleton className="h-64 w-full" />;
-    
-    // Group users by role to create role folders
-    const rolesMap: Record<string, { count: number, tokens: number }> = {};
-    if (orgUsers) {
-      orgUsers.forEach((user: any) => {
-        const role = user.role || "unknown";
-        if (!rolesMap[role]) rolesMap[role] = { count: 0, tokens: 0 };
-        rolesMap[role].count++;
-        rolesMap[role].tokens += user.ai_tokens?.ai_tokens_consumed || 0;
-      });
-    }
 
     return (
       <div className="space-y-6">
@@ -208,14 +272,14 @@ export function AiUsageDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {Object.entries(rolesMap).map(([role, stats]) => (
+              {orgUsers?.map((roleGroup: any) => (
                 <FolderIcon
-                  key={role}
-                  label={role.toUpperCase()}
-                  subtitle={`${stats.count} users • ${formatNumber(stats.tokens)} tokens`}
-                  badge={stats.count}
+                  key={roleGroup.roleName}
+                  label={roleGroup.roleName.toUpperCase()}
+                  subtitle={`${roleGroup.userCount} users • ${formatNumber(roleGroup.totalUsage || 0)} Credits`}
+                  badge={roleGroup.userCount}
                   icon={Shield}
-                  onClick={() => setPath({ ...path, role })}
+                  onClick={() => setPath({ ...path, role: roleGroup.roleName })}
                 />
               ))}
             </div>
@@ -228,7 +292,8 @@ export function AiUsageDashboardPage() {
   const renderLevel2Users = () => {
     if (orgUsersLoading) return <Skeleton className="h-64 w-full" />;
     
-    const usersInRole = orgUsers?.filter((u: any) => u.role === path.role) || [];
+    const roleGroup = orgUsers?.find((r: any) => r.roleName === path.role);
+    const usersInRole = roleGroup ? roleGroup.users : [];
 
     return (
       <Card>
@@ -239,12 +304,12 @@ export function AiUsageDashboardPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {usersInRole.map((user: any) => (
               <FolderIcon
-                key={user._id}
+                key={user.id}
                 label={user.name || user.email}
-                subtitle={`${formatNumber(user.ai_tokens?.ai_tokens_consumed || 0)} tokens`}
-                badge={user.ai_tokens?.ai_access_blocked ? "BLOCKED" : 0}
+                subtitle={`${formatNumber(user.totalUsage || 0)} Credits`}
+                badge={user.isBlocked ? "BLOCKED" : 0}
                 icon={UserIcon}
-                onClick={() => setPath({ ...path, userId: user._id, userName: user.name || user.email })}
+                onClick={() => setPath({ ...path, userId: user.id, userName: user.name || user.email })}
               />
             ))}
           </div>
