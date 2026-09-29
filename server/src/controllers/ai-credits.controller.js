@@ -15,9 +15,23 @@ export const getMyCredits = async (req, res) => {
             return res.status(404).json({ success: false, error: "User not found" });
         }
 
+        const tokens = user.ai_tokens || {};
+        
+        // Strictly calculate the amounts from the backend
+        const totalPurchased = tokens.total_ai_credits_purchased || 0;
+        const balance = tokens.ai_credits_balance || 0;
+        const usedAmount = Math.max(0, totalPurchased - balance);
+
         res.status(200).json({
             success: true,
-            data: user.ai_tokens
+            data: {
+                ...tokens,
+                total_ai_credits_purchased: totalPurchased,
+                ai_credits_balance: balance,
+                ai_credits_used: usedAmount,
+                ai_credits_start_date: tokens.ai_credits_start_date || null,
+                ai_credits_end_date: tokens.ai_credits_end_date || null,
+            }
         });
     } catch (error) {
         console.error("Get My AI Balance Error:", error);

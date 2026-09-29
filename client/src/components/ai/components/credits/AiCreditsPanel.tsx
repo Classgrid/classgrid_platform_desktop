@@ -76,9 +76,10 @@ export function AiCreditsPanel() {
           </div>
           
           {(() => {
+            // Strictly using BACKEND enforced values
             const issuedAmount = balance?.total_ai_credits_purchased || 0;
-            const remainingAmount = purchasedCredits;
-            const usedAmount = Math.max(0, issuedAmount - remainingAmount);
+            const remainingAmount = balance?.ai_credits_balance || 0;
+            const usedAmount = balance?.ai_credits_used || 0;
             const percentUsed = issuedAmount > 0 ? (usedAmount / issuedAmount) * 100 : 0;
             
             return (
