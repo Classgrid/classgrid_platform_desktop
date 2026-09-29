@@ -74,7 +74,6 @@ import { useBillingExportDownload, useBillingExportJob } from '../../hooks/useBi
 export {
   RevenueViewTabs,
   RevenueOrganizationTable,
-  RevenueModuleTable,
 } from './RevenueComponents';
 
 export const RevenueInvoiceTable: React.FC = () => {

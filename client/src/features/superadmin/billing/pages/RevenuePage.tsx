@@ -144,8 +144,7 @@ const RevenuePage = () => {
           </CardHeader>
           <CardContent className="p-0">
             {activeTab === 'organizations' && <RevenueOrganizationTable filters={filters} />}
-            {activeTab === 'modules' && <RevenueModuleTable />}
-            </CardContent>
+                        </CardContent>
         </Card>
       </div>
     </div>
