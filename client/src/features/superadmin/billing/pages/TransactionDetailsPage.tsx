@@ -178,9 +178,24 @@ export default function TransactionDetailsPage() {
                 </div>
                 <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
                   <span className="text-muted-foreground shrink-0 mr-4">Card</span>
-                  <span className="font-medium text-xs text-right uppercase break-all flex flex-col gap-0.5 items-end">
-                    <span>{tx.cardDetails.issuer}, {tx.cardDetails.network}</span>
-                    <span className="text-muted-foreground font-mono">(xx{tx.cardDetails.last4})</span>
+                  <span className="font-medium text-xs text-right uppercase break-all flex flex-col gap-1.5 items-end">
+                    <span className="flex items-center gap-2">
+                      <span className="text-muted-foreground">{tx.cardDetails.issuer}</span>
+                      {(() => {
+                        const net = (tx.cardDetails.network || "").toLowerCase();
+                        if (net === "visa") return <span className="font-bold text-[#1434CB] italic text-[14px]">VISA</span>;
+                        if (net === "mastercard") return (
+                          <div className="flex items-center">
+                            <div className="w-3.5 h-3.5 bg-[#EB001B] rounded-full mix-blend-multiply opacity-90 z-10"></div>
+                            <div className="w-3.5 h-3.5 bg-[#F79E1B] rounded-full -ml-1.5 mix-blend-multiply opacity-90"></div>
+                          </div>
+                        );
+                        if (net === "rupay") return <span className="font-bold italic text-[14px]"><span className="text-[#F37A20]">Ru</span><span className="text-[#03984A]">Pay</span></span>;
+                        if (net === "amex" || net === "american express") return <span className="bg-[#002663] text-white font-bold text-[10px] px-1.5 py-0.5 rounded-sm">AMEX</span>;
+                        return <span>{tx.cardDetails.network}</span>;
+                      })()}
+                    </span>
+                    <span className="text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">•••• {tx.cardDetails.last4}</span>
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
