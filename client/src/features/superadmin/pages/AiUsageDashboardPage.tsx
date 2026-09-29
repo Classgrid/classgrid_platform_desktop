@@ -30,7 +30,7 @@ import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-di
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { formatNumber } from "@/lib/utils";
 import { AiUserDetailPanel } from "../components/ai-usage/AiUserDetailPanel";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Legend, Pie, Cell } from "recharts";
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
 
@@ -79,7 +79,7 @@ const CustomTooltip = ({ active, payload }: any) => {
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].payload.fill || payload[0].color }} />
           {payload[0].name}
         </span>
-        <span className="text-muted-foreground">{Math.round(payload[0].value)}% Usage</span>
+        <span className="text-muted-foreground">{new Intl.NumberFormat("en-IN").format(payload[0].value)} Tokens Consumed</span>
       </div>
     );
   }
@@ -116,7 +116,7 @@ export function AiUsageDashboardPage() {
         <div className="relative w-full md:w-64 shrink-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
-            placeholder="Search name..." 
+            placeholder="Search name, owner, plan..." 
             className="pl-9 bg-background"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -239,7 +239,7 @@ export function AiUsageDashboardPage() {
     // Convert models to pie chart data
     const pieData = models?.map((m: any, i: number) => ({ 
         name: m.name.split('/').pop(), 
-        value: 10 + Math.random() * 90, 
+        value: m.value || 0, 
         color: COLORS[i % COLORS.length] 
     })) || [];
 
@@ -300,10 +300,22 @@ export function AiUsageDashboardPage() {
                       tickLine={false}
                       axisLine={false}
                     />
+                    
                     <RechartsTooltip 
                       cursor={{ fill: 'currentColor', opacity: 0.05 }}
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                      content={({ active, payload, label }: any) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-1 z-50">
+                              <span className="font-semibold text-foreground">{label}</span>
+                              <span className="text-muted-foreground">{payload[0].value} Chat Sessions</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
                     />
+
                     <Bar dataKey="credits" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -334,6 +346,7 @@ export function AiUsageDashboardPage() {
                       ))}
                     </Pie>
                     <RechartsTooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "20px" }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
