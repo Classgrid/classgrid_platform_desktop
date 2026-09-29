@@ -176,23 +176,25 @@ export function AiCreditsPanel() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <div className="shrink-0 w-[150px]">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal h-9">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateFilter ? format(new Date(dateFilter), "MMM dd, yyyy") : <span>Select Date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="end">
-                    <Calendar
-                      mode="single"
-                      selected={dateFilter ? new Date(dateFilter) : undefined}
-                      onSelect={(d: any) => setDateFilter(d ? d.toISOString() : "")}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+              <div className="shrink-0 w-[160px] relative overflow-hidden">
+                <NikhilTimeCalendar
+                  value={dateFilter ? new Date(dateFilter) : undefined}
+                  onChange={(d: Date | undefined) => setDateFilter(d ? d.toISOString() : "")}
+                  placeholder="Select Date"
+                  popDirection="down"
+                  showTime={false}
+                  className="h-9 w-full pr-8"
+                />
+                {dateFilter && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setDateFilter(""); }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent bg-background"
+                    title="Clear date"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                  </button>
+                )}
               </div>
             </div>
           </div>

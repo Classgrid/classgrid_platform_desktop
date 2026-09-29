@@ -99,6 +99,7 @@ router.get("/session", async (req, res) => {
             data: {
                 organizationName: organization?.name || "Organization",
                 maskedEmail: maskEmail(handoff.email),
+                email: handoff.email,
                 amountPaise: handoff.amountPaise,
                 currency: handoff.currency,
                 paymentType: handoff.payment_type,

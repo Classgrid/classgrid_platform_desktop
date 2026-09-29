@@ -11,18 +11,18 @@ export function AiUpgradePanel() {
   const { data: balance, isLoading: balanceLoading } = useMyAiBalance();
   const topUpMutation = useInitiateAiTopUp();
 
-  const [customAmountStr, setCustomAmountStr] = useState<string>("100");
+  const [customAmountStr, setCustomAmountStr] = useState<string>("1");
   
   const customAmount = parseInt(customAmountStr) || 0;
   const expectedTokens = customAmount * 5000;
-  const isValidAmount = customAmount >= 100 && customAmount <= 10000;
+  const isValidAmount = customAmount >= 1 && customAmount <= 10000;
 
   const handleTopUp = async () => {
     if (!isValidAmount) return;
     try {
       const response = await topUpMutation.mutateAsync(customAmount);
       if (response && response.checkout_url) {
-        window.location.href = response.checkout_url;
+        window.open(response.checkout_url, "_blank");
       }
     } catch (error) {
       toast.error("Failed to initiate top-up. Please try again.");
@@ -75,13 +75,13 @@ export function AiUpgradePanel() {
               
               <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-6">
                 <label className="block text-sm font-medium text-foreground mb-3">
-                  Enter Amount (₹100 - ₹10,000)
+                  Enter Amount (₹1 - ₹10,000)
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-lg z-10">₹</span>
                   <Input 
                     type="number"
-                    min={100}
+                    min={1}
                     max={10000}
                     value={customAmountStr}
                     onChange={(e) => setCustomAmountStr(e.target.value)}
@@ -98,7 +98,7 @@ export function AiUpgradePanel() {
                 </div>
                 {!isValidAmount && customAmountStr !== "" && (
                   <p className="text-red-500 text-sm mt-3 flex items-center gap-1.5">
-                    <AlertCircle className="w-4 h-4" /> Amount must be between ₹100 and ₹10,000.
+                    <AlertCircle className="w-4 h-4" /> Amount must be between ₹1 and ₹10,000.
                   </p>
                 )}
               </div>

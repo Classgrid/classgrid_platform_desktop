@@ -117,7 +117,7 @@ export function CheckoutPage() {
         .then((res) => {
           if (res.data?.success) {
             setStep("otp_step");
-            setEmail(res.data.data?.maskedEmail || res.data.email || "your registered email");
+            setEmail(res.data.data?.email || res.data.data?.maskedEmail || res.data.email || "your registered email");
             startCountdown();
           } else {
             setStep("invalid");
