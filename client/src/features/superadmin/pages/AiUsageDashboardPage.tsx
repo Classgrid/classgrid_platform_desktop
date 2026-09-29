@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/marketing_ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
 import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
 import { 
@@ -310,22 +311,22 @@ export function AiUsageDashboardPage() {
     return (
       <div className="space-y-6">
         <div className="flex justify-end gap-3 mb-4">
-            <button 
+            <Button 
+                variant="outline"
                 onClick={() => setShowOrgBlock(true)}
                 disabled={blockOrgMutation.isPending}
-                className="text-sm font-medium px-4 py-2 bg-background border border-border rounded-md hover:bg-muted transition-colors flex items-center"
             >
                 <Shield className="w-4 h-4 mr-2" />
                 {isOrgBlocked ? "Unblock Organization" : "Block Organization"}
-            </button>
-            <button 
+            </Button>
+            <Button 
+                variant="outline"
                 onClick={() => setShowOrgReset(true)}
                 disabled={resetOrgMutation.isPending}
-                className="text-sm font-medium px-4 py-2 bg-background border border-border rounded-md hover:bg-muted transition-colors flex items-center"
             >
                 <Activity className="w-4 h-4 mr-2" />
                 Reset Org Limit
-            </button>
+            </Button>
         </div>
 
         <Card>
