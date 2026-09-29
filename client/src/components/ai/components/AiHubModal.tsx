@@ -22,8 +22,8 @@ import { Button } from "@/components/marketing_ui/button";
 import { WhatsappConfigModal } from "./WhatsappConfigModal";
 import { AiImagesGallery } from "./AiImagesGallery";
 import { AiUsageBar } from "./AiUsageBar";
-import { AiCreditsPanel } from "./AiCreditsPanel";
-import { AiUpgradePanel } from "./AiUpgradePanel";
+import { AiCreditsPanel } from "./credits/AiCreditsPanel";
+import { AiUpgradePanel } from "./credits/AiUpgradePanel";
 
 interface AiHubModalProps {
   isOpen: boolean;

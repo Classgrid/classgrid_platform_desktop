@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/marketing_ui/button";
 import { ShieldAlert, RotateCcw, AlertTriangle, Plus, Coins, Zap } from "lucide-react";
 import { formatNumber } from "@/lib/utils";
-import { useBlockAiUser, useGrantAiCredits, useBlockAiOrg } from "../queries/useAiUsage";
+import { useBlockAiUser, useGrantAiCredits, useBlockAiOrg } from "../../queries/useAiUsage";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { Input } from "@/components/marketing_ui/input";
 

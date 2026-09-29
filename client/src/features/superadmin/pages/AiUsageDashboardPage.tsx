@@ -23,7 +23,7 @@ import {
 } from "../queries/useAiUsage";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { formatNumber } from "@/lib/utils";
-import { AiUserDetailPanel } from "../components/AiUserDetailPanel";
+import { AiUserDetailPanel } from "../components/ai-usage/AiUserDetailPanel";
 
 interface PathState {
   orgId?: string;

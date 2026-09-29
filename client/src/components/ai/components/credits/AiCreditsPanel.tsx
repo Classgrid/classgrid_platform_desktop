@@ -1,5 +1,5 @@
 import React from "react";
-import { useMyAiBalance, useMyAiHistory } from "@/features/chat/hooks/useAiCredits";
+import { useMyAiBalance, useMyAiHistory } from "@/components/ai/queries/useAiCredits";
 import { formatNumber } from "@/lib/utils";
 import { Zap, Wallet, Calendar, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/marketing_ui/skeleton";

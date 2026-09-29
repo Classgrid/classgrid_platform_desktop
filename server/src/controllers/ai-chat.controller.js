@@ -32,6 +32,7 @@ import {
     getUserGeneratedImages
 } from "../services/ai-chat.service.js";
 import { getHistory, appendToHistory, invalidateHistoryCache } from "../services/ai-chat-history.service.js";
+import { hasEnoughTokens, deductTokens, getImageGenerationCost } from "../services/ai-credits.service.js";
 import redis from "../config/redis.js";
 import { sendEmail } from "../services/aws-ses.service.js";
 import mongoose from "mongoose";
@@ -523,55 +524,25 @@ export const streamAskAi = async (req, res) => {
     const body = req.body || {};
 
     const userId = req.user?.id || body.userId;
+    let tokenSource = "personal";
+    let orgId = null;
+
     if (userId) {
         try {
             const User = (await import("../models/User.js")).default;
-            const Organization = (await import("../models/Organization.js")).default;
-            const userTokens = await User.findById(userId).select("ai_tokens organization_id");
+            const userTokens = await User.findById(userId).select("organization_id");
+            orgId = userTokens?.organization_id;
 
-            if (userTokens && userTokens.ai_tokens) {
-                const now = new Date();
-                // Reset weekly tokens if date passed
-                if (now > new Date(userTokens.ai_tokens.week_reset_date)) {
-                    userTokens.ai_tokens.used_this_week = 0;
-                    const nextWeek = new Date();
-                    nextWeek.setDate(nextWeek.getDate() + 7);
-                    userTokens.ai_tokens.week_reset_date = nextWeek;
-                    await userTokens.save();
-                }
+            const isDiagramRequest = false; // from original code
+            const estimatedCost = isDiagramRequest ? 500 : 50; // Assume minimum starting cost
 
-                const remaining = userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week;
-                if (remaining <= 0) {
-                    let proAllowed = false;
-                    if (userTokens.organization_id) {
-                        const org = await Organization.findById(userTokens.organization_id).select("ai_config");
-                        if (org && org.ai_config) {
-                            if (now > new Date(org.ai_config.pro_reset_date)) {
-                                org.ai_config.pro_used_this_period = 0;
-                                const nextReset = new Date();
-                                nextReset.setHours(nextReset.getHours() + 4);
-                                org.ai_config.pro_reset_date = nextReset;
-                                await org.save();
-                            }
-
-                            const proRemaining = org.ai_config.pro_pool_limit - org.ai_config.pro_used_this_period;
-                            if (proRemaining > 0) {
-                                const roleStr = req.user?.role || body.role;
-                                if (org.ai_config.pro_enabled_roles?.includes(roleStr) ||
-                                    org.ai_config.pro_enabled_users?.includes(userId)) {
-                                    proAllowed = true;
-                                }
-                            }
-                        }
-                    }
-
-                    if (!proAllowed) {
-                        res.writeHead(429, { "Content-Type": "application/json" });
-                        res.end(JSON.stringify({ error: "ai_quota_exceeded", message: "You have run out of AI tokens for this week.", resetDate: userTokens.ai_tokens.week_reset_date }));
-                        return;
-                    }
-                }
+            const check = await hasEnoughTokens(userId, orgId, estimatedCost);
+            if (!check.allowed) {
+                res.writeHead(429, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "ai_quota_exceeded", message: check.reason }));
+                return;
             }
+            tokenSource = check.source;
         } catch (err) {
             console.error("Quota check error:", err);
         }
@@ -2446,6 +2417,23 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                 const generateDuration = ((Date.now() - generateStartTime) / 1000).toFixed(1);
                 console.log(`[AI-DEBUG] ===== GENERATE END ===== duration=${generateDuration}s answer=${answer ? `"${String(answer).slice(0, 150)}..."` : 'NULL'} stepsCount=${accSteps.length} thoughtLength=${(accThought || '').length}`);
                 console.log(`[AI-DEBUG] accSteps tools called: ${accSteps.map(s => s.tool).join(', ') || 'NONE'}`);
+                
+                // Actual End-to-End token deduction logic wired up
+                if (answer && userId) {
+                    // Approximate token count based on input prompt and output response length
+                    // Roughly 4 chars = 1 token. Add 50 for base system prompt overhead.
+                    const inputLen = (body.question || "").length;
+                    const outputLen = String(answer).length;
+                    let tokensUsed = Math.ceil((inputLen + outputLen) / 4) + 50;
+                    
+                    // Add tool usage overhead (each tool call uses extra tokens)
+                    if (accSteps && accSteps.length > 0) {
+                        tokensUsed += accSteps.length * 150;
+                    }
+                    
+                    await deductTokens(userId, orgId, tokensUsed, tokenSource);
+                    console.log(`[AI-DEBUG] Deducted ${tokensUsed} tokens from ${tokenSource} for user ${userId}`);
+                }
 
                 if (requestAborted) return;
 

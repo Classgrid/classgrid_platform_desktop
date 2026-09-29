@@ -104,11 +104,41 @@ export const getUserAiDetail = async (req, res) => {
             }
         }
 
-        // 3. Dummy Everyday Spend Chart (in a real system, you'd aggregate transaction logs or usage logs)
-        const dummySpendChart = Array.from({ length: 7 }, (_, i) => ({
-            day: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][i],
-            tokens: Math.floor(Math.random() * 5000)
-        }));
+        // 3. Real 7-day Chart: Aggregate chat sessions from the last 7 days from Supabase
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        let spendChart = [];
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+        if (user.email) {
+            const { data: recentChats, error: recentChatsError } = await supabase
+                .from('ai_chat_sessions')
+                .select('created_at')
+                .eq('user_email', user.email)
+                .gte('created_at', sevenDaysAgo.toISOString());
+
+            const dailyCounts = { "Sun": 0, "Mon": 0, "Tue": 0, "Wed": 0, "Thu": 0, "Fri": 0, "Sat": 0 };
+            
+            if (recentChats && !recentChatsError) {
+                recentChats.forEach(chat => {
+                    const date = new Date(chat.created_at);
+                    const dayName = days[date.getDay()];
+                    dailyCounts[dayName] = (dailyCounts[dayName] || 0) + 1;
+                });
+            }
+            
+            // Build the chart array for the last 7 days in order
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dayName = days[d.getDay()];
+                spendChart.push({
+                    day: dayName,
+                    tokens: dailyCounts[dayName] // Using chat session count as a proxy for usage trend
+                });
+            }
+        }
 
         res.status(200).json({
             success: true,
@@ -122,7 +152,7 @@ export const getUserAiDetail = async (req, res) => {
                 longestChat,
                 totalTopUps,
                 topupHistory,
-                spendChart: dummySpendChart
+                spendChart
             }
         });
 

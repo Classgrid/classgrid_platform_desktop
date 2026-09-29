@@ -27,7 +27,7 @@ function checkoutUrl(rawToken) {
     return url.toString();
 }
 
-export const initiateAiTopUp = async (req, res) => {
+export const createTopupOrder = async (req, res) => {
     let paymentOrder;
     let paymentAttempt;
     let handoff;

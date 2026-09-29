@@ -1,28 +1,25 @@
 import React, { useState } from "react";
-import { useMyAiBalance, useInitiateAiTopUp } from "@/features/chat/hooks/useAiCredits";
+import { useMyAiBalance, useInitiateAiTopUp } from "@/components/ai/queries/useAiCredits";
 import { formatNumber } from "@/lib/utils";
 import { Zap, ArrowUpCircle, Wallet, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { Button } from "@/components/marketing_ui/button";
 import { toast } from "sonner";
 
-const PACKAGES = [
-  { amount: 100, tokens: 500000, label: "Starter" },
-  { amount: 500, tokens: 2500000, label: "Pro" },
-  { amount: 2000, tokens: 10000000, label: "Power" },
-  { amount: 10000, tokens: 50000000, label: "Enterprise" },
-];
-
 export function AiUpgradePanel() {
   const { data: balance, isLoading: balanceLoading } = useMyAiBalance();
   const topUpMutation = useInitiateAiTopUp();
 
-  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [customAmountStr, setCustomAmountStr] = useState<string>("100");
+  
+  const customAmount = parseInt(customAmountStr) || 0;
+  const expectedTokens = customAmount * 5000;
+  const isValidAmount = customAmount >= 100 && customAmount <= 10000;
 
   const handleTopUp = async () => {
-    if (!selectedAmount) return;
+    if (!isValidAmount) return;
     try {
-      const response = await topUpMutation.mutateAsync(selectedAmount);
+      const response = await topUpMutation.mutateAsync(customAmount);
       if (response && response.checkout_url) {
         window.location.href = response.checkout_url;
       }
@@ -68,36 +65,47 @@ export function AiUpgradePanel() {
               </div>
             </div>
 
-            {/* Top-up Section */}
+            {/* Top-up Form */}
             <div>
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <ArrowUpCircle className="w-5 h-5 text-amber-500" />
-                Select Package
+                Custom Top-Up Amount
               </h3>
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                {PACKAGES.map((pkg) => (
-                  <button
-                    key={pkg.amount}
-                    onClick={() => setSelectedAmount(pkg.amount)}
-                    className={`relative p-5 rounded-xl border-2 transition-all duration-200 text-center flex flex-col items-center justify-center shadow-sm ${
-                      selectedAmount === pkg.amount 
-                        ? "border-amber-500 bg-amber-500/5 shadow-amber-500/10" 
-                        : "border-border hover:border-amber-500/30 hover:bg-muted"
-                    }`}
-                  >
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">{pkg.label}</span>
-                    <span className="text-2xl font-black text-foreground">₹{pkg.amount}</span>
-                    <span className="text-sm text-emerald-600 dark:text-emerald-400 mt-1.5 font-medium flex items-center gap-1">
-                      <Zap className="w-3 h-3" />
-                      {formatNumber(pkg.tokens)} tokens
-                    </span>
-                  </button>
-                ))}
+              
+              <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-6">
+                <label className="block text-sm font-medium text-foreground mb-3">
+                  Enter Amount (₹100 - ₹10,000)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-lg">₹</span>
+                  <input 
+                    type="number"
+                    min={100}
+                    max={10000}
+                    value={customAmountStr}
+                    onChange={(e) => setCustomAmountStr(e.target.value)}
+                    className="w-full h-14 pl-9 pr-4 text-xl font-bold bg-background border-2 border-border focus:border-amber-500 rounded-lg outline-none transition-colors"
+                  />
+                </div>
+                
+                <div className="mt-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">You will receive:</span>
+                  <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                    <Zap className="w-5 h-5" />
+                    {formatNumber(expectedTokens)} tokens
+                  </span>
+                </div>
+                {!isValidAmount && customAmountStr !== "" && (
+                  <p className="text-red-500 text-sm mt-3 flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4" /> Amount must be between ₹100 and ₹10,000.
+                  </p>
+                )}
               </div>
+
               <div className="flex justify-end pt-2 border-t border-border/50">
                 <Button 
                   onClick={handleTopUp} 
-                  disabled={!selectedAmount || topUpMutation.isPending}
+                  disabled={!isValidAmount || topUpMutation.isPending}
                   className="bg-amber-500 hover:bg-amber-600 text-white min-w-[200px] h-11 text-base shadow-lg shadow-amber-500/20"
                 >
                   {topUpMutation.isPending ? "Processing..." : "Proceed to Checkout"}

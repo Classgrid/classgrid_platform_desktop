@@ -46,6 +46,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { Spinner } from "@/components/marketing_ui/spinner";
+import { NotFoundPage } from "@/features/system/pages/NotFoundPage";
 
 const OTP_TTL_SECONDS = 60;
 const API_BASE = import.meta.env.VITE_API_URL || "https://api.classgrid.in";
@@ -283,15 +284,7 @@ export function CheckoutPage() {
   }
 
   if (step === "invalid") {
-    return (
-      <main className="relative min-h-screen overflow-hidden bg-background text-foreground flex flex-col items-center justify-center text-center p-6 font-sans">
-        <h2 className="text-2xl font-bold mb-2">Payment Completed or Link Expired</h2>
-        <p className="text-muted-foreground mb-6">This checkout link is no longer valid.</p>
-        <button onClick={() => window.history.back()} className="h-12 rounded-xl bg-slate-900 px-6 font-semibold text-white transition hover:brightness-110 dark:bg-[#2a2a2a]">
-          Go Back
-        </button>
-      </main>
-    );
+    return <NotFoundPage />;
   }
 
   if (step === "failed") {

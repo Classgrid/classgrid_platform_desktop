@@ -69,12 +69,29 @@ export const getGlobalStats = async (req, res) => {
             { name: "@cf/runwayml/stable-diffusion-v1-5-img2img", type: "Img2Img", usage: "Image Editing" }
         ];
 
-        // 6. Build a dummy usage trend (bar graph data) for the month
-        // In a real scenario, this would group by day. 
-        const dummyTrend = Array.from({ length: 30 }, (_, i) => ({
-            date: `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
-            credits: Math.floor(Math.random() * 50000)
-        }));
+        // 6. Real Usage Trend: Fetch all chat sessions for the month and group by day
+        const { data: monthChats, error: monthChatsError } = await supabase
+            .from('ai_chat_sessions')
+            .select('created_at')
+            .gte('created_at', startDate.toISOString())
+            .lte('created_at', endDate.toISOString());
+
+        const trendMap = {};
+        if (monthChats && !monthChatsError) {
+            monthChats.forEach(chat => {
+                const dateStr = chat.created_at.split('T')[0];
+                trendMap[dateStr] = (trendMap[dateStr] || 0) + 1;
+            });
+        }
+
+        const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
+        const realTrend = Array.from({ length: daysInMonth }, (_, i) => {
+            const d = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
+            return {
+                date: d,
+                credits: trendMap[d] || 0 // We use session count as the proxy for usage trend
+            };
+        });
 
         res.status(200).json({
             success: true,
@@ -83,9 +100,9 @@ export const getGlobalStats = async (req, res) => {
                 totalRevenue,
                 creditsPurchasedThisMonth,
                 totalChats: totalChats || 0,
-                usageTrend: dummyTrend,
+                usageTrend: realTrend,
                 models,
-                notes: "Usage is calculated dynamically. 1 Credit = 1 Token exactly."
+                notes: "Trend shows number of AI chat sessions per day. 1 Credit = 1 Token exactly."
             }
         });
 
