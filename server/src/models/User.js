@@ -630,10 +630,19 @@ const userSchema = new mongoose.Schema(
       used_this_week: { type: Number, default: 0 },
       week_reset_date: { type: Date, default: () => { const d = new Date(); d.setDate(d.getDate() + 7); return d; } },
       is_ai_blocked: { type: Boolean, default: false },
+      
+      // Paid Credits
       ai_credits_balance: { type: Number, default: 0 },
       total_ai_credits_purchased: { type: Number, default: 0 },
       ai_credits_start_date: { type: Date, default: null },
       ai_credits_end_date: { type: Date, default: null },
+      
+      // Promotion Credits
+      promotion_credits_balance: { type: Number, default: 0 },
+      total_promotion_credits_granted: { type: Number, default: 0 },
+      promotion_credits_start_date: { type: Date, default: null },
+      promotion_credits_end_date: { type: Date, default: null },
+
       ai_image_free_weekly_limit: { type: Number, default: 20 },
       ai_image_free_weekly_used: { type: Number, default: 0 },
       total_ai_tokens_used: { type: Number, default: 0 }

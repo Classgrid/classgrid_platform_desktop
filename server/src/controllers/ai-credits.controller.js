@@ -21,24 +21,41 @@ export const getMyCredits = async (req, res) => {
         const balance = tokens.ai_credits_balance || 0;
         const usedAmount = Math.max(0, totalPurchased - balance);
 
-        // Calculate strict start/end dates
+        // Calculate strict start/end dates for Free
         const now = new Date();
-        const promoEndDate = tokens.week_reset_date ? new Date(tokens.week_reset_date) : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-        const promoStartDate = new Date(promoEndDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const freeEndDate = tokens.week_reset_date ? new Date(tokens.week_reset_date) : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const freeStartDate = new Date(freeEndDate.getTime() - 7 * 24 * 60 * 60 * 1000);
 
         const pools = [
             {
-                creditId: `PRM-${user._id.toString().substring(0, 10).toUpperCase()}`,
-                creditType: "Promotion",
+                creditId: `FREE-${user._id.toString().substring(0, 10).toUpperCase()}`,
+                creditType: "Free",
                 status: "Active",
                 issuedAmount: tokens.free_weekly_limit || 100000,
                 amountRemaining: Math.max(0, (tokens.free_weekly_limit || 100000) - (tokens.used_this_week || 0)),
                 estimatedAmountRemaining: Math.max(0, (tokens.free_weekly_limit || 100000) - (tokens.used_this_week || 0)),
-                startDate: promoStartDate.toISOString(),
-                expirationDate: promoEndDate.toISOString()
+                startDate: freeStartDate.toISOString(),
+                expirationDate: freeEndDate.toISOString()
             }
         ];
 
+        // Promotion Credits
+        const totalPromoGranted = tokens.total_promotion_credits_granted || 0;
+        const promoBalance = tokens.promotion_credits_balance || 0;
+        if (totalPromoGranted > 0 || promoBalance > 0) {
+            pools.push({
+                creditId: `PRM-${user._id.toString().substring(0, 10).toUpperCase()}`,
+                creditType: "Promotion",
+                status: "Active",
+                issuedAmount: totalPromoGranted,
+                amountRemaining: promoBalance,
+                estimatedAmountRemaining: promoBalance,
+                startDate: tokens.promotion_credits_start_date ? new Date(tokens.promotion_credits_start_date).toISOString() : now.toISOString(),
+                expirationDate: tokens.promotion_credits_end_date ? new Date(tokens.promotion_credits_end_date).toISOString() : null
+            });
+        }
+
+        // Paid Credits
         if (totalPurchased > 0 || balance > 0) {
             const paidStartDate = tokens.ai_credits_start_date ? new Date(tokens.ai_credits_start_date) : now;
             const paidExpirationDate = tokens.ai_credits_end_date 

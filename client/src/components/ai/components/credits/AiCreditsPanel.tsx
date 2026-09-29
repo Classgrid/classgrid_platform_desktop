@@ -68,19 +68,37 @@ export function AiCreditsPanel() {
             const estimatedRemaining = pool.estimatedAmountRemaining || 0;
             const usedAmount = Math.max(0, issuedAmount - remainingAmount);
             const percentUsed = issuedAmount > 0 ? (usedAmount / issuedAmount) * 100 : 0;
-            const isPromo = pool.creditType === "Promotion";
             
+            const isFree = pool.creditType === "Free";
+            const isPromo = pool.creditType === "Promotion";
+            const isPaid = pool.creditType === "Paid";
+            
+            let typeColorClass = "text-emerald-500";
+            let typeBgClass = "bg-emerald-500";
+            if (isFree) {
+              typeColorClass = "text-blue-500";
+              typeBgClass = "bg-blue-500";
+            } else if (isPromo) {
+              typeColorClass = "text-purple-500";
+              typeBgClass = "bg-purple-500";
+            }
+
             return (
               <div key={pool.creditId} className="bg-card border border-border rounded-xl p-6 shadow-sm relative overflow-hidden">
-                {isPromo && (
+                {isFree && (
                   <div className="absolute top-0 right-0 bg-blue-500/10 text-blue-500 text-xs font-bold px-3 py-1 rounded-bl-lg">
                     Free / Weekly
+                  </div>
+                )}
+                {isPromo && (
+                  <div className="absolute top-0 right-0 bg-purple-500/10 text-purple-500 text-xs font-bold px-3 py-1 rounded-bl-lg">
+                    Promotion / Granted
                   </div>
                 )}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-6 border-b border-border gap-4">
                   <div>
                     <h3 className="font-semibold text-lg flex items-center gap-2">
-                      <Wallet className={cn("w-5 h-5", isPromo ? "text-blue-500" : "text-emerald-500")} />
+                      <Wallet className={cn("w-5 h-5", typeColorClass)} />
                       Credit details <span className="text-sm font-normal text-muted-foreground ml-2">ID: {pool.creditId}</span>
                     </h3>
                   </div>
@@ -128,18 +146,18 @@ export function AiCreditsPanel() {
                   </div>
                 </div>
                 
-                {issuedAmount > 0 && !isPromo && (
+                {issuedAmount > 0 && !isFree && (
                   <div className="mt-8 pt-6 border-t border-border">
                     <div className="flex justify-between text-sm mb-3">
                       <div className="flex gap-4">
-                        <span className="text-muted-foreground">Amount Used: <strong className="text-foreground">{formatNumber(usedAmount)}</strong></span>
-                        <span className="text-muted-foreground">Amount Remaining: <strong className="text-foreground">{formatNumber(remainingAmount)}</strong></span>
+                        <span className="text-muted-foreground">Amount Used: <strong className="text-foreground">₹{formatNumber(usedAmount / 5000)}</strong></span>
+                        <span className="text-muted-foreground">Amount Remaining: <strong className="text-foreground">₹{formatNumber(remainingAmount / 5000)}</strong></span>
                       </div>
                       <span className="font-medium text-muted-foreground">{Math.round(percentUsed)}% Used</span>
                     </div>
                     <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
                       <div 
-                        className={cn("h-full rounded-full transition-all duration-500", isPromo ? "bg-blue-500" : "bg-emerald-500")}
+                        className={cn("h-full rounded-full transition-all duration-500", typeBgClass)}
                         style={{ width: `${percentUsed}%` }}
                       />
                     </div>
