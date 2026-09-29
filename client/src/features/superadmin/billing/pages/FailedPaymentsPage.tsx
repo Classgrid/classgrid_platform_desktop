@@ -60,12 +60,12 @@ const FailedPaymentsPage = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="flex flex-col gap-6 w-full p-4 sm:p-6 lg:p-8">
       {/* ═══ FILTER BAR — copied from ClassgridTalkPage ═══ */}
       <SuperadminFilterBar
         searchQuery={searchInput}
         onSearchChange={setSearchInput}
-        searchPlaceholder="Search name, email, or ID..."
+        searchPlaceholder="Search here..."
       >
         {/* Org Name */}
         <div className="w-[180px]">
