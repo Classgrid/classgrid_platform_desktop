@@ -1,18 +1,18 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import Organization from "../../models/Organization.js";
-import User from "../../models/User.js";
-import PaymentOrder from "../../models/PaymentOrder.js";
-import PaymentAttempt from "../../models/PaymentAttempt.js";
-import BillingHandoff from "../../models/BillingHandoff.js";
-import razorpayService from "../../services/razorpay.service.js";
-import { sendTemplateEmail } from "../../services/aws-ses.service.js";
+import Organization from "../models/Organization.js";
+import User from "../models/User.js";
+import PaymentOrder from "../models/PaymentOrder.js";
+import PaymentAttempt from "../models/PaymentAttempt.js";
+import BillingHandoff from "../models/BillingHandoff.js";
+import razorpayService from "../services/razorpay.service.js";
+import { sendTemplateEmail } from "../services/aws-ses.service.js";
 import {
     HANDOFF_TTL_MS,
     formatPaise,
     hashHandoffToken,
-} from "../../services/billing-handoff.service.js";
-import { PAYMENT_ATTEMPT_STAGE } from "../../utils/billing.utils.js";
+} from "../services/billing-handoff.service.js";
+import { PAYMENT_ATTEMPT_STAGE } from "../utils/billing.utils.js";
 
 /**
  * PHASE 12: Backend AI Top-Up Controller

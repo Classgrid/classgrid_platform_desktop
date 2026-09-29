@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { apiClient as api } from "@/lib/apiClient";
 
 export const aiCreditsApi = {
   getMyBalance: () => api.get("/api/ai/credits/balance").then(res => res.data.data),
