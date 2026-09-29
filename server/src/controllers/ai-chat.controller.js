@@ -538,8 +538,10 @@ export const streamAskAi = async (req, res) => {
 
             const check = await hasEnoughTokens(userId, orgId, estimatedCost);
             if (!check.allowed) {
+                const user = await User.findById(userId).select("ai_tokens");
+                const resetDate = user?.ai_tokens?.week_reset_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
                 res.writeHead(429, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: "ai_quota_exceeded", message: check.reason }));
+                res.end(JSON.stringify({ error: "ai_quota_exceeded", message: check.reason, resetDate: resetDate.toISOString() }));
                 return;
             }
             tokenSource = check.source;

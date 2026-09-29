@@ -24,9 +24,12 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     }
 
     // 2. Check if org is blocked
-    const org = await Organization.findById(orgId).select('ai_config status');
-    if (!org || org.status !== "active" || org.ai_config?.is_ai_blocked) {
-        return { allowed: false, reason: "Organization AI access is blocked or inactive." };
+    let org = null;
+    if (orgId) {
+        org = await Organization.findById(orgId).select('ai_config status');
+        if (org && (org.status !== "active" || org.ai_config?.is_ai_blocked)) {
+            return { allowed: false, reason: "Organization AI access is blocked or inactive." };
+        }
     }
 
     // 3. Check personal balance first
@@ -42,12 +45,13 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     }
 
     // 5. Check Org pro pool limit (if enabled for user's role/id)
-    // Assuming role check happens before this function or we just check pool size
-    const orgUsed = org.ai_config?.pro_used_this_period || 0;
-    const orgLimit = org.ai_config?.pro_pool_limit || 0;
-    
-    if (orgUsed + requiredTokens <= orgLimit) {
-        return { allowed: true, source: "org_pool" };
+    if (org) {
+        const orgUsed = org.ai_config?.pro_used_this_period || 0;
+        const orgLimit = org.ai_config?.pro_pool_limit || 0;
+        
+        if (orgUsed + requiredTokens <= orgLimit) {
+            return { allowed: true, source: "org_pool" };
+        }
     }
 
     return { allowed: false, reason: "Insufficient tokens." };
