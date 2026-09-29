@@ -381,8 +381,7 @@ export const FailedPaymentTable: React.FC<{
         </Button>
       ),
     },
-
-
+  ];
 
   return (
     <AsyncBillingState loading={isLoading} error={error} skeletonType="table">

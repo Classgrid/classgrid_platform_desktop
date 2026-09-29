@@ -53,6 +53,9 @@ const FailedPaymentsPage = () => {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      {/* ═══ OVERVIEW STATS ═══ */}
+      <FailedPaymentsOverview />
+
       {/* ═══ FILTER BAR — copied from ClassgridTalkPage ═══ */}
       <SuperadminFilterBar
         searchQuery={searchInput}
@@ -118,9 +121,6 @@ const FailedPaymentsPage = () => {
           </ResponsiveSelect>
         </div>
       </SuperadminFilterBar>
-
-      {/* ═══ OVERVIEW STATS ═══ */}
-      <FailedPaymentsOverview />
 
       {/* ═══ TABLE — direct render, no Card wrapper ═══ */}
       <div className="mt-4">
