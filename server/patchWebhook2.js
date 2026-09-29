@@ -1,0 +1,72 @@
+import fs from "fs";
+import path from "path";
+
+const filePath = path.join(process.cwd(), "src", "routes", "razorpay-webhook.routes.js");
+let content = fs.readFileSync(filePath, "utf-8");
+
+const replacement = `                if (paymentType === "saas_invoice" || paymentType === "platform" || invoiceId) {
+                    // Check for duplicate
+                    const existing = await PlatformTransaction.findOne({ razorpayPaymentId: paymentId });
+                    if (existing) {
+                        console.log(\`[Razorpay Webhook] Duplicate payment \${paymentId}, skipping\`);
+                        break;
+                    }
+
+                    let resolvedUserName = notes?.payerName || notes?.userName || "Unknown";
+                    let resolvedUserEmail = email || notes?.payerEmail || "";
+                    let resolvedUserMobile = contact || notes?.payerPhone || "";
+                    let resolvedUserId = notes?.user_id || null;
+                    let resolvedUserRole = "";
+                    let resolvedOrgName = "";
+
+                    try {
+                        const User = (await import("../models/User.js")).default;
+                        let user = null;
+                        if (resolvedUserId) {
+                            user = await User.findById(resolvedUserId).populate("organization_id");
+                        } else if (organizationId) {
+                            user = await User.findOne({ organization_id: organizationId, role: "owner" }).populate("organization_id");
+                        }
+
+                        if (user) {
+                            if (resolvedUserName === "Unknown") resolvedUserName = user.name || "Unknown";
+                            if (!resolvedUserEmail) resolvedUserEmail = user.email || "";
+                            if (!resolvedUserMobile) resolvedUserMobile = user.phoneNumber || "";
+                            if (!resolvedUserId) resolvedUserId = user._id;
+                            resolvedUserRole = user.role || "";
+                            if (user.organization_id) resolvedOrgName = user.organization_id.name || "";
+                        }
+                    } catch (e) {
+                        console.error("[Razorpay Webhook] User lookup failed for saas payment:", e);
+                    }
+
+                    // Log the transaction
+                    const platformTxn = await PlatformTransaction.create({
+                        organizationId,
+                        organizationName: resolvedOrgName,
+                        type: "razorpay",
+                        amount: amountInr,
+                        currency,
+                        status: "success",
+                        razorpayOrderId: orderId,
+                        razorpayPaymentId: paymentId,
+                        planActivated: "active",
+                        note: \`Razorpay webhook: \${event} | Method: \${method}\`,
+                        userName: resolvedUserName,
+                        userEmail: resolvedUserEmail,
+                        userMobile: resolvedUserMobile,
+                        userId: resolvedUserId,
+                        userRole: resolvedUserRole,
+                        paymentMethod: method || "",
+                        paymentTime: paymentEntity?.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
+                    });`;
+
+const regex = /if \(paymentType === "saas_invoice" \|\| paymentType === "platform" \|\| invoiceId\) \{[\s\S]*?const platformTxn = await PlatformTransaction\.create\(\{[\s\S]*?paymentTime: paymentEntity\?\.created_at \? new Date\(paymentEntity\.created_at \* 1000\) : new Date\(\),\s*\}\);/;
+
+if (regex.test(content)) {
+    content = content.replace(regex, replacement);
+    fs.writeFileSync(filePath, content, "utf-8");
+    console.log("Successfully replaced SaaS webhook content.");
+} else {
+    console.log("SaaS Regex didn't match!");
+}

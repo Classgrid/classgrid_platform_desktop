@@ -306,7 +306,7 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                 }
 
                 // ── Platform SaaS Payment ──
-                if (paymentType === "saas_invoice" || paymentType === "platform" || invoiceId) {
+                                if (paymentType === "saas_invoice" || paymentType === "platform" || invoiceId) {
                     // Check for duplicate
                     const existing = await PlatformTransaction.findOne({ razorpayPaymentId: paymentId });
                     if (existing) {
@@ -314,9 +314,38 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                         break;
                     }
 
+                    let resolvedUserName = notes?.payerName || notes?.userName || "Unknown";
+                    let resolvedUserEmail = email || notes?.payerEmail || "";
+                    let resolvedUserMobile = contact || notes?.payerPhone || "";
+                    let resolvedUserId = notes?.user_id || null;
+                    let resolvedUserRole = "";
+                    let resolvedOrgName = "";
+
+                    try {
+                        const User = (await import("../models/User.js")).default;
+                        let user = null;
+                        if (resolvedUserId) {
+                            user = await User.findById(resolvedUserId).populate("organization_id");
+                        } else if (organizationId) {
+                            user = await User.findOne({ organization_id: organizationId, role: "owner" }).populate("organization_id");
+                        }
+
+                        if (user) {
+                            if (resolvedUserName === "Unknown") resolvedUserName = user.name || "Unknown";
+                            if (!resolvedUserEmail) resolvedUserEmail = user.email || "";
+                            if (!resolvedUserMobile) resolvedUserMobile = user.phoneNumber || "";
+                            if (!resolvedUserId) resolvedUserId = user._id;
+                            resolvedUserRole = user.role || "";
+                            if (user.organization_id) resolvedOrgName = user.organization_id.name || "";
+                        }
+                    } catch (e) {
+                        console.error("[Razorpay Webhook] User lookup failed for saas payment:", e);
+                    }
+
                     // Log the transaction
                     const platformTxn = await PlatformTransaction.create({
                         organizationId,
+                        organizationName: resolvedOrgName,
                         type: "razorpay",
                         amount: amountInr,
                         currency,
@@ -324,11 +353,12 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                         razorpayOrderId: orderId,
                         razorpayPaymentId: paymentId,
                         planActivated: "active",
-                        note: `Razorpay webhook: ${event} | Method: ${method} | Email: ${email}`,
-                        userName: notes?.payerName || notes?.userName || "Unknown",
-                        userEmail: email || notes?.payerEmail || "",
-                        userMobile: contact || notes?.payerPhone || "",
-                        userId: notes?.user_id || null,
+                        note: `Razorpay webhook: ${event} | Method: ${method}`,
+                        userName: resolvedUserName,
+                        userEmail: resolvedUserEmail,
+                        userMobile: resolvedUserMobile,
+                        userId: resolvedUserId,
+                        userRole: resolvedUserRole,
                         paymentMethod: method || "",
                         paymentTime: paymentEntity?.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
                     });
@@ -614,23 +644,53 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                 }
 
                 // ── Generic/Unknown Payment ──
-                else {
+                                else {
                     // Log it anyway so nothing is lost
                     const existing = await PlatformTransaction.findOne({ razorpayPaymentId: paymentId });
                     if (!existing) {
+                        let resolvedUserName = notes?.payerName || notes?.userName || "Unknown";
+                        let resolvedUserEmail = email || notes?.payerEmail || "";
+                        let resolvedUserMobile = contact || notes?.payerPhone || "";
+                        let resolvedUserId = notes?.user_id || null;
+                        let resolvedUserRole = "";
+                        let resolvedOrgName = "";
+
+                        try {
+                            const User = (await import("../models/User.js")).default;
+                            let user = null;
+                            if (resolvedUserId) {
+                                user = await User.findById(resolvedUserId).populate("organization_id");
+                            } else if (organizationId) {
+                                user = await User.findOne({ organization_id: organizationId, role: "owner" }).populate("organization_id");
+                            }
+
+                            if (user) {
+                                if (resolvedUserName === "Unknown") resolvedUserName = user.name || "Unknown";
+                                if (!resolvedUserEmail) resolvedUserEmail = user.email || "";
+                                if (!resolvedUserMobile) resolvedUserMobile = user.phoneNumber || "";
+                                if (!resolvedUserId) resolvedUserId = user._id;
+                                resolvedUserRole = user.role || "";
+                                if (user.organization_id) resolvedOrgName = user.organization_id.name || "";
+                            }
+                        } catch (e) {
+                            console.error("[Razorpay Webhook] User lookup failed for generic payment:", e);
+                        }
+
                         await PlatformTransaction.create({
                             organizationId: organizationId || null,
+                            organizationName: resolvedOrgName,
                             type: "razorpay",
                             amount: amountInr,
                             currency,
                             status: "success",
                             razorpayOrderId: orderId,
                             razorpayPaymentId: paymentId,
-                            note: `Webhook: ${event} | Type: ${paymentType} | ${email || ""} | Notes: ${JSON.stringify(notes || {})}`,
-                            userName: notes?.payerName || notes?.userName || "Unknown",
-                            userEmail: email || notes?.payerEmail || "",
-                            userMobile: contact || notes?.payerPhone || "",
-                            userId: notes?.user_id || null,
+                            note: `Webhook: ${event} | Type: ${paymentType} | Notes: ${JSON.stringify(notes || {})}`,
+                            userName: resolvedUserName,
+                            userEmail: resolvedUserEmail,
+                            userMobile: resolvedUserMobile,
+                            userId: resolvedUserId,
+                            userRole: resolvedUserRole,
                             paymentMethod: method || "",
                             paymentTime: paymentEntity?.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
                         });
