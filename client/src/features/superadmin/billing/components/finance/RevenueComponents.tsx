@@ -114,9 +114,9 @@ export const RevenueOrganizationTable: React.FC<{ filters?: any }> = ({ filters 
                       </span>
                     </div>
                   </div>
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    {item.organizationName || item._id}
-                  </div>
+
+
+
                 </TableCell>
                 <TableCell className="text-right font-medium text-primary">
                   <MoneyDisplay amountPaise={item.grossRevenuePaise} />
