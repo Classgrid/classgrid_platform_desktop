@@ -65,7 +65,7 @@ const FailedPaymentsPage = () => {
       <SuperadminFilterBar
         searchQuery={searchInput}
         onSearchChange={setSearchInput}
-        searchPlaceholder="Search by name, email, or payment ID..."
+        searchPlaceholder="Search name, email, or ID..."
       >
         {/* Org Name */}
         <div className="w-[180px]">
@@ -83,7 +83,6 @@ const FailedPaymentsPage = () => {
           </ResponsiveSelect>
         </div>
 
-        {/* Date picker */}
         <div className="w-[180px] max-w-[180px] overflow-hidden relative">
           <NikhilTimeCalendar
             value={dateFrom}
@@ -92,8 +91,6 @@ const FailedPaymentsPage = () => {
             popDirection="down"
             showTime={false}
             className="h-9 w-full pr-8"
-            dateType={dateType}
-            onDateTypeChange={setDateType}
           />
           {dateFrom && (
             <button

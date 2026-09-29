@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/marketing_
 import { Calendar } from "@/components/marketing_ui/nikhil_calendar";
 import { Button } from "@/components/marketing_ui/button";
 import { format } from "date-fns";
+import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 
 export function AiCreditsPanel() {
   const { data: balance, isLoading: balanceLoading } = useMyAiBalance();
