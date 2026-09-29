@@ -15,6 +15,7 @@ export function AiUpgradePanel() {
   
   const customAmount = parseInt(customAmountStr) || 0;
   const expectedTokens = customAmount * 5000;
+  // TODO: Minimum amount lowered from 100 to 1 for testing purposes. Revert to 100 in production.
   const isValidAmount = customAmount >= 1 && customAmount <= 10000;
 
   const handleTopUp = async () => {

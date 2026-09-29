@@ -23,7 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import { ResponsiveSelect } from '@/components/marketing_ui/responsive-select';
 import { SuperadminFilterBar } from '../../components/SuperadminFilterBar';
 import { OrganizationSelector } from '../components/shared/BillingFilterComponents';
-import { FailedPaymentsTable, FailedPaymentsOverview } from '../components/finance/FailureComponents';
+import { FailedPaymentTable, FailedPaymentsOverview } from '../components/finance/FailureComponents';
 import { NikhilTimeCalendar } from '@/components/marketing_ui/nikhil_time_calendar';
 import { X } from 'lucide-react';
 
@@ -124,9 +124,9 @@ const FailedPaymentsPage = () => {
 
       {/* ═══ TABLE — direct render, no Card wrapper ═══ */}
       <div className="mt-4">
-        <FailedPaymentsTable 
+        <FailedPaymentTable 
           filters={filters} 
-          onViewDetail={(id) => navigate(`/super-admin/billing/failed-payments/${id}`)} 
+          onResolve={(id) => navigate(`/super-admin/billing/failed-payments/${id}`)} 
         />
       </div>
     </div>

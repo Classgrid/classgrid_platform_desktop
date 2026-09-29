@@ -36,6 +36,7 @@ export const createTopupOrder = async (req, res) => {
         const { amount_inr } = req.body;
         const organizationId = req.user.organization_id;
 
+        // TODO: Minimum amount lowered from 100 to 1 for testing purposes. Revert to 100 in production.
         if (!amount_inr || amount_inr < 1 || amount_inr > 10000) {
             return res.status(400).json({ success: false, error: "Amount must be between ₹1 and ₹10,000" });
         }
