@@ -104,6 +104,7 @@ export function AiUpgradePanel() {
 
               <div className="flex justify-end pt-2 border-t border-border/50">
                 <Button 
+                  variant="secondary"
                   onClick={handleTopUp} 
                   disabled={!isValidAmount || topUpMutation.isPending}
                   className="min-w-[200px] h-11 text-base"
