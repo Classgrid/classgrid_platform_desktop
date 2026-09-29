@@ -86,11 +86,19 @@ export function AiCreditsPanel() {
             </div>
             <div>
               <div className="text-sm text-muted-foreground mb-1">Start date</div>
-              <div className="font-medium">{filteredHistory?.length > 0 ? format(new Date(filteredHistory[filteredHistory.length - 1].createdAt), "MMM dd, yyyy") : "-"}</div>
+              <div className="font-medium">
+                {balance?.ai_credits_start_date 
+                  ? format(new Date(balance.ai_credits_start_date), "MMM dd, yyyy") 
+                  : "-"}
+              </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground mb-1">Expiration date</div>
-              <div className="font-medium">Never</div>
+              <div className="font-medium">
+                {balance?.ai_credits_end_date 
+                  ? format(new Date(balance.ai_credits_end_date), "MMM dd, yyyy") 
+                  : "Never"}
+              </div>
             </div>
           </div>
           
