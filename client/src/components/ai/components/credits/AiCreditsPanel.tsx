@@ -71,27 +71,18 @@ export function AiCreditsPanel() {
             const usedAmount = Math.max(0, issuedAmount - remainingAmount);
             const percentUsed = issuedAmount > 0 ? (usedAmount / issuedAmount) * 100 : 0;
             
-            const isFree = pool.creditType === "Free";
             const isPromo = pool.creditType === "Promotion";
             const isPaid = pool.creditType === "Paid";
             
             let typeColorClass = "text-emerald-500";
             let typeBgClass = "bg-emerald-500";
-            if (isFree) {
-              typeColorClass = "text-blue-500";
-              typeBgClass = "bg-blue-500";
-            } else if (isPromo) {
+            if (isPromo) {
               typeColorClass = "text-purple-500";
               typeBgClass = "bg-purple-500";
             }
 
             return (
               <div key={pool.creditId} className="bg-card border border-border rounded-xl p-6 shadow-sm relative overflow-hidden">
-                {isFree && (
-                  <div className="absolute top-0 right-0 bg-blue-500/10 text-blue-500 text-xs font-bold px-3 py-1 rounded-bl-lg">
-                    Free / Weekly
-                  </div>
-                )}
                 {isPromo && (
                   <div className="absolute top-0 right-0 bg-purple-500/10 text-purple-500 text-xs font-bold px-3 py-1 rounded-bl-lg">
                     Promotion / Granted
@@ -148,7 +139,7 @@ export function AiCreditsPanel() {
                   </div>
                 </div>
                 
-                {issuedAmount > 0 && !isFree && (
+                {issuedAmount > 0 && (
                   <div className="mt-8 pt-6 border-t border-border">
                     <div className="flex justify-between text-sm mb-3">
                       <div className="flex gap-4">
