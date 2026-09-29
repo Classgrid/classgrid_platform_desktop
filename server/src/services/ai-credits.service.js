@@ -32,16 +32,16 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
         }
     }
 
-    // 3. Check personal balance first
-    if (user.ai_tokens?.ai_credits_balance >= requiredTokens) {
-        return { allowed: true, source: "personal" };
-    }
-
-    // 4. Check free weekly limit
+    // 3. Check free weekly limit FIRST (So users don't waste paid credits if they have free ones)
     const usedThisWeek = user.ai_tokens?.used_this_week || 0;
     const weeklyLimit = user.ai_tokens?.free_weekly_limit || 0;
     if (usedThisWeek + requiredTokens <= weeklyLimit) {
         return { allowed: true, source: "weekly_free" };
+    }
+
+    // 4. Check personal balance NEXT (Paid credits)
+    if (user.ai_tokens?.ai_credits_balance >= requiredTokens) {
+        return { allowed: true, source: "personal" };
     }
 
     // 5. Check Org pro pool limit (if enabled for user's role/id)
