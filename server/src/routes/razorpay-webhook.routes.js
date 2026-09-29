@@ -722,12 +722,12 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                         
                         await sendEmail({
                             to: payerEmail,
-                            subject: \`Payment Failed - \${error_description || "Action Required"}\`,
+                            subject: `Payment Failed - ${error_description || "Action Required"}`,
                             html,
                             fromName: "Classgrid Billing",
                             fromEmail: "billing@classgrid.in"
                         });
-                        console.log(\`[Razorpay Webhook] ✅ Sent failure email to \${payerEmail}\`);
+                        console.log(`[Razorpay Webhook] ✅ Sent failure email to ${payerEmail}`);
                     }
                 } catch (err) {
                     console.error("[Razorpay Webhook] Failed to process PaymentFailure or email:", err);
