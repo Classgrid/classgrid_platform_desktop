@@ -2045,7 +2045,7 @@ router.get("/transactions", async (req, res) => {
 
         const filter = {};
         if (orgId || organizationId) filter.organizationId = orgId || organizationId;
-        if (status && status !== "ALL") filter.status = status;
+        if (status && status !== "ALL") { filter.status = status; } else { filter.status = { $ne: "failed" }; }
         if (type && type !== "ALL") filter.type = type;
         if (search) {
             filter.$or = [
