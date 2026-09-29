@@ -67,7 +67,7 @@ const FailedPaymentsPage = () => {
           </div>
           <div className="w-full md:w-[160px] xl:w-[160px]">
             <Select value={filterType} onValueChange={(value) => value && setFilterType(value)}>
-              <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectTrigger className="w-full rounded-full border-dashed h-9 bg-background"><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Failures</SelectItem>
                 <SelectItem value="UNRESOLVED">Unresolved</SelectItem>

@@ -124,7 +124,7 @@ export const OrganizationTypeFilter: React.FC<{
   onChange: (value: string) => void;
 }> = ({ value, onChange }) => (
   <Select value={value} onValueChange={(nextValue) => nextValue && onChange(nextValue)}>
-    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Org Type" /></SelectTrigger>
+    <SelectTrigger className="w-[180px] rounded-full border-dashed h-9"><SelectValue placeholder="Org Type" /></SelectTrigger>
     <SelectContent>
       <SelectItem value="ALL">All Types</SelectItem>
       <SelectItem value="school">School</SelectItem>
@@ -142,7 +142,7 @@ export const StructureTypeFilter: React.FC<{
   onChange: (value: string) => void;
 }> = ({ value, onChange }) => (
   <Select value={value} onValueChange={(nextValue) => nextValue && onChange(nextValue)}>
-    <SelectTrigger className="w-[200px]"><SelectValue placeholder="Structure Type" /></SelectTrigger>
+    <SelectTrigger className="w-[200px] rounded-full border-dashed h-9"><SelectValue placeholder="Structure Type" /></SelectTrigger>
     <SelectContent>
       <SelectItem value="ALL">All Structures</SelectItem>
       <SelectItem value="k12_standard">K-12 Standard</SelectItem>

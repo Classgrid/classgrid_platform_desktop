@@ -301,68 +301,88 @@ export const FailedPaymentTable: React.FC<{
 
   const columns = [
     {
+      key: "customer",
+      header: "Customer",
+      width: "w-[200px]",
+      render: (_: any, fail: any) => {
+        const name = fail.userName || "Unknown";
+        const initial = name.charAt(0).toUpperCase();
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center overflow-hidden text-white font-bold text-xs bg-indigo-500">
+              {initial}
+            </div>
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="font-semibold text-foreground text-sm truncate" title={name}>
+                {name}
+              </span>
+              <span className="text-[10px] text-muted-foreground truncate">
+                {fail.userEmail || "No Email"}
+              </span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
       key: "paymentId",
       header: "Payment ID",
       render: (_: any, fail: any) => (
-        <div>
-          <div className="font-mono text-sm">{fail.providerTxId || fail.razorpayPaymentId || "N/A"}</div>
-          <div className="text-xs text-muted-foreground mt-1 uppercase">{fail.paymentMethod?.type || fail.paymentMethod || "UNKNOWN"}</div>
-        </div>
+        <span className="text-sm font-medium text-foreground">
+          {fail.providerTxId || fail.razorpayPaymentId || fail.paymentId || "N/A"}
+        </span>
       ),
     },
     {
       key: "organization",
       header: "Organization",
       render: (_: any, fail: any) => (
-        <div>
-          <div className="flex items-center gap-1.5 font-medium">
-            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-            {fail.organization?.name || fail.orgId || fail.organizationName || "Unknown"}
-          </div>
-          <div className="font-mono text-xs text-muted-foreground mt-1">Org ID: {fail.orgId || fail.organizationId || "N/A"}</div>
-        </div>
-      ),
-    },
-    {
-      key: "customer",
-      header: "Customer Detail",
-      render: (_: any, fail: any) => (
-        <div>
-          <div className="font-medium text-sm">{fail.userMobile || "No Mobile"}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">{fail.userEmail || "No Email"}</div>
-          <div className="font-mono text-[10px] text-muted-foreground mt-0.5">UID: {fail.userId || fail.payer?.id || "N/A"}</div>
-        </div>
+        <span className="text-sm text-foreground truncate">
+          {fail.organization?.name || fail.organizationName || fail.orgId || "Unknown"}
+        </span>
       ),
     },
     {
       key: "date",
       header: "Created on",
-      render: (_: any, fail: any) => <span className="whitespace-nowrap text-sm text-muted-foreground">{format(new Date(fail.createdAt), 'EEE MMM dd, h:mma')}</span>,
+      render: (_: any, fail: any) => (
+        <span className="text-sm text-foreground whitespace-nowrap">
+          {format(new Date(fail.createdAt), 'EEE MMM dd, h:mma')}
+        </span>
+      ),
     },
     {
       key: "amount",
       header: "Amount",
-      render: (_: any, fail: any) => <span className="font-medium"><MoneyDisplay amountPaise={fail.amountPaise} /></span>,
+      width: "w-[120px]",
+      render: (_: any, fail: any) => (
+        <span className="font-semibold text-sm">
+          <MoneyDisplay amountPaise={fail.amountPaise || fail.amount * 100} />
+        </span>
+      ),
     },
     {
       key: "status",
       header: "Status",
       render: (_: any, fail: any) => (
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2 py-1 text-xs font-medium text-red-500">
-          <AlertTriangle className="h-3.5 w-3.5" />
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-red-50 text-red-700 px-2.5 py-1 text-xs font-medium">
+          <span className="text-[10px]">✕</span>
           {fail.reason || fail.stage || "FAILED"}
         </div>
       ),
     },
     {
       key: "actions",
-      header: "Action",
+      header: "",
+      width: "w-[80px]",
       render: (_: any, fail: any) => (
-        <div className="text-right">
-          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onResolve(fail.id); }} className="h-8 gap-1">
-            Investigate <ArrowRightCircle className="w-3 h-3" />
-          </Button>
-        </div>
+        <Button 
+          variant="primary" 
+          size="sm" 
+          onClick={(e) => { e.stopPropagation(); onResolve(fail.id); }}
+        >
+          Investigate
+        </Button>
       ),
     },
   ];

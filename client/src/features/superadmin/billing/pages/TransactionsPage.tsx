@@ -135,7 +135,7 @@ const TransactionsPage = () => {
           </div>
           <div className="w-full md:w-[160px] xl:w-[180px]">
             <Select value={paymentFlow} onValueChange={(value) => value && setPaymentFlow(value)}>
-              <SelectTrigger><SelectValue placeholder="Payment flow" /></SelectTrigger>
+              <SelectTrigger className="w-full rounded-full border-dashed h-9 bg-background"><SelectValue placeholder="Payment flow" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All payment flows</SelectItem>
                 <SelectItem value="CLASSGRID_SUBSCRIPTION">Classgrid subscriptions</SelectItem>
@@ -146,7 +146,7 @@ const TransactionsPage = () => {
           </div>
           <div className="w-full md:w-[160px] xl:w-[160px]">
             <Select value={status} onValueChange={(value) => value && setStatus(value)}>
-              <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectTrigger className="w-full rounded-full border-dashed h-9 bg-background"><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All statuses</SelectItem>
                 <SelectItem value="CAPTURED">Captured / Success</SelectItem>

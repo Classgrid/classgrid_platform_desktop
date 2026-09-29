@@ -101,7 +101,19 @@ export const RevenueOrganizationTable: React.FC<{ filters?: any }> = ({ filters 
             {revenueData?.map((item: any) => (
               <TableRow key={item._id}>
                 <TableCell className="font-medium">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center overflow-hidden text-white font-bold text-xs bg-indigo-500">
+                      {(item.organizationName || item._id || "U").charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="font-semibold text-foreground text-sm truncate" title={item.organizationName || item._id}>
+                        {item.organizationName || item._id}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground truncate">
+                        ID: {item._id}
+                      </span>
+                    </div>
+                  </div>
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                     {item.organizationName || item._id}
                   </div>

@@ -97,68 +97,92 @@ export const TransactionTable: React.FC<{
 
   const columns = [
     {
+      key: "customer",
+      header: "Customer",
+      width: "w-[200px]",
+      render: (_: any, tx: any) => {
+        const name = tx.userName || "Unknown";
+        const initial = name.charAt(0).toUpperCase();
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center overflow-hidden text-white font-bold text-xs bg-indigo-500">
+              {initial}
+            </div>
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="font-semibold text-foreground text-sm truncate" title={name}>
+                {name}
+              </span>
+              <span className="text-[10px] text-muted-foreground truncate">
+                {tx.userEmail || "No Email"}
+              </span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
       key: "paymentId",
       header: "Payment ID",
       render: (_: any, tx: any) => (
-        <div>
-          <div className="font-mono text-sm">{tx.razorpayPaymentId || tx.id || "N/A"}</div>
-          <div className="text-xs text-muted-foreground mt-1 uppercase">{tx.paymentMethod || "UNKNOWN"}</div>
-        </div>
+        <span className="text-sm font-medium text-foreground">
+          {tx.razorpayPaymentId || tx.id || "N/A"}
+        </span>
       ),
     },
     {
       key: "organization",
       header: "Organization",
       render: (_: any, tx: any) => (
-        <div>
-          <div className="flex items-center gap-1.5 font-medium">
-            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-            {tx.organization?.name || tx.orgId || tx.organizationName || "Unknown"}
-          </div>
-          <div className="font-mono text-xs text-muted-foreground mt-1">Org ID: {tx.orgId || tx.organizationId || "N/A"}</div>
-        </div>
+        <span className="text-sm text-foreground truncate">
+          {tx.organization?.name || tx.orgId || tx.organizationName || "Unknown"}
+        </span>
       ),
-    },
-    {
-      key: "customer",
-      header: "Customer Detail",
-      render: (_: any, tx: any) => (
-        <div>
-          <div className="font-medium text-sm">{tx.userMobile || "No Mobile"}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">{tx.userEmail || "No Email"}</div>
-          <div className="font-mono text-[10px] text-muted-foreground mt-0.5">UID: {tx.userId || tx.payer?.id || "N/A"}</div>
-        </div>
-      ),
-    },
-    {
-      key: "date",
-      header: "Created on",
-      render: (_: any, tx: any) => <span className="whitespace-nowrap text-sm text-muted-foreground">{format(new Date(tx.createdAt), 'EEE MMM dd, h:mma')}</span>,
-    },
-    {
-      key: "type",
-      header: "Type",
-      render: (_: any, tx: any) => <Badge variant="outline" className="font-mono text-xs uppercase bg-muted/50">{tx.type}</Badge>,
     },
     {
       key: "amount",
       header: "Amount",
-      render: (_: any, tx: any) => <span className="font-medium"><MoneyDisplay amountPaise={tx.amountPaise} /></span>,
+      render: (_: any, tx: any) => (
+        <span className="text-sm text-foreground">
+          <MoneyDisplay amountPaise={tx.amountPaise} />
+        </span>
+      ),
     },
     {
       key: "status",
       header: "Status",
-      render: (_: any, tx: any) => <TransactionStatusBadge status={tx.status} />,
+      render: (_: any, tx: any) => {
+        const isSuccess = tx.status === 'success' || tx.status === 'COMPLETED' || tx.status === 'CAPTURED';
+        const isFailed = tx.status === 'failed' || tx.status === 'DECLINED';
+        return (
+          <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${isSuccess ? 'bg-emerald-50 text-emerald-700' : isFailed ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>
+            {isFailed && <span className="text-[10px]">✕</span>}
+            {isSuccess && <span className="text-[10px]">✓</span>}
+            {tx.status?.toUpperCase() || 'UNKNOWN'}
+          </div>
+        );
+      },
+    },
+    {
+      key: "date",
+      header: "Created on",
+      render: (_: any, tx: any) => (
+        <span className="text-sm text-foreground whitespace-nowrap">
+          {format(new Date(tx.createdAt), 'EEE MMM dd, h:mma')}
+        </span>
+      ),
     },
     {
       key: "actions",
-      header: "Reference",
+      header: "",
+      width: "w-[80px]",
       render: (_: any, tx: any) => (
-        <div className="text-right">
-          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onViewDetail(tx.id); }} className="h-8 gap-1">
-            Details <ArrowRightCircle className="w-3 h-3" />
-          </Button>
-        </div>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={(e) => { e.stopPropagation(); onViewDetail(tx.id); }}
+        >
+          Read
+        </Button>
       ),
     },
   ];
