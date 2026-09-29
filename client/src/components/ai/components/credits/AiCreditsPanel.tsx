@@ -106,7 +106,7 @@ export function AiCreditsPanel() {
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Start date</div>
                     <div className="font-medium">
-                      {pool.startDate ? format(new Date(pool.startDate), "M/d/yyyy") : "-"}
+                      {pool.startDate ? format(new Date(pool.startDate), "d/M/yyyy") : "-"}
                     </div>
                   </div>
                   <div>
@@ -116,7 +116,7 @@ export function AiCreditsPanel() {
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Expiration date</div>
                     <div className="font-medium">
-                      {pool.expirationDate ? format(new Date(pool.expirationDate), "M/d/yyyy") : "Never"}
+                      {pool.expirationDate ? format(new Date(pool.expirationDate), "d/M/yyyy") : "Never"}
                     </div>
                   </div>
                   
