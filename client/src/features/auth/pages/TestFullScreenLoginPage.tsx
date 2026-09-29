@@ -282,7 +282,7 @@ export function TestFullScreenLoginPage({ preferredRole }: { preferredRole?: Aut
   // Load Google reCAPTCHA v3 â€” shows official badge at bottom-right
   if (brandingError) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center bg-background dark:bg-[#0f0f0f] text-white text-center">
+      <div className="flex h-screen flex-col items-center justify-center bg-background dark:bg-[#0f0f0f] text-foreground dark:text-white text-center">
         <img src="/logo.png" alt="Classgrid" className="h-16 w-16 object-contain mb-6 opacity-80" />
         <h2 className="text-2xl font-semibold mb-2">Institution Not Found</h2>
         <p className="text-muted-foreground dark:text-white/60">This login portal does not exist or has been moved.</p>

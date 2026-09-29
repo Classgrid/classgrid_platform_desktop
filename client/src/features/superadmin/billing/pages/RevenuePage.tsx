@@ -71,7 +71,7 @@ const RevenuePage = () => {
         <div>
           <h2 className="text-xl font-semibold tracking-tight">Revenue Ledger</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Only captured Classgrid SaaS subscription revenue is included.
+            Includes Classgrid SaaS subscriptions and AI Credit top-up revenue.
           </p>
         </div>
         <RevenueExportDialog />
@@ -88,7 +88,7 @@ const RevenuePage = () => {
                   ? 'Revenue by Module'
                   : 'Revenue by Invoice'}
             </CardTitle>
-            <p className="text-sm text-muted-foreground">Detailed platform subscription revenue records.</p>
+            <p className="text-sm text-muted-foreground">Detailed platform subscription and AI usage revenue records.</p>
           </CardHeader>
           <CardContent className="p-0">
             {activeTab === 'organizations' && <RevenueOrganizationTable />}
