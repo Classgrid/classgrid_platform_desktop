@@ -105,44 +105,47 @@ export const TransactionTable: React.FC<{
         const initial = name.charAt(0).toUpperCase();
         return (
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center overflow-hidden text-white font-bold text-xs bg-indigo-500">
-              {initial}
+            <div className="relative shrink-0">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center overflow-hidden text-white font-bold text-xs bg-emerald-600">
+                {initial}
+              </div>
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
               <span className="font-semibold text-foreground text-sm truncate" title={name}>
                 {name}
               </span>
-              <span className="text-[10px] text-muted-foreground truncate">
-                {tx.userEmail || "No Email"}
-              </span>
+              {tx.userEmail && (
+                <span className="text-[10px] text-muted-foreground truncate">
+                  {tx.userEmail}
+                </span>
+              )}
             </div>
           </div>
         );
       },
     },
     {
-      key: "paymentId",
-      header: "Payment ID",
+      key: "paymentDetail",
+      header: "Payment Detail",
       render: (_: any, tx: any) => (
-        <span className="text-sm font-medium text-foreground">
-          {tx.razorpayPaymentId || tx.id || "N/A"}
-        </span>
-      ),
-    },
-    {
-      key: "organization",
-      header: "Organization",
-      render: (_: any, tx: any) => (
-        <span className="text-sm text-foreground truncate">
-          {tx.organization?.name || tx.orgId || tx.organizationName || "Unknown"}
-        </span>
+        <div className="flex flex-col gap-1.5 min-w-0">
+          <span className="text-sm text-foreground font-medium truncate" title={tx.razorpayPaymentId || tx.id}>
+            {tx.razorpayPaymentId || tx.id || "N/A"}
+          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] text-muted-foreground">
+              {format(new Date(tx.createdAt), 'EEE MMM dd, h:mma')} • {tx.organization?.name || tx.organizationName || tx.orgId || ""}
+            </span>
+          </div>
+        </div>
       ),
     },
     {
       key: "amount",
       header: "Amount",
+      width: "w-[100px]",
       render: (_: any, tx: any) => (
-        <span className="text-sm text-foreground">
+        <span className="text-sm font-medium text-foreground">
           <MoneyDisplay amountPaise={tx.amountPaise} />
         </span>
       ),
@@ -150,31 +153,27 @@ export const TransactionTable: React.FC<{
     {
       key: "status",
       header: "Status",
+      width: "w-[120px]",
       render: (_: any, tx: any) => {
         const isSuccess = tx.status === 'success' || tx.status === 'COMPLETED' || tx.status === 'CAPTURED';
         const isFailed = tx.status === 'failed' || tx.status === 'DECLINED';
+        const isRefunded = tx.status === 'refunded' || tx.status === 'REFUNDED';
+        const dotColor = isSuccess ? 'bg-emerald-500' : isFailed ? 'bg-red-500' : isRefunded ? 'bg-indigo-500' : 'bg-amber-500';
+        const textColor = isSuccess ? 'text-emerald-500' : isFailed ? 'text-red-500' : isRefunded ? 'text-indigo-500' : 'text-foreground';
         return (
-          <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${isSuccess ? 'bg-emerald-50 text-emerald-700' : isFailed ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>
-            {isFailed && <span className="text-[10px]">✕</span>}
-            {isSuccess && <span className="text-[10px]">✓</span>}
-            {tx.status?.toUpperCase() || 'UNKNOWN'}
+          <div className="flex items-center gap-2">
+            <span className={`h-2 w-2 rounded-full ${dotColor}`} />
+            <span className={`text-xs font-medium ${textColor}`}>
+              {tx.status?.charAt(0).toUpperCase() + tx.status?.slice(1) || 'Unknown'}
+            </span>
           </div>
         );
       },
     },
     {
-      key: "date",
-      header: "Created on",
-      render: (_: any, tx: any) => (
-        <span className="text-sm text-foreground whitespace-nowrap">
-          {format(new Date(tx.createdAt), 'EEE MMM dd, h:mma')}
-        </span>
-      ),
-    },
-    {
       key: "actions",
       header: "",
-      width: "w-[80px]",
+      width: "w-[90px]",
       render: (_: any, tx: any) => (
         <Button
           variant="primary"

@@ -309,54 +309,47 @@ export const FailedPaymentTable: React.FC<{
         const initial = name.charAt(0).toUpperCase();
         return (
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center overflow-hidden text-white font-bold text-xs bg-indigo-500">
-              {initial}
+            <div className="relative shrink-0">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center overflow-hidden text-white font-bold text-xs bg-emerald-600">
+                {initial}
+              </div>
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
               <span className="font-semibold text-foreground text-sm truncate" title={name}>
                 {name}
               </span>
-              <span className="text-[10px] text-muted-foreground truncate">
-                {fail.userEmail || "No Email"}
-              </span>
+              {fail.userEmail && (
+                <span className="text-[10px] text-muted-foreground truncate">
+                  {fail.userEmail}
+                </span>
+              )}
             </div>
           </div>
         );
       },
     },
     {
-      key: "paymentId",
-      header: "Payment ID",
+      key: "paymentDetail",
+      header: "Payment Detail",
       render: (_: any, fail: any) => (
-        <span className="text-sm font-medium text-foreground">
-          {fail.providerTxId || fail.razorpayPaymentId || fail.paymentId || "N/A"}
-        </span>
-      ),
-    },
-    {
-      key: "organization",
-      header: "Organization",
-      render: (_: any, fail: any) => (
-        <span className="text-sm text-foreground truncate">
-          {fail.organization?.name || fail.organizationName || fail.orgId || "Unknown"}
-        </span>
-      ),
-    },
-    {
-      key: "date",
-      header: "Created on",
-      render: (_: any, fail: any) => (
-        <span className="text-sm text-foreground whitespace-nowrap">
-          {format(new Date(fail.createdAt), 'EEE MMM dd, h:mma')}
-        </span>
+        <div className="flex flex-col gap-1.5 min-w-0">
+          <span className="text-sm text-foreground font-medium truncate" title={fail.providerTxId || fail.razorpayPaymentId || fail.paymentId}>
+            {fail.providerTxId || fail.razorpayPaymentId || fail.paymentId || "N/A"}
+          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] text-muted-foreground">
+              {format(new Date(fail.createdAt), 'EEE MMM dd, h:mma')} • {fail.organization?.name || fail.organizationName || fail.orgId || ""}
+            </span>
+          </div>
+        </div>
       ),
     },
     {
       key: "amount",
       header: "Amount",
-      width: "w-[120px]",
+      width: "w-[100px]",
       render: (_: any, fail: any) => (
-        <span className="font-semibold text-sm">
+        <span className="text-sm font-medium text-foreground">
           <MoneyDisplay amountPaise={fail.amountPaise || fail.amount * 100} />
         </span>
       ),
@@ -364,28 +357,32 @@ export const FailedPaymentTable: React.FC<{
     {
       key: "status",
       header: "Status",
+      width: "w-[120px]",
       render: (_: any, fail: any) => (
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-red-50 text-red-700 px-2.5 py-1 text-xs font-medium">
-          <span className="text-[10px]">✕</span>
-          {fail.reason || fail.stage || "FAILED"}
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-red-500" />
+          <span className="text-xs font-medium text-red-500 truncate">
+            {fail.reason || fail.stage || "Failed"}
+          </span>
         </div>
       ),
     },
     {
       key: "actions",
       header: "",
-      width: "w-[80px]",
+      width: "w-[90px]",
       render: (_: any, fail: any) => (
         <Button 
           variant="primary" 
           size="sm" 
           onClick={(e) => { e.stopPropagation(); onResolve(fail.id); }}
         >
-          Investigate
+          Read
         </Button>
       ),
     },
-  ];
+
+
 
   return (
     <AsyncBillingState loading={isLoading} error={error} skeletonType="table">
