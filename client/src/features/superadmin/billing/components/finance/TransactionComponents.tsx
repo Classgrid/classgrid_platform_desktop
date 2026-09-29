@@ -104,8 +104,8 @@ export const TransactionTable: React.FC<{
         const initial = name.charAt(0).toUpperCase();
         return (
           <div className="flex items-center gap-3 py-1">
-            {tx.profilePicture ? (
-              <img src={tx.profilePicture} alt={name} className="h-8 w-8 rounded-full object-cover border border-border flex-shrink-0" />
+            {tx.userId?.profile_image || tx.profilePicture ? (
+              <img src={tx.userId?.profile_image || tx.profilePicture} alt={name} className="h-8 w-8 rounded-full object-cover border border-border flex-shrink-0" />
             ) : (
               <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-medium text-xs">
                 {name?.substring(0, 2).toUpperCase() || "??"}
@@ -126,6 +126,7 @@ export const TransactionTable: React.FC<{
     {
       key: "paymentDetail",
       header: "Payment Detail",
+      width: "w-[180px]",
       render: (_: any, tx: any) => (
         <div className="flex flex-col gap-1.5 min-w-0">
           <span className="text-sm text-foreground font-medium truncate" title={tx.razorpayPaymentId || tx.id}>
@@ -142,6 +143,7 @@ export const TransactionTable: React.FC<{
     {
       key: "amount",
       header: "Amount",
+      width: "w-[120px]",
       render: (_: any, tx: any) => (
         <span className="text-sm font-medium text-foreground">
           <MoneyDisplay amountPaise={tx.amountPaise} />
@@ -153,7 +155,7 @@ export const TransactionTable: React.FC<{
       header: "Status",
       render: (_: any, tx: any) => {
         const isSuccess = tx.status === 'success' || tx.status === 'COMPLETED' || tx.status === 'CAPTURED';
-        const isFailed = tx.status === 'failed' || tx.status === 'DECLINED';
+        const isFailed = tx.status === 'failed';
         const isRefunded = tx.status === 'refunded' || tx.status === 'REFUNDED';
         const dotColor = isSuccess ? 'bg-emerald-500' : isFailed ? 'bg-red-500' : isRefunded ? 'bg-indigo-500' : 'bg-amber-500';
         const textColor = isSuccess ? 'text-emerald-500' : isFailed ? 'text-red-500' : isRefunded ? 'text-indigo-500' : 'text-foreground';

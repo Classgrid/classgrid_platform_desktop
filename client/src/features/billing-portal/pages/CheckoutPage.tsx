@@ -235,14 +235,16 @@ export function CheckoutPage() {
               txnId: confirmRes.data?.data?.providerPaymentId || response.razorpay_payment_id,
               paidAt: now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' - ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
             });
-            if (return_url) {
-              setReturnUrl(return_url);
-            }
-            setStep("success");
+            if (return_url === "close_window") {
+              setReturnUrl("close_window");
+              if (window.opener) {
+                window.opener.postMessage({ type: "CLASSGRID_PAYMENT_SUCCESS" }, "*");
+              }
+            } else if (return_url === "close_window") { setReturnUrl("close_window"); if (window.opener) { window.opener.postMessage({ type: "CLASSGRID_PAYMENT_SUCCESS" }, "*"); } } else if (return_url) { setReturnUrl(return_url); } setStep("success");
           } catch (confirmError: any) {
             console.error("Confirmation error", confirmError);
             toast.error("Payment verification failed.", { id: "payment-verify" });
-            setError(confirmError.response?.data?.error || "Your payment was rejected or could not be verified.");
+            setError(confirmError.response?.data?.error || "Payment verification failed.");
             setStep("failed");
             setLoading(false);
           }
@@ -260,13 +262,7 @@ export function CheckoutPage() {
         }
       };
       const rzp = new (window as any).Razorpay(options);
-      rzp.on("payment.failed", function (response: any) {
-        console.error(response.error);
-        toast.error(response.error.description || "Payment failed");
-        setError(response.error.description || "Your payment was declined by the bank.");
-        setStep("failed");
-        setLoading(false);
-      });
+      
       rzp.open();
     } catch (err: any) {
       console.error(err);
@@ -313,10 +309,10 @@ export function CheckoutPage() {
                 Payment Failed
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                Transaction Blocked
+                Transaction Failed
               </h1>
               <p className="text-muted-foreground text-sm leading-relaxed mb-6">
-                {error || "Your payment could not be processed. This may be due to security reasons or a bank decline."}
+                {error || "Your payment could not be processed. If money was deducted, it will be automatically refunded."}
               </p>
               <button onClick={() => window.history.back()} className="h-12 w-full rounded-xl bg-slate-900 px-6 font-semibold text-white transition hover:bg-slate-800 dark:bg-[#2a2a2a] dark:hover:bg-[#333]">
                 Go Back
@@ -401,7 +397,11 @@ export function CheckoutPage() {
               <p className="text-muted-foreground text-sm leading-relaxed">
                 A confirmation email has been sent.
               </p>
-              {returnUrl ? (
+              {returnUrl === "close_window" ? (
+                <button onClick={() => window.close()} className="mt-4 flex w-full items-center justify-center rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-white transition-all hover:bg-emerald-600">
+                  Close Window
+                </button>
+              ) : returnUrl ? (
                 <a href={returnUrl} className="mt-4 flex w-full items-center justify-center rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-white transition-all hover:bg-emerald-600">
                   Return to Dashboard
                 </a>
@@ -628,3 +628,7 @@ export function CheckoutPage() {
     </div>
   );
 }
+
+
+
+

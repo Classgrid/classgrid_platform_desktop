@@ -2068,7 +2068,7 @@ router.get("/transactions", async (req, res) => {
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
-                .populate("organizationId", "name")
+                .populate("organizationId", "name").populate("userId", "profile_image")
                 .populate("processedBy", "name email")
                 .lean(),
             PlatformTransaction.countDocuments(filter),
@@ -2086,7 +2086,7 @@ router.get("/transactions/:id", async (req, res) => {
     try {
         const PlatformTransaction = (await import("../models/PlatformTransaction.js")).default;
         const txn = await PlatformTransaction.findById(req.params.id)
-            .populate("organizationId", "name")
+            .populate("organizationId", "name").populate("userId", "profile_image")
             .populate("processedBy", "name email")
             .lean();
             
@@ -2203,7 +2203,7 @@ router.get("/content-reports", async (req, res) => {
                 .limit(parseInt(limit))
                 .populate("reportedBy", "name email")
                 .populate("reportedUser", "name email")
-                .populate("organizationId", "name")
+                .populate("organizationId", "name").populate("userId", "profile_image")
                 .lean(),
             ContentReport.countDocuments(filter),
         ]);
@@ -2519,7 +2519,7 @@ router.get("/backup/export/:collection", async (req, res) => {
             case "transactions": {
                 const PT = (await import("../models/PlatformTransaction.js")).default;
                 data = await PT.find({})
-                    .populate("organizationId", "name")
+                    .populate("organizationId", "name").populate("userId", "profile_image")
                     .populate("processedBy", "name email")
                     .limit(parseInt(limit))
                     .lean();
@@ -2738,3 +2738,4 @@ router.get("/orgs/:id/fees-audit", isAuthenticated, requireRole("super_admin"), 
 router.get("/orgs/:id/admissions-audit", isAuthenticated, requireRole("super_admin"), getOrgAdmissionsAudit);
 
 export default router;
+

@@ -202,7 +202,7 @@ router.post("/confirm", async (req, res) => {
 
         let signatureValid = false;
         let providerPayment;
-        if (handoff.payment_type === "saas_invoice") {
+        if (handoff.payment_type === "saas_invoice" || handoff.payment_type === "AI_TOPUP") {
             signatureValid = razorpayService.verifyPlatformSignature(orderId, paymentId, signature);
             if (signatureValid) providerPayment = await razorpayService.fetchPlatformPayment(paymentId);
         } else {
@@ -371,3 +371,4 @@ router.post("/confirm", async (req, res) => {
 });
 
 export default router;
+
