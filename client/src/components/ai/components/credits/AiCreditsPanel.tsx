@@ -62,7 +62,7 @@ export function AiCreditsPanel() {
 
         {/* AWS Style Credit Pools */}
         <div className="space-y-6 mb-6">
-          {balance?.pools?.map((pool: any) => {
+          {balance?.pools?.filter((p: any) => p.creditType !== "Free").map((pool: any) => {
             const issuedAmount = pool.issuedAmount || 0;
             const remainingAmount = pool.amountRemaining || 0;
             const estimatedRemaining = pool.estimatedAmountRemaining || 0;
