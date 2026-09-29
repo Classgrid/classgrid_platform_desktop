@@ -4,6 +4,7 @@ import { formatNumber } from "@/lib/utils";
 import { Zap, ArrowUpCircle, Wallet, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { Button } from "@/components/marketing_ui/button";
+import { Input } from "@/components/marketing_ui/input";
 import { toast } from "sonner";
 
 export function AiUpgradePanel() {
