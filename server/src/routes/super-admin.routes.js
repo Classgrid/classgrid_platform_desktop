@@ -2094,6 +2094,17 @@ router.get("/transactions/:id", async (req, res) => {
             return res.status(404).json({ success: false, message: "Transaction not found" });
         }
         
+        // Enrich with PaymentTransaction data (feePaise, taxPaise, sourceIp, bankRRN)
+        if (txn && txn.razorpayPaymentId) {
+            const PaymentTransaction = (await import("../models/PaymentTransaction.js")).default;
+            const payTxn = await PaymentTransaction.findOne({ providerPaymentId: txn.razorpayPaymentId }).lean();
+            if (payTxn) {
+                txn.feePaise = payTxn.feePaise ?? 0;
+                txn.taxPaise = payTxn.taxPaise ?? 0;
+                txn.sourceIp = payTxn.sourceIp || null;
+                txn.bankRRN = payTxn.bankReference || null;
+            }
+        }
         res.json({ success: true, data: txn });
     } catch (err) {
         console.error("[SuperAdmin] get transaction error:", err.message);
@@ -2738,5 +2749,6 @@ router.get("/orgs/:id/fees-audit", isAuthenticated, requireRole("super_admin"), 
 router.get("/orgs/:id/admissions-audit", isAuthenticated, requireRole("super_admin"), getOrgAdmissionsAudit);
 
 export default router;
+
 
 
