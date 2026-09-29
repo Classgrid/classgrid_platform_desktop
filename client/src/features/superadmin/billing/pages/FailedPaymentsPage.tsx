@@ -25,7 +25,7 @@ import { NikhilTimeCalendar } from '@/components/marketing_ui/nikhil_calendar';
 import { X } from 'lucide-react';
 import { FailedPaymentsTable } from '../components/finance/FailureComponents';
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
-import { useBillingOrganizations } from '../../hooks/useBillingFinance';
+import { useBillingOrganizations } from '../hooks/useBillingFinance';
 
 const FailedPaymentsPage = () => {
   const navigate = useNavigate();
