@@ -60,58 +60,75 @@ export function AiCreditsPanel() {
           </div>
         )}
 
-        {/* AWS Style Purchased Credits Block */}
-        <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-6 border-b border-border gap-4">
-            <div>
-              <h3 className="font-semibold text-lg flex items-center gap-2">
-                <Wallet className="w-5 h-5 text-emerald-500" />
-                Purchased Credits Details
-              </h3>
-            </div>
-            <div className="flex items-center gap-2 text-sm bg-emerald-500/10 text-emerald-600 px-3 py-1.5 rounded-full font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Active
-            </div>
-          </div>
-          
-          {(() => {
-            // Strictly using BACKEND enforced values
-            const issuedAmount = balance?.total_ai_credits_purchased || 0;
-            const remainingAmount = balance?.ai_credits_balance || 0;
-            const usedAmount = balance?.ai_credits_used || 0;
+        {/* AWS Style Credit Pools */}
+        <div className="space-y-6 mb-6">
+          {balance?.pools?.map((pool: any) => {
+            const issuedAmount = pool.issuedAmount || 0;
+            const remainingAmount = pool.amountRemaining || 0;
+            const estimatedRemaining = pool.estimatedAmountRemaining || 0;
+            const usedAmount = Math.max(0, issuedAmount - remainingAmount);
             const percentUsed = issuedAmount > 0 ? (usedAmount / issuedAmount) * 100 : 0;
+            const isPromo = pool.creditType === "Promotion";
             
             return (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div key={pool.creditId} className="bg-card border border-border rounded-xl p-6 shadow-sm relative overflow-hidden">
+                {isPromo && (
+                  <div className="absolute top-0 right-0 bg-blue-500/10 text-blue-500 text-xs font-bold px-3 py-1 rounded-bl-lg">
+                    Free / Weekly
+                  </div>
+                )}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-6 border-b border-border gap-4">
+                  <div>
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                      <Wallet className={cn("w-5 h-5", isPromo ? "text-blue-500" : "text-emerald-500")} />
+                      Credit details <span className="text-sm font-normal text-muted-foreground ml-2">ID: {pool.creditId}</span>
+                    </h3>
+                  </div>
+                  <div className={cn(
+                    "flex items-center gap-2 text-sm px-3 py-1.5 rounded-full font-medium",
+                    pool.status === "Active" 
+                      ? "bg-emerald-500/10 text-emerald-600" 
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    {pool.status === "Active" && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
+                    {pool.status}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-8">
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Status</div>
-                    <div className="font-medium text-emerald-500">Active</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground mb-1">Issued credit amount</div>
-                    <div className="font-semibold text-xl">{formatNumber(issuedAmount)}</div>
+                    <div className="font-medium text-emerald-500">{pool.status}</div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Start date</div>
                     <div className="font-medium">
-                      {balance?.ai_credits_start_date 
-                        ? format(new Date(balance.ai_credits_start_date), "MMM dd, yyyy") 
-                        : "-"}
+                      {pool.startDate ? format(new Date(pool.startDate), "M/d/yyyy") : "-"}
                     </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Issued credit amount</div>
+                    <div className="font-semibold text-lg">{formatNumber(issuedAmount)} Credits</div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Expiration date</div>
                     <div className="font-medium">
-                      {balance?.ai_credits_end_date 
-                        ? format(new Date(balance.ai_credits_end_date), "MMM dd, yyyy") 
-                        : "Never"}
+                      {pool.expirationDate ? format(new Date(pool.expirationDate), "M/d/yyyy") : "Never"}
                     </div>
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <div className="text-sm text-muted-foreground mb-1">Amount remaining</div>
+                    <div className="font-semibold text-lg">{formatNumber(remainingAmount)} Credits</div>
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <div className="text-sm text-muted-foreground mb-1">Estimated amount remaining</div>
+                    <div className="font-semibold text-lg">{formatNumber(estimatedRemaining)} Credits</div>
                   </div>
                 </div>
                 
-                {issuedAmount > 0 && (
+                {issuedAmount > 0 && !isPromo && (
                   <div className="mt-8 pt-6 border-t border-border">
                     <div className="flex justify-between text-sm mb-3">
                       <div className="flex gap-4">
@@ -122,15 +139,15 @@ export function AiCreditsPanel() {
                     </div>
                     <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                        className={cn("h-full rounded-full transition-all duration-500", isPromo ? "bg-blue-500" : "bg-emerald-500")}
                         style={{ width: `${percentUsed}%` }}
                       />
                     </div>
                   </div>
                 )}
-              </>
+              </div>
             );
-          })()}
+          })}
         </div>
 
         {/* Transaction History Table */}

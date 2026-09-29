@@ -17,10 +17,40 @@ export const getMyCredits = async (req, res) => {
 
         const tokens = user.ai_tokens || {};
         
-        // Strictly calculate the amounts from the backend
         const totalPurchased = tokens.total_ai_credits_purchased || 0;
         const balance = tokens.ai_credits_balance || 0;
         const usedAmount = Math.max(0, totalPurchased - balance);
+
+        // Calculate strict start/end dates
+        const now = new Date();
+        const promoEndDate = tokens.week_reset_date ? new Date(tokens.week_reset_date) : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const promoStartDate = new Date(promoEndDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        const pools = [
+            {
+                creditId: `PRM-${user._id.toString().substring(0, 10).toUpperCase()}`,
+                creditType: "Promotion",
+                status: "Active",
+                issuedAmount: tokens.free_weekly_limit || 100000,
+                amountRemaining: Math.max(0, (tokens.free_weekly_limit || 100000) - (tokens.used_this_week || 0)),
+                estimatedAmountRemaining: Math.max(0, (tokens.free_weekly_limit || 100000) - (tokens.used_this_week || 0)),
+                startDate: promoStartDate.toISOString(),
+                expirationDate: promoEndDate.toISOString()
+            }
+        ];
+
+        if (totalPurchased > 0 || balance > 0) {
+            pools.push({
+                creditId: `PAID-${user._id.toString().substring(0, 10).toUpperCase()}`,
+                creditType: "Paid",
+                status: "Active",
+                issuedAmount: totalPurchased,
+                amountRemaining: balance,
+                estimatedAmountRemaining: balance,
+                startDate: tokens.ai_credits_start_date ? new Date(tokens.ai_credits_start_date).toISOString() : now.toISOString(),
+                expirationDate: tokens.ai_credits_end_date ? new Date(tokens.ai_credits_end_date).toISOString() : null
+            });
+        }
 
         res.status(200).json({
             success: true,
@@ -31,6 +61,7 @@ export const getMyCredits = async (req, res) => {
                 ai_credits_used: usedAmount,
                 ai_credits_start_date: tokens.ai_credits_start_date || null,
                 ai_credits_end_date: tokens.ai_credits_end_date || null,
+                pools: pools
             }
         });
     } catch (error) {
