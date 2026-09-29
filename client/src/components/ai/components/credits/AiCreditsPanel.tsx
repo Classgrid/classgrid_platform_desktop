@@ -6,7 +6,9 @@ import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { Progress } from "@/components/marketing_ui/progress";
 import { Input } from "@/components/marketing_ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/marketing_ui/table";
-import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/marketing_ui/popover";
+import { Calendar } from "@/components/marketing_ui/nikhil_calendar";
+import { Button } from "@/components/marketing_ui/button";
 import { format } from "date-fns";
 
 export function AiCreditsPanel() {
@@ -184,12 +186,22 @@ export function AiCreditsPanel() {
                 />
               </div>
               <div className="shrink-0 w-[150px]">
-                <NikhilTimeCalendar 
-                  date={dateFilter}
-                  setDate={setDateFilter}
-                  placeholder="Select Date"
-                  showTime={false}
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal h-9">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateFilter ? format(new Date(dateFilter), "MMM dd, yyyy") : <span>Select Date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                      mode="single"
+                      selected={dateFilter ? new Date(dateFilter) : undefined}
+                      onSelect={(d: any) => setDateFilter(d ? d.toISOString() : "")}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
           </div>
