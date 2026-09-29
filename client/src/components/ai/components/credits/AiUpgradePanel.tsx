@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useMyAiBalance, useInitiateAiTopUp } from "@/components/ai/queries/useAiCredits";
 import { useQueryClient } from "@tanstack/react-query";
-import { useQueryClient } from "@tanstack/react-query";
 import { formatNumber } from "@/lib/utils";
 import { Zap, ArrowUpCircle, Wallet, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
@@ -14,7 +13,6 @@ export function AiUpgradePanel() {
   const { data: balance, isLoading: balanceLoading } = useMyAiBalance();
   const topUpMutation = useInitiateAiTopUp();
 
-  const queryClient = useQueryClient();
   React.useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === "CLASSGRID_PAYMENT_SUCCESS") {
@@ -26,16 +24,7 @@ export function AiUpgradePanel() {
     return () => window.removeEventListener("message", handleMessage);
   }, [queryClient]);
 
-  React.useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === "CLASSGRID_PAYMENT_SUCCESS") {
-        toast.success("Payment successful! AI Credits have been added to your account.");
-        queryClient.invalidateQueries({ queryKey: ["myAiBalance"] });
-      }
-    };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [queryClient]);
+
 
   const [customAmountStr, setCustomAmountStr] = useState<string>("1");
   
@@ -147,4 +136,5 @@ export function AiUpgradePanel() {
     </div>
   );
 }
+
 
