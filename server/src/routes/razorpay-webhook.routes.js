@@ -649,6 +649,11 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     razorpayOrderId: orderId,
                     razorpayPaymentId: paymentId,
                     note: `FAILED: ${error_code} — ${error_description}`,
+                    userName: notes?.payerName || notes?.userName || "Unknown",
+                    userEmail: paymentEntity.email || "",
+                    userMobile: paymentEntity.contact || "",
+                    paymentMethod: paymentEntity.method || "",
+                    paymentTime: paymentEntity.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
                 });
 
                 // NEW LOGIC FOR FAILED PAYMENTS DASHBOARD & EMAIL
