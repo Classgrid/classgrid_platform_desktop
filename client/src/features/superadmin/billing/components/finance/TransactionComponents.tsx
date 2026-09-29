@@ -66,6 +66,31 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/marketing
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/marketing_ui/dropdown-menu';
 import { DataTable } from '@/components/marketing_ui/data-table';
 
+function getInitials(name: string) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+const avatarColors = [
+  "bg-emerald-500",
+  "bg-emerald-600",
+  "bg-green-500",
+  "bg-green-600",
+  "bg-teal-500",
+  "bg-teal-600",
+];
+
+function getAvatarColor(name: string) {
+  if (!name) return "bg-emerald-500";
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % avatarColors.length;
+  return avatarColors[index];
+}
 // 24. TransactionStatusBadge
 export const TransactionStatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const normalized = status.toUpperCase();
@@ -104,13 +129,15 @@ export const TransactionTable: React.FC<{
         const initial = name.charAt(0).toUpperCase();
         return (
           <div className="flex items-center gap-3 py-1">
-            {tx.userId?.profile_image || tx.profilePicture ? (
-              <img src={tx.userId?.profile_image || tx.profilePicture} alt={name} className="h-8 w-8 rounded-full object-cover border border-border flex-shrink-0" />
-            ) : (
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-medium text-xs">
-                {name?.substring(0, 2).toUpperCase() || "??"}
-              </div>
-            )}
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center overflow-hidden text-white font-bold text-[11px] shrink-0 ${getAvatarColor(name)}`}
+            >
+              {tx.userId?.profilePicture || tx.profilePicture ? (
+                <img src={tx.userId?.profilePicture || tx.profilePicture} alt={name} className="w-full h-full object-cover" />
+              ) : (
+                getInitials(name)
+              )}
+            </div>
             <div className="flex flex-col min-w-0">
               <span className="font-medium text-sm text-foreground truncate transition-colors" title={name}>
                 {name}
@@ -198,6 +225,86 @@ export const TransactionTable: React.FC<{
   );
 };
 
+// ── helpers ──
+function DetailRow({ label, value, mono = false }: { label: string; value?: React.ReactNode; mono?: boolean }) {
+  if (value === undefined || value === null || value === '') return null;
+  return (
+    <div className="flex items-start justify-between gap-4 py-2.5 border-b border-border/50 last:border-0">
+      <span className="text-xs text-muted-foreground shrink-0 pt-0.5">{label}</span>
+      <span className={`text-xs font-medium text-foreground text-right break-all ${mono ? 'font-mono' : ''}`}>{value}</span>
+    </div>
+  );
+}
+
+function SectionCard({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
+        <span className="text-muted-foreground">{icon}</span>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
+      </div>
+      <div className="px-4 py-1">{children}</div>
+    </div>
+  );
+}
+
+const TIMELINE_STEPS = [
+  { key: 'created', label: 'Payment Created', icon: '🕐' },
+  { key: 'authorized', label: 'Payment Authorized', icon: '🔐' },
+  { key: 'captured', label: 'Payment Captured', icon: '✅' },
+  { key: 'settlement', label: 'Settlement', icon: '🏦' },
+];
+
+function PaymentStepper({ tx }: { tx: any }) {
+  const isSuccess = tx.status === 'success' || tx.status === 'CAPTURED';
+  const isFailed = tx.status === 'failed';
+
+  const createdAt = tx.paymentTime || tx.createdAt;
+  const capturedAt = tx.paymentTime || tx.createdAt;
+  const settlementDate = capturedAt ? new Date(new Date(capturedAt).getTime() + 3 * 24 * 60 * 60 * 1000) : null;
+  const now = new Date();
+  const isSettled = settlementDate ? settlementDate <= now : false;
+
+  const steps = [
+    { label: 'Payment Created', sub: createdAt ? format(new Date(createdAt), 'EEE, dd MMM yyyy hh:mm a') : '—', done: true, failed: false },
+    { label: 'Payment Authorized', sub: isSuccess ? (capturedAt ? format(new Date(capturedAt), 'EEE, dd MMM yyyy hh:mm a') : '—') : (isFailed ? 'Not completed' : 'Pending'), done: isSuccess, failed: isFailed },
+    { label: 'Payment Captured', sub: isSuccess ? (capturedAt ? format(new Date(capturedAt), 'EEE, dd MMM yyyy hh:mm a') : '—') : (isFailed ? 'Not completed' : 'Pending'), done: isSuccess, failed: isFailed },
+    { label: isSettled ? 'Settlement Processed' : 'Settlement Pending', sub: settlementDate ? `Expected by ${format(settlementDate, 'EEE, dd MMM yyyy hh:mm a')}` : '—', done: isSettled && isSuccess, failed: false, pending: !isSettled },
+  ];
+
+  return (
+    <div className="py-2 space-y-0">
+      {steps.map((step, idx) => (
+        <div key={idx} className="flex gap-3">
+          {/* icon + line */}
+          <div className="flex flex-col items-center">
+            <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 mt-2.5 transition-colors
+              ${step.done ? 'border-emerald-500 bg-emerald-500/10' : step.failed ? 'border-red-500 bg-red-500/10' : 'border-muted-foreground/30 bg-muted/30'}`}>
+              {step.done ? (
+                <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+              ) : step.failed ? (
+                <svg className="h-3.5 w-3.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              ) : (
+                <div className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+              )}
+            </div>
+            {idx < steps.length - 1 && (
+              <div className={`w-0.5 flex-1 my-1 rounded ${step.done ? 'bg-emerald-500/40' : 'bg-border'}`} style={{ minHeight: '24px' }} />
+            )}
+          </div>
+          {/* content */}
+          <div className="pb-4 pt-2.5 min-w-0">
+            <p className={`text-xs font-semibold leading-tight ${step.done ? 'text-foreground' : step.failed ? 'text-red-500' : 'text-muted-foreground'}`}>
+              {step.label}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{step.sub}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // 26. TransactionDetailDrawer
 export const TransactionDetailDrawer: React.FC<{
   isOpen: boolean;
@@ -206,107 +313,128 @@ export const TransactionDetailDrawer: React.FC<{
 }> = ({ isOpen, onClose, txId }) => {
   const { data: tx, isLoading, error } = useTransactionDetail(txId);
 
+  const isSuccess = tx?.status === 'success' || tx?.status === 'CAPTURED';
+  const isFailed = tx?.status === 'failed';
+
+  // Parse UPI VPA or card details from paymentMethod string (e.g. "upi:nikhilsubsun123-1@okicici")
+  const rawMethod = tx?.paymentMethod || '';
+  const [methodType, methodDetail] = rawMethod.includes(':') ? rawMethod.split(':', 2) : [rawMethod, ''];
+
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="max-w-xl ml-auto right-0 left-auto h-full rounded-l-xl rounded-r-none">
-        <DrawerHeader className="border-b pb-4">
-          <DrawerTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5" />
+      <DrawerContent className="max-w-lg ml-auto right-0 left-auto h-full rounded-l-xl rounded-r-none flex flex-col">
+        <DrawerHeader className="border-b pb-3 shrink-0">
+          <DrawerTitle className="flex items-center gap-2 text-sm">
+            <Receipt className="h-4 w-4 text-muted-foreground" />
             Transaction Details
           </DrawerTitle>
         </DrawerHeader>
-        <div className="p-6 flex-1 overflow-y-auto space-y-6">
+
+        <div className="flex-1 overflow-y-auto">
           <AsyncBillingState loading={isLoading} error={error} skeletonType="card">
             {tx && (
-              <>
-                <div className="flex justify-between items-start bg-card p-4 rounded-lg border">
+              <div className="p-4 space-y-3">
+
+                {/* ── SECTION 1: Overview Hero ── */}
+                <div className={`rounded-xl border p-4 flex items-center justify-between
+                  ${isSuccess ? 'bg-emerald-500/5 border-emerald-500/20' : isFailed ? 'bg-red-500/5 border-red-500/20' : 'bg-card border-border'}`}>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Total Amount</p>
-                    <h3 className="text-2xl font-semibold flex items-center gap-2">
-                      <MoneyDisplay amountPaise={tx.amountPaise} />
-                    </h3>
+                    <p className="text-xs text-muted-foreground mb-1">Total Amount</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      ₹{tx.amount?.toFixed ? tx.amount.toFixed(2) : (tx.amountPaise ? (tx.amountPaise / 100).toFixed(2) : '—')}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-1 font-mono truncate max-w-[200px]">
+                      {tx.razorpayPaymentId || tx._id}
+                    </p>
                   </div>
-                  <TransactionStatusBadge status={tx.status} />
+                  <div className="flex flex-col items-end gap-2">
+                    <TransactionStatusBadge status={tx.status || 'unknown'} />
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                      {tx.paymentFlow === 'ai_topup' ? 'AI Top-Up' : tx.paymentFlow === 'subscription' ? 'Subscription' : tx.type || 'Razorpay'}
+                    </span>
+                  </div>
                 </div>
-                <div className="space-y-4 text-sm">
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="text-muted-foreground">Transaction ID</span>
-                    <span className="font-mono text-foreground">{tx._id || tx.id}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="text-muted-foreground">Organization</span>
-                    <span className="text-foreground">{tx.organization?.name || tx.orgId}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="text-muted-foreground">Date</span>
-                    <span className="text-foreground">{format(new Date(tx.createdAt), 'dd MMM yyyy, HH:mm:ss')}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="text-muted-foreground">Payment Gateway</span>
-                    <span className="text-foreground">{tx.provider || 'System'}</span>
-                  </div>
-                  {tx.providerTxId && (
-                    <div className="flex justify-between border-b pb-2">
-                      <span className="text-muted-foreground">Gateway Ref</span>
-                      <span className="font-mono text-primary flex items-center gap-1 cursor-pointer hover:underline">
-                        {tx.providerTxId} <ExternalLink className="w-3 h-3" />
-                      </span>
+
+                {/* ── SECTION 2: Customer / User Details ── */}
+                <SectionCard icon={<User className="h-3.5 w-3.5" />} title="Customer Details">
+                  <div className="py-3 flex justify-center">
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden text-white font-bold text-[16px] shrink-0 ${getAvatarColor(tx.userName || 'Unknown')}`}
+                    >
+                      {tx.userId?.profilePicture || tx.profilePicture ? (
+                        <img src={tx.userId?.profilePicture || tx.profilePicture} alt={tx.userName} className="w-full h-full object-cover" />
+                      ) : (
+                        getInitials(tx.userName || 'Unknown')
+                      )}
                     </div>
-                  )}
-                  {tx.paymentMethod && (
-                    <div className="flex justify-between border-b pb-2">
-                      <span className="text-muted-foreground">Payment Method</span>
-                      <PaymentMethodCell 
-                        method={tx.paymentMethod.type} 
-                        brand={tx.paymentMethod.brand} 
-                        last4={tx.paymentMethod.last4} 
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                  <PayerInformationPanel payer={tx.payer} />
-                  <MerchantAccountPanel merchant={tx.merchant} />
-                </div>
-
-                <div className="mt-6">
-                  <TransactionTimeline events={tx.events || []} />
-                </div>
-
-                {tx.allocations && tx.allocations.length > 0 && (
-                  <div className="mt-6">
-                    <PaymentAllocationPanel allocations={tx.allocations} />
                   </div>
+                  <DetailRow label="Name" value={tx.userName || 'Unknown'} />
+                  <DetailRow label="Email" value={tx.userEmail || '—'} />
+                  <DetailRow label="Mobile" value={tx.userMobile || '—'} />
+                  <DetailRow label="User ID" value={tx.userId?._id || tx.userId || '—'} mono />
+                  <DetailRow label="Role" value={tx.userRole ? tx.userRole.charAt(0).toUpperCase() + tx.userRole.slice(1) : '—'} />
+                </SectionCard>
+
+                {/* ── SECTION 3: Payment Method Details ── */}
+                <SectionCard icon={<CreditCard className="h-3.5 w-3.5" />} title="Payment Details">
+                  <DetailRow label="Payment ID" value={tx.razorpayPaymentId || '—'} mono />
+                  <DetailRow label="Order ID" value={tx.razorpayOrderId || '—'} mono />
+                  <DetailRow label="Method" value={
+                    <span className="flex items-center gap-1.5">
+                      {methodType.toLowerCase() === 'upi' && <Smartphone className="h-3 w-3" />}
+                      {methodType.toLowerCase() === 'netbanking' && <Banknote className="h-3 w-3" />}
+                      {methodType.toLowerCase() === 'card' && <CreditCard className="h-3 w-3" />}
+                      <span className="uppercase">{methodType || tx.method || '—'}</span>
+                    </span>
+                  } />
+                  {methodDetail && <DetailRow label={methodType.toLowerCase() === 'upi' ? 'UPI VPA' : methodType.toLowerCase() === 'card' ? 'Card' : 'Account'} value={methodDetail} mono />}
+                  {tx.bankRRN && <DetailRow label="Bank RRN" value={tx.bankRRN} mono />}
+                  <DetailRow label="Date & Time" value={tx.paymentTime ? format(new Date(tx.paymentTime), 'dd MMM yyyy, hh:mm:ss a') : tx.createdAt ? format(new Date(tx.createdAt), 'dd MMM yyyy, hh:mm:ss a') : '—'} />
+                  <DetailRow label="Currency" value={tx.currency || 'INR'} />
+                  {tx.note && <DetailRow label="Note" value={tx.note} />}
+                </SectionCard>
+
+                {/* ── SECTION 4: Organization ── */}
+                {(tx.organizationId || tx.organizationName) && (
+                  <SectionCard icon={<Building2 className="h-3.5 w-3.5" />} title="Organization">
+                    <DetailRow label="Name" value={tx.organizationId?.name || tx.organizationName || '—'} />
+                    <DetailRow label="Org ID" value={tx.organizationId?._id || (typeof tx.organizationId === 'string' ? tx.organizationId : '') || '—'} mono />
+                  </SectionCard>
                 )}
 
-                {tx.refunds && tx.refunds.length > 0 && (
-                  <div className="mt-6">
-                    <RefundPanel refunds={tx.refunds} />
-                  </div>
-                )}
+                {/* ── SECTION 5: Fees & Processing ── */}
+                <SectionCard icon={<Receipt className="h-3.5 w-3.5" />} title="Fees & Processing">
+                  <DetailRow label="Razorpay Fee" value={tx.feePaise != null ? `₹${(tx.feePaise / 100).toFixed(2)}` : '₹0.00'} />
+                  <DetailRow label="GST on Fee" value={tx.taxPaise != null ? `₹${(tx.taxPaise / 100).toFixed(2)}` : '₹0.00'} />
+                  <DetailRow label="Net Received" value={
+                    tx.amount != null
+                      ? `₹${(tx.amount - (tx.feePaise || 0) / 100 - (tx.taxPaise || 0) / 100).toFixed(2)}`
+                      : '—'
+                  } />
+                  {tx.sourceIp && <DetailRow label="Source IP" value={tx.sourceIp} mono />}
+                  <DetailRow label="Fee Bearer" value="Merchant" />
+                </SectionCard>
 
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <SignatureVerificationPanel isVerified={tx.signatureVerified ?? true} signature={tx.signature} />
-                  <GatewayResponsePanel response={tx.gatewayResponse} />
-                </div>
+                {/* ── SECTION 6: Payment Timeline Stepper ── */}
+                <SectionCard icon={<History className="h-3.5 w-3.5" />} title="Payment Timeline">
+                  <PaymentStepper tx={tx} />
+                </SectionCard>
 
-                <div className="mt-6">
-                  <WebhookTimeline txId={txId} />
-                </div>
-              </>
+              </div>
             )}
           </AsyncBillingState>
         </div>
-        <DrawerFooter className="border-t">
+
+        <DrawerFooter className="border-t shrink-0">
           <DrawerClose asChild>
-            <Button variant="outline">Close</Button>
+            <Button variant="outline" size="sm">Close</Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );
 };
+
 
 // 43. TransactionFlowTabs
 export const TransactionFlowTabs: React.FC<{
