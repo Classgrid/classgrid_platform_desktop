@@ -190,9 +190,18 @@ export default function TransactionDetailsPage() {
                             <div className="w-3.5 h-3.5 bg-[#F79E1B] rounded-full -ml-1.5 mix-blend-multiply opacity-90"></div>
                           </div>
                         );
+                        if (net === "maestro") return (
+                          <div className="flex items-center">
+                            <div className="w-3.5 h-3.5 bg-[#EB001B] rounded-full mix-blend-multiply opacity-90 z-10"></div>
+                            <div className="w-3.5 h-3.5 bg-[#00AEEF] rounded-full -ml-1.5 mix-blend-multiply opacity-90"></div>
+                          </div>
+                        );
                         if (net === "rupay") return <span className="font-bold italic text-[14px]"><span className="text-[#F37A20]">Ru</span><span className="text-[#03984A]">Pay</span></span>;
                         if (net === "amex" || net === "american express") return <span className="bg-[#002663] text-white font-bold text-[10px] px-1.5 py-0.5 rounded-sm">AMEX</span>;
-                        return <span>{tx.cardDetails.network}</span>;
+                        if (net === "discover") return <span className="font-bold text-[#F9A021] text-[12px]">DISCOVER</span>;
+                        if (net === "diners club") return <span className="font-bold text-[#004A97] text-[12px]">Diners Club</span>;
+                        if (net === "jcb") return <span className="font-bold text-[#003F90] text-[12px]">JCB</span>;
+                        return <span className="font-semibold uppercase text-xs">{tx.cardDetails.network}</span>;
                       })()}
                     </span>
                     <span className="text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">•••• {tx.cardDetails.last4}</span>
