@@ -64,7 +64,7 @@ const TransactionsPage = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full p-4 sm:p-6 lg:p-8">
+    <div className="flex flex-col gap-6 w-full pb-8">
       {/* ═══ FILTER BAR — copied from ClassgridTalkPage ═══ */}
       <SuperadminFilterBar
         searchQuery={searchInput}
