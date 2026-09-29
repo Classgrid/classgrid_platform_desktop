@@ -126,7 +126,7 @@ export const TransactionTable: React.FC<{
     {
       key: "paymentDetail",
       header: "Payment Detail",
-      width: "w-[180px]",
+      width: "w-[240px]",
       render: (_: any, tx: any) => (
         <div className="flex flex-col gap-1.5 min-w-0">
           <span className="text-sm text-foreground font-medium truncate" title={tx.razorpayPaymentId || tx.id}>
@@ -153,6 +153,7 @@ export const TransactionTable: React.FC<{
     {
       key: "status",
       header: "Status",
+      width: "w-[120px]",
       render: (_: any, tx: any) => {
         const isSuccess = tx.status === 'success' || tx.status === 'COMPLETED' || tx.status === 'CAPTURED';
         const isFailed = tx.status === 'failed';
