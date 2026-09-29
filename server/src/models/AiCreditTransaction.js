@@ -55,6 +55,6 @@ const aiCreditTransactionSchema = new mongoose.Schema(
 // Indexes for fast lookup by user and org
 aiCreditTransactionSchema.index({ userId: 1, createdAt: -1 });
 aiCreditTransactionSchema.index({ orgId: 1, createdAt: -1 });
-aiCreditTransactionSchema.index({ razorpay_payment_id: 1 });
+
 
 export default mongoose.models.AiCreditTransaction || mongoose.model("AiCreditTransaction", aiCreditTransactionSchema);
