@@ -103,7 +103,7 @@ export const createTopupOrder = async (req, res) => {
             amountPaise: amountPaise,
             currency: "INR",
             razorpay_key_id: process.env.RAZORPAY_KEY_ID, // Platform Key
-            payment_type: "saas_invoice",
+            payment_type: "AI_TOPUP",
             return_url: "close_window",
             clientIp: req.ip,
             userAgent: String(req.headers["user-agent"] || "").slice(0, 300),

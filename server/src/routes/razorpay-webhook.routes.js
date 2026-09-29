@@ -94,7 +94,7 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
         const refundEntity = payload?.refund?.entity;
         
         const notes = paymentEntity?.notes || orderEntity?.notes || refundEntity?.notes || {};
-        const paymentType = notes?.type || "unknown";
+        const paymentType = notes?.type || notes?.payment_type || "unknown";
         const organizationId = notes?.organization_id || notes?.orgId || req.query.organizationId || null;
 
         await connectDB();
@@ -325,6 +325,12 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                         razorpayPaymentId: paymentId,
                         planActivated: "active",
                         note: `Razorpay webhook: ${event} | Method: ${method} | Email: ${email}`,
+                        userName: notes?.payerName || notes?.userName || "Unknown",
+                        userEmail: email || notes?.payerEmail || "",
+                        userMobile: contact || notes?.payerPhone || "",
+                        userId: notes?.user_id || null,
+                        paymentMethod: method || "",
+                        paymentTime: paymentEntity?.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
                     });
 
                     // RULE 6 ENFORCEMENT: Audit Log
@@ -621,6 +627,12 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                             razorpayOrderId: orderId,
                             razorpayPaymentId: paymentId,
                             note: `Webhook: ${event} | Type: ${paymentType} | ${email || ""} | Notes: ${JSON.stringify(notes || {})}`,
+                            userName: notes?.payerName || notes?.userName || "Unknown",
+                            userEmail: email || notes?.payerEmail || "",
+                            userMobile: contact || notes?.payerPhone || "",
+                            userId: notes?.user_id || null,
+                            paymentMethod: method || "",
+                            paymentTime: paymentEntity?.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
                         });
                     }
                     console.log(`[Razorpay Webhook] ✅ Generic payment logged: ₹${amountInr}`);
@@ -641,6 +653,25 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
 
                 console.error(`[Razorpay Webhook] ❌ Payment FAILED: ₹${amountInr} | Error: ${error_code} — ${error_description}`);
 
+                let resolvedUserName = notes?.payerName || notes?.userName || "Unknown";
+                let resolvedUserEmail = paymentEntity.email || notes?.payerEmail || "";
+                let resolvedUserMobile = paymentEntity.contact || notes?.payerPhone || "";
+                let resolvedUserId = notes?.user_id || null;
+
+                if (resolvedUserId) {
+                    try {
+                        const User = (await import("../models/User.js")).default;
+                        const user = await User.findById(resolvedUserId).select("name email phoneNumber");
+                        if (user) {
+                            if (resolvedUserName === "Unknown") resolvedUserName = user.name || "Unknown";
+                            if (!resolvedUserEmail) resolvedUserEmail = user.email || "";
+                            if (!resolvedUserMobile) resolvedUserMobile = user.phoneNumber || "";
+                        }
+                    } catch (e) {
+                        console.error("[Razorpay Webhook] User lookup failed for failed payment:", e);
+                    }
+                }
+
                 await PlatformTransaction.create({
                     organizationId: organizationId || null,
                     type: "razorpay",
@@ -649,9 +680,10 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     razorpayOrderId: orderId,
                     razorpayPaymentId: paymentId,
                     note: `FAILED: ${error_code} — ${error_description}`,
-                    userName: notes?.payerName || notes?.userName || "Unknown",
-                    userEmail: paymentEntity.email || "",
-                    userMobile: paymentEntity.contact || "",
+                    userName: resolvedUserName,
+                    userEmail: resolvedUserEmail,
+                    userMobile: resolvedUserMobile,
+                    userId: resolvedUserId,
                     paymentMethod: paymentEntity.method || "",
                     paymentTime: paymentEntity.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
                 });

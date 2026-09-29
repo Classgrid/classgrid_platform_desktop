@@ -125,6 +125,10 @@ async function applyReferencePayment(handoff, payment, session) {
         return order;
     }
 
+    if (handoff.referenceModel === "AiTopUp") {
+        return { type: "AiTopUp", amountPaise };
+    }
+
     throw conflict("Unsupported payable model");
 }
 

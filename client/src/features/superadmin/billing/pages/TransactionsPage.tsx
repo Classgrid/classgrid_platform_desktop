@@ -25,7 +25,7 @@ import { NikhilTimeCalendar } from '@/components/marketing_ui/nikhil_calendar';
 import { X } from 'lucide-react';
 import { TransactionTable } from '../components/finance/TransactionComponents';
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
-import { useBillingOrganizations } from '../hooks/useBillingFinance';
+import { useBillingOrganizations } from '../hooks/useBillingFilters';
 
 const TransactionsPage = () => {
   const navigate = useNavigate();
