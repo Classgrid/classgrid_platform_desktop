@@ -168,16 +168,48 @@ export default function TransactionDetailsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4 space-y-3">
-            <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-              <span className="text-muted-foreground shrink-0 mr-4">Method</span>
-              <span className="font-medium uppercase flex items-center gap-1.5 text-right">
-                {methodType.toLowerCase() === 'upi' ? '📱' : methodType.toLowerCase() === 'card' ? '💳' : '🏦'} {methodType || tx.method || '—'}
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-              <span className="text-muted-foreground shrink-0 mr-4">{methodType.toLowerCase() === 'upi' ? 'UPI VPA' : 'Account'}</span>
-              <span className="font-medium font-mono text-xs text-right break-all">{methodDetail || '—'}</span>
-            </div>
+            {tx.cardDetails ? (
+              <>
+                <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
+                  <span className="text-muted-foreground shrink-0 mr-4">Method</span>
+                  <span className="font-medium flex items-center gap-1.5 text-right capitalize">
+                    💳 {tx.cardDetails.subType} {tx.cardDetails.type} card
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
+                  <span className="text-muted-foreground shrink-0 mr-4">Card</span>
+                  <span className="font-medium text-xs text-right uppercase break-all flex flex-col gap-0.5 items-end">
+                    <span>{tx.cardDetails.issuer}, {tx.cardDetails.network}</span>
+                    <span className="text-muted-foreground font-mono">(xx{tx.cardDetails.last4})</span>
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
+                  <span className="text-muted-foreground shrink-0 mr-4">Name on Card</span>
+                  <span className="font-medium text-xs text-right break-all">{tx.cardDetails.name || "—"}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
+                  <span className="text-muted-foreground shrink-0 mr-4">Card ID</span>
+                  <span className="font-medium font-mono text-xs text-right break-all">{tx.cardDetails.cardId || "—"}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
+                  <span className="text-muted-foreground shrink-0 mr-4">Auth Code</span>
+                  <span className="font-medium font-mono text-xs text-right break-all">{tx.cardDetails.authCode || "—"}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
+                  <span className="text-muted-foreground shrink-0 mr-4">Method</span>
+                  <span className="font-medium uppercase flex items-center gap-1.5 text-right">
+                    {methodType.toLowerCase() === 'upi' ? '📱' : methodType.toLowerCase() === 'card' ? '💳' : '🏦'} {methodType || tx.method || '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
+                  <span className="text-muted-foreground shrink-0 mr-4">{methodType.toLowerCase() === 'upi' ? 'UPI VPA' : 'Account'}</span>
+                  <span className="font-medium font-mono text-xs text-right break-all">{methodDetail || '—'}</span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
               <span className="text-muted-foreground shrink-0 mr-4">Bank RRN</span>
               <span className="font-medium font-mono text-xs text-right break-all">{tx.bankRRN || "—"}</span>

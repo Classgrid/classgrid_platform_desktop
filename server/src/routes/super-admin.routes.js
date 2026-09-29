@@ -2110,7 +2110,19 @@ router.get("/transactions/:id", async (req, res) => {
                     
                     let methodStr = payment.method || "";
                     if (methodStr === "upi" && payment.vpa) methodStr = `upi:${payment.vpa}`;
-                    else if (methodStr === "card" && payment.card) methodStr = `card:${payment.card.network} ${payment.card.last4}`;
+                    else if (methodStr === "card" && payment.card) {
+                        methodStr = `card:${payment.card.network} ${payment.card.last4}`;
+                        txn.cardDetails = {
+                            type: payment.card.type || "",
+                            subType: payment.card.sub_type || "",
+                            issuer: payment.card.issuer || "",
+                            network: payment.card.network || "",
+                            last4: payment.card.last4 || "",
+                            name: payment.card.name || "",
+                            cardId: payment.card_id || "",
+                            authCode: payment.acquirer_data?.auth_code || ""
+                        };
+                    }
                     else if (methodStr === "netbanking" && payment.bank) methodStr = `netbanking:${payment.bank}`;
                     
                     if (methodStr) txn.paymentMethod = methodStr;
