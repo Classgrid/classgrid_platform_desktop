@@ -99,7 +99,6 @@ export const TransactionTable: React.FC<{
     {
       key: "customer",
       header: "Customer",
-      width: "w-[200px]",
       render: (_: any, tx: any) => {
         const name = tx.userName || "Unknown";
         const initial = name.charAt(0).toUpperCase();
@@ -143,7 +142,6 @@ export const TransactionTable: React.FC<{
     {
       key: "amount",
       header: "Amount",
-      width: "w-[100px]",
       render: (_: any, tx: any) => (
         <span className="text-sm font-medium text-foreground">
           <MoneyDisplay amountPaise={tx.amountPaise} />
@@ -153,7 +151,6 @@ export const TransactionTable: React.FC<{
     {
       key: "status",
       header: "Status",
-      width: "w-[120px]",
       render: (_: any, tx: any) => {
         const isSuccess = tx.status === 'success' || tx.status === 'COMPLETED' || tx.status === 'CAPTURED';
         const isFailed = tx.status === 'failed' || tx.status === 'DECLINED';

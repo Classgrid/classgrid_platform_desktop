@@ -11,41 +11,49 @@
 
 /*
  * =========================================================================================
- * STRICT SECURITY POLICY:
- * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
- * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
- * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * 🚨 CRITICAL AI & SYSTEM RULE 🚨
+ * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
+ * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
  * =========================================================================================
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ResponsiveSelect } from '@/components/marketing_ui/responsive-select';
 import { SuperadminFilterBar } from '../../components/SuperadminFilterBar';
-import { OrganizationSelector } from '../components/shared/BillingFilterComponents';
-import { FailedPaymentTable, FailedPaymentsOverview } from '../components/finance/FailureComponents';
-import { NikhilTimeCalendar } from '@/components/marketing_ui/nikhil_time_calendar';
+import { NikhilTimeCalendar } from '@/components/marketing_ui/nikhil_calendar';
 import { X } from 'lucide-react';
+import { FailedPaymentsTable } from '../components/finance/FailureComponents';
+import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
+import { useBillingOrganizations } from '../../hooks/useBillingFinance';
 
 const FailedPaymentsPage = () => {
   const navigate = useNavigate();
-  const [filterType, setFilterType] = useState('');
+  const setBreadcrumbs = useBreadcrumbStore((state) => state.setBreadcrumbs);
+  
+  useEffect(() => {
+    setBreadcrumbs([
+      { label: "Failed Payments" }
+    ]);
+    return () => setBreadcrumbs([]);
+  }, [setBreadcrumbs]);
+
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [organizationId, setOrganizationId] = useState('');
-  const [organizationType, setOrganizationType] = useState('');
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
-  const [dateType, setDateType] = useState('createdAt');
+  const [organizationId, setOrganizationId] = useState<string>('');
+  const [dateFrom, setDateFrom] = useState<Date>();
+  const [dateType, setDateType] = useState<"created" | "updated">("created");
 
+  const { data: organizations } = useBillingOrganizations();
+
+  // Debounce search
   useEffect(() => {
-    const timer = window.setTimeout(() => setSearch(searchInput.trim()), 300);
-    return () => window.clearTimeout(timer);
+    const t = setTimeout(() => setSearch(searchInput), 400);
+    return () => clearTimeout(t);
   }, [searchInput]);
 
   const filters = {
-    status: filterType || undefined,
     organizationId: organizationId || undefined,
-    organizationType: organizationType || undefined,
     startDate: dateFrom ? dateFrom.toISOString() : undefined,
     endDate: dateFrom ? (() => { const e = new Date(dateFrom); e.setHours(23, 59, 59, 999); return e.toISOString(); })() : undefined,
     search: search || undefined,
@@ -53,9 +61,6 @@ const FailedPaymentsPage = () => {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-      {/* ═══ OVERVIEW STATS ═══ */}
-      <FailedPaymentsOverview />
-
       {/* ═══ FILTER BAR — copied from ClassgridTalkPage ═══ */}
       <SuperadminFilterBar
         searchQuery={searchInput}
@@ -64,23 +69,17 @@ const FailedPaymentsPage = () => {
       >
         {/* Org Name */}
         <div className="w-[180px]">
-          <OrganizationSelector selectedId={organizationId} onSelect={setOrganizationId} />
-        </div>
-
-        {/* Org Type */}
-        <div className="w-[150px]">
           <ResponsiveSelect
             className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
-            value={organizationType}
-            onChange={(e) => setOrganizationType(e.target.value)}
+            value={organizationId}
+            onChange={(e) => setOrganizationId(e.target.value)}
           >
-            <option value="">Org Type: All</option>
-            <option value="school">School</option>
-            <option value="junior_college">Junior College</option>
-            <option value="engineering">Engineering</option>
-            <option value="coaching">Coaching</option>
-            <option value="diploma">Diploma</option>
-            <option value="other">Other</option>
+            <option value="">Org: All</option>
+            {organizations?.map((org: any) => (
+              <option key={org._id || org.id} value={org._id || org.id}>
+                {org.name}
+              </option>
+            ))}
           </ResponsiveSelect>
         </div>
 
@@ -107,26 +106,13 @@ const FailedPaymentsPage = () => {
             </button>
           )}
         </div>
-
-        {/* Status */}
-        <div className="w-[150px]">
-          <ResponsiveSelect
-            className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-          >
-            <option value="">Status: All</option>
-            <option value="UNRESOLVED">Unresolved</option>
-            <option value="RESOLVED">Resolved</option>
-          </ResponsiveSelect>
-        </div>
       </SuperadminFilterBar>
 
       {/* ═══ TABLE — direct render, no Card wrapper ═══ */}
       <div className="mt-4">
-        <FailedPaymentTable 
+        <FailedPaymentsTable 
           filters={filters} 
-          onResolve={(id) => navigate(`/super-admin/billing/failed-payments/${id}`)} 
+          onViewDetail={(id) => navigate(`/super-admin/billing/failed-payments/${id}`)} 
         />
       </div>
     </div>

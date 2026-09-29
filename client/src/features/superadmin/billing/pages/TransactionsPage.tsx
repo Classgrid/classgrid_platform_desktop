@@ -11,10 +11,9 @@
 
 /*
  * =========================================================================================
- * STRICT SECURITY POLICY:
- * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
- * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
- * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
+ * 🚨 CRITICAL AI & SYSTEM RULE 🚨
+ * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
+ * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
  * =========================================================================================
  */
 
@@ -22,31 +21,42 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ResponsiveSelect } from '@/components/marketing_ui/responsive-select';
 import { SuperadminFilterBar } from '../../components/SuperadminFilterBar';
-import { OrganizationSelector } from '../components/shared/BillingFilterComponents';
-import { TransactionTable } from '../components/finance/TransactionComponents';
-import { NikhilTimeCalendar } from '@/components/marketing_ui/nikhil_time_calendar';
+import { NikhilTimeCalendar } from '@/components/marketing_ui/nikhil_calendar';
 import { X } from 'lucide-react';
+import { TransactionTable } from '../components/finance/TransactionComponents';
+import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
+import { useBillingOrganizations } from '../../hooks/useBillingFinance';
 
 const TransactionsPage = () => {
   const navigate = useNavigate();
-  const [paymentFlow, setPaymentFlow] = useState('');
-  const [organizationId, setOrganizationId] = useState('');
-  const [organizationType, setOrganizationType] = useState('');
-  const [status, setStatus] = useState('');
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
-  const [dateType, setDateType] = useState('createdAt');
+  const setBreadcrumbs = useBreadcrumbStore((state) => state.setBreadcrumbs);
+  
+  useEffect(() => {
+    setBreadcrumbs([
+      { label: "Transactions" }
+    ]);
+    return () => setBreadcrumbs([]);
+  }, [setBreadcrumbs]);
+
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [organizationId, setOrganizationId] = useState<string>('');
+  const [paymentFlow, setPaymentFlow] = useState<string>('');
+  const [status, setStatus] = useState<string>('');
+  const [dateFrom, setDateFrom] = useState<Date>();
+  const [dateType, setDateType] = useState<"created" | "updated">("created");
 
+  const { data: organizations } = useBillingOrganizations();
+
+  // Debounce search
   useEffect(() => {
-    const timer = window.setTimeout(() => setSearch(searchInput.trim()), 300);
-    return () => window.clearTimeout(timer);
+    const t = setTimeout(() => setSearch(searchInput), 400);
+    return () => clearTimeout(t);
   }, [searchInput]);
 
   const filters = {
-    type: paymentFlow || undefined,
     organizationId: organizationId || undefined,
-    organizationType: organizationType || undefined,
+    type: paymentFlow || undefined,
     status: status || undefined,
     startDate: dateFrom ? dateFrom.toISOString() : undefined,
     endDate: dateFrom ? (() => { const e = new Date(dateFrom); e.setHours(23, 59, 59, 999); return e.toISOString(); })() : undefined,
@@ -63,7 +73,18 @@ const TransactionsPage = () => {
       >
         {/* Org Name */}
         <div className="w-[180px]">
-          <OrganizationSelector selectedId={organizationId} onSelect={setOrganizationId} />
+          <ResponsiveSelect
+            className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-sm"
+            value={organizationId}
+            onChange={(e) => setOrganizationId(e.target.value)}
+          >
+            <option value="">Org: All</option>
+            {organizations?.map((org: any) => (
+              <option key={org._id || org.id} value={org._id || org.id}>
+                {org.name}
+              </option>
+            ))}
+          </ResponsiveSelect>
         </div>
 
         {/* Payment Flow */}
