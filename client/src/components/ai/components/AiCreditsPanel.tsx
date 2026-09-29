@@ -3,7 +3,7 @@ import { useMyAiBalance, useMyAiHistory } from "@/features/chat/hooks/useAiCredi
 import { formatNumber } from "@/lib/utils";
 import { Zap, Wallet, Calendar, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
-import { toast } from "sonner";
+
 import { format } from "date-fns";
 
 

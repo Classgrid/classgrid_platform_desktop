@@ -58,3 +58,8 @@ export function getInitials(name: string | null | undefined): string {
   }
   return name.substring(0, 2).toUpperCase();
 }
+
+export function formatNumber(num: number | string): string {
+  if (num === null || num === undefined) return "0";
+  return Number(num).toLocaleString("en-IN");
+}
