@@ -308,21 +308,21 @@ export const FailedPaymentTable: React.FC<{
         const name = fail.userName || "Unknown";
         const initial = name.charAt(0).toUpperCase();
         return (
-          <div className="flex items-center gap-3">
-            <div className="relative shrink-0">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center overflow-hidden text-white font-bold text-xs bg-emerald-600">
-                {initial}
+          <div className="flex items-center gap-3 py-1">
+            {fail.profilePicture ? (
+              <img src={fail.profilePicture} alt={name} className="h-8 w-8 rounded-full object-cover border border-border flex-shrink-0" />
+            ) : (
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-medium text-xs">
+                {name?.substring(0, 2).toUpperCase() || "??"}
               </div>
-            </div>
-            <div className="flex flex-col gap-0.5 min-w-0">
-              <span className="font-semibold text-foreground text-sm truncate" title={name}>
+            )}
+            <div className="flex flex-col min-w-0">
+              <span className="font-medium text-sm text-foreground truncate transition-colors" title={name}>
                 {name}
               </span>
-              {fail.userEmail && (
-                <span className="text-[10px] text-muted-foreground truncate">
-                  {fail.userEmail}
-                </span>
-              )}
+              <span className="text-muted-foreground text-xs truncate">
+                {fail.userEmail || "No email"}
+              </span>
             </div>
           </div>
         );
