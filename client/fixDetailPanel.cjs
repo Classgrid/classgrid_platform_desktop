@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+const fs = require('fs');
+
+const panelContent = `import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/marketing_ui/card";
 import { Button } from "@/components/marketing_ui/button";
 import { ShieldAlert, RotateCcw, AlertTriangle, Coins, Zap } from "lucide-react";
@@ -184,3 +186,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
     </div>
   );
 }
+`;
+
+fs.writeFileSync('c:/CLASSGRIDPLATFORM/classgrid_platoform-desktop-/client/src/features/superadmin/components/ai-usage/AiUserDetailPanel.tsx', panelContent);
+console.log('Fixed AiUserDetailPanel.tsx');

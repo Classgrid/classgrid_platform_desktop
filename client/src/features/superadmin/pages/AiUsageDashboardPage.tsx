@@ -18,8 +18,11 @@ import {
   useAiUsageOrgs, 
   useAiOrgDetail, 
   useAiOrgUsers,
-  useAiUserDetail
+  useAiUserDetail,
+  useResetOrgUsage,
+  useBlockAiOrg
 } from "../queries/useAiUsage";
+import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { formatNumber } from "@/lib/utils";
 import { AiUserDetailPanel } from "../components/ai-usage/AiUserDetailPanel";
@@ -67,6 +70,10 @@ const FolderIcon = ({ label, subtitle, onClick, badge, icon: Icon = Building }: 
 
 export function AiUsageDashboardPage() {
   const [path, setPath] = useState<PathState>({});
+  const [showOrgReset, setShowOrgReset] = useState(false);
+  const [showOrgBlock, setShowOrgBlock] = useState(false);
+  const resetOrgMutation = useResetOrgUsage();
+  const blockOrgMutation = useBlockAiOrg();
 
   const { data: globalStats, isLoading: globalLoading } = useGlobalAiStats();
   const { data: orgs, isLoading: orgsLoading } = useAiUsageOrgs();
@@ -123,9 +130,33 @@ export function AiUsageDashboardPage() {
             </div>
           </>
         )}
-      </div>
-    );
-  };
+      
+      {/* Organization Level Action Dialogs */}
+      <DangerConfirmDialog
+        open={showOrgReset}
+        onOpenChange={setShowOrgReset}
+        title="Reset Organization Limit?"
+        description="This will reset the total usage counter for this organization back to 0."
+        onConfirm={() => {
+            resetOrgMutation.mutate(path.orgId || "");
+            setShowOrgReset(false);
+        }}
+        confirmText="Reset Limit"
+      />
+      <DangerConfirmDialog
+        open={showOrgBlock}
+        onOpenChange={setShowOrgBlock}
+        title={orgDetail?.isBlocked ? "Unblock Organization?" : "Block Organization?"}
+        description={orgDetail?.isBlocked ? "Unblocking will allow all users in this org to use AI again." : "Blocking will immediately prevent all users in this org from using AI features."}
+        onConfirm={() => {
+            blockOrgMutation.mutate({ orgId: path.orgId || "", blocked: !orgDetail?.isBlocked });
+            setShowOrgBlock(false);
+        }}
+        confirmText={orgDetail?.isBlocked ? "Unblock" : "Block"}
+      />
+    </div>
+  );
+};
 
   const renderGlobalStats = () => {
     if (globalLoading) return <Skeleton className="h-96 w-full mb-8" />;
@@ -271,11 +302,32 @@ export function AiUsageDashboardPage() {
     );
   };
 
-  const renderLevel1Roles = () => {
+    const renderLevel1Roles = () => {
     if (orgDetailLoading || orgUsersLoading) return <Skeleton className="h-64 w-full" />;
+
+    const isOrgBlocked = orgDetail?.isBlocked;
 
     return (
       <div className="space-y-6">
+        <div className="flex justify-end gap-3 mb-4">
+            <button 
+                onClick={() => setShowOrgBlock(true)}
+                disabled={blockOrgMutation.isPending}
+                className="text-sm font-medium px-4 py-2 bg-background border border-border rounded-md hover:bg-muted transition-colors flex items-center"
+            >
+                <Shield className="w-4 h-4 mr-2" />
+                {isOrgBlocked ? "Unblock Organization" : "Block Organization"}
+            </button>
+            <button 
+                onClick={() => setShowOrgReset(true)}
+                disabled={resetOrgMutation.isPending}
+                className="text-sm font-medium px-4 py-2 bg-background border border-border rounded-md hover:bg-muted transition-colors flex items-center"
+            >
+                <Activity className="w-4 h-4 mr-2" />
+                Reset Org Limit
+            </button>
+        </div>
+
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">{path.orgName} — Usage Roles</CardTitle>

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { apiClient as api } from "@/lib/apiClient";
 
 // API endpoints
@@ -57,8 +58,10 @@ export const useAiUserDetail = (userId: string) => useQuery({
 export const useBlockAiUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ userId, blocked }: { userId: string, blocked: boolean }) => aiUsageApi.blockUser(userId, blocked),
+    mutationFn: ({ userId,
+    onError: (error) => toast.error("Action failed. " + error.message), blocked }: { userId: string, blocked: boolean }) => aiUsageApi.blockUser(userId, blocked),
     onSuccess: (_, { userId }) => {
+      toast.success("Action completed successfully.");
       queryClient.invalidateQueries({ queryKey: ["ai-usage-user", userId] });
       queryClient.invalidateQueries({ queryKey: ["ai-usage-org-users"] });
     },
@@ -68,8 +71,10 @@ export const useBlockAiUser = () => {
 export const useBlockAiOrg = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ orgId, blocked }: { orgId: string, blocked: boolean }) => aiUsageApi.blockOrg(orgId, blocked),
+    mutationFn: ({ orgId,
+    onError: (error) => toast.error("Action failed. " + error.message), blocked }: { orgId: string, blocked: boolean }) => aiUsageApi.blockOrg(orgId, blocked),
     onSuccess: (_, { orgId }) => {
+      toast.success("Action completed successfully.");
       queryClient.invalidateQueries({ queryKey: ["ai-usage-org", orgId] });
       queryClient.invalidateQueries({ queryKey: ["ai-usage-orgs"] });
     },
@@ -79,9 +84,36 @@ export const useBlockAiOrg = () => {
 export const useGrantAiCredits = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ userId, amount }: { userId: string, amount: number }) => aiUsageApi.grantCredits(userId, amount),
+    mutationFn: ({ userId,
+    onError: (error) => toast.error("Action failed. " + error.message), amount }: { userId: string, amount: number }) => aiUsageApi.grantCredits(userId, amount),
     onSuccess: (_, { userId }) => {
+      toast.success("Action completed successfully.");
       queryClient.invalidateQueries({ queryKey: ["ai-usage-user", userId] });
     },
+  });
+};
+
+export const useResetUserUsage = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => aiUsageApi.resetUserUsage(userId),
+    onSuccess: (_, userId) => {
+      toast.success("User usage limit has been reset to 0.");
+      queryClient.invalidateQueries({ queryKey: ["ai-usage-user", userId] });
+    },
+    onError: (error) => toast.error("Failed to reset limit. " + error.message),
+  });
+};
+
+export const useResetOrgUsage = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (orgId: string) => aiUsageApi.resetOrgUsage(orgId),
+    onSuccess: (_, orgId) => {
+      toast.success("Organization usage has been reset.");
+      queryClient.invalidateQueries({ queryKey: ["ai-usage-org", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["ai-usage-orgs"] });
+    },
+    onError: (error) => toast.error("Failed to reset limit. " + error.message),
   });
 };
