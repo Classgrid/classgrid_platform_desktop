@@ -69,11 +69,24 @@ export default function TransactionDetailsPage() {
   const now = new Date();
   const isSettled = settlementDate ? settlementDate <= now : false;
 
+  // Date formatter for Razorpay style: Wed, Sep 30, 2026 12:42 AM
+  const formatRzpDate = (d: Date | string) => {
+    return new Date(d).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true
+    });
+  };
+
   const steps = [
-    { label: 'Payment Created', sub: createdAt ? formatDate(createdAt) : '—', done: true, failed: false },
-    { label: 'Payment Authorized', sub: isSuccess ? (capturedAt ? formatDate(capturedAt) : '—') : (isFailed ? 'Not completed' : 'Pending'), done: isSuccess, failed: isFailed },
-    { label: 'Payment Captured', sub: isSuccess ? (capturedAt ? formatDate(capturedAt) : '—') : (isFailed ? 'Not completed' : 'Pending'), done: isSuccess, failed: isFailed },
-    { label: isSettled ? 'Settlement Processed' : 'Settlement Pending', sub: settlementDate ? `Expected by ${formatDate(settlementDate)}` : '—', done: isSettled && isSuccess, failed: false, pending: !isSettled },
+    { label: 'Payment created', sub: createdAt ? formatRzpDate(createdAt) : '—', done: true, failed: false },
+    { label: 'Payment authorized', sub: isSuccess ? (capturedAt ? formatRzpDate(capturedAt) : '—') : (isFailed ? 'Not completed' : 'Pending'), done: isSuccess, failed: isFailed },
+    { label: 'Payment captured', sub: isSuccess ? (capturedAt ? formatRzpDate(capturedAt) : '—') : (isFailed ? 'Not completed' : 'Pending'), done: isSuccess, failed: isFailed },
+    { label: isSettled ? 'Settlement processed' : 'Settlement (To be processed)', sub: settlementDate ? `To be deposited by: ${formatRzpDate(settlementDate)}` : '—', done: isSettled && isSuccess, failed: false, pending: !isSettled },
   ];
 
   return (
@@ -124,24 +137,24 @@ export default function TransactionDetailsPage() {
           </CardHeader>
           <CardContent className="pt-4 space-y-3">
             <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-              <span className="text-muted-foreground">Name</span>
-              <span className="font-medium">{tx.userName || "Unknown"}</span>
+              <span className="text-muted-foreground shrink-0 mr-4">Name</span>
+              <span className="font-medium text-right break-words max-w-[65%]">{tx.userName || "Unknown"}</span>
             </div>
             <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-              <span className="text-muted-foreground">Email</span>
-              <span className="font-medium truncate max-w-[150px]">{tx.userEmail || "—"}</span>
+              <span className="text-muted-foreground shrink-0 mr-4">Email</span>
+              <span className="font-medium text-right break-all">{tx.userEmail || "—"}</span>
             </div>
             <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-              <span className="text-muted-foreground">Mobile</span>
-              <span className="font-medium font-mono">{tx.userMobile || "—"}</span>
+              <span className="text-muted-foreground shrink-0 mr-4">Mobile</span>
+              <span className="font-medium font-mono text-right">{tx.userMobile || "—"}</span>
             </div>
             <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-              <span className="text-muted-foreground">User ID</span>
-              <span className="font-medium font-mono text-xs">{tx.userId?._id || tx.userId || "—"}</span>
+              <span className="text-muted-foreground shrink-0 mr-4">User ID</span>
+              <span className="font-medium font-mono text-xs text-right break-all">{tx.userId?._id || tx.userId || "—"}</span>
             </div>
             <div className="flex justify-between items-center text-sm pt-1">
-              <span className="text-muted-foreground">Role</span>
-              <span className="font-medium capitalize px-2 py-0.5 bg-muted rounded text-xs">{tx.userRole || "—"}</span>
+              <span className="text-muted-foreground shrink-0 mr-4">Role</span>
+              <span className="font-medium capitalize px-2 py-0.5 bg-muted rounded text-xs text-right">{tx.userRole || "—"}</span>
             </div>
           </CardContent>
         </Card>
@@ -156,22 +169,22 @@ export default function TransactionDetailsPage() {
           </CardHeader>
           <CardContent className="pt-4 space-y-3">
             <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-              <span className="text-muted-foreground">Method</span>
-              <span className="font-medium uppercase flex items-center gap-1.5">
+              <span className="text-muted-foreground shrink-0 mr-4">Method</span>
+              <span className="font-medium uppercase flex items-center gap-1.5 text-right">
                 {methodType.toLowerCase() === 'upi' ? '📱' : methodType.toLowerCase() === 'card' ? '💳' : '🏦'} {methodType || tx.method || '—'}
               </span>
             </div>
             <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-              <span className="text-muted-foreground">{methodType.toLowerCase() === 'upi' ? 'UPI VPA' : 'Account'}</span>
-              <span className="font-medium font-mono text-xs truncate max-w-[140px]" title={methodDetail}>{methodDetail || '—'}</span>
+              <span className="text-muted-foreground shrink-0 mr-4">{methodType.toLowerCase() === 'upi' ? 'UPI VPA' : 'Account'}</span>
+              <span className="font-medium font-mono text-xs text-right break-all">{methodDetail || '—'}</span>
             </div>
             <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-              <span className="text-muted-foreground">Bank RRN</span>
-              <span className="font-medium font-mono text-xs">{tx.bankRRN || "—"}</span>
+              <span className="text-muted-foreground shrink-0 mr-4">Bank RRN</span>
+              <span className="font-medium font-mono text-xs text-right break-all">{tx.bankRRN || "—"}</span>
             </div>
             <div className="flex justify-between items-center text-sm border-b border-border/50 pb-2">
-              <span className="text-muted-foreground">Date</span>
-              <span className="font-medium text-[11px]">{tx.paymentTime ? formatDate(tx.paymentTime) : tx.createdAt ? formatDate(tx.createdAt) : "—"}</span>
+              <span className="text-muted-foreground shrink-0 mr-4">Date</span>
+              <span className="font-medium text-[11px] text-right">{tx.paymentTime ? formatDate(tx.paymentTime) : tx.createdAt ? formatDate(tx.createdAt) : "—"}</span>
             </div>
             <div className="flex justify-between items-start text-sm pt-1">
               <span className="text-muted-foreground shrink-0 mr-4">Note</span>
@@ -191,12 +204,12 @@ export default function TransactionDetailsPage() {
             </CardHeader>
             <CardContent className="pt-3 pb-3 px-4 space-y-2">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Name</span>
-                <span className="font-medium text-right line-clamp-1">{tx.organization?.name || tx.organizationId?.name || tx.organizationName || "—"}</span>
+                <span className="text-muted-foreground shrink-0 mr-4">Name</span>
+                <span className="font-medium text-right break-words max-w-[65%]">{tx.organization?.name || tx.organizationId?.name || tx.organizationName || "—"}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">ID</span>
-                <span className="font-medium font-mono text-xs">{tx.organization?._id || tx.organizationId?._id || (typeof tx.organizationId === 'string' ? tx.organizationId : '') || "—"}</span>
+                <span className="text-muted-foreground shrink-0 mr-4">ID</span>
+                <span className="font-medium font-mono text-xs text-right break-all">{tx.organization?._id || tx.organizationId?._id || (typeof tx.organizationId === 'string' ? tx.organizationId : '') || "—"}</span>
               </div>
             </CardContent>
           </Card>
@@ -234,42 +247,41 @@ export default function TransactionDetailsPage() {
         </div>
 
         {/* ── SECTION 6: Payment Timeline ── */}
-        <Card className="shadow-sm md:col-span-2 lg:col-span-full border-primary/20">
-          <CardHeader className="bg-primary/5 border-b pb-4">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <div className="p-1.5 rounded-md bg-primary text-primary-foreground"><Clock className="h-4 w-4" /></div>
+        <Card className="shadow-sm md:col-span-2 lg:col-span-full border-none">
+          <CardHeader className="pb-6">
+            <CardTitle className="text-xl font-semibold">
               Timeline
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-6 pb-8">
+          <CardContent className="pt-0 pb-8 pl-4">
             <div className="flex flex-col gap-0 max-w-lg">
               {steps.map((step, idx) => (
-                <div key={idx} className="flex relative">
+                <div key={idx} className="flex relative group">
                   {/* Vertical line connecting to next item */}
                   {idx < steps.length - 1 && (
-                    <div className="absolute left-3.5 top-8 bottom-[-8px] w-0.5 bg-border -z-10" />
+                    <div className="absolute left-[11px] top-6 bottom-[-6px] w-[2px] bg-border/40" />
                   )}
                   
                   {/* Step Icon */}
-                  <div className={`flex h-7 w-7 mt-0.5 shrink-0 items-center justify-center rounded-full bg-background transition-colors
-                    ${step.done ? 'text-emerald-600 bg-emerald-50' : step.failed ? 'text-red-600 bg-red-50' : step.pending ? 'text-amber-600 bg-amber-50' : 'text-muted-foreground bg-muted'}`}>
+                  <div className={`flex h-6 w-6 mt-0.5 shrink-0 items-center justify-center rounded-full z-10
+                    ${step.done ? 'text-emerald-500 bg-emerald-500/10' : step.failed ? 'text-red-500 bg-red-500/10' : step.pending ? 'text-orange-500 bg-orange-500/10' : 'text-muted-foreground bg-muted'}`}>
                     {step.done ? (
-                      <CheckCircle2 className="h-5 w-5" />
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                     ) : step.failed ? (
-                      <ShieldAlert className="h-4 w-4" />
+                      <ShieldAlert className="h-3.5 w-3.5" />
                     ) : step.pending ? (
-                      <Clock className="h-4 w-4" />
+                      <Clock className="h-3.5 w-3.5" />
                     ) : (
-                      <div className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+                      <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
                     )}
                   </div>
                   
                   {/* Step Content */}
-                  <div className="ml-4 pb-8">
-                    <p className={`text-base font-medium leading-none ${step.done ? 'text-foreground' : step.failed ? 'text-red-600' : 'text-foreground'}`}>
+                  <div className="ml-5 pb-8">
+                    <p className={`text-[15px] font-medium leading-none ${step.done ? 'text-foreground' : step.failed ? 'text-red-500' : 'text-foreground'}`}>
                       {step.label}
                     </p>
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <p className="text-[13px] text-muted-foreground mt-2">
                       {step.sub}
                     </p>
                   </div>
