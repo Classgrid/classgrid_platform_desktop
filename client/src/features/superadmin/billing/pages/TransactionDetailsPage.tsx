@@ -238,33 +238,40 @@ export default function TransactionDetailsPage() {
           <CardHeader className="bg-primary/5 border-b pb-4">
             <CardTitle className="text-sm flex items-center gap-2">
               <div className="p-1.5 rounded-md bg-primary text-primary-foreground"><Clock className="h-4 w-4" /></div>
-              Payment Timeline
+              Timeline
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row justify-between gap-6 relative">
-              {/* Desktop Connecting Line */}
-              <div className="hidden sm:block absolute top-[14px] left-[10%] right-[10%] h-0.5 bg-border -z-10" />
-              {/* Mobile Connecting Line */}
-              <div className="sm:hidden absolute left-[14px] top-6 bottom-6 w-0.5 bg-border -z-10" />
-
+          <CardContent className="pt-6 pb-8">
+            <div className="flex flex-col gap-0 max-w-lg">
               {steps.map((step, idx) => (
-                <div key={idx} className="flex flex-row sm:flex-col items-start sm:items-center text-left sm:text-center relative gap-4 sm:gap-2 flex-1">
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 bg-background transition-colors shadow-sm
-                    ${step.done ? 'border-emerald-500' : step.failed ? 'border-red-500' : 'border-muted-foreground/30'}`}>
+                <div key={idx} className="flex relative">
+                  {/* Vertical line connecting to next item */}
+                  {idx < steps.length - 1 && (
+                    <div className="absolute left-3.5 top-8 bottom-[-8px] w-0.5 bg-border -z-10" />
+                  )}
+                  
+                  {/* Step Icon */}
+                  <div className={`flex h-7 w-7 mt-0.5 shrink-0 items-center justify-center rounded-full bg-background transition-colors
+                    ${step.done ? 'text-emerald-600 bg-emerald-50' : step.failed ? 'text-red-600 bg-red-50' : step.pending ? 'text-amber-600 bg-amber-50' : 'text-muted-foreground bg-muted'}`}>
                     {step.done ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      <CheckCircle2 className="h-5 w-5" />
                     ) : step.failed ? (
-                      <ShieldAlert className="h-4 w-4 text-red-500" />
+                      <ShieldAlert className="h-4 w-4" />
+                    ) : step.pending ? (
+                      <Clock className="h-4 w-4" />
                     ) : (
-                      <div className="h-2.5 w-2.5 rounded-full bg-muted-foreground/40" />
+                      <div className="h-2 w-2 rounded-full bg-muted-foreground/40" />
                     )}
                   </div>
-                  <div>
-                    <p className={`text-sm font-semibold leading-tight ${step.done ? 'text-foreground' : step.failed ? 'text-red-500' : 'text-muted-foreground'}`}>
+                  
+                  {/* Step Content */}
+                  <div className="ml-4 pb-8">
+                    <p className={`text-base font-medium leading-none ${step.done ? 'text-foreground' : step.failed ? 'text-red-600' : 'text-foreground'}`}>
                       {step.label}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1 max-w-[150px] mx-auto">{step.sub}</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {step.sub}
+                    </p>
                   </div>
                 </div>
               ))}

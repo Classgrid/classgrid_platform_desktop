@@ -2094,15 +2094,43 @@ router.get("/transactions/:id", async (req, res) => {
             return res.status(404).json({ success: false, message: "Transaction not found" });
         }
         
-        // Enrich with PaymentTransaction data (feePaise, taxPaise, sourceIp, bankRRN)
+        // Enrich with PaymentTransaction data OR fetch directly from Razorpay if missing
         if (txn && txn.razorpayPaymentId) {
-            const PaymentTransaction = (await import("../models/PaymentTransaction.js")).default;
-            const payTxn = await PaymentTransaction.findOne({ providerPaymentId: txn.razorpayPaymentId }).lean();
-            if (payTxn) {
-                txn.feePaise = payTxn.feePaise ?? 0;
-                txn.taxPaise = payTxn.taxPaise ?? 0;
-                txn.sourceIp = payTxn.sourceIp || null;
-                txn.bankRRN = payTxn.bankReference || null;
+            let fetchedFromRzp = false;
+            try {
+                const razorpayService = (await import("../services/razorpay.service.js")).default;
+                const rzp = razorpayService.getPlatformInstance();
+                const payment = await rzp.payments.fetch(txn.razorpayPaymentId);
+                
+                if (payment) {
+                    fetchedFromRzp = true;
+                    txn.feePaise = payment.fee || 0;
+                    txn.taxPaise = payment.tax || 0;
+                    txn.bankRRN = payment.acquirer_data?.rrn || payment.acquirer_data?.bank_transaction_id || payment.bank_transaction_id || null;
+                    
+                    let methodStr = payment.method || "";
+                    if (methodStr === "upi" && payment.vpa) methodStr = `upi:${payment.vpa}`;
+                    else if (methodStr === "card" && payment.card) methodStr = `card:${payment.card.network} ${payment.card.last4}`;
+                    else if (methodStr === "netbanking" && payment.bank) methodStr = `netbanking:${payment.bank}`;
+                    
+                    if (methodStr) txn.paymentMethod = methodStr;
+                    
+                    if (!txn.userEmail && payment.email) txn.userEmail = payment.email;
+                    if (!txn.userMobile && payment.contact) txn.userMobile = payment.contact;
+                }
+            } catch (e) {
+                console.error("[SuperAdmin] Failed to fetch live Razorpay payment:", e.message);
+            }
+
+            if (!fetchedFromRzp) {
+                const PaymentTransaction = (await import("../models/PaymentTransaction.js")).default;
+                const payTxn = await PaymentTransaction.findOne({ providerPaymentId: txn.razorpayPaymentId }).lean();
+                if (payTxn) {
+                    txn.feePaise = payTxn.feePaise ?? 0;
+                    txn.taxPaise = payTxn.taxPaise ?? 0;
+                    txn.sourceIp = payTxn.sourceIp || null;
+                    txn.bankRRN = payTxn.bankReference || null;
+                }
             }
         }
         res.json({ success: true, data: txn });
