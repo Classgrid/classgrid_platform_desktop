@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
@@ -6,10 +6,12 @@ import { formatDate } from "@/utils/dateUtils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/marketing_ui/card";
 import { Button } from "@/components/marketing_ui/button";
 import { ArrowLeft, RefreshCw, ServerCrash, CheckCircle2, Clock, Globe, ShieldAlert, CreditCard } from "lucide-react";
+import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 
 export default function TransactionDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const setBreadcrumbs = useBreadcrumbStore((state) => state.setBreadcrumbs);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["superadmin", "transaction", id],
@@ -17,6 +19,16 @@ export default function TransactionDetailsPage() {
   });
 
   const tx = data?.data;
+
+  useEffect(() => {
+    if (tx) {
+      setBreadcrumbs([
+        { label: "Transactions", href: "/super-admin/billing/transactions" },
+        { label: tx._id },
+      ]);
+    }
+    return () => setBreadcrumbs([]);
+  }, [tx, setBreadcrumbs]);
 
   if (isLoading) {
     return (
@@ -69,10 +81,28 @@ export default function TransactionDetailsPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Status</p>
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-500">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  {tx.status?.toUpperCase() || "SUCCESS"}
-                </div>
+                {(() => {
+                  const status = tx.status?.toUpperCase() || "SUCCESS";
+                  const isFailed = status === "FAILED";
+                  const isRefunded = status === "REFUNDED" || status === "PARTIALLY_REFUNDED";
+                  
+                  return (
+                    <div className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${
+                      isFailed ? "bg-red-500/10 text-red-500" :
+                      isRefunded ? "bg-gray-500/10 text-gray-400" :
+                      "bg-emerald-500/10 text-emerald-500"
+                    }`}>
+                      {isFailed ? (
+                         <span className="h-2 w-2 rounded-full bg-red-500" />
+                      ) : isRefunded ? (
+                        <span className="h-2 w-2 rounded-full bg-gray-400" />
+                      ) : (
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      )}
+                      {status}
+                    </div>
+                  );
+                })()}
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Payment ID</p>
@@ -105,44 +135,9 @@ export default function TransactionDetailsPage() {
                 <p className="text-sm font-medium text-muted-foreground">Email Address</p>
                 <p className="font-medium">{tx.userEmail || "Not provided"}</p>
               </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Mobile Number</p>
-                <p className="font-medium">{tx.userMobile || "Not provided"}</p>
-              </div>
-              <div>
+              <div className="col-span-2">
                 <p className="text-sm font-medium text-muted-foreground">Organization</p>
-                <p className="font-medium">{tx.organizationName || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Role</p>
-                <p className="font-medium capitalize">{tx.userRole || "N/A"}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Network & Device Context</CardTitle>
-            <CardDescription>Security and origin information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5" /> Payment Method</p>
-                <p className="font-medium uppercase mt-1">{tx.paymentMethod || "UNKNOWN"}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> Payment Time</p>
-                <p className="font-medium mt-1">{tx.paymentTime ? formatDate(tx.paymentTime, "dd MMM yyyy, hh:mm a") : "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5"><Globe className="h-3.5 w-3.5" /> IP Address</p>
-                <p className="font-mono text-sm mt-1">{tx.networkIp || "Unknown"}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5"><ShieldAlert className="h-3.5 w-3.5" /> VPN Usage</p>
-                <p className="font-medium mt-1">{tx.vpnConnected ? "Detected" : "Not Detected"}</p>
+                <p className="font-medium">{tx.organization?.name || tx.organizationId?.name || tx.organizationName || "N/A"}</p>
               </div>
             </div>
           </CardContent>
