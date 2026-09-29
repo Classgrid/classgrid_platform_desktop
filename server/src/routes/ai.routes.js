@@ -50,6 +50,9 @@ import {
 } from "../controllers/ai.controller.js";
 import { streamAskAi, getChatSessions, getChatSession, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession, createPublicShare, getPublicShare, submitAiFeedback, getAgentReviews, updateAgentReviewStatus, processAgentReviewsCron, deleteAgentReview, bulkDeleteAgentReviews, generateImage, getMyGeneratedImages, deleteGeneratedImage, getMyUsage, getOrgUsage } from "../controllers/ai-chat.controller.js";
 
+import aiTopUpRoutes from "./ai-credits-topup.routes.js";
+import aiCreditsRoutes from "./ai-credits.routes.js";
+
 
 const router = express.Router();
 
@@ -100,9 +103,6 @@ router.get("/shared/:shareId", getPublicShare);
 
 // R2 Image Upload for Chat
 router.post("/upload", isAuthenticated, uploadChatImage);
-
-import aiTopUpRoutes from "./ai-credits-topup.routes.js";
-import aiCreditsRoutes from "./ai-credits.routes.js";
 
 // Top-up Routes
 router.use("/topup", aiTopUpRoutes);

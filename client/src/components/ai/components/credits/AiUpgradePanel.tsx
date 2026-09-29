@@ -38,7 +38,7 @@ export function AiUpgradePanel() {
     <div className="flex flex-col h-full animate-in fade-in duration-300">
       <div className="p-6 border-b border-border">
         <h2 className="text-2xl font-bold mb-2">Upgrade AI Credits</h2>
-        <p className="text-muted-foreground text-sm">Purchase additional AI tokens to continue using the assistant seamlessly.</p>
+        <p className="text-muted-foreground text-sm">Purchase additional AI Credits to continue using the assistant seamlessly.</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
@@ -60,7 +60,7 @@ export function AiUpgradePanel() {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Current Balance</div>
-                  <div className="font-bold text-foreground">{formatNumber(balance?.ai_credits_balance || 0)} tokens</div>
+                  <div className="font-bold text-foreground">{formatNumber(balance?.ai_credits_balance || 0)} Credits</div>
                 </div>
               </div>
             </div>
@@ -88,11 +88,11 @@ export function AiUpgradePanel() {
                   />
                 </div>
                 
-                <div className="mt-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-between">
+                <div className="mt-6 p-4 bg-muted border border-border rounded-lg flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">You will receive:</span>
-                  <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                    <Zap className="w-5 h-5" />
-                    {formatNumber(expectedTokens)} tokens
+                  <span className="text-lg font-bold text-foreground flex items-center gap-1.5">
+                    <Zap className="w-5 h-5 text-amber-500" />
+                    {formatNumber(expectedTokens)} Credits
                   </span>
                 </div>
                 {!isValidAmount && customAmountStr !== "" && (
