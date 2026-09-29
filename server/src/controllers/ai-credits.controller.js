@@ -40,6 +40,11 @@ export const getMyCredits = async (req, res) => {
         ];
 
         if (totalPurchased > 0 || balance > 0) {
+            const paidStartDate = tokens.ai_credits_start_date ? new Date(tokens.ai_credits_start_date) : now;
+            const paidExpirationDate = tokens.ai_credits_end_date 
+                ? new Date(tokens.ai_credits_end_date) 
+                : new Date(paidStartDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days validity
+
             pools.push({
                 creditId: `PAID-${user._id.toString().substring(0, 10).toUpperCase()}`,
                 creditType: "Paid",
@@ -47,8 +52,8 @@ export const getMyCredits = async (req, res) => {
                 issuedAmount: totalPurchased,
                 amountRemaining: balance,
                 estimatedAmountRemaining: balance,
-                startDate: tokens.ai_credits_start_date ? new Date(tokens.ai_credits_start_date).toISOString() : now.toISOString(),
-                expirationDate: tokens.ai_credits_end_date ? new Date(tokens.ai_credits_end_date).toISOString() : null
+                startDate: paidStartDate.toISOString(),
+                expirationDate: paidExpirationDate.toISOString()
             });
         }
 

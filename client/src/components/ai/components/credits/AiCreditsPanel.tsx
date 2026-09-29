@@ -108,7 +108,7 @@ export function AiCreditsPanel() {
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Issued credit amount</div>
-                    <div className="font-semibold text-lg">{formatNumber(issuedAmount)} Credits</div>
+                    <div className="font-semibold text-lg">₹{formatNumber(issuedAmount / 5000)}</div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Expiration date</div>
@@ -119,12 +119,12 @@ export function AiCreditsPanel() {
                   
                   <div className="col-span-2">
                     <div className="text-sm text-muted-foreground mb-1">Amount remaining</div>
-                    <div className="font-semibold text-lg">{formatNumber(remainingAmount)} Credits</div>
+                    <div className="font-semibold text-lg">₹{formatNumber(remainingAmount / 5000)}</div>
                   </div>
                   
                   <div className="col-span-2">
                     <div className="text-sm text-muted-foreground mb-1">Estimated amount remaining</div>
-                    <div className="font-semibold text-lg">{formatNumber(estimatedRemaining)} Credits</div>
+                    <div className="font-semibold text-lg">₹{formatNumber(estimatedRemaining / 5000)}</div>
                   </div>
                 </div>
                 
