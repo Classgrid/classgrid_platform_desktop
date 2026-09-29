@@ -481,9 +481,27 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                         paymentTime: paymentEntity.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
                     });
 
-                    await User.findByIdAndUpdate(userId, {
-                        $inc: { "ai_tokens.ai_credits_balance": creditsAdded }
-                    });
+                    // Set start date only if this is the first purchase, always extend end date to 30 days from now
+                    const now = new Date();
+                    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+                    
+                    const targetUser = await User.findById(userId).select("ai_tokens").lean();
+                    const updateOps = {
+                        $inc: {
+                            "ai_tokens.ai_credits_balance": creditsAdded,
+                            "ai_tokens.total_ai_credits_purchased": creditsAdded
+                        },
+                        $set: {
+                            "ai_tokens.ai_credits_end_date": thirtyDaysFromNow
+                        }
+                    };
+                    
+                    // Only set start_date if it hasn't been set yet (first purchase)
+                    if (!targetUser?.ai_tokens?.ai_credits_start_date) {
+                        updateOps.$set["ai_tokens.ai_credits_start_date"] = now;
+                    }
+                    
+                    await User.findByIdAndUpdate(userId, updateOps);
 
                     const PaymentOrder = (await import("../models/PaymentOrder.js")).default;
                     await PaymentOrder.findOneAndUpdate({ providerOrderId: orderId }, { status: "PAID" });

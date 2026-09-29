@@ -119,8 +119,8 @@ export function AiCreditsPanel() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-sm text-muted-foreground mb-1">Issued credit amount</div>
-                    <div className="font-semibold text-lg">₹{formatNumber(issuedAmount / 5000)}</div>
+                    <div className="text-sm text-muted-foreground mb-1">Issued credits</div>
+                    <div className="font-semibold text-lg">{formatNumber(issuedAmount)} <span className="text-sm font-normal text-muted-foreground">Credits</span></div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Expiration date</div>
@@ -130,13 +130,13 @@ export function AiCreditsPanel() {
                   </div>
                   
                   <div className="col-span-2">
-                    <div className="text-sm text-muted-foreground mb-1">Amount remaining</div>
-                    <div className="font-semibold text-lg">₹{formatNumber(remainingAmount / 5000)}</div>
+                    <div className="text-sm text-muted-foreground mb-1">Credits remaining</div>
+                    <div className="font-semibold text-lg">{formatNumber(remainingAmount)} <span className="text-sm font-normal text-muted-foreground">Credits</span></div>
                   </div>
                   
                   <div className="col-span-2">
-                    <div className="text-sm text-muted-foreground mb-1">Estimated amount remaining</div>
-                    <div className="font-semibold text-lg">₹{formatNumber(estimatedRemaining / 5000)}</div>
+                    <div className="text-sm text-muted-foreground mb-1">Estimated credits remaining</div>
+                    <div className="font-semibold text-lg">{formatNumber(estimatedRemaining)} <span className="text-sm font-normal text-muted-foreground">Credits</span></div>
                   </div>
                 </div>
                 
@@ -144,8 +144,8 @@ export function AiCreditsPanel() {
                   <div className="mt-8 pt-6 border-t border-border">
                     <div className="flex justify-between text-sm mb-3">
                       <div className="flex gap-4">
-                        <span className="text-muted-foreground">Amount Used: <strong className="text-foreground">₹{formatNumber(usedAmount / 5000)}</strong></span>
-                        <span className="text-muted-foreground">Amount Remaining: <strong className="text-foreground">₹{formatNumber(remainingAmount / 5000)}</strong></span>
+                        <span className="text-muted-foreground">Credits Used: <strong className="text-foreground">{formatNumber(usedAmount)}</strong></span>
+                        <span className="text-muted-foreground">Credits Remaining: <strong className="text-foreground">{formatNumber(remainingAmount)}</strong></span>
                       </div>
                       <span className="font-medium text-muted-foreground">{Math.round(percentUsed)}% Used</span>
                     </div>
