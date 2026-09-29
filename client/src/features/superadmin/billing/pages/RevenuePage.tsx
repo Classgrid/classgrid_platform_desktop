@@ -59,11 +59,28 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/marketing_ui/card';
-import { RevenueViewTabs, RevenueOrganizationTable, RevenueModuleTable } from '../components/finance/RevenueComponents';
-import { RevenueExportDialog, RevenueInvoiceTable } from '../components/finance/FinanceComponents';
+import { RevenueViewTabs, RevenueOrganizationTable, RevenueTypeTable } from '../components/finance/RevenueComponents';
+import { RevenueExportDialog } from '../components/finance/FinanceComponents';
+import { SuperadminFilterBar } from '../../components/SuperadminFilterBar';
+import { OrganizationSelector, OrganizationTypeFilter } from '../components/shared/BillingFilterComponents';
+import { NikhilTimeCalendar } from '@/components/marketing_ui/nikhil_time_calendar';
+import { X } from 'lucide-react';
 
 const RevenuePage = () => {
   const [activeTab, setActiveTab] = useState('organizations');
+  const [searchInput, setSearchInput] = useState('');
+  const [organizationId, setOrganizationId] = useState('');
+  const [organizationType, setOrganizationType] = useState('ALL');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateType, setDateType] = useState('createdAt');
+
+  const filters = {
+    organizationId: organizationId || undefined,
+    organizationType: organizationType !== 'ALL' ? organizationType : undefined,
+    startDate: dateFrom ? dateFrom.toISOString() : undefined,
+    endDate: dateFrom ? (() => { const e = new Date(dateFrom); e.setHours(23, 59, 59, 999); return e.toISOString(); })() : undefined,
+    search: searchInput || undefined,
+  };
 
   return (
     <div className="flex h-full flex-col bg-background text-foreground">
@@ -74,7 +91,44 @@ const RevenuePage = () => {
             Includes Classgrid SaaS subscriptions and AI Credit top-up revenue.
           </p>
         </div>
-        <RevenueExportDialog />
+                <RevenueExportDialog />
+      </div>
+
+      <div className="w-full relative z-50 p-6 pb-0">
+        <SuperadminFilterBar
+          searchQuery={searchInput}
+          onSearchChange={setSearchInput}
+          searchPlaceholder="Search by organization name..."
+        >
+          <div className="w-full md:w-[180px] xl:w-[200px]">
+            <OrganizationSelector selectedId={organizationId} onSelect={setOrganizationId} />
+          </div>
+          <div className="w-full md:w-[160px] xl:w-[180px]">
+            <OrganizationTypeFilter value={organizationType} onChange={setOrganizationType} />
+          </div>
+          <div className="w-[180px] max-w-[180px] overflow-hidden relative">
+            <NikhilTimeCalendar
+              value={dateFrom}
+              onChange={setDateFrom}
+              placeholder="Select Date"
+              popDirection="down"
+              showTime={false}
+              className="h-9 w-full pr-8"
+              dateType={dateType}
+              onDateTypeChange={setDateType}
+            />
+            {dateFrom && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent bg-background"
+                title="Clear date"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </SuperadminFilterBar>
       </div>
 
       <div className="space-y-6 p-6">
@@ -84,17 +138,14 @@ const RevenuePage = () => {
             <CardTitle>
               {activeTab === 'organizations'
                 ? 'Revenue by Organization'
-                : activeTab === 'modules'
-                  ? 'Revenue by Module'
-                  : 'Revenue by Invoice'}
+                : activeTab === 'types' ? 'Revenue by Payment Type' : ''}
             </CardTitle>
             <p className="text-sm text-muted-foreground">Detailed platform subscription and AI usage revenue records.</p>
           </CardHeader>
           <CardContent className="p-0">
-            {activeTab === 'organizations' && <RevenueOrganizationTable />}
+            {activeTab === 'organizations' && <RevenueOrganizationTable filters={filters} />}
             {activeTab === 'modules' && <RevenueModuleTable />}
-            {activeTab === 'invoices' && <RevenueInvoiceTable />}
-          </CardContent>
+            </CardContent>
         </Card>
       </div>
     </div>

@@ -1940,6 +1940,99 @@ router.get("/system-metrics", async (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
+// ── REVENUE AGGREGATION ──────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+router.get("/revenue/by-organization", async (req, res) => {
+    try {
+        const PlatformTransaction = (await import("../models/PlatformTransaction.js")).default;
+        const Organization = (await import("../models/Organization.js")).default;
+        
+        const { organizationId, organizationType, startDate, endDate, search } = req.query;
+        
+        const match = { status: "success" };
+        if (organizationId) match.organizationId = organizationId;
+        if (startDate || endDate) {
+            match.createdAt = {};
+            if (startDate) match.createdAt.$gte = new Date(startDate);
+            if (endDate) match.createdAt.$lte = new Date(endDate);
+        }
+
+        // We will fetch matching orgs if there is a search or organizationType filter
+        let validOrgIds = null;
+        if (organizationType || search) {
+            const orgFilter = {};
+            if (organizationType && organizationType !== "ALL") orgFilter.type = organizationType;
+            if (search) orgFilter.name = new RegExp(search, "i");
+            const orgs = await Organization.find(orgFilter).select('_id');
+            validOrgIds = orgs.map(o => o._id.toString());
+            match.organizationId = { $in: validOrgIds };
+        }
+
+        const agg = await PlatformTransaction.aggregate([
+            { $match: match },
+            {
+                $group: {
+                    _id: "$organizationId",
+                    organizationName: { $first: "$organizationName" },
+                    grossRevenuePaise: { $sum: { $multiply: ["$amount", 100] } },
+                    transactionCount: { $sum: 1 },
+                    latestTransactionDate: { $max: "$createdAt" }
+                }
+            },
+            { $sort: { grossRevenuePaise: -1 } }
+        ]);
+
+        return res.json({ success: true, data: agg });
+    } catch (err) {
+        console.error("Revenue By Org error:", err);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+router.get("/revenue/by-type", async (req, res) => {
+    try {
+        const PlatformTransaction = (await import("../models/PlatformTransaction.js")).default;
+        const Organization = (await import("../models/Organization.js")).default;
+        
+        const { organizationId, organizationType, startDate, endDate, search } = req.query;
+        
+        const match = { status: "success" };
+        if (organizationId) match.organizationId = organizationId;
+        if (startDate || endDate) {
+            match.createdAt = {};
+            if (startDate) match.createdAt.$gte = new Date(startDate);
+            if (endDate) match.createdAt.$lte = new Date(endDate);
+        }
+
+        if (organizationType || search) {
+            const orgFilter = {};
+            if (organizationType && organizationType !== "ALL") orgFilter.type = organizationType;
+            if (search) orgFilter.name = new RegExp(search, "i");
+            const orgs = await Organization.find(orgFilter).select('_id');
+            match.organizationId = { $in: orgs.map(o => o._id.toString()) };
+        }
+
+        const agg = await PlatformTransaction.aggregate([
+            { $match: match },
+            {
+                $group: {
+                    _id: "$type",
+                    grossRevenuePaise: { $sum: { $multiply: ["$amount", 100] } },
+                    transactionCount: { $sum: 1 },
+                }
+            },
+            { $sort: { grossRevenuePaise: -1 } }
+        ]);
+
+        return res.json({ success: true, data: agg });
+    } catch (err) {
+        console.error("Revenue By Type error:", err);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
 // ── PLATFORM TRANSACTIONS (Billing History + Refunds) ────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 

@@ -65,18 +65,18 @@ export const useRevenueOverview = () => {
   });
 };
 
-export const useRevenueByOrg = () => {
+export const useRevenueByOrg = (filters: any = {}) => {
   return useQuery({
-    queryKey: ['billing-revenue-org'],
-    queryFn: fetchRevenueByOrg,
+    queryKey: ['billing-revenue-org', filters],
+    queryFn: () => fetchRevenueByOrg(filters),
     staleTime: 5 * 60 * 1000,
   });
 };
 
-export const useRevenueByModule = () => {
+export const useRevenueByModule = (filters: any = {}) => {
   return useQuery({
-    queryKey: ['billing-revenue-module'],
-    queryFn: fetchRevenueByModule,
+    queryKey: ['billing-revenue-module', filters],
+    queryFn: () => fetchRevenueByModule(filters),
     staleTime: 5 * 60 * 1000,
   });
 };

@@ -73,18 +73,17 @@ export const RevenueViewTabs: React.FC<{
         <TabsTrigger value="organizations" className="flex items-center gap-2">
           <Building2 className="w-4 h-4" /> By Organization
         </TabsTrigger>
-        <TabsTrigger value="modules" className="flex items-center gap-2">
-          <Package className="w-4 h-4" /> By Add-on Module
+        <TabsTrigger value="types" className="flex items-center gap-2">
+          <Package className="w-4 h-4" /> By Payment Type
         </TabsTrigger>
-        <TabsTrigger value="invoices">By Invoice</TabsTrigger>
       </TabsList>
     </Tabs>
   );
 };
 
 // 22. RevenueOrganizationTable
-export const RevenueOrganizationTable: React.FC = () => {
-  const { data: revenueData, isLoading, error } = useRevenueByOrg();
+export const RevenueOrganizationTable: React.FC<{ filters?: any }> = ({ filters }) => {
+  const { data: revenueData, isLoading, error } = useRevenueByOrg(filters);
 
   return (
     <div className="rounded-md border bg-card">
@@ -104,7 +103,7 @@ export const RevenueOrganizationTable: React.FC = () => {
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
-                    {item.organization?.sidebar_name || item.organization?.name || item._id}
+                    {item.organizationName || item._id}
                   </div>
                 </TableCell>
                 <TableCell className="text-right font-medium text-primary">
@@ -129,8 +128,8 @@ export const RevenueOrganizationTable: React.FC = () => {
 };
 
 // 23. RevenueModuleTable
-export const RevenueModuleTable: React.FC = () => {
-  const { data: revenueData, isLoading, error } = useRevenueByModule();
+export const RevenueTypeTable: React.FC<{ filters?: any }> = ({ filters }) => {
+  const { data: revenueData, isLoading, error } = useRevenueByModule(filters);
 
   return (
     <div className="rounded-md border bg-card">
@@ -138,27 +137,23 @@ export const RevenueModuleTable: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Add-on Module</TableHead>
-              <TableHead className="text-right">Active Subscriptions</TableHead>
-              <TableHead className="text-right">Recognized revenue</TableHead>
-              <TableHead className="text-right">% of module revenue</TableHead>
+              <TableHead>Payment Type</TableHead>
+              <TableHead className="text-right">Transaction Count</TableHead>
+              <TableHead className="text-right">Gross Revenue</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {revenueData?.map((item: any) => (
-              <TableRow key={item.moduleId}>
+              <TableRow key={item._id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4 text-muted-foreground" />
-                    {item.module?.name || item.moduleId}
+                    <span className="uppercase">{item._id || 'UNKNOWN'}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-right">{item.activeCount}</TableCell>
+                <TableCell className="text-right">{item.transactionCount}</TableCell>
                 <TableCell className="text-right font-medium text-primary">
-                  <MoneyDisplay amountPaise={item.recognizedRevenuePaise} />
-                </TableCell>
-                <TableCell className="text-right">
-                  <Badge variant="secondary">{item.percentageOfTotal}%</Badge>
+                  <MoneyDisplay amountPaise={item.grossRevenuePaise} />
                 </TableCell>
               </TableRow>
             ))}
