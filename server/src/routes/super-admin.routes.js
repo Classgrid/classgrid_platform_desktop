@@ -1973,6 +1973,26 @@ router.get("/transactions", async (req, res) => {
     }
 });
 
+// Get single platform transaction
+router.get("/transactions/:id", async (req, res) => {
+    try {
+        const PlatformTransaction = (await import("../models/PlatformTransaction.js")).default;
+        const txn = await PlatformTransaction.findById(req.params.id)
+            .populate("organizationId", "name")
+            .populate("processedBy", "name email")
+            .lean();
+            
+        if (!txn) {
+            return res.status(404).json({ success: false, message: "Transaction not found" });
+        }
+        
+        res.json({ success: true, data: txn });
+    } catch (err) {
+        console.error("[SuperAdmin] get transaction error:", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
 // Record a manual transaction (Super Admin logs a manual payment)
 router.post("/transactions", async (req, res) => {
     try {

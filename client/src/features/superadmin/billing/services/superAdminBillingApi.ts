@@ -65,12 +65,12 @@ const normalizeTransaction = (transaction: any) => ({
   id: transaction.id || transaction._id,
   orgId: transaction.organizationId?._id || transaction.organizationId,
   organization: typeof transaction.organizationId === "object" ? transaction.organizationId : undefined,
-  type: transaction.paymentFlow,
-  amountPaise: transaction.amountCapturedPaise,
+  type: transaction.type || transaction.paymentFlow,
+  amountPaise: transaction.amountCapturedPaise || (transaction.amount ? transaction.amount * 100 : 0),
   provider: "Razorpay",
-  providerTxId: transaction.providerPaymentId,
-  paymentMethod: transaction.method
-    ? { type: transaction.method, last4: transaction.cardInfo?.last4 }
+  providerTxId: transaction.providerPaymentId || transaction.razorpayPaymentId,
+  paymentMethod: transaction.method || transaction.paymentMethod
+    ? { type: transaction.method || transaction.paymentMethod, last4: transaction.cardInfo?.last4 }
     : undefined,
 });
 
@@ -243,12 +243,12 @@ export const fetchBillingExportDownload = (jobId: string) =>
 export const fetchTransactions = async (filters: any = {}) => {
   const { type, ...params } = filters;
   if (type) params.paymentFlow = type;
-  const response = await apiClient.get<ApiEnvelope<any[]>>(`${BILLING_BASE}/transactions`, { params });
+  const response = await apiClient.get<ApiEnvelope<any[]>>(`/api/super-admin/transactions`, { params });
   return response.data.data.map(normalizeTransaction);
 };
 export const fetchTransactionDetail = async (transactionId: string) => {
   const [transaction, events] = await Promise.all([
-    request<any>({ method: "GET", url: `${BILLING_BASE}/transactions/${transactionId}` }),
+    request<any>({ method: "GET", url: `/api/super-admin/transactions/${transactionId}` }),
     request<any[]>({ method: "GET", url: `${BILLING_BASE}/transactions/${transactionId}/timeline` }),
   ]);
   return { ...normalizeTransaction(transaction), events };
