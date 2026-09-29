@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/marketing_ui/button";
+import { Input } from "@/components/marketing_ui/input";
+import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
+import { Search, Filter, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
 import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
 import { 
@@ -87,6 +90,9 @@ export function AiUsageDashboardPage() {
   const [path, setPath] = useState<PathState>({});
   const [showOrgReset, setShowOrgReset] = useState(false);
   const [showOrgBlock, setShowOrgBlock] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [orgTypeFilter, setOrgTypeFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState<Date | undefined>();
   const resetOrgMutation = useResetOrgUsage();
   const blockOrgMutation = useBlockAiOrg();
 
@@ -101,6 +107,57 @@ export function AiUsageDashboardPage() {
     if (level === "root") setPath({});
     else if (level === "org") setPath({ orgId: path.orgId, orgName: path.orgName });
     else if (level === "role") setPath({ orgId: path.orgId, orgName: path.orgName, role: path.role });
+  };
+
+  
+  const renderFilterBar = () => {
+    return (
+      <div className="bg-card border border-border rounded-xl p-4 mb-6 flex flex-col md:flex-row gap-4 items-center animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="relative w-full md:w-64 shrink-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search name..." 
+            className="pl-9 bg-background"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        
+        <div className="flex w-full gap-4 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
+          <div className="min-w-[140px] flex-1">
+            <select 
+              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              value={orgTypeFilter}
+              onChange={(e) => setOrgTypeFilter(e.target.value)}
+            >
+              <option value="all">Org Type: All</option>
+              <option value="school">School</option>
+              <option value="college">College</option>
+              <option value="university">University</option>
+            </select>
+          </div>
+          
+          <div className="min-w-[140px] flex-1">
+            <select 
+              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="all">Org Name: All</option>
+              {orgs?.map((o: any) => (
+                <option key={o.orgId} value={o.orgId}>{o.orgName}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="shrink-0">
+            <NikhilTimeCalendar 
+              date={dateFilter}
+              setDate={setDateFilter}
+              placeholder="Select Date"
+            />
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const renderBreadcrumbs = () => {
@@ -285,6 +342,16 @@ export function AiUsageDashboardPage() {
         </div>
       </div>
     );
+  };
+
+  
+  const getFilteredOrgs = () => {
+    if (!orgs) return [];
+    return orgs.filter((org: any) => {
+      const matchesSearch = org.orgName.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = orgTypeFilter === "all" || org.type === orgTypeFilter;
+      return matchesSearch && matchesType;
+    });
   };
 
   const renderLevel0Orgs = () => {
