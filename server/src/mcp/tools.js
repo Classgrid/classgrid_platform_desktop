@@ -1403,7 +1403,7 @@ export const handleToolCall = async (name, args, context = {}) => {
             const hasAttachments = attachMap[m.id] && attachMap[m.id].length > 0;
             return {
               ...m,
-              body: m.body ? m.body.replace(/<[^>]*>?/gm, ' ').trim() : m.body,
+              message: m.message ? m.message.replace(/<[^>]*>?/gm, ' ').trim() : m.message,
               senderName: userMap[m.sender_id]?.name || 'Unknown',
               senderEmail: userMap[m.sender_id]?.email || '',
               is_sent_by_current_user: m.sender_id === userId,
@@ -1419,7 +1419,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: args.threadId,
             sender_id: args.senderUserId,
-            body: args.content,
+            message: args.content,
             type: 'text'
           }]).select().single();
           if (error) throw error;
@@ -1438,7 +1438,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: args.threadId,
             sender_id: args.senderUserId,
-            body: args.fileName || 'File',
+            message: args.fileName || 'File',
             type: 'file'
           }]).select().single();
           if (error) throw error;
@@ -1581,7 +1581,7 @@ export const handleToolCall = async (name, args, context = {}) => {
             const hasAttachments = attachMap[m.id] && attachMap[m.id].length > 0;
             return { 
               ...m, 
-              body: m.body ? m.body.replace(/<[^>]*>?/gm, ' ').trim() : m.body,
+              message: m.message ? m.message.replace(/<[^>]*>?/gm, ' ').trim() : m.message,
               senderName: userMap[m.sender_id]?.name || 'Unknown',
               senderEmail: userMap[m.sender_id]?.email || '',
               is_sent_by_current_user: m.sender_id === context.userId,
@@ -1599,7 +1599,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: thread.id,
             sender_id: args.senderUserId,
-            body: args.content,
+            message: args.content,
             type: 'text'
           }]).select().single();
           if (error) throw error;
@@ -1623,7 +1623,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: thread.id,
             sender_id: args.senderUserId,
-            body: args.fileName || 'File',
+            message: args.fileName || 'File',
             type: 'file'
           }]).select().single();
           if (error) throw error;
@@ -1648,7 +1648,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: thread.id,
             sender_id: args.senderUserId,
-            body: args.content,
+            message: args.content,
             type: 'announcement'
           }]).select().single();
           if (error) throw error;
@@ -1700,7 +1700,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           await sb.from('chat_messages').insert([{
             thread_id: thread.id,
             sender_id: args.creatorUserId,
-            body: `📊 Poll: ${args.question}`,
+            message: `📊 Poll: ${args.question}`,
             type: 'system'
           }]);
           return { content: [{ type: 'text', text: `Poll created successfully. ID: ${poll.id}` }] };
