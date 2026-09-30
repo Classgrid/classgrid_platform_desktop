@@ -1648,8 +1648,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: thread.id,
             sender_id: args.senderUserId,
-            message: args.content,
-            type: 'announcement'
+            message: args.content
           }]).select().single();
           if (error) throw error;
           await sb.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', thread.id);
@@ -1700,8 +1699,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           await sb.from('chat_messages').insert([{
             thread_id: thread.id,
             sender_id: args.creatorUserId,
-            message: `📊 Poll: ${args.question}`,
-            type: 'system'
+            message: `📊 Poll: ${args.question}`
           }]);
           return { content: [{ type: 'text', text: `Poll created successfully. ID: ${poll.id}` }] };
         }
