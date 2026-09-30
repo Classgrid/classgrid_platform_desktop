@@ -1449,6 +1449,11 @@ export const handleToolCall = async (name, args, context = {}) => {
           const finalSenderName = resolvedUser?.name || 'Classgrid AI';
           const finalUserAvatar = resolvedUser?.profilePicture || null;
 
+          const { data: memCheck } = await sb.from('chat_thread_members').select('id').eq('thread_id', args.threadId).eq('user_id', finalSenderId).single();
+          if (!memCheck) {
+            await sb.from('chat_thread_members').insert({ thread_id: args.threadId, user_id: finalSenderId, role: 'member' });
+          }
+
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: args.threadId,
             sender_id: finalSenderId,
@@ -1492,6 +1497,11 @@ export const handleToolCall = async (name, args, context = {}) => {
           const finalSenderId = resolvedUser?._id?.toString() || args.senderUserId;
           const finalSenderName = resolvedUser?.name || 'Classgrid AI';
           const finalUserAvatar = resolvedUser?.profilePicture || null;
+
+          const { data: memCheck } = await sb.from('chat_thread_members').select('id').eq('thread_id', args.threadId).eq('user_id', finalSenderId).single();
+          if (!memCheck) {
+            await sb.from('chat_thread_members').insert({ thread_id: args.threadId, user_id: finalSenderId, role: 'member' });
+          }
 
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: args.threadId,
@@ -1680,6 +1690,11 @@ export const handleToolCall = async (name, args, context = {}) => {
           const finalSenderName = resolvedUser?.name || 'Classgrid AI';
           const finalUserAvatar = resolvedUser?.profilePicture || null;
 
+          const { data: memCheck } = await sb.from('chat_thread_members').select('id').eq('thread_id', thread.id).eq('user_id', finalSenderId).single();
+          if (!memCheck) {
+            await sb.from('chat_thread_members').insert({ thread_id: thread.id, user_id: finalSenderId, role: 'member' });
+          }
+
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: thread.id,
             sender_id: finalSenderId,
@@ -1732,6 +1747,11 @@ export const handleToolCall = async (name, args, context = {}) => {
           const finalSenderName = resolvedUser?.name || 'Classgrid AI';
           const finalUserAvatar = resolvedUser?.profilePicture || null;
 
+          const { data: memCheck } = await sb.from('chat_thread_members').select('id').eq('thread_id', thread.id).eq('user_id', finalSenderId).single();
+          if (!memCheck) {
+            await sb.from('chat_thread_members').insert({ thread_id: thread.id, user_id: finalSenderId, role: 'member' });
+          }
+
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: thread.id,
             sender_id: finalSenderId,
@@ -1771,6 +1791,11 @@ export const handleToolCall = async (name, args, context = {}) => {
           const finalSenderId = resolvedUser?._id?.toString() || args.senderUserId;
           const finalSenderName = resolvedUser?.name || 'Classgrid AI';
           const finalUserAvatar = resolvedUser?.profilePicture || null;
+
+          const { data: memCheck } = await sb.from('chat_thread_members').select('id').eq('thread_id', thread.id).eq('user_id', finalSenderId).single();
+          if (!memCheck) {
+            await sb.from('chat_thread_members').insert({ thread_id: thread.id, user_id: finalSenderId, role: 'member' });
+          }
 
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: thread.id,
