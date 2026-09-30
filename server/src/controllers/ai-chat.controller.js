@@ -264,8 +264,9 @@ If the user asks to manage Support Tickets or Classgrid Talk inquiries, use thes
 If the user EXPLICITLY asks to check or send internal 1:1 person-to-person messages/chats, use these tools:
 1. \`list_chat_threads\`: Call this to find the correct \`threadId\` if the user didn't provide one.
 2. \`read_chat_messages\`: Call with the \`threadId\` to read the conversation history.
-3. \`send_chat_message\`: Call with the \`threadId\` to send a new message.
-4. \`get_chat_attachment_url\`: Call this to get the URL of an attachment from a message.
+3. \`send_chat_message\`: Call with the \`threadId\` to send a new text message.
+4. \`upload_file_to_chat\`: Call with the \`threadId\` to send a file/video to a 1:1 chat.
+5. \`get_chat_attachment_url\`: Call this to get the URL of an attachment from a message.
 
 CRITICAL INSTRUCTIONS FOR GRID CHATS:
 - TIME LIMIT & FLOOD RULE: You MUST ONLY read and summarize messages that were sent within the last 1 to 2 hours. Even within this window, NEVER fetch or process more than the 50 most recent messages. Do NOT read older messages from 1 day ago or 7 days ago to save tokens.
@@ -2568,6 +2569,10 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     },
                     send_chat_message: async (args) => {
                         const result = await handleToolCall('send_chat_message', args, { userId: req.user?._id });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    upload_file_to_chat: async (args) => {
+                        const result = await handleToolCall('upload_file_to_chat', args, { userId: req.user?._id });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     // ================= LEAD CRM TOOLS =================

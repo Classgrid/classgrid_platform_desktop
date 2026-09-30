@@ -736,6 +736,11 @@ export const getMcpTools = () => [
     inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, content: { type: 'string', description: 'The message text content.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender user.' } }, required: ['threadId', 'content', 'senderUserId'] }
   },
   {
+    name: 'upload_file_to_chat',
+    description: 'Upload a file or video to a 1:1 direct chat message.',
+    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, fileUrl: { type: 'string', description: 'The R2 CDN URL of the uploaded file.' }, fileName: { type: 'string', description: 'Original file name.' }, fileType: { type: 'string', description: 'MIME type of file (e.g. video/mp4).' }, fileSize: { type: 'number', description: 'File size in bytes.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender user.' } }, required: ['threadId', 'fileUrl', 'senderUserId'] }
+  },
+  {
     name: 'get_chat_attachment_url',
     description: 'Get the R2 CDN URL of a file/attachment uploaded in a 1:1 direct chat message.',
     inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, messageId: { type: 'string', description: 'The Supabase UUID of the message containing the attachment.' } }, required: ['threadId', 'messageId'] }
@@ -1316,7 +1321,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     // ================= DIRECT CHAT HANDLERS (4 tools - Supabase) =================
-    const DIRECT_CHAT_TOOL_NAMES = ['list_chat_threads', 'read_chat_messages', 'send_chat_message', 'get_chat_attachment_url'];
+    const DIRECT_CHAT_TOOL_NAMES = ['list_chat_threads', 'read_chat_messages', 'send_chat_message', 'upload_file_to_chat', 'get_chat_attachment_url'];
     
     if (DIRECT_CHAT_TOOL_NAMES.includes(name)) {
       try {
@@ -1421,6 +1426,34 @@ export const handleToolCall = async (name, args, context = {}) => {
           }).eq('id', args.threadId);
           
           return { content: [{ type: 'text', text: `Message sent successfully. ID: ${msg.id}` }] };
+        }
+
+        // 3.5 UPLOAD 1:1 FILE
+        if (name === 'upload_file_to_chat') {
+          const { data: msg, error } = await sb.from('chat_messages').insert([{
+            thread_id: args.threadId,
+            sender_id: args.senderUserId,
+            body: args.fileName || 'File',
+            type: 'file'
+          }]).select().single();
+          if (error) throw error;
+          
+          const { error: attError } = await sb.from('chat_attachments').insert([{
+            message_id: msg.id,
+            file_url: args.fileUrl,
+            file_name: args.fileName || 'File',
+            file_type: args.fileType || 'unknown',
+            file_size: args.fileSize || 0
+          }]);
+          if (attError) throw attError;
+
+          await sb.from('chat_threads').update({ 
+            last_message: '📎 File', 
+            last_message_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }).eq('id', args.threadId);
+
+          return { content: [{ type: 'text', text: `File uploaded successfully. Message ID: ${msg.id}` }] };
         }
 
         // 4. GET 1:1 ATTACHMENT
@@ -1586,11 +1619,19 @@ export const handleToolCall = async (name, args, context = {}) => {
             thread_id: thread.id,
             sender_id: args.senderUserId,
             body: args.fileName || 'File',
-            type: 'file',
-            file_url: args.fileUrl,
-            file_name: args.fileName
+            type: 'file'
           }]).select().single();
           if (error) throw error;
+          
+          const { error: attError } = await sb.from('chat_attachments').insert([{
+            message_id: msg.id,
+            file_url: args.fileUrl,
+            file_name: args.fileName || 'File',
+            file_type: args.fileType || 'unknown',
+            file_size: args.fileSize || 0
+          }]);
+          if (attError) throw attError;
+          
           await sb.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', thread.id);
           return { content: [{ type: 'text', text: `File uploaded successfully. Message ID: ${msg.id}` }] };
         }
