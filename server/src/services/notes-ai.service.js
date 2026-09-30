@@ -93,7 +93,6 @@ Respond ONLY in this exact JSON format (no markdown, no code blocks):
                 topicCategory: "General",
             };
         }
-    }
 }
 
 // ─────────────────────────────────────────────
