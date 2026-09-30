@@ -2580,6 +2580,10 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                         const result = await handleToolCall('upload_file_to_chat', args, { userId: req.user?._id });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
+                    get_chat_attachment_url: async (args) => {
+                        const result = await handleToolCall('get_chat_attachment_url', args, { userId: req.user?._id });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
                     // ================= LEAD CRM TOOLS =================
                     list_leads: async (args) => {
                         const result = await handleToolCall('list_leads', args, {});
