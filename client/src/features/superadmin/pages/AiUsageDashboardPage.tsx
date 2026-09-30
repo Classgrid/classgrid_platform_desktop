@@ -109,7 +109,13 @@ export function AiUsageDashboardPage() {
   const blockOrgMutation = useBlockAiOrg();
   const updateLimitsMutation = useUpdateOrgAiLimits();
 
-  const { data: globalStats, isLoading: globalLoading } = useGlobalAiStats(selectedGlobalOrgId !== "all" ? selectedGlobalOrgId : undefined);
+  const selectedMonth = dateFilter ? dateFilter.getMonth() + 1 : undefined;
+  const selectedYear = dateFilter ? dateFilter.getFullYear() : undefined;
+  const { data: globalStats, isLoading: globalLoading } = useGlobalAiStats(
+    selectedGlobalOrgId !== "all" ? selectedGlobalOrgId : undefined,
+    selectedMonth,
+    selectedYear
+  );
 
   const getAggregatedData = (data: any[], type: "daily"| "weekly"| "monthly") => {
     if (!data) return [];
