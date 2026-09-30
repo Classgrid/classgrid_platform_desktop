@@ -477,10 +477,16 @@ export function AiUsageDashboardPage() {
                                        return (
                                          <div key={id} className="flex flex-col space-y-1 mb-2 border-b border-border/50 pb-2 last:border-0 last:pb-0">
                                             <div className="flex items-center space-x-2">
-                                                {org.logo && <img src={org.logo} alt={org.name} className="h-5 w-5 rounded object-cover" />}
-                                                <span className="truncate font-medium text-xs text-foreground">{org.name}</span>
+                                                {org.logo ? (
+                                                    <img src={org.logo} alt={org.name} className="h-5 w-5 rounded object-cover" />
+                                                ) : (
+                                                    <div className="h-5 w-5 rounded bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
+                                                        {org.name?.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                <span className="truncate font-medium text-xs text-foreground">Org: {org.name}</span>
                                             </div>
-                                            <span className="text-[10px] text-muted-foreground font-mono">ID: {org.orgId}</span>
+                                            <span className="text-[10px] text-muted-foreground font-mono">Org ID: {org.orgId}</span>
                                          </div>
                                        );
                                     })}
