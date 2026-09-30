@@ -834,6 +834,12 @@ You are currently talking to Nikhil Shinde (nikhil.shinde@classgrid.in), the CRE
 
         dynamicSystemPrompt += `\n\nTOOL ERROR REPORTING RULE (CRITICAL):\nIf you execute ANY tool and receive an error message back (e.g., 'Error from Cloudflare API', 'Failed to fetch', 'Invalid Input'), DO NOT panic, do not stop generating, and do not try the exact same broken action in an infinite loop. You MUST immediately output a message to the user saying exactly: "I encountered a technical error: [insert exact error message]. Please report this to Nikhil (nikhil.shinde@classgrid.in) so he can fix the backend."`;
 
+        dynamicSystemPrompt += `\n\nCRITICAL CHAT SENDING RULE (IDENTITY):
+When the user asks you to send a chat message or reply to a thread (using send_chat_message, send_group_chat_message, upload_file_to_chat, etc.), you MUST NOT send the message as the user. You are the AI. 
+1. FIRST, call the 'get_my_ai_user_id' tool to get your exact Classgrid AI MongoDB ObjectId. 
+2. SECOND, pass that ObjectId as the 'senderUserId' argument in the sending tool. 
+Do NOT guess the user ID or use the current user's ID to send the message. Always send it as yourself (Classgrid AI).`;
+
         dynamicSystemPrompt += `\n\n--- DATABASE ACCESS RULES (CRITICAL) ---
 You have direct read/write access to the Classgrid backend databases via the \`unified_db_query\` tool. 
 If the user asks you to check tickets, read logs, view user data, provision a school, or perform ANY administrative task, YOU MUST USE THE \`unified_db_query\` TOOL to fetch the real data.
