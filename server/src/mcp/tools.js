@@ -761,11 +761,6 @@ export const getMcpTools = () => [
     inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Name or email to search for.' }, limit: { type: 'number', description: 'Max users to return. Default 10.' } }, required: ['query'] }
   },
   {
-    name: 'get_my_ai_user_id',
-    description: 'Get the exact MongoDB ObjectId for the Classgrid AI (support@classgrid.in) account to use as the senderUserId when sending chat messages on behalf of the platform.',
-    inputSchema: { type: 'object', properties: {}, required: [] }
-  },
-  {
     name: 'list_group_chats',
     description: 'List all group chats. Returns group name, description, member count, and timestamps.',
     inputSchema: { type: 'object', properties: { orgId: { type: 'string', description: 'Optional. Filter by organization ID.' }, limit: { type: 'number', description: 'Max groups to return. Default 50.' } } }
@@ -1437,14 +1432,6 @@ export const handleToolCall = async (name, args, context = {}) => {
             ]
           }).select('name email role').limit(args.limit || 10).lean();
           return { content: [{ type: 'text', text: JSON.stringify(users, null, 2) }] };
-        }
-
-        // 2.6 GET MY AI USER ID
-        if (name === 'get_my_ai_user_id') {
-          const User = (await import('../models/User.js')).default;
-          const aiUser = await User.findOne({ email: 'support@classgrid.in' }).select('_id name email').lean();
-          if (!aiUser) return { content: [{ type: 'text', text: 'Error: support@classgrid.in user not found.' }], isError: true };
-          return { content: [{ type: 'text', text: JSON.stringify(aiUser, null, 2) }] };
         }
 
         // 3. SEND 1:1 MESSAGE

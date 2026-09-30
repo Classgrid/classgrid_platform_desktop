@@ -265,8 +265,8 @@ If the user EXPLICITLY asks to check or send internal 1:1 person-to-person messa
 1. \`list_grids\`: Call this to list all 1:1 chats / grids, and find the correct \`threadId\`.
 2. \`list_chat_threads\`: Alias for list_grids.
 2. \`read_chat_messages\`: Call with the \`threadId\` to read the conversation history.
-3. \`send_chat_message\`: Call with the \`threadId\` to send a new text message.
-4. \`upload_file_to_chat\`: Call with the \`threadId\` to send a file/video to a 1:1 chat.
+3. \`send_chat_message\`: Call with the \`threadId\` and \`senderUserId\` to send a new text message. IMPORTANT: If the user asks you to send a message on their behalf, you MUST use "Their User ID" (provided in the USER CONTEXT) as the \`senderUserId\`. DO NOT use the recipient's user ID.
+4. \`upload_file_to_chat\`: Call with the \`threadId\` and \`senderUserId\` to send a file/video to a 1:1 chat. Same rule applies: use "Their User ID" as the \`senderUserId\`.
 5. \`get_chat_attachment_url\`: Call this to get the URL of an attachment from a message.
 
 CRITICAL INSTRUCTIONS FOR GRID CHATS:
@@ -1010,6 +1010,9 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     dynamicSystemPrompt += ` (SUPER ADMIN / PLATFORM OWNER)`;
                 }
             }
+            if (req.user && req.user._id) {
+                dynamicSystemPrompt += `\nTheir User ID: ${req.user._id}`;
+            }
             if (body.userRole) dynamicSystemPrompt += `\nTheir Role: ${body.userRole}`;
             if (body.subdomain) {
                 dynamicSystemPrompt += `\nCurrent Dashboard Subdomain: ${body.subdomain}`;
@@ -1035,7 +1038,6 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
         let allowedConnectorNames = new Set([
             'unified_db_query',
             'search_users_for_chat',
-            'get_my_ai_user_id',
             'run_code',
             'read_sandbox_file',
             'execute_terminal_command',
