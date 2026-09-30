@@ -186,7 +186,7 @@ export function DashboardLayout({ children, role, user }: DashboardLayoutProps) 
   const location = useLocation();
   const isFullBleed = location.pathname.includes("/chat") || location.pathname.includes("/website") || location.pathname.includes("/storage/files") || location.pathname.includes("/dashboard") || (location.pathname.includes("/agent") && !location.pathname.includes("agent-reviews"));
   const isNoPadding = location.pathname.includes("/storage/notes");
-  const { items, showBreadcrumbs, customNode } = useBreadcrumbStore();
+  const { items, showBreadcrumbs } = useBreadcrumbStore();
   const dashboardRole = normalizeDashboardRole(role, location.pathname);
   const { data: currentUser } = useCurrentUser();
   const sidebarUser = user ?? currentUser ?? undefined;
@@ -228,38 +228,34 @@ export function DashboardLayout({ children, role, user }: DashboardLayoutProps) 
 
                 {/* Center: breadcrumb */}
                 <Breadcrumb>
-                  {customNode ? (
-                    customNode
-                  ) : (
-                    <BreadcrumbList>
-                      {items.length > 0 ? (
-                        items.map((item, index) => (
-                          <React.Fragment key={index}>
-                            <BreadcrumbItem>
-                              {item.onClick ? (
-                                <BreadcrumbLink asChild>
-                                  <div role="button" tabIndex={0} onClick={item.onClick} className="hover:text-foreground cursor-pointer bg-transparent border-none p-0 inline-flex">
-                                    {item.label}
-                                  </div>
-                                </BreadcrumbLink>
-                              ) : item.href ? (
-                                <BreadcrumbLink asChild>
-                                  <Link to={item.href}>{item.label}</Link>
-                                </BreadcrumbLink>
-                              ) : (
-                                <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                              )}
-                            </BreadcrumbItem>
-                            {index < items.length - 1 && <BreadcrumbSeparator />}
-                          </React.Fragment>
-                        ))
-                      ) : (
-                        <BreadcrumbItem>
-                          <BreadcrumbPage>{resolveDashboardPageTitle(location.pathname)}</BreadcrumbPage>
-                        </BreadcrumbItem>
-                      )}
-                    </BreadcrumbList>
-                  )}
+                  <BreadcrumbList>
+                    {items.length > 0 ? (
+                      items.map((item, index) => (
+                        <React.Fragment key={index}>
+                          <BreadcrumbItem>
+                            {item.onClick ? (
+                              <BreadcrumbLink asChild>
+                                <div role="button" tabIndex={0} onClick={item.onClick} className="hover:text-foreground cursor-pointer bg-transparent border-none p-0 inline-flex">
+                                  {item.label}
+                                </div>
+                              </BreadcrumbLink>
+                            ) : item.href ? (
+                              <BreadcrumbLink asChild>
+                                <Link to={item.href}>{item.label}</Link>
+                              </BreadcrumbLink>
+                            ) : (
+                              <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                            )}
+                          </BreadcrumbItem>
+                          {index < items.length - 1 && <BreadcrumbSeparator />}
+                        </React.Fragment>
+                      ))
+                    ) : (
+                      <BreadcrumbItem>
+                        <BreadcrumbPage>{resolveDashboardPageTitle(location.pathname)}</BreadcrumbPage>
+                      </BreadcrumbItem>
+                    )}
+                  </BreadcrumbList>
                 </Breadcrumb>
 
                 <div className="absolute right-4 flex items-center">

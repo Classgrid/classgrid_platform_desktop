@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/marketing_ui/dialog";
 import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
-import {
-  Building,
+import { 
+  Building, 
   ChevronRight,
   Home,
   Shield,
@@ -19,10 +19,10 @@ import {
   Database,
   HardDrive
 } from "lucide-react";
-import {
-  useGlobalAiStats,
-  useAiUsageOrgs,
-  useAiOrgDetail,
+import { 
+  useGlobalAiStats, 
+  useAiUsageOrgs, 
+  useAiOrgDetail, 
   useAiOrgUsers,
   useAiUserDetail,
   useResetOrgUsage,
@@ -46,13 +46,13 @@ interface PathState {
 }
 
 const FolderIcon = ({ label, subtitle, onClick, badge, icon: Icon = Building }: any) => (
-  <button
+  <button 
     onClick={onClick}
     className="flex flex-col items-center justify-start p-4 rounded-xl hover:bg-accent/50 transition-colors border border-transparent hover:border-border group h-auto min-h-[160px] relative cursor-pointer"
   >
     <div className="relative mb-2">
       <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400 group-hover:text-amber-500 transition-colors drop-shadow-sm">
-        <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+        <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
       </svg>
       {badge > 0 && (
         <div className="absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm min-w-[20px] text-center">
@@ -103,39 +103,39 @@ export function AiUsageDashboardPage() {
   const [chatsTime, setChatsTime] = useState<"daily" | "weekly" | "monthly">("daily");
   const [orgsTime, setOrgsTime] = useState<"daily" | "weekly" | "monthly">("daily");
   const [usersTime, setUsersTime] = useState<"daily" | "weekly" | "monthly">("daily");
-
+  
   const resetOrgMutation = useResetOrgUsage();
   const blockOrgMutation = useBlockAiOrg();
   const updateLimitsMutation = useUpdateOrgAiLimits();
 
   const { data: globalStats, isLoading: globalLoading } = useGlobalAiStats(selectedGlobalOrgId !== "all" ? selectedGlobalOrgId : undefined);
 
-  const getAggregatedData = (data: any[], type: "daily" | "weekly" | "monthly") => {
+  const getAggregatedData = (data: any[], type: "daily"| "weekly"| "monthly") => {
     if (!data) return [];
     if (type === "daily") return data;
     const aggregated: any = {};
     data.forEach(d => {
       let key = d.date;
       if (type === "weekly") {
-        const date = new Date(d.date);
-        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-        const week = Math.ceil((date.getDate() + firstDay.getDay()) / 7);
-        key = `Week ${week} (${date.toLocaleString('default', { month: 'short' })})`;
+         const date = new Date(d.date);
+         const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+         const week = Math.ceil((date.getDate() + firstDay.getDay()) / 7);
+         key = `Week ${week} (${date.toLocaleString('default', { month: 'short' })})`;
       } else if (type === "monthly") {
-        const date = new Date(d.date);
-        key = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+         const date = new Date(d.date);
+         key = date.toLocaleString('default', { month: 'short', year: 'numeric' });
       }
       if (!aggregated[key]) {
-        aggregated[key] = { date: key, requests: 0, activeUsers: 0, activeOrgs: 0, activeUsersList: [], activeOrgsList: [] };
+         aggregated[key] = { date: key, requests: 0, activeUsers: 0, activeOrgs: 0, activeUsersList: [], activeOrgsList: [] };
       }
       aggregated[key].requests += d.requests || 0;
-
+      
       const newUsersList = [...aggregated[key].activeUsersList, ...(d.activeUsersList || [])];
       const newOrgsList = [...aggregated[key].activeOrgsList, ...(d.activeOrgsList || [])];
-
+      
       aggregated[key].activeUsersList = newUsersList;
       aggregated[key].activeOrgsList = newOrgsList;
-
+      
       aggregated[key].activeUsers = new Set(newUsersList).size;
       aggregated[key].activeOrgs = new Set(newOrgsList).size;
     });
@@ -153,22 +153,22 @@ export function AiUsageDashboardPage() {
     else if (level === "role") setPath({ orgId: path.orgId, orgName: path.orgName, role: path.role });
   };
 
-
+  
 
   const renderBreadcrumbs = () => {
     return (
       <div className="flex items-center text-sm text-muted-foreground mb-6 bg-muted/30 p-2 rounded-lg w-fit border border-border/50">
-        <button
+        <button 
           onClick={() => handleNavigateUp("root")}
           className={`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md ${!path.orgId ? "bg-background shadow-sm text-foreground" : ""}`}
         >
           <Activity className="h-4 w-4 mr-1.5" /> AI Usage & Credits
         </button>
-
+        
         {path.orgId && (
           <>
             <ChevronRight className="h-4 w-4 mx-1 opacity-50" />
-            <button
+            <button 
               onClick={() => handleNavigateUp("org")}
               className={`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md ${!path.role ? "bg-background shadow-sm text-foreground" : ""}`}
             >
@@ -180,7 +180,7 @@ export function AiUsageDashboardPage() {
         {path.role && (
           <>
             <ChevronRight className="h-4 w-4 mx-1 opacity-50" />
-            <button
+            <button 
               onClick={() => handleNavigateUp("role")}
               className={`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md ${!path.userId ? "bg-background shadow-sm text-foreground" : ""}`}
             >
@@ -197,33 +197,33 @@ export function AiUsageDashboardPage() {
             </div>
           </>
         )}
-
-        {/* Organization Level Action Dialogs */}
-        <DangerConfirmDialog
-          open={showOrgReset}
-          onOpenChange={setShowOrgReset}
-          title="Reset Organization Limit?"
-          description="This will reset the total usage counter for this organization back to 0."
-          onConfirm={() => {
+      
+      {/* Organization Level Action Dialogs */}
+      <DangerConfirmDialog
+        open={showOrgReset}
+        onOpenChange={setShowOrgReset}
+        title="Reset Organization Limit?"
+        description="This will reset the total usage counter for this organization back to 0."
+        onConfirm={() => {
             resetOrgMutation.mutate(path.orgId || "");
             setShowOrgReset(false);
-          }}
-          confirmText="Reset Limit"
-        />
-        <DangerConfirmDialog
-          open={showOrgBlock}
-          onOpenChange={setShowOrgBlock}
-          title={orgDetail?.isBlocked ? "Unblock Organization?" : "Block Organization?"}
-          description={orgDetail?.isBlocked ? "Unblocking will allow all users in this org to use AI again." : "Blocking will immediately prevent all users in this org from using AI features."}
-          onConfirm={() => {
+        }}
+        confirmText="Reset Limit"
+      />
+      <DangerConfirmDialog
+        open={showOrgBlock}
+        onOpenChange={setShowOrgBlock}
+        title={orgDetail?.isBlocked ? "Unblock Organization?" : "Block Organization?"}
+        description={orgDetail?.isBlocked ? "Unblocking will allow all users in this org to use AI again." : "Blocking will immediately prevent all users in this org from using AI features."}
+        onConfirm={() => {
             blockOrgMutation.mutate({ orgId: path.orgId || "", blocked: !orgDetail?.isBlocked });
             setShowOrgBlock(false);
-          }}
-          confirmText={orgDetail?.isBlocked ? "Unblock" : "Block"}
-        />
-      </div>
-    );
-  };
+        }}
+        confirmText={orgDetail?.isBlocked ? "Unblock" : "Block"}
+      />
+    </div>
+  );
+};
 
   const renderGlobalStats = () => {
     if (globalLoading) return <Skeleton className="h-96 w-full mb-8" />;
@@ -231,10 +231,10 @@ export function AiUsageDashboardPage() {
 
     const { totalCreditsSpent, totalRevenue, creditsPurchasedThisMonth, totalChats, usageTrend, models, orgsBreakdown, usersBreakdown } = globalStats;
     // Prepare pie chart data
-    const modelPieData = models?.map((m: any, i: number) => ({
-      name: m.name.split('/').pop(),
-      value: m.value || m.requests || 0,
-      color: COLORS[i % COLORS.length]
+    const modelPieData = models?.map((m: any, i: number) => ({ 
+        name: m.name.split('/').pop(), 
+        value: m.value || m.requests || 0,
+        color: COLORS[i % COLORS.length]
     })) || [];
 
     const UniversalTooltip = ({ active, payload, label }: any) => {
@@ -289,7 +289,7 @@ export function AiUsageDashboardPage() {
           </Card>
         </div>
 
-        <SuperadminFilterBar
+        <SuperadminFilterBar 
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           orgTypeFilter={orgTypeFilter}
@@ -322,11 +322,11 @@ export function AiUsageDashboardPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={getAggregatedData(usageTrend, chatsTime)} barCategoryGap="30%" margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                    <XAxis
-                      dataKey="date"
-                      stroke="currentColor"
-                      className="text-xs opacity-50"
-                      tickLine={false}
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="currentColor" 
+                      className="text-xs opacity-50" 
+                      tickLine={false} 
                       axisLine={false}
                       minTickGap={40}
                       tickFormatter={(value) => {
@@ -335,26 +335,26 @@ export function AiUsageDashboardPage() {
                       }}
                     />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
-                    <RechartsTooltip
-                      cursor={{ fill: 'currentColor', opacity: 0.05 }}
-                      content={({ active, payload, label }) => {
-                        if (active && payload && payload.length) {
-                          const date = new Date(label);
-                          const displayLabel = isNaN(date.getTime()) ? label : date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-                          return (
-                            <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50">
-                              <span className="font-semibold text-foreground mb-1">{displayLabel}</span>
-                              {payload.map((entry: any, index: number) => (
-                                <span key={index} className="flex items-center gap-2" style={{ color: entry.color }}>
-                                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                                  {entry.name} : {formatNumber(entry.value)}
-                                </span>
-                              ))}
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
+                    <RechartsTooltip 
+                        cursor={{ fill: 'currentColor', opacity: 0.05 }}
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            const date = new Date(label);
+                            const displayLabel = isNaN(date.getTime()) ? label : date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                            return (
+                              <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50">
+                                <span className="font-semibold text-foreground mb-1">{displayLabel}</span>
+                                {payload.map((entry: any, index: number) => (
+                                  <span key={index} className="flex items-center gap-2" style={{ color: entry.color }}>
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                                    {entry.name} : {formatNumber(entry.value)}
+                                  </span>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
                     />
                     <Bar dataKey="requests" name="AI Requests" fill="#f59e0b" radius={[2, 2, 0, 0]} maxBarSize={12} />
                   </BarChart>
@@ -373,11 +373,11 @@ export function AiUsageDashboardPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={usageTrend || []} barCategoryGap="30%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                    <XAxis
-                      dataKey="date"
-                      stroke="currentColor"
-                      className="text-xs opacity-50"
-                      tickLine={false}
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="currentColor" 
+                      className="text-xs opacity-50" 
+                      tickLine={false} 
                       axisLine={false}
                       minTickGap={40}
                       tickFormatter={(value) => {
@@ -406,11 +406,11 @@ export function AiUsageDashboardPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={usageTrend || []} barCategoryGap="30%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                    <XAxis
-                      dataKey="date"
-                      stroke="currentColor"
-                      className="text-xs opacity-50"
-                      tickLine={false}
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="currentColor" 
+                      className="text-xs opacity-50" 
+                      tickLine={false} 
                       axisLine={false}
                       minTickGap={40}
                       tickFormatter={(value) => {
@@ -447,11 +447,11 @@ export function AiUsageDashboardPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={getAggregatedData(usageTrend, orgsTime)} barCategoryGap="30%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                    <XAxis
-                      dataKey="date"
-                      stroke="currentColor"
-                      className="text-xs opacity-50"
-                      tickLine={false}
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="currentColor" 
+                      className="text-xs opacity-50" 
+                      tickLine={false} 
                       axisLine={false}
                       minTickGap={40}
                       tickFormatter={(value) => {
@@ -461,41 +461,41 @@ export function AiUsageDashboardPage() {
                     />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
                     <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload;
-                        const ids = [...new Set(data.activeOrgsList || [])];
-
-                        return (
-                          <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50 min-w-[220px]">
-                            <span className="font-medium text-foreground">{label}</span>
-                            <div className="text-xs text-muted-foreground mb-1">Active Organizations: {data.activeOrgs}</div>
-                            {ids.length === 0 ? <div className="text-xs text-muted-foreground italic">No organizations active</div> : null}
-                            <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
-                              {ids.slice(0, 10).map((id: any) => {
-                                const org = orgsBreakdown?.find((o: any) => o.orgId === id);
-                                if (!org) return null;
-                                return (
-                                  <div key={id} className="flex flex-col space-y-1 mb-2 border-b border-border/50 pb-2 last:border-0 last:pb-0">
-                                    <div className="flex items-center space-x-2">
-                                      {org.logo ? (
-                                        <img src={org.logo} alt={org.name} className="h-5 w-5 rounded object-cover" />
-                                      ) : (
-                                        <div className="h-5 w-5 rounded bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
-                                          {org.name?.substring(0, 2).toUpperCase()}
-                                        </div>
-                                      )}
-                                      <span className="truncate font-medium text-xs text-foreground">Org: {org.name}</span>
-                                    </div>
-                                    <span className="text-[10px] text-muted-foreground font-mono">Org ID: {org.orgId}</span>
-                                  </div>
-                                );
-                              })}
-                              {ids.length > 10 && <div className="text-xs text-muted-foreground italic">+{ids.length - 10} more...</div>}
-                            </div>
-                          </div>
-                        );
-                      }
-                      return null;
+                        if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const ids = [...new Set(data.activeOrgsList || [])];
+                            
+                            return (
+                              <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50 min-w-[220px]">
+                                <span className="font-medium text-foreground">{label}</span>
+                                <div className="text-xs text-muted-foreground mb-1">Active Organizations: {data.activeOrgs}</div>
+                                {ids.length === 0 ? <div className="text-xs text-muted-foreground italic">No organizations active</div> : null}
+                                <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
+                                    {ids.slice(0, 10).map((id: any) => {
+                                       const org = orgsBreakdown?.find((o: any) => o.orgId === id);
+                                       if (!org) return null;
+                                       return (
+                                         <div key={id} className="flex flex-col space-y-1 mb-2 border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                                            <div className="flex items-center space-x-2">
+                                                {org.logo ? (
+                                                    <img src={org.logo} alt={org.name} className="h-5 w-5 rounded object-cover" />
+                                                ) : (
+                                                    <div className="h-5 w-5 rounded bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
+                                                        {org.name?.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                <span className="truncate font-medium text-xs text-foreground">Org: {org.name}</span>
+                                            </div>
+                                            <span className="text-[10px] text-muted-foreground font-mono">Org ID: {org.orgId}</span>
+                                         </div>
+                                       );
+                                    })}
+                                    {ids.length > 10 && <div className="text-xs text-muted-foreground italic">+{ids.length - 10} more...</div>}
+                                </div>
+                              </div>
+                            );
+                        }
+                        return null;
                     }} />
                     <Bar dataKey="activeOrgs" name="Active Organizations" fill="#2563eb" radius={[2, 2, 0, 0]} maxBarSize={12} />
                   </BarChart>
@@ -524,11 +524,11 @@ export function AiUsageDashboardPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={getAggregatedData(usageTrend, usersTime)} barCategoryGap="30%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                    <XAxis
-                      dataKey="date"
-                      stroke="currentColor"
-                      className="text-xs opacity-50"
-                      tickLine={false}
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="currentColor" 
+                      className="text-xs opacity-50" 
+                      tickLine={false} 
                       axisLine={false}
                       minTickGap={40}
                       tickFormatter={(value) => {
@@ -538,50 +538,50 @@ export function AiUsageDashboardPage() {
                     />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
                     <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload;
-                        const ids = [...new Set(data.activeUsersList || [])];
-
-                        return (
-                          <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50 min-w-[220px]">
-                            <span className="font-medium text-foreground">{label}</span>
-                            <div className="text-xs text-muted-foreground mb-1">Active Users: {data.activeUsers}</div>
-                            {ids.length === 0 ? <div className="text-xs text-muted-foreground italic">No users active</div> : null}
-                            <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
-                              {ids
-                                .map((id: any) => ({
-                                  id,
-                                  uData: usersBreakdown?.find((u: any) => u.userId === id || u._id === id || u.name === id) || { name: 'Unknown User', value: 0 }
-                                }))
-                                .sort((a: any, b: any) => (b.uData.value || 0) - (a.uData.value || 0))
-                                .slice(0, 3)
-                                .map(({ id, uData }: any) => (
-                                  <div key={id} className="flex flex-col space-y-1 mb-2 border-b border-border/50 pb-2 last:border-0 last:pb-0">
-                                    <div className="flex items-center space-x-2">
-                                      {uData.profilePicture ? (
-                                        <img src={uData.profilePicture} alt={uData.name} className="h-5 w-5 rounded-full object-cover" />
-                                      ) : (
-                                        <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
-                                          {uData.name?.substring(0, 2).toUpperCase()}
-                                        </div>
-                                      )}
-                                      <div className="flex flex-col">
-                                        <span className="truncate font-medium text-xs text-foreground">{uData.name}</span>
-                                        {uData.email && <span className="truncate text-[10px] text-muted-foreground">{uData.email}</span>}
-                                      </div>
-                                    </div>
-                                    <div className="flex flex-col gap-0.5 mt-1">
-                                      {uData.orgName && <span className="text-[10px] text-muted-foreground">Org: {uData.orgName}</span>}
-                                      <span className="text-[10px] text-muted-foreground font-mono">User ID: {id}</span>
-                                    </div>
-                                  </div>
-                                ))}
-                              {ids.length > 3 && <div className="text-xs text-muted-foreground italic">+{ids.length - 3} more...</div>}
-                            </div>
-                          </div>
-                        );
-                      }
-                      return null;
+                        if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const ids = [...new Set(data.activeUsersList || [])];
+                            
+                            return (
+                              <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50 min-w-[220px]">
+                                <span className="font-medium text-foreground">{label}</span>
+                                <div className="text-xs text-muted-foreground mb-1">Active Users: {data.activeUsers}</div>
+                                {ids.length === 0 ? <div className="text-xs text-muted-foreground italic">No users active</div> : null}
+                                <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
+                                    {ids
+                                        .map((id: any) => ({
+                                            id,
+                                            uData: usersBreakdown?.find((u: any) => u.userId === id || u._id === id || u.name === id) || { name: 'Unknown User', value: 0 }
+                                        }))
+                                        .sort((a: any, b: any) => (b.uData.value || 0) - (a.uData.value || 0))
+                                        .slice(0, 3)
+                                        .map(({ id, uData }: any) => (
+                                         <div key={id} className="flex flex-col space-y-1 mb-2 border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                                            <div className="flex items-center space-x-2">
+                                                {uData.profilePicture ? (
+                                                    <img src={uData.profilePicture} alt={uData.name} className="h-5 w-5 rounded-full object-cover" />
+                                                ) : (
+                                                    <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
+                                                        {uData.name?.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                <div className="flex flex-col">
+                                                    <span className="truncate font-medium text-xs text-foreground">{uData.name}</span>
+                                                    {uData.email && <span className="truncate text-[10px] text-muted-foreground">{uData.email}</span>}
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 mt-1">
+                                                {uData.orgName && <span className="text-[10px] text-muted-foreground">Org: {uData.orgName}</span>}
+                                                <span className="text-[10px] text-muted-foreground font-mono">User ID: {id}</span>
+                                            </div>
+                                         </div>
+                                    ))}
+                                    {ids.length > 3 && <div className="text-xs text-muted-foreground italic">+{ids.length - 3} more...</div>}
+                                </div>
+                              </div>
+                            );
+                        }
+                        return null;
                     }} />
                     <Bar dataKey="activeUsers" name="Active Users" fill="#8b5cf6" radius={[2, 2, 0, 0]} maxBarSize={12} />
                   </BarChart>
@@ -618,7 +618,7 @@ export function AiUsageDashboardPage() {
     );
   };
 
-
+  
   const getFilteredOrgs = () => {
     if (!orgs) return [];
     return orgs.filter((org: any) => {
@@ -655,7 +655,7 @@ export function AiUsageDashboardPage() {
     );
   };
 
-  const renderLevel1Roles = () => {
+    const renderLevel1Roles = () => {
     if (orgDetailLoading || orgUsersLoading) return <Skeleton className="h-64 w-full" />;
 
     const isOrgBlocked = orgDetail?.isBlocked;
@@ -675,7 +675,7 @@ export function AiUsageDashboardPage() {
                 {formatNumber(orgDetail?.poolLimit || 500000)}
               </div>
               <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1">Tokens shared across all users</p>
-              <Button
+              <Button 
                 variant="outline"
                 className="w-full mt-4 bg-white/50 hover:bg-white/80 dark:bg-black/50 dark:hover:bg-black/80 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
                 onClick={() => setShowOrgReset(true)}
@@ -700,7 +700,7 @@ export function AiUsageDashboardPage() {
               <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">Free tokens per individual user</p>
               <Dialog open={showLimitsDialog} onOpenChange={setShowLimitsDialog}>
                 <DialogTrigger asChild>
-                  <Button
+                  <Button 
                     variant="outline"
                     className="w-full mt-4 bg-white/50 hover:bg-white/80 dark:bg-black/50 dark:hover:bg-black/80 text-blue-700 dark:text-blue-400 border-blue-500/30"
                     onClick={() => setTempLimits({ poolLimit: orgDetail?.poolLimit || 0, userWeeklyLimit: orgDetail?.userWeeklyLimit || 0 })}
@@ -737,11 +737,11 @@ export function AiUsageDashboardPage() {
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setShowLimitsDialog(false)}>Cancel</Button>
-                    <Button
+                    <Button 
                       onClick={() => {
-                        updateLimitsMutation.mutate({
-                          orgId: path.orgId || "",
-                          data: { pro_pool_limit: tempLimits.poolLimit, free_weekly_limit_per_user: tempLimits.userWeeklyLimit }
+                        updateLimitsMutation.mutate({ 
+                          orgId: path.orgId || "", 
+                          data: { pro_pool_limit: tempLimits.poolLimit, free_weekly_limit_per_user: tempLimits.userWeeklyLimit } 
                         });
                         setShowLimitsDialog(false);
                       }}
@@ -769,7 +769,7 @@ export function AiUsageDashboardPage() {
               <p className={isOrgBlocked ? "text-xs text-rose-600/80 dark:text-rose-400/80 mt-1" : "text-xs text-slate-600/80 dark:text-slate-400/80 mt-1"}>
                 {isOrgBlocked ? "All AI usage is suspended" : "Users can access AI features"}
               </p>
-              <Button
+              <Button 
                 variant="outline"
                 className={isOrgBlocked ? "w-full mt-4 bg-white/50 hover:bg-white/80 dark:bg-black/50 dark:hover:bg-black/80 text-rose-700 dark:text-rose-400 border-rose-500/30" : "w-full mt-4 bg-white/50 hover:bg-white/80 dark:bg-black/50 dark:hover:bg-black/80 text-slate-700 dark:text-slate-400 border-slate-500/30"}
                 onClick={() => setShowOrgBlock(true)}
@@ -806,7 +806,7 @@ export function AiUsageDashboardPage() {
 
   const renderLevel2Users = () => {
     if (orgUsersLoading) return <Skeleton className="h-64 w-full" />;
-
+    
     const roleGroup = orgUsers?.find((r: any) => r.roleName === path.role);
     const usersInRole = roleGroup ? roleGroup.users : [];
 
@@ -840,7 +840,7 @@ export function AiUsageDashboardPage() {
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
-      <PageBreadcrumbs customNode={renderBreadcrumbs()} />
+      {renderBreadcrumbs()}
 
       <div className="flex items-center justify-between mb-8">
         <div>
