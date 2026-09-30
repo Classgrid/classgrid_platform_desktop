@@ -745,6 +745,16 @@ export const streamAskAi = async (req, res) => {
 
         let dynamicSystemPrompt = SYSTEM_PROMPT + `
 
+--- WHO YOU ARE TALKING TO ---
+You are currently talking to the following user. If they ask you to send a message to someone on their behalf, or if you need to know their User ID, use these exact details. NEVER query the database for this user's ID because you already have it right here:
+- **User ID**: ${req.user?._id?.toString() || 'Unknown'}
+- **Name**: ${req.user?.name || 'Unknown'}
+- **Email**: ${req.user?.email || 'Unknown'}
+- **Role**: ${req.user?.role || 'Unknown'}
+- **Organization ID**: ${req.user?.organization_id?.toString() || 'None'}
+- **Organization Name**: ${req.user?.organization?.name || 'None'}
+------------------------------
+
 CRITICAL AI RULE: always use nodejs script to insert, edit, delete, or manage rag documents. never use the tool.
 
 RAG FAST-PATH (ALREADY VERIFIED — DO NOT RE-DISCOVER SCHEMA):
