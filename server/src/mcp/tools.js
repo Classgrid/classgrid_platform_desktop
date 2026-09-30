@@ -1345,7 +1345,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           const { data: threads, error: thErr } = await sb.from('chat_threads')
             .select('id, type, updated_at, last_message, last_message_at, group_id')
             .in('id', threadIds)
-            .eq('type', 'direct');
+            .eq('type', 'dm');
           if (thErr) throw thErr;
           
           // Get the other user for each thread to set the "name" of the thread
