@@ -2561,27 +2561,27 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     },
                     // ================= INTERNAL CHAT TOOLS =================
                     list_grids: async (args) => {
-                        const result = await handleToolCall('list_grids', args, { userId: req.user?._id });
+                        const result = await handleToolCall('list_grids', args, { userId: req.user?._id?.toString() });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     list_chat_threads: async (args) => {
-                        const result = await handleToolCall('list_chat_threads', args, { userId: req.user?._id });
+                        const result = await handleToolCall('list_chat_threads', args, { userId: req.user?._id?.toString() });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     read_chat_messages: async (args) => {
-                        const result = await handleToolCall('read_chat_messages', args, { userId: req.user?._id });
+                        const result = await handleToolCall('read_chat_messages', args, { userId: req.user?._id?.toString() });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     send_chat_message: async (args) => {
-                        const result = await handleToolCall('send_chat_message', args, { userId: req.user?._id });
+                        const result = await handleToolCall('send_chat_message', args, { userId: req.user?._id?.toString() });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     upload_file_to_chat: async (args) => {
-                        const result = await handleToolCall('upload_file_to_chat', args, { userId: req.user?._id });
+                        const result = await handleToolCall('upload_file_to_chat', args, { userId: req.user?._id?.toString() });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     get_chat_attachment_url: async (args) => {
-                        const result = await handleToolCall('get_chat_attachment_url', args, { userId: req.user?._id });
+                        const result = await handleToolCall('get_chat_attachment_url', args, { userId: req.user?._id?.toString() });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     // ================= LEAD CRM TOOLS =================
