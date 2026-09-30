@@ -76,27 +76,26 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
-      <div className="flex items-center justify-end">
-        <div className="flex items-center gap-3">
-          {isEditing ? (
-            <>
-              <Button variant="ghost" onClick={() => setIsEditing(false)} disabled={isSaving}>Cancel</Button>
-              <Button onClick={handleSave} disabled={isSaving}>
-                {isSaving ? <span className="flex items-center gap-2"><Spinner className="w-4 h-4" /> Saving...</span> : "Save Changes"}
-              </Button>
-            </>
-          ) : (
-            <Button variant="outline" onClick={() => setIsEditing(true)}>Edit Details</Button>
-          )}
-        </div>
-      </div>
-
-      <div className="border rounded-xl bg-card shadow-sm overflow-hidden">
-        <div className="border-b bg-muted/10 px-6 py-4">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <User className="w-5 h-5 text-primary" /> Basic Information
-          </h3>
-          <p className="text-sm text-muted-foreground mt-0.5">Your primary identity details linked to the core backend.</p>
+      <div className="border rounded-xl bg-card shadow-sm overflow-hidden mt-2">
+        <div className="border-b bg-muted/10 px-6 py-4 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <User className="w-5 h-5 text-primary" /> Basic Information
+            </h3>
+            <p className="text-sm text-muted-foreground mt-0.5">Your primary identity details linked to the core backend.</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {isEditing ? (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} disabled={isSaving}>Cancel</Button>
+                <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? <span className="flex items-center gap-2"><Spinner className="w-3 h-3" /> Saving...</span> : "Save"}
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>Edit</Button>
+            )}
+          </div>
         </div>
         <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-1.5">
