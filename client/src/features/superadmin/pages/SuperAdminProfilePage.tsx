@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 import { apiClient } from "@/lib/apiClient";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/marketing_ui/input";
+import { Label } from "@/components/marketing_ui/label";
+import { Button } from "@/components/marketing_ui/button";
+import { Textarea } from "@/components/marketing_ui/textarea";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/marketing_ui/card";
 import { User, Globe, Loader2 } from "lucide-react";
 
 export function SuperAdminProfilePage() {
