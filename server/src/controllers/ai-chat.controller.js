@@ -248,6 +248,57 @@ If the user asks you to edit, view, or delete an existing schedule, use these to
 9. \`delete_schedule_attachment\`: Call with the \`schedule_id\` to remove the attachment.
 10. \`delete_schedule\`: Call with the \`schedule_id\` to cancel and remove the schedule entirely.
 
+--- WORKFLOW 10: SUPPORT TICKETS & CLASSGRID TALK ---
+If the user asks to manage Support Tickets or Classgrid Talk inquiries, use these tools:
+1. \`list_support_tickets\`: Call this to find the correct \`ticketId\` if the user didn't provide one.
+2. \`read_support_ticket_details\`: Call with the \`ticketId\` to read the full thread and details.
+3. \`update_support_ticket\`: Call with the \`ticketId\` to update priority, status, or assignee.
+4. \`reply_support_ticket\`: Call with the \`ticketId\` to add a new message to the ticket conversation.
+5. \`delete_support_ticket\`: Call with the \`ticketId\` to permanently delete a spam ticket.
+
+--- WORKFLOW 11: INTERNAL CHAT ---
+If the user asks to check or send internal messages/group chats, use these tools:
+1. \`list_chat_threads\`: Call this to find the correct \`threadId\` if the user didn't provide one.
+2. \`read_chat_messages\`: Call with the \`threadId\` to read the conversation history.
+3. \`send_chat_message\`: Call with the \`threadId\` to send a new message.
+
+--- WORKFLOW 12: ORGANIZATIONS & USERS ---
+If the user asks to view organization details, tenants, or users, use these tools:
+1. \`list_organizations\`: Call this to find the correct \`orgId\` if the user didn't provide one.
+2. \`read_organization_details\`: Call with the \`orgId\` to read full details of a specific organization.
+3. \`count_organization_users\`: Call with the \`orgId\` to get the exact number of users and their details grouped by role.
+
+--- WORKFLOW 13: LEAD CRM ---
+If the user asks to manage demo requests, pipeline, or leads, use these tools:
+1. \`list_leads\`: Call this to find the correct \`leadId\` if the user didn't provide one.
+2. \`read_lead_details\`: Call with the \`leadId\` to read discovery info, module allocations, and meeting notes.
+3. \`assign_lead\`: Call with the \`leadId\` to assign a lead to a team member.
+4. \`update_lead_info\`: Call with the \`leadId\` to update discovery data, module allocations, or status.
+5. \`update_lead_meeting_notes\`: Call with the \`leadId\` to edit internal meeting notes.
+6. \`schedule_lead_meeting\`: Call with the \`leadId\` to schedule a demo meeting date and URL.
+7. \`request_lead_vetting_approval\`: Call with the \`leadId\` to toggle vetting status.
+8. \`approve_lead_and_provision\`: Call with the \`leadId\` to convert the lead into a provisioned workspace.
+9. \`delete_lead\`: Call with the \`leadId\` to delete a spam lead.
+
+--- WORKFLOW 14: BLOG SUBSCRIBERS ---
+If the user asks to manage blog, changelog, or legal subscribers, use these tools:
+1. \`list_blog_subscribers\`: List the subscribers from Supabase.
+2. \`count_blog_subscribers\`: Get the exact count.
+
+--- WORKFLOW 15: GROUP CHAT ---
+If the user asks to view or manage group chats, messages, or polls, use these tools:
+1. \`list_group_chats\`: Find all the group chats the user is a member of. NEVER query the database directly for groups.
+2. \`read_group_chat_details\`: Get specific group configuration.
+3. \`read_group_chat_messages\`: Read messages in a group chat.
+4. \`send_group_chat_message\`: Send a text message to a group chat.
+5. \`upload_file_to_group_chat\`: Send a file to a group chat.
+6. \`send_group_announcement\`: Send an announcement to a group chat.
+7. \`list_group_polls\`: View active polls in a group.
+8. \`read_group_poll_details\`: Read the options and votes of a poll.
+9. \`create_group_poll\`: Start a new poll.
+10. \`list_group_members\`: See who is in the group.
+11. \`count_group_members\`: Get the total number of members in the group.
+
 CRITICAL SCHEDULE RULES:
 - Always infer the correct date from context. If user says "Monday", calculate the next upcoming Monday.
 - Convert all times to UTC ISO 8601 format (e.g. 2026-10-06T10:00:00.000Z).
@@ -286,8 +337,12 @@ ACADEMIC HIERARCHY (BACKEND DOMAIN KNOWLEDGE):
 
 DATABASE ARCHITECTURE (CRITICAL GROUND TRUTH):
 Classgrid uses a hybrid dual-database architecture. When using \`unified_db_query\`, you MUST set the correct 'source' parameter based on this mapping:
-- MONGODB (source='mongodb'): Users, UserProfiles, Organizations, SystemLogs, ActivityLogs, SupportTickets, SupportConversations, DemoRequests, Notes, Attendances, Exams, Timetables, FeeRecords, Invoices, PaymentTransactions, TaxRules, SystemSettings.
-- SUPABASE POSTGRES (source='supabase'): messages, threads, classroom_messages, email_notification_queue, device_tokens, events, holidays, leaves, blog_subscribers (fields: name, email, created_at, receives_blog), PLUS all V2 Migrated tables (Advanced Quiz, Certificates, Alumni, Library, Result Engine).
+- MONGODB (source='mongodb'): SystemLogs, ActivityLogs, Notes, Attendances, Exams, Timetables, FeeRecords, Invoices, PaymentTransactions, TaxRules, SystemSettings.
+- SUPABASE POSTGRES (source='supabase'): email_notification_queue, device_tokens, events, holidays, leaves, PLUS all V2 Migrated tables (Advanced Quiz, Certificates, Alumni, Library, Result Engine).
+
+[BANNED DB QUERY DOMAINS - CRITICAL INSTRUCTION]
+You are STRICTLY FORBIDDEN from using \`unified_db_query\` for the following domains: Support Tickets, Classgrid Talk, Internal Chat (messages/threads), Organizations, Users, Leads (DemoRequests), and Blog Subscribers. You now have dedicated, specialized tools for all of these (e.g., list_support_tickets, list_leads, list_organizations, list_chat_threads, etc.). YOU MUST USE THE DEDICATED TOOLS INSTEAD OF RAW DB QUERIES for these domains.
+
 - CRITICAL SCHEMA RULE: You have two master schema files containing the EXACT database structures:
   1. MongoDB Schema: ./src/mcp/schemas/all_mongodb_schema.md
   2. Supabase Schema: ./src/mcp/schemas/all_database_schema.md
@@ -2295,6 +2350,241 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     list_schedules: async (args) => {
                         const userEmail = req.user?.email || body.userEmail || '';
                         const result = await handleToolCall('list_schedules', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    // ================= SUPPORT TICKET TOOLS (14) =================
+                    list_support_tickets: async (args) => {
+                        const result = await handleToolCall('list_support_tickets', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    read_support_ticket_details: async (args) => {
+                        const result = await handleToolCall('read_support_ticket_details', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    update_support_ticket_status: async (args) => {
+                        const result = await handleToolCall('update_support_ticket_status', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    close_support_ticket: async (args) => {
+                        const result = await handleToolCall('close_support_ticket', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    reopen_support_ticket: async (args) => {
+                        const result = await handleToolCall('reopen_support_ticket', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    assign_support_ticket: async (args) => {
+                        const result = await handleToolCall('assign_support_ticket', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    reply_support_ticket: async (args) => {
+                        const result = await handleToolCall('reply_support_ticket', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    attach_file_to_support_ticket: async (args) => {
+                        const result = await handleToolCall('attach_file_to_support_ticket', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    edit_support_ticket_reply: async (args) => {
+                        const result = await handleToolCall('edit_support_ticket_reply', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    add_internal_note_to_support_ticket: async (args) => {
+                        const result = await handleToolCall('add_internal_note_to_support_ticket', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    read_support_ticket_draft: async (args) => {
+                        const result = await handleToolCall('read_support_ticket_draft', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    save_support_ticket_draft: async (args) => {
+                        const result = await handleToolCall('save_support_ticket_draft', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    delete_support_ticket_draft: async (args) => {
+                        const result = await handleToolCall('delete_support_ticket_draft', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    delete_support_ticket: async (args) => {
+                        const result = await handleToolCall('delete_support_ticket', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    // ================= CLASSGRID TALK TOOLS (14) =================
+                    list_classgrid_talks: async (args) => {
+                        const result = await handleToolCall('list_classgrid_talks', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    read_classgrid_talk_details: async (args) => {
+                        const result = await handleToolCall('read_classgrid_talk_details', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    update_classgrid_talk_status: async (args) => {
+                        const result = await handleToolCall('update_classgrid_talk_status', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    close_classgrid_talk: async (args) => {
+                        const result = await handleToolCall('close_classgrid_talk', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    reopen_classgrid_talk: async (args) => {
+                        const result = await handleToolCall('reopen_classgrid_talk', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    assign_classgrid_talk: async (args) => {
+                        const result = await handleToolCall('assign_classgrid_talk', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    reply_classgrid_talk: async (args) => {
+                        const result = await handleToolCall('reply_classgrid_talk', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    attach_file_to_classgrid_talk: async (args) => {
+                        const result = await handleToolCall('attach_file_to_classgrid_talk', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    edit_classgrid_talk_reply: async (args) => {
+                        const result = await handleToolCall('edit_classgrid_talk_reply', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    add_internal_note_to_classgrid_talk: async (args) => {
+                        const result = await handleToolCall('add_internal_note_to_classgrid_talk', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    read_classgrid_talk_draft: async (args) => {
+                        const result = await handleToolCall('read_classgrid_talk_draft', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    save_classgrid_talk_draft: async (args) => {
+                        const result = await handleToolCall('save_classgrid_talk_draft', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    delete_classgrid_talk_draft: async (args) => {
+                        const result = await handleToolCall('delete_classgrid_talk_draft', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    delete_classgrid_talk: async (args) => {
+                        const result = await handleToolCall('delete_classgrid_talk', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    // ================= GROUP CHAT TOOLS (12) =================
+                    list_group_chats: async (args) => {
+                        const result = await handleToolCall('list_group_chats', args, { userId: req.user?._id?.toString(), orgId: req.user?.organization_id?.toString(), role: req.user?.role });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    read_group_chat_details: async (args) => {
+                        const result = await handleToolCall('read_group_chat_details', args, { userId: req.user?._id?.toString(), orgId: req.user?.organization_id?.toString(), role: req.user?.role });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    read_group_chat_messages: async (args) => {
+                        const result = await handleToolCall('read_group_chat_messages', args, { userId: req.user?._id?.toString(), orgId: req.user?.organization_id?.toString(), role: req.user?.role });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    send_group_chat_message: async (args) => {
+                        const result = await handleToolCall('send_group_chat_message', args, { userId: req.user?._id?.toString(), orgId: req.user?.organization_id?.toString(), role: req.user?.role });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    get_group_chat_attachment_url: async (args) => {
+                        const result = await handleToolCall('get_group_chat_attachment_url', args, { userId: req.user?._id?.toString(), orgId: req.user?.organization_id?.toString(), role: req.user?.role });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    upload_file_to_group_chat: async (args) => {
+                        const result = await handleToolCall('upload_file_to_group_chat', args, { userId: req.user?._id?.toString(), orgId: req.user?.organization_id?.toString(), role: req.user?.role });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    send_group_announcement: async (args) => {
+                        const result = await handleToolCall('send_group_announcement', args, { userId: req.user?._id?.toString(), orgId: req.user?.organization_id?.toString(), role: req.user?.role });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    list_group_polls: async (args) => {
+                        const result = await handleToolCall('list_group_polls', args, { userId: req.user?._id?.toString(), orgId: req.user?.organization_id?.toString(), role: req.user?.role });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    read_group_poll_details: async (args) => {
+                        const result = await handleToolCall('read_group_poll_details', args, { userId: req.user?._id?.toString(), orgId: req.user?.organization_id?.toString(), role: req.user?.role });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    create_group_poll: async (args) => {
+                        const result = await handleToolCall('create_group_poll', args, { userId: req.user?._id?.toString(), orgId: req.user?.organization_id?.toString(), role: req.user?.role });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    list_group_members: async (args) => {
+                        const result = await handleToolCall('list_group_members', args, { userId: req.user?._id?.toString(), orgId: req.user?.organization_id?.toString(), role: req.user?.role });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    count_group_members: async (args) => {
+                        const result = await handleToolCall('count_group_members', args, { userId: req.user?._id?.toString(), orgId: req.user?.organization_id?.toString(), role: req.user?.role });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    // ================= ORGANIZATION TOOLS =================
+                    list_organizations: async (args) => {
+                        const result = await handleToolCall('list_organizations', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    read_organization_details: async (args) => {
+                        const result = await handleToolCall('read_organization_details', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    count_organization_users: async (args) => {
+                        const result = await handleToolCall('count_organization_users', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    // ================= SUPABASE SUBSCRIBERS TOOLS =================
+                    list_blog_subscribers: async (args) => {
+                        const result = await handleToolCall('list_blog_subscribers', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    count_blog_subscribers: async (args) => {
+                        const result = await handleToolCall('count_blog_subscribers', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    // ================= INTERNAL CHAT TOOLS =================
+                    list_chat_threads: async (args) => {
+                        const result = await handleToolCall('list_chat_threads', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    read_chat_messages: async (args) => {
+                        const result = await handleToolCall('read_chat_messages', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    send_chat_message: async (args) => {
+                        const result = await handleToolCall('send_chat_message', args, { userId: req.user?._id });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    // ================= LEAD CRM TOOLS =================
+                    list_leads: async (args) => {
+                        const result = await handleToolCall('list_leads', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    read_lead_details: async (args) => {
+                        const result = await handleToolCall('read_lead_details', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    assign_lead: async (args) => {
+                        const result = await handleToolCall('assign_lead', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    update_lead_info: async (args) => {
+                        const result = await handleToolCall('update_lead_info', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    update_lead_meeting_notes: async (args) => {
+                        const result = await handleToolCall('update_lead_meeting_notes', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    schedule_lead_meeting: async (args) => {
+                        const result = await handleToolCall('schedule_lead_meeting', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    request_lead_vetting_approval: async (args) => {
+                        const result = await handleToolCall('request_lead_vetting_approval', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    approve_lead_and_provision: async (args) => {
+                        const result = await handleToolCall('approve_lead_and_provision', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    delete_lead: async (args) => {
+                        const result = await handleToolCall('delete_lead', args, {});
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     open_integration_panel: async () => {

@@ -573,6 +573,288 @@ export const getMcpTools = () => [
         status: { type: 'string', description: 'Optional. Filter by status (pending, sent, failed, cancelled).' }
       }
     }
+  },
+
+  // ================= SUPPORT TICKET TOOLS (14) =================
+  {
+    name: 'list_support_tickets',
+    description: 'List all Support Tickets (organization-linked). Returns ticket summaries with status, priority, subject.',
+    inputSchema: { type: 'object', properties: { status: { type: 'string', description: 'Filter by status: open, in_progress, waiting_on_user, resolved, closed, reopened' }, priority: { type: 'string', description: 'Filter by priority: low, medium, high, critical' }, limit: { type: 'number', description: 'Max tickets to return. Default 50.' } } }
+  },
+  {
+    name: 'read_support_ticket_details',
+    description: 'Read the full details of a Support Ticket including all messages, replies, events, and attachments.',
+    inputSchema: { type: 'object', properties: { ticketId: { type: 'string', description: 'The MongoDB ObjectId of the ticket.' } }, required: ['ticketId'] }
+  },
+  {
+    name: 'update_support_ticket_status',
+    description: 'Update the status and/or priority of a Support Ticket.',
+    inputSchema: { type: 'object', properties: { ticketId: { type: 'string', description: 'The MongoDB ObjectId of the ticket.' }, status: { type: 'string', description: 'New status: open, in_progress, waiting_on_user, resolved, closed, reopened' }, priority: { type: 'string', description: 'New priority: low, medium, high, critical' } }, required: ['ticketId'] }
+  },
+  {
+    name: 'close_support_ticket',
+    description: 'Close a Support Ticket by setting its status to closed.',
+    inputSchema: { type: 'object', properties: { ticketId: { type: 'string', description: 'The MongoDB ObjectId of the ticket.' } }, required: ['ticketId'] }
+  },
+  {
+    name: 'reopen_support_ticket',
+    description: 'Reopen a previously closed or resolved Support Ticket.',
+    inputSchema: { type: 'object', properties: { ticketId: { type: 'string', description: 'The MongoDB ObjectId of the ticket.' } }, required: ['ticketId'] }
+  },
+  {
+    name: 'assign_support_ticket',
+    description: 'Assign a Support Ticket to a specific staff member.',
+    inputSchema: { type: 'object', properties: { ticketId: { type: 'string', description: 'The MongoDB ObjectId of the ticket.' }, assignedTo: { type: 'string', description: 'The MongoDB ObjectId of the user to assign the ticket to.' } }, required: ['ticketId', 'assignedTo'] }
+  },
+  {
+    name: 'reply_support_ticket',
+    description: 'Send a reply to a Support Ticket. You can toggle email notification ON or OFF.',
+    inputSchema: { type: 'object', properties: { ticketId: { type: 'string', description: 'The MongoDB ObjectId of the ticket.' }, message: { type: 'string', description: 'The reply message content (HTML supported).' }, sendEmail: { type: 'boolean', description: 'If true, sends an email notification to the ticket creator. Default false.' } }, required: ['ticketId', 'message'] }
+  },
+  {
+    name: 'attach_file_to_support_ticket',
+    description: 'Attach a file URL to a Support Ticket.',
+    inputSchema: { type: 'object', properties: { ticketId: { type: 'string', description: 'The MongoDB ObjectId of the ticket.' }, fileUrl: { type: 'string', description: 'The URL of the file to attach.' }, fileName: { type: 'string', description: 'Optional display name for the file.' } }, required: ['ticketId', 'fileUrl'] }
+  },
+  {
+    name: 'edit_support_ticket_reply',
+    description: 'Edit an existing reply in a Support Ticket conversation thread.',
+    inputSchema: { type: 'object', properties: { ticketId: { type: 'string', description: 'The MongoDB ObjectId of the ticket.' }, replyId: { type: 'string', description: 'The MongoDB ObjectId of the reply to edit.' }, message: { type: 'string', description: 'The updated message content.' } }, required: ['ticketId', 'replyId', 'message'] }
+  },
+  {
+    name: 'add_internal_note_to_support_ticket',
+    description: 'Add a private internal note to a Support Ticket. Only visible to admins, not the customer.',
+    inputSchema: { type: 'object', properties: { ticketId: { type: 'string', description: 'The MongoDB ObjectId of the ticket.' }, message: { type: 'string', description: 'The internal note content.' } }, required: ['ticketId', 'message'] }
+  },
+  {
+    name: 'read_support_ticket_draft',
+    description: 'Read the currently saved draft for a Support Ticket.',
+    inputSchema: { type: 'object', properties: { ticketId: { type: 'string', description: 'The MongoDB ObjectId of the ticket.' } }, required: ['ticketId'] }
+  },
+  {
+    name: 'save_support_ticket_draft',
+    description: 'Save a draft reply for a Support Ticket for later review.',
+    inputSchema: { type: 'object', properties: { ticketId: { type: 'string', description: 'The MongoDB ObjectId of the ticket.' }, draftContent: { type: 'string', description: 'The draft content (HTML supported).' } }, required: ['ticketId', 'draftContent'] }
+  },
+  {
+    name: 'delete_support_ticket_draft',
+    description: 'Delete the saved draft for a Support Ticket.',
+    inputSchema: { type: 'object', properties: { ticketId: { type: 'string', description: 'The MongoDB ObjectId of the ticket.' } }, required: ['ticketId'] }
+  },
+  {
+    name: 'delete_support_ticket',
+    description: 'Permanently delete a Support Ticket.',
+    inputSchema: { type: 'object', properties: { ticketId: { type: 'string', description: 'The MongoDB ObjectId of the ticket.' } }, required: ['ticketId'] }
+  },
+
+  // ================= CLASSGRID TALK TOOLS (14) =================
+  {
+    name: 'list_classgrid_talks',
+    description: 'List all Classgrid Talk inquiries (public inquiries with no organization). Returns inquiry summaries.',
+    inputSchema: { type: 'object', properties: { status: { type: 'string', description: 'Filter by status: open, in_progress, waiting_on_user, resolved, closed, reopened' }, priority: { type: 'string', description: 'Filter by priority: low, medium, high, critical' }, limit: { type: 'number', description: 'Max inquiries to return. Default 50.' } } }
+  },
+  {
+    name: 'read_classgrid_talk_details',
+    description: 'Read the full details of a Classgrid Talk inquiry including all messages, replies, events, and attachments.',
+    inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' } }, required: ['talkId'] }
+  },
+  {
+    name: 'update_classgrid_talk_status',
+    description: 'Update the status and/or priority of a Classgrid Talk inquiry.',
+    inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' }, status: { type: 'string', description: 'New status: open, in_progress, waiting_on_user, resolved, closed, reopened' }, priority: { type: 'string', description: 'New priority: low, medium, high, critical' } }, required: ['talkId'] }
+  },
+  {
+    name: 'close_classgrid_talk',
+    description: 'Close a Classgrid Talk inquiry by setting its status to closed.',
+    inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' } }, required: ['talkId'] }
+  },
+  {
+    name: 'reopen_classgrid_talk',
+    description: 'Reopen a previously closed or resolved Classgrid Talk inquiry.',
+    inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' } }, required: ['talkId'] }
+  },
+  {
+    name: 'assign_classgrid_talk',
+    description: 'Assign a Classgrid Talk inquiry to a specific staff member.',
+    inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' }, assignedTo: { type: 'string', description: 'The MongoDB ObjectId of the user to assign the inquiry to.' } }, required: ['talkId', 'assignedTo'] }
+  },
+  {
+    name: 'reply_classgrid_talk',
+    description: 'Send a reply to a Classgrid Talk inquiry. You can toggle email notification ON or OFF.',
+    inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' }, message: { type: 'string', description: 'The reply message content (HTML supported).' }, sendEmail: { type: 'boolean', description: 'If true, sends an email notification to the inquiry creator. Default false.' } }, required: ['talkId', 'message'] }
+  },
+  {
+    name: 'attach_file_to_classgrid_talk',
+    description: 'Attach a file URL to a Classgrid Talk inquiry.',
+    inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' }, fileUrl: { type: 'string', description: 'The URL of the file to attach.' }, fileName: { type: 'string', description: 'Optional display name for the file.' } }, required: ['talkId', 'fileUrl'] }
+  },
+  {
+    name: 'edit_classgrid_talk_reply',
+    description: 'Edit an existing reply in a Classgrid Talk inquiry conversation thread.',
+    inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' }, replyId: { type: 'string', description: 'The MongoDB ObjectId of the reply to edit.' }, message: { type: 'string', description: 'The updated message content.' } }, required: ['talkId', 'replyId', 'message'] }
+  },
+  {
+    name: 'add_internal_note_to_classgrid_talk',
+    description: 'Add a private internal note to a Classgrid Talk inquiry. Only visible to admins.',
+    inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' }, message: { type: 'string', description: 'The internal note content.' } }, required: ['talkId', 'message'] }
+  },
+  {
+    name: 'read_classgrid_talk_draft',
+    description: 'Read the currently saved draft for a Classgrid Talk inquiry.',
+    inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' } }, required: ['talkId'] }
+  },
+  {
+    name: 'save_classgrid_talk_draft',
+    description: 'Save a draft reply for a Classgrid Talk inquiry for later review.',
+    inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' }, draftContent: { type: 'string', description: 'The draft content (HTML supported).' } }, required: ['talkId', 'draftContent'] }
+  },
+  {
+    name: 'delete_classgrid_talk_draft',
+    description: 'Delete the saved draft for a Classgrid Talk inquiry.',
+    inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' } }, required: ['talkId'] }
+  },
+  {
+    name: 'delete_classgrid_talk',
+    description: 'Permanently delete a Classgrid Talk inquiry.',
+    inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' } }, required: ['talkId'] }
+  },
+
+  // ================= GROUP CHAT TOOLS (12) =================
+  {
+    name: 'list_group_chats',
+    description: 'List all group chats. Returns group name, description, member count, and timestamps.',
+    inputSchema: { type: 'object', properties: { orgId: { type: 'string', description: 'Optional. Filter by organization ID.' }, limit: { type: 'number', description: 'Max groups to return. Default 50.' } } }
+  },
+  {
+    name: 'read_group_chat_details',
+    description: 'Read the full details of a group chat including name, description, permissions, and metadata.',
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' } }, required: ['groupId'] }
+  },
+  {
+    name: 'read_group_chat_messages',
+    description: 'Read messages in a group chat with timestamps and sender info. Messages are in Supabase.',
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, limit: { type: 'number', description: 'Max messages to return. Default 50.' } }, required: ['groupId'] }
+  },
+  {
+    name: 'send_group_chat_message',
+    description: 'Send a text message into a group chat.',
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The message text content.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender user.' } }, required: ['groupId', 'content', 'senderUserId'] }
+  },
+  {
+    name: 'get_group_chat_attachment_url',
+    description: 'Get the R2 CDN URL of a file/attachment uploaded in a group chat message.',
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, messageId: { type: 'string', description: 'The Supabase UUID of the message containing the attachment.' } }, required: ['groupId', 'messageId'] }
+  },
+  {
+    name: 'upload_file_to_group_chat',
+    description: 'Upload a file to a group chat by providing a URL. The file is stored in R2.',
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, fileUrl: { type: 'string', description: 'The URL of the file to upload.' }, fileName: { type: 'string', description: 'Display name for the file.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender.' } }, required: ['groupId', 'fileUrl', 'fileName', 'senderUserId'] }
+  },
+  {
+    name: 'send_group_announcement',
+    description: 'Send an important announcement message to a group chat.',
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The announcement text.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender.' } }, required: ['groupId', 'content', 'senderUserId'] }
+  },
+  {
+    name: 'list_group_polls',
+    description: 'List all polls in a group chat with vote counts.',
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' } }, required: ['groupId'] }
+  },
+  {
+    name: 'read_group_poll_details',
+    description: 'Read a specific poll with full vote counts and options.',
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, pollId: { type: 'string', description: 'The Supabase UUID of the poll.' } }, required: ['groupId', 'pollId'] }
+  },
+  {
+    name: 'create_group_poll',
+    description: 'Create a new poll in a group chat.',
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, question: { type: 'string', description: 'The poll question.' }, options: { type: 'array', items: { type: 'string' }, description: 'Array of option texts.' }, allowMultiple: { type: 'boolean', description: 'If true, users can select multiple options.' }, closesAt: { type: 'string', description: 'Optional ISO date when the poll closes.' }, creatorUserId: { type: 'string', description: 'The MongoDB ObjectId of the poll creator.' } }, required: ['groupId', 'question', 'options', 'creatorUserId'] }
+  },
+  {
+    name: 'list_group_members',
+    description: 'List all members present in a group chat with their names, roles, and join times.',
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' } }, required: ['groupId'] }
+  },
+  {
+    name: 'count_group_members',
+    description: 'Get the total number of members in a group chat.',
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' } }, required: ['groupId'] }
+  },
+
+  // ================= ORGANIZATION TOOLS =================
+  {
+    name: 'list_organizations',
+    description: 'List all organizations in the platform (or filter by status/type).',
+    inputSchema: { type: 'object', properties: { limit: { type: 'number', description: 'Max organizations to return. Default 50.' }, status: { type: 'string', description: 'Filter by status (e.g. active, suspended).' } } }
+  },
+  {
+    name: 'read_organization_details',
+    description: 'Read the full details of a specific organization (MongoDB).',
+    inputSchema: { type: 'object', properties: { orgId: { type: 'string', description: 'The MongoDB ObjectId of the organization.' } }, required: ['orgId'] }
+  },
+  {
+    name: 'count_organization_users',
+    description: 'Get the count of users in an organization grouped by their role (e.g. students, org_admin).',
+    inputSchema: { type: 'object', properties: { orgId: { type: 'string', description: 'The MongoDB ObjectId of the organization.' } }, required: ['orgId'] }
+  },
+
+  // ================= SUPABASE SUBSCRIBERS TOOLS =================
+  {
+    name: 'list_blog_subscribers',
+    description: 'List blog/changelog/legal subscribers from Supabase. Returns email, name, subscription date, and preferences.',
+    inputSchema: { type: 'object', properties: { limit: { type: 'number', description: 'Max subscribers to return. Default 50.' }, preference: { type: 'string', description: 'Filter by preference: "blog", "changelog", "legal", or "all". Default "all".' } } }
+  },
+  {
+    name: 'count_blog_subscribers',
+    description: 'Get the total number of blog/changelog/legal subscribers in Supabase.',
+    inputSchema: { type: 'object', properties: { preference: { type: 'string', description: 'Filter by preference: "blog", "changelog", "legal", or "all". Default "all".' } } }
+  },
+
+  // ================= LEAD CRM TOOLS =================
+  {
+    name: 'list_leads',
+    description: 'List all DemoRequests (Leads). Filters by status or assignment.',
+    inputSchema: { type: 'object', properties: { status: { type: 'string', description: 'Filter by status (new, contacted, pending, closed, converted).' }, limit: { type: 'number', description: 'Limit results (default 50).' } } }
+  },
+  {
+    name: 'read_lead_details',
+    description: 'Read the full details, discovery information, meeting notes, and allocations for a lead.',
+    inputSchema: { type: 'object', properties: { leadId: { type: 'string', description: 'The MongoDB ObjectId of the lead.' } }, required: ['leadId'] }
+  },
+  {
+    name: 'assign_lead',
+    description: 'Assign or reassign a lead to a team member.',
+    inputSchema: { type: 'object', properties: { leadId: { type: 'string' }, assignedTo: { type: 'string', description: 'User ObjectId to assign to.' } }, required: ['leadId', 'assignedTo'] }
+  },
+  {
+    name: 'update_lead_info',
+    description: 'Update lead discovery info, basic details, status, or module allocations.',
+    inputSchema: { type: 'object', properties: { leadId: { type: 'string' }, updates: { type: 'object', description: 'Key-value pairs of fields to update (e.g. studentCount, status, allocatedModules).' } }, required: ['leadId', 'updates'] }
+  },
+  {
+    name: 'update_lead_meeting_notes',
+    description: 'Update the internal meeting notes for a lead.',
+    inputSchema: { type: 'object', properties: { leadId: { type: 'string' }, meetingNotes: { type: 'string' } }, required: ['leadId', 'meetingNotes'] }
+  },
+  {
+    name: 'schedule_lead_meeting',
+    description: 'Schedule a demo meeting. Sends Google Meet invite internally.',
+    inputSchema: { type: 'object', properties: { leadId: { type: 'string' }, scheduledAt: { type: 'string', description: 'ISO date' }, meetingUrl: { type: 'string' }, provider: { type: 'string', description: 'google or zoom' }, notes: { type: 'string' } }, required: ['leadId', 'scheduledAt', 'meetingUrl'] }
+  },
+  {
+    name: 'request_lead_vetting_approval',
+    description: 'Request or toggle organization vetting approval for a lead.',
+    inputSchema: { type: 'object', properties: { leadId: { type: 'string' }, isOrganizationVetted: { type: 'boolean' } }, required: ['leadId', 'isOrganizationVetted'] }
+  },
+  {
+    name: 'approve_lead_and_provision',
+    description: 'Approve a lead and provision their workspace organization.',
+    inputSchema: { type: 'object', properties: { leadId: { type: 'string' }, plan: { type: 'string', description: 'demo or active' } }, required: ['leadId', 'plan'] }
+  },
+  {
+    name: 'delete_lead',
+    description: 'Permanently delete a spam or invalid lead.',
+    inputSchema: { type: 'object', properties: { leadId: { type: 'string' } }, required: ['leadId'] }
   }
 ];
 
@@ -596,7 +878,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         const User = (await import('../models/User.js')).default;
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
         const user = await User.findOne({ email: finalUserEmail }).select('_id organization_id');
-        
+
         const schedule = await AiSchedule.create({
           user_email: finalUserEmail,
           user_id: user?._id,
@@ -610,9 +892,9 @@ export const handleToolCall = async (name, args, context = {}) => {
           email_body: args.email_body,
           status: 'pending'
         });
-        
+
         await emitScheduleUpdate(user?._id, schedule._id);
-        
+
         return { content: [{ type: 'text', text: `Successfully scheduled task "${args.title}" for ${args.scheduled_at}. The user will receive an email at that time. IMPORTANT: The schedule_id is ${schedule._id}. Save this ID if you need to update or delete it later.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error creating schedule: ${e.message}` }] };
@@ -623,7 +905,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
-        
+
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
           return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
@@ -645,7 +927,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
-        
+
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
           return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
@@ -664,7 +946,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
-        
+
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
           return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
@@ -683,7 +965,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
-        
+
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
           return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
@@ -702,7 +984,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
-        
+
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
           return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
@@ -721,7 +1003,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
-        
+
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
           return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
@@ -740,7 +1022,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
-        
+
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
           return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
@@ -759,7 +1041,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
-        
+
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
           return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission.` }] };
@@ -768,7 +1050,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         // We remove attachments by stripping hrefs from the body or wiping the attachment_url if it existed.
         // For our schema, we'll strip out <a> tags that link to files from the body.
         if (schedule.email_body) {
-           schedule.email_body = schedule.email_body.replace(/<a[^>]*>(.*?)<\/a>/ig, "");
+          schedule.email_body = schedule.email_body.replace(/<a[^>]*>(.*?)<\/a>/ig, "");
         }
         await schedule.save();
         await emitScheduleUpdate(schedule.user_id, schedule._id);
@@ -795,10 +1077,10 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
         if (!args.schedule_id) throw new Error("schedule_id is required");
-        
+
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
-        
+
         if (!schedule) {
           return { content: [{ type: 'text', text: `Error: Schedule with ID ${args.schedule_id} not found or you don't have permission to delete it.` }] };
         }
@@ -808,6 +1090,595 @@ export const handleToolCall = async (name, args, context = {}) => {
         return { content: [{ type: 'text', text: `Successfully deleted schedule ${args.schedule_id}.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error deleting schedule: ${e.message}` }] };
+      }
+    }
+
+    // ================= SUPPORT TICKET & CLASSGRID TALK HANDLERS (28 tools) =================
+    const SUPPORT_TALK_TOOL_NAMES = [
+      'list_support_tickets', 'read_support_ticket_details', 'update_support_ticket_status',
+      'close_support_ticket', 'reopen_support_ticket', 'assign_support_ticket',
+      'reply_support_ticket', 'attach_file_to_support_ticket', 'edit_support_ticket_reply',
+      'add_internal_note_to_support_ticket', 'read_support_ticket_draft', 'save_support_ticket_draft',
+      'delete_support_ticket_draft', 'delete_support_ticket',
+      'list_classgrid_talks', 'read_classgrid_talk_details', 'update_classgrid_talk_status',
+      'close_classgrid_talk', 'reopen_classgrid_talk', 'assign_classgrid_talk',
+      'reply_classgrid_talk', 'attach_file_to_classgrid_talk', 'edit_classgrid_talk_reply',
+      'add_internal_note_to_classgrid_talk', 'read_classgrid_talk_draft', 'save_classgrid_talk_draft',
+      'delete_classgrid_talk_draft', 'delete_classgrid_talk'
+    ];
+
+    if (SUPPORT_TALK_TOOL_NAMES.includes(name)) {
+      try {
+        const SupportTicket = (await import('../models/SupportTicket.js')).default;
+        const MessageDraft = (await import('../models/MessageDraft.js')).default;
+
+        const isTalk = name.includes('classgrid_talk');
+        const targetId = isTalk ? args.talkId : args.ticketId;
+        const baseQuery = isTalk ? { organization_id: null } : { organization_id: { $ne: null } };
+
+        // 1. LIST
+        if (name === 'list_support_tickets' || name === 'list_classgrid_talks') {
+          const query = { ...baseQuery };
+          if (args.status) query.status = args.status;
+          if (args.priority) query.priority = args.priority;
+          const tickets = await SupportTicket.find(query)
+            .sort({ createdAt: -1 })
+            .limit(args.limit || 50)
+            .select('subject status priority category submitterName submitterEmail organization_id assignedTo createdAt updatedAt')
+            .populate('assignedTo', 'name email')
+            .lean();
+          return { content: [{ type: 'text', text: JSON.stringify(tickets, null, 2) }] };
+        }
+
+        // 2. READ DETAILS
+        if (name === 'read_support_ticket_details' || name === 'read_classgrid_talk_details') {
+          const ticket = await SupportTicket.findOne({ _id: targetId, ...baseQuery })
+            .populate('assignedTo', 'name email')
+            .populate('submittedBy', 'name email')
+            .lean();
+          if (!ticket) return { content: [{ type: 'text', text: 'Error: Ticket not found.' }], isError: true };
+          return { content: [{ type: 'text', text: JSON.stringify(ticket, null, 2) }] };
+        }
+
+        // 3. UPDATE STATUS
+        if (name === 'update_support_ticket_status' || name === 'update_classgrid_talk_status') {
+          const update = {};
+          if (args.status) update.status = args.status;
+          if (args.priority) update.priority = args.priority;
+          const ticket = await SupportTicket.findOne({ _id: targetId, ...baseQuery });
+          if (!ticket) return { content: [{ type: 'text', text: 'Error: Ticket not found.' }], isError: true };
+          if (args.status) {
+            ticket.events.push({ type: 'statusChanged', label: `Status changed to ${args.status}`, from: ticket.status, to: args.status, actorName: 'AI Admin', actorRole: 'super_admin', createdAt: new Date() });
+            ticket.status = args.status;
+          }
+          if (args.priority) {
+            ticket.events.push({ type: 'priorityChanged', label: `Priority changed to ${args.priority}`, from: ticket.priority, to: args.priority, actorName: 'AI Admin', actorRole: 'super_admin', createdAt: new Date() });
+            ticket.priority = args.priority;
+          }
+          await ticket.save();
+          return { content: [{ type: 'text', text: `Ticket updated. Status: ${ticket.status}, Priority: ${ticket.priority}` }] };
+        }
+
+        // 4. CLOSE
+        if (name === 'close_support_ticket' || name === 'close_classgrid_talk') {
+          const ticket = await SupportTicket.findOne({ _id: targetId, ...baseQuery });
+          if (!ticket) return { content: [{ type: 'text', text: 'Error: Ticket not found.' }], isError: true };
+          ticket.events.push({ type: 'statusChanged', label: 'Ticket closed', from: ticket.status, to: 'closed', actorName: 'AI Admin', actorRole: 'super_admin', createdAt: new Date() });
+          ticket.status = 'closed';
+          ticket.resolvedAt = new Date();
+          await ticket.save();
+          return { content: [{ type: 'text', text: 'Ticket closed successfully.' }] };
+        }
+
+        // 5. REOPEN
+        if (name === 'reopen_support_ticket' || name === 'reopen_classgrid_talk') {
+          const ticket = await SupportTicket.findOne({ _id: targetId, ...baseQuery });
+          if (!ticket) return { content: [{ type: 'text', text: 'Error: Ticket not found.' }], isError: true };
+          ticket.events.push({ type: 'reopened', label: 'Ticket reopened', from: ticket.status, to: 'reopened', actorName: 'AI Admin', actorRole: 'super_admin', createdAt: new Date() });
+          ticket.status = 'reopened';
+          ticket.resolvedAt = null;
+          await ticket.save();
+          return { content: [{ type: 'text', text: 'Ticket reopened successfully.' }] };
+        }
+
+        // 6. ASSIGN
+        if (name === 'assign_support_ticket' || name === 'assign_classgrid_talk') {
+          const ticket = await SupportTicket.findOne({ _id: targetId, ...baseQuery });
+          if (!ticket) return { content: [{ type: 'text', text: 'Error: Ticket not found.' }], isError: true };
+          ticket.events.push({ type: 'assigned', label: `Assigned to ${args.assignedTo}`, actorName: 'AI Admin', actorRole: 'super_admin', createdAt: new Date() });
+          ticket.assignedTo = args.assignedTo;
+          await ticket.save();
+          return { content: [{ type: 'text', text: `Ticket assigned to ${args.assignedTo} successfully.` }] };
+        }
+
+        // 7. REPLY (with email ON/OFF)
+        if (name === 'reply_support_ticket' || name === 'reply_classgrid_talk') {
+          const ticket = await SupportTicket.findOne({ _id: targetId, ...baseQuery });
+          if (!ticket) return { content: [{ type: 'text', text: 'Error: Ticket not found.' }], isError: true };
+          const now = new Date();
+          ticket.replies = ticket.replies || [];
+          ticket.messages = ticket.messages || [];
+          ticket.replies.push({ authorName: 'AI Support Admin', authorRole: 'super_admin', message: args.message, createdAt: now });
+          ticket.messages.push({ author: 'AI Support Admin', role: 'admin', body: args.message, date: now, authorRole: 'super_admin', avatar: '', attachments: [] });
+          ticket.events.push({ type: 'adminReply', label: 'AI Admin replied', actorName: 'AI Support Admin', actorRole: 'super_admin', createdAt: now });
+          ticket.lastAdminReplyAt = now;
+          ticket.lastComment = now;
+          if (ticket.status === 'open') ticket.status = 'in_progress';
+          await ticket.save();
+
+          if (args.sendEmail) {
+            try {
+              const { notifyTicketCreatorOfAdminReply } = await import('../services/support-ticket-email.service.js');
+              await notifyTicketCreatorOfAdminReply({ ticket });
+            } catch (emailErr) {
+              return { content: [{ type: 'text', text: `Reply added but email failed: ${emailErr.message}` }] };
+            }
+          }
+          return { content: [{ type: 'text', text: `Reply added successfully. Email sent: ${!!args.sendEmail}` }] };
+        }
+
+        // 8. ATTACH FILE
+        if (name === 'attach_file_to_support_ticket' || name === 'attach_file_to_classgrid_talk') {
+          const ticket = await SupportTicket.findOne({ _id: targetId, ...baseQuery });
+          if (!ticket) return { content: [{ type: 'text', text: 'Error: Ticket not found.' }], isError: true };
+          ticket.attachments = ticket.attachments || [];
+          ticket.attachments.push({ url: args.fileUrl, name: args.fileName || 'attachment' });
+          ticket.events.push({ type: 'attachmentAdded', label: 'File attached', actorName: 'AI Admin', actorRole: 'super_admin', createdAt: new Date() });
+          await ticket.save();
+          return { content: [{ type: 'text', text: 'File attached successfully.' }] };
+        }
+
+        // 9. EDIT REPLY
+        if (name === 'edit_support_ticket_reply' || name === 'edit_classgrid_talk_reply') {
+          const ticket = await SupportTicket.findOne({ _id: targetId, ...baseQuery });
+          if (!ticket) return { content: [{ type: 'text', text: 'Error: Ticket not found.' }], isError: true };
+          let edited = false;
+          const rIdx = ticket.replies.findIndex(r => r._id.toString() === args.replyId);
+          if (rIdx !== -1) { ticket.replies[rIdx].message = args.message; edited = true; }
+          const mIdx = ticket.messages.findIndex(m => m._id.toString() === args.replyId);
+          if (mIdx !== -1) { ticket.messages[mIdx].body = args.message; edited = true; }
+          if (!edited) return { content: [{ type: 'text', text: 'Error: Reply not found.' }], isError: true };
+          await ticket.save();
+          return { content: [{ type: 'text', text: 'Reply edited successfully.' }] };
+        }
+
+        // 10. ADD INTERNAL NOTE
+        if (name === 'add_internal_note_to_support_ticket' || name === 'add_internal_note_to_classgrid_talk') {
+          const ticket = await SupportTicket.findOne({ _id: targetId, ...baseQuery });
+          if (!ticket) return { content: [{ type: 'text', text: 'Error: Ticket not found.' }], isError: true };
+          const now = new Date();
+          ticket.messages.push({ author: 'AI Admin', role: 'admin', body: args.message, date: now, footer: 'internal_note', avatar: '', attachments: [] });
+          ticket.events.push({ type: 'internalNote', label: 'Internal note added', actorName: 'AI Admin', actorRole: 'super_admin', createdAt: now });
+          await ticket.save();
+          return { content: [{ type: 'text', text: 'Internal note added successfully.' }] };
+        }
+
+        // 11. READ DRAFT
+        if (name === 'read_support_ticket_draft' || name === 'read_classgrid_talk_draft') {
+          const draft = await MessageDraft.findOne({ ticketId: targetId }).lean();
+          return { content: [{ type: 'text', text: draft ? JSON.stringify(draft, null, 2) : 'No draft found for this ticket.' }] };
+        }
+
+        // 12. SAVE DRAFT
+        if (name === 'save_support_ticket_draft' || name === 'save_classgrid_talk_draft') {
+          const draft = await MessageDraft.findOneAndUpdate(
+            { ticketId: targetId },
+            { draftContent: args.draftContent, source: 'ai_generated' },
+            { upsert: true, new: true }
+          ).lean();
+          return { content: [{ type: 'text', text: 'Draft saved successfully.' }] };
+        }
+
+        // 13. DELETE DRAFT
+        if (name === 'delete_support_ticket_draft' || name === 'delete_classgrid_talk_draft') {
+          await MessageDraft.findOneAndDelete({ ticketId: targetId });
+          return { content: [{ type: 'text', text: 'Draft deleted successfully.' }] };
+        }
+
+        // 14. DELETE TICKET
+        if (name === 'delete_support_ticket' || name === 'delete_classgrid_talk') {
+          const result = await SupportTicket.findOneAndDelete({ _id: targetId, ...baseQuery });
+          if (!result) return { content: [{ type: 'text', text: 'Error: Ticket not found.' }], isError: true };
+          return { content: [{ type: 'text', text: 'Ticket deleted permanently.' }] };
+        }
+
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error in support/talk tool: ${e.message}` }], isError: true };
+      }
+    }
+
+    // ================= GROUP CHAT HANDLERS (12 tools — Supabase) =================
+    const GROUP_CHAT_TOOL_NAMES = [
+      'list_group_chats', 'read_group_chat_details', 'read_group_chat_messages',
+      'send_group_chat_message', 'get_group_chat_attachment_url', 'upload_file_to_group_chat',
+      'send_group_announcement', 'list_group_polls', 'read_group_poll_details',
+      'create_group_poll', 'list_group_members', 'count_group_members'
+    ];
+
+    if (GROUP_CHAT_TOOL_NAMES.includes(name)) {
+      try {
+        const sb = getChatSb();
+        const User = (await import('../models/User.js')).default;
+
+        // Helper: get thread for a group
+        const getThread = async (groupId) => {
+          const { data } = await sb.from('chat_threads').select('*').eq('group_id', groupId).single();
+          return data;
+        };
+
+        // 1. LIST GROUP CHATS (only groups user is a MEMBER of — org-scoped, membership-based)
+        if (name === 'list_group_chats') {
+          const userId = context.userId;
+          if (!userId) return { content: [{ type: 'text', text: 'Error: User context is required to list group chats.' }], isError: true };
+
+          // Step 1: Find all threads the user is a member of
+          const { data: memberships, error: memErr } = await sb.from('chat_thread_members')
+            .select('thread_id')
+            .eq('user_id', userId);
+          if (memErr) throw memErr;
+          if (!memberships || memberships.length === 0) {
+            return { content: [{ type: 'text', text: JSON.stringify({ groups: [], message: 'User is not a member of any group chats.' }) }] };
+          }
+
+          const threadIds = memberships.map(m => m.thread_id);
+
+          // Step 2: Get group threads only (type = 'group') and extract group_ids
+          const { data: threads, error: thErr } = await sb.from('chat_threads')
+            .select('id, group_id, org_id, updated_at, last_message, last_message_at')
+            .in('id', threadIds)
+            .eq('type', 'group')
+            .not('group_id', 'is', null);
+          if (thErr) throw thErr;
+          if (!threads || threads.length === 0) {
+            return { content: [{ type: 'text', text: JSON.stringify({ groups: [], message: 'User has no group chats.' }) }] };
+          }
+
+          const groupIds = threads.map(t => t.group_id).filter(Boolean);
+
+          // Step 3: Get the actual groups
+          let groupQuery = sb.from('chat_groups').select('*').in('id', groupIds).order('created_at', { ascending: false }).limit(args.limit || 50);
+          const { data: groups, error } = await groupQuery;
+          if (error) throw error;
+
+          // Enrich with thread metadata (last_message, last_message_at)
+          const threadMap = {};
+          threads.forEach(t => { threadMap[t.group_id] = t; });
+          const enriched = (groups || []).map(g => ({
+            ...g,
+            threadId: threadMap[g.id]?.id || null,
+            last_message: threadMap[g.id]?.last_message || null,
+            last_message_at: threadMap[g.id]?.last_message_at || null,
+          }));
+
+          return { content: [{ type: 'text', text: JSON.stringify(enriched, null, 2) }] };
+        }
+
+
+        // 2. READ GROUP DETAILS
+        if (name === 'read_group_chat_details') {
+          const { data: group, error } = await sb.from('chat_groups').select('*').eq('id', args.groupId).single();
+          if (error || !group) return { content: [{ type: 'text', text: 'Error: Group not found.' }], isError: true };
+          return { content: [{ type: 'text', text: JSON.stringify(group, null, 2) }] };
+        }
+
+        // 3. READ MESSAGES
+        if (name === 'read_group_chat_messages') {
+          const thread = await getThread(args.groupId);
+          if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
+          const { data: messages, error } = await sb.from('chat_messages')
+            .select('*')
+            .eq('thread_id', thread.id)
+            .order('created_at', { ascending: false })
+            .limit(args.limit || 50);
+          if (error) throw error;
+
+          // Enrich with user names
+          const senderIds = [...new Set((messages || []).map(m => m.sender_id).filter(Boolean))];
+          let userMap = {};
+          if (senderIds.length > 0) {
+            const users = await User.find({ _id: { $in: senderIds } }).select('name email').lean();
+            users.forEach(u => { userMap[u._id.toString()] = u; });
+          }
+          const enriched = (messages || []).map(m => ({ ...m, senderName: userMap[m.sender_id]?.name || 'Unknown', senderEmail: userMap[m.sender_id]?.email || '' }));
+          return { content: [{ type: 'text', text: JSON.stringify(enriched, null, 2) }] };
+        }
+
+        // 4. SEND MESSAGE
+        if (name === 'send_group_chat_message') {
+          const thread = await getThread(args.groupId);
+          if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
+          const { data: msg, error } = await sb.from('chat_messages').insert([{
+            thread_id: thread.id,
+            sender_id: args.senderUserId,
+            body: args.content,
+            type: 'text'
+          }]).select().single();
+          if (error) throw error;
+          await sb.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', thread.id);
+          return { content: [{ type: 'text', text: `Message sent successfully. ID: ${msg.id}` }] };
+        }
+
+        // 5. GET ATTACHMENT URL
+        if (name === 'get_group_chat_attachment_url') {
+          const thread = await getThread(args.groupId);
+          if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
+          const { data: msg, error } = await sb.from('chat_messages').select('*').eq('id', args.messageId).eq('thread_id', thread.id).single();
+          if (error || !msg) return { content: [{ type: 'text', text: 'Error: Message not found.' }], isError: true };
+          const attachmentUrl = msg.file_url || msg.attachment_url || null;
+          return { content: [{ type: 'text', text: attachmentUrl ? `Attachment URL: ${attachmentUrl}` : 'No attachment found on this message.' }] };
+        }
+
+        // 6. UPLOAD FILE
+        if (name === 'upload_file_to_group_chat') {
+          const thread = await getThread(args.groupId);
+          if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
+          const { data: msg, error } = await sb.from('chat_messages').insert([{
+            thread_id: thread.id,
+            sender_id: args.senderUserId,
+            body: args.fileName || 'File',
+            type: 'file',
+            file_url: args.fileUrl,
+            file_name: args.fileName
+          }]).select().single();
+          if (error) throw error;
+          await sb.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', thread.id);
+          return { content: [{ type: 'text', text: `File uploaded successfully. Message ID: ${msg.id}` }] };
+        }
+
+        // 7. SEND ANNOUNCEMENT
+        if (name === 'send_group_announcement') {
+          const thread = await getThread(args.groupId);
+          if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
+          const { data: msg, error } = await sb.from('chat_messages').insert([{
+            thread_id: thread.id,
+            sender_id: args.senderUserId,
+            body: args.content,
+            type: 'announcement'
+          }]).select().single();
+          if (error) throw error;
+          await sb.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', thread.id);
+          return { content: [{ type: 'text', text: `Announcement sent successfully. ID: ${msg.id}` }] };
+        }
+
+        // 8. LIST POLLS
+        if (name === 'list_group_polls') {
+          const thread = await getThread(args.groupId);
+          if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
+          const { data: polls, error } = await sb.from('chat_polls').select('*').eq('thread_id', thread.id).order('created_at', { ascending: false });
+          if (error) throw error;
+
+          const result = await Promise.all((polls || []).map(async (poll) => {
+            const { data: votes } = await sb.from('chat_poll_votes').select('option_id, user_id').eq('poll_id', poll.id);
+            const voteCounts = {};
+            (votes || []).forEach(v => { voteCounts[v.option_id] = (voteCounts[v.option_id] || 0) + 1; });
+            return { ...poll, vote_counts: voteCounts, total_votes: (votes || []).length };
+          }));
+          return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+        }
+
+        // 9. READ POLL DETAILS
+        if (name === 'read_group_poll_details') {
+          const { data: poll, error } = await sb.from('chat_polls').select('*').eq('id', args.pollId).single();
+          if (error || !poll) return { content: [{ type: 'text', text: 'Error: Poll not found.' }], isError: true };
+          const { data: votes } = await sb.from('chat_poll_votes').select('option_id, user_id').eq('poll_id', args.pollId);
+          const voteCounts = {};
+          (votes || []).forEach(v => { voteCounts[v.option_id] = (voteCounts[v.option_id] || 0) + 1; });
+          return { content: [{ type: 'text', text: JSON.stringify({ ...poll, vote_counts: voteCounts, total_votes: (votes || []).length }, null, 2) }] };
+        }
+
+        // 10. CREATE POLL
+        if (name === 'create_group_poll') {
+          const thread = await getThread(args.groupId);
+          if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
+          const options = (args.options || []).map((text, i) => ({ id: `opt_${i}`, text }));
+          const { data: poll, error } = await sb.from('chat_polls').insert([{
+            thread_id: thread.id,
+            question: args.question,
+            options: options,
+            created_by: args.creatorUserId,
+            allow_multiple: args.allowMultiple || false,
+            closes_at: args.closesAt || null
+          }]).select().single();
+          if (error) throw error;
+          // Also send a system message
+          await sb.from('chat_messages').insert([{
+            thread_id: thread.id,
+            sender_id: args.creatorUserId,
+            body: `📊 Poll: ${args.question}`,
+            type: 'system'
+          }]);
+          return { content: [{ type: 'text', text: `Poll created successfully. ID: ${poll.id}` }] };
+        }
+
+        // 11. LIST GROUP MEMBERS
+        if (name === 'list_group_members') {
+          const thread = await getThread(args.groupId);
+          if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
+          const { data: members, error } = await sb.from('chat_thread_members').select('user_id, role, joined_at').eq('thread_id', thread.id);
+          if (error) throw error;
+          const memberIds = (members || []).map(m => m.user_id).filter(id => /^[0-9a-fA-F]{24}$/.test(id));
+          const users = await User.find({ _id: { $in: memberIds } }).select('name email role profilePicture').lean();
+          const userMap = {};
+          users.forEach(u => { userMap[u._id.toString()] = u; });
+          const enriched = (members || []).map(m => ({
+            userId: m.user_id,
+            name: userMap[m.user_id]?.name || 'Unknown',
+            email: userMap[m.user_id]?.email || '',
+            userRole: userMap[m.user_id]?.role || '',
+            groupRole: m.role,
+            joinedAt: m.joined_at
+          }));
+          return { content: [{ type: 'text', text: JSON.stringify(enriched, null, 2) }] };
+        }
+
+        // 12. COUNT GROUP MEMBERS
+        if (name === 'count_group_members') {
+          const thread = await getThread(args.groupId);
+          if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
+          const { data: members, error } = await sb.from('chat_thread_members').select('user_id').eq('thread_id', thread.id);
+          if (error) throw error;
+          return { content: [{ type: 'text', text: `Total members: ${(members || []).length}` }] };
+        }
+
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error in group chat tool: ${e.message}` }], isError: true };
+      }
+    }
+
+    // ================= ORGANIZATION HANDLERS =================
+    if (['list_organizations', 'read_organization_details', 'count_organization_users'].includes(name)) {
+      try {
+        const Organization = (await import('../models/Organization.js')).default;
+
+        if (name === 'list_organizations') {
+          const query = {};
+          if (args.status) query.status = args.status;
+          const orgs = await Organization.find(query).limit(args.limit || 50).lean();
+          return { content: [{ type: 'text', text: JSON.stringify(orgs, null, 2) }] };
+        }
+
+        if (name === 'read_organization_details') {
+          const org = await Organization.findById(args.orgId).lean();
+          if (!org) return { content: [{ type: 'text', text: 'Error: Organization not found.' }], isError: true };
+          return { content: [{ type: 'text', text: JSON.stringify(org, null, 2) }] };
+        }
+
+        if (name === 'count_organization_users') {
+          const User = (await import('../models/User.js')).default;
+          const mongoose = (await import('mongoose')).default;
+
+          const org = await Organization.findById(args.orgId).select('name').lean();
+          const orgName = org ? org.name : 'Unknown Organization';
+
+          const roleCounts = await User.aggregate([
+            { $match: { organization_id: new mongoose.Types.ObjectId(args.orgId) } },
+            {
+              $group: {
+                _id: "$role",
+                count: { $sum: 1 },
+                users: { $push: { name: "$name", email: "$email" } }
+              }
+            },
+            { $sort: { count: -1 } }
+          ]);
+
+          const result = {
+            organizationId: args.orgId,
+            organizationName: orgName,
+            roles: roleCounts
+          };
+
+          return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+        }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error in organization tool: ${e.message}` }], isError: true };
+      }
+    }
+
+    // ================= SUPABASE SUBSCRIBERS HANDLERS =================
+    if (['list_blog_subscribers', 'count_blog_subscribers'].includes(name)) {
+      try {
+        const { getBlogSubscribersSb } = await import('../config/blogSubscribersSupabaseClient.js');
+        const sb = getBlogSubscribersSb();
+
+        if (name === 'list_blog_subscribers') {
+          let query = sb.from('blog_subscribers').select('*').order('created_at', { ascending: false }).limit(args.limit || 50);
+
+          if (args.preference === 'blog') query = query.eq('receives_blog', true);
+          else if (args.preference === 'changelog') query = query.eq('receives_changelog', true);
+          else if (args.preference === 'legal') query = query.eq('receives_legal', true);
+
+          const { data, error } = await query;
+          if (error) throw error;
+
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        if (name === 'count_blog_subscribers') {
+          let query = sb.from('blog_subscribers').select('id', { count: 'exact', head: true });
+
+          if (args.preference === 'blog') query = query.eq('receives_blog', true);
+          else if (args.preference === 'changelog') query = query.eq('receives_changelog', true);
+          else if (args.preference === 'legal') query = query.eq('receives_legal', true);
+
+          const { count, error } = await query;
+          if (error) throw error;
+
+          return { content: [{ type: 'text', text: `Total subscribers (${args.preference || 'all'}): ${count}` }] };
+        }
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error in subscriber tool: ${e.message}` }], isError: true };
+      }
+    }
+
+    // ================= LEAD CRM HANDLERS =================
+    if (['list_leads', 'read_lead_details', 'assign_lead', 'update_lead_info', 'update_lead_meeting_notes', 'schedule_lead_meeting', 'request_lead_vetting_approval', 'approve_lead_and_provision', 'delete_lead'].includes(name)) {
+      try {
+        const DemoRequest = (await import('../models/DemoRequest.js')).default;
+
+        if (name === 'list_leads') {
+          const filter = {};
+          if (args.status) filter.status = args.status;
+          const leads = await DemoRequest.find(filter).sort({ createdAt: -1 }).limit(args.limit || 50).lean();
+          return { content: [{ type: 'text', text: JSON.stringify(leads, null, 2) }] };
+        }
+
+        if (name === 'read_lead_details') {
+          const lead = await DemoRequest.findById(args.leadId).populate('assignedTo', 'name email').lean();
+          if (!lead) return { content: [{ type: 'text', text: 'Lead not found.' }], isError: true };
+          return { content: [{ type: 'text', text: JSON.stringify(lead, null, 2) }] };
+        }
+
+        if (name === 'assign_lead') {
+          const lead = await DemoRequest.findByIdAndUpdate(args.leadId, { assignedTo: args.assignedTo, assignedAt: new Date() }, { new: true });
+          return { content: [{ type: 'text', text: `Lead assigned successfully.` }] };
+        }
+
+        if (name === 'update_lead_info') {
+          const lead = await DemoRequest.findByIdAndUpdate(args.leadId, { $set: args.updates }, { new: true });
+          return { content: [{ type: 'text', text: `Lead info updated successfully.` }] };
+        }
+
+        if (name === 'update_lead_meeting_notes') {
+          const lead = await DemoRequest.findByIdAndUpdate(args.leadId, { meetingNotes: args.meetingNotes }, { new: true });
+          return { content: [{ type: 'text', text: `Meeting notes updated.` }] };
+        }
+
+        if (name === 'request_lead_vetting_approval') {
+          const lead = await DemoRequest.findByIdAndUpdate(args.leadId, { isOrganizationVetted: args.isOrganizationVetted }, { new: true });
+          return { content: [{ type: 'text', text: `Lead vetting status updated to ${args.isOrganizationVetted}.` }] };
+        }
+
+        if (name === 'delete_lead') {
+          await DemoRequest.findByIdAndDelete(args.leadId);
+          return { content: [{ type: 'text', text: `Lead deleted permanently.` }] };
+        }
+
+        if (name === 'schedule_lead_meeting') {
+          // Minimal mock implementation that just updates the lead to match the controller logic (without full email tracking)
+          const lead = await DemoRequest.findById(args.leadId);
+          if (!lead) return { content: [{ type: 'text', text: 'Lead not found.' }], isError: true };
+
+          lead.meetingStatus = "rescheduled";
+          lead.meetingProvider = args.provider || "google";
+          lead.meetingScheduledAt = new Date(args.scheduledAt);
+          lead.meetingUrl = args.meetingUrl;
+          if (args.notes) lead.meetingNotes = args.notes;
+          if (lead.status === "new") lead.status = "contacted";
+          lead.lifecycleStage = "meeting_scheduled";
+          await lead.save();
+          return { content: [{ type: 'text', text: `Meeting scheduled and lead updated successfully.` }] };
+        }
+
+        if (name === 'approve_lead_and_provision') {
+          // Wrap the actual service
+          const { approveLeadAndProvision: approveService } = await import("../services/lead-conversion.service.js");
+          const result = await approveService(args.leadId, { plan: args.plan || "demo" }, null);
+          return { content: [{ type: 'text', text: `Lead approved and provisioned successfully! New Org ID: ${result.organization?._id}` }] };
+        }
+
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error in Lead tool: ${e.message}` }], isError: true };
       }
     }
 
@@ -825,7 +1696,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         const { fileUrl } = args;
         const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
         const cfToken = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
-        
+
         if (!cfAccountId || !cfToken) {
           return { content: [{ type: 'text', text: 'Error: Cloudflare credentials are not configured on the server.' }] };
         }
@@ -856,7 +1727,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         const aiResult = await aiResponse.json();
-        
+
         if (aiResult.success && aiResult.result && aiResult.result.text) {
           return { content: [{ type: 'text', text: aiResult.result.text }] };
         } else {
@@ -1018,7 +1889,7 @@ export const handleToolCall = async (name, args, context = {}) => {
               pipeline.unshift({ $match: { organization_id: userDoc.organization_id } });
             }
           }
-          
+
           const hasLimit = pipeline.some(stage => Object.keys(stage)[0] === '$limit');
           if (!hasLimit) pipeline.push({ $limit: queryLimit });
 
@@ -1037,7 +1908,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (Array.isArray(result) && result.length > 1) {
           const hasFields = args.fields && Array.isArray(args.fields) && args.fields.length > 0;
           const hasProject = operation === 'aggregate' && pipeline && pipeline.some(stage => Object.keys(stage)[0] === '$project');
-          
+
           if (!hasFields && !hasProject) {
             return {
               content: [{ type: 'text', text: `ERROR: Query returned ${result.length} documents. You MUST use the 'fields' array parameter (or a $project stage) to specify exactly which fields you need (e.g. fields: ["name", "email"]). Returning full documents is forbidden for security and token limit reasons. First document keys for reference: ${Object.keys(result[0] || {}).join(', ')}` }]
@@ -1066,7 +1937,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         };
 
         let outputText = JSON.stringify(result, aiSafetyReplacer, 2);
-        
+
         if (outputText.length > 10000) {
           return {
             content: [{ type: 'text', text: `ERROR: The result is too large (${outputText.length} bytes). Even with fields requested, it exceeds the context window. Add a stricter filter to your query.` }]
@@ -1255,9 +2126,9 @@ export const handleToolCall = async (name, args, context = {}) => {
         const systemVars = ['PATH', 'HOME', 'USER', 'PWD', 'SHELL', 'SHLVL', 'LOGNAME', 'MAIL', 'TERM', 'HOSTNAME', 'LS_COLORS', 'LESSOPEN', 'LESSCLOSE', 'XDG_SESSION_ID', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'npm_config_user_agent', 'npm_lifecycle_event', 'npm_node_execpath', 'npm_package_json', 'npm_config_metrics_registry', 'AGENT_SSH_KEY'];
         let envVars = '';
         for (const [key, value] of Object.entries(process.env)) {
-            if (/^[A-Z_][A-Z0-9_]*$/.test(key) && !systemVars.includes(key) && !key.startsWith('npm_')) {
-                envVars += ` -e ${key}="${(value || '').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '')}"`;
-            }
+          if (/^[A-Z_][A-Z0-9_]*$/.test(key) && !systemVars.includes(key) && !key.startsWith('npm_')) {
+            envVars += ` -e ${key}="${(value || '').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '')}"`;
+          }
         }
 
         console.log(`[Sandbox] Securely injecting credentials and running Docker container for terminal command...`);
@@ -1356,9 +2227,9 @@ export const handleToolCall = async (name, args, context = {}) => {
         const systemVars = ['PATH', 'HOME', 'USER', 'PWD', 'SHELL', 'SHLVL', 'LOGNAME', 'MAIL', 'TERM', 'HOSTNAME', 'LS_COLORS', 'LESSOPEN', 'LESSCLOSE', 'XDG_SESSION_ID', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'npm_config_user_agent', 'npm_lifecycle_event', 'npm_node_execpath', 'npm_package_json', 'npm_config_metrics_registry', 'AGENT_SSH_KEY'];
         let envVars = '';
         for (const [key, value] of Object.entries(process.env)) {
-            if (/^[A-Z_][A-Z0-9_]*$/.test(key) && !systemVars.includes(key) && !key.startsWith('npm_')) {
-                envVars += ` -e ${key}="${(value || '').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '')}"`;
-            }
+          if (/^[A-Z_][A-Z0-9_]*$/.test(key) && !systemVars.includes(key) && !key.startsWith('npm_')) {
+            envVars += ` -e ${key}="${(value || '').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '')}"`;
+          }
         }
 
         console.log(`[Sandbox] Securely injecting credentials and running Docker container for ${language} script...`);
@@ -1700,9 +2571,9 @@ export const handleToolCall = async (name, args, context = {}) => {
           const content = doc.chunkText || doc.text || 'No content';
           const docType = doc.documentType || (doc.metadata && doc.metadata.type) || 'unknown';
           const source = doc.sourceUrl || (doc.metadata && doc.metadata.source) || 'unknown';
-          return `[Match ${idx+1}] (Score: ${doc.score.toFixed(3)})\nSource: ${source}\nType: ${docType}\nContent:\n${content}`;
+          return `[Match ${idx + 1}] (Score: ${doc.score.toFixed(3)})\nSource: ${source}\nType: ${docType}\nContent:\n${content}`;
         }).join('\n\n---\n\n');
-        
+
         return { content: [{ type: 'text', text: `Found ${docs.length} matches:\n\n${formatted}` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Failed to search knowledge base: ${e.message}` }] };
@@ -1711,7 +2582,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
     if (name === 'manage_rag_document') {
       const { action, id, documentType, chunkText, sourceUrl = 'ai-generated', collectionName = 'platform_rag_chunks' } = args;
-      
+
       try {
         if (!mongoose.connection.db) {
           throw new Error("MongoDB connection not established");
@@ -1801,7 +2672,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         } else if (log_type === 'winston_combined') {
           command = `tail -n ${numLines} logs/combined.log || echo 'File not found'`;
         }
-        
+
         const { stdout, stderr } = await execPromise(command, { maxBuffer: 1024 * 1024 * 10 });
         let resultText = stdout || stderr;
         if (!resultText) resultText = "No logs found or empty output.";
@@ -1977,9 +2848,9 @@ export const handleToolCall = async (name, args, context = {}) => {
 
       try {
         const decodeGoogleId = (id) => {
-            if (!id) return id;
-            if (/^\d+$/.test(id)) return id;
-            try { const dec = Buffer.from(id, 'base64').toString('utf-8'); return /^\d+$/.test(dec) ? dec : id; } catch(e) { return id; }
+          if (!id) return id;
+          if (/^\d+$/.test(id)) return id;
+          try { const dec = Buffer.from(id, 'base64').toString('utf-8'); return /^\d+$/.test(dec) ? dec : id; } catch (e) { return id; }
         };
         args.courseId = decodeGoogleId(args.courseId);
         args.courseworkId = decodeGoogleId(args.courseworkId);
@@ -2079,7 +2950,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           data = { message: "File successfully uploaded to Google Drive.", ...res.data };
         } else if (operation === 'list_emails') {
           const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-          
+
           const listParams = {
             userId: 'me',
             maxResults: 50 // Changed to 50 to prevent the server from crashing or taking too long
@@ -2101,7 +2972,7 @@ export const handleToolCall = async (name, args, context = {}) => {
             let rawDateStr = headers.find(h => h.name === 'Date')?.value;
             let dateObj = new Date(parseInt(msg.data.internalDate));
             const date = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', timeZoneName: 'short' });
-            
+
             let attachments = [];
             if (msg.data.payload.parts) {
               for (let part of msg.data.payload.parts) {
@@ -2110,7 +2981,7 @@ export const handleToolCall = async (name, args, context = {}) => {
                 }
               }
             }
-            
+
             data.push({ id: msg.data.id, snippet: msg.data.snippet, subject, from, date, rawInternalDate: msg.data.internalDate, attachments });
           }
         } else if (operation === 'read_email') {
@@ -2123,61 +2994,61 @@ export const handleToolCall = async (name, args, context = {}) => {
           let rawDateStr = headers.find(h => h.name === 'Date')?.value;
           let dateObj = new Date(parseInt(msg.data.internalDate));
           const date = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', timeZoneName: 'short' });
-          
+
           let body = '';
           let attachments = [];
-          
+
           const decodePart = (part) => {
             if (part.body && part.body.data) {
-                let base64 = part.body.data.replace(/-/g, '+').replace(/_/g, '/');
-                return Buffer.from(base64, 'base64').toString('utf-8');
+              let base64 = part.body.data.replace(/-/g, '+').replace(/_/g, '/');
+              return Buffer.from(base64, 'base64').toString('utf-8');
             }
             return '';
           };
-          
+
           if (msg.data.payload.parts) {
             let plainTextPart = msg.data.payload.parts.find(p => p.mimeType === 'text/plain');
             let htmlPart = msg.data.payload.parts.find(p => p.mimeType === 'text/html');
-            
+
             for (let part of msg.data.payload.parts) {
-               if (part.filename && part.filename.length > 0 && part.body && part.body.attachmentId) {
-                 attachments.push({ filename: part.filename, attachmentId: part.body.attachmentId, mimeType: part.mimeType });
-               }
-               if (part.parts) {
-                   for (let subpart of part.parts) {
-                       if (subpart.filename && subpart.filename.length > 0 && subpart.body && subpart.body.attachmentId) {
-                           attachments.push({ filename: subpart.filename, attachmentId: subpart.body.attachmentId, mimeType: subpart.mimeType });
-                       }
-                       if (subpart.mimeType === 'text/plain') plainTextPart = subpart;
-                       if (subpart.mimeType === 'text/html') htmlPart = subpart;
-                   }
-               }
+              if (part.filename && part.filename.length > 0 && part.body && part.body.attachmentId) {
+                attachments.push({ filename: part.filename, attachmentId: part.body.attachmentId, mimeType: part.mimeType });
+              }
+              if (part.parts) {
+                for (let subpart of part.parts) {
+                  if (subpart.filename && subpart.filename.length > 0 && subpart.body && subpart.body.attachmentId) {
+                    attachments.push({ filename: subpart.filename, attachmentId: subpart.body.attachmentId, mimeType: subpart.mimeType });
+                  }
+                  if (subpart.mimeType === 'text/plain') plainTextPart = subpart;
+                  if (subpart.mimeType === 'text/html') htmlPart = subpart;
+                }
+              }
             }
-            
+
             if (plainTextPart) {
-                body = decodePart(plainTextPart);
+              body = decodePart(plainTextPart);
             } else if (htmlPart) {
-                body = decodePart(htmlPart).replace(/<style[^>]*>.*<\/style>/gms, '').replace(/<script[^>]*>.*<\/script>/gms, '').replace(/<[^>]*>?/gm, '\n').replace(/\n\s*\n/g, '\n');
+              body = decodePart(htmlPart).replace(/<style[^>]*>.*<\/style>/gms, '').replace(/<script[^>]*>.*<\/script>/gms, '').replace(/<[^>]*>?/gm, '\n').replace(/\n\s*\n/g, '\n');
             }
           } else {
-             body = decodePart(msg.data.payload);
-             if (msg.data.payload.mimeType === 'text/html') {
-                 body = body.replace(/<style[^>]*>.*<\/style>/gms, '').replace(/<script[^>]*>.*<\/script>/gms, '').replace(/<[^>]*>?/gm, '\n').replace(/\n\s*\n/g, '\n');
-             }
+            body = decodePart(msg.data.payload);
+            if (msg.data.payload.mimeType === 'text/html') {
+              body = body.replace(/<style[^>]*>.*<\/style>/gms, '').replace(/<script[^>]*>.*<\/script>/gms, '').replace(/<[^>]*>?/gm, '\n').replace(/\n\s*\n/g, '\n');
+            }
           }
-          
+
           if (body.length > 10000) body = body.substring(0, 10000) + '... [TRUNCATED]';
-          
+
           data = { id: msg.data.id, subject, from, date, snippet: msg.data.snippet, attachments, body };
         } else if (operation === 'read_email_attachment') {
           if (!args.messageId || !args.attachmentId) throw new Error("messageId and attachmentId are required for read_email_attachment");
           const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
           const attachment = await gmail.users.messages.attachments.get({ userId: 'me', messageId: args.messageId, id: args.attachmentId });
-          
+
           let base64 = attachment.data.data.replace(/-/g, '+').replace(/_/g, '/');
           let buffer = Buffer.from(base64, 'base64');
           if (buffer.length > 10 * 1024 * 1024) throw new Error("Attachment exceeds 10MB limit.");
-          
+
           const objectKey = await uploadPrivateBufferToR2(buffer, `ai-temp-cache/attachment-${Date.now()}-${args.attachmentId}`, 'application/octet-stream');
           const url = await getPrivateDownloadUrl(objectKey);
           data = { message: "Attachment downloaded and staged in R2 temp cache.", url, sizeBytes: buffer.length };
@@ -2326,12 +3197,12 @@ export const handleToolCall = async (name, args, context = {}) => {
             workType: 'ASSIGNMENT',
             state: 'PUBLISHED',
           };
-          
+
           requestBody.materials = [];
           if (args.link) requestBody.materials.push({ link: { url: args.link } });
           if (args.driveFileId) requestBody.materials.push({ driveFile: { driveFile: { id: args.driveFileId } } });
           if (requestBody.materials.length === 0) delete requestBody.materials;
-          
+
           const res = await classroom.courses.courseWork.create({ courseId: args.courseId, requestBody });
           data = { message: "Assignment created successfully!", coursework: res.data };
         } else if (operation === 'create_classroom_announcement') {
@@ -2341,12 +3212,12 @@ export const handleToolCall = async (name, args, context = {}) => {
             text: args.description,
             state: 'PUBLISHED',
           };
-          
+
           requestBody.materials = [];
           if (args.link) requestBody.materials.push({ link: { url: args.link } });
           if (args.driveFileId) requestBody.materials.push({ driveFile: { driveFile: { id: args.driveFileId } } });
           if (requestBody.materials.length === 0) delete requestBody.materials;
-          
+
           const res = await classroom.courses.announcements.create({ courseId: args.courseId, requestBody });
           data = { message: "Announcement created successfully!", announcement: res.data };
         } else if (operation === 'get_classroom_coursework') {
@@ -2488,20 +3359,20 @@ export const handleToolCall = async (name, args, context = {}) => {
           user.microsoft_access_token = tokenData.access_token;
           if (tokenData.refresh_token) user.microsoft_refresh_token = tokenData.refresh_token;
           user.microsoft_token_expiry = new Date(Date.now() + tokenData.expires_in * 1000);
-          
+
           try {
             const profileRes = await fetch("https://graph.microsoft.com/v1.0/me", {
-                headers: { "Authorization": `Bearer ${tokenData.access_token}` }
+              headers: { "Authorization": `Bearer ${tokenData.access_token}` }
             });
             if (profileRes.ok) {
-                const profile = await profileRes.json();
-                if (profile.displayName) user.microsoft_name = profile.displayName;
-                if (profile.mail || profile.userPrincipalName) user.microsoft_email = profile.mail || profile.userPrincipalName;
+              const profile = await profileRes.json();
+              if (profile.displayName) user.microsoft_name = profile.displayName;
+              if (profile.mail || profile.userPrincipalName) user.microsoft_email = profile.mail || profile.userPrincipalName;
             }
           } catch (e) {
             console.error("Failed to sync Microsoft profile during tool refresh:", e);
           }
-          
+
           await user.save();
           accessToken = user.microsoft_access_token;
         }
@@ -2848,7 +3719,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           }
           const res = await fetch(url, { headers });
           let data = await res.json();
-          
+
           // If org repos fail (e.g. 404 or bad credentials), fallback to user repos
           if (data.message && owner) {
             console.log(`[GitHub] Failed to fetch org repos for ${owner}. Falling back to user repos.`);
@@ -3209,7 +4080,7 @@ export const handleToolCall = async (name, args, context = {}) => {
       const { operation } = args;
       try {
         const sesClient = new SESClient({ region: process.env.AWS_REGION || 'ap-south-1' });
-        
+
         if (operation === 'get_statistics') {
           const command = new GetSendStatisticsCommand({});
           const response = await sesClient.send(command);
