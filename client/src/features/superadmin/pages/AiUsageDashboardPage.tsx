@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { SuperadminFilterBar } from "@/features/superadmin/components/SuperadminFilterBar";
+import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { Search, Filter, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
@@ -223,15 +224,41 @@ export function AiUsageDashboardPage() {
 
         <SuperadminFilterBar 
           searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          orgTypeFilter={orgTypeFilter}
-          setOrgTypeFilter={setOrgTypeFilter}
-          selectedGlobalOrgId={selectedGlobalOrgId}
-          setSelectedGlobalOrgId={setSelectedGlobalOrgId}
-          dateFilter={dateFilter}
-          setDateFilter={setDateFilter}
-          orgs={orgs || []}
-        />
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search name, owner, plan..."
+        >
+          <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Org Type: All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Org Type: All</SelectItem>
+              <SelectItem value="school">School</SelectItem>
+              <SelectItem value="college">College</SelectItem>
+              <SelectItem value="university">University</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedGlobalOrgId} onValueChange={setSelectedGlobalOrgId}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Org Name: All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Org Name: All</SelectItem>
+              {orgs?.map((o: any) => (
+                <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="shrink-0">
+            <NikhilTimeCalendar 
+              date={dateFilter}
+              setDate={setDateFilter}
+              placeholder="Select Date"
+            />
+          </div>
+        </SuperadminFilterBar>
 
         <div className="flex flex-col space-y-6">
           {/* Bar Chart 1: Daily AI Requests */}
@@ -554,7 +581,8 @@ export function AiUsageDashboardPage() {
   const getFilteredOrgs = () => {
     if (!orgs) return [];
     return orgs.filter((org: any) => {
-      const matchesSearch = org.orgName.toLowerCase().includes(searchQuery.toLowerCase());
+      const name = org.name || org.orgName || "";
+      const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesType = orgTypeFilter === "all" || org.type === orgTypeFilter;
       return matchesSearch && matchesType;
     });
@@ -562,16 +590,17 @@ export function AiUsageDashboardPage() {
 
   const renderLevel0Orgs = () => {
     if (orgsLoading) return <Skeleton className="h-64 w-full" />;
-    if (!orgs || orgs.length === 0) return <div className="text-center py-12 text-muted-foreground">No organizations found using AI.</div>;
+    const filteredOrgs = getFilteredOrgs();
+    if (!filteredOrgs || filteredOrgs.length === 0) return <div className="text-center py-12 text-muted-foreground">No organizations found using AI.</div>;
 
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Organizations ({orgs.length})</CardTitle>
+          <CardTitle className="text-lg">Organizations ({filteredOrgs.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {orgs.map((org: any) => (
+            {filteredOrgs.map((org: any) => (
               <FolderIcon
                 key={org.id}
                 label={org.name}
