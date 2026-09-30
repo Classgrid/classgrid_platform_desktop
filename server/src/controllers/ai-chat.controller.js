@@ -265,7 +265,7 @@ If the user asks to check or send internal messages/chats, or says "Read my Grid
 1. \`list_chat_threads\`: Call this to find the correct \`threadId\` if the user didn't provide one.
 2. \`read_chat_messages\`: Call with the \`threadId\` to read the conversation history.
 3. \`send_chat_message\`: Call with the \`threadId\` to send a new message.
-4. \`get_chat_attachment_url\`: Call this to get the URL of an attachment from a message. CRITICAL INSTRUCTION: If you read a message and the \`ai_hint\` says there is an attachment, you MUST IMMEDIATELY use this tool to fetch and read the attachment. Do NOT ask the user for permission. Read it directly and present the contents/summary to the user.
+4. \`get_chat_attachment_url\`: Call this to get the URL of an attachment from a message. CRITICAL INSTRUCTION: If you read a message and the \`ai_hint\` says there is an attachment, you MUST ASK the user if they want you to read/fetch the attachment. Do NOT read it directly without asking first.
 
 --- WORKFLOW 12: ORGANIZATIONS & USERS ---
 If the user asks to view organization details, tenants, or users, use these tools:
@@ -295,7 +295,7 @@ If the user asks to view or manage group chats, messages, or polls, or says "Rea
 1. \`list_group_chats\`: Find all the group chats the user is a member of. NEVER query the database directly for groups.
 2. \`read_group_chat_details\`: Get specific group configuration.
 3. \`read_group_chat_messages\`: Read messages in a group chat.
-4. \`get_group_chat_attachment_url\`: Get the R2 URL for a video, image, or file. CRITICAL INSTRUCTION: If you read a message and the \`ai_hint\` says there is an attachment, you MUST IMMEDIATELY use this tool to fetch and read the attachment. Do NOT ask the user for permission. Read it directly.
+4. \`get_group_chat_attachment_url\`: Get the R2 URL for a video, image, or file. CRITICAL INSTRUCTION: If you read a message and the \`ai_hint\` says there is an attachment, you MUST ASK the user if they want you to read/fetch the attachment. Do NOT read it directly without asking first.
 5. \`send_group_chat_message\`: Send a text message to a group chat.
 6. \`upload_file_to_group_chat\`: Send a file to a group chat.
 7. \`send_group_announcement\`: Send an announcement to a group chat.
