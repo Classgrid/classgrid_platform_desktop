@@ -183,9 +183,9 @@ export const getGlobalStats = async (req, res) => {
             { $group: { _id: "$organization_id", requests: { $sum: 1 } } },
             { $lookup: { from: "organizations", localField: "_id", foreignField: "_id", as: "org" } },
             { $unwind: { path: "$org", preserveNullAndEmptyArrays: true } },
-            { $project: { name: { $ifNull: ["$org.name", "Unknown Org"] }, requests: 1, _id: 0 } }
+            { $project: { name: { $ifNull: ["$org.name", "Unknown Org"] }, orgId: "$org._id", logo: "$org.logo", requests: 1, _id: 0 } }
         ]);
-        const orgsBreakdown = orgData.map(o => ({ name: o.name, value: o.requests, requests: o.requests }));
+        const orgsBreakdown = orgData.map(o => ({ name: o.name, orgId: o.orgId, logo: o.logo, value: o.requests, requests: o.requests }));
 
         // Status Breakdown
         const statusData = await AiUsageLog.aggregate([
@@ -203,6 +203,18 @@ export const getGlobalStats = async (req, res) => {
         ]);
         const rolesBreakdown = roleData.map(r => ({ name: r._id || "unknown", value: r.requests, requests: r.requests }));
 
+        // Users Breakdown
+        const userData = await AiUsageLog.aggregate([
+            { $match: logMatch },
+            { $group: { _id: { userId: "$userId", orgId: "$organization_id" }, requests: { $sum: 1 } } },
+            { $lookup: { from: "users", localField: "_id.userId", foreignField: "_id", as: "user" } },
+            { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+            { $lookup: { from: "organizations", localField: "_id.orgId", foreignField: "_id", as: "org" } },
+            { $unwind: { path: "$org", preserveNullAndEmptyArrays: true } },
+            { $project: { name: { $ifNull: ["$user.name", "$user.email"] }, fallbackName: "Unknown User", orgName: { $ifNull: ["$org.name", "Unknown Org"] }, requests: 1, _id: 0 } }
+        ]);
+        const usersBreakdown = userData.map(u => ({ name: u.name || u.fallbackName, orgName: u.orgName, value: u.requests, requests: u.requests }));
+
         res.status(200).json({
             success: true,
             data: {
@@ -214,6 +226,8 @@ export const getGlobalStats = async (req, res) => {
                 models: modelsBreakdown, 
                 features: featuresBreakdown,
                 orgsBreakdown,
+                usersBreakdown,
+
                 statusBreakdown,
                 rolesBreakdown,
                 notes: "Analytics data pulled from AiUsageLog for full granularity."

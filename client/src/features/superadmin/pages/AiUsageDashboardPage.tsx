@@ -93,6 +93,8 @@ export function AiUsageDashboardPage() {
   const [path, setPath] = useState<PathState>({});
   const [showOrgReset, setShowOrgReset] = useState(false);
   const [showOrgBlock, setShowOrgBlock] = useState(false);
+  const [showLimitsDialog, setShowLimitsDialog] = useState(false);
+  const [tempLimits, setTempLimits] = useState({ poolLimit: 0, userWeeklyLimit: 0 });
   const [searchQuery, setSearchQuery] = useState("");
   const [orgTypeFilter, setOrgTypeFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<Date | undefined>();
@@ -104,6 +106,7 @@ export function AiUsageDashboardPage() {
   
   const resetOrgMutation = useResetOrgUsage();
   const blockOrgMutation = useBlockAiOrg();
+  const updateLimitsMutation = useUpdateOrgAiLimits();
 
   const { data: globalStats, isLoading: globalLoading } = useGlobalAiStats(selectedGlobalOrgId !== "all" ? selectedGlobalOrgId : undefined);
 
@@ -117,7 +120,7 @@ export function AiUsageDashboardPage() {
          const date = new Date(d.date);
          const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
          const week = Math.ceil((date.getDate() + firstDay.getDay()) / 7);
-         key = `Week ${week}`;
+         key = `Week ${week} (${date.toLocaleString('default', { month: 'short' })})`;
       } else if (type === "monthly") {
          const date = new Date(d.date);
          key = date.toLocaleString('default', { month: 'short', year: 'numeric' });
@@ -219,20 +222,27 @@ export function AiUsageDashboardPage() {
     if (globalLoading) return <Skeleton className="h-96 w-full mb-8" />;
     if (!globalStats) return null;
 
-    const { totalCreditsSpent, totalRevenue, creditsPurchasedThisMonth, totalChats, usageTrend, modelsBreakdown } = globalStats;
+    const { totalCreditsSpent, totalRevenue, creditsPurchasedThisMonth, totalChats, usageTrend, models, orgsBreakdown, usersBreakdown } = globalStats;
     // Prepare pie chart data
-    const modelPieData = modelsBreakdown?.map((m: any, i: number) => ({ 
+    const modelPieData = models?.map((m: any, i: number) => ({ 
         name: m.name.split('/').pop(), 
         value: m.requests || 0,
         color: COLORS[i % COLORS.length]
     })) || [];
 
-    const CustomTooltip = ({ active, payload }: any) => {
+    const UniversalTooltip = ({ active, payload, label }: any) => {
       if (active && payload && payload.length) {
+        const date = new Date(label);
+        const displayLabel = isNaN(date.getTime()) ? label : date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
         return (
-          <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-1 z-50">
-            <span className="font-semibold text-foreground">{payload[0].payload.name}</span>
-            <span className="text-muted-foreground">{new Intl.NumberFormat("en-IN").format(payload[0].value)} Requests</span>
+          <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50">
+            <span className="font-semibold text-foreground mb-1">{displayLabel || payload[0].payload.name}</span>
+            {payload.map((entry: any, index: number) => (
+              <span key={index} className="flex items-center gap-2" style={{ color: entry.color }}>
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                {entry.name} : {formatNumber(entry.value)}
+              </span>
+            ))}
           </div>
         );
       }
@@ -303,7 +313,7 @@ export function AiUsageDashboardPage() {
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={getAggregatedData(usageTrend, chatsTime)} barCategoryGap="25%" margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <BarChart data={getAggregatedData(usageTrend, chatsTime)} barCategoryGap="30%" margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
                     <XAxis 
                       dataKey="date" 
@@ -311,15 +321,35 @@ export function AiUsageDashboardPage() {
                       className="text-xs opacity-50" 
                       tickLine={false} 
                       axisLine={false}
-                      minTickGap={30}
+                      minTickGap={40}
                       tickFormatter={(value) => {
                         const date = new Date(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                       }}
                     />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
-                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<CustomTooltip />} />
-                    <Bar dataKey="requests" name="AI Requests" fill="#f59e0b" radius={[2, 2, 0, 0]} />
+                    <RechartsTooltip 
+                        cursor={{ fill: 'currentColor', opacity: 0.05 }}
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            const date = new Date(label);
+                            const displayLabel = isNaN(date.getTime()) ? label : date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                            return (
+                              <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50">
+                                <span className="font-semibold text-foreground mb-1">{displayLabel}</span>
+                                {payload.map((entry: any, index: number) => (
+                                  <span key={index} className="flex items-center gap-2" style={{ color: entry.color }}>
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                                    {entry.name} : {formatNumber(entry.value)}
+                                  </span>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                    />
+                    <Bar dataKey="requests" name="AI Requests" fill="#f59e0b" radius={[2, 2, 0, 0]} maxBarSize={40} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -334,7 +364,7 @@ export function AiUsageDashboardPage() {
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={usageTrend || []} barCategoryGap="25%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                  <BarChart data={usageTrend || []} barCategoryGap="30%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
                     <XAxis 
                       dataKey="date" 
@@ -342,36 +372,16 @@ export function AiUsageDashboardPage() {
                       className="text-xs opacity-50" 
                       tickLine={false} 
                       axisLine={false}
-                      minTickGap={30}
+                      minTickGap={40}
                       tickFormatter={(value) => {
                         const date = new Date(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                       }}
                     />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
-                    <RechartsTooltip 
-                        cursor={{ fill: 'currentColor', opacity: 0.05 }}
-                        content={({ active, payload, label }) => {
-                          if (active && payload && payload.length) {
-                            return (
-                              <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50">
-                                <span className="font-semibold text-foreground mb-1">
-                                  {new Date(label).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                </span>
-                                {payload.map((entry: any, index: number) => (
-                                  <span key={index} className="flex items-center gap-2" style={{ color: entry.color }}>
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                                    {entry.name} : {formatNumber(entry.value)}
-                                  </span>
-                                ))}
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                    />
-                    <Bar dataKey="promptTokens" name="Input Tokens" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="completionTokens" name="Output Tokens" stackId="a" fill="#3b82f6" radius={[2, 2, 0, 0]} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<UniversalTooltip />} />
+                    <Bar dataKey="promptTokens" name="Input Tokens" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} maxBarSize={40} />
+                    <Bar dataKey="completionTokens" name="Output Tokens" stackId="a" fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={40} />
                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -387,7 +397,7 @@ export function AiUsageDashboardPage() {
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={usageTrend || []} barCategoryGap="25%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                  <BarChart data={usageTrend || []} barCategoryGap="30%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
                     <XAxis 
                       dataKey="date" 
@@ -395,15 +405,15 @@ export function AiUsageDashboardPage() {
                       className="text-xs opacity-50" 
                       tickLine={false} 
                       axisLine={false}
-                      minTickGap={30}
+                      minTickGap={40}
                       tickFormatter={(value) => {
                         const date = new Date(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                       }}
                     />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
-                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<CustomTooltip />} />
-                    <Bar dataKey="revenue" name="Cost (INR)" fill="#10b981" radius={[2, 2, 0, 0]} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<UniversalTooltip />} />
+                    <Bar dataKey="revenue" name="Cost (INR)" fill="#10b981" radius={[2, 2, 0, 0]} maxBarSize={40} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -428,7 +438,7 @@ export function AiUsageDashboardPage() {
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={getAggregatedData(usageTrend, orgsTime)} barCategoryGap="25%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                  <BarChart data={getAggregatedData(usageTrend, orgsTime)} barCategoryGap="30%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
                     <XAxis 
                       dataKey="date" 
@@ -436,15 +446,15 @@ export function AiUsageDashboardPage() {
                       className="text-xs opacity-50" 
                       tickLine={false} 
                       axisLine={false}
-                      minTickGap={30}
+                      minTickGap={40}
                       tickFormatter={(value) => {
                         const date = new Date(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                       }}
                     />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
-                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<CustomTooltip />} />
-                    <Bar dataKey="activeOrgs" name="Active Organizations" fill="#2563eb" radius={[2, 2, 0, 0]} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<UniversalTooltip />} />
+                    <Bar dataKey="activeOrgs" name="Active Organizations" fill="#2563eb" radius={[2, 2, 0, 0]} maxBarSize={40} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -469,7 +479,7 @@ export function AiUsageDashboardPage() {
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={getAggregatedData(usageTrend, usersTime)} barCategoryGap="25%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                  <BarChart data={getAggregatedData(usageTrend, usersTime)} barCategoryGap="30%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
                     <XAxis 
                       dataKey="date" 
@@ -477,24 +487,82 @@ export function AiUsageDashboardPage() {
                       className="text-xs opacity-50" 
                       tickLine={false} 
                       axisLine={false}
-                      minTickGap={30}
+                      minTickGap={40}
                       tickFormatter={(value) => {
                         const date = new Date(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                       }}
                     />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
-                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<CustomTooltip />} />
-                    <Bar dataKey="activeUsers" name="Active Users" fill="#8b5cf6" radius={[2, 2, 0, 0]} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<UniversalTooltip />} />
+                    <Bar dataKey="activeUsers" name="Active Users" fill="#8b5cf6" radius={[2, 2, 0, 0]} maxBarSize={40} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
 
-          {/* Pie Chart at the end */}
+          {/* Breakdowns Row */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
+            <Card className="col-span-1 lg:col-span-1">
+              <CardHeader><CardTitle>Top Organizations by Requests</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-4">
+                  {orgsBreakdown?.sort((a: any, b: any) => b.requests - a.requests).slice(0, 10).map((org: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        {org.logo ? (
+                           <img src={org.logo} alt={org.name} className="h-8 w-8 rounded object-cover" />
+                        ) : (
+                           <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                             {org.name.substring(0, 2).toUpperCase()}
+                           </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-medium leading-none max-w-[120px] truncate" title={org.name}>{org.name}</p>
+                          <p className="text-xs text-muted-foreground mt-1 truncate max-w-[120px]" title={org.orgId}>ID: {org.orgId}</p>
+                        </div>
+                      </div>
+                      <div className="font-medium text-sm">
+                        {formatNumber(org.requests)}
+                      </div>
+                    </div>
+                  ))}
+                  {(!orgsBreakdown || orgsBreakdown.length === 0) && (
+                    <div className="text-center text-muted-foreground py-8">No organization data</div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-1 lg:col-span-1">
+              <CardHeader><CardTitle>Top Users by Requests</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-4">
+                  {usersBreakdown?.sort((a: any, b: any) => b.requests - a.requests).slice(0, 10).map((user: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                          {user.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium leading-none max-w-[120px] truncate" title={user.name}>{user.name}</p>
+                          <p className="text-xs text-muted-foreground mt-1 truncate max-w-[120px]" title={user.orgName}>{user.orgName}</p>
+                        </div>
+                      </div>
+                      <div className="font-medium text-sm">
+                        {formatNumber(user.requests)}
+                      </div>
+                    </div>
+                  ))}
+                  {(!usersBreakdown || usersBreakdown.length === 0) && (
+                    <div className="text-center text-muted-foreground py-8">No user data</div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-1 lg:col-span-1">
               <CardHeader><CardTitle>Requests by Model</CardTitle></CardHeader>
               <CardContent>
                 <div className="h-[300px] w-full">
@@ -503,7 +571,7 @@ export function AiUsageDashboardPage() {
                       <Pie data={modelPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
                         {modelPieData.map((e: any, i: number) => <Cell key={i} fill={e.color} />)}
                       </Pie>
-                      <RechartsTooltip content={<CustomTooltip />} />
+                      <RechartsTooltip content={<UniversalTooltip />} />
                       <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }} />
                     </PieChart>
                   </ResponsiveContainer>
@@ -511,6 +579,7 @@ export function AiUsageDashboardPage() {
               </CardContent>
             </Card>
           </div>
+
 
         </div>
       </div>
