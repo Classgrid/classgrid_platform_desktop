@@ -9,9 +9,10 @@
 import fs from 'fs';
 import mongoose from 'mongoose';
 import { getChatSb } from '../config/supabaseClient.js';
-import redis from '../config/redis.js';
-import path from 'path';
-import accessLogger from '../config/logger.js';
+import { uploadBufferToR2, uploadPrivateBufferToR2, getPrivateDownloadUrl } from '../config/r2Client.js';
+import { broadcastToChannel } from '../services/realtimeBroadcast.js';
+
+// Internal module state for tracking queried tables and anti-looping.
 import { exec } from 'child_process';
 import util from 'util';
 import { marked } from 'marked';
@@ -753,6 +754,11 @@ export const getMcpTools = () => [
 
   // ================= GROUP CHAT TOOLS (12) =================
   {
+    name: 'search_users_for_chat',
+    description: 'Search for users by name or email to get their MongoDB ObjectIds. Use this to find the senderUserId or recipient IDs for chat tools.',
+    inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Name or email to search for.' }, limit: { type: 'number', description: 'Max users to return. Default 10.' } }, required: ['query'] }
+  },
+  {
     name: 'list_group_chats',
     description: 'List all group chats. Returns group name, description, member count, and timestamps.',
     inputSchema: { type: 'object', properties: { orgId: { type: 'string', description: 'Optional. Filter by organization ID.' }, limit: { type: 'number', description: 'Max groups to return. Default 50.' } } }
@@ -1414,6 +1420,18 @@ export const handleToolCall = async (name, args, context = {}) => {
           return { content: [{ type: 'text', text: JSON.stringify(enriched, null, 2) }] };
         }
 
+        // 2.5 SEARCH USERS
+        if (name === 'search_users_for_chat') {
+          const User = (await import('../models/User.js')).default;
+          const users = await User.find({
+            $or: [
+              { name: { $regex: args.query, $options: 'i' } },
+              { email: { $regex: args.query, $options: 'i' } }
+            ]
+          }).select('name email role').limit(args.limit || 10).lean();
+          return { content: [{ type: 'text', text: JSON.stringify(users, null, 2) }] };
+        }
+
         // 3. SEND 1:1 MESSAGE
         if (name === 'send_chat_message') {
           const { data: msg, error } = await sb.from('chat_messages').insert([{
@@ -1428,6 +1446,20 @@ export const handleToolCall = async (name, args, context = {}) => {
             last_message_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }).eq('id', args.threadId);
+          
+          const User = (await import('../models/User.js')).default;
+          const senderUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
+
+          broadcastToChannel(`thread:${args.threadId}`, 'new_message', {
+            id: msg.id,
+            thread_id: args.threadId,
+            sender_id: args.senderUserId,
+            sender_name: senderUser?.name || 'Classgrid AI',
+            user_avatar: senderUser?.profilePicture || null,
+            message: args.content,
+            created_at: new Date().toISOString(),
+            attachments: []
+          });
           
           return { content: [{ type: 'text', text: `Message sent successfully. ID: ${msg.id}` }] };
         }
@@ -1600,7 +1632,23 @@ export const handleToolCall = async (name, args, context = {}) => {
             message: args.content
           }]).select().single();
           if (error) throw error;
+          
           await sb.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', thread.id);
+          
+          const User = (await import('../models/User.js')).default;
+          const senderUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
+
+          broadcastToChannel(`thread:${thread.id}`, 'new_message', {
+            id: msg.id,
+            thread_id: thread.id,
+            sender_id: args.senderUserId,
+            sender_name: senderUser?.name || 'Classgrid AI',
+            user_avatar: senderUser?.profilePicture || null,
+            message: args.content,
+            created_at: new Date().toISOString(),
+            attachments: []
+          });
+
           return { content: [{ type: 'text', text: `Message sent successfully. ID: ${msg.id}` }] };
         }
 
@@ -1648,6 +1696,21 @@ export const handleToolCall = async (name, args, context = {}) => {
           }]).select().single();
           if (error) throw error;
           await sb.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', thread.id);
+          
+          const User = (await import('../models/User.js')).default;
+          const senderUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
+
+          broadcastToChannel(`thread:${thread.id}`, 'new_message', {
+            id: msg.id,
+            thread_id: thread.id,
+            sender_id: args.senderUserId,
+            sender_name: senderUser?.name || 'Classgrid AI',
+            user_avatar: senderUser?.profilePicture || null,
+            message: args.content,
+            created_at: new Date().toISOString(),
+            attachments: []
+          });
+
           return { content: [{ type: 'text', text: `Announcement sent successfully. ID: ${msg.id}` }] };
         }
 

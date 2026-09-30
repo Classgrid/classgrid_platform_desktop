@@ -1000,9 +1000,6 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
             dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {
                 dynamicSystemPrompt += `\nTheir Email: ${body.userEmail}`;
-                if (req.user && req.user._id) {
-                    dynamicSystemPrompt += `\nTheir senderUserId (MongoDB ObjectId): ${req.user._id.toString()}`;
-                }
                 if (body.userEmail.endsWith("@classgrid.in")) {
                     dynamicSystemPrompt += ` (SUPER ADMIN / PLATFORM OWNER)`;
                 }
@@ -1031,6 +1028,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
         let pluginPrompt = '';
         let allowedConnectorNames = new Set([
             'unified_db_query',
+            'search_users_for_chat',
             'run_code',
             'read_sandbox_file',
             'execute_terminal_command',
