@@ -17,7 +17,9 @@ import {
   PieController,
   DoughnutController,
   RadarController,
-  PolarAreaController
+  PolarAreaController,
+  ScatterController,
+  BubbleController
 } from "chart.js";
 import { Chart } from "react-chartjs-2";
 import { useTheme } from "next-themes";
@@ -39,7 +41,9 @@ ChartJS.register(
   PieController,
   DoughnutController,
   RadarController,
-  PolarAreaController
+  PolarAreaController,
+  ScatterController,
+  BubbleController
 );
 
 interface AiChartRendererProps {
