@@ -161,7 +161,7 @@ export function SharedSettingsPage() {
 
       {profileData?.role !== "org_admin" && (
         <>
-          <SettingsRoleRequestCard />
+          {profileData?.role !== "super_admin" && <SettingsRoleRequestCard />}
           <SettingsChangePasswordCard />
           {profileData?.role !== "super_admin" && <SettingsDeleteAccountCard />}
         </>
