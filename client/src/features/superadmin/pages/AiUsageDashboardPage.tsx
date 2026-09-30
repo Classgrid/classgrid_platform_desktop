@@ -217,9 +217,9 @@ export function AiUsageDashboardPage() {
     if (globalLoading) return <Skeleton className="h-96 w-full mb-8" />;
     if (!globalStats) return null;
 
-    const { totalCreditsSpent, totalRevenue, creditsPurchasedThisMonth, totalChats, usageTrend, models, features } = globalStats;
+    const { totalCreditsSpent, totalRevenue, creditsPurchasedThisMonth, totalChats, usageTrend, modelsBreakdown } = globalStats;
     // Prepare pie chart data
-    const modelPieData = models?.map((m: any, i: number) => ({ 
+    const modelPieData = modelsBreakdown?.map((m: any, i: number) => ({ 
         name: m.name.split('/').pop(), 
         value: m.requests || 0,
         color: COLORS[i % COLORS.length]
