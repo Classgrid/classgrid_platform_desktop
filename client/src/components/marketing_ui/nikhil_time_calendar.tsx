@@ -206,10 +206,7 @@ export function NikhilTimeCalendar({
   ];
   const monthOptions = monthNames.map((m, i) => ({ label: m, value: i.toString() }));
 
-  const yearOptions = Array.from({ length: 100 }, (_, i) => {
-    const v = (currentYear + i).toString();
-    return { label: v, value: v };
-  });
+  const yearOptions = Array.from({ length: 150 }, (_, i) => { const v = (currentYear - 100 + i).toString(); return { label: v, value: v }; });
 
   const ampmOptions = [
     { label: "AM", value: "AM" },
@@ -422,3 +419,4 @@ export function NikhilTimeCalendar({
     </Popover>
   );
 }
+
