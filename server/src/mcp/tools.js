@@ -719,6 +719,28 @@ export const getMcpTools = () => [
     inputSchema: { type: 'object', properties: { talkId: { type: 'string', description: 'The MongoDB ObjectId of the inquiry.' } }, required: ['talkId'] }
   },
 
+  // ================= DIRECT CHAT TOOLS (3) =================
+  {
+    name: 'list_chat_threads',
+    description: 'List 1:1 direct message threads for the current user.',
+    inputSchema: { type: 'object', properties: {}, required: [] }
+  },
+  {
+    name: 'read_chat_messages',
+    description: 'Read a direct conversation (1:1 chat).',
+    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, limit: { type: 'number', description: 'Max messages to return. Default 50.' } }, required: ['threadId'] }
+  },
+  {
+    name: 'send_chat_message',
+    description: 'Send a direct message in a 1:1 chat.',
+    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, content: { type: 'string', description: 'The message text content.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender user.' } }, required: ['threadId', 'content', 'senderUserId'] }
+  },
+  {
+    name: 'get_chat_attachment_url',
+    description: 'Get the R2 CDN URL of a file/attachment uploaded in a 1:1 direct chat message.',
+    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, messageId: { type: 'string', description: 'The Supabase UUID of the message containing the attachment.' } }, required: ['threadId', 'messageId'] }
+  },
+
   // ================= GROUP CHAT TOOLS (12) =================
   {
     name: 'list_group_chats',
@@ -1148,6 +1170,9 @@ export const handleToolCall = async (name, args, context = {}) => {
           const ticket = await SupportTicket.findOne({ _id: targetId, ...baseQuery });
           if (!ticket) return { content: [{ type: 'text', text: 'Error: Ticket not found.' }], isError: true };
           if (args.status) {
+            if (args.status === 'reopened' && ticket.status === 'closed') {
+              return { content: [{ type: 'text', text: 'Safety Policy Violation: Closed tickets cannot be reopened. Only resolved tickets can be reopened.' }], isError: true };
+            }
             ticket.events.push({ type: 'statusChanged', label: `Status changed to ${args.status}`, from: ticket.status, to: args.status, actorName: 'AI Admin', actorRole: 'super_admin', createdAt: new Date() });
             ticket.status = args.status;
           }
@@ -1174,6 +1199,9 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (name === 'reopen_support_ticket' || name === 'reopen_classgrid_talk') {
           const ticket = await SupportTicket.findOne({ _id: targetId, ...baseQuery });
           if (!ticket) return { content: [{ type: 'text', text: 'Error: Ticket not found.' }], isError: true };
+          if (ticket.status === 'closed') {
+            return { content: [{ type: 'text', text: 'Safety Policy Violation: Closed tickets cannot be reopened. Only resolved tickets can be reopened.' }], isError: true };
+          }
           ticket.events.push({ type: 'reopened', label: 'Ticket reopened', from: ticket.status, to: 'reopened', actorName: 'AI Admin', actorRole: 'super_admin', createdAt: new Date() });
           ticket.status = 'reopened';
           ticket.resolvedAt = null;
@@ -1287,6 +1315,111 @@ export const handleToolCall = async (name, args, context = {}) => {
       }
     }
 
+    // ================= DIRECT CHAT HANDLERS (4 tools - Supabase) =================
+    const DIRECT_CHAT_TOOL_NAMES = ['list_chat_threads', 'read_chat_messages', 'send_chat_message', 'get_chat_attachment_url'];
+    
+    if (DIRECT_CHAT_TOOL_NAMES.includes(name)) {
+      try {
+        const sb = getChatSb();
+        const User = (await import('../models/User.js')).default;
+        const userId = context.userId;
+        if (!userId) return { content: [{ type: 'text', text: 'Error: User context is required.' }], isError: true };
+
+        // 1. LIST 1:1 CHATS
+        if (name === 'list_chat_threads') {
+          const { data: memberships, error: memErr } = await sb.from('chat_thread_members').select('thread_id').eq('user_id', userId);
+          if (memErr) throw memErr;
+          const threadIds = (memberships || []).map(m => m.thread_id);
+          if (threadIds.length === 0) return { content: [{ type: 'text', text: '[]' }] };
+
+          const { data: threads, error: thErr } = await sb.from('chat_threads')
+            .select('id, type, updated_at, last_message, last_message_at, group_id')
+            .in('id', threadIds)
+            .eq('type', 'direct');
+          if (thErr) throw thErr;
+          
+          // Get the other user for each thread to set the "name" of the thread
+          const threadList = await Promise.all((threads || []).map(async (t) => {
+            const { data: otherMembers } = await sb.from('chat_thread_members')
+              .select('user_id')
+              .eq('thread_id', t.id)
+              .neq('user_id', userId)
+              .limit(1);
+            let otherUserName = 'Unknown User';
+            let otherUserAvatar = null;
+            if (otherMembers && otherMembers.length > 0) {
+              const otherUser = await User.findById(otherMembers[0].user_id).select('name profilePicture').lean();
+              if (otherUser) {
+                otherUserName = otherUser.name;
+                otherUserAvatar = otherUser.profilePicture;
+              }
+            }
+            return {
+              ...t,
+              name: otherUserName,
+              avatar_url: otherUserAvatar,
+              last_message: t.last_message ? t.last_message.replace(/<[^>]*>?/gm, ' ').trim() : null
+            };
+          }));
+          return { content: [{ type: 'text', text: JSON.stringify(threadList, null, 2) }] };
+        }
+
+        // 2. READ 1:1 MESSAGES
+        if (name === 'read_chat_messages') {
+          const { data: messages, error } = await sb.from('chat_messages')
+            .select('*')
+            .eq('thread_id', args.threadId)
+            .order('created_at', { ascending: false })
+            .limit(args.limit || 50);
+          if (error) throw error;
+
+          const senderIds = [...new Set((messages || []).map(m => m.sender_id).filter(Boolean))];
+          let userMap = {};
+          if (senderIds.length > 0) {
+            const users = await User.find({ _id: { $in: senderIds } }).select('name email').lean();
+            users.forEach(u => { userMap[u._id.toString()] = u; });
+          }
+          const enriched = (messages || []).map(m => ({
+            ...m,
+            body: m.body ? m.body.replace(/<[^>]*>?/gm, ' ').trim() : m.body,
+            senderName: userMap[m.sender_id]?.name || 'Unknown',
+            senderEmail: userMap[m.sender_id]?.email || ''
+          }));
+          return { content: [{ type: 'text', text: JSON.stringify(enriched, null, 2) }] };
+        }
+
+        // 3. SEND 1:1 MESSAGE
+        if (name === 'send_chat_message') {
+          const { data: msg, error } = await sb.from('chat_messages').insert([{
+            thread_id: args.threadId,
+            sender_id: args.senderUserId,
+            body: args.content,
+            type: 'text'
+          }]).select().single();
+          if (error) throw error;
+          
+          await sb.from('chat_threads').update({ 
+            last_message: args.content, 
+            last_message_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }).eq('id', args.threadId);
+          
+          return { content: [{ type: 'text', text: `Message sent successfully. ID: ${msg.id}` }] };
+        }
+
+        // 4. GET 1:1 ATTACHMENT
+        if (name === 'get_chat_attachment_url') {
+          const { data: msg, error } = await sb.from('chat_messages').select('*').eq('id', args.messageId).eq('thread_id', args.threadId).single();
+          if (error || !msg) return { content: [{ type: 'text', text: 'Error: Message not found.' }], isError: true };
+          const attachmentUrl = msg.file_url || msg.attachment_url || null;
+          return { content: [{ type: 'text', text: attachmentUrl ? `Attachment URL: ${attachmentUrl}` : 'No attachment found on this message.' }] };
+        }
+
+      } catch (e) {
+        return { content: [{ type: 'text', text: `Error in direct chat tool: ${e.message}` }], isError: true };
+      }
+    }
+
     // ================= GROUP CHAT HANDLERS (12 tools — Supabase) =================
     const GROUP_CHAT_TOOL_NAMES = [
       'list_group_chats', 'read_group_chat_details', 'read_group_chat_messages',
@@ -1346,7 +1479,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           const enriched = (groups || []).map(g => ({
             ...g,
             threadId: threadMap[g.id]?.id || null,
-            last_message: threadMap[g.id]?.last_message || null,
+            last_message: threadMap[g.id]?.last_message ? threadMap[g.id].last_message.replace(/<[^>]*>?/gm, ' ').trim() : null,
             last_message_at: threadMap[g.id]?.last_message_at || null,
           }));
 
@@ -1379,7 +1512,12 @@ export const handleToolCall = async (name, args, context = {}) => {
             const users = await User.find({ _id: { $in: senderIds } }).select('name email').lean();
             users.forEach(u => { userMap[u._id.toString()] = u; });
           }
-          const enriched = (messages || []).map(m => ({ ...m, senderName: userMap[m.sender_id]?.name || 'Unknown', senderEmail: userMap[m.sender_id]?.email || '' }));
+          const enriched = (messages || []).map(m => ({ 
+            ...m, 
+            body: m.body ? m.body.replace(/<[^>]*>?/gm, ' ').trim() : m.body,
+            senderName: userMap[m.sender_id]?.name || 'Unknown', 
+            senderEmail: userMap[m.sender_id]?.email || '' 
+          }));
           return { content: [{ type: 'text', text: JSON.stringify(enriched, null, 2) }] };
         }
 
