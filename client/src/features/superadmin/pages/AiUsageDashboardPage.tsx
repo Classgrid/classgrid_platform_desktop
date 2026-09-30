@@ -6,6 +6,7 @@ import { SuperadminFilterBar } from "@/features/superadmin/components/Superadmin
 import { Search, Filter, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/marketing_ui/dialog";
 import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
 import { 
   Building, 
@@ -25,7 +26,8 @@ import {
   useAiOrgUsers,
   useAiUserDetail,
   useResetOrgUsage,
-  useBlockAiOrg
+  useBlockAiOrg,
+  useUpdateOrgAiLimits
 } from "@/features/superadmin/queries/useAiUsage";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
