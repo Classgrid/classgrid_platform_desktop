@@ -235,16 +235,19 @@ export function AiUsageDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Daily Usage Trend (Chats)</CardTitle>
-              <Select value={chatsTime} onValueChange={setChatsTime as any}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Daily" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-4">
+                <NikhilTimeCalendar date={dateFilter} setDate={setDateFilter} placeholder="Select Date" />
+                <Select value={chatsTime} onValueChange={setChatsTime as any}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Daily" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
@@ -296,6 +299,7 @@ export function AiUsageDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Tokens Consumed (Input vs Output)</CardTitle>
+              <NikhilTimeCalendar date={dateFilter} setDate={setDateFilter} placeholder="Select Date" />
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
@@ -329,6 +333,7 @@ export function AiUsageDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Cost Spend Trend (INR Revenue)</CardTitle>
+              <NikhilTimeCalendar date={dateFilter} setDate={setDateFilter} placeholder="Select Date" />
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
