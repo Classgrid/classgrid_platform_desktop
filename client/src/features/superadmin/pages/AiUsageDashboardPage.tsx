@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
-import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
+import { SuperadminFilterBar } from "@/features/superadmin/components/SuperadminFilterBar";
 import { Search, Filter, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
@@ -26,11 +26,11 @@ import {
   useAiUserDetail,
   useResetOrgUsage,
   useBlockAiOrg
-} from "../queries/useAiUsage";
+} from "@/features/superadmin/queries/useAiUsage";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { formatNumber } from "@/lib/utils";
-import { AiUserDetailPanel } from "../components/ai-usage/AiUserDetailPanel";
+import { AiUserDetailPanel } from "@/features/superadmin/components/ai-usage/AiUserDetailPanel";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Legend, Pie, Cell } from "recharts";
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
