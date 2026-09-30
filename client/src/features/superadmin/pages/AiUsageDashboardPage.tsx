@@ -126,11 +126,18 @@ export function AiUsageDashboardPage() {
          key = date.toLocaleString('default', { month: 'short', year: 'numeric' });
       }
       if (!aggregated[key]) {
-         aggregated[key] = { date: key, requests: 0, activeUsers: 0, activeOrgs: 0 };
+         aggregated[key] = { date: key, requests: 0, activeUsers: 0, activeOrgs: 0, activeUsersList: [], activeOrgsList: [] };
       }
       aggregated[key].requests += d.requests || 0;
-      aggregated[key].activeUsers += d.activeUsers || 0; 
-      aggregated[key].activeOrgs += d.activeOrgs || 0;
+      
+      const newUsersList = [...aggregated[key].activeUsersList, ...(d.activeUsersList || [])];
+      const newOrgsList = [...aggregated[key].activeOrgsList, ...(d.activeOrgsList || [])];
+      
+      aggregated[key].activeUsersList = newUsersList;
+      aggregated[key].activeOrgsList = newOrgsList;
+      
+      aggregated[key].activeUsers = new Set(newUsersList).size;
+      aggregated[key].activeOrgs = new Set(newOrgsList).size;
     });
     return Object.values(aggregated);
   };
@@ -453,7 +460,40 @@ export function AiUsageDashboardPage() {
                       }}
                     />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
-                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<UniversalTooltip />} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const ids = [...new Set(data.activeOrgsList || [])];
+                            
+                            return (
+                              <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50 min-w-[220px]">
+                                <span className="font-medium text-foreground">{label}</span>
+                                <div className="text-xs text-muted-foreground mb-1">Active Organizations: {data.activeOrgs}</div>
+                                {ids.length === 0 ? <div className="text-xs text-muted-foreground italic">No organizations active</div> : null}
+                                <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
+                                    {ids.slice(0, 10).map((id: any) => {
+                                       const org = orgsBreakdown?.find((o: any) => o.orgId === id);
+                                       if (!org) return null;
+                                       return (
+                                         <div key={id} className="flex items-center space-x-2">
+                                            {org.logo ? (
+                                                <img src={org.logo} alt={org.name} className="h-5 w-5 rounded object-cover" />
+                                            ) : (
+                                                <div className="h-5 w-5 rounded bg-primary/10 flex items-center justify-center text-primary text-[10px] font-semibold">
+                                                    {org.name?.substring(0, 2).toUpperCase()}
+                                                </div>
+                                            )}
+                                            <span className="truncate max-w-[140px] font-medium text-xs">{org.name}</span>
+                                         </div>
+                                       );
+                                    })}
+                                    {ids.length > 10 && <div className="text-xs text-muted-foreground italic">+{ids.length - 10} more...</div>}
+                                </div>
+                              </div>
+                            );
+                        }
+                        return null;
+                    }} />
                     <Bar dataKey="activeOrgs" name="Active Organizations" fill="#2563eb" radius={[2, 2, 0, 0]} maxBarSize={40} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -494,7 +534,38 @@ export function AiUsageDashboardPage() {
                       }}
                     />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
-                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<UniversalTooltip />} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const ids = [...new Set(data.activeUsersList || [])];
+                            
+                            return (
+                              <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50 min-w-[220px]">
+                                <span className="font-medium text-foreground">{label}</span>
+                                <div className="text-xs text-muted-foreground mb-1">Active Users: {data.activeUsers}</div>
+                                {ids.length === 0 ? <div className="text-xs text-muted-foreground italic">No users active</div> : null}
+                                <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
+                                    {ids.slice(0, 10).map((id: any) => {
+                                       const uData = usersBreakdown?.find((u: any) => u.userId === id || u._id === id || u.name === id) || { name: 'Unknown User' };
+                                       
+                                       return (
+                                         <div key={id} className="flex items-center space-x-2">
+                                            <div className="h-5 w-5 rounded bg-primary/10 flex items-center justify-center text-primary text-[10px] font-semibold">
+                                                {uData.name?.substring(0, 2).toUpperCase()}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="truncate max-w-[140px] font-medium text-xs leading-tight">{uData.name}</span>
+                                            </div>
+                                         </div>
+                                       );
+                                    })}
+                                    {ids.length > 10 && <div className="text-xs text-muted-foreground italic">+{ids.length - 10} more...</div>}
+                                </div>
+                              </div>
+                            );
+                        }
+                        return null;
+                    }} />
                     <Bar dataKey="activeUsers" name="Active Users" fill="#8b5cf6" radius={[2, 2, 0, 0]} maxBarSize={40} />
                   </BarChart>
                 </ResponsiveContainer>

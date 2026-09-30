@@ -120,7 +120,9 @@ export const getGlobalStats = async (req, res) => {
                 completionTokens: d.completionTokens,
                 requests: d.requests,
                 activeUsers: d.uniqueUsers.length,
-                activeOrgs: d.uniqueOrgs.length
+                activeOrgs: d.uniqueOrgs.length,
+                activeUsersList: d.uniqueUsers,
+                activeOrgsList: d.uniqueOrgs
             };
         });
 
@@ -152,6 +154,8 @@ export const getGlobalStats = async (req, res) => {
                 requests: t.requests || 0,
                 activeUsers: t.activeUsers || 0,
                 activeOrgs: t.activeOrgs || 0,
+                activeUsersList: t.activeUsersList || [],
+                activeOrgsList: t.activeOrgsList || [],
                 revenue: revenueMap[d] || 0
             };
         });
