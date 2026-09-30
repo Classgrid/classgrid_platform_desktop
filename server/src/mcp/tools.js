@@ -1384,6 +1384,7 @@ export const handleToolCall = async (name, args, context = {}) => {
             body: m.body ? m.body.replace(/<[^>]*>?/gm, ' ').trim() : m.body,
             senderName: userMap[m.sender_id]?.name || 'Unknown',
             senderEmail: userMap[m.sender_id]?.email || '',
+            is_sent_by_current_user: m.sender_id === userId,
             attachment_url: m.file_url || m.attachment_url || null,
             ai_hint: (m.file_url || m.attachment_url) ? `This message contains an attachment. Use get_chat_attachment_url with messageId=${m.id} to retrieve it.` : null
           }));
@@ -1519,6 +1520,7 @@ export const handleToolCall = async (name, args, context = {}) => {
             body: m.body ? m.body.replace(/<[^>]*>?/gm, ' ').trim() : m.body,
             senderName: userMap[m.sender_id]?.name || 'Unknown',
             senderEmail: userMap[m.sender_id]?.email || '',
+            is_sent_by_current_user: m.sender_id === context.userId,
             attachment_url: m.file_url || m.attachment_url || null,
             ai_hint: (m.file_url || m.attachment_url) ? `This message contains an attachment. Use get_group_chat_attachment_url with messageId=${m.id} to retrieve it.` : null
           }));
