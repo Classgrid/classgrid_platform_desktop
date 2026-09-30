@@ -63,6 +63,7 @@ import { UserBlueMark } from "@/components/marketing_ui/user-blue-mark";
 import { GroupBlueMark } from "@/components/marketing_ui/group-blue-mark";
 import { toast } from "sonner";
 import { ContextualProfile } from "../components/ContextualProfile";
+import { SuperAdminProfileView } from "../components/SuperAdminProfileView";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 import { useOnlineUsers } from "@/features/chat/context/PresenceContext";
 import { formatDistanceToNow } from "date-fns";
@@ -746,14 +747,18 @@ export function SharedProfilePage({ publicUser, groupData, mode = "user", onClos
             {/* Dynamic Contextual Profile Data - Only shown to the user themselves */}
             {!isReadOnly && !isGroup && (
               <div className="mt-8 mb-6">
-                <ContextualProfile 
-                  targetRole={form.role || "student"} 
-                  viewerRole={currentUser?.role || "student"} 
-                  orgType={currentUser?.organization?.type || "university"} 
-                  structureType={currentUser?.organization?.structure || "standalone"} 
-                  isSelfView={true} 
-                  profileData={profileData?.user || {}}
-                />
+                {(form.role === "super_admin" || form.role === "Super Admin") ? (
+                  <SuperAdminProfileView profileData={profileData?.user || {}} />
+                ) : (
+                  <ContextualProfile 
+                    targetRole={form.role || "student"} 
+                    viewerRole={currentUser?.role || "student"} 
+                    orgType={currentUser?.organization?.type || "university"} 
+                    structureType={currentUser?.organization?.structure || "standalone"} 
+                    isSelfView={true} 
+                    profileData={profileData?.user || {}}
+                  />
+                )}
               </div>
             )}
 
@@ -821,3 +826,5 @@ export function SharedProfilePage({ publicUser, groupData, mode = "user", onClos
 
   return containerContent;
 }
+
+
