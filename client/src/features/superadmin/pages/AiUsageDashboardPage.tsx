@@ -3,7 +3,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { SuperadminFilterBar } from "@/features/superadmin/components/SuperadminFilterBar";
-import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/marketing_ui/popover";
+import { Calendar as DayPickerCalendar } from "@/components/marketing_ui/nikhil_calendar";
 import { Search, Filter, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
@@ -236,7 +237,17 @@ export function AiUsageDashboardPage() {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Daily Usage Trend (Chats)</CardTitle>
               <div className="flex items-center gap-4">
-                <NikhilTimeCalendar date={dateFilter} setDate={setDateFilter} placeholder="Select Date" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="h-9 w-[160px] justify-start text-left font-normal border-white/20 hover:bg-white/5">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {dateFilter ? dateFilter.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : <span>Select Date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-50" align="start">
+                    <DayPickerCalendar mode="single" selected={dateFilter} onSelect={(date) => date && setDateFilter(date)} />
+                  </PopoverContent>
+                </Popover>
                 <Select value={chatsTime} onValueChange={setChatsTime as any}>
                   <SelectTrigger className="w-[120px]">
                     <SelectValue placeholder="Daily" />
@@ -299,7 +310,17 @@ export function AiUsageDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Tokens Consumed (Input vs Output)</CardTitle>
-              <NikhilTimeCalendar date={dateFilter} setDate={setDateFilter} placeholder="Select Date" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="h-9 w-[160px] justify-start text-left font-normal border-white/20 hover:bg-white/5">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {dateFilter ? dateFilter.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : <span>Select Date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-50" align="start">
+                  <DayPickerCalendar mode="single" selected={dateFilter} onSelect={(date) => date && setDateFilter(date)} />
+                </PopoverContent>
+              </Popover>
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
@@ -333,7 +354,17 @@ export function AiUsageDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Cost Spend Trend (INR Revenue)</CardTitle>
-              <NikhilTimeCalendar date={dateFilter} setDate={setDateFilter} placeholder="Select Date" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="h-9 w-[160px] justify-start text-left font-normal border-white/20 hover:bg-white/5">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {dateFilter ? dateFilter.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : <span>Select Date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-50" align="start">
+                  <DayPickerCalendar mode="single" selected={dateFilter} onSelect={(date) => date && setDateFilter(date)} />
+                </PopoverContent>
+              </Popover>
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
