@@ -356,7 +356,7 @@ export function AiUsageDashboardPage() {
                           return null;
                         }}
                     />
-                    <Bar dataKey="requests" name="AI Requests" fill="#f59e0b" radius={[2, 2, 0, 0]} maxBarSize={40} />
+                    <Bar dataKey="requests" name="AI Requests" fill="#f59e0b" radius={[2, 2, 0, 0]} maxBarSize={12} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -387,8 +387,8 @@ export function AiUsageDashboardPage() {
                     />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
                     <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<UniversalTooltip />} />
-                    <Bar dataKey="promptTokens" name="Input Tokens" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} maxBarSize={40} />
-                    <Bar dataKey="completionTokens" name="Output Tokens" stackId="a" fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={40} />
+                    <Bar dataKey="promptTokens" name="Input Tokens" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} maxBarSize={12} />
+                    <Bar dataKey="completionTokens" name="Output Tokens" stackId="a" fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={12} />
                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -420,7 +420,7 @@ export function AiUsageDashboardPage() {
                     />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
                     <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<UniversalTooltip />} />
-                    <Bar dataKey="revenue" name="Cost (INR)" fill="#10b981" radius={[2, 2, 0, 0]} maxBarSize={40} />
+                    <Bar dataKey="revenue" name="Cost (INR)" fill="#10b981" radius={[2, 2, 0, 0]} maxBarSize={12} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -494,7 +494,7 @@ export function AiUsageDashboardPage() {
                         }
                         return null;
                     }} />
-                    <Bar dataKey="activeOrgs" name="Active Organizations" fill="#2563eb" radius={[2, 2, 0, 0]} maxBarSize={40} />
+                    <Bar dataKey="activeOrgs" name="Active Organizations" fill="#2563eb" radius={[2, 2, 0, 0]} maxBarSize={12} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -566,7 +566,7 @@ export function AiUsageDashboardPage() {
                         }
                         return null;
                     }} />
-                    <Bar dataKey="activeUsers" name="Active Users" fill="#8b5cf6" radius={[2, 2, 0, 0]} maxBarSize={40} />
+                    <Bar dataKey="activeUsers" name="Active Users" fill="#8b5cf6" radius={[2, 2, 0, 0]} maxBarSize={12} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
