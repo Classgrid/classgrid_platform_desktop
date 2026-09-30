@@ -76,10 +76,7 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold flex items-center gap-2 text-foreground">
-          <User className="w-6 h-6 text-primary" /> Profile Settings
-        </h2>
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-3">
           {isEditing ? (
             <>
