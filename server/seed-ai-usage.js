@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import AiUsageLog from "./src/models/AiUsageLog.js";
 import Organization from "./src/models/Organization.js";
+import User from "./src/models/User.js";
 
 dotenv.config();
 
@@ -16,6 +17,12 @@ mongoose.connect(process.env.MONGO_URI)
         const orgIds = orgs.map(o => o._id);
         if (orgIds.length === 0) {
             orgIds.push(new mongoose.Types.ObjectId());
+        }
+
+        const users = await User.find({}).limit(20);
+        const userIds = users.map(u => u._id);
+        if (userIds.length === 0) {
+            userIds.push(new mongoose.Types.ObjectId());
         }
 
         const models = [
@@ -44,7 +51,7 @@ mongoose.connect(process.env.MONGO_URI)
                 createdAt.setMinutes(Math.floor(Math.random() * 60));
                 
                 logs.push({
-                    userId: new mongoose.Types.ObjectId(), // users can be random for now
+                    userId: userIds[Math.floor(Math.random() * userIds.length)],
                     organization_id: orgIds[Math.floor(Math.random() * orgIds.length)], // Use real orgs!
                     provider: "cloudflare",
                     model: model,

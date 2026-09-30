@@ -14,7 +14,7 @@ export const getGlobalStats = async (req, res) => {
         const currentDate = new Date();
         let targetMonth = month ? parseInt(month) : currentDate.getMonth() + 1;
         let targetYear = year ? parseInt(year) : currentDate.getFullYear();
-        
+
         const startDate = new Date(targetYear, targetMonth - 1, 1);
         const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59, 999);
 
@@ -68,15 +68,15 @@ export const getGlobalStats = async (req, res) => {
         // If orgId is passed, we fetch users first
         let totalChats = 0;
         if (orgId && orgId !== "all" && orgId !== "classgrid") {
-             const users = await User.find(userMatch).select("email").lean();
-             const emails = users.map(u => u.email).filter(e => e);
-             if (emails.length > 0) {
-                 const { count, error } = await supabase
+            const users = await User.find(userMatch).select("email").lean();
+            const emails = users.map(u => u.email).filter(e => e);
+            if (emails.length > 0) {
+                const { count, error } = await supabase
                     .from('ai_chat_sessions')
                     .select('*', { count: 'exact', head: true })
                     .in('user_email', emails);
-                 if (!error) totalChats = count || 0;
-             }
+                if (!error) totalChats = count || 0;
+            }
         } else {
             const { count, error } = await chatQuery;
             if (!error) totalChats = count || 0;
@@ -111,7 +111,7 @@ export const getGlobalStats = async (req, res) => {
                 }
             }
         ]);
-        
+
         const trendMap = {};
         dailyUsage.forEach(d => {
             trendMap[d._id] = {
@@ -136,7 +136,7 @@ export const getGlobalStats = async (req, res) => {
                 }
             }
         ]);
-        
+
         const revenueMap = {};
         dailyRevenue.forEach(d => {
             revenueMap[d._id] = d.totalRevenue;
@@ -173,7 +173,7 @@ export const getGlobalStats = async (req, res) => {
             { $group: { _id: "$model", requests: { $sum: 1 }, tokens: { $sum: "$totalTokens" } } }
         ]);
         let modelsBreakdown = modelData.map(m => ({ name: m._id || "unknown", requests: m.requests, value: m.tokens }));
-        
+
         if (modelsBreakdown.length === 0) {
             modelsBreakdown = [
                 { name: "@cf/deepseek-ai/deepseek-v4-pro-0813", requests: 0, value: 0 },
@@ -215,9 +215,9 @@ export const getGlobalStats = async (req, res) => {
             { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
             { $lookup: { from: "organizations", localField: "_id.orgId", foreignField: "_id", as: "org" } },
             { $unwind: { path: "$org", preserveNullAndEmptyArrays: true } },
-            { $project: { name: { $ifNull: ["$user.name", "$user.email"] }, fallbackName: "Unknown User", orgName: { $cond: [{ $eq: ["$_id.orgId", null] }, "Classgrid Platform", { $ifNull: ["$org.name", "Unknown Org"] }] }, requests: 1, _id: 0 } }
+            { $project: { name: { $ifNull: ["$user.name", "$user.email"] }, email: "$user.email", profilePicture: "$user.profilePicture", fallbackName: "Unknown User", orgName: { $cond: [{ $eq: ["$_id.orgId", null] }, "Classgrid Platform", { $ifNull: ["$org.name", "Unknown Org"] }] }, userId: "$_id.userId", requests: 1, _id: 0 } }
         ]);
-        const usersBreakdown = userData.map(u => ({ name: u.name || u.fallbackName, orgName: u.orgName, value: u.requests, requests: u.requests }));
+        const usersBreakdown = userData.map(u => ({ name: u.name || u.fallbackName, email: u.email, profilePicture: u.profilePicture, orgName: u.orgName, userId: u.userId, value: u.requests, requests: u.requests }));
 
         res.status(200).json({
             success: true,
@@ -227,7 +227,7 @@ export const getGlobalStats = async (req, res) => {
                 creditsPurchasedThisMonth,
                 totalChats: totalChats,
                 usageTrend,
-                models: modelsBreakdown, 
+                models: modelsBreakdown,
                 features: featuresBreakdown,
                 orgsBreakdown,
                 usersBreakdown,

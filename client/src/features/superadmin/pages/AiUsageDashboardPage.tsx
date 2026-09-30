@@ -233,7 +233,7 @@ export function AiUsageDashboardPage() {
     // Prepare pie chart data
     const modelPieData = models?.map((m: any, i: number) => ({ 
         name: m.name.split('/').pop(), 
-        value: m.requests || 0,
+        value: m.value || m.requests || 0,
         color: COLORS[i % COLORS.length]
     })) || [];
 
@@ -548,10 +548,14 @@ export function AiUsageDashboardPage() {
                                 <div className="text-xs text-muted-foreground mb-1">Active Users: {data.activeUsers}</div>
                                 {ids.length === 0 ? <div className="text-xs text-muted-foreground italic">No users active</div> : null}
                                 <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
-                                    {ids.slice(0, 10).map((id: any) => {
-                                       const uData = usersBreakdown?.find((u: any) => u.userId === id || u._id === id || u.name === id) || { name: 'Unknown User' };
-                                       
-                                       return (
+                                    {ids
+                                        .map((id: any) => ({
+                                            id,
+                                            uData: usersBreakdown?.find((u: any) => u.userId === id || u._id === id || u.name === id) || { name: 'Unknown User', value: 0 }
+                                        }))
+                                        .sort((a: any, b: any) => (b.uData.value || 0) - (a.uData.value || 0))
+                                        .slice(0, 3)
+                                        .map(({ id, uData }: any) => (
                                          <div key={id} className="flex flex-col space-y-1 mb-2 border-b border-border/50 pb-2 last:border-0 last:pb-0">
                                             <div className="flex items-center space-x-2">
                                                 {uData.profilePicture ? (
@@ -571,9 +575,8 @@ export function AiUsageDashboardPage() {
                                                 <span className="text-[10px] text-muted-foreground font-mono">User ID: {id}</span>
                                             </div>
                                          </div>
-                                       );
-                                    })}
-                                    {ids.length > 10 && <div className="text-xs text-muted-foreground italic">+{ids.length - 10} more...</div>}
+                                    ))}
+                                    {ids.length > 3 && <div className="text-xs text-muted-foreground italic">+{ids.length - 3} more...</div>}
                                 </div>
                               </div>
                             );
