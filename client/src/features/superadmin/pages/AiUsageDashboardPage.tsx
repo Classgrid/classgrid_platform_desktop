@@ -155,75 +155,7 @@ export function AiUsageDashboardPage() {
 
   
 
-  const renderBreadcrumbs = () => {
-    return (
-      <div className="flex items-center text-sm text-muted-foreground mb-6 bg-muted/30 p-2 rounded-lg w-fit border border-border/50">
-        <button 
-          onClick={() => handleNavigateUp("root")}
-          className={`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md ${!path.orgId ? "bg-background shadow-sm text-foreground" : ""}`}
-        >
-          <Activity className="h-4 w-4 mr-1.5" /> AI Usage & Credits
-        </button>
-        
-        {path.orgId && (
-          <>
-            <ChevronRight className="h-4 w-4 mx-1 opacity-50" />
-            <button 
-              onClick={() => handleNavigateUp("org")}
-              className={`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md ${!path.role ? "bg-background shadow-sm text-foreground" : ""}`}
-            >
-              <Building className="h-4 w-4 mr-1.5" /> {path.orgName}
-            </button>
-          </>
-        )}
 
-        {path.role && (
-          <>
-            <ChevronRight className="h-4 w-4 mx-1 opacity-50" />
-            <button 
-              onClick={() => handleNavigateUp("role")}
-              className={`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md ${!path.userId ? "bg-background shadow-sm text-foreground" : ""}`}
-            >
-              <Shield className="h-4 w-4 mr-1.5" /> {path.role}
-            </button>
-          </>
-        )}
-
-        {path.userId && (
-          <>
-            <ChevronRight className="h-4 w-4 mx-1 opacity-50" />
-            <div className="flex items-center bg-background shadow-sm text-foreground px-2 py-1 rounded-md">
-              <UserIcon className="h-4 w-4 mr-1.5" /> {path.userName}
-            </div>
-          </>
-        )}
-      
-      {/* Organization Level Action Dialogs */}
-      <DangerConfirmDialog
-        open={showOrgReset}
-        onOpenChange={setShowOrgReset}
-        title="Reset Organization Limit?"
-        description="This will reset the total usage counter for this organization back to 0."
-        onConfirm={() => {
-            resetOrgMutation.mutate(path.orgId || "");
-            setShowOrgReset(false);
-        }}
-        confirmText="Reset Limit"
-      />
-      <DangerConfirmDialog
-        open={showOrgBlock}
-        onOpenChange={setShowOrgBlock}
-        title={orgDetail?.isBlocked ? "Unblock Organization?" : "Block Organization?"}
-        description={orgDetail?.isBlocked ? "Unblocking will allow all users in this org to use AI again." : "Blocking will immediately prevent all users in this org from using AI features."}
-        onConfirm={() => {
-            blockOrgMutation.mutate({ orgId: path.orgId || "", blocked: !orgDetail?.isBlocked });
-            setShowOrgBlock(false);
-        }}
-        confirmText={orgDetail?.isBlocked ? "Unblock" : "Block"}
-      />
-    </div>
-  );
-};
 
   const renderGlobalStats = () => {
     if (globalLoading) return <Skeleton className="h-96 w-full mb-8" />;
@@ -840,7 +772,14 @@ export function AiUsageDashboardPage() {
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
-      {renderBreadcrumbs()}
+      <PageBreadcrumbs
+        items={[
+          { label: "AI Usage & Credits", onClick: () => handleNavigateUp("root") },
+          ...(path.orgName ? [{ label: path.orgName, onClick: () => handleNavigateUp("org") }] : []),
+          ...(path.role ? [{ label: path.role, onClick: () => handleNavigateUp("role") }] : []),
+          ...(path.userName ? [{ label: path.userName }] : [])
+        ]}
+      />
 
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -857,6 +796,30 @@ export function AiUsageDashboardPage() {
       {path.orgId && !path.role && renderLevel1Roles()}
       {path.orgId && path.role && !path.userId && renderLevel2Users()}
       {path.userId && renderLevel3UserDetail()}
+
+      {/* Organization Level Action Dialogs */}
+      <DangerConfirmDialog
+        open={showOrgReset}
+        onOpenChange={setShowOrgReset}
+        title="Reset Organization Limit?"
+        description="This will reset the total usage counter for this organization back to 0."
+        onConfirm={() => {
+            resetOrgMutation.mutate(path.orgId || "");
+            setShowOrgReset(false);
+        }}
+        confirmText="Reset Limit"
+      />
+      <DangerConfirmDialog
+        open={showOrgBlock}
+        onOpenChange={setShowOrgBlock}
+        title={orgDetail?.isBlocked ? "Unblock Organization?" : "Block Organization?"}
+        description={orgDetail?.isBlocked ? "Unblocking will allow all users in this org to use AI again." : "Blocking will immediately prevent all users in this org from using AI features."}
+        onConfirm={() => {
+            blockOrgMutation.mutate({ orgId: path.orgId || "", blocked: !orgDetail?.isBlocked });
+            setShowOrgBlock(false);
+        }}
+        confirmText={orgDetail?.isBlocked ? "Unblock" : "Block"}
+      />
     </div>
   );
 }
