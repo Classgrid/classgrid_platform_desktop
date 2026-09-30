@@ -280,6 +280,7 @@ export function ContextualProfile({
   });
 
   const [activeSection, setActiveSection] = useState(strategy.sections[0]?.key || "");
+  React.useEffect(() => { if (!activeSection && strategy.sections.length > 0) setActiveSection(strategy.sections[0].key); }, [strategy.sections, activeSection]);
   
   // Initialize from actual profile data, flattening root props and metadata
   const [formData, setFormData] = useState<Record<string, any>>({
@@ -1070,3 +1071,4 @@ export function ContextualProfile({
     </div>
   );
 }
+

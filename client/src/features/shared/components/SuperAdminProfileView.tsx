@@ -2,9 +2,7 @@ import React, { useState } from "react";
 import { User, Globe } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { Spinner } from "@/components/marketing_ui/spinner";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/marketing_ui/popover";
-import { Calendar } from "@/components/marketing_ui/nikhil_calendar";
-import { CalendarIcon } from "lucide-react";
+import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -18,7 +16,6 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [dobOpen, setDobOpen] = useState(false);
 
   React.useEffect(() => {
     if (profileData) {
@@ -78,7 +75,7 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
   const dobDate = dobValue ? new Date(dobValue) : undefined;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold flex items-center gap-2 text-foreground">
           <User className="w-6 h-6 text-primary" /> Profile Settings
@@ -115,17 +112,18 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Date of Birth</label>
-            <Popover open={dobOpen && isEditing} onOpenChange={v => isEditing && setDobOpen(v)}>
-              <PopoverTrigger asChild>
-                <button type="button" disabled={!isEditing} className={cn("w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-left flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed", !dobDate && "text-muted-foreground")}>
-                  <CalendarIcon className="w-4 h-4 text-muted-foreground" />
-                  {dobDate ? format(dobDate, "dd MMM yyyy") : "Not specified"}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={dobDate} onSelect={(date) => { if (date) { handleInputChange("identity.date_of_birth", date.toISOString()); handleInputChange("dob", date.toISOString()); } setDobOpen(false); }} defaultMonth={dobDate || new Date(2000, 0)} captionLayout="dropdown-buttons" fromYear={1950} toYear={new Date().getFullYear()} />
-              </PopoverContent>
-            </Popover>
+            <NikhilTimeCalendar
+              value={dobDate}
+              onChange={(date: Date | undefined) => {
+                if (date) {
+                  handleInputChange("identity.date_of_birth", date.toISOString());
+                  handleInputChange("dob", date.toISOString());
+                }
+              }}
+              showTime={false}
+              placeholder="Not specified"
+              className={cn("w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed", !isEditing && "pointer-events-none opacity-60")}
+            />
           </div>
           <div className="space-y-1.5 md:col-span-2">
             <label className="text-sm font-medium text-foreground">Bio</label>
