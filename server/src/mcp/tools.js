@@ -743,7 +743,7 @@ export const getMcpTools = () => [
   {
     name: 'upload_file_to_chat',
     description: 'Upload a file or video to a 1:1 direct chat message.',
-    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, fileUrl: { type: 'string', description: 'The R2 CDN URL of the uploaded file.' }, fileName: { type: 'string', description: 'Original file name.' }, fileType: { type: 'string', description: 'MIME type of file (e.g. video/mp4).' }, fileSize: { type: 'number', description: 'File size in bytes.' } }, required: ['threadId', 'fileUrl'] }
+    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, fileUrl: { type: 'string', description: 'The R2 CDN URL of the uploaded file.' }, fileName: { type: 'string', description: 'Original file name.' }, fileType: { type: 'string', description: 'MIME type of file (e.g. video/mp4).' }, fileSize: { type: 'number', description: 'File size in bytes.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender user.' } }, required: ['threadId', 'fileUrl', 'senderUserId'] }
   },
   {
     name: 'get_chat_attachment_url',
@@ -770,7 +770,7 @@ export const getMcpTools = () => [
   {
     name: 'send_group_chat_message',
     description: 'Send a text message into a group chat.',
-    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The message text content.' } }, required: ['groupId', 'content'] }
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The message text content.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender user.' } }, required: ['groupId', 'content', 'senderUserId'] }
   },
   {
     name: 'get_group_chat_attachment_url',
@@ -780,12 +780,12 @@ export const getMcpTools = () => [
   {
     name: 'upload_file_to_group_chat',
     description: 'Upload a file to a group chat by providing a URL. The file is stored in R2.',
-    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, fileUrl: { type: 'string', description: 'The URL of the file to upload.' }, fileName: { type: 'string', description: 'Display name for the file.' } }, required: ['groupId', 'fileUrl', 'fileName'] }
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, fileUrl: { type: 'string', description: 'The URL of the file to upload.' }, fileName: { type: 'string', description: 'Display name for the file.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender.' } }, required: ['groupId', 'fileUrl', 'fileName', 'senderUserId'] }
   },
   {
     name: 'send_group_announcement',
     description: 'Send an important announcement message to a group chat.',
-    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The announcement text.' } }, required: ['groupId', 'content'] }
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The announcement text.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender.' } }, required: ['groupId', 'content', 'senderUserId'] }
   },
   {
     name: 'list_group_polls',
@@ -1418,7 +1418,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (name === 'send_chat_message') {
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: args.threadId,
-            sender_id: userId,
+            sender_id: args.senderUserId,
             message: args.content
           }]).select().single();
           if (error) throw error;
@@ -1436,7 +1436,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (name === 'upload_file_to_chat') {
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: args.threadId,
-            sender_id: userId,
+            sender_id: args.senderUserId,
             message: args.fileName || 'File'
           }]).select().single();
           if (error) throw error;
@@ -1596,7 +1596,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: thread.id,
-            sender_id: context.userId,
+            sender_id: args.senderUserId,
             message: args.content
           }]).select().single();
           if (error) throw error;
@@ -1619,7 +1619,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: thread.id,
-            sender_id: context.userId,
+            sender_id: args.senderUserId,
             message: args.fileName || 'File'
           }]).select().single();
           if (error) throw error;
@@ -1643,7 +1643,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: thread.id,
-            sender_id: context.userId,
+            sender_id: args.senderUserId,
             message: args.content
           }]).select().single();
           if (error) throw error;
