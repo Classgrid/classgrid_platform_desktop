@@ -1379,15 +1379,28 @@ export const handleToolCall = async (name, args, context = {}) => {
             const users = await User.find({ _id: { $in: senderIds } }).select('name email').lean();
             users.forEach(u => { userMap[u._id.toString()] = u; });
           }
-          const enriched = (messages || []).map(m => ({
-            ...m,
-            body: m.body ? m.body.replace(/<[^>]*>?/gm, ' ').trim() : m.body,
-            senderName: userMap[m.sender_id]?.name || 'Unknown',
-            senderEmail: userMap[m.sender_id]?.email || '',
-            is_sent_by_current_user: m.sender_id === userId,
-            attachment_url: m.file_url || m.attachment_url || null,
-            ai_hint: (m.file_url || m.attachment_url) ? `This message contains an attachment. Use get_chat_attachment_url with messageId=${m.id} to retrieve it.` : null
-          }));
+          // Fetch attachments for all messages
+          const msgIds = (messages || []).map(m => m.id);
+          let attachMap = {};
+          if (msgIds.length > 0) {
+            const { data: attachments } = await sb.from('chat_message_attachments').select('*').in('message_id', msgIds);
+            (attachments || []).forEach(a => {
+              if (!attachMap[a.message_id]) attachMap[a.message_id] = [];
+              attachMap[a.message_id].push({ file_url: a.file_url, file_name: a.file_name, file_type: a.file_type, file_size: a.file_size });
+            });
+          }
+          const enriched = (messages || []).map(m => {
+            const hasAttachments = attachMap[m.id] && attachMap[m.id].length > 0;
+            return {
+              ...m,
+              body: m.body ? m.body.replace(/<[^>]*>?/gm, ' ').trim() : m.body,
+              senderName: userMap[m.sender_id]?.name || 'Unknown',
+              senderEmail: userMap[m.sender_id]?.email || '',
+              is_sent_by_current_user: m.sender_id === userId,
+              attachments: attachMap[m.id] || [],
+              ai_hint: hasAttachments ? `This message has ${attachMap[m.id].length} attachment(s). URLs: ${attachMap[m.id].map(a => a.file_url).join(', ')}` : null
+            };
+          });
           return { content: [{ type: 'text', text: JSON.stringify(enriched, null, 2) }] };
         }
 
@@ -1412,10 +1425,11 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         // 4. GET 1:1 ATTACHMENT
         if (name === 'get_chat_attachment_url') {
-          const { data: msg, error } = await sb.from('chat_messages').select('*').eq('id', args.messageId).eq('thread_id', args.threadId).single();
-          if (error || !msg) return { content: [{ type: 'text', text: 'Error: Message not found.' }], isError: true };
-          const attachmentUrl = msg.file_url || msg.attachment_url || null;
-          return { content: [{ type: 'text', text: attachmentUrl ? `Attachment URL: ${attachmentUrl}` : 'No attachment found on this message.' }] };
+          const { data: attachments, error } = await sb.from('chat_message_attachments').select('*').eq('message_id', args.messageId);
+          if (error) return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+          if (!attachments || attachments.length === 0) return { content: [{ type: 'text', text: 'No attachment found on this message.' }] };
+          const result = attachments.map(a => ({ file_url: a.file_url, file_name: a.file_name, file_type: a.file_type, file_size: a.file_size }));
+          return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
         }
 
       } catch (e) {
@@ -1515,15 +1529,28 @@ export const handleToolCall = async (name, args, context = {}) => {
             const users = await User.find({ _id: { $in: senderIds } }).select('name email').lean();
             users.forEach(u => { userMap[u._id.toString()] = u; });
           }
-          const enriched = (messages || []).map(m => ({ 
-            ...m, 
-            body: m.body ? m.body.replace(/<[^>]*>?/gm, ' ').trim() : m.body,
-            senderName: userMap[m.sender_id]?.name || 'Unknown',
-            senderEmail: userMap[m.sender_id]?.email || '',
-            is_sent_by_current_user: m.sender_id === context.userId,
-            attachment_url: m.file_url || m.attachment_url || null,
-            ai_hint: (m.file_url || m.attachment_url) ? `This message contains an attachment. Use get_group_chat_attachment_url with messageId=${m.id} to retrieve it.` : null
-          }));
+          // Fetch attachments for all messages
+          const msgIds = (messages || []).map(m => m.id);
+          let attachMap = {};
+          if (msgIds.length > 0) {
+            const { data: attachments } = await sb.from('chat_message_attachments').select('*').in('message_id', msgIds);
+            (attachments || []).forEach(a => {
+              if (!attachMap[a.message_id]) attachMap[a.message_id] = [];
+              attachMap[a.message_id].push({ file_url: a.file_url, file_name: a.file_name, file_type: a.file_type, file_size: a.file_size });
+            });
+          }
+          const enriched = (messages || []).map(m => {
+            const hasAttachments = attachMap[m.id] && attachMap[m.id].length > 0;
+            return { 
+              ...m, 
+              body: m.body ? m.body.replace(/<[^>]*>?/gm, ' ').trim() : m.body,
+              senderName: userMap[m.sender_id]?.name || 'Unknown',
+              senderEmail: userMap[m.sender_id]?.email || '',
+              is_sent_by_current_user: m.sender_id === context.userId,
+              attachments: attachMap[m.id] || [],
+              ai_hint: hasAttachments ? `This message has ${attachMap[m.id].length} attachment(s). URLs: ${attachMap[m.id].map(a => a.file_url).join(', ')}` : null
+            };
+          });
           return { content: [{ type: 'text', text: JSON.stringify(enriched, null, 2) }] };
         }
 
@@ -1544,12 +1571,11 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         // 5. GET ATTACHMENT URL
         if (name === 'get_group_chat_attachment_url') {
-          const thread = await getThread(args.groupId);
-          if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
-          const { data: msg, error } = await sb.from('chat_messages').select('*').eq('id', args.messageId).eq('thread_id', thread.id).single();
-          if (error || !msg) return { content: [{ type: 'text', text: 'Error: Message not found.' }], isError: true };
-          const attachmentUrl = msg.file_url || msg.attachment_url || null;
-          return { content: [{ type: 'text', text: attachmentUrl ? `Attachment URL: ${attachmentUrl}` : 'No attachment found on this message.' }] };
+          const { data: attachments, error } = await sb.from('chat_message_attachments').select('*').eq('message_id', args.messageId);
+          if (error) return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+          if (!attachments || attachments.length === 0) return { content: [{ type: 'text', text: 'No attachment found on this message.' }] };
+          const result = attachments.map(a => ({ file_url: a.file_url, file_name: a.file_name, file_type: a.file_type, file_size: a.file_size }));
+          return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
         }
 
         // 6. UPLOAD FILE
