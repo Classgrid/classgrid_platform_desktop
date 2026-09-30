@@ -610,21 +610,28 @@ export function SharedProfilePage({ publicUser, groupData, mode = "user", onClos
                         </Button>
                       </a>
                     )}
-                    {form.metadata?.linkedin_url && (
-                      <a href={form.metadata.linkedin_url} target="_blank" rel="noopener noreferrer">
+                    {(form.metadata?.twitter_url || form.metadata?.["social.twitter"]) && (
+                      <a href={form.metadata?.twitter_url || form.metadata?.["social.twitter"]} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="icon" className="h-10 w-10 rounded-full bg-background/50 backdrop-blur border-border/50 text-muted-foreground hover:text-foreground hover:border-foreground hover:bg-foreground/5 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-all duration-300 hover:-translate-y-0.5">
+                          <XIcon className="w-[18px] h-[18px] fill-current" />
+                        </Button>
+                      </a>
+                    )}
+                    {(form.metadata?.linkedin_url || form.metadata?.["social.linkedin"]) && (
+                      <a href={form.metadata?.linkedin_url || form.metadata?.["social.linkedin"]} target="_blank" rel="noopener noreferrer">
                         <Button variant="outline" size="icon" className="h-10 w-10 rounded-full bg-background/50 backdrop-blur border-border/50 text-muted-foreground hover:text-sky-500 hover:border-sky-500 hover:bg-sky-500/10 hover:shadow-[0_0_15px_rgba(14,165,233,0.3)] transition-all duration-300 hover:-translate-y-0.5">
                           <Linkedin size={18} />
                         </Button>
                       </a>
                     )}
-                    {form.metadata?.github_url && (
-                      <a href={form.metadata.github_url} target="_blank" rel="noopener noreferrer">
+                    {(form.metadata?.github_url || form.metadata?.["social.github"]) && (
+                      <a href={form.metadata?.github_url || form.metadata?.["social.github"]} target="_blank" rel="noopener noreferrer">
                         <Button variant="outline" size="icon" className="h-10 w-10 rounded-full bg-background/50 backdrop-blur border-border/50 text-muted-foreground hover:text-foreground hover:border-foreground hover:bg-foreground/5 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-all duration-300 hover:-translate-y-0.5">
                           <Github size={18} />
                         </Button>
                       </a>
                     )}
-                    {(!form.metadata?.instagram_url && !form.metadata?.facebook_url && !form.metadata?.linkedin_url && !form.metadata?.github_url) && (
+                    {(!form.metadata?.instagram_url && !form.metadata?.["social.instagram"] && !form.metadata?.facebook_url && !form.metadata?.["social.facebook"] && !form.metadata?.linkedin_url && !form.metadata?.["social.linkedin"] && !form.metadata?.github_url && !form.metadata?.["social.github"] && !form.metadata?.twitter_url && !form.metadata?.["social.twitter"]) && (
                        <div className="text-xs text-muted-foreground italic mt-2">No social links added yet.</div>
                     )}
                   </div>
