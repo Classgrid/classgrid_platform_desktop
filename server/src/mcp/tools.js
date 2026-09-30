@@ -742,12 +742,12 @@ export const getMcpTools = () => [
   {
     name: 'send_chat_message',
     description: 'Send a direct message in a 1:1 chat.',
-    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, content: { type: 'string', description: 'The message text content.' }, senderUserId: { type: 'string', description: 'Optional. The MongoDB ObjectId of the sender user.' } }, required: ['threadId', 'content'] }
+    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, content: { type: 'string', description: 'The message text content.' } }, required: ['threadId', 'content'] }
   },
   {
     name: 'upload_file_to_chat',
     description: 'Upload a file or video to a 1:1 direct chat message.',
-    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, fileUrl: { type: 'string', description: 'The R2 CDN URL of the uploaded file.' }, fileName: { type: 'string', description: 'Original file name.' }, fileType: { type: 'string', description: 'MIME type of file (e.g. video/mp4).' }, fileSize: { type: 'number', description: 'File size in bytes.' }, senderUserId: { type: 'string', description: 'Optional. The MongoDB ObjectId of the sender user.' } }, required: ['threadId', 'fileUrl'] }
+    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, fileUrl: { type: 'string', description: 'The R2 CDN URL of the uploaded file.' }, fileName: { type: 'string', description: 'Original file name.' }, fileType: { type: 'string', description: 'MIME type of file (e.g. video/mp4).' }, fileSize: { type: 'number', description: 'File size in bytes.' } }, required: ['threadId', 'fileUrl'] }
   },
   {
     name: 'get_chat_attachment_url',
@@ -778,7 +778,7 @@ export const getMcpTools = () => [
   {
     name: 'send_group_chat_message',
     description: 'Send a text message into a group chat.',
-    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The message text content.' }, senderUserId: { type: 'string', description: 'Optional. The MongoDB ObjectId of the sender user.' } }, required: ['groupId', 'content'] }
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The message text content.' } }, required: ['groupId', 'content'] }
   },
   {
     name: 'get_group_chat_attachment_url',
@@ -788,12 +788,12 @@ export const getMcpTools = () => [
   {
     name: 'upload_file_to_group_chat',
     description: 'Upload a file to a group chat by providing a URL. The file is stored in R2.',
-    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, fileUrl: { type: 'string', description: 'The URL of the file to upload.' }, fileName: { type: 'string', description: 'Display name for the file.' }, senderUserId: { type: 'string', description: 'Optional. The MongoDB ObjectId of the sender.' } }, required: ['groupId', 'fileUrl', 'fileName'] }
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, fileUrl: { type: 'string', description: 'The URL of the file to upload.' }, fileName: { type: 'string', description: 'Display name for the file.' } }, required: ['groupId', 'fileUrl', 'fileName'] }
   },
   {
     name: 'send_group_announcement',
     description: 'Send an important announcement message to a group chat.',
-    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The announcement text.' }, senderUserId: { type: 'string', description: 'Optional. The MongoDB ObjectId of the sender.' } }, required: ['groupId', 'content'] }
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The announcement text.' } }, required: ['groupId', 'content'] }
   },
   {
     name: 'list_group_polls',
@@ -1436,18 +1436,14 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         // 3. SEND 1:1 MESSAGE
         if (name === 'send_chat_message') {
+          if (!context.userId) return { content: [{ type: 'text', text: 'Error: Missing context.userId.' }], isError: true };
           const User = (await import('../models/User.js')).default;
-          let resolvedUser = null;
-          if (args.senderUserId && args.senderUserId.length === 24) {
-            resolvedUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
-          }
-          if (!resolvedUser) {
-            resolvedUser = await User.findOne({ email: 'support@classgrid.in' }).select('_id name profilePicture').lean();
-          }
+          const resolvedUser = await User.findById(context.userId).select('_id name profilePicture').lean();
+          if (!resolvedUser) return { content: [{ type: 'text', text: 'Error: User not found in database.' }], isError: true };
           
-          const finalSenderId = resolvedUser?._id?.toString() || args.senderUserId;
-          const finalSenderName = resolvedUser?.name || 'Classgrid AI';
-          const finalUserAvatar = resolvedUser?.profilePicture || null;
+          const finalSenderId = resolvedUser._id.toString();
+          const finalSenderName = resolvedUser.name || 'User';
+          const finalUserAvatar = resolvedUser.profilePicture || null;
 
           const { data: memCheck } = await sb.from('chat_thread_members').select('id').eq('thread_id', args.threadId).eq('user_id', finalSenderId).single();
           if (!memCheck) {
@@ -1485,18 +1481,14 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         // 3.5 UPLOAD 1:1 FILE
         if (name === 'upload_file_to_chat') {
+          if (!context.userId) return { content: [{ type: 'text', text: 'Error: Missing context.userId.' }], isError: true };
           const User = (await import('../models/User.js')).default;
-          let resolvedUser = null;
-          if (args.senderUserId && args.senderUserId.length === 24) {
-            resolvedUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
-          }
-          if (!resolvedUser) {
-            resolvedUser = await User.findOne({ email: 'support@classgrid.in' }).select('_id name profilePicture').lean();
-          }
+          const resolvedUser = await User.findById(context.userId).select('_id name profilePicture').lean();
+          if (!resolvedUser) return { content: [{ type: 'text', text: 'Error: User not found in database.' }], isError: true };
           
-          const finalSenderId = resolvedUser?._id?.toString() || args.senderUserId;
-          const finalSenderName = resolvedUser?.name || 'Classgrid AI';
-          const finalUserAvatar = resolvedUser?.profilePicture || null;
+          const finalSenderId = resolvedUser._id.toString();
+          const finalSenderName = resolvedUser.name || 'User';
+          const finalUserAvatar = resolvedUser.profilePicture || null;
 
           const { data: memCheck } = await sb.from('chat_thread_members').select('id').eq('thread_id', args.threadId).eq('user_id', finalSenderId).single();
           if (!memCheck) {
@@ -1677,18 +1669,14 @@ export const handleToolCall = async (name, args, context = {}) => {
           const thread = await getThread(args.groupId);
           if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
           
+          if (!context.userId) return { content: [{ type: 'text', text: 'Error: Missing context.userId.' }], isError: true };
           const User = (await import('../models/User.js')).default;
-          let resolvedUser = null;
-          if (args.senderUserId && args.senderUserId.length === 24) {
-            resolvedUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
-          }
-          if (!resolvedUser) {
-            resolvedUser = await User.findOne({ email: 'support@classgrid.in' }).select('_id name profilePicture').lean();
-          }
+          const resolvedUser = await User.findById(context.userId).select('_id name profilePicture').lean();
+          if (!resolvedUser) return { content: [{ type: 'text', text: 'Error: User not found in database.' }], isError: true };
           
-          const finalSenderId = resolvedUser?._id?.toString() || args.senderUserId;
-          const finalSenderName = resolvedUser?.name || 'Classgrid AI';
-          const finalUserAvatar = resolvedUser?.profilePicture || null;
+          const finalSenderId = resolvedUser._id.toString();
+          const finalSenderName = resolvedUser.name || 'User';
+          const finalUserAvatar = resolvedUser.profilePicture || null;
 
           const { data: memCheck } = await sb.from('chat_thread_members').select('id').eq('thread_id', thread.id).eq('user_id', finalSenderId).single();
           if (!memCheck) {
@@ -1734,18 +1722,14 @@ export const handleToolCall = async (name, args, context = {}) => {
           const thread = await getThread(args.groupId);
           if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
           
+          if (!context.userId) return { content: [{ type: 'text', text: 'Error: Missing context.userId.' }], isError: true };
           const User = (await import('../models/User.js')).default;
-          let resolvedUser = null;
-          if (args.senderUserId && args.senderUserId.length === 24) {
-            resolvedUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
-          }
-          if (!resolvedUser) {
-            resolvedUser = await User.findOne({ email: 'support@classgrid.in' }).select('_id name profilePicture').lean();
-          }
+          const resolvedUser = await User.findById(context.userId).select('_id name profilePicture').lean();
+          if (!resolvedUser) return { content: [{ type: 'text', text: 'Error: User not found in database.' }], isError: true };
           
-          const finalSenderId = resolvedUser?._id?.toString() || args.senderUserId;
-          const finalSenderName = resolvedUser?.name || 'Classgrid AI';
-          const finalUserAvatar = resolvedUser?.profilePicture || null;
+          const finalSenderId = resolvedUser._id.toString();
+          const finalSenderName = resolvedUser.name || 'User';
+          const finalUserAvatar = resolvedUser.profilePicture || null;
 
           const { data: memCheck } = await sb.from('chat_thread_members').select('id').eq('thread_id', thread.id).eq('user_id', finalSenderId).single();
           if (!memCheck) {
@@ -1779,18 +1763,14 @@ export const handleToolCall = async (name, args, context = {}) => {
           const thread = await getThread(args.groupId);
           if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
           
+          if (!context.userId) return { content: [{ type: 'text', text: 'Error: Missing context.userId.' }], isError: true };
           const User = (await import('../models/User.js')).default;
-          let resolvedUser = null;
-          if (args.senderUserId && args.senderUserId.length === 24) {
-            resolvedUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
-          }
-          if (!resolvedUser) {
-            resolvedUser = await User.findOne({ email: 'support@classgrid.in' }).select('_id name profilePicture').lean();
-          }
+          const resolvedUser = await User.findById(context.userId).select('_id name profilePicture').lean();
+          if (!resolvedUser) return { content: [{ type: 'text', text: 'Error: User not found in database.' }], isError: true };
           
-          const finalSenderId = resolvedUser?._id?.toString() || args.senderUserId;
-          const finalSenderName = resolvedUser?.name || 'Classgrid AI';
-          const finalUserAvatar = resolvedUser?.profilePicture || null;
+          const finalSenderId = resolvedUser._id.toString();
+          const finalSenderName = resolvedUser.name || 'User';
+          const finalUserAvatar = resolvedUser.profilePicture || null;
 
           const { data: memCheck } = await sb.from('chat_thread_members').select('id').eq('thread_id', thread.id).eq('user_id', finalSenderId).single();
           if (!memCheck) {
