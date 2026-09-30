@@ -262,7 +262,8 @@ If the user asks to manage Support Tickets or Classgrid Talk inquiries, use thes
 
 --- WORKFLOW 11: INTERNAL CHAT ---
 If the user EXPLICITLY asks to check or send internal 1:1 person-to-person messages/chats, or says "List Grids" / "Number of Grids", use these tools:
-1. \`list_chat_threads\`: Call this to list all 1:1 chats or find the correct \`threadId\` if the user didn't provide one.
+1. \`list_grids\`: Call this to list all 1:1 chats / grids, and find the correct \`threadId\`.
+2. \`list_chat_threads\`: Alias for list_grids.
 2. \`read_chat_messages\`: Call with the \`threadId\` to read the conversation history.
 3. \`send_chat_message\`: Call with the \`threadId\` to send a new text message.
 4. \`upload_file_to_chat\`: Call with the \`threadId\` to send a file/video to a 1:1 chat.
@@ -2559,6 +2560,10 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     // ================= INTERNAL CHAT TOOLS =================
+                    list_grids: async (args) => {
+                        const result = await handleToolCall('list_grids', args, {});
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
                     list_chat_threads: async (args) => {
                         const result = await handleToolCall('list_chat_threads', args, {});
                         return result.isError ? result.content[0].text : result.content[0].text;

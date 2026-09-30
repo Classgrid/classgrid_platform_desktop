@@ -726,6 +726,11 @@ export const getMcpTools = () => [
     inputSchema: { type: 'object', properties: {}, required: [] }
   },
   {
+    name: 'list_grids',
+    description: 'List 1:1 direct message threads (Grids) for the current user. Alias for list_chat_threads.',
+    inputSchema: { type: 'object', properties: {}, required: [] }
+  },
+  {
     name: 'read_chat_messages',
     description: 'Read a direct conversation (1:1 chat).',
     inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, limit: { type: 'number', description: 'Max messages to return. Default 50.' } }, required: ['threadId'] }
@@ -1321,7 +1326,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     // ================= DIRECT CHAT HANDLERS (4 tools - Supabase) =================
-    const DIRECT_CHAT_TOOL_NAMES = ['list_chat_threads', 'read_chat_messages', 'send_chat_message', 'upload_file_to_chat', 'get_chat_attachment_url'];
+    const DIRECT_CHAT_TOOL_NAMES = ['list_chat_threads', 'list_grids', 'read_chat_messages', 'send_chat_message', 'upload_file_to_chat', 'get_chat_attachment_url'];
     
     if (DIRECT_CHAT_TOOL_NAMES.includes(name)) {
       try {
@@ -1331,7 +1336,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (!userId) return { content: [{ type: 'text', text: 'Error: User context is required.' }], isError: true };
 
         // 1. LIST 1:1 CHATS
-        if (name === 'list_chat_threads') {
+        if (name === 'list_chat_threads' || name === 'list_grids') {
           const { data: memberships, error: memErr } = await sb.from('chat_thread_members').select('thread_id').eq('user_id', userId);
           if (memErr) throw memErr;
           const threadIds = (memberships || []).map(m => m.thread_id);
