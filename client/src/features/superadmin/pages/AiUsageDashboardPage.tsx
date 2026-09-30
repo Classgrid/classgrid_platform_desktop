@@ -575,63 +575,7 @@ export function AiUsageDashboardPage() {
 
           {/* Breakdowns Row */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="col-span-1 lg:col-span-1">
-              <CardHeader><CardTitle>Top Organizations by Requests</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-4">
-                  {orgsBreakdown?.sort((a: any, b: any) => b.requests - a.requests).slice(0, 10).map((org: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        {org.logo ? (
-                           <img src={org.logo} alt={org.name} className="h-8 w-8 rounded object-cover" />
-                        ) : (
-                           <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                             {org.name.substring(0, 2).toUpperCase()}
-                           </div>
-                        )}
-                        <div>
-                          <p className="text-sm font-medium leading-none max-w-[120px] truncate" title={org.name}>{org.name}</p>
-                          <p className="text-xs text-muted-foreground mt-1 truncate max-w-[120px]" title={org.orgId}>ID: {org.orgId}</p>
-                        </div>
-                      </div>
-                      <div className="font-medium text-sm">
-                        {formatNumber(org.requests)}
-                      </div>
-                    </div>
-                  ))}
-                  {(!orgsBreakdown || orgsBreakdown.length === 0) && (
-                    <div className="text-center text-muted-foreground py-8">No organization data</div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="col-span-1 lg:col-span-1">
-              <CardHeader><CardTitle>Top Users by Requests</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-4">
-                  {usersBreakdown?.sort((a: any, b: any) => b.requests - a.requests).slice(0, 10).map((user: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                          {user.name.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium leading-none max-w-[120px] truncate" title={user.name}>{user.name}</p>
-                          <p className="text-xs text-muted-foreground mt-1 truncate max-w-[120px]" title={user.orgName}>{user.orgName}</p>
-                        </div>
-                      </div>
-                      <div className="font-medium text-sm">
-                        {formatNumber(user.requests)}
-                      </div>
-                    </div>
-                  ))}
-                  {(!usersBreakdown || usersBreakdown.length === 0) && (
-                    <div className="text-center text-muted-foreground py-8">No user data</div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            {/* The Top Organizations and Top Users cards have been removed as requested */}
 
             <Card className="col-span-1 lg:col-span-1">
               <CardHeader><CardTitle>Requests by Model</CardTitle></CardHeader>
