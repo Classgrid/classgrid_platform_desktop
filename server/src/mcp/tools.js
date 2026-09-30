@@ -742,12 +742,12 @@ export const getMcpTools = () => [
   {
     name: 'send_chat_message',
     description: 'Send a direct message in a 1:1 chat.',
-    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, content: { type: 'string', description: 'The message text content.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender user.' } }, required: ['threadId', 'content', 'senderUserId'] }
+    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, content: { type: 'string', description: 'The message text content.' }, senderUserId: { type: 'string', description: 'Optional. The MongoDB ObjectId of the sender user.' } }, required: ['threadId', 'content'] }
   },
   {
     name: 'upload_file_to_chat',
     description: 'Upload a file or video to a 1:1 direct chat message.',
-    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, fileUrl: { type: 'string', description: 'The R2 CDN URL of the uploaded file.' }, fileName: { type: 'string', description: 'Original file name.' }, fileType: { type: 'string', description: 'MIME type of file (e.g. video/mp4).' }, fileSize: { type: 'number', description: 'File size in bytes.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender user.' } }, required: ['threadId', 'fileUrl', 'senderUserId'] }
+    inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, fileUrl: { type: 'string', description: 'The R2 CDN URL of the uploaded file.' }, fileName: { type: 'string', description: 'Original file name.' }, fileType: { type: 'string', description: 'MIME type of file (e.g. video/mp4).' }, fileSize: { type: 'number', description: 'File size in bytes.' }, senderUserId: { type: 'string', description: 'Optional. The MongoDB ObjectId of the sender user.' } }, required: ['threadId', 'fileUrl'] }
   },
   {
     name: 'get_chat_attachment_url',
@@ -778,7 +778,7 @@ export const getMcpTools = () => [
   {
     name: 'send_group_chat_message',
     description: 'Send a text message into a group chat.',
-    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The message text content.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender user.' } }, required: ['groupId', 'content', 'senderUserId'] }
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The message text content.' }, senderUserId: { type: 'string', description: 'Optional. The MongoDB ObjectId of the sender user.' } }, required: ['groupId', 'content'] }
   },
   {
     name: 'get_group_chat_attachment_url',
@@ -788,12 +788,12 @@ export const getMcpTools = () => [
   {
     name: 'upload_file_to_group_chat',
     description: 'Upload a file to a group chat by providing a URL. The file is stored in R2.',
-    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, fileUrl: { type: 'string', description: 'The URL of the file to upload.' }, fileName: { type: 'string', description: 'Display name for the file.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender.' } }, required: ['groupId', 'fileUrl', 'fileName', 'senderUserId'] }
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, fileUrl: { type: 'string', description: 'The URL of the file to upload.' }, fileName: { type: 'string', description: 'Display name for the file.' }, senderUserId: { type: 'string', description: 'Optional. The MongoDB ObjectId of the sender.' } }, required: ['groupId', 'fileUrl', 'fileName'] }
   },
   {
     name: 'send_group_announcement',
     description: 'Send an important announcement message to a group chat.',
-    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The announcement text.' }, senderUserId: { type: 'string', description: 'The MongoDB ObjectId of the sender.' } }, required: ['groupId', 'content', 'senderUserId'] }
+    inputSchema: { type: 'object', properties: { groupId: { type: 'string', description: 'The Supabase UUID of the group.' }, content: { type: 'string', description: 'The announcement text.' }, senderUserId: { type: 'string', description: 'Optional. The MongoDB ObjectId of the sender.' } }, required: ['groupId', 'content'] }
   },
   {
     name: 'list_group_polls',
@@ -1436,9 +1436,24 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         // 3. SEND 1:1 MESSAGE
         if (name === 'send_chat_message') {
+          const User = (await import('../models/User.js')).default;
+          let resolvedUser = null;
+          if (args.senderUserId && args.senderUserId.length === 24) {
+            resolvedUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
+          }
+          if (!resolvedUser) {
+            resolvedUser = await User.findOne({ email: 'support@classgrid.in' }).select('_id name profilePicture').lean();
+          }
+          
+          const finalSenderId = resolvedUser?._id?.toString() || args.senderUserId;
+          const finalSenderName = resolvedUser?.name || 'Classgrid AI';
+          const finalUserAvatar = resolvedUser?.profilePicture || null;
+
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: args.threadId,
-            sender_id: args.senderUserId,
+            sender_id: finalSenderId,
+            sender_name: finalSenderName,
+            user_avatar: finalUserAvatar,
             message: args.content
           }]).select().single();
           if (error) throw error;
@@ -1448,16 +1463,13 @@ export const handleToolCall = async (name, args, context = {}) => {
             last_message_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }).eq('id', args.threadId);
-          
-          const User = (await import('../models/User.js')).default;
-          const senderUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
 
           broadcastToChannel(`thread:${args.threadId}`, 'new_message', {
             id: msg.id,
             thread_id: args.threadId,
-            sender_id: args.senderUserId,
-            sender_name: senderUser?.name || 'Classgrid AI',
-            user_avatar: senderUser?.profilePicture || null,
+            sender_id: finalSenderId,
+            sender_name: finalSenderName,
+            user_avatar: finalUserAvatar,
             message: args.content,
             created_at: new Date().toISOString(),
             attachments: []
@@ -1468,9 +1480,24 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         // 3.5 UPLOAD 1:1 FILE
         if (name === 'upload_file_to_chat') {
+          const User = (await import('../models/User.js')).default;
+          let resolvedUser = null;
+          if (args.senderUserId && args.senderUserId.length === 24) {
+            resolvedUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
+          }
+          if (!resolvedUser) {
+            resolvedUser = await User.findOne({ email: 'support@classgrid.in' }).select('_id name profilePicture').lean();
+          }
+          
+          const finalSenderId = resolvedUser?._id?.toString() || args.senderUserId;
+          const finalSenderName = resolvedUser?.name || 'Classgrid AI';
+          const finalUserAvatar = resolvedUser?.profilePicture || null;
+
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: args.threadId,
-            sender_id: args.senderUserId,
+            sender_id: finalSenderId,
+            sender_name: finalSenderName,
+            user_avatar: finalUserAvatar,
             message: args.fileName || 'File'
           }]).select().single();
           if (error) throw error;
@@ -1490,15 +1517,12 @@ export const handleToolCall = async (name, args, context = {}) => {
             updated_at: new Date().toISOString()
           }).eq('id', args.threadId);
 
-          const User = (await import('../models/User.js')).default;
-          const senderUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
-
           broadcastToChannel(`thread:${args.threadId}`, 'new_message', {
             id: msg.id,
             thread_id: args.threadId,
-            sender_id: args.senderUserId,
-            sender_name: senderUser?.name || 'User',
-            user_avatar: senderUser?.profilePicture || null,
+            sender_id: finalSenderId,
+            sender_name: finalSenderName,
+            user_avatar: finalUserAvatar,
             message: args.fileName || 'File',
             created_at: new Date().toISOString(),
             attachments: [{ file_url: args.fileUrl, file_name: args.fileName || 'File', file_type: args.fileType || 'unknown', file_size: args.fileSize || 0 }]
@@ -1642,24 +1666,37 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (name === 'send_group_chat_message') {
           const thread = await getThread(args.groupId);
           if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
+          
+          const User = (await import('../models/User.js')).default;
+          let resolvedUser = null;
+          if (args.senderUserId && args.senderUserId.length === 24) {
+            resolvedUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
+          }
+          if (!resolvedUser) {
+            resolvedUser = await User.findOne({ email: 'support@classgrid.in' }).select('_id name profilePicture').lean();
+          }
+          
+          const finalSenderId = resolvedUser?._id?.toString() || args.senderUserId;
+          const finalSenderName = resolvedUser?.name || 'Classgrid AI';
+          const finalUserAvatar = resolvedUser?.profilePicture || null;
+
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: thread.id,
-            sender_id: args.senderUserId,
+            sender_id: finalSenderId,
+            sender_name: finalSenderName,
+            user_avatar: finalUserAvatar,
             message: args.content
           }]).select().single();
           if (error) throw error;
           
           await sb.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', thread.id);
           
-          const User = (await import('../models/User.js')).default;
-          const senderUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
-
           broadcastToChannel(`thread:${thread.id}`, 'new_message', {
             id: msg.id,
             thread_id: thread.id,
-            sender_id: args.senderUserId,
-            sender_name: senderUser?.name || 'Classgrid AI',
-            user_avatar: senderUser?.profilePicture || null,
+            sender_id: finalSenderId,
+            sender_name: finalSenderName,
+            user_avatar: finalUserAvatar,
             message: args.content,
             created_at: new Date().toISOString(),
             attachments: []
@@ -1681,9 +1718,25 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (name === 'upload_file_to_group_chat') {
           const thread = await getThread(args.groupId);
           if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
+          
+          const User = (await import('../models/User.js')).default;
+          let resolvedUser = null;
+          if (args.senderUserId && args.senderUserId.length === 24) {
+            resolvedUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
+          }
+          if (!resolvedUser) {
+            resolvedUser = await User.findOne({ email: 'support@classgrid.in' }).select('_id name profilePicture').lean();
+          }
+          
+          const finalSenderId = resolvedUser?._id?.toString() || args.senderUserId;
+          const finalSenderName = resolvedUser?.name || 'Classgrid AI';
+          const finalUserAvatar = resolvedUser?.profilePicture || null;
+
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: thread.id,
-            sender_id: args.senderUserId,
+            sender_id: finalSenderId,
+            sender_name: finalSenderName,
+            user_avatar: finalUserAvatar,
             message: args.fileName || 'File'
           }]).select().single();
           if (error) throw error;
@@ -1705,23 +1758,36 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (name === 'send_group_announcement') {
           const thread = await getThread(args.groupId);
           if (!thread) return { content: [{ type: 'text', text: 'Error: Group thread not found.' }], isError: true };
+          
+          const User = (await import('../models/User.js')).default;
+          let resolvedUser = null;
+          if (args.senderUserId && args.senderUserId.length === 24) {
+            resolvedUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
+          }
+          if (!resolvedUser) {
+            resolvedUser = await User.findOne({ email: 'support@classgrid.in' }).select('_id name profilePicture').lean();
+          }
+          
+          const finalSenderId = resolvedUser?._id?.toString() || args.senderUserId;
+          const finalSenderName = resolvedUser?.name || 'Classgrid AI';
+          const finalUserAvatar = resolvedUser?.profilePicture || null;
+
           const { data: msg, error } = await sb.from('chat_messages').insert([{
             thread_id: thread.id,
-            sender_id: args.senderUserId,
+            sender_id: finalSenderId,
+            sender_name: finalSenderName,
+            user_avatar: finalUserAvatar,
             message: args.content
           }]).select().single();
           if (error) throw error;
           await sb.from('chat_threads').update({ updated_at: new Date().toISOString() }).eq('id', thread.id);
           
-          const User = (await import('../models/User.js')).default;
-          const senderUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
-
           broadcastToChannel(`thread:${thread.id}`, 'new_message', {
             id: msg.id,
             thread_id: thread.id,
-            sender_id: args.senderUserId,
-            sender_name: senderUser?.name || 'Classgrid AI',
-            user_avatar: senderUser?.profilePicture || null,
+            sender_id: finalSenderId,
+            sender_name: finalSenderName,
+            user_avatar: finalUserAvatar,
             message: args.content,
             created_at: new Date().toISOString(),
             attachments: []

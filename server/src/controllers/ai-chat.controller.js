@@ -265,8 +265,8 @@ If the user EXPLICITLY asks to check or send internal 1:1 person-to-person messa
 1. \`list_grids\`: Call this to list all 1:1 chats / grids, and find the correct \`threadId\`.
 2. \`list_chat_threads\`: Alias for list_grids.
 2. \`read_chat_messages\`: Call with the \`threadId\` to read the conversation history.
-3. \`send_chat_message\`: Call with the \`threadId\` and \`senderUserId\` to send a new text message. IMPORTANT: If the user asks you to send a message on their behalf, you MUST use "Their User ID" (provided in the USER CONTEXT) as the \`senderUserId\`. DO NOT use the recipient's user ID.
-4. \`upload_file_to_chat\`: Call with the \`threadId\` and \`senderUserId\` to send a file/video to a 1:1 chat. Same rule applies: use "Their User ID" as the \`senderUserId\`.
+3. \`send_chat_message\`: Call with the \`threadId\` and \`senderUserId\` to send a new text message. IMPORTANT: If the user asks you to send a message on their behalf, you MUST use "Their User ID" (provided in the USER CONTEXT) as the \`senderUserId\`. DO NOT use the recipient's user ID. If you are sending a message yourself as the AI, DO NOT provide a \`senderUserId\` parameter at all.
+4. \`upload_file_to_chat\`: Call with the \`threadId\` and \`senderUserId\` to send a file/video to a 1:1 chat. Same rule applies: use "Their User ID" as the \`senderUserId\`, or omit if sending as yourself.
 5. \`get_chat_attachment_url\`: Call this to get the URL of an attachment from a message.
 
 CRITICAL INSTRUCTIONS FOR GRID CHATS:
@@ -833,12 +833,6 @@ You are currently talking to Nikhil Shinde (nikhil.shinde@classgrid.in), the CRE
         dynamicSystemPrompt += `\n\nFILE ANALYSIS & MULTIMODAL RULE (CRITICAL):\nIf you have a tool available to analyze or read uploaded files, you are COMPLETELY FREE to use it. You MUST NOT skip or refuse to read ANY kind of file (including video, zip files, pptx, pdf, images, code, and everything else). You are NOT limited to PDFs or photos. If a user asks you to read or analyze a file, use your tools to read it immediately. DO NOT say "I cannot read video/zip" — you MUST use your tools to extract and process the data!\nIMPORTANT PARALLEL EXECUTION RULE: You are STRICTLY FORBIDDEN from calling multiple analysis tools (e.g. analyze_image and analyze_video) at the same time in parallel. You MUST call them sequentially, one at a time. Wait for the result of the first tool before calling the next one!`;
 
         dynamicSystemPrompt += `\n\nTOOL ERROR REPORTING RULE (CRITICAL):\nIf you execute ANY tool and receive an error message back (e.g., 'Error from Cloudflare API', 'Failed to fetch', 'Invalid Input'), DO NOT panic, do not stop generating, and do not try the exact same broken action in an infinite loop. You MUST immediately output a message to the user saying exactly: "I encountered a technical error: [insert exact error message]. Please report this to Nikhil (nikhil.shinde@classgrid.in) so he can fix the backend."`;
-
-        dynamicSystemPrompt += `\n\nCRITICAL CHAT SENDING RULE (IDENTITY):
-When the user asks you to send a chat message or reply to a thread (using send_chat_message, send_group_chat_message, upload_file_to_chat, etc.), you MUST NOT send the message as the user. You are the AI. 
-1. FIRST, call the 'get_my_ai_user_id' tool to get your exact Classgrid AI MongoDB ObjectId. 
-2. SECOND, pass that ObjectId as the 'senderUserId' argument in the sending tool. 
-Do NOT guess the user ID or use the current user's ID to send the message. Always send it as yourself (Classgrid AI).`;
 
         dynamicSystemPrompt += `\n\n--- DATABASE ACCESS RULES (CRITICAL) ---
 You have direct read/write access to the Classgrid backend databases via the \`unified_db_query\` tool. 
