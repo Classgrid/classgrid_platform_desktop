@@ -100,11 +100,11 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
         <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">First Name</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed" value={formData["identity.first_name"] || ""} onChange={e => handleInputChange("identity.first_name", e.target.value)} disabled={!isEditing} placeholder="e.g. Nikhil" />
+            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["identity.first_name"] || ""} onChange={e => handleInputChange("identity.first_name", e.target.value)} disabled={!isEditing} placeholder="e.g. Nikhil" />
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Last Name</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed" value={formData["identity.last_name"] || ""} onChange={e => handleInputChange("identity.last_name", e.target.value)} disabled={!isEditing} placeholder="e.g. Shinde" />
+            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["identity.last_name"] || ""} onChange={e => handleInputChange("identity.last_name", e.target.value)} disabled={!isEditing} placeholder="e.g. Shinde" />
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Date of Birth</label>
@@ -118,16 +118,16 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
               }}
               showTime={false}
               placeholder="Not specified"
-              className={cn("w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed", !isEditing && "pointer-events-none opacity-60")}
+              className={cn("w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10", !isEditing && "pointer-events-none opacity-60")}
             />
           </div>
           <div className="space-y-1.5 md:col-span-2">
             <label className="text-sm font-medium text-foreground">Bio</label>
-            <textarea className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed resize-none" rows={3} value={formData["social.bio"] || formData.bio || ""} onChange={e => handleInputChange("social.bio", e.target.value)} disabled={!isEditing} placeholder="A short bio about yourself" />
+            <textarea className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10 resize-none" rows={3} value={formData["social.bio"] || formData.bio || ""} onChange={e => handleInputChange("social.bio", e.target.value)} disabled={!isEditing} placeholder="A short bio about yourself" />
           </div>
           <div className="space-y-1.5 md:col-span-2">
             <label className="text-sm font-medium text-foreground">Hobbies</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed" value={formData["social.hobby"] || formData.hobby || ""} onChange={e => handleInputChange("social.hobby", e.target.value)} disabled={!isEditing} placeholder="e.g. Reading, Coding, Travel" />
+            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.hobby"] || formData.hobby || ""} onChange={e => handleInputChange("social.hobby", e.target.value)} disabled={!isEditing} placeholder="e.g. Reading, Coding, Travel" />
           </div>
         </div>
       </div>
@@ -142,35 +142,35 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
         <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-1.5 md:col-span-2">
             <label className="text-sm font-medium text-foreground">Tech Stack</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed" value={formData["social.tech_stack"] || ""} onChange={e => handleInputChange("social.tech_stack", e.target.value)} disabled={!isEditing} placeholder="e.g. React, Node.js, AWS" />
+            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.tech_stack"] || ""} onChange={e => handleInputChange("social.tech_stack", e.target.value)} disabled={!isEditing} placeholder="e.g. React, Node.js, AWS" />
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">LinkedIn</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed" value={formData["social.linkedin"] || ""} onChange={e => handleInputChange("social.linkedin", e.target.value)} disabled={!isEditing} placeholder="https://linkedin.com/in/..." />
+            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.linkedin"] || ""} onChange={e => handleInputChange("social.linkedin", e.target.value)} disabled={!isEditing} placeholder="https://linkedin.com/in/..." />
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">GitHub</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed" value={formData["social.github"] || ""} onChange={e => handleInputChange("social.github", e.target.value)} disabled={!isEditing} placeholder="https://github.com/..." />
+            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.github"] || ""} onChange={e => handleInputChange("social.github", e.target.value)} disabled={!isEditing} placeholder="https://github.com/..." />
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Twitter / X</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed" value={formData["social.twitter"] || ""} onChange={e => handleInputChange("social.twitter", e.target.value)} disabled={!isEditing} placeholder="https://x.com/..." />
+            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.twitter"] || ""} onChange={e => handleInputChange("social.twitter", e.target.value)} disabled={!isEditing} placeholder="https://x.com/..." />
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Coding Profile (LeetCode/HackerRank)</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed" value={formData["social.coding_profile"] || ""} onChange={e => handleInputChange("social.coding_profile", e.target.value)} disabled={!isEditing} placeholder="https://leetcode.com/..." />
+            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.coding_profile"] || ""} onChange={e => handleInputChange("social.coding_profile", e.target.value)} disabled={!isEditing} placeholder="https://leetcode.com/..." />
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Portfolio Website</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed" value={formData["social.portfolio"] || ""} onChange={e => handleInputChange("social.portfolio", e.target.value)} disabled={!isEditing} placeholder="https://yourwebsite.com" />
+            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.portfolio"] || ""} onChange={e => handleInputChange("social.portfolio", e.target.value)} disabled={!isEditing} placeholder="https://yourwebsite.com" />
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Instagram</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed" value={formData["social.instagram"] || ""} onChange={e => handleInputChange("social.instagram", e.target.value)} disabled={!isEditing} placeholder="https://instagram.com/..." />
+            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.instagram"] || ""} onChange={e => handleInputChange("social.instagram", e.target.value)} disabled={!isEditing} placeholder="https://instagram.com/..." />
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Facebook</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed" value={formData["social.facebook"] || ""} onChange={e => handleInputChange("social.facebook", e.target.value)} disabled={!isEditing} placeholder="https://facebook.com/..." />
+            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.facebook"] || ""} onChange={e => handleInputChange("social.facebook", e.target.value)} disabled={!isEditing} placeholder="https://facebook.com/..." />
           </div>
         </div>
       </div>
