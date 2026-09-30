@@ -570,11 +570,6 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     } catch (e) {
                         console.error("[Razorpay Webhook] Could not create PaymentTransaction for AI Top-Up:", e.message);
                     }
-                        merchantType: "CLASSGRID",
-                        paymentFlow: "AI_TOPUP",
-                        sourceIp: req.ip || req.connection.remoteAddress,
-                        method: paymentEntity.method || "card"
-                    });
 
                     console.log(`[Razorpay Webhook] ✅ AI Top-Up successful! ${creditsAdded} credits added to User ${userId}`);
                 }
