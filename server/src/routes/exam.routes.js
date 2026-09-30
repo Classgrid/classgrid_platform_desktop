@@ -1,3 +1,7 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -165,7 +169,7 @@ Return ONLY a valid JSON array. Each object must have these exact keys:
 If a field is missing, use empty string "". Do not include any explanation, just the JSON array.`;
 
         const completion = await groq.chat.completions.create({
-            model: 'llama3-70b-8192',
+            /* model: 'llama3-70b-8192' */
             messages: [{ role: 'user', content: prompt }],
             temperature: 0.1,
             max_tokens: 3000,

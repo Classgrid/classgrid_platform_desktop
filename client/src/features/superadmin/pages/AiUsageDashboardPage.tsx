@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
+import { NativeSelect, NativeSelectOption } from "@/components/marketing_ui/native-select";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { Search, Filter, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
@@ -93,10 +94,11 @@ export function AiUsageDashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [orgTypeFilter, setOrgTypeFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<Date | undefined>();
+  const [selectedGlobalOrgId, setSelectedGlobalOrgId] = useState<string>("all");
   const resetOrgMutation = useResetOrgUsage();
   const blockOrgMutation = useBlockAiOrg();
 
-  const { data: globalStats, isLoading: globalLoading } = useGlobalAiStats();
+  const { data: globalStats, isLoading: globalLoading } = useGlobalAiStats(selectedGlobalOrgId !== "all" ? selectedGlobalOrgId : undefined);
   const { data: orgs, isLoading: orgsLoading } = useAiUsageOrgs();
 
   const { data: orgDetail, isLoading: orgDetailLoading } = useAiOrgDetail(path.orgId || "");
@@ -124,29 +126,25 @@ export function AiUsageDashboardPage() {
         </div>
         
         <div className="flex w-full gap-4 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
-          <div className="min-w-[140px] flex-1">
-            <select 
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              value={orgTypeFilter}
-              onChange={(e) => setOrgTypeFilter(e.target.value)}
-            >
-              <option value="all">Org Type: All</option>
-              <option value="school">School</option>
-              <option value="college">College</option>
-              <option value="university">University</option>
-            </select>
-          </div>
+          <NativeSelect 
+            value={orgTypeFilter}
+            onChange={(e) => setOrgTypeFilter(e.target.value)}
+          >
+            <NativeSelectOption value="all">Org Type: All</NativeSelectOption>
+            <NativeSelectOption value="school">School</NativeSelectOption>
+            <NativeSelectOption value="college">College</NativeSelectOption>
+            <NativeSelectOption value="university">University</NativeSelectOption>
+          </NativeSelect>
           
-          <div className="min-w-[140px] flex-1">
-            <select 
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="all">Org Name: All</option>
-              {orgs?.map((o: any) => (
-                <option key={o.orgId} value={o.orgId}>{o.orgName}</option>
-              ))}
-            </select>
-          </div>
+          <NativeSelect 
+            value={selectedGlobalOrgId}
+            onChange={(e) => setSelectedGlobalOrgId(e.target.value)}
+          >
+            <NativeSelectOption value="all">Org Name: All</NativeSelectOption>
+            {orgs?.map((o: any) => (
+              <NativeSelectOption key={o.id} value={o.id}>{o.name}</NativeSelectOption>
+            ))}
+          </NativeSelect>
 
           <div className="shrink-0">
             <NikhilTimeCalendar 
@@ -262,9 +260,9 @@ export function AiUsageDashboardPage() {
           </Card>
           <Card>
             <CardContent className="p-6 flex flex-col items-center text-center">
-              <Activity className="h-8 w-8 text-emerald-500 mb-3" />
-              <div className="text-3xl font-bold">₹{formatNumber(totalRevenue || 0)}</div>
-              <div className="text-sm text-muted-foreground mt-1">Total Top-Up Revenue</div>
+              <Building className="h-8 w-8 text-emerald-500 mb-3" />
+              <div className="text-3xl font-bold">{formatNumber(orgs?.length || 0)}</div>
+              <div className="text-sm text-muted-foreground mt-1">Active Organizations</div>
             </CardContent>
           </Card>
           <Card>
@@ -275,6 +273,8 @@ export function AiUsageDashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {renderFilterBar()}
 
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="col-span-2">
@@ -316,7 +316,11 @@ export function AiUsageDashboardPage() {
                       }}
                     />
 
-                    <Bar dataKey="credits" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="credits" radius={[4, 4, 0, 0]}>
+                      {(usageTrend || []).map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>

@@ -1,3 +1,7 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 import { Worker } from 'bullmq';
 import Trajectory from '../models/Trajectory.js';
 import Artifact from '../models/Artifact.js';
@@ -22,7 +26,7 @@ export const buildWorker = new Worker('build-steps', async (job) => {
                 name: "mistral",
                 url: "https://api.mistral.ai/v1/chat/completions",
                 apiKey: process.env.MISTRAL_API_KEY || "",
-                model: "mistral-large-latest"
+                /* model: "mistral-large-latest" */
             },
             {
                 name: "cloudflare",

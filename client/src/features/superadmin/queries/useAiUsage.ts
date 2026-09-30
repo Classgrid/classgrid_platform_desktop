@@ -4,7 +4,7 @@ import { apiClient as api } from "@/lib/apiClient";
 
 // API endpoints
 export const aiUsageApi = {
-  getGlobalStats: () => api.get("/api/super-admin/ai-usage/global/stats").then(res => res.data.data),
+  getGlobalStats: (orgId?: string) => api.get(`/api/super-admin/ai-usage/global/stats${orgId ? `?orgId=${orgId}` : ''}`).then(res => res.data.data),
   getModelBreakdown: () => api.get("/api/super-admin/ai-usage/global/models").then(res => res.data.data),
   
   getOrgs: () => api.get("/api/super-admin/ai-usage/orgs").then(res => res.data.data),
@@ -22,9 +22,9 @@ export const aiUsageApi = {
   deleteUserData: (userId: string) => api.delete(`/api/super-admin/ai-usage/users/${userId}/data`).then(res => res.data),
 };
 
-export const useGlobalAiStats = () => useQuery({
-  queryKey: ["ai-usage-global"],
-  queryFn: aiUsageApi.getGlobalStats,
+export const useGlobalAiStats = (orgId?: string) => useQuery({
+  queryKey: ["ai-usage-global", orgId],
+  queryFn: () => aiUsageApi.getGlobalStats(orgId),
 });
 
 export const useAiModelBreakdown = () => useQuery({

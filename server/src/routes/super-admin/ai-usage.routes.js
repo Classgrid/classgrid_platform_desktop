@@ -1,3 +1,7 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 import express from "express";
 import * as globalController from "../../controllers/super-admin/ai-usage-global.controller.js";
 import * as orgController from "../../controllers/super-admin/ai-usage-orgs.controller.js";

@@ -1,3 +1,7 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 import mongoose from 'mongoose';
 
 const MONGODB_URI = "mongodb+srv://classgrid-admin:aiLfOjcURw9UUALw@classgrid.sa5ww0z.mongodb.net/classgrid?retryWrites=true&w=majority&appName=Classgrid&authSource=admin";

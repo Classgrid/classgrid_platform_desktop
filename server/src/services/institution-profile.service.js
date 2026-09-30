@@ -1,3 +1,7 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨

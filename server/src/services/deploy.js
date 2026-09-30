@@ -1,3 +1,7 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 import Artifact from '../models/Artifact.js';
 import Trajectory from '../models/Trajectory.js';
 import { r2Client } from '../config/r2Client.js';

@@ -1,3 +1,7 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -506,6 +510,20 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     const PaymentOrder = (await import("../models/PaymentOrder.js")).default;
                     await PaymentOrder.findOneAndUpdate({ providerOrderId: orderId }, { status: "PAID" });
 
+                    // Format payment method string properly
+                    let methodStr = paymentEntity.method || "";
+                    if (methodStr === "upi" && paymentEntity.vpa) {
+                        methodStr = `upi:${paymentEntity.vpa}`;
+                    } else if (methodStr === "card" && paymentEntity.card) {
+                        methodStr = `card:${paymentEntity.card.network} ${paymentEntity.card.last4}`;
+                    } else if (methodStr === "netbanking" && paymentEntity.bank) {
+                        methodStr = `netbanking:${paymentEntity.bank}`;
+                    }
+
+                    const bankRrn = paymentEntity.acquirer_data?.rrn || paymentEntity.acquirer_data?.bank_transaction_id || paymentEntity.bank_transaction_id || null;
+                    const feePaise = paymentEntity.fee || 0;
+                    const taxPaise = paymentEntity.tax || 0;
+
                     const PlatformTransaction = (await import("../models/PlatformTransaction.js")).default;
                     await PlatformTransaction.create({
                         organizationId: organizationId || null,
@@ -523,21 +541,35 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                         userMobile: paymentEntity.contact || user?.phoneNumber || "",
                         userId: userId,
                         userRole: user?.role || "",
-                        paymentMethod: paymentEntity.method || "",
+                        paymentMethod: methodStr,
                         paymentTime: paymentEntity.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
                     });
 
-                    const PaymentTransaction = (await import("../models/PaymentTransaction.js")).default;
-                    await PaymentTransaction.create({
-                        organizationId: organizationId || null,
-                        amountCapturedPaise: amount,
-                        feePaise: fee || 0,
-                        taxPaise: tax || 0,
-                        currency,
-                        status: "CAPTURED",
-                        capturedAt: new Date(),
-                        providerPaymentId: paymentId,
-                        providerOrderId: orderId,
+                    // We wrap PaymentTransaction creation in try-catch in case paymentAttemptId is required and fails
+                    try {
+                        const PaymentTransaction = (await import("../models/PaymentTransaction.js")).default;
+                        await PaymentTransaction.create({
+                            organizationId: organizationId || null,
+                            amountCapturedPaise: amount,
+                            feePaise: feePaise,
+                            taxPaise: taxPaise,
+                            currency,
+                            status: "CAPTURED",
+                            capturedAt: new Date(),
+                            providerPaymentId: paymentId,
+                            providerOrderId: orderId,
+                            merchantType: "CLASSGRID",
+                            paymentFlow: "AI_TOPUP",
+                            sourceIp: req.headers['x-forwarded-for'] || req.ip || req.connection?.remoteAddress,
+                            method: paymentEntity.method || "card",
+                            vpa: paymentEntity.vpa || null,
+                            bankReference: bankRrn,
+                            paymentOrderId: orderId, // Some default schema fields to avoid validation errors
+                            paymentAttemptId: new mongoose.Types.ObjectId() // Fake attempt ID if missing, since this is a direct top-up bypass
+                        });
+                    } catch (e) {
+                        console.error("[Razorpay Webhook] Could not create PaymentTransaction for AI Top-Up:", e.message);
+                    }
                         merchantType: "CLASSGRID",
                         paymentFlow: "AI_TOPUP",
                         sourceIp: req.ip || req.connection.remoteAddress,

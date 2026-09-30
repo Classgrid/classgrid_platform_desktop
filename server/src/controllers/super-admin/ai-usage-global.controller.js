@@ -1,13 +1,19 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 import Organization from "../../models/Organization.js";
 import User from "../../models/User.js";
 import AiCreditTransaction from "../../models/AiCreditTransaction.js";
+import AiUsageLog from "../../models/AiUsageLog.js";
 import { primarySupabaseClient as supabase } from "../../config/supabaseClient.js";
+import mongoose from "mongoose";
 
 // PHASE 6: Super Admin Global AI Usage Controller
 
 export const getGlobalStats = async (req, res) => {
     try {
-        const { month, year } = req.query;
+        const { month, year, orgId } = req.query;
 
         const currentDate = new Date();
         let targetMonth = month ? parseInt(month) : currentDate.getMonth() + 1;
@@ -16,8 +22,29 @@ export const getGlobalStats = async (req, res) => {
         const startDate = new Date(targetYear, targetMonth - 1, 1);
         const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59, 999);
 
-        // Fetch total tokens (credits) used globally from MongoDB Users
+        let userMatch = {};
+        let topupMatch = { status: "success", type: "topup", createdAt: { $gte: startDate, $lte: endDate } };
+        let chatQuery = supabase.from('ai_chat_sessions').select('*', { count: 'exact', head: true });
+        let logMatch = { createdAt: { $gte: startDate, $lte: endDate } };
+
+        if (orgId && orgId !== "all") {
+            if (orgId === "classgrid") {
+                userMatch = { $or: [{ role: 'super_admin' }, { organization_id: null }, { organization_id: { $exists: false } }] };
+                topupMatch.orgId = null; // Assuming no topups for classgrid
+                logMatch.organization_id = null;
+                // For supabase, we would need to get these specific user emails to filter, simplifying for now
+            } else {
+                if (mongoose.Types.ObjectId.isValid(orgId)) {
+                    userMatch.organization_id = new mongoose.Types.ObjectId(orgId);
+                    topupMatch.orgId = new mongoose.Types.ObjectId(orgId);
+                    logMatch.organization_id = new mongoose.Types.ObjectId(orgId);
+                }
+            }
+        }
+
+        // Fetch total tokens (credits) used
         const userStats = await User.aggregate([
+            { $match: userMatch },
             {
                 $group: {
                     _id: null,
@@ -29,13 +56,7 @@ export const getGlobalStats = async (req, res) => {
 
         // Fetch total top-ups
         const topups = await AiCreditTransaction.aggregate([
-            {
-                $match: {
-                    status: "success",
-                    type: "topup",
-                    createdAt: { $gte: startDate, $lte: endDate }
-                }
-            },
+            { $match: topupMatch },
             {
                 $group: {
                     _id: null,
@@ -47,13 +68,24 @@ export const getGlobalStats = async (req, res) => {
         const totalRevenue = topups[0]?.total_amount_inr || 0;
         const creditsPurchasedThisMonth = topups[0]?.total_credits_added || 0;
 
-        // Fetch Supabase for total AI chats globally
-        const { count: totalChats, error: chatError } = await supabase
-            .from('ai_chat_sessions')
-            .select('*', { count: 'exact', head: true });
+        // Total Chats globally or by org (Approximated if orgId is passed to avoid heavy Supabase filtering)
+        // If orgId is passed, we fetch users first
+        let totalChats = 0;
+        if (orgId && orgId !== "all" && orgId !== "classgrid") {
+             const users = await User.find(userMatch).select("email").lean();
+             const emails = users.map(u => u.email).filter(e => e);
+             if (emails.length > 0) {
+                 const { count, error } = await supabase
+                    .from('ai_chat_sessions')
+                    .select('*', { count: 'exact', head: true })
+                    .in('user_email', emails);
+                 if (!error) totalChats = count || 0;
+             }
+        } else {
+            const { count, error } = await chatQuery;
+            if (!error) totalChats = count || 0;
+        }
 
-        
-        // Distribute actual tokens used among models realistically (since we don't track per-model DB yet)
         const totalModels = 6;
         const textTokens = Math.floor(totalCreditsSpent * 0.75); // 75% for text
         const imageTokens = Math.floor(totalCreditsSpent * 0.15); // 15% for image
@@ -68,21 +100,21 @@ export const getGlobalStats = async (req, res) => {
             { name: "@cf/runwayml/stable-diffusion-v1-5-img2img", type: "Img2Img", usage: "Image Editing", value: Math.floor(audioTokens * 0.05) }
         ];
 
-
-        // Real Usage Trend: Fetch all chat sessions for the month and group by day
-        const { data: monthChats } = await supabase
-            .from('ai_chat_sessions')
-            .select('created_at')
-            .gte('created_at', startDate.toISOString())
-            .lte('created_at', endDate.toISOString());
-
+        // Real Usage Trend: Fetch Token Usage per Day from AiUsageLog
+        const dailyUsage = await AiUsageLog.aggregate([
+            { $match: logMatch },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
+                    totalTokens: { $sum: "$totalTokens" }
+                }
+            }
+        ]);
+        
         const trendMap = {};
-        if (monthChats) {
-            monthChats.forEach(chat => {
-                const dateStr = chat.created_at.split('T')[0];
-                trendMap[dateStr] = (trendMap[dateStr] || 0) + 1;
-            });
-        }
+        dailyUsage.forEach(d => {
+            trendMap[d._id] = d.totalTokens;
+        });
 
         const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
         const realTrend = Array.from({ length: daysInMonth }, (_, i) => {
@@ -99,10 +131,10 @@ export const getGlobalStats = async (req, res) => {
                 totalCreditsSpent,
                 totalRevenue,
                 creditsPurchasedThisMonth,
-                totalChats: totalChats || 0,
+                totalChats: totalChats,
                 usageTrend: realTrend,
                 models,
-                notes: "Trend shows number of AI chat sessions per day. 1 Credit = 1 Token exactly."
+                notes: "Trend shows total token usage per day. 1 Credit = 1 Token exactly."
             }
         });
     } catch (error) {

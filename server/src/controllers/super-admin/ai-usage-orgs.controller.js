@@ -1,3 +1,7 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 import Organization from "../../models/Organization.js";
 import User from "../../models/User.js";
 import AiCreditTransaction from "../../models/AiCreditTransaction.js";

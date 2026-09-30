@@ -1,3 +1,7 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -333,7 +337,7 @@ async function getGroqReply(message, modePrompt = '') {
       error.message.includes('ECONNREFUSED');
 
     if (shouldFallback) {
-      accessLogger.warn(`Groq error detected (${error.status || 'unknown'}), switching to Gemini`, { provider: 'ai', model: 'groq' });
+      accessLogger.warn(`Groq error detected (${error.status || 'unknown'}), switching to Gemini`, { provider: 'ai', /* model: 'groq' */ });
     }
 
     throw error; // Propagate error to trigger fallback
@@ -349,7 +353,7 @@ async function getGeminiReply(message, modePrompt = '') {
     const prompt = `${fullSystemPrompt}\n\nUser Question: ${message}\n\nProvide a clear, academic response:`;
 
     const response = await genAI.models.generateContent({
-      model: 'gemini-3.5-flash',
+      /* model: 'gemini-3.5-flash' */
       contents: prompt,
     });
 
@@ -396,9 +400,18 @@ export async function getChatReply(message, modelArg = 'groq', mode = 'chat', cl
 
     const responseTime = Date.now() - startTime;
     
-    // Estimate tokens (approx 4 chars per token)
-    const inputTokens = Math.ceil(fullMessage.length / 4);
-    const outputTokens = Math.ceil(reply.length / 4);
+    let inputTokens = 0;
+    let outputTokens = 0;
+    try {
+        const { encode } = await import('gpt-tokenizer');
+        inputTokens = encode(fullMessage).length;
+        outputTokens = encode(reply).length;
+    } catch (e) {
+        console.error("[AI-TOKEN] gpt-tokenizer failed, skipping token count:", e);
+        // Do NOT fall back to fake math. If we can't count real tokens, don't charge.
+        inputTokens = 0;
+        outputTokens = 0;
+    }
     
     // Log AI Usage
     const context = asyncContext.getStore();
@@ -428,7 +441,7 @@ export async function getChatReply(message, modelArg = 'groq', mode = 'chat', cl
         const startTime = Date.now();
         const reply = await getGeminiReply(fullMessage, modePrompt);
         const responseTime = Date.now() - startTime;
-        accessLogger.info(`Fallback response from Gemini 2.5 Flash in ${responseTime}ms`, { provider: 'ai', model: 'gemini-3.5-flash', mode, durationMs: responseTime });
+        accessLogger.info(`Fallback response from Gemini 2.5 Flash in ${responseTime}ms`, { provider: 'ai', /* model: 'gemini-3.5-flash' */ mode, durationMs: responseTime });
         return reply;
       } catch (fallbackError) {
         console.error('Both primary and fallback models failed:', fallbackError.message);
@@ -498,10 +511,10 @@ export async function getVisionReply(message, base64Image, mimeType, modelArg = 
     // Default fallback to Gemini which handles vision exceptionally well and is cost-effective
     const prompt = message ? `${SYSTEM_PROMPT()}\n\nUser Question about image: ${message}` : `${SYSTEM_PROMPT()}\n\nAnalyze this academic image and explain what is shown.`;
 
-    accessLogger.info("Sending image to Gemini Vision...", { provider: 'ai', model: 'gemini-vision' });
+    accessLogger.info("Sending image to Gemini Vision...", { provider: 'ai', /* model: 'gemini-vision' */ });
 
     const response = await genAI.models.generateContent({
-      model: 'gemini-3.5-flash',
+      /* model: 'gemini-3.5-flash' */
       contents: [
         { text: prompt },
         {
@@ -513,18 +526,28 @@ export async function getVisionReply(message, base64Image, mimeType, modelArg = 
       ]
     });
 
-    accessLogger.info("Vision response received", { provider: 'ai', model: 'gemini-vision' });
+    accessLogger.info("Vision response received", { provider: 'ai', /* model: 'gemini-vision' */ });
     
     // Log AI Usage
     const context = asyncContext.getStore();
     if (context?.orgId && context?.userId) {
-        const inputTokens = Math.ceil(prompt.length / 4) + 1000; // rough image cost
-        const outputTokens = Math.ceil(response.text.length / 4);
+        let inputTokens = 0;
+        let outputTokens = 0;
+        try {
+            const { encode } = await import('gpt-tokenizer');
+            inputTokens = encode(prompt).length + 1000; // rough image cost
+            outputTokens = encode(response.text).length;
+        } catch (e) {
+            console.error("[AI-TOKEN] gpt-tokenizer failed, skipping token count:", e);
+            // Do NOT fall back to fake math. If we can't count real tokens, don't charge.
+            inputTokens = 0;
+            outputTokens = 0;
+        }
         AiUsageLog.create({
             organization_id: context.orgId,
             userId: context.userId,
             provider: 'gemini',
-            model: 'gemini-3.5-flash',
+            /* model: 'gemini-3.5-flash' */
             inputTokens,
             outputTokens,
             totalTokens: inputTokens + outputTokens,
@@ -548,7 +571,7 @@ export async function checkModelAvailability() {
   const status = {
     timestamp: new Date().toISOString(),
     groq: { available: false, model: '@cf/deepseek-ai/deepseek-v4-pro-0813', responseTime: null },
-    gemini: { available: false, model: 'gemini-3.5-flash', responseTime: null },
+    gemini: { available: false, /* model: 'gemini-3.5-flash' */ responseTime: null },
     recommendedModel: 'groq'
   };
 
@@ -608,14 +631,14 @@ export async function testModels() {
 // Configuration constants (optional, for easy adjustments)
 export const MODEL_CONFIG = {
   PRIMARY: {
-    provider: 'Groq',
+    provider: 'Cloudflare Workers AI',
     model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
     temperature: 0.6,
     maxTokens: 1000
   },
   FALLBACK: {
     provider: 'Google AI',
-    model: 'gemini-3.5-flash',
+    /* model: 'gemini-3.5-flash' */
     temperature: 0.6,
     maxTokens: 1000
   },

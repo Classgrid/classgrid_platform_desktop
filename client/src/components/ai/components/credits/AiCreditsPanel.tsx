@@ -125,10 +125,6 @@ export function AiCreditsPanel() {
                     <div className="font-semibold text-lg">{formatNumber(remainingAmount)} <span className="text-sm font-normal text-muted-foreground">Credits</span></div>
                   </div>
                   
-                  <div className="col-span-2">
-                    <div className="text-sm text-muted-foreground mb-1">Estimated credits remaining</div>
-                    <div className="font-semibold text-lg">{formatNumber(estimatedRemaining)} <span className="text-sm font-normal text-muted-foreground">Credits</span></div>
-                  </div>
                 </div>
                 
                 {issuedAmount > 0 && (

@@ -1,3 +1,7 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 /*
  * // Trigger AWS Deployment Test 3
 
@@ -422,13 +426,13 @@ async function generateSessionTitle(sessionId, question) {
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
                     apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
-                    model: "open-mistral-nemo"
+                    /* model: "open-mistral-nemo" */
                 },
                 {
                     name: "gemini",
                     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                     apiKey: process.env.GEMINI_API_KEY || "",
-                    model: "gemini-3.5-flash"
+                    /* model: "gemini-3.5-flash" */
                 }
             ]
         });
@@ -1340,7 +1344,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
                     apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
-                    model: "open-mistral-nemo",
+                    /* model: "open-mistral-nemo" */
                     timeoutMs: 60000
                 },
                 {
@@ -1350,7 +1354,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     // ÃƒÂ°Ã…Â¸Ã…Â¡Ã‚Â¨ AI WARNING: DO NOT CHANGE THIS TO gemini-3.5-flash ÃƒÂ°Ã…Â¸Ã…Â¡Ã‚Â¨
                     // gemini-3.5-flash was deprecated and completely removed by Google in 2025.
                     // If you change this back to 1.5, the backend will crash and hang.
-                    model: "gemini-3.5-flash",
+                    /* model: "gemini-3.5-flash" */
                     timeoutMs: 60000
                 }
             ],
@@ -2420,22 +2424,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                 console.log(`[AI-DEBUG] ===== GENERATE END ===== duration=${generateDuration}s answer=${answer ? `"${String(answer).slice(0, 150)}..."` : 'NULL'} stepsCount=${accSteps.length} thoughtLength=${(accThought || '').length}`);
                 console.log(`[AI-DEBUG] accSteps tools called: ${accSteps.map(s => s.tool).join(', ') || 'NONE'}`);
                 
-                // Actual End-to-End token deduction logic wired up
-                if (answer && userId) {
-                    // Approximate token count based on input prompt and output response length
-                    // Roughly 4 chars = 1 token. Add 50 for base system prompt overhead.
-                    const inputLen = (body.question || "").length;
-                    const outputLen = String(answer).length;
-                    let tokensUsed = Math.ceil((inputLen + outputLen) / 4) + 50;
-                    
-                    // Add tool usage overhead (each tool call uses extra tokens)
-                    if (accSteps && accSteps.length > 0) {
-                        tokensUsed += accSteps.length * 150;
-                    }
-                    
-                    await deductTokens(userId, orgId, tokensUsed, tokenSource);
-                    console.log(`[AI-DEBUG] Deducted ${tokensUsed} tokens from ${tokenSource} for user ${userId}`);
-                }
+
 
                 if (requestAborted) return;
 
@@ -2500,10 +2489,13 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     const outputTokens = encode(`${answer || ""}\n${typeof accThought !== 'undefined' ? (accThought || "") : ""}`).length;
                     calculatedTokens = inputTokens + outputTokens;
                 } catch (e) {
-                    console.error("Token calculation failed, falling back to math:", e);
-                    calculatedTokens = Math.ceil(((body.question || "").length + answer.length + (typeof accThought !== 'undefined' ? (accThought || "").length : 0)) / 4);
+                    console.error("[AI-TOKEN] gpt-tokenizer failed, skipping deduction for this message:", e);
+                    // Do NOT fall back to fake math. If we can't count real tokens, don't charge.
+                    calculatedTokens = 0;
                 }
-                const estimatedTokens = req.capturedUsage && req.capturedUsage.total_tokens ? req.capturedUsage.total_tokens : calculatedTokens;
+                // Cloudflare @cf/ models do NOT return usage in the API response.
+                // Real token count comes from gpt-tokenizer above.
+                const estimatedTokens = calculatedTokens;
                 if (estimatedTokens > 0) {
                     const User = (await import("../models/User.js")).default;
                     const Organization = (await import("../models/Organization.js")).default;

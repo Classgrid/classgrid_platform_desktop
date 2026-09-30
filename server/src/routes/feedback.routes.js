@@ -1,3 +1,7 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -269,7 +273,7 @@ Redact any names, exact dates, or specific incidents that could identify the stu
 
 Original Comment: "${safeComment}"`;
                     const completion = await groq.chat.completions.create({
-                        model: 'llama3-70b-8192',
+                        /* model: 'llama3-70b-8192' */
                         messages: [{ role: 'user', content: prompt }],
                         temperature: 0.1,
                         max_tokens: 300,
@@ -492,7 +496,7 @@ Return as valid JSON:
 {"strengths": ["..."], "weaknesses": ["..."], "suggestions": ["..."]}`;
 
         const completion = await groq.chat.completions.create({
-            model: 'llama3-70b-8192',
+            /* model: 'llama3-70b-8192' */
             messages: [{ role: 'user', content: prompt }],
             temperature: 0.3,
             max_tokens: 1000,

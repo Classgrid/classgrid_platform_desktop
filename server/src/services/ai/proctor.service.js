@@ -1,3 +1,7 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -44,7 +48,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.Gemini_API_KEY || process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+const model = genAI.getGenerativeModel({ /* model: "gemini-3.5-flash" */ });
 
 /**
  * analyzeProctorSnapshot

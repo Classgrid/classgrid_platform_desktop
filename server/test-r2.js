@@ -1,3 +1,7 @@
+// MODEL STATUS:
+// - Cloudflare Workers AI = ACTIVE (now in use)
+// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
+// - Groq model = DEAD (removed from use)
 import { uploadBufferToR2 } from './src/config/r2Client.js';
 import dotenv from 'dotenv';
 dotenv.config({ path: './.env' });
