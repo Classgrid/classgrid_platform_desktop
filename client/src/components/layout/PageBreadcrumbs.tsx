@@ -63,7 +63,7 @@ export function PageBreadcrumbs({ items = [], customNode, show = true }: PageBre
       setBreadcrumbs([]);
       setShowBreadcrumbs(true);
     };
-  }, [items, customNode, show, setBreadcrumbs, setShowBreadcrumbs]);
+  }, [JSON.stringify(items), show, setBreadcrumbs, setShowBreadcrumbs]); // Excluded customNode to prevent infinite loops when passing JSX
 
   return null; // This component doesn't render anything directly
 }
