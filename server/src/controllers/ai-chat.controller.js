@@ -2561,15 +2561,15 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     },
                     // ================= INTERNAL CHAT TOOLS =================
                     list_grids: async (args) => {
-                        const result = await handleToolCall('list_grids', args, {});
+                        const result = await handleToolCall('list_grids', args, { userId: req.user?._id });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     list_chat_threads: async (args) => {
-                        const result = await handleToolCall('list_chat_threads', args, {});
+                        const result = await handleToolCall('list_chat_threads', args, { userId: req.user?._id });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     read_chat_messages: async (args) => {
-                        const result = await handleToolCall('read_chat_messages', args, {});
+                        const result = await handleToolCall('read_chat_messages', args, { userId: req.user?._id });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     send_chat_message: async (args) => {
