@@ -1383,7 +1383,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           const msgIds = (messages || []).map(m => m.id);
           let attachMap = {};
           if (msgIds.length > 0) {
-            const { data: attachments } = await sb.from('chat_message_attachments').select('*').in('message_id', msgIds);
+            const { data: attachments } = await sb.from('chat_attachments').select('*').in('message_id', msgIds);
             (attachments || []).forEach(a => {
               if (!attachMap[a.message_id]) attachMap[a.message_id] = [];
               attachMap[a.message_id].push({ file_url: a.file_url, file_name: a.file_name, file_type: a.file_type, file_size: a.file_size });
@@ -1425,7 +1425,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         // 4. GET 1:1 ATTACHMENT
         if (name === 'get_chat_attachment_url') {
-          const { data: attachments, error } = await sb.from('chat_message_attachments').select('*').eq('message_id', args.messageId);
+          const { data: attachments, error } = await sb.from('chat_attachments').select('*').eq('message_id', args.messageId);
           if (error) return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
           if (!attachments || attachments.length === 0) return { content: [{ type: 'text', text: 'No attachment found on this message.' }] };
           const result = attachments.map(a => ({ file_url: a.file_url, file_name: a.file_name, file_type: a.file_type, file_size: a.file_size }));
@@ -1533,7 +1533,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           const msgIds = (messages || []).map(m => m.id);
           let attachMap = {};
           if (msgIds.length > 0) {
-            const { data: attachments } = await sb.from('chat_message_attachments').select('*').in('message_id', msgIds);
+            const { data: attachments } = await sb.from('chat_attachments').select('*').in('message_id', msgIds);
             (attachments || []).forEach(a => {
               if (!attachMap[a.message_id]) attachMap[a.message_id] = [];
               attachMap[a.message_id].push({ file_url: a.file_url, file_name: a.file_name, file_type: a.file_type, file_size: a.file_size });
@@ -1571,7 +1571,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         // 5. GET ATTACHMENT URL
         if (name === 'get_group_chat_attachment_url') {
-          const { data: attachments, error } = await sb.from('chat_message_attachments').select('*').eq('message_id', args.messageId);
+          const { data: attachments, error } = await sb.from('chat_attachments').select('*').eq('message_id', args.messageId);
           if (error) return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
           if (!attachments || attachments.length === 0) return { content: [{ type: 'text', text: 'No attachment found on this message.' }] };
           const result = attachments.map(a => ({ file_url: a.file_url, file_name: a.file_name, file_type: a.file_type, file_size: a.file_size }));
