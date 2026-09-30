@@ -146,31 +146,66 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">LinkedIn</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.linkedin"] || ""} onChange={e => handleInputChange("social.linkedin", e.target.value)} disabled={!isEditing} placeholder="https://linkedin.com/in/..." />
+            <div className="relative">
+              <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.linkedin"] || ""} onChange={e => handleInputChange("social.linkedin", e.target.value)} disabled={!isEditing} placeholder="https://linkedin.com/in/..." />
+              {!isEditing && formData["social.linkedin"] && (
+                <a href={formData["social.linkedin"]} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-10 cursor-pointer" />
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">GitHub</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.github"] || ""} onChange={e => handleInputChange("social.github", e.target.value)} disabled={!isEditing} placeholder="https://github.com/..." />
+            <div className="relative">
+              <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.github"] || ""} onChange={e => handleInputChange("social.github", e.target.value)} disabled={!isEditing} placeholder="https://github.com/..." />
+              {!isEditing && formData["social.github"] && (
+                <a href={formData["social.github"]} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-10 cursor-pointer" />
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Twitter / X</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.twitter"] || ""} onChange={e => handleInputChange("social.twitter", e.target.value)} disabled={!isEditing} placeholder="https://x.com/..." />
+            <div className="relative">
+              <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.twitter"] || ""} onChange={e => handleInputChange("social.twitter", e.target.value)} disabled={!isEditing} placeholder="https://x.com/..." />
+              {!isEditing && formData["social.twitter"] && (
+                <a href={formData["social.twitter"]} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-10 cursor-pointer" />
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Coding Profile (LeetCode/HackerRank)</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.coding_profile"] || ""} onChange={e => handleInputChange("social.coding_profile", e.target.value)} disabled={!isEditing} placeholder="https://leetcode.com/..." />
+            <div className="relative">
+              <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.coding_profile"] || ""} onChange={e => handleInputChange("social.coding_profile", e.target.value)} disabled={!isEditing} placeholder="https://leetcode.com/..." />
+              {!isEditing && formData["social.coding_profile"] && (
+                <a href={formData["social.coding_profile"]} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-10 cursor-pointer" />
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Portfolio Website</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.portfolio"] || ""} onChange={e => handleInputChange("social.portfolio", e.target.value)} disabled={!isEditing} placeholder="https://yourwebsite.com" />
+            <div className="relative">
+              <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.portfolio"] || ""} onChange={e => handleInputChange("social.portfolio", e.target.value)} disabled={!isEditing} placeholder="https://yourwebsite.com" />
+              {!isEditing && formData["social.portfolio"] && (
+                <a href={formData["social.portfolio"]} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-10 cursor-pointer" />
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Instagram</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.instagram"] || ""} onChange={e => handleInputChange("social.instagram", e.target.value)} disabled={!isEditing} placeholder="https://instagram.com/..." />
+            <div className="relative">
+              <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.instagram"] || ""} onChange={e => handleInputChange("social.instagram", e.target.value)} disabled={!isEditing} placeholder="https://instagram.com/..." />
+              {!isEditing && formData["social.instagram"] && (
+                <a href={formData["social.instagram"]} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-10 cursor-pointer" />
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Facebook</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.facebook"] || ""} onChange={e => handleInputChange("social.facebook", e.target.value)} disabled={!isEditing} placeholder="https://facebook.com/..." />
+            <div className="relative">
+              <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["social.facebook"] || ""} onChange={e => handleInputChange("social.facebook", e.target.value)} disabled={!isEditing} placeholder="https://facebook.com/..." />
+              {!isEditing && formData["social.facebook"] && (
+                <a href={formData["social.facebook"]} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-10 cursor-pointer" />
+              )}
+            </div>
           </div>
         </div>
       </div>
