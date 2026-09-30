@@ -553,20 +553,8 @@ export function AiUsageDashboardPage() {
                                        
                                        return (
                                          <div key={id} className="flex flex-col space-y-1 mb-2 border-b border-border/50 pb-2 last:border-0 last:pb-0">
-                                            <div className="flex items-center space-x-2">
-                                                {uData.profilePicture ? (
-                                                    <img src={uData.profilePicture} alt={uData.name} className="h-5 w-5 rounded-full object-cover" />
-                                                ) : (
-                                                    <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
-                                                        {uData.name?.substring(0, 2).toUpperCase()}
-                                                    </div>
-                                                )}
-                                                <div className="flex flex-col">
-                                                    <span className="truncate font-medium text-xs text-foreground">{uData.name}</span>
-                                                    {uData.email && <span className="truncate text-[10px] text-muted-foreground">{uData.email}</span>}
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col gap-0.5 mt-1">
+                                            <span className="truncate font-medium text-xs text-foreground">{uData.name}</span>
+                                            <div className="flex flex-col gap-0.5">
                                                 {uData.orgName && <span className="text-[10px] text-muted-foreground">Org: {uData.orgName}</span>}
                                                 <span className="text-[10px] text-muted-foreground font-mono">User ID: {id}</span>
                                             </div>
