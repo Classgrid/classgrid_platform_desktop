@@ -1687,6 +1687,7 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
 
                         return text;
                     },
+
                     unified_db_query: async (args) => {
                         if (args && args.collectionOrTable) {
                             const tableKey = `${args.source || 'unknown'}:${args.collectionOrTable}`;
