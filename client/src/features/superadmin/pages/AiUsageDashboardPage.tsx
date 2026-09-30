@@ -222,43 +222,7 @@ export function AiUsageDashboardPage() {
           </Card>
         </div>
 
-        <SuperadminFilterBar 
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          searchPlaceholder="Search name, owner, plan..."
-        >
-          <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Org Type: All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Org Type: All</SelectItem>
-              <SelectItem value="school">School</SelectItem>
-              <SelectItem value="college">College</SelectItem>
-              <SelectItem value="university">University</SelectItem>
-            </SelectContent>
-          </Select>
 
-          <Select value={selectedGlobalOrgId} onValueChange={setSelectedGlobalOrgId}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Org Name: All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Org Name: All</SelectItem>
-              {orgs?.map((o: any) => (
-                <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="shrink-0">
-            <NikhilTimeCalendar 
-              date={dateFilter}
-              setDate={setDateFilter}
-              placeholder="Select Date"
-            />
-          </div>
-        </SuperadminFilterBar>
 
         <div className="flex flex-col space-y-6">
           {/* Bar Chart 1: Daily AI Requests */}

@@ -4,7 +4,13 @@ import { apiClient as api } from "@/lib/apiClient";
 
 // API endpoints
 export const aiUsageApi = {
-  getGlobalStats: (orgId?: string) => api.get(`/api/super-admin/ai-usage/global/stats${orgId ? `?orgId=${orgId}` : ''}`).then(res => res.data.data),
+  getGlobalStats: (orgId?: string, month?: number, year?: number) => {
+    let url = `/api/super-admin/ai-usage/global/stats?`;
+    if (orgId) url += `orgId=${orgId}&`;
+    if (month) url += `month=${month}&`;
+    if (year) url += `year=${year}&`;
+    return api.get(url).then(res => res.data.data);
+  },
   getModelBreakdown: () => api.get("/api/super-admin/ai-usage/global/models").then(res => res.data.data),
   
   getOrgs: () => api.get("/api/super-admin/ai-usage/orgs").then(res => res.data.data),
@@ -23,9 +29,9 @@ export const aiUsageApi = {
   updateOrgLimits: (orgId: string, data: { pro_pool_limit: number, free_weekly_limit_per_user: number }) => api.put(`/api/super-admin/ai-usage/orgs/${orgId}/limits`, data).then(res => res.data),
 };
 
-export const useGlobalAiStats = (orgId?: string) => useQuery({
-  queryKey: ["ai-usage-global", orgId],
-  queryFn: () => aiUsageApi.getGlobalStats(orgId),
+export const useGlobalAiStats = (orgId?: string, month?: number, year?: number) => useQuery({
+  queryKey: ["ai-usage-global", orgId, month, year],
+  queryFn: () => aiUsageApi.getGlobalStats(orgId, month, year),
 });
 
 export const useAiModelBreakdown = () => useQuery({
