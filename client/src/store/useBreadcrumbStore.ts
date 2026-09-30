@@ -42,6 +42,7 @@
  */
 
 import { create } from 'zustand';
+import React from 'react';
 
 interface BreadcrumbItem {
   label: string;
@@ -51,14 +52,16 @@ interface BreadcrumbItem {
 
 interface BreadcrumbState {
   items: BreadcrumbItem[];
+  customNode?: React.ReactNode;
   showBreadcrumbs: boolean;
-  setBreadcrumbs: (items: BreadcrumbItem[]) => void;
+  setBreadcrumbs: (items: BreadcrumbItem[], customNode?: React.ReactNode) => void;
   setShowBreadcrumbs: (show: boolean) => void;
 }
 
 export const useBreadcrumbStore = create<BreadcrumbState>((set) => ({
   items: [],
+  customNode: undefined,
   showBreadcrumbs: true,
-  setBreadcrumbs: (items) => set({ items, showBreadcrumbs: true }),
+  setBreadcrumbs: (items, customNode) => set({ items, customNode, showBreadcrumbs: true }),
   setShowBreadcrumbs: (show) => set({ showBreadcrumbs: show }),
 }));

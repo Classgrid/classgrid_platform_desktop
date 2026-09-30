@@ -43,17 +43,19 @@
 
 import { useEffect } from 'react';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
+import React from 'react';
 
 interface PageBreadcrumbsProps {
-  items: { label: string; href?: string }[];
+  items?: { label: string; href?: string }[];
+  customNode?: React.ReactNode;
   show?: boolean;
 }
 
-export function PageBreadcrumbs({ items, show = true }: PageBreadcrumbsProps) {
+export function PageBreadcrumbs({ items = [], customNode, show = true }: PageBreadcrumbsProps) {
   const { setBreadcrumbs, setShowBreadcrumbs } = useBreadcrumbStore();
 
   useEffect(() => {
-    setBreadcrumbs(items);
+    setBreadcrumbs(items, customNode);
     setShowBreadcrumbs(show);
     
     return () => {
@@ -61,7 +63,7 @@ export function PageBreadcrumbs({ items, show = true }: PageBreadcrumbsProps) {
       setBreadcrumbs([]);
       setShowBreadcrumbs(true);
     };
-  }, [items, show, setBreadcrumbs, setShowBreadcrumbs]);
+  }, [items, customNode, show, setBreadcrumbs, setShowBreadcrumbs]);
 
   return null; // This component doesn't render anything directly
 }
