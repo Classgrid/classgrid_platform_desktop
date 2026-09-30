@@ -7,8 +7,10 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function SuperAdminProfileView({ profileData }: { profileData: any }) {
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState<Record<string, any>>({
     ...(profileData || {}),
     ...(profileData?.metadata || {})
@@ -71,6 +73,8 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
           "facebook_url": formData["facebook_url"] || "",
         }
       });
+      queryClient.invalidateQueries({ queryKey: ["global-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["current-user"] });
       toast.success("Super Admin profile updated successfully");
       setIsEditing(false);
     } catch (error: any) {
