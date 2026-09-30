@@ -236,7 +236,7 @@ export function AiUsageDashboardPage() {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Daily Usage Trend (Chats)</CardTitle>
               <div className="flex items-center gap-4">
-                <NikhilTimeCalendar value={dateFilter} onChange={setDateFilter as any} showTime={false} placeholder="Select Date" />
+                <NikhilTimeCalendar value={dateFilter} onChange={setDateFilter as any} showTime={false} placeholder="Select Date" className="w-[160px] h-9 border border-input bg-background" />
                 <Select value={chatsTime} onValueChange={setChatsTime as any}>
                   <SelectTrigger className="w-[120px]">
                     <SelectValue placeholder="Daily" />
@@ -299,7 +299,7 @@ export function AiUsageDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Tokens Consumed (Input vs Output)</CardTitle>
-              <NikhilTimeCalendar value={dateFilter} onChange={setDateFilter as any} showTime={false} placeholder="Select Date" />
+              <NikhilTimeCalendar value={dateFilter} onChange={setDateFilter as any} showTime={false} placeholder="Select Date" className="w-[160px] h-9 border border-input bg-background" />
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
@@ -333,7 +333,7 @@ export function AiUsageDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Cost Spend Trend (INR Revenue)</CardTitle>
-              <NikhilTimeCalendar value={dateFilter} onChange={setDateFilter as any} showTime={false} placeholder="Select Date" />
+              <NikhilTimeCalendar value={dateFilter} onChange={setDateFilter as any} showTime={false} placeholder="Select Date" className="w-[160px] h-9 border border-input bg-background" />
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
