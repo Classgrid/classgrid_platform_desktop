@@ -116,6 +116,7 @@ import { OrgAdmissionsPage } from "@/features/superadmin/pages/OrgAdmissionsPage
 import { PlatformAnnouncementsPage } from "@/features/superadmin/pages/PlatformAnnouncementsPage";
 import { SharedChatPage } from "@/features/shared/pages/SharedChatPage";
 import { SharedProfilePage } from "@/features/shared/pages/SharedProfilePage";
+import { SuperAdminProfilePage } from "@/features/superadmin/pages/SuperAdminProfilePage";
 import SandboxProfilePage from "@/features/shared/pages/SandboxProfilePage";
 import DateTimePickerSandbox from "@/features/sandbox/pages/DateTimePickerSandbox";
 import { SandboxPage } from "@/features/superadmin/pages/SandboxPage";
@@ -348,7 +349,7 @@ export function AppRouter() {
           <Route path="/superadmin/team" element={<TeamPage />} />
           <Route path="/superadmin/gdpr" element={<GdprPage />} />
           <Route path="/superadmin/backup" element={<BackupPage />} />
-          <Route path="/superadmin/profile" element={<SharedProfilePage />} />
+          <Route path="/superadmin/profile" element={<SuperAdminProfilePage />} />
           <Route path="/superadmin/settings" element={<SharedSettingsPage />} />
           <Route path="/superadmin/chat" element={<ChatPage />} />
           <Route path="/superadmin/subscribers" element={<SubscribersPage />} />
