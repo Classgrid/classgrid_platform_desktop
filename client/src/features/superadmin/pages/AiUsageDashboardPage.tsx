@@ -301,12 +301,23 @@ export function AiUsageDashboardPage() {
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={getAggregatedData(usageTrend, chatsTime)}>
+                  <BarChart data={getAggregatedData(usageTrend, chatsTime)} barCategoryGap="25%" margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                    <XAxis dataKey="date" stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="currentColor" 
+                      className="text-xs opacity-50" 
+                      tickLine={false} 
+                      axisLine={false}
+                      minTickGap={30}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                      }}
+                    />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
-                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} />
-                    <Bar dataKey="requests" name="AI Requests" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<CustomTooltip />} />
+                    <Bar dataKey="requests" name="AI Requests" fill="#f59e0b" radius={[2, 2, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -321,13 +332,44 @@ export function AiUsageDashboardPage() {
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={usageTrend || []}>
+                  <BarChart data={usageTrend || []} barCategoryGap="25%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                    <XAxis dataKey="date" stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="currentColor" 
+                      className="text-xs opacity-50" 
+                      tickLine={false} 
+                      axisLine={false}
+                      minTickGap={30}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                      }}
+                    />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
-                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} />
+                    <RechartsTooltip 
+                        cursor={{ fill: 'currentColor', opacity: 0.05 }}
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50">
+                                <span className="font-semibold text-foreground mb-1">
+                                  {new Date(label).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                </span>
+                                {payload.map((entry: any, index: number) => (
+                                  <span key={index} className="flex items-center gap-2" style={{ color: entry.color }}>
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                                    {entry.name} : {formatNumber(entry.value)}
+                                  </span>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                    />
                     <Bar dataKey="promptTokens" name="Input Tokens" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="completionTokens" name="Output Tokens" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="completionTokens" name="Output Tokens" stackId="a" fill="#3b82f6" radius={[2, 2, 0, 0]} />
                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -343,12 +385,23 @@ export function AiUsageDashboardPage() {
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={usageTrend || []}>
+                  <BarChart data={usageTrend || []} barCategoryGap="25%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                    <XAxis dataKey="date" stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="currentColor" 
+                      className="text-xs opacity-50" 
+                      tickLine={false} 
+                      axisLine={false}
+                      minTickGap={30}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                      }}
+                    />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
-                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} />
-                    <Bar dataKey="revenue" name="Cost (INR)" fill="#f97316" radius={[4, 4, 0, 0]} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<CustomTooltip />} />
+                    <Bar dataKey="revenue" name="Cost (INR)" fill="#10b981" radius={[2, 2, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -373,12 +426,23 @@ export function AiUsageDashboardPage() {
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={getAggregatedData(usageTrend, orgsTime)}>
+                  <BarChart data={getAggregatedData(usageTrend, orgsTime)} barCategoryGap="25%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                    <XAxis dataKey="date" stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="currentColor" 
+                      className="text-xs opacity-50" 
+                      tickLine={false} 
+                      axisLine={false}
+                      minTickGap={30}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                      }}
+                    />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
-                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} />
-                    <Bar dataKey="activeOrgs" name="Active Organizations" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<CustomTooltip />} />
+                    <Bar dataKey="activeOrgs" name="Active Organizations" fill="#2563eb" radius={[2, 2, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -403,12 +467,23 @@ export function AiUsageDashboardPage() {
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={getAggregatedData(usageTrend, usersTime)}>
+                  <BarChart data={getAggregatedData(usageTrend, usersTime)} barCategoryGap="25%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                    <XAxis dataKey="date" stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="currentColor" 
+                      className="text-xs opacity-50" 
+                      tickLine={false} 
+                      axisLine={false}
+                      minTickGap={30}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                      }}
+                    />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
-                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} />
-                    <Bar dataKey="activeUsers" name="Active Users" fill="#ea580c" radius={[4, 4, 0, 0]} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<CustomTooltip />} />
+                    <Bar dataKey="activeUsers" name="Active Users" fill="#8b5cf6" radius={[2, 2, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -484,23 +559,123 @@ export function AiUsageDashboardPage() {
 
     return (
       <div className="space-y-6">
-        <div className="flex justify-end gap-3 mb-4">
-            <Button 
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="bg-emerald-500/10 border-emerald-500/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-emerald-700 dark:text-emerald-400 text-sm font-medium flex items-center">
+                <Activity className="w-4 h-4 mr-2" />
+                Monthly Org AI Pool
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                {formatNumber(orgDetail?.poolLimit || 500000)}
+              </div>
+              <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1">Tokens shared across all users</p>
+              <Button 
                 variant="outline"
-                onClick={() => setShowOrgBlock(true)}
-                disabled={blockOrgMutation.isPending}
-            >
-                <Shield className="w-4 h-4 mr-2" />
-                {isOrgBlocked ? "Unblock Organization" : "Block Organization"}
-            </Button>
-            <Button 
-                variant="outline"
+                className="w-full mt-4 bg-white/50 hover:bg-white/80 dark:bg-black/50 dark:hover:bg-black/80 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
                 onClick={() => setShowOrgReset(true)}
                 disabled={resetOrgMutation.isPending}
-            >
-                <Activity className="w-4 h-4 mr-2" />
-                Reset Org Limit
-            </Button>
+              >
+                Reset Organization Usage
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-blue-500/10 border-blue-500/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-blue-700 dark:text-blue-400 text-sm font-medium flex items-center">
+                <UserIcon className="w-4 h-4 mr-2" />
+                7-Day Free User Limit
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                {formatNumber(orgDetail?.userWeeklyLimit || 100000)}
+              </div>
+              <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">Free tokens per individual user</p>
+              <Dialog open={showLimitsDialog} onOpenChange={setShowLimitsDialog}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    className="w-full mt-4 bg-white/50 hover:bg-white/80 dark:bg-black/50 dark:hover:bg-black/80 text-blue-700 dark:text-blue-400 border-blue-500/30"
+                    onClick={() => setTempLimits({ poolLimit: orgDetail?.poolLimit || 0, userWeeklyLimit: orgDetail?.userWeeklyLimit || 0 })}
+                  >
+                    Manage Organization Limits
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Manage AI Pool Limits</DialogTitle>
+                    <DialogDescription>
+                      Update the token allocations for the entire organization and the individual weekly user limit.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <label className="text-right text-sm font-medium">Org (Monthly)</label>
+                      <Input
+                        type="number"
+                        value={tempLimits.poolLimit}
+                        onChange={(e) => setTempLimits(prev => ({ ...prev, poolLimit: Number(e.target.value) }))}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <label className="text-right text-sm font-medium">User (Weekly)</label>
+                      <Input
+                        type="number"
+                        value={tempLimits.userWeeklyLimit}
+                        onChange={(e) => setTempLimits(prev => ({ ...prev, userWeeklyLimit: Number(e.target.value) }))}
+                        className="col-span-3"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowLimitsDialog(false)}>Cancel</Button>
+                    <Button 
+                      onClick={() => {
+                        updateLimitsMutation.mutate({ 
+                          orgId: path.orgId || "", 
+                          data: { pro_pool_limit: tempLimits.poolLimit, free_weekly_limit_per_user: tempLimits.userWeeklyLimit } 
+                        });
+                        setShowLimitsDialog(false);
+                      }}
+                      disabled={updateLimitsMutation.isPending}
+                    >
+                      Save Changes
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardContent>
+          </Card>
+
+          <Card className={isOrgBlocked ? "bg-rose-500/10 border-rose-500/20" : "bg-slate-500/10 border-slate-500/20"}>
+            <CardHeader className="pb-2">
+              <CardTitle className={isOrgBlocked ? "text-rose-700 dark:text-rose-400 text-sm font-medium flex items-center" : "text-slate-700 dark:text-slate-400 text-sm font-medium flex items-center"}>
+                <Shield className="w-4 h-4 mr-2" />
+                Security & Access
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={isOrgBlocked ? "text-xl font-bold text-rose-700 dark:text-rose-400" : "text-xl font-bold text-slate-700 dark:text-slate-400"}>
+                {isOrgBlocked ? "BLOCKED" : "ACTIVE"}
+              </div>
+              <p className={isOrgBlocked ? "text-xs text-rose-600/80 dark:text-rose-400/80 mt-1" : "text-xs text-slate-600/80 dark:text-slate-400/80 mt-1"}>
+                {isOrgBlocked ? "All AI usage is suspended" : "Users can access AI features"}
+              </p>
+              <Button 
+                variant="outline"
+                className={isOrgBlocked ? "w-full mt-4 bg-white/50 hover:bg-white/80 dark:bg-black/50 dark:hover:bg-black/80 text-rose-700 dark:text-rose-400 border-rose-500/30" : "w-full mt-4 bg-white/50 hover:bg-white/80 dark:bg-black/50 dark:hover:bg-black/80 text-slate-700 dark:text-slate-400 border-slate-500/30"}
+                onClick={() => setShowOrgBlock(true)}
+                disabled={blockOrgMutation.isPending}
+              >
+                {isOrgBlocked ? "Unblock Organization" : "Block Organization"}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         <Card>

@@ -29,6 +29,7 @@ router.put("/users/:userId/block", adminController.blockAiUser);
 router.put("/orgs/:orgId/block", adminController.blockAiOrg);
 router.post("/users/:userId/reset", adminController.resetUserUsage);
 router.post("/orgs/:orgId/reset", adminController.resetOrgUsage);
+router.put("/orgs/:orgId/limits", adminController.updateOrgAiLimits);
 router.post("/users/:userId/grant", adminController.grantCredits);
 router.delete("/users/:userId/data", adminController.deleteUserAiData);
 

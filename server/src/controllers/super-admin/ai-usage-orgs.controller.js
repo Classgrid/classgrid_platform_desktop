@@ -66,6 +66,7 @@ export const getOrgAiDetail = async (req, res) => {
         let orgName = "Classgrid (Platform Team)";
         let isBlocked = false;
         let poolLimit = 0;
+        let userWeeklyLimit = 100000;
         let userQuery = {};
 
         if (orgId === "classgrid") {
@@ -83,6 +84,7 @@ export const getOrgAiDetail = async (req, res) => {
             orgName = org.name;
             isBlocked = org.ai_config?.is_ai_blocked || false;
             poolLimit = org.ai_config?.pro_pool_limit || 0;
+            userWeeklyLimit = org.ai_config?.free_weekly_limit_per_user || 100000;
             userQuery = { organization_id: orgId };
         }
 
@@ -125,6 +127,7 @@ export const getOrgAiDetail = async (req, res) => {
                 name: orgName,
                 isBlocked,
                 poolLimit,
+                userWeeklyLimit,
                 totalUsage,
                 totalRevenue,
                 totalTopUpCredits,

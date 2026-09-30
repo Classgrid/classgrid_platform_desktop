@@ -164,3 +164,38 @@ export const deleteUserAiData = async (req, res) => {
         res.status(500).json({ success: false, error: "Failed to delete user AI data" });
     }
 };
+
+export const updateOrgAiLimits = async (req, res) => {
+    try {
+        const { orgId } = req.params;
+        const { pro_pool_limit, free_weekly_limit_per_user } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(orgId)) {
+            return res.status(400).json({ success: false, error: "Invalid org ID" });
+        }
+
+        const org = await Organization.findByIdAndUpdate(
+            orgId,
+            { 
+                $set: { 
+                    "ai_config.pro_pool_limit": pro_pool_limit,
+                    "ai_config.free_weekly_limit_per_user": free_weekly_limit_per_user
+                } 
+            },
+            { new: true }
+        );
+
+        if (!org) return res.status(404).json({ success: false, error: "Organization not found" });
+
+        // Update the default weekly limit for all users in this org
+        await User.updateMany(
+            { organization_id: orgId },
+            { $set: { "ai_tokens.free_weekly_limit": free_weekly_limit_per_user } }
+        );
+
+        res.status(200).json({ success: true, message: "Organization AI limits updated successfully." });
+    } catch (error) {
+        console.error("Update Org AI Limits Error:", error);
+        res.status(500).json({ success: false, error: "Failed to update org AI limits" });
+    }
+};
