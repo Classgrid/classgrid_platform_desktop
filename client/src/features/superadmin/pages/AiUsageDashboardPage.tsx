@@ -150,7 +150,7 @@ export function AiUsageDashboardPage() {
           onClick={() => handleNavigateUp("root")}
           className={`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md ${!path.orgId ? "bg-background shadow-sm text-foreground" : ""}`}
         >
-          <Home className="h-4 w-4 mr-1.5" /> All Organizations
+          <Activity className="h-4 w-4 mr-1.5" /> AI Usage & Credits
         </button>
         
         {path.orgId && (
@@ -564,9 +564,10 @@ export function AiUsageDashboardPage() {
     <div className="flex-1 space-y-4 p-8 pt-6">
       <PageBreadcrumbs
         items={[
-          { label: "Dashboard", href: "/superadmin/dashboard" },
-          { label: "AI & Platform Settings", href: "/superadmin/settings" },
-          { label: "AI Usage", href: "/superadmin/ai-usage" }
+          { label: "AI Usage & Credits", href: "/superadmin/ai-usage" },
+          ...(path.orgName ? [{ label: path.orgName }] : []),
+          ...(path.role ? [{ label: path.role.toUpperCase() }] : []),
+          ...(path.userName ? [{ label: path.userName }] : [])
         ]}
       />
 
