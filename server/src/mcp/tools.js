@@ -755,11 +755,15 @@ export const getMcpTools = () => [
     inputSchema: { type: 'object', properties: { threadId: { type: 'string', description: 'The Supabase UUID of the thread.' }, messageId: { type: 'string', description: 'The Supabase UUID of the message containing the attachment.' } }, required: ['threadId', 'messageId'] }
   },
 
-  // ================= GROUP CHAT TOOLS (12) =================
   {
     name: 'search_users_for_chat',
-    description: 'Search for users by name or email to get their MongoDB ObjectIds. Use this to find the senderUserId or recipient IDs for chat tools.',
+    description: 'Search for users by name or email to get their MongoDB ObjectIds. CRITICAL: You MUST use this tool to find your own senderUserId or recipient IDs before sending chat messages. NEVER use unified_db_query to search for User IDs for chats.',
     inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Name or email to search for.' }, limit: { type: 'number', description: 'Max users to return. Default 10.' } }, required: ['query'] }
+  },
+  {
+    name: 'get_my_ai_user_id',
+    description: 'Get the exact MongoDB ObjectId for the Classgrid AI (support@classgrid.in) account to use as the senderUserId when sending chat messages on behalf of the platform.',
+    inputSchema: { type: 'object', properties: {}, required: [] }
   },
   {
     name: 'list_group_chats',
@@ -1435,6 +1439,14 @@ export const handleToolCall = async (name, args, context = {}) => {
           return { content: [{ type: 'text', text: JSON.stringify(users, null, 2) }] };
         }
 
+        // 2.6 GET MY AI USER ID
+        if (name === 'get_my_ai_user_id') {
+          const User = (await import('../models/User.js')).default;
+          const aiUser = await User.findOne({ email: 'support@classgrid.in' }).select('_id name email').lean();
+          if (!aiUser) return { content: [{ type: 'text', text: 'Error: support@classgrid.in user not found.' }], isError: true };
+          return { content: [{ type: 'text', text: JSON.stringify(aiUser, null, 2) }] };
+        }
+
         // 3. SEND 1:1 MESSAGE
         if (name === 'send_chat_message') {
           const { data: msg, error } = await sb.from('chat_messages').insert([{
@@ -1490,6 +1502,20 @@ export const handleToolCall = async (name, args, context = {}) => {
             last_message_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }).eq('id', args.threadId);
+
+          const User = (await import('../models/User.js')).default;
+          const senderUser = await User.findById(args.senderUserId).select('name profilePicture').lean();
+
+          broadcastToChannel(`thread:${args.threadId}`, 'new_message', {
+            id: msg.id,
+            thread_id: args.threadId,
+            sender_id: args.senderUserId,
+            sender_name: senderUser?.name || 'User',
+            user_avatar: senderUser?.profilePicture || null,
+            message: args.fileName || 'File',
+            created_at: new Date().toISOString(),
+            attachments: [{ file_url: args.fileUrl, file_name: args.fileName || 'File', file_type: args.fileType || 'unknown', file_size: args.fileSize || 0 }]
+          });
 
           return { content: [{ type: 'text', text: `File uploaded successfully. Message ID: ${msg.id}` }] };
         }

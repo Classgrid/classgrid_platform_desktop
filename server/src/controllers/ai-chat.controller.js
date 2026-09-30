@@ -1029,6 +1029,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
         let allowedConnectorNames = new Set([
             'unified_db_query',
             'search_users_for_chat',
+            'get_my_ai_user_id',
             'run_code',
             'read_sandbox_file',
             'execute_terminal_command',
@@ -2580,6 +2581,10 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     },
                     search_users_for_chat: async (args) => {
                         const result = await handleToolCall('search_users_for_chat', args, { userId: req.user?._id?.toString() });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    get_my_ai_user_id: async (args) => {
+                        const result = await handleToolCall('get_my_ai_user_id', args, { userId: req.user?._id?.toString() });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     upload_file_to_chat: async (args) => {
