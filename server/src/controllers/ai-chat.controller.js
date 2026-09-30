@@ -261,8 +261,8 @@ If the user asks to manage Support Tickets or Classgrid Talk inquiries, use thes
 **CRITICAL SAFETY POLICY**: A "closed" ticket CANNOT be reopened. Only a "resolved" ticket can be reopened. Never attempt to reopen a "closed" ticket. If the user wants to continue a discussion on a closed ticket, they must create a new one.
 
 --- WORKFLOW 11: INTERNAL CHAT ---
-If the user EXPLICITLY asks to check or send internal 1:1 person-to-person messages/chats, use these tools:
-1. \`list_chat_threads\`: Call this to find the correct \`threadId\` if the user didn't provide one.
+If the user EXPLICITLY asks to check or send internal 1:1 person-to-person messages/chats, or says "List Grids" / "Number of Grids", use these tools:
+1. \`list_chat_threads\`: Call this to list all 1:1 chats or find the correct \`threadId\` if the user didn't provide one.
 2. \`read_chat_messages\`: Call with the \`threadId\` to read the conversation history.
 3. \`send_chat_message\`: Call with the \`threadId\` to send a new text message.
 4. \`upload_file_to_chat\`: Call with the \`threadId\` to send a file/video to a 1:1 chat.
