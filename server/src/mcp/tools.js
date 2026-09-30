@@ -1383,7 +1383,9 @@ export const handleToolCall = async (name, args, context = {}) => {
             ...m,
             body: m.body ? m.body.replace(/<[^>]*>?/gm, ' ').trim() : m.body,
             senderName: userMap[m.sender_id]?.name || 'Unknown',
-            senderEmail: userMap[m.sender_id]?.email || ''
+            senderEmail: userMap[m.sender_id]?.email || '',
+            attachment_url: m.file_url || m.attachment_url || null,
+            ai_hint: (m.file_url || m.attachment_url) ? `This message contains an attachment. Use get_chat_attachment_url with messageId=${m.id} to retrieve it.` : null
           }));
           return { content: [{ type: 'text', text: JSON.stringify(enriched, null, 2) }] };
         }
@@ -1515,8 +1517,10 @@ export const handleToolCall = async (name, args, context = {}) => {
           const enriched = (messages || []).map(m => ({ 
             ...m, 
             body: m.body ? m.body.replace(/<[^>]*>?/gm, ' ').trim() : m.body,
-            senderName: userMap[m.sender_id]?.name || 'Unknown', 
-            senderEmail: userMap[m.sender_id]?.email || '' 
+            senderName: userMap[m.sender_id]?.name || 'Unknown',
+            senderEmail: userMap[m.sender_id]?.email || '',
+            attachment_url: m.file_url || m.attachment_url || null,
+            ai_hint: (m.file_url || m.attachment_url) ? `This message contains an attachment. Use get_group_chat_attachment_url with messageId=${m.id} to retrieve it.` : null
           }));
           return { content: [{ type: 'text', text: JSON.stringify(enriched, null, 2) }] };
         }
