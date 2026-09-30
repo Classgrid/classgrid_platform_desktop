@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 import AiLibraryFile from '../models/AiLibraryFile.js';
 import UserStorageQuota from '../models/UserStorageQuota.js';
 import { uploadBufferToR2, deleteFromR2 } from '../config/r2Client.js';

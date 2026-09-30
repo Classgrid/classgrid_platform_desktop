@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -45,10 +41,12 @@
  * ─────────────────────────────────────────────────────────
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 
-const genAI = new GoogleGenerativeAI(process.env.Gemini_API_KEY || process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+const openai = new OpenAI({ 
+    apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, 
+    baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` 
+});
 
 /**
  * analyzeProctorSnapshot
@@ -60,13 +58,8 @@ export const analyzeProctorSnapshot = async (base64Image) => {
     try {
         if (!base64Image) throw new Error("No image provided");
 
-        // Prepare the image for Gemini
-        const imagePart = {
-            inlineData: {
-                data: base64Image.split(",")[1] || base64Image,
-                mimeType: "image/jpeg",
-            },
-        };
+        const b64Data = base64Image.split(",")[1] || base64Image;
+        const dataUrl = `data:image/jpeg;base64,${b64Data}`;
 
         const prompt = `
             You are an AI Exam Proctor. Analyze this webcam snapshot of a student taking a high-stakes exam.
@@ -85,9 +78,22 @@ export const analyzeProctorSnapshot = async (base64Image) => {
             }
         `;
 
-        const result = await model.generateContent([prompt, imagePart]);
-        const response = await result.response;
-        const text = response.text();
+        const response = await openai.chat.completions.create({
+            model: "@cf/meta/llama-3.2-11b-vision-instruct",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: prompt },
+                        { type: "image_url", image_url: { url: dataUrl } }
+                    ]
+                }
+            ],
+            max_tokens: 500,
+            temperature: 0.2
+        });
+        
+        const text = response.choices[0].message.content;
         
         // Clean and parse JSON
         const jsonMatch = text.match(/\{.*\}/s);
@@ -99,3 +105,4 @@ export const analyzeProctorSnapshot = async (base64Image) => {
         return { violationDetected: false, reason: "Analysis failed", error: err.message };
     }
 };
+

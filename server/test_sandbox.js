@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 async function testSandbox() {
     const sandboxUrl = 'https://autumn-sky-3042.nikhil-shinde-6b9.workers.dev';
     

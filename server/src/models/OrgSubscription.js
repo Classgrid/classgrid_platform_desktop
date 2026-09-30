@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -103,7 +99,7 @@ const orgSubscriptionSchema = new mongoose.Schema({
     pricePerEmail:       { type: Number, default: 0 },   // ₹ per sent email
     pricePerSms:         { type: Number, default: 0 },   // ₹ per sent SMS segment
     pricePerApiRequest:  { type: Number, default: 0 },   // ₹ per API request (EC2/Vercel)
-    pricePerAiToken:     { type: Number, default: 0 },   // ₹ per AI token (OpenAI/Groq/Gemini)
+    pricePerAiToken:     { type: Number, default: 0 },   // ₹ per AI token (OpenAI/Groq/Cloudflare)
     pricePerAgoraMinute: { type: Number, default: 0 },   // ₹ per Agora video participant-minute
     modulePrices:        { type: Map, of: Number, default: {} }, // Custom monthly price per module (INR)
   }

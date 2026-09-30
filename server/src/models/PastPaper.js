@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -51,7 +47,7 @@ import mongoose from "mongoose";
  * PastPaper — Stores extracted question papers with year/subject metadata.
  * Used by the AI Past Paper Analysis Engine for multi-year pattern detection.
  * 
- * Flow: Image Upload → Gemini Vision OCR → Questions extracted → Stored here
+ * Flow: Image Upload → Cloudflare Vision OCR → Questions extracted → Stored here
  *       → Analysis engine queries across years → Repeated questions, topic frequency
  */
 const pastPaperSchema = new mongoose.Schema(
@@ -87,7 +83,7 @@ const pastPaperSchema = new mongoose.Schema(
         branch: { type: String, default: "" },
         university: { type: String, default: "" },  // e.g. "SPPU", "Mumbai University"
 
-        // Extracted questions from Gemini Vision OCR
+        // Extracted questions from Cloudflare Vision OCR
         questions: [{
             questionText: { type: String, required: true },
             // Normalized version for similarity matching (lowercase, no whitespace)

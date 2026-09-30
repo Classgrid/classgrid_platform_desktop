@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -135,7 +131,7 @@ router.get("/proxy/pdf", isAuthenticated, async (req, res) => {
 import { getChatReply } from "../services/chat.js";
 
 // ─────────────────────────────────────────────
-// GROQ/GEMINI SUMMARIZE PROXY (Replaces Hugging Face)
+// GROQ/Cloudflare SUMMARIZE PROXY (Replaces Hugging Face)
 // Frontend sends text chunk → backend calls Groq → returns summary
 // ─────────────────────────────────────────────
 router.post("/hf-summarize", isAuthenticated, async (req, res) => {
@@ -146,7 +142,7 @@ router.post("/hf-summarize", isAuthenticated, async (req, res) => {
         }
 
         // We use our existing chat service which automatically routes to Groq (primary)
-        // and falls back to Gemini if rate limited! This prevents 504 timeouts.
+        // and falls back to Cloudflare if rate limited! This prevents 504 timeouts.
 
         const prompt = `You are an expert academic assistant. Please summarize the following text extracted from a document${title ? ` titled "${title}"` : ""}. 
 Make the summary concise, clear, and highlight the key educational concepts.

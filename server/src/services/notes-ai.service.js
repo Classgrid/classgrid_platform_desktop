@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -46,11 +42,11 @@
  */
 
 import Groq from "groq-sdk";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+
 
 const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
-const genAI = new GoogleGenerativeAI(process.env.Gemini_API_KEY);
-const geminiModel = null; // genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+
+
 
 // ─────────────────────────────────────────────
 // AI VERIFY & SUMMARIZE
@@ -86,14 +82,7 @@ Respond ONLY in this exact JSON format (no markdown, no code blocks):
         const text = response.choices?.[0]?.message?.content || "";
         return parseJSON(text);
     } catch (err) {
-        console.log("Groq failed for verification, trying Gemini:", err.message);
-
-        try {
-            const result = await geminiModel.generateContent(prompt);
-            const text = result.response.text();
-            return parseJSON(text);
-        } catch (geminiErr) {
-            console.error("Both models failed for verification:", geminiErr.message);
+        console.error("AI verification failed:", err.message);
             return {
                 isAccurate: true,
                 summary: "AI verification temporarily unavailable. Content has been accepted.",
@@ -177,16 +166,8 @@ Respond ONLY in this exact JSON format (no markdown, no code blocks):
         const text = response.choices?.[0]?.message?.content || "";
         return parseJSON(text);
     } catch (err) {
-        console.log("Groq failed for quiz gen, trying Gemini:", err.message);
-
-        try {
-            const result = await geminiModel.generateContent(prompt);
-            const text = result.response.text();
-            return parseJSON(text);
-        } catch (geminiErr) {
-            console.error("Both models failed for quiz generation:", geminiErr.message);
-            throw new Error("Quiz generation failed with both AI providers");
-        }
+        console.error("AI quiz generation failed:", err.message);
+        throw new Error("Quiz generation failed with AI provider");
     }
 }
 
@@ -212,3 +193,4 @@ function parseJSON(text) {
         throw new Error("No JSON found in AI response");
     }
 }
+

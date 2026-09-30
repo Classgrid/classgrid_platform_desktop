@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -48,7 +44,7 @@
 /**
  * Classgrid — AiUsageLog Model
  *
- * Logs every AI API call (OpenAI, Groq, Gemini) with token counts
+ * Logs every AI API call (OpenAI, Groq, Cloudflare) with token counts
  * so the nightly metering worker can calculate AI usage per org.
  */
 
@@ -69,7 +65,7 @@ const aiUsageLogSchema = new mongoose.Schema(
         },
         provider: {
             type: String,
-            enum: ["openai", "groq", "gemini"],
+            enum: ["openai", "groq", "cloudflare"],
             required: true,
             index: true,
         },

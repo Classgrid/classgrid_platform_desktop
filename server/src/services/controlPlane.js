@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 import Trajectory from '../models/Trajectory.js';
 import { buildQueue } from '../queues/buildQueue.js';
 import { deployToR2 } from './deploy.js';

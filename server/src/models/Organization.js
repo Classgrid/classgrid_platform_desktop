@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -634,7 +630,7 @@ const organizationSchema = new mongoose.Schema(
             custom_api_keys: {
                 openai_key: { type: String, default: "" },
                 anthropic_key: { type: String, default: "" },
-                gemini_key: { type: String, default: "" },
+                Cloudflare_key: { type: String, default: "" },
             }
         },
         // 🔄 Academic Promotion Lock — prevents concurrent promotions

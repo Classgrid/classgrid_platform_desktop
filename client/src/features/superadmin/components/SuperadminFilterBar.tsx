@@ -1,101 +1,83 @@
-/*
- * =========================================================================================
- * 🚨 CRITICAL AI & SYSTEM RULE 🚨
- * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
- * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
- * =========================================================================================
- */
-
-/**
- * ==============================================================================
- * 🚨 AI AGENT WARNING: BREADCRUMB POLICY 🚨
- * ==============================================================================
- * NEVER hardcode "Super Admin Dashboard /" as a breadcrumb on any deep dive page.
- * Deep dive pages or sub-pages MUST accurately reflect the actual parent pages 
- * they were opened from (e.g., Organizations / [Name] / Configuration / ...).
- * DO NOT use generic dashboard text for breadcrumbs.
- * ==============================================================================
- */
-
-/*
- * =========================================================================================
- * STRICT SECURITY POLICY:
- * NO ONE CAN EVER CHANGE THE ORGANIZATION TYPE FROM THE FRONTEND OR BACKEND.
- * NEVER ADD A DROPDOWN OR OPTION TO CHANGE IT ANYWHERE IN THE CODEBASE.
- * NO MEANS NO. THIS IS A FIXED PLATFORM RULE.
- * =========================================================================================
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
- * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
- * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
- * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
- * ─────────────────────────────────────────────────────────
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 NAMING CONVENTION RULE 🚨
- * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
- * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
- * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
- * ─────────────────────────────────────────────────────────
- */
-
-/*
- * ─────────────────────────────────────────────────────────
- * 🚨 HOSTING & ARCHITECTURE RULE 🚨
- * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
- * 2. FRONTEND IS HOSTED ON VERCEL
- * ─────────────────────────────────────────────────────────
- */
-
 import React from "react";
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
+import { Input } from "@/components/marketing_ui/input";
+import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/marketing_ui/select";
 
-export interface SuperadminFilterBarProps {
+interface SuperadminFilterBarProps {
   searchQuery: string;
-  onSearchChange: (value: string) => void;
-  searchPlaceholder?: string;
-  children?: React.ReactNode;
+  setSearchQuery: (val: string) => void;
+  orgTypeFilter: string;
+  setOrgTypeFilter: (val: string) => void;
+  selectedGlobalOrgId: string;
+  setSelectedGlobalOrgId: (val: string) => void;
+  dateFilter: Date | undefined;
+  setDateFilter: (val: Date | undefined) => void;
+  orgs: any[];
 }
 
 export function SuperadminFilterBar({
   searchQuery,
-  onSearchChange,
-  searchPlaceholder = "Search...",
-  children,
+  setSearchQuery,
+  orgTypeFilter,
+  setOrgTypeFilter,
+  selectedGlobalOrgId,
+  setSelectedGlobalOrgId,
+  dateFilter,
+  setDateFilter,
+  orgs
 }: SuperadminFilterBarProps) {
   return (
-    <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3 mb-6">
-      {/* Search Input */}
-      <div className="relative w-full xl:w-[240px] shrink-0">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder={searchPlaceholder}
+    <div className="bg-card border border-border rounded-xl p-4 mb-6 flex flex-col md:flex-row gap-4 items-center animate-in fade-in slide-in-from-top-4 duration-500">
+      <div className="relative w-full md:w-64 shrink-0">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input 
+          placeholder="Search name, owner, plan..." 
+          className="pl-9 bg-background"
           value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full h-9 pl-10 pr-10 rounded-full border border-dashed border-border bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all shadow-sm"
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
-        {searchQuery && (
-          <button
-            onClick={() => onSearchChange("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
-            <X size={14} />
-          </button>
-        )}
       </div>
+      
+      <div className="flex w-full gap-4 overflow-x-auto custom-scrollbar pb-1 md:pb-0 items-center">
+        <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Org Type: All" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Org Type: All</SelectItem>
+            <SelectItem value="school">School</SelectItem>
+            <SelectItem value="college">College</SelectItem>
+            <SelectItem value="university">University</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        <Select value={selectedGlobalOrgId} onValueChange={setSelectedGlobalOrgId}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Org Name: All" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Org Name: All</SelectItem>
+            {orgs?.map((o: any) => (
+              <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      {/* Dynamic Filters (Dropdowns & Date Pickers) */}
-      {children && (
-        <div className="flex flex-row flex-wrap xl:flex-nowrap gap-2 shrink-0">
-          {children}
+        <div className="shrink-0">
+          <NikhilTimeCalendar 
+            date={dateFilter}
+            setDate={setDateFilter}
+            placeholder="Select Date"
+          />
         </div>
-      )}
+      </div>
     </div>
   );
 }

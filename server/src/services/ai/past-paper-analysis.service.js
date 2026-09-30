@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -56,7 +52,7 @@ const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL
 /**
  * Past Paper Analysis Engine — Module 24 Extension
  * 
- * Pipeline: Image → Gemini Vision OCR → Normalize → MongoDB → Groq Analysis → Cached Results
+ * Pipeline: Image → Cloudflare Vision OCR → Normalize → MongoDB → Groq Analysis → Cached Results
  * 
  * Supports: 2, 3, 4, 5, 7, 10 year analysis windows
  */
@@ -69,7 +65,7 @@ export async function ingestPastPaper({
     semester, branch, university, examType,
     classroomId, organizationId, uploadedBy, fileUrl
 }) {
-    // Step 1a: OCR — Extract questions via Gemini Vision
+    // Step 1a: OCR — Extract questions via Cloudflare Vision
     const rawQuestions = await extractQuestionsFromImage(imageBuffer, mimeType);
 
     // Step 1b: Normalize — Clean text for similarity matching

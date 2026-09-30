@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -79,7 +75,7 @@ const upload = multer({
 
 /**
  * POST /api/online-exam/ocr-import
- * Uses Gemini AI to extract structured questions from an image
+ * Uses Cloudflare AI to extract structured questions from an image
  */
 router.post('/ocr-import', isAuthenticated, requireRole('teacher', 'faculty', 'org_admin'), upload.single('file'), async (req, res) => {
     try {
@@ -813,7 +809,7 @@ router.post("/:examId/anticheat", isAuthenticated, requireRole("student"), async
 
 /**
  * POST /api/online-exam/:examId/proctor/flag
- * Receives a webcam snapshot, analyzes it with Gemini AI,
+ * Receives a webcam snapshot, analyzes it with Cloudflare AI,
  * and SAVES the photo as evidence in Supabase Storage.
  *
  * Faculty can later view these snapshots in the Proctor Report

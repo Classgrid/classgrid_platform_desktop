@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -45,20 +41,21 @@
  * ─────────────────────────────────────────────────────────
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import dotenv from 'dotenv';
 dotenv.config();
 
-const genAI = new GoogleGenerativeAI(process.env.Gemini_API_KEY);
+const openai = new OpenAI({ 
+    apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, 
+    baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` 
+});
 
 /**
- * Extracts questions from an image using Gemini 1.5 Flash
+ * Extracts questions from an image using Cloudflare Workers AI Vision Model
  * Supports Physics, Maths, Chemistry (LaTeX) and General subjects
  */
 export async function extractQuestionsFromImage(imageBuffer, mimeType) {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
-
         const prompt = `
         You are an expert OCR and Question Parser for Classgrid Platform.
         Your task is to extract educational questions from the provided image (which could be a photo of a textbook, a PDF screenshot, or a handwritten paper).
@@ -84,18 +81,25 @@ export async function extractQuestionsFromImage(imageBuffer, mimeType) {
         }
         `;
 
-        const imageParts = [
-            {
-                inlineData: {
-                    data: imageBuffer.toString("base64"),
-                    mimeType
-                },
-            },
-        ];
+        const b64Data = imageBuffer.toString("base64");
+        const dataUrl = `data:${mimeType || "image/jpeg"};base64,${b64Data}`;
 
-        const result = await model.generateContent([prompt, ...imageParts]);
-        const response = await result.response;
-        const text = response.text();
+        const response = await openai.chat.completions.create({
+            model: "@cf/meta/llama-3.2-11b-vision-instruct",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: prompt },
+                        { type: "image_url", image_url: { url: dataUrl } }
+                    ]
+                }
+            ],
+            max_tokens: 1500,
+            temperature: 0.1
+        });
+        
+        const text = response.choices[0].message.content;
         
         // Clean markdown JSON blocks if present
         const cleanedJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -111,3 +115,4 @@ export async function extractQuestionsFromImage(imageBuffer, mimeType) {
         throw new Error("AI failed to read questions from this image.");
     }
 }
+

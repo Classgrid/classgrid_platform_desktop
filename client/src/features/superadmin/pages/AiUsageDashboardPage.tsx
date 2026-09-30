@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
-import { NativeSelect, NativeSelectOption } from "@/components/marketing_ui/native-select";
-import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
+import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
 import { Search, Filter, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
 import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
 import { 
   Building, 
@@ -95,10 +95,40 @@ export function AiUsageDashboardPage() {
   const [orgTypeFilter, setOrgTypeFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<Date | undefined>();
   const [selectedGlobalOrgId, setSelectedGlobalOrgId] = useState<string>("all");
+
+  const [chatsTime, setChatsTime] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [orgsTime, setOrgsTime] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [usersTime, setUsersTime] = useState<"daily" | "weekly" | "monthly">("daily");
+  
   const resetOrgMutation = useResetOrgUsage();
   const blockOrgMutation = useBlockAiOrg();
 
   const { data: globalStats, isLoading: globalLoading } = useGlobalAiStats(selectedGlobalOrgId !== "all" ? selectedGlobalOrgId : undefined);
+
+  const getAggregatedData = (data: any[], type: "daily"| "weekly"| "monthly") => {
+    if (!data) return [];
+    if (type === "daily") return data;
+    const aggregated: any = {};
+    data.forEach(d => {
+      let key = d.date;
+      if (type === "weekly") {
+         const date = new Date(d.date);
+         const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+         const week = Math.ceil((date.getDate() + firstDay.getDay()) / 7);
+         key = `Week ${week}`;
+      } else if (type === "monthly") {
+         const date = new Date(d.date);
+         key = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+      }
+      if (!aggregated[key]) {
+         aggregated[key] = { date: key, requests: 0, activeUsers: 0, activeOrgs: 0 };
+      }
+      aggregated[key].requests += d.requests || 0;
+      aggregated[key].activeUsers += d.activeUsers || 0; 
+      aggregated[key].activeOrgs += d.activeOrgs || 0;
+    });
+    return Object.values(aggregated);
+  };
   const { data: orgs, isLoading: orgsLoading } = useAiUsageOrgs();
 
   const { data: orgDetail, isLoading: orgDetailLoading } = useAiOrgDetail(path.orgId || "");
@@ -112,51 +142,6 @@ export function AiUsageDashboardPage() {
   };
 
   
-  const renderFilterBar = () => {
-    return (
-      <div className="bg-card border border-border rounded-xl p-4 mb-6 flex flex-col md:flex-row gap-4 items-center animate-in fade-in slide-in-from-top-4 duration-500">
-        <div className="relative w-full md:w-64 shrink-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search name, owner, plan..." 
-            className="pl-9 bg-background"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex w-full gap-4 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
-          <NativeSelect 
-            value={orgTypeFilter}
-            onChange={(e) => setOrgTypeFilter(e.target.value)}
-          >
-            <NativeSelectOption value="all">Org Type: All</NativeSelectOption>
-            <NativeSelectOption value="school">School</NativeSelectOption>
-            <NativeSelectOption value="college">College</NativeSelectOption>
-            <NativeSelectOption value="university">University</NativeSelectOption>
-          </NativeSelect>
-          
-          <NativeSelect 
-            value={selectedGlobalOrgId}
-            onChange={(e) => setSelectedGlobalOrgId(e.target.value)}
-          >
-            <NativeSelectOption value="all">Org Name: All</NativeSelectOption>
-            {orgs?.map((o: any) => (
-              <NativeSelectOption key={o.id} value={o.id}>{o.name}</NativeSelectOption>
-            ))}
-          </NativeSelect>
-
-          <div className="shrink-0">
-            <NikhilTimeCalendar 
-              date={dateFilter}
-              setDate={setDateFilter}
-              placeholder="Select Date"
-            />
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   const renderBreadcrumbs = () => {
     return (
@@ -232,14 +217,25 @@ export function AiUsageDashboardPage() {
     if (globalLoading) return <Skeleton className="h-96 w-full mb-8" />;
     if (!globalStats) return null;
 
-    const { totalCreditsSpent, totalRevenue, creditsPurchasedThisMonth, totalChats, usageTrend, models } = globalStats;
-    
-    // Convert models to pie chart data
-    const pieData = models?.map((m: any, i: number) => ({ 
+    const { totalCreditsSpent, totalRevenue, creditsPurchasedThisMonth, totalChats, usageTrend, models, features } = globalStats;
+    // Prepare pie chart data
+    const modelPieData = models?.map((m: any, i: number) => ({ 
         name: m.name.split('/').pop(), 
-        value: m.value || 0, 
-        color: COLORS[i % COLORS.length] 
+        value: m.requests || 0,
+        color: COLORS[i % COLORS.length]
     })) || [];
+
+    const CustomTooltip = ({ active, payload }: any) => {
+      if (active && payload && payload.length) {
+        return (
+          <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-1 z-50">
+            <span className="font-semibold text-foreground">{payload[0].payload.name}</span>
+            <span className="text-muted-foreground">{new Intl.NumberFormat("en-IN").format(payload[0].value)} Requests</span>
+          </div>
+        );
+      }
+      return null;
+    };
 
     return (
       <div className="space-y-6 mb-8">
@@ -274,88 +270,171 @@ export function AiUsageDashboardPage() {
           </Card>
         </div>
 
-        {renderFilterBar()}
+        <SuperadminFilterBar 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          orgTypeFilter={orgTypeFilter}
+          setOrgTypeFilter={setOrgTypeFilter}
+          selectedGlobalOrgId={selectedGlobalOrgId}
+          setSelectedGlobalOrgId={setSelectedGlobalOrgId}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+          orgs={orgs || []}
+        />
 
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card className="col-span-2">
-            <CardHeader>
+        <div className="flex flex-col space-y-6">
+          {/* Bar Chart 1: Daily AI Requests */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Daily Usage Trend (Chats)</CardTitle>
+              <Select value={chatsTime} onValueChange={setChatsTime as any}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Daily" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={usageTrend || []}>
+                  <BarChart data={getAggregatedData(usageTrend, chatsTime)}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                    <XAxis 
-                      dataKey="date" 
-                      tickFormatter={(val) => val.split('-').slice(1).join('/')}
-                      stroke="currentColor" 
-                      className="text-xs opacity-50"
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis 
-                      stroke="currentColor" 
-                      className="text-xs opacity-50"
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    
-                    <RechartsTooltip 
-                      cursor={{ fill: 'currentColor', opacity: 0.05 }}
-                      content={({ active, payload, label }: any) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-1 z-50">
-                              <span className="font-semibold text-foreground">{label}</span>
-                              <span className="text-muted-foreground">{payload[0].value} Chat Sessions</span>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-
-                    <Bar dataKey="credits" radius={[4, 4, 0, 0]}>
-                      {(usageTrend || []).map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
+                    <XAxis dataKey="date" stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} />
+                    <Bar dataKey="requests" name="AI Requests" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
 
+          {/* Bar Chart 2: Input vs Output Tokens */}
           <Card>
-            <CardHeader>
-              <CardTitle>Model Breakdown</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle>Tokens Consumed (Input vs Output)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px] w-full flex flex-col items-center">
+              <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                      stroke="none"
-                    >
-                      {pieData.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip content={<CustomTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "20px" }} />
-                  </PieChart>
+                  <BarChart data={usageTrend || []}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
+                    <XAxis dataKey="date" stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} />
+                    <Bar dataKey="promptTokens" name="Input Tokens" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="completionTokens" name="Output Tokens" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
+
+          {/* Bar Chart 3: Cost Spend Trend */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle>Cost Spend Trend (INR Revenue)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={usageTrend || []}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
+                    <XAxis dataKey="date" stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} />
+                    <Bar dataKey="revenue" name="Cost (INR)" fill="#f97316" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Bar Chart 4: Active Organizations */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle>Active Organizations</CardTitle>
+              <Select value={orgsTime} onValueChange={setOrgsTime as any}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Daily" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={getAggregatedData(usageTrend, orgsTime)}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
+                    <XAxis dataKey="date" stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} />
+                    <Bar dataKey="activeOrgs" name="Active Organizations" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Bar Chart 5: Active Users */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle>Active Users</CardTitle>
+              <Select value={usersTime} onValueChange={setUsersTime as any}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Daily" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={getAggregatedData(usageTrend, usersTime)}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
+                    <XAxis dataKey="date" stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} />
+                    <Bar dataKey="activeUsers" name="Active Users" fill="#ea580c" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pie Chart at the end */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader><CardTitle>Requests by Model</CardTitle></CardHeader>
+              <CardContent>
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={modelPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
+                        {modelPieData.map((e: any, i: number) => <Cell key={i} fill={e.color} />)}
+                      </Pie>
+                      <RechartsTooltip content={<CustomTooltip />} />
+                      <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
         </div>
       </div>
     );

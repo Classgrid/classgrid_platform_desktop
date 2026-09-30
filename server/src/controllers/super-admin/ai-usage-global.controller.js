@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 import Organization from "../../models/Organization.js";
 import User from "../../models/User.js";
 import AiCreditTransaction from "../../models/AiCreditTransaction.js";
@@ -91,7 +87,7 @@ export const getGlobalStats = async (req, res) => {
         const imageTokens = Math.floor(totalCreditsSpent * 0.15); // 15% for image
         const audioTokens = totalCreditsSpent - textTokens - imageTokens; // 10% for audio
 
-        const models = [
+        const mockModels = [
             { name: "@cf/deepseek-ai/deepseek-v4-pro-0813", type: "Text (Primary)", usage: "Primary Chat", value: textTokens },
             { name: "@cf/black-forest-labs/flux-1-schnell", type: "Image Gen", usage: "Image Generation", value: Math.floor(imageTokens * 0.7) },
             { name: "@cf/meta/llama-3.2-11b-vision-instruct", type: "Image Understanding", usage: "Vision/Analysis", value: Math.floor(imageTokens * 0.3) },
@@ -100,30 +96,112 @@ export const getGlobalStats = async (req, res) => {
             { name: "@cf/runwayml/stable-diffusion-v1-5-img2img", type: "Img2Img", usage: "Image Editing", value: Math.floor(audioTokens * 0.05) }
         ];
 
-        // Real Usage Trend: Fetch Token Usage per Day from AiUsageLog
+        // Daily Trend: Fetch Tokens, Requests, Active Users, Active Orgs from AiUsageLog
         const dailyUsage = await AiUsageLog.aggregate([
             { $match: logMatch },
             {
                 $group: {
                     _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
-                    totalTokens: { $sum: "$totalTokens" }
+                    totalTokens: { $sum: "$totalTokens" },
+                    promptTokens: { $sum: "$promptTokens" },
+                    completionTokens: { $sum: "$completionTokens" },
+                    requests: { $sum: 1 },
+                    uniqueUsers: { $addToSet: "$userId" },
+                    uniqueOrgs: { $addToSet: "$organization_id" }
                 }
             }
         ]);
         
         const trendMap = {};
         dailyUsage.forEach(d => {
-            trendMap[d._id] = d.totalTokens;
+            trendMap[d._id] = {
+                totalTokens: d.totalTokens,
+                promptTokens: d.promptTokens,
+                completionTokens: d.completionTokens,
+                requests: d.requests,
+                activeUsers: d.uniqueUsers.length,
+                activeOrgs: d.uniqueOrgs.length
+            };
+        });
+
+        // Revenue Trend: Fetch Top-ups per day
+        const dailyRevenue = await AiCreditTransaction.aggregate([
+            { $match: topupMatch },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
+                    totalRevenue: { $sum: "$amount_inr" }
+                }
+            }
+        ]);
+        
+        const revenueMap = {};
+        dailyRevenue.forEach(d => {
+            revenueMap[d._id] = d.totalRevenue;
         });
 
         const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
-        const realTrend = Array.from({ length: daysInMonth }, (_, i) => {
+        const usageTrend = Array.from({ length: daysInMonth }, (_, i) => {
             const d = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
+            const t = trendMap[d] || {};
             return {
                 date: d,
-                credits: trendMap[d] || 0
+                credits: t.totalTokens || 0,
+                promptTokens: t.promptTokens || 0,
+                completionTokens: t.completionTokens || 0,
+                requests: t.requests || 0,
+                activeUsers: t.activeUsers || 0,
+                activeOrgs: t.activeOrgs || 0,
+                revenue: revenueMap[d] || 0
             };
         });
+
+        // Feature Breakdown
+        const featureData = await AiUsageLog.aggregate([
+            { $match: logMatch },
+            { $group: { _id: "$feature", requests: { $sum: 1 }, tokens: { $sum: "$totalTokens" } } }
+        ]);
+        const featuresBreakdown = featureData.map(f => ({ name: f._id || "unknown", requests: f.requests, value: f.tokens }));
+
+        // Model Breakdown
+        const modelData = await AiUsageLog.aggregate([
+            { $match: logMatch },
+            { $group: { _id: "$model", requests: { $sum: 1 }, tokens: { $sum: "$totalTokens" } } }
+        ]);
+        let modelsBreakdown = modelData.map(m => ({ name: m._id || "unknown", requests: m.requests, value: m.tokens }));
+        
+        if (modelsBreakdown.length === 0) {
+            modelsBreakdown = [
+                { name: "@cf/deepseek-ai/deepseek-v4-pro-0813", requests: 0, value: 0 },
+                { name: "cloudflare-llama-3.2-vision", requests: 0, value: 0 }
+            ];
+        }
+
+        // Org Breakdown
+        const orgData = await AiUsageLog.aggregate([
+            { $match: logMatch },
+            { $group: { _id: "$organization_id", requests: { $sum: 1 } } },
+            { $lookup: { from: "organizations", localField: "_id", foreignField: "_id", as: "org" } },
+            { $unwind: { path: "$org", preserveNullAndEmptyArrays: true } },
+            { $project: { name: { $ifNull: ["$org.name", "Unknown Org"] }, requests: 1, _id: 0 } }
+        ]);
+        const orgsBreakdown = orgData.map(o => ({ name: o.name, value: o.requests, requests: o.requests }));
+
+        // Status Breakdown
+        const statusData = await AiUsageLog.aggregate([
+            { $match: logMatch },
+            { $group: { _id: "$success", requests: { $sum: 1 } } }
+        ]);
+        const statusBreakdown = statusData.map(s => ({ name: s._id ? "Success (200)" : "Error (4xx/5xx)", value: s.requests, requests: s.requests }));
+
+        // Role Breakdown
+        const roleData = await AiUsageLog.aggregate([
+            { $match: logMatch },
+            { $lookup: { from: "users", localField: "userId", foreignField: "_id", as: "user" } },
+            { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+            { $group: { _id: "$user.role", requests: { $sum: 1 } } }
+        ]);
+        const rolesBreakdown = roleData.map(r => ({ name: r._id || "unknown", value: r.requests, requests: r.requests }));
 
         res.status(200).json({
             success: true,
@@ -132,9 +210,13 @@ export const getGlobalStats = async (req, res) => {
                 totalRevenue,
                 creditsPurchasedThisMonth,
                 totalChats: totalChats,
-                usageTrend: realTrend,
-                models,
-                notes: "Trend shows total token usage per day. 1 Credit = 1 Token exactly."
+                usageTrend,
+                models: modelsBreakdown, 
+                features: featuresBreakdown,
+                orgsBreakdown,
+                statusBreakdown,
+                rolesBreakdown,
+                notes: "Analytics data pulled from AiUsageLog for full granularity."
             }
         });
     } catch (error) {

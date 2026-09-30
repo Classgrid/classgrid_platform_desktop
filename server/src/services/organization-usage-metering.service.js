@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -280,7 +276,7 @@ async function calculateApiRequestsByOrg(periodStart, periodEnd) {
     }]));
 }
 
-// ── AI Token Usage (OpenAI / Groq / Gemini) ───────────────────────
+// ── AI Token Usage (OpenAI / Groq / Cloudflare) ───────────────────────
 async function calculateAiTokensByOrg(periodStart, periodEnd) {
     try {
         const rows = await AiUsageLog.aggregate([
@@ -302,11 +298,11 @@ async function calculateAiTokensByOrg(periodStart, periodEnd) {
         const result = new Map();
         rows.forEach((row) => {
             const orgId = row._id.org.toString();
-            const existing = result.get(orgId) || { openai: 0, groq: 0, gemini: 0, totalRequests: 0 };
+            const existing = result.get(orgId) || { openai: 0, groq: 0, cloudflare: 0, totalRequests: 0 };
             const provider = (row._id.provider || "").toLowerCase();
             if (provider.includes("openai")) existing.openai += row.totalTokens;
             else if (provider.includes("groq")) existing.groq += row.totalTokens;
-            else if (provider.includes("gemini")) existing.gemini += row.totalTokens;
+            else if (provider.includes("cloudflare")) existing.cloudflare += row.totalTokens;
             existing.totalRequests += row.requests;
             result.set(orgId, existing);
         });
@@ -372,7 +368,7 @@ function buildLineItems({ r2, emailCount, sms, apiRequests, aiTokens, agoraMinut
     const emailQuantity = Number(emailCount || 0);
     const smsQuantity = Number(sms.segments || 0);
     const apiRequestCount = Number(apiRequests.requests || 0);
-    const aiTokenCount = Number((aiTokens.openai || 0) + (aiTokens.groq || 0) + (aiTokens.gemini || 0));
+    const aiTokenCount = Number((aiTokens.openai || 0) + (aiTokens.groq || 0) + (aiTokens.cloudflare || 0));
     const agoraMinuteCount = Number(agoraMinutes.minutes || 0);
 
     return [
@@ -447,7 +443,7 @@ function buildLineItems({ r2, emailCount, sms, apiRequests, aiTokens, agoraMinut
         {
             provider: "openai",
             resourceKey: "ai_tokens_used",
-            resourceLabel: "AI tokens (OpenAI + Groq + Gemini)",
+            resourceLabel: "AI tokens (OpenAI + Groq + Cloudflare)",
             quantity: aiTokenCount,
             unit: "token",
             unitRateInr: rateSnapshot.pricePerAiToken,
@@ -459,7 +455,7 @@ function buildLineItems({ r2, emailCount, sms, apiRequests, aiTokens, agoraMinut
             metadata: {
                 openai: aiTokens.openai || 0,
                 groq: aiTokens.groq || 0,
-                gemini: aiTokens.gemini || 0,
+                cloudflare: aiTokens.cloudflare || 0,
                 totalRequests: aiTokens.totalRequests || 0,
             },
         },
@@ -546,7 +542,7 @@ export async function calculateOrganizationUsageDaily({ date = new Date() } = {}
         const emailCount = emailUsage.get(orgId) || 0;
         const sms = smsUsage.get(orgId) || { messages: 0, segments: 0 };
         const apiRequests = apiRequestUsage.get(orgId) || { requests: 0, bytesIn: 0, bytesOut: 0 };
-        const aiTokens = aiTokenUsage.get(orgId) || { openai: 0, groq: 0, gemini: 0, totalRequests: 0 };
+        const aiTokens = aiTokenUsage.get(orgId) || { openai: 0, groq: 0, cloudflare: 0, totalRequests: 0 };
         const agoraMinutes = agoraUsage.get(orgId) || { minutes: 0, sessions: 0 };
         const calculationErrors = [];
 
@@ -573,7 +569,7 @@ export async function calculateOrganizationUsageDaily({ date = new Date() } = {}
             emails: emailCount,
             sms: sms.segments || 0,
             apiRequests: apiRequests.requests || 0,
-            aiTokens: (aiTokens.openai || 0) + (aiTokens.groq || 0) + (aiTokens.gemini || 0),
+            aiTokens: (aiTokens.openai || 0) + (aiTokens.groq || 0) + (aiTokens.cloudflare || 0),
             agoraMinutes: agoraMinutes.minutes || 0,
             amountInr: money(lineItems.reduce((sum, item) => sum + item.amountInr, 0)),
         };

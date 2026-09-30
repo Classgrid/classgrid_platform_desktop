@@ -1,7 +1,3 @@
-// MODEL STATUS:
-// - Cloudflare Workers AI = ACTIVE (now in use)
-// - Gemini 3.5 Flash = COMMENTED OUT (disabled)
-// - Groq model = DEAD (removed from use)
 /*
  * =========================================================================================
  * 🚨 CRITICAL AI & SYSTEM RULE 🚨
@@ -99,7 +95,7 @@ const PROVIDER_CONFIG = [
     {
         provider: "ai",
         label: "AI providers",
-        requiredEnvAny: ["GROQ_API_KEY", "GEMINI_API_KEY", "Gemini_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"],
+        requiredEnvAny: ["GROQ_API_KEY", "CLOUDFLARE_WORKERS_AI_TOKEN", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"],
         optionalEnv: ["HUGGINGFACE_API_KEY"],
         meterStatus: "config_only",
         note: "AI keys are env-backed. Per-organization token and model cost needs request logging at each AI call site.",
