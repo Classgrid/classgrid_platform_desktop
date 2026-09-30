@@ -31,7 +31,7 @@ import {
 } from "@/features/superadmin/queries/useAiUsage";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, formatRoleLabel } from "@/lib/utils";
 import { AiUserDetailPanel } from "@/features/superadmin/components/ai-usage/AiUserDetailPanel";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Legend, Pie, Cell } from "recharts";
 
@@ -722,7 +722,7 @@ export function AiUsageDashboardPage() {
               {orgUsers?.map((roleGroup: any) => (
                 <FolderIcon
                   key={roleGroup.roleName}
-                  label={roleGroup.roleName.toUpperCase()}
+                  label={formatRoleLabel(roleGroup.roleName)}
                   subtitle={`${roleGroup.userCount} users • ${formatNumber(roleGroup.totalUsage || 0)} Credits`}
                   badge={roleGroup.userCount}
                   icon={Shield}
@@ -745,7 +745,7 @@ export function AiUsageDashboardPage() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{path.role?.toUpperCase()} Users ({usersInRole.length})</CardTitle>
+          <CardTitle className="text-lg">{formatRoleLabel(path.role)} Users ({usersInRole.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -776,7 +776,7 @@ export function AiUsageDashboardPage() {
         items={[
           { label: "AI Usage & Credits", onClick: () => handleNavigateUp("root") },
           ...(path.orgName ? [{ label: path.orgName, onClick: () => handleNavigateUp("org") }] : []),
-          ...(path.role ? [{ label: path.role, onClick: () => handleNavigateUp("role") }] : []),
+          ...(path.role ? [{ label: formatRoleLabel(path.role), onClick: () => handleNavigateUp("role") }] : []),
           ...(path.userName ? [{ label: path.userName }] : [])
         ]}
       />

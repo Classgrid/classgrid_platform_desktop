@@ -63,3 +63,13 @@ export function formatNumber(num: number | string): string {
   if (num === null || num === undefined) return "0";
   return Number(num).toLocaleString("en-IN");
 }
+
+export function formatRoleLabel(role?: string | null): string {
+  if (!role) return "";
+  return role
+    .replace(/_/g, " ")
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+

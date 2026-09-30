@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/marketing_ui/card";
 import { Button } from "@/components/marketing_ui/button";
 import { ShieldAlert, RotateCcw, AlertTriangle, Coins, Zap } from "lucide-react";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, formatRoleLabel } from "@/lib/utils";
 import { useBlockAiUser, useGrantAiCredits, useResetUserUsage } from "../../queries/useAiUsage";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { Input } from "@/components/marketing_ui/input";
@@ -107,7 +107,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
           </div>
           <div>
             <div className="text-xs text-muted-foreground uppercase tracking-wider">Role</div>
-            <div className="text-sm font-medium mt-1 capitalize">{userDetail.role}</div>
+            <div className="text-sm font-medium mt-1">{formatRoleLabel(userDetail.role)}</div>
           </div>
           <div>
             <div className="text-xs text-muted-foreground uppercase tracking-wider">Total Chat Sessions</div>
