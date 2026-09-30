@@ -150,7 +150,7 @@ export function AiUsageDashboardPage() {
           onClick={() => handleNavigateUp("root")}
           className={`flex items-center hover:text-foreground transition-colors px-2 py-1 rounded-md ${!path.orgId ? "bg-background shadow-sm text-foreground" : ""}`}
         >
-          <Home className="h-4 w-4 mr-1.5" /> All Organizations
+          <Activity className="h-4 w-4 mr-1.5" /> AI Usage & Credits
         </button>
         
         {path.orgId && (
@@ -217,13 +217,11 @@ export function AiUsageDashboardPage() {
     if (globalLoading) return <Skeleton className="h-96 w-full mb-8" />;
     if (!globalStats) return null;
 
-    const { totalCreditsSpent, totalRevenue, creditsPurchasedThisMonth, totalChats, usageTrend, modelsBreakdown } = globalStats;
-    // Prepare pie chart data
-    const modelPieData = modelsBreakdown?.map((m: any, i: number) => ({ 
-        name: m.name.split('/').pop(), 
-        value: m.requests || 0,
-        color: COLORS[i % COLORS.length]
-    })) || [];
+    const { totalCreditsSpent, totalRevenue, creditsPurchasedThisMonth, totalChats, usageTrend, models, orgsBreakdown, statusBreakdown, rolesBreakdown } = globalStats;
+    const modelPieData = models?.map((m: any, i: number) => ({ name: m.name.split('/').pop(), value: m.requests || 0, color: COLORS[i % COLORS.length] })) || [];
+    const orgPieData = orgsBreakdown?.map((m: any, i: number) => ({ name: m.name, value: m.requests || 0, color: COLORS[i % COLORS.length] })) || [];
+    const rolePieData = rolesBreakdown?.map((m: any, i: number) => ({ name: m.name.toUpperCase(), value: m.requests || 0, color: COLORS[i % COLORS.length] })) || [];
+    const statusPieData = statusBreakdown?.map((m: any, i: number) => ({ name: m.name, value: m.requests || 0, color: m.name.includes("Success") ? "#10b981" : "#ef4444" })) || [];
 
     const CustomTooltip = ({ active, payload }: any) => {
       if (active && payload && payload.length) {
@@ -415,16 +413,67 @@ export function AiUsageDashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Pie Chart at the end */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* Pie Charts */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader><CardTitle>Requests by Model</CardTitle></CardHeader>
               <CardContent>
-                <div className="h-[300px] w-full">
+                <div className="h-[250px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={modelPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
+                      <Pie data={modelPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value" stroke="none">
                         {modelPieData.map((e: any, i: number) => <Cell key={i} fill={e.color} />)}
+                      </Pie>
+                      <RechartsTooltip content={<CustomTooltip />} />
+                      <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle>Top Organizations</CardTitle></CardHeader>
+              <CardContent>
+                <div className="h-[250px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={orgPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value" stroke="none">
+                        {orgPieData.map((e: any, i: number) => <Cell key={i} fill={e.color} />)}
+                      </Pie>
+                      <RechartsTooltip content={<CustomTooltip />} />
+                      <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle>Usage by Role</CardTitle></CardHeader>
+              <CardContent>
+                <div className="h-[250px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={rolePieData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value" stroke="none">
+                        {rolePieData.map((e: any, i: number) => <Cell key={i} fill={e.color} />)}
+                      </Pie>
+                      <RechartsTooltip content={<CustomTooltip />} />
+                      <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle>API Status</CardTitle></CardHeader>
+              <CardContent>
+                <div className="h-[250px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={statusPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value" stroke="none">
+                        {statusPieData.map((e: any, i: number) => <Cell key={i} fill={e.color} />)}
                       </Pie>
                       <RechartsTooltip content={<CustomTooltip />} />
                       <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }} />
@@ -566,7 +615,10 @@ export function AiUsageDashboardPage() {
         items={[
           { label: "Dashboard", href: "/superadmin/dashboard" },
           { label: "AI & Platform Settings", href: "/superadmin/settings" },
-          { label: "AI Usage", href: "/superadmin/ai-usage" }
+          { label: "AI Usage", href: "/superadmin/ai-usage" },
+          ...(path.orgName ? [{ label: path.orgName }] : []),
+          ...(path.role ? [{ label: path.role.toUpperCase() }] : []),
+          ...(path.userName ? [{ label: path.userName }] : [])
         ]}
       />
 
