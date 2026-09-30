@@ -1479,6 +1479,27 @@ export const handleToolCall = async (name, args, context = {}) => {
             created_at: new Date().toISOString(),
             attachments: []
           });
+
+          // Increment unread count for all OTHER members so the badge (1, 2, 3...) shows up
+          try {
+            const { data: members } = await sb.from('chat_thread_members').select('user_id').eq('thread_id', args.threadId);
+            if (members) {
+              for (const m of members) {
+                if (m.user_id !== finalSenderId) {
+                  try {
+                    if (redis && redis.status === 'ready') {
+                      await redis.hincrby(`unread:${m.user_id}`, args.threadId, 1);
+                    }
+                  } catch {}
+                  broadcastToChannel(`user:${m.user_id}`, 'thread_updated', {
+                    threadId: args.threadId,
+                    messageId: msg.id,
+                    message: { sender_name: finalSenderName, message: args.content, created_at: new Date().toISOString() }
+                  });
+                }
+              }
+            }
+          } catch {}
           
           return { content: [{ type: 'text', text: `Message sent successfully. ID: ${msg.id}` }] };
         }

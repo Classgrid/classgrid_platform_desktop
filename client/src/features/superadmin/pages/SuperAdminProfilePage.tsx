@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/apiClient";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
