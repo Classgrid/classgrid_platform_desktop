@@ -475,15 +475,12 @@ export function AiUsageDashboardPage() {
                                        const org = orgsBreakdown?.find((o: any) => o.orgId === id);
                                        if (!org) return null;
                                        return (
-                                         <div key={id} className="flex items-center space-x-2">
-                                            {org.logo ? (
-                                                <img src={org.logo} alt={org.name} className="h-5 w-5 rounded object-cover" />
-                                            ) : (
-                                                <div className="h-5 w-5 rounded bg-primary/10 flex items-center justify-center text-primary text-[10px] font-semibold">
-                                                    {org.name?.substring(0, 2).toUpperCase()}
-                                                </div>
-                                            )}
-                                            <span className="truncate max-w-[140px] font-medium text-xs">{org.name}</span>
+                                         <div key={id} className="flex flex-col space-y-1 mb-2 border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                                            <div className="flex items-center space-x-2">
+                                                {org.logo && <img src={org.logo} alt={org.name} className="h-5 w-5 rounded object-cover" />}
+                                                <span className="truncate font-medium text-xs text-foreground">{org.name}</span>
+                                            </div>
+                                            <span className="text-[10px] text-muted-foreground font-mono">ID: {org.orgId}</span>
                                          </div>
                                        );
                                     })}
@@ -549,12 +546,11 @@ export function AiUsageDashboardPage() {
                                        const uData = usersBreakdown?.find((u: any) => u.userId === id || u._id === id || u.name === id) || { name: 'Unknown User' };
                                        
                                        return (
-                                         <div key={id} className="flex items-center space-x-2">
-                                            <div className="h-5 w-5 rounded bg-primary/10 flex items-center justify-center text-primary text-[10px] font-semibold">
-                                                {uData.name?.substring(0, 2).toUpperCase()}
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="truncate max-w-[140px] font-medium text-xs leading-tight">{uData.name}</span>
+                                         <div key={id} className="flex flex-col space-y-1 mb-2 border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                                            <span className="truncate font-medium text-xs text-foreground">{uData.name}</span>
+                                            <div className="flex flex-col gap-0.5">
+                                                {uData.orgName && <span className="text-[10px] text-muted-foreground">Org: {uData.orgName}</span>}
+                                                <span className="text-[10px] text-muted-foreground font-mono">User ID: {id}</span>
                                             </div>
                                          </div>
                                        );
