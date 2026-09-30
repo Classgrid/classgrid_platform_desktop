@@ -45,6 +45,7 @@ import Organization from "../models/Organization.js";
 import Classroom from "../models/Classroom.js";
 import ClassroomMembership from "../models/ClassroomMembership.js";
 import AiSchedule from "../models/AiSchedule.js";
+import AiUsageLog from "../models/AiUsageLog.js";
 import { ROLE_DEFINITIONS } from "../utils/roles.js";
 
 const uniqueDashboards = [...new Set(Object.values(ROLE_DEFINITIONS).map(r => r.dashboard))];
@@ -2792,16 +2793,17 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
             const userId = req.user?.id;
             if (userId && answer && answer !== "[RATE_LIMITED]") {
                 let calculatedTokens = 0;
+                let inputTokens = 0;
+                let outputTokens = 0;
                 try {
                     const { encode } = await import('gpt-tokenizer');
-                    let inputTokens = 0;
                     if (messages && Array.isArray(messages)) {
                         for (const msg of messages) {
                             let contentStr = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
                             inputTokens += encode(`role: ${msg.role}\ncontent: ${contentStr}`).length;
                         }
                     }
-                    const outputTokens = encode(`${answer || ""}\n${typeof accThought !== 'undefined' ? (accThought || "") : ""}`).length;
+                    outputTokens = encode(`${answer || ""}\n${typeof accThought !== 'undefined' ? (accThought || "") : ""}`).length;
                     calculatedTokens = inputTokens + outputTokens;
                 } catch (e) {
                     console.error("[AI-TOKEN] gpt-tokenizer failed, skipping deduction for this message:", e);
@@ -2834,6 +2836,11 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                                     $inc: { "ai_config.pro_used_this_period": estimatedTokens }
                                 }, { new: true });
 
+                                // Ensure total lifetime tokens is still incremented on the user for dashboard tracking
+                                await User.findByIdAndUpdate(userId, {
+                                    $inc: { "ai_tokens.total_ai_tokens_used": estimatedTokens }
+                                });
+
                                 deductedFromPro = true;
                                 currentRemaining = updatedOrg.ai_config.pro_pool_limit - updatedOrg.ai_config.pro_used_this_period;
                                 updateType = 'pro';
@@ -2849,7 +2856,10 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                         if (deduction > 0) {
                             // FIX: Use atomic $inc and {new: true} to get the true post-update remaining balance
                             const updatedUser = await User.findByIdAndUpdate(userId, {
-                                $inc: { "ai_tokens.used_this_week": deduction }
+                                $inc: { 
+                                    "ai_tokens.used_this_week": deduction,
+                                    "ai_tokens.total_ai_tokens_used": estimatedTokens
+                                }
                             }, { new: true });
                             currentRemaining = updatedUser.ai_tokens.free_weekly_limit - updatedUser.ai_tokens.used_this_week;
                         } else {
@@ -2864,6 +2874,21 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                         if (io) {
                             io.to(userId).emit("ai_token_update", { remaining: currentRemaining, type: updateType, used: estimatedTokens });
                         }
+                    }
+
+                    // Log to AiUsageLog for dashboard analytics
+                    if (userTokens) {
+                        AiUsageLog.create({
+                            organization_id: userTokens.organization_id || null,
+                            userId: userId,
+                            provider: 'cloudflare',
+                            model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
+                            feature: 'Chat',
+                            inputTokens: inputTokens || 0,
+                            outputTokens: outputTokens || 0,
+                            totalTokens: estimatedTokens,
+                            success: true
+                        }).catch(err => console.error("AiUsageLog Error:", err));
                     }
                 }
             }
