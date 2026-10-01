@@ -1018,6 +1018,11 @@ export const getMcpTools = () => [
     inputSchema: { type: 'object', properties: {} }
   },
   {
+    name: 'list_department_admins',
+    description: 'Fetch all users with the role of Head of Department (HOD) or department admins in the organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
     name: 'get_my_profile',
     description: 'Fetch the current user\'s profile including Basic Information (Name, DOB, Bio, Hobbies, WhatsApp Number) and Social Status (Tech Stack, LinkedIn, GitHub, etc).',
     inputSchema: { type: 'object', properties: {} }
@@ -1051,7 +1056,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     }
 
     // --- ORGANIZATION SECURE TOOLS ---
-    const orgTools = ['get_organization_info', 'get_student_count', 'get_teacher_count', 'list_recent_users', 'get_fee_collection_stats', 'list_pending_fee_defaulters', 'get_today_attendance_stats', 'list_active_classrooms', 'list_recent_exams', 'list_pending_support_tickets', 'list_pending_leave_requests', 'get_admission_stats', 'list_recent_leads'];
+    const orgTools = ['get_organization_info', 'get_student_count', 'get_teacher_count', 'list_recent_users', 'get_fee_collection_stats', 'list_pending_fee_defaulters', 'get_today_attendance_stats', 'list_active_classrooms', 'list_recent_exams', 'list_pending_support_tickets', 'list_pending_leave_requests', 'get_admission_stats', 'list_recent_leads', 'list_department_admins'];
     
     if (orgTools.includes(name)) {
       try {
@@ -1134,6 +1139,10 @@ export const handleToolCall = async (name, args, context = {}) => {
           const Lead = (await import('../models/Lead.js')).default;
           const leads = await Lead.find({ organization_id: orgId }).sort({ createdAt: -1 }).limit(5).lean();
           return { content: [{ type: 'text', text: JSON.stringify(leads, null, 2) }] };
+        }
+        if (name === 'list_department_admins') {
+          const hods = await User.find({ organization_id: orgId, role: 'hod' }).select('name email department phoneNumber role additional_roles').lean();
+          return { content: [{ type: 'text', text: JSON.stringify(hods, null, 2) }] };
         }
       } catch (err) {
         return { content: [{ type: 'text', text: `Error executing organization tool: ${err.message}` }] };

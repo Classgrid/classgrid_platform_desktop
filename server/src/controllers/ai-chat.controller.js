@@ -1067,6 +1067,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
             allowedConnectorNames.add('list_pending_leave_requests');
             allowedConnectorNames.add('get_admission_stats');
             allowedConnectorNames.add('list_recent_leads');
+            allowedConnectorNames.add('list_department_admins');
         }
         let googleConnected = false;
         let msConnected = false;
@@ -2485,6 +2486,11 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                     list_recent_leads: async (args) => {
                         const userEmail = req.user?.email || body.userEmail || '';
                         const result = await handleToolCall('list_recent_leads', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    list_department_admins: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('list_department_admins', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     whatsapp_business_connector: async (args) => {
