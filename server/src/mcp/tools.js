@@ -1414,10 +1414,11 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         if (operation === 'send_message') {
-            if (!recipientId || !message) return { content: [{ type: 'text', text: 'Error: recipientId and message are required for send_message' }] };
+            const finalRecipientId = targetId || recipientId;
+            if (!finalRecipientId || !message) return { content: [{ type: 'text', text: 'Error: targetId (recipient) and message are required for send_message' }] };
             const fbUrl = `https://graph.facebook.com/v19.0/${pageId}/messages`;
             const fbBody = { 
-                recipient: { id: recipientId }, 
+                recipient: { id: finalRecipientId }, 
                 message: { text: message },
                 messaging_type: "RESPONSE",
                 access_token: token
@@ -1539,11 +1540,12 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         if (operation === 'send_message') {
-            if (!recipientId || !message) return { content: [{ type: 'text', text: 'Error: recipientId and message are required for send_message' }] };
+            const finalRecipientId = targetId || recipientId;
+            if (!finalRecipientId || !message) return { content: [{ type: 'text', text: 'Error: targetId (recipient) and message are required for send_message' }] };
             if (!pageId) return { content: [{ type: 'text', text: 'Error: Could not dynamically fetch Page ID for Instagram DMs.' }] };
             const igUrl = `https://graph.facebook.com/v19.0/${pageId}/messages`;
             const igBody = { 
-                recipient: { id: recipientId }, 
+                recipient: { id: finalRecipientId }, 
                 message: { text: message },
                 access_token: token
             };
