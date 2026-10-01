@@ -379,6 +379,9 @@ When generating charts, graphs, or reports that need aggregate data (counts, sum
 
 SYLLABUS & MATERIAL SEARCH:
 - If the user asks you to search through study materials, notes, or syllabus content, YOU MUST trigger the \`search_syllabus_vectors\` tool to perform a similarity search in the MongoDB Atlas Vector Search database. You must provide the \`org_id\` if it's available in the user context.
+
+USER PROFILE & SOCIAL DATA:
+- If you need the user's phone number, WhatsApp number, Date of Birth, Bio, Hobbies, or Social Links (LinkedIn, GitHub, Tech Stack, etc.), YOU MUST trigger the \`get_my_profile\` tool. This fetches their complete identity and social profile.
 - VOYAGE AI EMBEDDINGS (CRITICAL SCRIPTING RULE): Vector embeddings are generated using Voyage AI via the \`VOYAGE_API_KEY\`. This works directly through the MongoDB API (unified Atlas billing). If you write a Node.js or Python script in the sandbox to generate embeddings, you MUST send your HTTP POST request to \`https://ai.mongodb.com/v1/embeddings\` (NOT api.voyageai.com). You MUST include \`"model": "voyage-3-large"\` in the JSON body. The \`VOYAGE_API_KEY\` starts with 'al-' and will ONLY work with the MongoDB Atlas AI endpoint. DO NOT use the standard Voyage SDK; just do a raw fetch/requests call to the MongoDB URL.
 
 - Write like you are explaining to a friend, not writing documentation.
@@ -1032,7 +1035,6 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
         // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
         let pluginPrompt = '';
         let allowedConnectorNames = new Set([
-            'unified_db_query',
             'search_users_for_chat',
             'run_code',
             'read_sandbox_file',
@@ -1043,6 +1045,28 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
             'analyze_image',
             'upload_sandbox_file_to_cdn'
         ]);
+
+        // CRITICAL SECURITY ENFORCEMENT: ONLY SUPER ADMINS GET DATABASE TOOLS
+        const isSuperAdmin = req.user && (req.user.role === 'super_admin' || (req.user.email && req.user.email.endsWith('@classgrid.in')));
+        if (isSuperAdmin) {
+            allowedConnectorNames.add('unified_db_query');
+        }
+        
+        if (req.user && req.user.organization_id) {
+            allowedConnectorNames.add('get_organization_info');
+            allowedConnectorNames.add('get_student_count');
+            allowedConnectorNames.add('get_teacher_count');
+            allowedConnectorNames.add('list_recent_users');
+            allowedConnectorNames.add('get_fee_collection_stats');
+            allowedConnectorNames.add('list_pending_fee_defaulters');
+            allowedConnectorNames.add('get_today_attendance_stats');
+            allowedConnectorNames.add('list_active_classrooms');
+            allowedConnectorNames.add('list_recent_exams');
+            allowedConnectorNames.add('list_pending_support_tickets');
+            allowedConnectorNames.add('list_pending_leave_requests');
+            allowedConnectorNames.add('get_admission_stats');
+            allowedConnectorNames.add('list_recent_leads');
+        }
         let googleConnected = false;
         let msConnected = false;
         let zoomConnected = false;
@@ -1233,7 +1257,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     if (vercelConnected) allowedConnectorNames.add('vercel_connector');
                     if (whatsappConnected) allowedConnectorNames.add('whatsapp_business_connector');
                     if (youtubeConnected) allowedConnectorNames.add('youtube_connector');
-                    if (supabaseConnected) allowedConnectorNames.add('supabase_connector');
+                    if (supabaseConnected && isSuperAdmin) allowedConnectorNames.add('supabase_connector');
                     if (sanityConnected) allowedConnectorNames.add('sanity_connector');
                     allowedConnectorNames.add('cloudflare_r2_connector');
                     allowedConnectorNames.add('send_whatsapp_message');

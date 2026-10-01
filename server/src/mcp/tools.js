@@ -951,6 +951,76 @@ export const getMcpTools = () => [
     name: 'delete_lead',
     description: 'Permanently delete a spam or invalid lead.',
     inputSchema: { type: 'object', properties: { leadId: { type: 'string' } }, required: ['leadId'] }
+  },
+  {
+    name: 'get_organization_info',
+    description: 'Fetch the configuration, branding, and billing plan details of the user\'s current organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'get_student_count',
+    description: 'Return the total number of students enrolled in the user\'s organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'get_teacher_count',
+    description: 'Return the total number of faculty/teachers in the user\'s organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'list_recent_users',
+    description: 'Fetch the 10 most recently joined students or teachers in the user\'s organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'get_fee_collection_stats',
+    description: 'Aggregate total fees collected vs pending for the current month in the user\'s organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'list_pending_fee_defaulters',
+    description: 'Fetch a list of the top 10 students with the highest pending fee balances in the user\'s organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'get_today_attendance_stats',
+    description: 'Aggregate the percentage of students present vs absent today in the user\'s organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'list_active_classrooms',
+    description: 'Fetch a list of active batches/classrooms in the user\'s organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'list_recent_exams',
+    description: 'Fetch details of recent or upcoming exams in the user\'s organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'list_pending_support_tickets',
+    description: 'Fetch all open/pending support tickets created by users in the user\'s organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'list_pending_leave_requests',
+    description: 'Fetch leave requests submitted by faculty that need approval in the user\'s organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'get_admission_stats',
+    description: 'Fetch the total number of applications received, approved, and pending in the user\'s organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'list_recent_leads',
+    description: 'Fetch the 5 most recent admission inquiries (leads/demo requests) in the user\'s organization.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'get_my_profile',
+    description: 'Fetch the current user\'s profile including Basic Information (Name, DOB, Bio, Hobbies, WhatsApp Number) and Social Status (Tech Stack, LinkedIn, GitHub, etc).',
+    inputSchema: { type: 'object', properties: {} }
   }
 ];
 
@@ -968,6 +1038,108 @@ export const handleToolCall = async (name, args, context = {}) => {
   };
 
   try {
+    if (name === 'get_my_profile') {
+      try {
+        const User = (await import('../models/User.js')).default;
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const currentUser = await User.findOne({ email: finalUserEmail }).select('-password -verificationToken').lean();
+        if (!currentUser) return { content: [{ type: 'text', text: 'Error: User profile not found.' }] };
+        return { content: [{ type: 'text', text: JSON.stringify(currentUser) }] };
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Error fetching profile: ${err.message}` }] };
+      }
+    }
+
+    // --- ORGANIZATION SECURE TOOLS ---
+    const orgTools = ['get_organization_info', 'get_student_count', 'get_teacher_count', 'list_recent_users', 'get_fee_collection_stats', 'list_pending_fee_defaulters', 'get_today_attendance_stats', 'list_active_classrooms', 'list_recent_exams', 'list_pending_support_tickets', 'list_pending_leave_requests', 'get_admission_stats', 'list_recent_leads'];
+    
+    if (orgTools.includes(name)) {
+      try {
+        const User = (await import('../models/User.js')).default;
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const currentUser = await User.findOne({ email: finalUserEmail }).select('_id organization_id');
+        if (!currentUser || !currentUser.organization_id) {
+          return { content: [{ type: 'text', text: 'Error: You are not linked to an organization.' }] };
+        }
+        const orgId = currentUser.organization_id;
+
+        if (name === 'get_organization_info') {
+          const Organization = (await import('../models/Organization.js')).default;
+          const org = await Organization.findById(orgId).select('-fees_razorpay_key_secret -canteen_razorpay_key_secret').lean();
+          return { content: [{ type: 'text', text: JSON.stringify(org, null, 2) }] };
+        }
+        if (name === 'get_student_count') {
+          const count = await User.countDocuments({ organization_id: orgId, role: 'student' });
+          return { content: [{ type: 'text', text: `Total Students: ${count}` }] };
+        }
+        if (name === 'get_teacher_count') {
+          const count = await User.countDocuments({ organization_id: orgId, role: { $in: ['faculty', 'teacher'] } });
+          return { content: [{ type: 'text', text: `Total Teachers/Faculty: ${count}` }] };
+        }
+        if (name === 'list_recent_users') {
+          const users = await User.find({ organization_id: orgId, role: { $in: ['student', 'faculty', 'teacher'] } }).sort({ createdAt: -1 }).limit(10).select('name email role createdAt').lean();
+          return { content: [{ type: 'text', text: JSON.stringify(users, null, 2) }] };
+        }
+        if (name === 'get_fee_collection_stats') {
+          const FeeRecord = (await import('../models/FeeRecord.js')).default;
+          const stats = await FeeRecord.aggregate([
+            { $match: { organization_id: orgId } },
+            { $group: { _id: "$status", totalAmount: { $sum: "$amount" }, count: { $sum: 1 } } }
+          ]);
+          return { content: [{ type: 'text', text: JSON.stringify(stats, null, 2) }] };
+        }
+        if (name === 'list_pending_fee_defaulters') {
+          const FeeRecord = (await import('../models/FeeRecord.js')).default;
+          const defaulters = await FeeRecord.find({ organization_id: orgId, status: 'pending' }).sort({ amount: -1 }).limit(10).populate('studentId', 'name email').lean();
+          return { content: [{ type: 'text', text: JSON.stringify(defaulters, null, 2) }] };
+        }
+        if (name === 'get_today_attendance_stats') {
+          const AttendanceRecord = (await import('../models/AttendanceRecord.js')).default;
+          const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
+          const stats = await AttendanceRecord.aggregate([
+            { $match: { organization_id: orgId, date: { $gte: startOfDay } } },
+            { $group: { _id: "$status", count: { $sum: 1 } } }
+          ]);
+          return { content: [{ type: 'text', text: JSON.stringify(stats, null, 2) }] };
+        }
+        if (name === 'list_active_classrooms') {
+          const Classroom = (await import('../models/Classroom.js')).default;
+          const classrooms = await Classroom.find({ organization_id: orgId }).limit(20).lean();
+          return { content: [{ type: 'text', text: JSON.stringify(classrooms, null, 2) }] };
+        }
+        if (name === 'list_recent_exams') {
+          const Exam = (await import('../models/Exam.js')).default;
+          const exams = await Exam.find({ organization_id: orgId }).sort({ createdAt: -1 }).limit(10).lean();
+          return { content: [{ type: 'text', text: JSON.stringify(exams, null, 2) }] };
+        }
+        if (name === 'list_pending_support_tickets') {
+          const SupportTicket = (await import('../models/SupportTicket.js')).default;
+          const tickets = await SupportTicket.find({ organization_id: orgId, status: { $ne: 'closed' } }).limit(10).lean();
+          return { content: [{ type: 'text', text: JSON.stringify(tickets, null, 2) }] };
+        }
+        if (name === 'list_pending_leave_requests') {
+          const LeaveRequest = (await import('../models/LeaveRequest.js')).default;
+          const leaves = await LeaveRequest.find({ organization_id: orgId, status: 'pending' }).limit(10).lean();
+          return { content: [{ type: 'text', text: JSON.stringify(leaves, null, 2) }] };
+        }
+        if (name === 'get_admission_stats') {
+          const AdmissionApplication = (await import('../models/AdmissionApplication.js')).default;
+          const stats = await AdmissionApplication.aggregate([
+            { $match: { organization_id: orgId } },
+            { $group: { _id: "$status", count: { $sum: 1 } } }
+          ]);
+          return { content: [{ type: 'text', text: JSON.stringify(stats, null, 2) }] };
+        }
+        if (name === 'list_recent_leads') {
+          const Lead = (await import('../models/Lead.js')).default;
+          const leads = await Lead.find({ organization_id: orgId }).sort({ createdAt: -1 }).limit(5).lean();
+          return { content: [{ type: 'text', text: JSON.stringify(leads, null, 2) }] };
+        }
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Error executing organization tool: ${err.message}` }] };
+      }
+    }
+
     if (name === 'create_schedule') {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
