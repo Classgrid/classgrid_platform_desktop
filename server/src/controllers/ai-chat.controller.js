@@ -1335,7 +1335,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                         disconnectedLinks.push(`[Supabase](/api/auth/supabase/connect)`);
                     }
                     if (sanityConnected) {
-                        activeDescriptions.push(`- **Sanity CMS**: ✓ CONNECTED. Use 'sanity_connector' tool to query documents and edit data.`);
+                        activeDescriptions.push(`- **Sanity CMS**: ✓ CONNECTED. Use 'sanity_connector' tool to query documents and edit data. \n  CRITICAL SANITY SCHEMA RULE: Before creating or updating any Sanity document, you MUST first query the existing documents of that _type and mirror their EXACT field keys. Never invent field names based on the user's natural-language request alone. If the user asks for a field that does not exist in the observed schema, STOP and ask them for the correct field name instead of guessing. Only write keys that already appear on existing documents of the same _type.`);
                     } else {
                         disconnectedLinks.push(`[Sanity CMS](#) (Connect via AI Hub)`);
                     }
