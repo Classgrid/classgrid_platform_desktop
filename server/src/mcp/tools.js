@@ -1397,7 +1397,14 @@ export const handleToolCall = async (name, args, context = {}) => {
            return { content: [{ type: 'text', text: 'Error: Facebook Page is not fully connected.' }] };
         }
         
-        const { operation, message, imageUrl, recipientId } = args;
+        const { operation, message, imageUrl, recipientId, targetId } = args;
+
+        if (operation === 'get_profile') {
+            const fbUrl = `https://graph.facebook.com/v19.0/${pageId}?fields=id,name,followers_count,fan_count,about,link&access_token=${token}`;
+            const res = await fetch(fbUrl);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
 
         if (operation === 'list_messages') {
             const fbUrl = `https://graph.facebook.com/v19.0/${pageId}/conversations?fields=id,updated_time,participants,messages{message,created_time,from}&access_token=${token}`;
@@ -1513,7 +1520,14 @@ export const handleToolCall = async (name, args, context = {}) => {
            return { content: [{ type: 'text', text: 'Error: Instagram Account is not fully connected.' }] };
         }
         
-        const { operation, message, imageUrl, recipientId } = args;
+        const { operation, message, imageUrl, recipientId, targetId } = args;
+
+        if (operation === 'get_profile') {
+            const igUrl = `https://graph.facebook.com/v19.0/${accountId}?fields=id,username,followers_count,follows_count,media_count,name,biography,profile_picture_url&access_token=${token}`;
+            const res = await fetch(igUrl);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
 
         if (operation === 'list_messages') {
             // Instagram DMs route through the Facebook Page's conversations endpoint
