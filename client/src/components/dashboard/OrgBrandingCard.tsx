@@ -140,7 +140,7 @@ const resolveBrandColors = (branding?: BrandingData) => {
 
 const SOCIAL_ICONS: Record<string, string> = {
   instagram_url: "https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/instagram-2-1-logo-svgrepo-com.svg",
-  youtube_url: "https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/youtube-color-svgrepo-com.svg",
+  youtube_url: "https://cdn.classgrid.in/youtube-icon.svg",
   facebook_url: "https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/facebook-icon-logo-svgrepo-com.svg",
   linkedin_url: "https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/linkedin-svgrepo-com.svg",
   twitter_url: "https://bumxgscngzjadyozdpce.supabase.co/storage/v1/object/public/LOGO%20AND%20%20SVG/Untitled%20folder/new-twitter-x-logo-twitter-icon-x-social-media-icon-free-png.webp",

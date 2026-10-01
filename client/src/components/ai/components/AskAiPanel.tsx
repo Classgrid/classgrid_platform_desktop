@@ -1495,7 +1495,7 @@ export const INTEGRATIONS_LIST: any[] = [
   { id: "vercel", name: "Vercel", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/vercel-icon-svgrepo-com.svg", invertInDarkMode: true },
   { id: "slack", name: "Slack", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/slack-new-logo-logo-svgrepo-com.svg" },
   { id: "github", name: "GitHub", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/github-icon.svg", invertInDarkMode: true },
-  { id: "youtube", name: "YouTube", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/YouTube_social_white_square_(2024).svg" },
+  { id: "youtube", name: "YouTube", imgUrl: "https://cdn.classgrid.in/youtube-icon.svg" },
   { id: "supabase", name: "Supabase", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/supabase-icon.svg" },
   { id: "sanity", name: "Sanity CMS", imgUrl: "https://cdn.classgrid.in/classgrid_intgration/sanity-icon-logo-png_seeklogo-653456.png", invertInDarkMode: true },
 ];
