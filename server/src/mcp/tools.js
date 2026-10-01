@@ -1486,13 +1486,14 @@ export const handleToolCall = async (name, args, context = {}) => {
         
         let token = currentUser?.instagram_access_token;
         let accountId = currentUser?.instagram_account_id;
+        let pageId = null;
 
         const isSuperAdmin = ['super_admin', 'co_super_admin'].includes(currentUser?.role);
         if (isSuperAdmin && process.env.META_SYSTEM_ACCESS_TOKEN) {
             token = await getMetaLongLivedToken() || process.env.META_SYSTEM_ACCESS_TOKEN;
             accountId = process.env.META_SYSTEM_IG_ACCOUNT_ID || accountId;
             
-            let pageId = process.env.META_SYSTEM_PAGE_ID;
+            pageId = process.env.META_SYSTEM_PAGE_ID;
             
             if (pageId && token) {
                 const pageRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}?fields=access_token&access_token=${token}`);
