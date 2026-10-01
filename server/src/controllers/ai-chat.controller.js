@@ -2498,6 +2498,11 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                         const result = await handleToolCall('whatsapp_business_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
+                    youtube_connector: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('youtube_connector', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
                     read_server_logs: async (args) => {
                         const result = await handleToolCall('read_server_logs', args, {});
                         return result.isError ? result.content[0].text : result.content[0].text;

@@ -1172,6 +1172,50 @@ export const handleToolCall = async (name, args, context = {}) => {
       }
     }
 
+    if (name === 'youtube_connector') {
+      try {
+        const User = (await import('../models/User.js')).default;
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const currentUser = await User.findOne({ email: finalUserEmail }).select('metadata').lean();
+        
+        const youtubeToken = currentUser?.metadata?.youtube_tokens?.access_token;
+        if (!youtubeToken) {
+          return { content: [{ type: 'text', text: 'Error: YouTube is not connected or token is missing.' }] };
+        }
+
+        const { operation, query, channelId, videoId, maxResults = 10 } = args;
+
+        let url = '';
+        if (operation === 'search_videos') {
+            if (!query) return { content: [{ type: 'text', text: 'Error: query is required for search_videos.' }] };
+            url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&maxResults=${maxResults}&type=video`;
+        } else if (operation === 'get_channel_stats') {
+            if (!channelId) return { content: [{ type: 'text', text: 'Error: channelId is required for get_channel_stats.' }] };
+            url = `https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${channelId}`;
+        } else if (operation === 'read_comments') {
+            if (!videoId) return { content: [{ type: 'text', text: 'Error: videoId is required for read_comments.' }] };
+            url = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&maxResults=${maxResults}`;
+        } else {
+            return { content: [{ type: 'text', text: 'Error: Invalid YouTube operation.' }] };
+        }
+
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${youtubeToken}` }
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            return { content: [{ type: 'text', text: `YouTube API Error: ${data.error?.message || JSON.stringify(data)}` }] };
+        }
+        
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Error executing youtube_connector: ${err.message}` }] };
+      }
+    }
+
     if (name === 'supabase_connector') {
       try {
         const User = (await import('../models/User.js')).default;
