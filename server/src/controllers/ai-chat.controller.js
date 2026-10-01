@@ -1252,8 +1252,11 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     sanityConnected = !!(latestUser.sanity_project_id && latestUser.sanity_access_token);
                     if (sanityConnected) console.log('[integration-verify] Sanity: ✓ CONNECTED (token in DB)');
 
-                    const metaConnected = !!latestUser.meta_access_token;
-                    if (metaConnected) console.log('[integration-verify] Meta: ✓ CONNECTED (token in DB)');
+                    const facebookConnected = !!latestUser.facebook_access_token;
+                    if (facebookConnected) console.log('[integration-verify] Facebook: ✓ CONNECTED (token in DB)');
+
+                    const instagramConnected = !!latestUser.instagram_access_token;
+                    if (instagramConnected) console.log('[integration-verify] Instagram: ✓ CONNECTED (token in DB)');
 
                     // Only VERIFIED integrations get tools
                     if (googleConnected) allowedConnectorNames.add('google_workspace_connector');
@@ -1264,7 +1267,8 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     if (youtubeConnected) allowedConnectorNames.add('youtube_connector');
                     if (supabaseConnected && isSuperAdmin) allowedConnectorNames.add('supabase_connector');
                     if (sanityConnected) allowedConnectorNames.add('sanity_connector');
-                    if (metaConnected) allowedConnectorNames.add('meta_connector');
+                    if (facebookConnected) allowedConnectorNames.add('facebook_connector');
+                    if (instagramConnected) allowedConnectorNames.add('instagram_connector');
                     allowedConnectorNames.add('cloudflare_r2_connector');
                     allowedConnectorNames.add('send_whatsapp_message');
 
@@ -1343,10 +1347,15 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     } else {
                         disconnectedLinks.push(`[Sanity CMS](#) (Connect via AI Hub)`);
                     }
-                    if (metaConnected) {
-                        activeDescriptions.push(`- **Meta (Facebook & Instagram)**: ✓ CONNECTED. Use 'meta_connector' tool to publish_post to Facebook and Instagram. Ensure you have the user's message. If posting to Instagram, an imageUrl is REQUIRED.`);
+                    if (facebookConnected) {
+                        activeDescriptions.push(`- **Facebook Pages**: ✓ CONNECTED. Use 'facebook_connector' tool to publish_post to Facebook. Ensure you have the user's message.`);
                     } else {
-                        disconnectedLinks.push(`[Meta](#) (Connect via AI Hub)`);
+                        disconnectedLinks.push(`[Facebook](#) (Connect via AI Hub)`);
+                    }
+                    if (instagramConnected) {
+                        activeDescriptions.push(`- **Instagram Business**: ✓ CONNECTED. Use 'instagram_connector' tool to publish_post to Instagram. Ensure you have the user's message. An imageUrl is REQUIRED.`);
+                    } else {
+                        disconnectedLinks.push(`[Instagram](#) (Connect via AI Hub)`);
                     }
 
                     pluginPrompt = `\n\n--- ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ…â€™ ACTIVE INTEGRATIONS ---`;
@@ -2427,9 +2436,14 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                         const result = await handleToolCall('sanity_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
-                    meta_connector: async (args) => {
+                    facebook_connector: async (args) => {
                         const userEmail = req.user?.email || body.userEmail || '';
-                        const result = await handleToolCall('meta_connector', args, { userEmail });
+                        const result = await handleToolCall('facebook_connector', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    instagram_connector: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('instagram_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     get_my_profile: async (args) => {

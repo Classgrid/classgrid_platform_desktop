@@ -252,17 +252,29 @@ export const getMcpTools = () => [
     }
   },
   {
-    name: 'meta_connector',
-    description: 'Interact with Meta Graph API to publish posts to Facebook Pages and Instagram Accounts.',
+    name: 'facebook_connector',
+    description: 'Interact with Meta Graph API to publish posts to Facebook Pages.',
     inputSchema: {
       type: 'object',
       properties: {
         operation: { type: 'string', enum: ['publish_post'], description: 'The Meta operation to perform.' },
         message: { type: 'string', description: 'The text content of the post.' },
-        imageUrl: { type: 'string', description: 'Optional image URL to attach to the post.' },
-        platform: { type: 'string', enum: ['facebook', 'instagram', 'both'], description: 'Which platform to post to.' }
+        imageUrl: { type: 'string', description: 'Optional image URL to attach to the post.' }
       },
-      required: ['operation', 'message', 'platform']
+      required: ['operation', 'message']
+    }
+  },
+  {
+    name: 'instagram_connector',
+    description: 'Interact with Meta Graph API to publish posts to Instagram Business Accounts.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['publish_post'], description: 'The Meta operation to perform.' },
+        message: { type: 'string', description: 'The text content of the post.' },
+        imageUrl: { type: 'string', description: 'REQUIRED image URL to attach to the post.' }
+      },
+      required: ['operation', 'message', 'imageUrl']
     }
   },
   {
@@ -1316,83 +1328,84 @@ export const handleToolCall = async (name, args, context = {}) => {
       }
     }
 
-    if (name === 'meta_connector') {
+    if (name === 'facebook_connector') {
       try {
         const User = (await import('../models/User.js')).default;
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
-        const currentUser = await User.findOne({ email: finalUserEmail }).select('meta_access_token meta_page_id meta_ig_account_id');
+        const currentUser = await User.findOne({ email: finalUserEmail }).select('facebook_access_token facebook_page_id');
         
-        if (!currentUser || !currentUser.meta_access_token) {
-           return { content: [{ type: 'text', text: 'Error: Meta is not connected. Please connect it in the AI Hub.' }] };
+        if (!currentUser || !currentUser.facebook_access_token || !currentUser.facebook_page_id) {
+           return { content: [{ type: 'text', text: 'Error: Facebook Page is not fully connected.' }] };
         }
         
-        const token = currentUser.meta_access_token;
-        const { operation, message, imageUrl, platform } = args;
+        const token = currentUser.facebook_access_token;
+        const { operation, message, imageUrl } = args;
 
         if (operation === 'publish_post') {
-            const results = [];
+            const fbUrl = `https://graph.facebook.com/v19.0/${currentUser.facebook_page_id}/${imageUrl ? 'photos' : 'feed'}`;
+            const fbBody = { access_token: token, message };
+            if (imageUrl) fbBody.url = imageUrl;
             
-            // Facebook
-            if (platform === 'facebook' || platform === 'both') {
-                if (!currentUser.meta_page_id) {
-                    results.push({ platform: 'facebook', error: 'Facebook Page ID not configured.' });
-                } else {
-                    const fbUrl = `https://graph.facebook.com/v19.0/${currentUser.meta_page_id}/${imageUrl ? 'photos' : 'feed'}`;
-                    const fbBody = { access_token: token, message };
-                    if (imageUrl) fbBody.url = imageUrl;
-                    
-                    const res = await fetch(fbUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(fbBody)
-                    });
-                    const data = await res.json();
-                    results.push({ platform: 'facebook', response: data });
-                }
-            }
-
-            // Instagram
-            if (platform === 'instagram' || platform === 'both') {
-                if (!currentUser.meta_ig_account_id) {
-                    results.push({ platform: 'instagram', error: 'Instagram Account ID not configured.' });
-                } else {
-                    if (!imageUrl) {
-                         results.push({ platform: 'instagram', error: 'Instagram requires an imageUrl to publish a post.' });
-                    } else {
-                         // Step 1: Create media container
-                         const createUrl = `https://graph.facebook.com/v19.0/${currentUser.meta_ig_account_id}/media`;
-                         const createBody = { access_token: token, image_url: imageUrl, caption: message };
-                         
-                         const createRes = await fetch(createUrl, {
-                             method: 'POST',
-                             headers: { 'Content-Type': 'application/json' },
-                             body: JSON.stringify(createBody)
-                         });
-                         const createData = await createRes.json();
-                         
-                         if (createData.id) {
-                             // Step 2: Publish media container
-                             const publishUrl = `https://graph.facebook.com/v19.0/${currentUser.meta_ig_account_id}/media_publish`;
-                             const publishBody = { access_token: token, creation_id: createData.id };
-                             
-                             const publishRes = await fetch(publishUrl, {
-                                 method: 'POST',
-                                 headers: { 'Content-Type': 'application/json' },
-                                 body: JSON.stringify(publishBody)
-                             });
-                             const publishData = await publishRes.json();
-                             results.push({ platform: 'instagram', response: publishData });
-                         } else {
-                             results.push({ platform: 'instagram', error: 'Failed to create media container', response: createData });
-                         }
-                    }
-                }
-            }
-            
-            return { content: [{ type: 'text', text: JSON.stringify(results, null, 2) }] };
+            const res = await fetch(fbUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fbBody)
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
         }
       } catch (err) {
-        return { content: [{ type: 'text', text: `Meta Error: ${err.message}` }] };
+        return { content: [{ type: 'text', text: `Facebook Error: ${err.message}` }] };
+      }
+    }
+
+    if (name === 'instagram_connector') {
+      try {
+        const User = (await import('../models/User.js')).default;
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const currentUser = await User.findOne({ email: finalUserEmail }).select('instagram_access_token instagram_account_id');
+        
+        if (!currentUser || !currentUser.instagram_access_token || !currentUser.instagram_account_id) {
+           return { content: [{ type: 'text', text: 'Error: Instagram Account is not fully connected.' }] };
+        }
+        
+        const token = currentUser.instagram_access_token;
+        const { operation, message, imageUrl } = args;
+
+        if (operation === 'publish_post') {
+            if (!imageUrl) {
+                 return { content: [{ type: 'text', text: 'Error: Instagram requires an imageUrl to publish a post.' }] };
+            }
+            
+            // Step 1: Create media container
+            const createUrl = `https://graph.facebook.com/v19.0/${currentUser.instagram_account_id}/media`;
+            const createBody = { access_token: token, image_url: imageUrl, caption: message };
+            
+            const createRes = await fetch(createUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(createBody)
+            });
+            const createData = await createRes.json();
+            
+            if (createData.id) {
+                // Step 2: Publish media container
+                const publishUrl = `https://graph.facebook.com/v19.0/${currentUser.instagram_account_id}/media_publish`;
+                const publishBody = { access_token: token, creation_id: createData.id };
+                
+                const publishRes = await fetch(publishUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(publishBody)
+                });
+                const publishData = await publishRes.json();
+                return { content: [{ type: 'text', text: JSON.stringify(publishData, null, 2) }] };
+            } else {
+                return { content: [{ type: 'text', text: JSON.stringify({ error: 'Failed to create media container', response: createData }, null, 2) }] };
+            }
+        }
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Instagram Error: ${err.message}` }] };
       }
     }
 

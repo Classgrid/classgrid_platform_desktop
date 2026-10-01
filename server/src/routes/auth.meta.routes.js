@@ -20,7 +20,7 @@ router.get('/oauth', isAuthenticated, (req, res) => {
     if (type === 'facebook') {
         scope = 'pages_manage_posts,pages_show_list,pages_read_engagement,pages_manage_metadata';
     } else {
-        scope = 'instagram_basic,instagram_content_publish,instagram_manage_comments,instagram_manage_insights,instagram_manage_messages,pages_show_list,pages_manage_metadata';
+        scope = 'instagram_basic,instagram_business_basic,instagram_content_publish,instagram_business_content_publish,instagram_manage_comments,instagram_business_manage_comments,instagram_manage_insights,instagram_business_manage_insights,instagram_manage_messages,instagram_business_manage_messages,instagram_manage_contents,pages_show_list,pages_manage_metadata,pages_read_engagement';
     }
 
     const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
