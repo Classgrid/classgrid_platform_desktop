@@ -1582,7 +1582,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         if (operation === 'get_insights') {
-            const res = await fetch(`https://graph.facebook.com/v19.0/${accountId}/insights?metric=impressions,reach,profile_views&period=day&access_token=${token}`);
+            const res = await fetch(`https://graph.facebook.com/v19.0/${accountId}/insights?metric=reach,follower_count,profile_views&period=day&access_token=${token}`);
             return { content: [{ type: 'text', text: JSON.stringify(await res.json(), null, 2) }] };
         }
 
