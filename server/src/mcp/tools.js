@@ -1516,7 +1516,10 @@ export const handleToolCall = async (name, args, context = {}) => {
         const { operation, message, imageUrl, recipientId } = args;
 
         if (operation === 'list_messages') {
-            const igUrl = `https://graph.facebook.com/v19.0/${accountId}/conversations?platform=instagram&fields=id,updated_time,participants,messages{message,created_time,from}&access_token=${token}`;
+            // Instagram DMs route through the Facebook Page's conversations endpoint
+            const pageId = process.env.META_SYSTEM_PAGE_ID;
+            if (!pageId) return { content: [{ type: 'text', text: 'Error: META_SYSTEM_PAGE_ID is required for Instagram DMs.' }] };
+            const igUrl = `https://graph.facebook.com/v19.0/${pageId}/conversations?platform=instagram&fields=id,updated_time,participants,messages{message,created_time,from}&access_token=${token}`;
             const res = await fetch(igUrl);
             const data = await res.json();
             return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
@@ -1524,7 +1527,9 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         if (operation === 'send_message') {
             if (!recipientId || !message) return { content: [{ type: 'text', text: 'Error: recipientId and message are required for send_message' }] };
-            const igUrl = `https://graph.facebook.com/v19.0/${accountId}/messages`;
+            const pageId = process.env.META_SYSTEM_PAGE_ID;
+            if (!pageId) return { content: [{ type: 'text', text: 'Error: META_SYSTEM_PAGE_ID is required for Instagram DMs.' }] };
+            const igUrl = `https://graph.facebook.com/v19.0/${pageId}/messages`;
             const igBody = { 
                 recipient: { id: recipientId }, 
                 message: { text: message },
