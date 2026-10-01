@@ -31,6 +31,38 @@ import { Readable } from 'stream';
 
 const execPromise = util.promisify(exec);
 
+// ── Meta Long-Lived Token Cache ──
+let _cachedMetaLongLivedToken = null;
+let _metaTokenExchangedAt = null;
+
+async function getMetaLongLivedToken() {
+  if (_cachedMetaLongLivedToken && _metaTokenExchangedAt) {
+    const daysSince = (Date.now() - _metaTokenExchangedAt) / (1000 * 60 * 60 * 24);
+    if (daysSince < 50) return _cachedMetaLongLivedToken;
+  }
+  const shortToken = process.env.META_SYSTEM_ACCESS_TOKEN;
+  const appId = process.env.META_FACEBOOK_APP_ID;
+  const appSecret = process.env.META_FACEBOOK_APP_SECRET;
+  if (!shortToken) return null;
+  if (!appId || !appSecret) return shortToken;
+  try {
+    const url = `https://graph.facebook.com/v19.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortToken}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.access_token) {
+      _cachedMetaLongLivedToken = data.access_token;
+      _metaTokenExchangedAt = Date.now();
+      console.log('[meta-token] Exchanged for long-lived token (60 days)');
+      return _cachedMetaLongLivedToken;
+    }
+    console.error('[meta-token] Exchange failed:', data.error?.message || JSON.stringify(data));
+    return shortToken;
+  } catch (err) {
+    console.error('[meta-token] Exchange error:', err.message);
+    return shortToken;
+  }
+}
+
 export const getMcpTools = () => [
   {
     name: 'unified_db_query',
@@ -1342,7 +1374,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         const isSuperAdmin = ['super_admin', 'co_super_admin'].includes(currentUser?.role);
         if (isSuperAdmin && process.env.META_SYSTEM_ACCESS_TOKEN) {
-            token = process.env.META_SYSTEM_ACCESS_TOKEN;
+            token = await getMetaLongLivedToken() || process.env.META_SYSTEM_ACCESS_TOKEN;
             pageId = process.env.META_SYSTEM_PAGE_ID || pageId;
             if (!pageId && token) {
                 const pagesRes = await fetch(`https://graph.facebook.com/v19.0/me/accounts?access_token=${token}`);
@@ -1442,7 +1474,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         const isSuperAdmin = ['super_admin', 'co_super_admin'].includes(currentUser?.role);
         if (isSuperAdmin && process.env.META_SYSTEM_ACCESS_TOKEN) {
-            token = process.env.META_SYSTEM_ACCESS_TOKEN;
+            token = await getMetaLongLivedToken() || process.env.META_SYSTEM_ACCESS_TOKEN;
             accountId = process.env.META_SYSTEM_IG_ACCOUNT_ID || accountId;
             
             if (!accountId && token) {
