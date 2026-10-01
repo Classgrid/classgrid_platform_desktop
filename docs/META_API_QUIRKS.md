@@ -39,3 +39,6 @@ Meta strictly prohibits developers from retrieving a raw list of usernames that 
 ## 5. Insights Metrics Deprecation
 Meta frequently deprecates API metrics. For `get_insights` on Instagram accounts, the `impressions` metric has been deprecated. 
 - **Correct Usage:** You must use `metric=reach,follower_count` (do not use `impressions` or `profile_views` unless `metric_type=total_value` is explicitly handled).
+
+## 6. The `pageId is not defined` Scoping Bug
+When implementing the dynamic `pageId` fetcher in Node.js, ensure `let pageId = null;` is hoisted to the absolute top of the connector block (outside of any `if (isSuperAdmin)` statements). If it is scoped locally inside the `if` block, operations at the bottom of the function (like `list_messages`) will crash with a `ReferenceError: pageId is not defined`, even if the Facebook Page is perfectly connected!
