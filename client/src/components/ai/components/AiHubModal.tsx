@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { INTEGRATIONS_LIST } from "./AskAiPanel";
 import { Button } from "@/components/marketing_ui/button";
 import { WhatsappConfigModal } from "./WhatsappConfigModal";
+import { SanityConfigModal } from "./SanityConfigModal";
 import { AiImagesGallery } from "./AiImagesGallery";
 import { AiUsageBar } from "./AiUsageBar";
 import { AiCreditsPanel } from "./credits/AiCreditsPanel";
@@ -58,6 +59,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [showWhatsappConfig, setShowWhatsappConfig] = useState(false);
+  const [showSanityConfig, setShowSanityConfig] = useState(false);
 
   const backendUrl = typeof import.meta !== "undefined" && import.meta.env
     ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
@@ -99,7 +101,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
   const handleConnect = async (id: string, name: string) => {
     setIsConnecting(true);
     try {
-      const isGoogle = ['gmail', 'gcal', 'gdrive', 'gclass', 'gmeet', 'gforms'].includes(id);
+      const isGoogle = ['gmail', 'gcal', 'gdrive', 'gclass', 'gmeet', 'gforms', 'youtube'].includes(id);
       const isMicrosoft = id === 'outlook' || id === 'teams';
       
       if (id === 'whatsapp') {
@@ -107,10 +109,16 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
         setShowWhatsappConfig(true);
         return;
       }
+      
+      if (id === 'sanity') {
+        setIsConnecting(false);
+        setShowSanityConfig(true);
+        return;
+      }
 
       let endpoint = '';
       if (isGoogle) {
-        const service = id === 'gcal' ? 'calendar' : id === 'gdrive' ? 'drive' : id === 'gclass' ? 'classroom' : id === 'gmeet' ? 'meet' : id === 'gforms' ? 'forms' : 'gmail';
+        const service = id === 'gcal' ? 'calendar' : id === 'gdrive' ? 'drive' : id === 'gclass' ? 'classroom' : id === 'gmeet' ? 'meet' : id === 'gforms' ? 'forms' : id === 'youtube' ? 'youtube' : 'gmail';
         endpoint = `/api/google-workspace/connect?service=${service}&returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       } else if (isMicrosoft) {
         endpoint = `/api/auth/microsoft/connect?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
@@ -124,6 +132,8 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
         endpoint = `/api/auth/slack/connect?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       } else if (id === 'github') {
         endpoint = `/api/auth/github/connect?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
+      } else if (id === 'supabase') {
+        endpoint = `/api/auth/supabase/connect?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       } else {
         endpoint = `/api/ai-integrations/connect/${id}?returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       }
@@ -230,7 +240,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
   const handleDisconnect = async (id: string, name: string) => {
     setIsDisconnecting(true);
     try {
-      const isGoogle = ['gmail', 'gcal', 'gdrive', 'gclass', 'gmeet', 'gforms'].includes(id);
+      const isGoogle = ['gmail', 'gcal', 'gdrive', 'gclass', 'gmeet', 'gforms', 'youtube'].includes(id);
       const isMicrosoft = id === 'outlook' || id === 'teams';
       
       let endpoint = '';
@@ -248,6 +258,10 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
         endpoint = `/api/auth/slack/disconnect`;
       } else if (id === 'github') {
         endpoint = `/api/auth/github/disconnect`;
+      } else if (id === 'supabase') {
+        endpoint = `/api/auth/supabase/disconnect`;
+      } else if (id === 'sanity') {
+        endpoint = `/api/sanity/disconnect`;
       } else {
         endpoint = `/api/ai-integrations/disconnect/${id}`;
       }
@@ -290,6 +304,9 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
       case "zoom": return ["Create Zoom meetings directly", "Retrieve recording summaries", "Invite participants effortlessly"];
       case "whatsapp": return ["Send WhatsApp messages to students/parents", "Automate customer support replies", "Broadcast important announcements"];
       case "vercel": return ["Trigger Vercel deployments", "Monitor project build status", "Manage environment variables seamlessly"];
+      case "youtube": return ["Search for educational videos automatically", "Fetch channel statistics and views", "Analyze video comments and engagement"];
+      case "supabase": return ["Query your Postgres database naturally", "List and manage storage buckets", "Check active projects and configurations"];
+      case "sanity": return ["Query documents from your Sanity Studio", "Draft new content and articles", "Update metadata and fields programmatically"];
       default: return [
         `Allow Classgrid AI to access your ${name} workspace`,
         `Search and sync data automatically`,
@@ -311,6 +328,9 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
       case "zoom": return ["Schedule a Zoom meeting for 3 PM tomorrow", "Create an instant Zoom link for a quick chat", "Find the recording of the last town hall", "Summarize the Zoom transcript from the strategy session", "Cancel my scheduled Zoom meeting for today"];
       case "whatsapp": return ["Send a WhatsApp reminder to students about the test", "Broadcast the holiday announcement via WhatsApp", "Draft a reply to a parent's inquiry on WhatsApp", "Send the Zoom link to the class WhatsApp group", "Check if there are any unread messages from parents"];
       case "vercel": return ["Check the status of the latest production deployment", "Trigger a new deployment for the staging branch", "List all active environment variables", "Show me the build logs for the last failed deployment", "Roll back to the previous successful Vercel build"];
+      case "youtube": return ["Search YouTube for Next.js tutorials", "What is the sub count of MrBeast?", "Find the top comments on my latest video"];
+      case "supabase": return ["List all my Supabase projects", "Query the users table for active accounts", "Show me the files in the 'avatars' storage bucket"];
+      case "sanity": return ["List all published blog posts", "Create a new article draft about AI", "Update the title of the latest announcement"];
       case "mcp-cursor": return ["Analyze the AiHubModal.tsx file in my Cursor workspace", "Find where the OAuth redirect is handled in the codebase", "Explain the authentication flow in the backend", "Draft a new React component for the settings page", "Fix the linting errors in the user controller"];
       case "mcp-chatgpt": return ["Ask ChatGPT to review this text for tone", "Generate a creative story using ChatGPT", "Brainstorm 5 marketing ideas", "Translate this document to French", "Explain quantum computing simply"];
       case "mcp-claude": return ["Analyze this 50-page PDF document", "Extract the key arguments from this research paper", "Compare these two long contracts", "Write a detailed technical specification", "Help me debug this complex logic issue"];
@@ -637,6 +657,15 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
     <WhatsappConfigModal 
       isOpen={showWhatsappConfig} 
       onClose={() => setShowWhatsappConfig(false)}
+      backendUrl={backendUrl}
+      onSuccess={async () => {
+        await fetchStatus();
+      }}
+    />
+
+    <SanityConfigModal 
+      isOpen={showSanityConfig} 
+      onClose={() => setShowSanityConfig(false)}
       backendUrl={backendUrl}
       onSuccess={async () => {
         await fetchStatus();

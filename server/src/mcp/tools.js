@@ -210,6 +210,48 @@ export const getMcpTools = () => [
     }
   },
   {
+    name: 'youtube_connector',
+    description: 'Interact with the YouTube Data API to search videos, get channel stats, or read comments.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['search_videos', 'get_channel_stats', 'read_comments'], description: 'The YouTube operation to perform.' },
+        query: { type: 'string', description: 'Search query (for search_videos).' },
+        channelId: { type: 'string', description: 'YouTube Channel ID (for get_channel_stats).' },
+        videoId: { type: 'string', description: 'YouTube Video ID (for read_comments).' },
+        maxResults: { type: 'number', description: 'Max number of results to return (default 10).' }
+      },
+      required: ['operation']
+    }
+  },
+  {
+    name: 'supabase_connector',
+    description: 'Interact with the Supabase Management API to manage projects, database, and storage.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['list_projects', 'query_database', 'list_storage_buckets'], description: 'The Supabase operation to perform.' },
+        ref: { type: 'string', description: 'The Supabase project reference ID (required for query_database and list_storage_buckets).' },
+        query: { type: 'string', description: 'The SQL query string (required for query_database).' }
+      },
+      required: ['operation']
+    }
+  },
+  {
+    name: 'sanity_connector',
+    description: 'Interact with the Sanity CMS API to query documents, create drafts, and update data.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['query_documents', 'create_document', 'update_document'], description: 'The Sanity operation to perform.' },
+        query: { type: 'string', description: 'GROQ query string (for query_documents).' },
+        documentId: { type: 'string', description: 'Sanity Document ID (for update_document).' },
+        mutations: { type: 'string', description: 'JSON string of Sanity mutations (for create_document and update_document).' }
+      },
+      required: ['operation']
+    }
+  },
+  {
     name: 'vercel_connector',
     description: 'Interact with Vercel API to create projects linked to GitHub, list projects, or deployments, and manage project environment variables.',
     inputSchema: {
@@ -432,6 +474,18 @@ export const getMcpTools = () => [
         filePath: { type: 'string', description: 'The absolute path to the file.' }
       },
       required: ['filePath']
+    }
+  },
+  {
+    name: 'send_whatsapp_message',
+    description: 'Send a WhatsApp text message globally using the platform WhatsApp Business account. Use this whenever the user asks you to send a WhatsApp message.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        toPhoneNumber: { type: 'string', description: 'The recipient phone number with country code (e.g. 919876543210).' },
+        messageText: { type: 'string', description: 'The text message to send.' }
+      },
+      required: ['toPhoneNumber', 'messageText']
     }
   },
   {

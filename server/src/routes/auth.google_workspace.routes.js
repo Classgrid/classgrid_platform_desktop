@@ -112,6 +112,15 @@ router.get("/connect", isAuthenticated, (req, res) => {
         scopes.push('https://www.googleapis.com/auth/forms.responses.readonly');
     }
 
+    if (service === 'youtube' || service === 'all') {
+        scopes.push('https://www.googleapis.com/auth/youtube'); // Full access
+        scopes.push('https://www.googleapis.com/auth/youtube.force-ssl'); // Full access with SSL
+        scopes.push('https://www.googleapis.com/auth/youtube.readonly'); // Read-only access
+        scopes.push('https://www.googleapis.com/auth/youtube.upload'); // Upload videos
+        scopes.push('https://www.googleapis.com/auth/youtubepartner'); // Manage assets
+        scopes.push('https://www.googleapis.com/auth/youtubepartner-channel-audit'); // Channel audit
+    }
+
     const returnTo = req.query.returnTo || req.headers.referer || req.headers.origin || process.env.FRONTEND_URL;
     const isPopup = req.query.popup === 'true';
 
@@ -230,6 +239,7 @@ router.get("/callback", async (req, res) => {
                 'classroom': 'gclass',
                 'meet': 'gmeet',
                 'forms': 'gforms',
+                'youtube': 'youtube',
                 'all': 'all'
             };
             const mappedId = serviceToIdMap[connectedService];

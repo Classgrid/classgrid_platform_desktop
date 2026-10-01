@@ -1051,6 +1051,9 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
         let cursorConnected = false;
         let chatgptConnected = false;
         let claudeConnected = false;
+        let youtubeConnected = false;
+        let supabaseConnected = false;
+        let sanityConnected = false;
 
         if (req.user) {
             try {
@@ -1213,13 +1216,26 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     chatgptConnected = connectedMcps.includes('mcp-chatgpt');
                     claudeConnected = connectedMcps.includes('mcp-claude');
 
+                    youtubeConnected = latestUser.metadata?.connected_google_services?.includes('youtube');
+                    if (youtubeConnected) console.log('[integration-verify] YouTube: ✓ CONNECTED (scopes in DB)');
+
+                    supabaseConnected = !!(latestUser.supabase_refresh_token || latestUser.supabase_access_token);
+                    if (supabaseConnected) console.log('[integration-verify] Supabase: ✓ CONNECTED (token in DB)');
+
+                    sanityConnected = !!(latestUser.sanity_project_id && latestUser.sanity_access_token);
+                    if (sanityConnected) console.log('[integration-verify] Sanity: ✓ CONNECTED (token in DB)');
+
                     // Only VERIFIED integrations get tools
                     if (googleConnected) allowedConnectorNames.add('google_workspace_connector');
                     if (msConnected) allowedConnectorNames.add('microsoft_workspace_connector');
                     if (zoomConnected) allowedConnectorNames.add('zoom_connector');
                     if (vercelConnected) allowedConnectorNames.add('vercel_connector');
                     if (whatsappConnected) allowedConnectorNames.add('whatsapp_business_connector');
+                    if (youtubeConnected) allowedConnectorNames.add('youtube_connector');
+                    if (supabaseConnected) allowedConnectorNames.add('supabase_connector');
+                    if (sanityConnected) allowedConnectorNames.add('sanity_connector');
                     allowedConnectorNames.add('cloudflare_r2_connector');
+                    allowedConnectorNames.add('send_whatsapp_message');
 
                     let activeDescriptions = [];
                     let disconnectedLinks = [];
@@ -1277,10 +1293,25 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                         disconnectedLinks.push(`[Vercel](/api/auth/vercel/connect)`);
                     }
 
-                    if (whatsappConnected) activeDescriptions.push(`- **WhatsApp Business**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONFIGURED (Server). Use 'whatsapp_business_connector' to send texts.`);
-                    if (cursorConnected) activeDescriptions.push(`- **Cursor IDE**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED.`);
-                    if (chatgptConnected) activeDescriptions.push(`- **ChatGPT**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED.`);
-                    if (claudeConnected) activeDescriptions.push(`- **Claude**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED.`);
+                    if (whatsappConnected) activeDescriptions.push(`- **WhatsApp Business**: ✓ CONFIGURED (Server). Use 'whatsapp_business_connector' to send texts.`);
+                    if (cursorConnected) activeDescriptions.push(`- **Cursor IDE**: ✓ CONNECTED.`);
+                    if (chatgptConnected) activeDescriptions.push(`- **ChatGPT**: ✓ CONNECTED.`);
+                    if (claudeConnected) activeDescriptions.push(`- **Claude**: ✓ CONNECTED.`);
+                    if (youtubeConnected) {
+                        activeDescriptions.push(`- **YouTube**: ✓ CONNECTED. Use 'youtube_connector' tool to search_videos, get_channel_stats, read_comments.`);
+                    } else {
+                        disconnectedLinks.push(`[YouTube](/api/google-workspace/connect?service=youtube)`);
+                    }
+                    if (supabaseConnected) {
+                        activeDescriptions.push(`- **Supabase**: ✓ CONNECTED. Use 'supabase_connector' tool to list_projects, query_database, list_storage_buckets.`);
+                    } else {
+                        disconnectedLinks.push(`[Supabase](/api/auth/supabase/connect)`);
+                    }
+                    if (sanityConnected) {
+                        activeDescriptions.push(`- **Sanity CMS**: ✓ CONNECTED. Use 'sanity_connector' tool to query documents and edit data.`);
+                    } else {
+                        disconnectedLinks.push(`[Sanity CMS](#) (Connect via AI Hub)`);
+                    }
 
                     pluginPrompt = `\n\n--- ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ…â€™ ACTIVE INTEGRATIONS ---`;
 
@@ -2112,6 +2143,41 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                             });
                         } catch (e) {
                             return "Web Search failed: " + e;
+                        }
+                    },
+                    send_whatsapp_message: async (args) => {
+                        const { toPhoneNumber, messageText } = args;
+                        try {
+                            if (!process.env.WHATSAPP_PHONE_ID || !process.env.WHATSAPP_ACCESS_TOKEN) {
+                                return "FAILED: WhatsApp Business API keys are not configured in the backend environment.";
+                            }
+                            
+                            const res = await fetch(`https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_ID}/messages`, {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    messaging_product: "whatsapp",
+                                    recipient_type: "individual",
+                                    to: toPhoneNumber,
+                                    type: "text",
+                                    text: {
+                                        preview_url: false,
+                                        body: messageText
+                                    }
+                                })
+                            });
+
+                            if (!res.ok) {
+                                const err = await res.text();
+                                return `FAILED to send WhatsApp message: ${res.status} ${res.statusText} - ${err}`;
+                            }
+
+                            return `SUCCESS: WhatsApp message sent successfully to ${toPhoneNumber}`;
+                        } catch (e) {
+                            return `FAILED to send WhatsApp message: ${e.message}`;
                         }
                     },
                     send_email: async (args) => {

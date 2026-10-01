@@ -624,6 +624,22 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    sanity_project_id: {
+      type: String,
+      default: null,
+    },
+    sanity_access_token: {
+      type: String,
+      default: null,
+    },
+    supabase_access_token: {
+      type: String,
+      default: null,
+    },
+    supabase_refresh_token: {
+      type: String,
+      default: null,
+    },
     // 🤖 AI Configuration (Personal Token Pools)
     ai_tokens: {
       free_weekly_limit: { type: Number, default: 100000 },

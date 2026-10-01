@@ -14,7 +14,7 @@ router.get("/status", isAuthenticated, async (req, res) => {
     try {
         await connectDB();
         const user = await User.findById(req.user._id).select(
-            "google_access_token google_refresh_token microsoft_access_token microsoft_refresh_token zoom_access_token zoom_refresh_token vercel_access_token notion_access_token notion_refresh_token webex_access_token webex_refresh_token metadata slack_access_token github_access_token"
+            "google_access_token google_refresh_token microsoft_access_token microsoft_refresh_token zoom_access_token zoom_refresh_token vercel_access_token notion_access_token notion_refresh_token webex_access_token webex_refresh_token metadata slack_access_token github_access_token supabase_access_token supabase_refresh_token"
         ).lean();
 
         if (!user) return res.status(404).json({ message: "User not found" });
@@ -45,6 +45,11 @@ router.get("/status", isAuthenticated, async (req, res) => {
 
         // Vercel — ONLY if real OAuth token exists
         if (isValidToken(user.vercel_access_token)) connected.push("vercel");
+
+        // Supabase — ONLY if real OAuth token exists
+        if (isValidToken(user.supabase_access_token) || isValidToken(user.supabase_refresh_token)) {
+            connected.push("supabase");
+        }
 
         // Notion — ONLY if real OAuth tokens exist
         if (isValidToken(user.notion_access_token) || isValidToken(user.notion_refresh_token)) connected.push("mcp-notion");
