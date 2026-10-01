@@ -111,7 +111,7 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
 
       await apiClient.put("/api/user/update", {
         name: fullName || undefined,
-        dob: formData["identity.date_of_birth"] || null,
+        dob: formData["identity.date_of_birth"] || formData.dob || null,
         bio: formData["bio"] || formData.bio || "",
         hobby: formData["hobby"] || formData.hobby || "",
         metadata: {
@@ -185,6 +185,9 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
                 if (date) {
                   handleInputChange("identity.date_of_birth", date.toISOString());
                   handleInputChange("dob", date.toISOString());
+                } else {
+                  handleInputChange("identity.date_of_birth", "");
+                  handleInputChange("dob", "");
                 }
               }}
               showTime={false}
