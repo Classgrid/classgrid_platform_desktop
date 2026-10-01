@@ -1,66 +1,126 @@
 import express from 'express';
 import { protect } from '../middlewares/auth.middleware.js';
 import User from '../models/User.js';
+import axios from 'axios';
 
 const router = express.Router();
 
 /**
- * @route POST /api/auth/meta/connect
- * @desc  Save Meta Access Token, Page ID, and Instagram Account ID for AI Hub.
+ * @route GET /api/auth/meta/oauth
+ * @desc  Get the Meta OAuth URL to redirect the user to.
  * @access Private
  */
-router.post('/connect', protect, async (req, res) => {
+router.get('/oauth', protect, (req, res) => {
+    const { type } = req.query; // 'facebook' or 'instagram'
+    const clientId = process.env.FACEBOOK_CLIENT_ID;
+    const redirectUri = `${process.env.BACKEND_URL}/api/auth/meta/callback`;
+    const state = Buffer.from(JSON.stringify({ userId: req.user._id.toString(), type })).toString('base64');
+    
+    let scope = '';
+    if (type === 'facebook') {
+        scope = 'pages_manage_posts,pages_show_list,pages_read_engagement,pages_manage_metadata';
+    } else {
+        scope = 'instagram_basic,instagram_content_publish,instagram_manage_comments,instagram_manage_insights,instagram_manage_messages,pages_show_list,pages_manage_metadata';
+    }
+
+    const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
+    res.json({ success: true, url: authUrl });
+});
+
+/**
+ * @route GET /api/auth/meta/callback
+ * @desc  Handle the OAuth callback from Facebook
+ * @access Public
+ */
+router.get('/callback', async (req, res) => {
+    const { code, state, error } = req.query;
+
+    if (error) {
+        return res.redirect(`${process.env.FRONTEND_URL}/dashboard/ai-hub?error=meta_auth_failed`);
+    }
+
+    if (!code || !state) {
+        return res.redirect(`${process.env.FRONTEND_URL}/dashboard/ai-hub?error=missing_code_or_state`);
+    }
+
     try {
-        const { meta_access_token, meta_page_id, meta_ig_account_id } = req.body;
+        let decodedState = { userId: state, type: 'facebook' };
+        try {
+            decodedState = JSON.parse(Buffer.from(state, 'base64').toString('ascii'));
+        } catch(e) {}
+        
+        const { userId, type } = decodedState;
+        const clientId = process.env.FACEBOOK_CLIENT_ID;
+        const clientSecret = process.env.FACEBOOK_CLIENT_SECRET;
+        const redirectUri = `${process.env.BACKEND_URL}/api/auth/meta/callback`;
 
-        if (!meta_access_token) {
-            return res.status(400).json({ success: false, message: 'Meta Access Token is required.' });
+        // 1. Exchange code for User Access Token
+        const tokenResponse = await axios.get(`https://graph.facebook.com/v19.0/oauth/access_token?client_id=${clientId}&redirect_uri=${redirectUri}&client_secret=${clientSecret}&code=${code}`);
+        const userAccessToken = tokenResponse.data.access_token;
+
+        // 2. Get User's Pages
+        const pagesResponse = await axios.get(`https://graph.facebook.com/v19.0/me/accounts?access_token=${userAccessToken}`);
+        const pages = pagesResponse.data.data;
+        if (!pages || pages.length === 0) {
+            return res.redirect(`${process.env.FRONTEND_URL}/dashboard/ai-hub?error=no_facebook_pages_found`);
         }
 
-        const user = await User.findById(req.user._id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
+        const page = pages[0];
+        const pageAccessToken = page.access_token;
+        const pageId = page.id;
 
-        user.meta_access_token = meta_access_token;
-        user.meta_page_id = meta_page_id || null;
-        user.meta_ig_account_id = meta_ig_account_id || null;
-        await user.save();
-
-        return res.status(200).json({
-            success: true,
-            message: 'Meta connection successfully updated.',
-            data: {
-                has_page: !!meta_page_id,
-                has_ig: !!meta_ig_account_id
+        // 3. Try to get Instagram Business Account
+        let igAccountId = null;
+        try {
+            const igResponse = await axios.get(`https://graph.facebook.com/v19.0/${pageId}?fields=instagram_business_account&access_token=${pageAccessToken}`);
+            if (igResponse.data && igResponse.data.instagram_business_account) {
+                igAccountId = igResponse.data.instagram_business_account.id;
             }
-        });
-    } catch (error) {
-        console.error('Error connecting Meta:', error);
-        return res.status(500).json({ success: false, message: 'Internal Server Error' });
+        } catch (igError) {}
+
+        // 4. Save to User
+        const user = await User.findById(userId);
+        if (user) {
+            if (type === 'facebook') {
+                user.facebook_access_token = pageAccessToken;
+                user.facebook_page_id = pageId;
+            } else {
+                user.instagram_access_token = pageAccessToken;
+                user.instagram_account_id = igAccountId;
+                // IG also needs the page token to publish sometimes, but pageAccessToken is exactly what's needed for Graph API!
+            }
+            await user.save();
+        }
+
+        return res.redirect(`${process.env.FRONTEND_URL}/dashboard/ai-hub?success=${type}_connected`);
+    } catch (err) {
+        console.error('Meta OAuth Callback Error:', err?.response?.data || err.message);
+        return res.redirect(`${process.env.FRONTEND_URL}/dashboard/ai-hub?error=meta_exchange_failed`);
     }
 });
 
 /**
- * @route DELETE /api/auth/meta/disconnect
- * @desc  Disconnect Meta credentials
+ * @route DELETE /api/auth/meta/disconnect/:type
+ * @desc  Disconnect Facebook or Instagram
  * @access Private
  */
-router.delete('/disconnect', protect, async (req, res) => {
+router.delete('/disconnect/:type', protect, async (req, res) => {
     try {
+        const { type } = req.params;
         const user = await User.findById(req.user._id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-        user.meta_access_token = null;
-        user.meta_page_id = null;
-        user.meta_ig_account_id = null;
+        if (type === 'facebook') {
+            user.facebook_access_token = null;
+            user.facebook_page_id = null;
+        } else if (type === 'instagram') {
+            user.instagram_access_token = null;
+            user.instagram_account_id = null;
+        }
         await user.save();
 
-        return res.status(200).json({ success: true, message: 'Meta integration disconnected.' });
+        return res.status(200).json({ success: true, message: `${type} disconnected.` });
     } catch (error) {
-        console.error('Error disconnecting Meta:', error);
         return res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 });

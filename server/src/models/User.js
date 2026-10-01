@@ -652,6 +652,22 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    facebook_access_token: {
+      type: String,
+      default: null,
+    },
+    facebook_page_id: {
+      type: String,
+      default: null,
+    },
+    instagram_access_token: {
+      type: String,
+      default: null,
+    },
+    instagram_account_id: {
+      type: String,
+      default: null,
+    },
     // 🤖 AI Configuration (Personal Token Pools)
     ai_tokens: {
       free_weekly_limit: { type: Number, default: 100000 },

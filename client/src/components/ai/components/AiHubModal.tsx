@@ -118,14 +118,10 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
         return;
       }
       
-      if (id === 'meta') {
-        setIsConnecting(false);
-        setShowMetaConfig(true);
-        return;
-      }
-
       let endpoint = '';
-      if (isGoogle) {
+      if (id === 'facebook' || id === 'instagram') {
+        endpoint = `/api/auth/meta/oauth?type=${id}`;
+      } else if (isGoogle) {
         const service = id === 'gcal' ? 'calendar' : id === 'gdrive' ? 'drive' : id === 'gclass' ? 'classroom' : id === 'gmeet' ? 'meet' : id === 'gforms' ? 'forms' : id === 'youtube' ? 'youtube' : 'gmail';
         endpoint = `/api/google-workspace/connect?service=${service}&returnTo=${encodeURIComponent(window.location.href)}&popup=true`;
       } else if (isMicrosoft) {
@@ -270,8 +266,8 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
         endpoint = `/api/auth/supabase/disconnect`;
       } else if (id === 'sanity') {
         endpoint = `/api/sanity/disconnect`;
-      } else if (id === 'meta') {
-        endpoint = `/api/auth/meta/disconnect`;
+      } else if (id === 'facebook' || id === 'instagram') {
+        endpoint = `/api/auth/meta/disconnect/${id}`;
       } else {
         endpoint = `/api/ai-integrations/disconnect/${id}`;
       }
@@ -342,7 +338,8 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
       case "youtube": return ["Search YouTube for Next.js tutorials", "What is the sub count of MrBeast?", "Find the top comments on my latest video"];
       case "supabase": return ["List all my Supabase projects", "Query the users table for active accounts", "Show me the files in the 'avatars' storage bucket"];
       case "sanity": return ["List all published blog posts", "Create a new article draft about AI", "Update the title of the latest announcement"];
-      case "meta": return ["Post 'Happy Diwali' to Facebook and Instagram", "Draft a new promotional post for social media", "Update my followers about the new feature"];
+      case "facebook": return ["Post 'Happy Diwali' to my Facebook Page", "Draft a new promotional post for Facebook", "Update my followers about the new feature"];
+      case "instagram": return ["Post to my Instagram Business account", "Draft a caption for an Instagram post", "Check my latest Instagram insights"];
       case "mcp-cursor": return ["Analyze the AiHubModal.tsx file in my Cursor workspace", "Find where the OAuth redirect is handled in the codebase", "Explain the authentication flow in the backend", "Draft a new React component for the settings page", "Fix the linting errors in the user controller"];
       case "mcp-chatgpt": return ["Ask ChatGPT to review this text for tone", "Generate a creative story using ChatGPT", "Brainstorm 5 marketing ideas", "Translate this document to French", "Explain quantum computing simply"];
       case "mcp-claude": return ["Analyze this 50-page PDF document", "Extract the key arguments from this research paper", "Compare these two long contracts", "Write a detailed technical specification", "Help me debug this complex logic issue"];
