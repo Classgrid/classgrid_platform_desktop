@@ -212,6 +212,85 @@ router.get("/profile", isAuthenticated, async (req, res) => {
 });
 
 // =======================
+// SEND WHATSAPP OTP
+// =======================
+router.post("/send-whatsapp-otp", isAuthenticated, async (req, res) => {
+  try {
+    const { phoneNumber } = req.body;
+    if (!phoneNumber) return res.status(400).json({ message: "Phone number is required" });
+    
+    // Generate a random 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Save to Redis (expires in 10 minutes)
+    await redis.set(`whatsapp_otp:${req.user._id}`, JSON.stringify({ otp, phoneNumber }), "EX", 600);
+    
+    // Send OTP using Meta WhatsApp API
+    if (process.env.WHATSAPP_PHONE_ID && process.env.WHATSAPP_ACCESS_TOKEN) {
+      const waRes = await fetch(`https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_ID}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: phoneNumber,
+          type: "text",
+          text: {
+            preview_url: false,
+            body: `Your Classgrid Platform verification OTP is: ${otp}`
+          }
+        })
+      });
+      const data = await waRes.json();
+      if (data.error) {
+        console.error("Meta API Error:", data.error);
+        return res.status(400).json({ message: "Failed to send WhatsApp message. Please check the number format (with country code)." });
+      }
+    } else {
+      return res.status(500).json({ message: "WhatsApp credentials missing on server." });
+    }
+    
+    res.json({ message: "OTP sent successfully via WhatsApp" });
+  } catch (error) {
+    console.error("SEND WHATSAPP OTP ERROR:", error.message);
+    res.status(500).json({ message: "Server error sending OTP" });
+  }
+});
+
+// =======================
+// VERIFY WHATSAPP OTP
+// =======================
+router.post("/verify-whatsapp-otp", isAuthenticated, async (req, res) => {
+  try {
+    const { otp } = req.body;
+    if (!otp) return res.status(400).json({ message: "OTP is required" });
+    
+    const storedData = await redis.get(`whatsapp_otp:${req.user._id}`);
+    if (!storedData) return res.status(400).json({ message: "OTP expired or not requested" });
+    
+    const { otp: storedOtp, phoneNumber } = JSON.parse(storedData);
+    if (storedOtp !== otp) return res.status(400).json({ message: "Invalid OTP" });
+    
+    // Valid OTP, save the number to user metadata
+    await User.findByIdAndUpdate(req.user._id, {
+      $set: { "metadata.whatsapp_number": phoneNumber }
+    });
+    
+    await redis.del(`whatsapp_otp:${req.user._id}`);
+    await redis.del(`user:profile:${req.user._id}`);
+    await redis.del(`user:profile:v2:${req.user._id}`);
+    
+    res.json({ message: "WhatsApp number verified successfully", phoneNumber });
+  } catch (error) {
+    console.error("VERIFY WHATSAPP OTP ERROR:", error.message);
+    res.status(500).json({ message: "Server error verifying OTP" });
+  }
+});
+
+// =======================
 // UPDATE USER PROFILE
 // =======================
 router.put("/update", isAuthenticated, attachInstitutionProfile({ required: false }), async (req, res) => {

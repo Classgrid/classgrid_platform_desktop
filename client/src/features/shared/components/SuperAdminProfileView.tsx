@@ -18,6 +18,11 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
+  const [pendingWhatsappNumber, setPendingWhatsappNumber] = useState("");
 
   React.useEffect(() => {
     if (profileData) {
@@ -29,6 +34,7 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
         ...m,
         "identity.first_name": m?.["identity.first_name"] || nameParts[0] || "",
         "identity.last_name": m?.["identity.last_name"] || nameParts.slice(1).join(" ") || "",
+        "whatsapp_number": m?.["whatsapp_number"] || "",
         "linkedin_url": m?.["linkedin_url"] || m?.["linkedin_url"] || "",
         "github_url": m?.["github_url"] || m?.["github_url"] || "",
         "twitter_url": m?.["twitter_url"] || m?.["twitter_url"] || "",
@@ -43,6 +49,39 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
 
   const handleInputChange = (key: string, value: string) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSendWhatsappOtp = async () => {
+    const num = formData["whatsapp_number"] || "";
+    if (!num.trim()) return toast.error("Please enter a WhatsApp number first");
+    setIsSendingOtp(true);
+    try {
+      await apiClient.post("/api/user/send-whatsapp-otp", { phoneNumber: num });
+      setOtpSent(true);
+      setPendingWhatsappNumber(num);
+      toast.success("OTP sent to WhatsApp!");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyWhatsappOtp = async () => {
+    if (!otpValue.trim()) return toast.error("Please enter the OTP");
+    setIsVerifyingOtp(true);
+    try {
+      await apiClient.post("/api/user/verify-whatsapp-otp", { otp: otpValue });
+      toast.success("WhatsApp number verified successfully!");
+      setOtpSent(false);
+      setOtpValue("");
+      queryClient.invalidateQueries({ queryKey: ["global-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["current-user"] });
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Invalid OTP");
+    } finally {
+      setIsVerifyingOtp(false);
+    }
   };
 
   const handleSave = async () => {
@@ -63,6 +102,7 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
           "identity.date_of_birth": formData["identity.date_of_birth"] || "",
           "bio": formData["bio"] || formData.bio || "",
           "hobby": formData["hobby"] || formData.hobby || "",
+          "whatsapp_number": formData["whatsapp_number"] || "",
           "tech_stack": formData["tech_stack"] || "",
           "linkedin_url": formData["linkedin_url"] || "",
           "github_url": formData["github_url"] || "",
@@ -141,6 +181,47 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
           <div className="space-y-1.5 md:col-span-2">
             <label className="text-sm font-medium text-foreground">Hobbies</label>
             <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["hobby"] || formData.hobby || ""} onChange={e => handleInputChange("hobby", e.target.value)} disabled={!isEditing} placeholder="e.g. Reading, Coding, Travel" />
+          </div>
+          <div className="space-y-1.5 md:col-span-2">
+            <label className="text-sm font-medium text-foreground flex items-center gap-2">
+              WhatsApp Number
+              {profileData?.metadata?.whatsapp_number && profileData?.metadata?.whatsapp_number === formData["whatsapp_number"] && (
+                <span className="text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full font-medium">Verified</span>
+              )}
+            </label>
+            <div className="flex gap-2 items-start">
+              <input 
+                className="flex-1 h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" 
+                value={formData["whatsapp_number"] || ""} 
+                onChange={e => {
+                  handleInputChange("whatsapp_number", e.target.value);
+                  setOtpSent(false);
+                }} 
+                disabled={!isEditing || otpSent} 
+                placeholder="e.g. 919876543210 (include country code)" 
+              />
+              {isEditing && profileData?.metadata?.whatsapp_number !== formData["whatsapp_number"] && !otpSent && (
+                <Button size="sm" type="button" variant="secondary" onClick={handleSendWhatsappOtp} disabled={isSendingOtp || !formData["whatsapp_number"]}>
+                  {isSendingOtp ? <Spinner className="w-3 h-3" /> : "Verify"}
+                </Button>
+              )}
+            </div>
+            {otpSent && isEditing && (
+              <div className="mt-2 flex gap-2 items-center bg-muted/20 p-3 rounded-md border">
+                <input
+                  className="flex-1 h-9 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="Enter 6-digit OTP"
+                  value={otpValue}
+                  onChange={e => setOtpValue(e.target.value)}
+                  maxLength={6}
+                />
+                <Button size="sm" type="button" onClick={handleVerifyWhatsappOtp} disabled={isVerifyingOtp || !otpValue}>
+                  {isVerifyingOtp ? <Spinner className="w-3 h-3" /> : "Confirm"}
+                </Button>
+                <Button size="sm" variant="ghost" type="button" onClick={() => setOtpSent(false)}>Cancel</Button>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">Used for AI scheduling and important platform notifications.</p>
           </div>
         </div>
       </div>

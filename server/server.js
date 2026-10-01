@@ -109,7 +109,7 @@ setTimeout(async () => {
           userId: nikhil._id,
           provider: 'cloudflare',
           model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
-          feature: 'Chat',
+          feature: 'chat_ai',
           inputTokens: 1150000,
           outputTokens: 110000,
           totalTokens: 1260000,
