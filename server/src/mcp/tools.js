@@ -253,26 +253,28 @@ export const getMcpTools = () => [
   },
   {
     name: 'facebook_connector',
-    description: 'Interact with Meta Graph API to publish posts to Facebook Pages or list posts.',
+    description: 'Interact with Meta Graph API to manage Facebook Pages. Supports reading/publishing posts, messages, comments, and insights.',
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['publish_post', 'list_posts'], description: 'The Meta operation to perform.' },
-        message: { type: 'string', description: 'The text content of the post. Required for publish_post.' },
-        imageUrl: { type: 'string', description: 'Optional image URL to attach to the post.' }
+        operation: { type: 'string', enum: ['publish_post', 'list_posts', 'list_messages', 'send_message', 'list_comments', 'reply_comment', 'get_insights'], description: 'The operation to perform.' },
+        message: { type: 'string', description: 'Text for post, message, or comment reply.' },
+        imageUrl: { type: 'string', description: 'Optional image URL for publishing posts.' },
+        targetId: { type: 'string', description: 'PSID for sending messages, or Object ID (Post/Comment) for reading/replying to comments.' }
       },
       required: ['operation']
     }
   },
   {
     name: 'instagram_connector',
-    description: 'Interact with Meta Graph API to publish posts to Instagram Business Accounts or list posts.',
+    description: 'Interact with Meta Graph API to manage Instagram Business Accounts. Supports reading/publishing posts, messages, comments, and insights.',
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['publish_post', 'list_posts'], description: 'The Meta operation to perform.' },
-        message: { type: 'string', description: 'The text content of the post. Required for publish_post.' },
-        imageUrl: { type: 'string', description: 'REQUIRED image URL to attach to the post for publish_post.' }
+        operation: { type: 'string', enum: ['publish_post', 'list_posts', 'list_messages', 'send_message', 'list_comments', 'reply_comment', 'get_insights'], description: 'The operation to perform.' },
+        message: { type: 'string', description: 'Text for post, message, or comment reply.' },
+        imageUrl: { type: 'string', description: 'REQUIRED image URL for publishing posts.' },
+        targetId: { type: 'string', description: 'IG-SID for sending messages, or Media ID / Comment ID for reading/replying to comments.' }
       },
       required: ['operation']
     }
@@ -1353,13 +1355,59 @@ export const handleToolCall = async (name, args, context = {}) => {
            return { content: [{ type: 'text', text: 'Error: Facebook Page is not fully connected.' }] };
         }
         
-        const { operation, message, imageUrl } = args;
+        const { operation, message, imageUrl, recipientId } = args;
+
+        if (operation === 'list_messages') {
+            const fbUrl = `https://graph.facebook.com/v19.0/${pageId}/conversations?fields=id,updated_time,participants,messages{message,created_time,from}&access_token=${token}`;
+            const res = await fetch(fbUrl);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        if (operation === 'send_message') {
+            if (!recipientId || !message) return { content: [{ type: 'text', text: 'Error: recipientId and message are required for send_message' }] };
+            const fbUrl = `https://graph.facebook.com/v19.0/${pageId}/messages`;
+            const fbBody = { 
+                recipient: { id: recipientId }, 
+                message: { text: message },
+                messaging_type: "RESPONSE",
+                access_token: token
+            };
+            const res = await fetch(fbUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fbBody)
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
 
         if (operation === 'list_posts') {
             const fbUrl = `https://graph.facebook.com/v19.0/${pageId}/published_posts?fields=id,message,created_time,permalink_url&access_token=${token}`;
             const res = await fetch(fbUrl);
             const data = await res.json();
             return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        if (operation === 'list_comments') {
+            if (!targetId) return { content: [{ type: 'text', text: 'Error: targetId (Post ID) required.' }] };
+            const res = await fetch(`https://graph.facebook.com/v19.0/${targetId}/comments?access_token=${token}`);
+            return { content: [{ type: 'text', text: JSON.stringify(await res.json(), null, 2) }] };
+        }
+
+        if (operation === 'reply_comment') {
+            if (!targetId || !message) return { content: [{ type: 'text', text: 'Error: targetId (Comment ID) and message required.' }] };
+            const res = await fetch(`https://graph.facebook.com/v19.0/${targetId}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message, access_token: token })
+            });
+            return { content: [{ type: 'text', text: JSON.stringify(await res.json(), null, 2) }] };
+        }
+
+        if (operation === 'get_insights') {
+            const res = await fetch(`https://graph.facebook.com/v19.0/${pageId}/insights?metric=page_impressions,page_engaged_users&access_token=${token}`);
+            return { content: [{ type: 'text', text: JSON.stringify(await res.json(), null, 2) }] };
         }
 
         if (operation === 'publish_post') {
@@ -1415,13 +1463,58 @@ export const handleToolCall = async (name, args, context = {}) => {
            return { content: [{ type: 'text', text: 'Error: Instagram Account is not fully connected.' }] };
         }
         
-        const { operation, message, imageUrl } = args;
+        const { operation, message, imageUrl, recipientId } = args;
+
+        if (operation === 'list_messages') {
+            const igUrl = `https://graph.facebook.com/v19.0/${accountId}/conversations?platform=instagram&fields=id,updated_time,participants,messages{message,created_time,from}&access_token=${token}`;
+            const res = await fetch(igUrl);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        if (operation === 'send_message') {
+            if (!recipientId || !message) return { content: [{ type: 'text', text: 'Error: recipientId and message are required for send_message' }] };
+            const igUrl = `https://graph.facebook.com/v19.0/${accountId}/messages`;
+            const igBody = { 
+                recipient: { id: recipientId }, 
+                message: { text: message },
+                access_token: token
+            };
+            const res = await fetch(igUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(igBody)
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
 
         if (operation === 'list_posts') {
             const igUrl = `https://graph.facebook.com/v19.0/${accountId}/media?fields=id,caption,media_type,media_url,timestamp,permalink&access_token=${token}`;
             const res = await fetch(igUrl);
             const data = await res.json();
             return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        if (operation === 'list_comments') {
+            if (!targetId) return { content: [{ type: 'text', text: 'Error: targetId (Media ID) required.' }] };
+            const res = await fetch(`https://graph.facebook.com/v19.0/${targetId}/comments?access_token=${token}`);
+            return { content: [{ type: 'text', text: JSON.stringify(await res.json(), null, 2) }] };
+        }
+
+        if (operation === 'reply_comment') {
+            if (!targetId || !message) return { content: [{ type: 'text', text: 'Error: targetId (Comment ID) and message required.' }] };
+            const res = await fetch(`https://graph.facebook.com/v19.0/${targetId}/replies`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message, access_token: token })
+            });
+            return { content: [{ type: 'text', text: JSON.stringify(await res.json(), null, 2) }] };
+        }
+
+        if (operation === 'get_insights') {
+            const res = await fetch(`https://graph.facebook.com/v19.0/${accountId}/insights?metric=impressions,reach,profile_views&period=day&access_token=${token}`);
+            return { content: [{ type: 'text', text: JSON.stringify(await res.json(), null, 2) }] };
         }
 
         if (operation === 'publish_post') {

@@ -21,7 +21,7 @@ import { INTEGRATIONS_LIST } from "./AskAiPanel";
 import { Button } from "@/components/marketing_ui/button";
 import { WhatsappConfigModal } from "./WhatsappConfigModal";
 import { SanityConfigModal } from "./SanityConfigModal";
-import { MetaConfigModal } from "./MetaConfigModal";
+
 import { AiImagesGallery } from "./AiImagesGallery";
 import { AiUsageBar } from "./AiUsageBar";
 import { AiCreditsPanel } from "./credits/AiCreditsPanel";
@@ -61,7 +61,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [showWhatsappConfig, setShowWhatsappConfig] = useState(false);
   const [showSanityConfig, setShowSanityConfig] = useState(false);
-  const [showMetaConfig, setShowMetaConfig] = useState(false);
+
 
   const backendUrl = typeof import.meta !== "undefined" && import.meta.env
     ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
@@ -681,14 +681,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
       }}
     />
 
-    <MetaConfigModal 
-      isOpen={showMetaConfig} 
-      onClose={() => setShowMetaConfig(false)}
-      backendUrl={backendUrl}
-      onSuccess={async () => {
-        await fetchStatus();
-      }}
-    />
+
     </>
   );
 }
