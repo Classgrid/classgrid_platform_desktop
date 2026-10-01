@@ -1348,12 +1348,12 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                         disconnectedLinks.push(`[Sanity CMS](#) (Connect via AI Hub)`);
                     }
                     if (facebookConnected) {
-                        activeDescriptions.push(`- **Facebook Pages**: ✓ CONNECTED. Use 'facebook_connector' tool to 'publish_post' or 'list_posts' on Facebook. Ensure you have the user's message when publishing.`);
+                        activeDescriptions.push(`- **Facebook Pages**: ✓ CONNECTED. Use 'facebook_connector' tool. Available operations: 'publish_post', 'list_posts', 'list_messages', 'send_message', 'list_comments', 'reply_comment', 'get_insights', 'get_profile'.`);
                     } else {
                         disconnectedLinks.push(`[Facebook](#) (Connect via AI Hub)`);
                     }
                     if (instagramConnected) {
-                        activeDescriptions.push(`- **Instagram Business**: ✓ CONNECTED. Use 'instagram_connector' tool to 'publish_post' or 'list_posts' on Instagram. Ensure you have the user's message. An imageUrl is REQUIRED when publishing.`);
+                        activeDescriptions.push(`- **Instagram Business**: ✓ CONNECTED. Use 'instagram_connector' tool. Available operations: 'publish_post', 'list_posts', 'list_messages', 'send_message', 'list_comments', 'reply_comment', 'get_insights', 'get_profile'.`);
                     } else {
                         disconnectedLinks.push(`[Instagram](#) (Connect via AI Hub)`);
                     }
