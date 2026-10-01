@@ -253,28 +253,28 @@ export const getMcpTools = () => [
   },
   {
     name: 'facebook_connector',
-    description: 'Interact with Meta Graph API to publish posts to Facebook Pages.',
+    description: 'Interact with Meta Graph API to publish posts to Facebook Pages or list posts.',
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['publish_post'], description: 'The Meta operation to perform.' },
-        message: { type: 'string', description: 'The text content of the post.' },
+        operation: { type: 'string', enum: ['publish_post', 'list_posts'], description: 'The Meta operation to perform.' },
+        message: { type: 'string', description: 'The text content of the post. Required for publish_post.' },
         imageUrl: { type: 'string', description: 'Optional image URL to attach to the post.' }
       },
-      required: ['operation', 'message']
+      required: ['operation']
     }
   },
   {
     name: 'instagram_connector',
-    description: 'Interact with Meta Graph API to publish posts to Instagram Business Accounts.',
+    description: 'Interact with Meta Graph API to publish posts to Instagram Business Accounts or list posts.',
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['publish_post'], description: 'The Meta operation to perform.' },
-        message: { type: 'string', description: 'The text content of the post.' },
-        imageUrl: { type: 'string', description: 'REQUIRED image URL to attach to the post.' }
+        operation: { type: 'string', enum: ['publish_post', 'list_posts'], description: 'The Meta operation to perform.' },
+        message: { type: 'string', description: 'The text content of the post. Required for publish_post.' },
+        imageUrl: { type: 'string', description: 'REQUIRED image URL to attach to the post for publish_post.' }
       },
-      required: ['operation', 'message', 'imageUrl']
+      required: ['operation']
     }
   },
   {
@@ -1355,7 +1355,15 @@ export const handleToolCall = async (name, args, context = {}) => {
         
         const { operation, message, imageUrl } = args;
 
+        if (operation === 'list_posts') {
+            const fbUrl = `https://graph.facebook.com/v19.0/${pageId}/published_posts?fields=id,message,created_time,permalink_url&access_token=${token}`;
+            const res = await fetch(fbUrl);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
         if (operation === 'publish_post') {
+            if (!message) return { content: [{ type: 'text', text: 'Error: message is required for publish_post' }] };
             const fbUrl = `https://graph.facebook.com/v19.0/${pageId}/${imageUrl ? 'photos' : 'feed'}`;
             const fbBody = { access_token: token, message };
             if (imageUrl) fbBody.url = imageUrl;
@@ -1409,7 +1417,15 @@ export const handleToolCall = async (name, args, context = {}) => {
         
         const { operation, message, imageUrl } = args;
 
+        if (operation === 'list_posts') {
+            const igUrl = `https://graph.facebook.com/v19.0/${accountId}/media?fields=id,caption,media_type,media_url,timestamp,permalink&access_token=${token}`;
+            const res = await fetch(igUrl);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
         if (operation === 'publish_post') {
+            if (!message) return { content: [{ type: 'text', text: 'Error: message is required for publish_post' }] };
             if (!imageUrl) {
                  return { content: [{ type: 'text', text: 'Error: Instagram requires an imageUrl to publish a post.' }] };
             }
