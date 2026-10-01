@@ -1252,11 +1252,11 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     sanityConnected = !!(latestUser.sanity_project_id && latestUser.sanity_access_token);
                     if (sanityConnected) console.log('[integration-verify] Sanity: ✓ CONNECTED (token in DB)');
 
-                    const facebookConnected = !!latestUser.facebook_access_token;
-                    if (facebookConnected) console.log('[integration-verify] Facebook: ✓ CONNECTED (token in DB)');
+                    const facebookConnected = !!latestUser.facebook_access_token || (isSuperAdmin && !!process.env.META_SYSTEM_ACCESS_TOKEN);
+                    if (facebookConnected) console.log('[integration-verify] Facebook: ✓ CONNECTED (token in DB or ENV)');
 
-                    const instagramConnected = !!latestUser.instagram_access_token;
-                    if (instagramConnected) console.log('[integration-verify] Instagram: ✓ CONNECTED (token in DB)');
+                    const instagramConnected = !!latestUser.instagram_access_token || (isSuperAdmin && !!process.env.META_SYSTEM_ACCESS_TOKEN);
+                    if (instagramConnected) console.log('[integration-verify] Instagram: ✓ CONNECTED (token in DB or ENV)');
 
                     // Only VERIFIED integrations get tools
                     if (googleConnected) allowedConnectorNames.add('google_workspace_connector');

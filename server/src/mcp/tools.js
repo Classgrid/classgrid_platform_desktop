@@ -1334,15 +1334,29 @@ export const handleToolCall = async (name, args, context = {}) => {
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
         const currentUser = await User.findOne({ email: finalUserEmail }).select('facebook_access_token facebook_page_id');
         
-        if (!currentUser || !currentUser.facebook_access_token || !currentUser.facebook_page_id) {
+        let token = currentUser?.facebook_access_token;
+        let pageId = currentUser?.facebook_page_id;
+
+        if (finalUserEmail === process.env.SUPER_ADMIN_EMAIL && process.env.META_SYSTEM_ACCESS_TOKEN) {
+            token = process.env.META_SYSTEM_ACCESS_TOKEN;
+            pageId = process.env.META_SYSTEM_PAGE_ID || pageId;
+            if (!pageId && token) {
+                const pagesRes = await fetch(`https://graph.facebook.com/v19.0/me/accounts?access_token=${token}`);
+                const pagesData = await pagesRes.json();
+                if (pagesData.data && pagesData.data.length > 0) {
+                    pageId = pagesData.data[0].id;
+                }
+            }
+        }
+        
+        if (!token || !pageId) {
            return { content: [{ type: 'text', text: 'Error: Facebook Page is not fully connected.' }] };
         }
         
-        const token = currentUser.facebook_access_token;
         const { operation, message, imageUrl } = args;
 
         if (operation === 'publish_post') {
-            const fbUrl = `https://graph.facebook.com/v19.0/${currentUser.facebook_page_id}/${imageUrl ? 'photos' : 'feed'}`;
+            const fbUrl = `https://graph.facebook.com/v19.0/${pageId}/${imageUrl ? 'photos' : 'feed'}`;
             const fbBody = { access_token: token, message };
             if (imageUrl) fbBody.url = imageUrl;
             
@@ -1365,11 +1379,34 @@ export const handleToolCall = async (name, args, context = {}) => {
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
         const currentUser = await User.findOne({ email: finalUserEmail }).select('instagram_access_token instagram_account_id');
         
-        if (!currentUser || !currentUser.instagram_access_token || !currentUser.instagram_account_id) {
+        let token = currentUser?.instagram_access_token;
+        let accountId = currentUser?.instagram_account_id;
+
+        if (finalUserEmail === process.env.SUPER_ADMIN_EMAIL && process.env.META_SYSTEM_ACCESS_TOKEN) {
+            token = process.env.META_SYSTEM_ACCESS_TOKEN;
+            accountId = process.env.META_SYSTEM_IG_ACCOUNT_ID || accountId;
+            
+            if (!accountId && token) {
+                let pageId = process.env.META_SYSTEM_PAGE_ID;
+                if (!pageId) {
+                    const pagesRes = await fetch(`https://graph.facebook.com/v19.0/me/accounts?access_token=${token}`);
+                    const pagesData = await pagesRes.json();
+                    if (pagesData.data && pagesData.data.length > 0) pageId = pagesData.data[0].id;
+                }
+                if (pageId) {
+                    const igRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}?fields=instagram_business_account&access_token=${token}`);
+                    const igData = await igRes.json();
+                    if (igData.instagram_business_account) {
+                        accountId = igData.instagram_business_account.id;
+                    }
+                }
+            }
+        }
+        
+        if (!token || !accountId) {
            return { content: [{ type: 'text', text: 'Error: Instagram Account is not fully connected.' }] };
         }
         
-        const token = currentUser.instagram_access_token;
         const { operation, message, imageUrl } = args;
 
         if (operation === 'publish_post') {
@@ -1378,7 +1415,7 @@ export const handleToolCall = async (name, args, context = {}) => {
             }
             
             // Step 1: Create media container
-            const createUrl = `https://graph.facebook.com/v19.0/${currentUser.instagram_account_id}/media`;
+            const createUrl = `https://graph.facebook.com/v19.0/${accountId}/media`;
             const createBody = { access_token: token, image_url: imageUrl, caption: message };
             
             const createRes = await fetch(createUrl, {
@@ -1390,7 +1427,7 @@ export const handleToolCall = async (name, args, context = {}) => {
             
             if (createData.id) {
                 // Step 2: Publish media container
-                const publishUrl = `https://graph.facebook.com/v19.0/${currentUser.instagram_account_id}/media_publish`;
+                const publishUrl = `https://graph.facebook.com/v19.0/${accountId}/media_publish`;
                 const publishBody = { access_token: token, creation_id: createData.id };
                 
                 const publishRes = await fetch(publishUrl, {
