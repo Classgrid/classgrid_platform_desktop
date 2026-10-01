@@ -215,9 +215,17 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
                   handleInputChange("whatsapp_number", e.target.value);
                   setOtpSent(false);
                 }} 
-                disabled={!isEditing || otpSent} 
+                disabled={!isEditing || otpSent || (profileData?.metadata?.whatsapp_number && profileData?.metadata?.whatsapp_number === formData["whatsapp_number"])} 
                 placeholder="e.g. 919876543210 (include country code)" 
               />
+              {isEditing && profileData?.metadata?.whatsapp_number === formData["whatsapp_number"] && formData["whatsapp_number"] && (
+                <Button size="sm" type="button" variant="outline" onClick={() => {
+                  handleInputChange("whatsapp_number", "");
+                  setOtpSent(false);
+                }}>
+                  Change
+                </Button>
+              )}
               {isEditing && profileData?.metadata?.whatsapp_number !== formData["whatsapp_number"] && !otpSent && (
                 <Button size="sm" type="button" variant="secondary" onClick={handleSendWhatsappOtp} disabled={isSendingOtp || !formData["whatsapp_number"]}>
                   {isSendingOtp ? <Spinner className="w-3 h-3" /> : "Verify"}
