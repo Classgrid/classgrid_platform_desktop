@@ -21,6 +21,7 @@ import { INTEGRATIONS_LIST } from "./AskAiPanel";
 import { Button } from "@/components/marketing_ui/button";
 import { WhatsappConfigModal } from "./WhatsappConfigModal";
 import { SanityConfigModal } from "./SanityConfigModal";
+import { MetaConfigModal } from "./MetaConfigModal";
 import { AiImagesGallery } from "./AiImagesGallery";
 import { AiUsageBar } from "./AiUsageBar";
 import { AiCreditsPanel } from "./credits/AiCreditsPanel";
@@ -60,6 +61,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [showWhatsappConfig, setShowWhatsappConfig] = useState(false);
   const [showSanityConfig, setShowSanityConfig] = useState(false);
+  const [showMetaConfig, setShowMetaConfig] = useState(false);
 
   const backendUrl = typeof import.meta !== "undefined" && import.meta.env
     ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
@@ -113,6 +115,12 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
       if (id === 'sanity') {
         setIsConnecting(false);
         setShowSanityConfig(true);
+        return;
+      }
+      
+      if (id === 'meta') {
+        setIsConnecting(false);
+        setShowMetaConfig(true);
         return;
       }
 
@@ -262,6 +270,8 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
         endpoint = `/api/auth/supabase/disconnect`;
       } else if (id === 'sanity') {
         endpoint = `/api/sanity/disconnect`;
+      } else if (id === 'meta') {
+        endpoint = `/api/auth/meta/disconnect`;
       } else {
         endpoint = `/api/ai-integrations/disconnect/${id}`;
       }
@@ -307,6 +317,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
       case "youtube": return ["Search for educational videos automatically", "Fetch channel statistics and views", "Analyze video comments and engagement"];
       case "supabase": return ["Query your Postgres database naturally", "List and manage storage buckets", "Check active projects and configurations"];
       case "sanity": return ["Query documents from your Sanity Studio", "Draft new content and articles", "Update metadata and fields programmatically"];
+      case "meta": return ["Post updates to Facebook and Instagram", "Draft social media content", "Schedule cross-platform announcements"];
       default: return [
         `Allow Classgrid AI to access your ${name} workspace`,
         `Search and sync data automatically`,
@@ -331,6 +342,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
       case "youtube": return ["Search YouTube for Next.js tutorials", "What is the sub count of MrBeast?", "Find the top comments on my latest video"];
       case "supabase": return ["List all my Supabase projects", "Query the users table for active accounts", "Show me the files in the 'avatars' storage bucket"];
       case "sanity": return ["List all published blog posts", "Create a new article draft about AI", "Update the title of the latest announcement"];
+      case "meta": return ["Post 'Happy Diwali' to Facebook and Instagram", "Draft a new promotional post for social media", "Update my followers about the new feature"];
       case "mcp-cursor": return ["Analyze the AiHubModal.tsx file in my Cursor workspace", "Find where the OAuth redirect is handled in the codebase", "Explain the authentication flow in the backend", "Draft a new React component for the settings page", "Fix the linting errors in the user controller"];
       case "mcp-chatgpt": return ["Ask ChatGPT to review this text for tone", "Generate a creative story using ChatGPT", "Brainstorm 5 marketing ideas", "Translate this document to French", "Explain quantum computing simply"];
       case "mcp-claude": return ["Analyze this 50-page PDF document", "Extract the key arguments from this research paper", "Compare these two long contracts", "Write a detailed technical specification", "Help me debug this complex logic issue"];
@@ -666,6 +678,15 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
     <SanityConfigModal 
       isOpen={showSanityConfig} 
       onClose={() => setShowSanityConfig(false)}
+      backendUrl={backendUrl}
+      onSuccess={async () => {
+        await fetchStatus();
+      }}
+    />
+
+    <MetaConfigModal 
+      isOpen={showMetaConfig} 
+      onClose={() => setShowMetaConfig(false)}
       backendUrl={backendUrl}
       onSuccess={async () => {
         await fetchStatus();

@@ -1252,6 +1252,9 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     sanityConnected = !!(latestUser.sanity_project_id && latestUser.sanity_access_token);
                     if (sanityConnected) console.log('[integration-verify] Sanity: ✓ CONNECTED (token in DB)');
 
+                    const metaConnected = !!latestUser.meta_access_token;
+                    if (metaConnected) console.log('[integration-verify] Meta: ✓ CONNECTED (token in DB)');
+
                     // Only VERIFIED integrations get tools
                     if (googleConnected) allowedConnectorNames.add('google_workspace_connector');
                     if (msConnected) allowedConnectorNames.add('microsoft_workspace_connector');
@@ -1261,6 +1264,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     if (youtubeConnected) allowedConnectorNames.add('youtube_connector');
                     if (supabaseConnected && isSuperAdmin) allowedConnectorNames.add('supabase_connector');
                     if (sanityConnected) allowedConnectorNames.add('sanity_connector');
+                    if (metaConnected) allowedConnectorNames.add('meta_connector');
                     allowedConnectorNames.add('cloudflare_r2_connector');
                     allowedConnectorNames.add('send_whatsapp_message');
 
@@ -1338,6 +1342,11 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                         activeDescriptions.push(`- **Sanity CMS**: ✓ CONNECTED. Use 'sanity_connector' tool to query documents and edit data. \n  CRITICAL SANITY SCHEMA RULE: Before creating or updating any Sanity document, you MUST first query the existing documents of that _type and mirror their EXACT field keys. Never invent field names based on the user's natural-language request alone. If the user asks for a field that does not exist in the observed schema, STOP and ask them for the correct field name instead of guessing. Only write keys that already appear on existing documents of the same _type.`);
                     } else {
                         disconnectedLinks.push(`[Sanity CMS](#) (Connect via AI Hub)`);
+                    }
+                    if (metaConnected) {
+                        activeDescriptions.push(`- **Meta (Facebook & Instagram)**: ✓ CONNECTED. Use 'meta_connector' tool to publish_post to Facebook and Instagram. Ensure you have the user's message. If posting to Instagram, an imageUrl is REQUIRED.`);
+                    } else {
+                        disconnectedLinks.push(`[Meta](#) (Connect via AI Hub)`);
                     }
 
                     pluginPrompt = `\n\n--- ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ…â€™ ACTIVE INTEGRATIONS ---`;
@@ -2416,6 +2425,11 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                     sanity_connector: async (args) => {
                         const userEmail = req.user?.email || body.userEmail || '';
                         const result = await handleToolCall('sanity_connector', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    meta_connector: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('meta_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     get_my_profile: async (args) => {

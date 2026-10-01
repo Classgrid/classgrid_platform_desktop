@@ -14,7 +14,7 @@ router.get("/status", isAuthenticated, async (req, res) => {
     try {
         await connectDB();
         const user = await User.findById(req.user._id).select(
-            "google_access_token google_refresh_token microsoft_access_token microsoft_refresh_token zoom_access_token zoom_refresh_token vercel_access_token notion_access_token notion_refresh_token webex_access_token webex_refresh_token metadata slack_access_token github_access_token supabase_access_token supabase_refresh_token sanity_access_token sanity_project_id"
+            "google_access_token google_refresh_token microsoft_access_token microsoft_refresh_token zoom_access_token zoom_refresh_token vercel_access_token notion_access_token notion_refresh_token webex_access_token webex_refresh_token metadata slack_access_token github_access_token supabase_access_token supabase_refresh_token sanity_access_token sanity_project_id meta_access_token meta_page_id meta_ig_account_id"
         ).lean();
 
         if (!user) return res.status(404).json({ message: "User not found" });
@@ -61,6 +61,11 @@ router.get("/status", isAuthenticated, async (req, res) => {
         // Sanity — ONLY if real API token exists
         if (isValidToken(user.sanity_access_token)) {
             connected.push("sanity");
+        }
+
+        // Meta (Facebook & Instagram) — ONLY if real API token exists
+        if (isValidToken(user.meta_access_token)) {
+            connected.push("meta");
         }
 
         // Notion — ONLY if real OAuth tokens exist
