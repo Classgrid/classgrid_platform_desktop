@@ -1049,7 +1049,30 @@ export const handleToolCall = async (name, args, context = {}) => {
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
         const currentUser = await User.findOne({ email: finalUserEmail }).select('-password -verificationToken').lean();
         if (!currentUser) return { content: [{ type: 'text', text: 'Error: User profile not found.' }] };
-        return { content: [{ type: 'text', text: JSON.stringify(currentUser) }] };
+        
+        // Explicitly structure the response so the AI never misses nested metadata like WhatsApp
+        const profileData = {
+          name: currentUser.name,
+          email: currentUser.email,
+          role: currentUser.role,
+          dob: currentUser.dob,
+          bio: currentUser.bio || currentUser.metadata?.bio || '',
+          hobbies: currentUser.hobby || currentUser.metadata?.hobby || '',
+          phoneNumber: currentUser.phoneNumber || 'Not provided',
+          whatsappNumber: currentUser.metadata?.whatsapp_number || 'Not provided',
+          socials: {
+            tech_stack: currentUser.metadata?.tech_stack || '',
+            linkedin: currentUser.metadata?.linkedin_url || '',
+            github: currentUser.metadata?.github_url || '',
+            twitter: currentUser.metadata?.twitter_url || '',
+            coding_profile: currentUser.metadata?.coding_profile || '',
+            portfolio: currentUser.metadata?.portfolio_url || '',
+            instagram: currentUser.metadata?.instagram_url || '',
+            facebook: currentUser.metadata?.facebook_url || ''
+          }
+        };
+
+        return { content: [{ type: 'text', text: JSON.stringify(profileData, null, 2) }] };
       } catch (err) {
         return { content: [{ type: 'text', text: `Error fetching profile: ${err.message}` }] };
       }
