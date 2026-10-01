@@ -28,14 +28,47 @@ cron.schedule('* * * * *', async () => {
           console.error("Failed to emit socket update", socErr);
         }
 
-        // Fire and forget AWS SES. Do NOT await it, and do NOT let its failures affect MongoDB.
-        sendEmail({
-          to: schedule.user_email,
-          subject: schedule.email_subject,
-          html: schedule.email_body
-        }).catch(smtpErr => {
-          console.warn(`[AiSchedule Worker] AWS SES SMTP threw an error, but it was already marked as sent in DB. Error: ${smtpErr.message}`);
-        });
+        // Fire and forget AWS SES if email fields exist
+        if (schedule.email_subject && schedule.email_body) {
+          sendEmail({
+            to: schedule.user_email,
+            subject: schedule.email_subject,
+            html: schedule.email_body
+          }).catch(smtpErr => {
+            console.warn(`[AiSchedule Worker] AWS SES SMTP threw an error. Error: ${smtpErr.message}`);
+          });
+        }
+
+        // Fire and forget WhatsApp if whatsapp fields exist
+        if (schedule.whatsapp_phone_number && schedule.whatsapp_message) {
+          if (process.env.WHATSAPP_PHONE_ID && process.env.WHATSAPP_ACCESS_TOKEN) {
+            fetch(`https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_ID}/messages`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                messaging_product: "whatsapp",
+                recipient_type: "individual",
+                to: schedule.whatsapp_phone_number,
+                type: "text",
+                text: {
+                  preview_url: false,
+                  body: schedule.whatsapp_message
+                }
+              })
+            }).then(res => res.json()).then(data => {
+              if (data.error) {
+                console.warn(`[AiSchedule Worker] WhatsApp API error: ${JSON.stringify(data.error)}`);
+              }
+            }).catch(waErr => {
+              console.warn(`[AiSchedule Worker] WhatsApp fetch failed. Error: ${waErr.message}`);
+            });
+          } else {
+             console.warn(`[AiSchedule Worker] Missing WhatsApp credentials in .env`);
+          }
+        }
     }
   } catch (error) {
     console.error('[AiSchedule Worker] Error processing schedules:', error);

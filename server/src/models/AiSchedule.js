@@ -9,8 +9,10 @@ const aiScheduleSchema = new mongoose.Schema({
   summary: { type: String },
   action_info: { type: String },
   scheduled_at: { type: Date, required: true },
-  email_subject: { type: String, required: true },
-  email_body: { type: String, required: true },
+  email_subject: { type: String },
+  email_body: { type: String },
+  whatsapp_phone_number: { type: String },
+  whatsapp_message: { type: String },
   status: { 
     type: String, 
     enum: ['pending', 'sent', 'failed', 'cancelled'], 

@@ -501,7 +501,7 @@ export const getMcpTools = () => [
   },
   {
     name: 'create_schedule',
-    description: 'Schedule an email reminder or task for a specific date and time. Use this when the user mentions a future event, exam, task, or deadline they want to be reminded about. Always pre-write a full HTML email body. CRITICAL: The title MUST be a very short 2-4 word summary (e.g. "Fee Reminder", "Gmail Review"). Do NOT make the title a long sentence. Put all the highly specific details and context into the description and summary instead. You MUST also provide a summary and action_info for the schedule card display (these are SEPARATE from the email content).',
+    description: 'Schedule an email AND WhatsApp reminder/task for a specific date and time. Use this when the user mentions a future event, exam, task, or deadline they want to be reminded about. You MUST schedule BOTH an email AND a WhatsApp message every time. CRITICAL RULES: 1. The content MUST be different! Email must be highly professional and formatted in HTML. WhatsApp must be very short, friendly, and plain text (use emojis). 2. The title MUST be a very short 2-4 word summary (e.g. "Fee Reminder", "Gmail Review"). Do NOT make the title a long sentence. Put all the highly specific details and context into the description and summary instead. You MUST also provide a summary and action_info for the schedule card display.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -511,9 +511,11 @@ export const getMcpTools = () => [
         action_info: { type: 'string', description: 'Detailed plain-text information shown when the user clicks the schedule card. Include all relevant details like amounts, dates, links, names, instructions. This is NOT the email body — it is for UI display only.' },
         scheduled_at: { type: 'string', description: 'ISO 8601 datetime string for when to send the email (e.g. 2026-10-06T10:00:00.000Z)' },
         email_subject: { type: 'string', description: 'Subject line for the email that will be sent' },
-        email_body: { type: 'string', description: 'Full beautiful HTML email body with inline CSS to send at scheduled time' }
+        email_body: { type: 'string', description: 'Full beautiful HTML email body with inline CSS to send at scheduled time' },
+        whatsapp_phone_number: { type: 'string', description: 'The recipient phone number with country code for WhatsApp (e.g. 919876543210)' },
+        whatsapp_message: { type: 'string', description: 'The text message to send on WhatsApp' }
       },
-      required: ['title', 'scheduled_at', 'email_subject', 'email_body', 'summary', 'action_info']
+      required: ['title', 'scheduled_at', 'summary', 'action_info', 'email_subject', 'email_body', 'whatsapp_phone_number', 'whatsapp_message']
     }
   },
   {
@@ -984,6 +986,8 @@ export const handleToolCall = async (name, args, context = {}) => {
           scheduled_at: new Date(args.scheduled_at),
           email_subject: args.email_subject,
           email_body: args.email_body,
+          whatsapp_phone_number: args.whatsapp_phone_number,
+          whatsapp_message: args.whatsapp_message,
           status: 'pending'
         });
 
