@@ -1140,6 +1140,92 @@ export const handleToolCall = async (name, args, context = {}) => {
       }
     }
 
+    if (name === 'supabase_connector') {
+      try {
+        const User = (await import('../models/User.js')).default;
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const currentUser = await User.findOne({ email: finalUserEmail }).select('supabase_access_token supabase_refresh_token');
+        if (!currentUser || !currentUser.supabase_access_token) {
+           return { content: [{ type: 'text', text: 'Error: Supabase is not connected. Please connect it in the AI Hub.' }] };
+        }
+        
+        const token = currentUser.supabase_access_token;
+        const { operation, ref, query } = args;
+
+        if (operation === 'list_projects') {
+          const res = await fetch('https://api.supabase.com/v1/projects', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+        
+        if (operation === 'query_database') {
+          if (!ref || !query) return { content: [{ type: 'text', text: 'Error: ref and query are required for query_database.' }] };
+          const res = await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`, {
+             method: 'POST',
+             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+             body: JSON.stringify({ query })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        if (operation === 'list_storage_buckets') {
+          if (!ref) return { content: [{ type: 'text', text: 'Error: ref is required.' }] };
+          // Fetch storage buckets via SQL since the management API doesn't expose it directly
+          const res = await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`, {
+             method: 'POST',
+             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+             body: JSON.stringify({ query: 'SELECT * FROM storage.buckets;' })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Supabase Error: ${err.message}` }] };
+      }
+    }
+
+    if (name === 'sanity_connector') {
+      try {
+        const User = (await import('../models/User.js')).default;
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const currentUser = await User.findOne({ email: finalUserEmail }).select('sanity_project_id sanity_access_token');
+        if (!currentUser || !currentUser.sanity_project_id || !currentUser.sanity_access_token) {
+           return { content: [{ type: 'text', text: 'Error: Sanity is not connected. Please connect it in the AI Hub.' }] };
+        }
+        
+        const projectId = currentUser.sanity_project_id;
+        const token = currentUser.sanity_access_token;
+        const baseUrl = `https://${projectId}.api.sanity.io/v2022-03-07/data`;
+        
+        const { operation, query, documentId, mutations } = args;
+
+        if (operation === 'query_documents') {
+           if (!query) return { content: [{ type: 'text', text: 'Error: query is required.' }] };
+           const res = await fetch(`${baseUrl}/query/production?query=${encodeURIComponent(query)}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+           });
+           const data = await res.json();
+           return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+        
+        if (operation === 'create_document' || operation === 'update_document') {
+           if (!mutations) return { content: [{ type: 'text', text: 'Error: mutations is required.' }] };
+           const res = await fetch(`${baseUrl}/mutate/production`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ mutations: JSON.parse(mutations) })
+           });
+           const data = await res.json();
+           return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Sanity Error: ${err.message}` }] };
+      }
+    }
+
     if (name === 'create_schedule') {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
