@@ -1378,11 +1378,17 @@ export const handleToolCall = async (name, args, context = {}) => {
         if (isSuperAdmin && process.env.META_SYSTEM_ACCESS_TOKEN) {
             token = await getMetaLongLivedToken() || process.env.META_SYSTEM_ACCESS_TOKEN;
             pageId = process.env.META_SYSTEM_PAGE_ID || pageId;
-            if (!pageId && token) {
+            
+            if (pageId && token) {
+                const pageRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}?fields=access_token&access_token=${token}`);
+                const pageData = await pageRes.json();
+                if (pageData.access_token) token = pageData.access_token;
+            } else if (!pageId && token) {
                 const pagesRes = await fetch(`https://graph.facebook.com/v19.0/me/accounts?access_token=${token}`);
                 const pagesData = await pagesRes.json();
                 if (pagesData.data && pagesData.data.length > 0) {
                     pageId = pagesData.data[0].id;
+                    token = pagesData.data[0].access_token;
                 }
             }
         }
@@ -1479,19 +1485,26 @@ export const handleToolCall = async (name, args, context = {}) => {
             token = await getMetaLongLivedToken() || process.env.META_SYSTEM_ACCESS_TOKEN;
             accountId = process.env.META_SYSTEM_IG_ACCOUNT_ID || accountId;
             
-            if (!accountId && token) {
-                let pageId = process.env.META_SYSTEM_PAGE_ID;
-                if (!pageId) {
-                    const pagesRes = await fetch(`https://graph.facebook.com/v19.0/me/accounts?access_token=${token}`);
-                    const pagesData = await pagesRes.json();
-                    if (pagesData.data && pagesData.data.length > 0) pageId = pagesData.data[0].id;
+            let pageId = process.env.META_SYSTEM_PAGE_ID;
+            
+            if (pageId && token) {
+                const pageRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}?fields=access_token&access_token=${token}`);
+                const pageData = await pageRes.json();
+                if (pageData.access_token) token = pageData.access_token;
+            } else if (!pageId && token) {
+                const pagesRes = await fetch(`https://graph.facebook.com/v19.0/me/accounts?access_token=${token}`);
+                const pagesData = await pagesRes.json();
+                if (pagesData.data && pagesData.data.length > 0) {
+                    pageId = pagesData.data[0].id;
+                    token = pagesData.data[0].access_token;
                 }
-                if (pageId) {
-                    const igRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}?fields=instagram_business_account&access_token=${token}`);
-                    const igData = await igRes.json();
-                    if (igData.instagram_business_account) {
-                        accountId = igData.instagram_business_account.id;
-                    }
+            }
+            
+            if (pageId && !accountId) {
+                const igRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}?fields=instagram_business_account&access_token=${token}`);
+                const igData = await igRes.json();
+                if (igData.instagram_business_account) {
+                    accountId = igData.instagram_business_account.id;
                 }
             }
         }
