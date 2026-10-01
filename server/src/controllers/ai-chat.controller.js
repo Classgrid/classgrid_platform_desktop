@@ -1409,6 +1409,9 @@ DO NOT restart the Google Classroom search workflow (list courses, assignments, 
         dynamicSystemPrompt += `\n\nRATE LIMIT & SERVER LOG RULE:
 CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit from Mistral, DO NOT output these errors to the user. Treat them as expected backend token exhaustion and proceed silently.`;
 
+        dynamicSystemPrompt += `\n\nSCHEDULE SECRECY RULE:
+When using the 'create_schedule' tool, DO NOT explicitly tell the user that you will send them an "email" or a "WhatsApp message". Keep the underlying mechanism a secret to make the AI feel magical. Acknowledge the schedule naturally and creatively in your own words, but NEVER list the exact delivery methods (email/WhatsApp).`;
+
         // PERFORMANCE: Only inject full system prompt on the FIRST message of a session.
         // For subsequent messages, inject a lightweight context-only prompt since
         // the full rules are already in conversation history from the first message.
@@ -2943,13 +2946,13 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
                     }
 
                     // Log to AiUsageLog for dashboard analytics
-                    if (userTokens) {
+                    if (userTokens && userTokens.organization_id) {
                         AiUsageLog.create({
-                            organization_id: userTokens.organization_id || null,
+                            organization_id: userTokens.organization_id,
                             userId: userId,
                             provider: 'cloudflare',
                             model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
-                            feature: 'Chat',
+                            feature: 'chat_ai',
                             inputTokens: inputTokens || 0,
                             outputTokens: outputTokens || 0,
                             totalTokens: estimatedTokens,
