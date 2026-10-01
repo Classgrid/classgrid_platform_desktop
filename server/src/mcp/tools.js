@@ -1418,7 +1418,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         }
 
         if (operation === 'list_posts') {
-            const fbUrl = `https://graph.facebook.com/v19.0/${pageId}/published_posts?fields=id,message,created_time,permalink_url&access_token=${token}`;
+            const fbUrl = `https://graph.facebook.com/v19.0/${pageId}/posts?fields=id,message,created_time,permalink_url&access_token=${token}`;
             const res = await fetch(fbUrl);
             const data = await res.json();
             return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
