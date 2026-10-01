@@ -52,8 +52,26 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
   };
 
   const handleSendWhatsappOtp = async () => {
-    const num = formData["whatsapp_number"] || "";
-    if (!num.trim()) return toast.error("Please enter a WhatsApp number first");
+    let num = formData["whatsapp_number"] || "";
+    
+    // Remove any spaces, plus signs, or dashes
+    num = num.replace(/[\s+-]/g, "");
+
+    // Check if it's empty or contains letters
+    if (!num.trim() || isNaN(Number(num))) {
+      return toast.error("Please enter a valid numeric phone number.");
+    }
+
+    // Check length (assuming 10 digits for India + optional country code)
+    if (num.length < 10 || num.length > 15) {
+      return toast.error("Please enter a valid 10-digit phone number.");
+    }
+
+    // Auto-prepend 91 if it's exactly 10 digits (assuming Indian users)
+    if (num.length === 10) {
+      num = "91" + num;
+    }
+
     setIsSendingOtp(true);
     try {
       await apiClient.post("/api/user/send-whatsapp-otp", { phoneNumber: num });
