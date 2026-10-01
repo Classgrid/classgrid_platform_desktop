@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect } from '../middlewares/auth.middleware.js';
+import { isAuthenticated } from '../middleware/auth.middleware.js';
 import User from '../models/User.js';
 import axios from 'axios';
 
@@ -10,7 +10,7 @@ const router = express.Router();
  * @desc  Get the Meta OAuth URL to redirect the user to.
  * @access Private
  */
-router.get('/oauth', protect, (req, res) => {
+router.get('/oauth', isAuthenticated, (req, res) => {
     const { type } = req.query; // 'facebook' or 'instagram'
     const clientId = process.env.FACEBOOK_CLIENT_ID;
     const redirectUri = `${process.env.BACKEND_URL}/api/auth/meta/callback`;
@@ -104,7 +104,7 @@ router.get('/callback', async (req, res) => {
  * @desc  Disconnect Facebook or Instagram
  * @access Private
  */
-router.delete('/disconnect/:type', protect, async (req, res) => {
+router.delete('/disconnect/:type', isAuthenticated, async (req, res) => {
     try {
         const { type } = req.params;
         const user = await User.findById(req.user._id);
