@@ -1335,12 +1335,13 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const User = (await import('../models/User.js')).default;
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
-        const currentUser = await User.findOne({ email: finalUserEmail }).select('facebook_access_token facebook_page_id');
+        const currentUser = await User.findOne({ email: finalUserEmail }).select('facebook_access_token facebook_page_id role');
         
         let token = currentUser?.facebook_access_token;
         let pageId = currentUser?.facebook_page_id;
 
-        if (finalUserEmail === process.env.SUPER_ADMIN_EMAIL && process.env.META_SYSTEM_ACCESS_TOKEN) {
+        const isSuperAdmin = ['super_admin', 'co_super_admin'].includes(currentUser?.role);
+        if (isSuperAdmin && process.env.META_SYSTEM_ACCESS_TOKEN) {
             token = process.env.META_SYSTEM_ACCESS_TOKEN;
             pageId = process.env.META_SYSTEM_PAGE_ID || pageId;
             if (!pageId && token) {
@@ -1434,12 +1435,13 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const User = (await import('../models/User.js')).default;
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
-        const currentUser = await User.findOne({ email: finalUserEmail }).select('instagram_access_token instagram_account_id');
+        const currentUser = await User.findOne({ email: finalUserEmail }).select('instagram_access_token instagram_account_id role');
         
         let token = currentUser?.instagram_access_token;
         let accountId = currentUser?.instagram_account_id;
 
-        if (finalUserEmail === process.env.SUPER_ADMIN_EMAIL && process.env.META_SYSTEM_ACCESS_TOKEN) {
+        const isSuperAdmin = ['super_admin', 'co_super_admin'].includes(currentUser?.role);
+        if (isSuperAdmin && process.env.META_SYSTEM_ACCESS_TOKEN) {
             token = process.env.META_SYSTEM_ACCESS_TOKEN;
             accountId = process.env.META_SYSTEM_IG_ACCOUNT_ID || accountId;
             
