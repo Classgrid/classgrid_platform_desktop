@@ -32,6 +32,13 @@ router.get("/status", isAuthenticated, async (req, res) => {
                 connected.push(...user.metadata.connected_google_services);
             }
         }
+        
+        // YouTube — Check explicitly in metadata
+        if (user.metadata?.youtube_tokens?.access_token || user.metadata?.youtube_tokens?.refresh_token) {
+            if (isValidToken(user.metadata.youtube_tokens.access_token) || isValidToken(user.metadata.youtube_tokens.refresh_token)) {
+                connected.push("youtube");
+            }
+        }
 
         // Microsoft — ONLY if real OAuth tokens exist
         if (isValidToken(user.microsoft_access_token) || isValidToken(user.microsoft_refresh_token)) {

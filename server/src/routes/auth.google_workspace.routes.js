@@ -112,7 +112,7 @@ router.get("/connect", isAuthenticated, (req, res) => {
         scopes.push('https://www.googleapis.com/auth/forms.responses.readonly');
     }
 
-    if (service === 'youtube' || service === 'all') {
+    if (service === 'youtube') {
         scopes.push('https://www.googleapis.com/auth/youtube.readonly'); // Read-only access
         scopes.push('https://www.googleapis.com/auth/youtube.upload'); // Upload videos
     }
@@ -132,7 +132,7 @@ router.get("/connect", isAuthenticated, (req, res) => {
         prompt: 'consent',      // Force consent screen to guarantee refresh token is provided
         scope: scopes,
         state: statePayload,
-        include_granted_scopes: true // Keep previously granted scopes (e.g. if they connect Gmail, then Calendar later)
+        include_granted_scopes: service === 'youtube' ? false : true
     });
 
     res.json({ url });
@@ -198,12 +198,22 @@ router.get("/callback", async (req, res) => {
             return res.redirect(`${returnTo}?integration_error=user_not_found`);
         }
 
-        user.google_access_token = tokens.access_token;
-        if (tokens.refresh_token) {
-            user.google_refresh_token = tokens.refresh_token;
-        }
-        if (tokens.expiry_date) {
-            user.google_token_expiry = new Date(tokens.expiry_date);
+        if (connectedService === 'youtube') {
+            user.metadata = user.metadata || {};
+            user.metadata.youtube_tokens = {
+                access_token: tokens.access_token,
+                refresh_token: tokens.refresh_token,
+                expiry_date: tokens.expiry_date
+            };
+            user.markModified('metadata');
+        } else {
+            user.google_access_token = tokens.access_token;
+            if (tokens.refresh_token) {
+                user.google_refresh_token = tokens.refresh_token;
+            }
+            if (tokens.expiry_date) {
+                user.google_token_expiry = new Date(tokens.expiry_date);
+            }
         }
 
         // Fetch user profile to get their connected Google email and name
@@ -335,13 +345,20 @@ router.post("/disconnect", isAuthenticated, async (req, res) => {
                 user.google_refresh_token = undefined;
                 user.google_token_expiry = undefined;
             }
+
+            if (serviceToDisconnect === 'youtube' && user.metadata.youtube_tokens) {
+                user.metadata.youtube_tokens = undefined;
+            }
         } else {
             // Fallback (disconnect everything) if no specific service provided
             user.google_access_token = undefined;
             user.google_refresh_token = undefined;
             user.google_token_expiry = undefined;
-            if (user.metadata && user.metadata.connected_google_services) {
-                user.metadata.connected_google_services = [];
+            if (user.metadata) {
+                if (user.metadata.connected_google_services) {
+                    user.metadata.connected_google_services = [];
+                }
+                user.metadata.youtube_tokens = undefined;
                 user.markModified('metadata');
             }
         }
