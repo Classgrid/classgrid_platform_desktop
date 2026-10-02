@@ -1,10 +1,52 @@
-import React, { useState, useEffect } from "react";
-import { Plus, Trash2, Edit2, Zap, Save } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Plus, Trash2, Edit2, Zap, Save, ChevronDown } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { Textarea } from "@/components/marketing_ui/textarea";
 import { Switch } from "@/components/marketing_ui/switch";
 import { toast } from "sonner";
+
+const CustomSelect = ({ value, onChange, options }: { value: string, onChange: (val: string) => void, options: {value: string, label: string}[] }) => {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selected = options.find(o => o.value === value) || options[0];
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <div 
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between gap-3 bg-muted/50 hover:bg-muted text-sm font-medium rounded-lg px-3 py-2 cursor-pointer text-foreground transition-colors min-w-[160px] border border-transparent focus-within:border-border"
+      >
+        <span>{selected.label}</span>
+        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+      </div>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-full min-w-[160px] bg-popover border border-border rounded-lg shadow-md z-50 py-1 flex flex-col max-h-[250px] overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+          {options.map(opt => (
+            <div 
+              key={opt.value}
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors ${opt.value === value ? 'bg-muted/50 font-medium text-foreground' : 'text-muted-foreground'}`}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
   const [skills, setSkills] = useState<any[]>([]);
@@ -44,16 +86,10 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
     };
   });
 
-  const isMounted = React.useRef(false);
-
-  useEffect(() => {
+  const savePreferences = () => {
     localStorage.setItem('classgrid_ai_prefs', JSON.stringify(prefs));
-    if (isMounted.current) {
-      toast.success("Preferences saved");
-    } else {
-      isMounted.current = true;
-    }
-  }, [prefs]);
+    toast.success("Preferences saved successfully!");
+  };
 
   const toggleDefaultSkill = (id: string) => {
     setPrefs((prev: any) => ({
@@ -144,76 +180,71 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
           <div className="flex flex-col divide-y divide-border/50">
             <div className="flex items-center justify-between py-4">
               <label className="text-sm font-medium">Base Tone</label>
-              <select
-                value={prefs.tone}
-                onChange={(e) => setPrefs({...prefs, tone: e.target.value})}
-                className="bg-muted/50 hover:bg-muted text-sm font-medium rounded-lg px-3 py-1.5 border-0 outline-none cursor-pointer text-foreground appearance-none pr-7 transition-colors"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
-              >
-                <option value="professional">Professional</option>
-                <option value="friendly">Friendly</option>
-                <option value="balanced">Balanced</option>
-                <option value="candid">Candid</option>
-                <option value="quirky">Quirky</option>
-                <option value="efficient">Efficient</option>
-              </select>
+              <CustomSelect 
+                value={prefs.tone} 
+                onChange={(val) => setPrefs({...prefs, tone: val})} 
+                options={[
+                  { value: 'professional', label: 'Professional' },
+                  { value: 'friendly', label: 'Friendly' },
+                  { value: 'balanced', label: 'Balanced' },
+                  { value: 'candid', label: 'Candid' },
+                  { value: 'quirky', label: 'Quirky' },
+                  { value: 'efficient', label: 'Efficient' }
+                ]} 
+              />
             </div>
 
             <div className="flex items-center justify-between py-4">
               <label className="text-sm font-medium">Verbosity</label>
-              <select
-                value={prefs.verbosity}
-                onChange={(e) => setPrefs({...prefs, verbosity: e.target.value})}
-                className="bg-muted/50 hover:bg-muted text-sm font-medium rounded-lg px-3 py-1.5 border-0 outline-none cursor-pointer text-foreground appearance-none pr-7 transition-colors"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
-              >
-                <option value="detailed">Detailed</option>
-                <option value="balanced">Balanced</option>
-                <option value="concise">Concise</option>
-              </select>
+              <CustomSelect 
+                value={prefs.verbosity} 
+                onChange={(val) => setPrefs({...prefs, verbosity: val})} 
+                options={[
+                  { value: 'detailed', label: 'Detailed' },
+                  { value: 'balanced', label: 'Balanced' },
+                  { value: 'concise', label: 'Concise' }
+                ]} 
+              />
             </div>
 
             <div className="flex items-center justify-between py-4">
               <label className="text-sm font-medium">Format Preference</label>
-              <select
-                value={prefs.format}
-                onChange={(e) => setPrefs({...prefs, format: e.target.value})}
-                className="bg-muted/50 hover:bg-muted text-sm font-medium rounded-lg px-3 py-1.5 border-0 outline-none cursor-pointer text-foreground appearance-none pr-7 transition-colors"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
-              >
-                <option value="markdown">Markdown & Lists</option>
-                <option value="plain">Plain Text</option>
-                <option value="code">Code-Heavy</option>
-                <option value="visual">Visual (Tables)</option>
-              </select>
+              <CustomSelect 
+                value={prefs.format} 
+                onChange={(val) => setPrefs({...prefs, format: val})} 
+                options={[
+                  { value: 'markdown', label: 'Markdown & Lists' },
+                  { value: 'plain', label: 'Plain Text' },
+                  { value: 'code', label: 'Code-Heavy' },
+                  { value: 'visual', label: 'Visual (Tables)' }
+                ]} 
+              />
             </div>
 
             <div className="flex items-center justify-between py-4">
               <label className="text-sm font-medium">Emoji Usage</label>
-              <select
-                value={prefs.emoji}
-                onChange={(e) => setPrefs({...prefs, emoji: e.target.value})}
-                className="bg-muted/50 hover:bg-muted text-sm font-medium rounded-lg px-3 py-1.5 border-0 outline-none cursor-pointer text-foreground appearance-none pr-7 transition-colors"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
-              >
-                <option value="more">More Emojis</option>
-                <option value="default">Default</option>
-                <option value="none">No Emojis</option>
-              </select>
+              <CustomSelect 
+                value={prefs.emoji} 
+                onChange={(val) => setPrefs({...prefs, emoji: val})} 
+                options={[
+                  { value: 'more', label: 'More Emojis' },
+                  { value: 'default', label: 'Default' },
+                  { value: 'none', label: 'No Emojis' }
+                ]} 
+              />
             </div>
 
             <div className="flex items-center justify-between py-4">
               <label className="text-sm font-medium">Explanation Level</label>
-              <select
-                value={prefs.level}
-                onChange={(e) => setPrefs({...prefs, level: e.target.value})}
-                className="bg-muted/50 hover:bg-muted text-sm font-medium rounded-lg px-3 py-1.5 border-0 outline-none cursor-pointer text-foreground appearance-none pr-7 transition-colors"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
-              >
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
+              <CustomSelect 
+                value={prefs.level} 
+                onChange={(val) => setPrefs({...prefs, level: val})} 
+                options={[
+                  { value: 'beginner', label: 'Beginner' },
+                  { value: 'intermediate', label: 'Intermediate' },
+                  { value: 'advanced', label: 'Advanced' }
+                ]} 
+              />
             </div>
           </div>
         </section>
@@ -352,7 +383,13 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
             </div>
           </section>
         )}
-
+        {/* SAVE BUTTON */}
+        <div className="pt-6 border-t border-border mt-4 flex justify-end">
+          <Button onClick={savePreferences} className="gap-2 px-6">
+            <Save className="w-4 h-4" />
+            Save Preferences
+          </Button>
+        </div>
       </div>
     </div>
   );
