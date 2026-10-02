@@ -111,16 +111,23 @@ export const AiUsageBar = ({ initialData }: { initialData?: any }) => {
                     </span>
                 </div>
                 
-                <div className="flex-1 flex items-center gap-4 mt-1">
-                    <div className="flex-1 h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
+                <div className="flex-1 flex flex-col gap-1.5 mt-1">
+                    <div className="w-full flex items-center justify-between text-xs">
+                        <span className="font-medium text-foreground">
+                            {Math.round(usageData.type === 'pro' ? percentUsedFree : percentUsed)}% Used
+                        </span>
+                        <span className="text-muted-foreground">
+                            {usageData.type === 'pro' 
+                                ? `${(usageData.freeData?.used || 0).toLocaleString()} / ${(usageData.freeData?.limit || 0).toLocaleString()}` 
+                                : `${(usageData.used || 0).toLocaleString()} / ${(usageData.limit || 0).toLocaleString()}`} tokens
+                        </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
                         <div 
                             className="h-full bg-blue-500 rounded-full transition-all duration-500"
                             style={{ width: `${usageData.type === 'pro' ? percentUsedFree : percentUsed}%` }}
                         />
                     </div>
-                    <span className="text-xs text-muted-foreground w-[60px] text-right">
-                        {Math.round(usageData.type === 'pro' ? percentUsedFree : percentUsed)}% used
-                    </span>
                 </div>
             </div>
 
@@ -136,16 +143,21 @@ export const AiUsageBar = ({ initialData }: { initialData?: any }) => {
                         </span>
                     </div>
                     
-                    <div className="flex-1 flex items-center gap-4 mt-1">
-                        <div className="flex-1 h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
+                    <div className="flex-1 flex flex-col gap-1.5 mt-1">
+                        <div className="w-full flex items-center justify-between text-xs">
+                            <span className="font-medium text-foreground">
+                                {Math.round(percentUsed)}% Used
+                            </span>
+                            <span className="text-muted-foreground">
+                                {(usageData.used || 0).toLocaleString()} / {(usageData.limit || 0).toLocaleString()} tokens
+                            </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
                             <div 
                                 className="h-full bg-purple-500 rounded-full transition-all duration-500"
                                 style={{ width: `${percentUsed}%` }}
                             />
                         </div>
-                        <span className="text-xs text-muted-foreground w-[60px] text-right">
-                            {Math.round(percentUsed)}% used
-                        </span>
                     </div>
                 </div>
             )}
