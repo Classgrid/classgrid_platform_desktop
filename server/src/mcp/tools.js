@@ -3690,7 +3690,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'generate_pdf') {
       let { content = '', title, rawData } = args;
 
-      console.log(`\nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ [AWS NATIVE] AI is generating a REAL PDF document securely using Puppeteer!`);
+      console.log(`\n📄 [AWS NATIVE] AI is generating a REAL PDF document securely using Puppeteer!`);
 
       try {
         if (rawData && Array.isArray(rawData) && rawData.length > 0) {
@@ -3725,7 +3725,6 @@ export const handleToolCall = async (name, args, context = {}) => {
                     </style>
                 </head>
                 <body>
-                    ${title ? `<h1>${title}</h1>` : ''}
                     ${content}
                 </body>
                 </html>
