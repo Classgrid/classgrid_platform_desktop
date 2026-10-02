@@ -107,7 +107,7 @@ export const getGlobalStats = async (req, res) => {
                     completionTokens: { $sum: "$completionTokens" },
                     requests: { $sum: 1 },
                     uniqueUsers: { $addToSet: "$userId" },
-                    uniqueOrgs: { $addToSet: "$organization_id" }
+                    uniqueOrgs: { $addToSet: { $cond: [{ $eq: ["$organization_id", null] }, "classgrid", "$organization_id"] } }
                 }
             }
         ]);
@@ -247,9 +247,9 @@ export const getGlobalStats = async (req, res) => {
             { $group: { _id: "$organization_id", requests: { $sum: 1 } } },
             { $lookup: { from: "organizations", localField: "_id", foreignField: "_id", as: "org" } },
             { $unwind: { path: "$org", preserveNullAndEmptyArrays: true } },
-            { $project: { name: { $cond: [{ $eq: ["$_id", null] }, "Classgrid Platform", { $ifNull: ["$org.name", "Unknown Org"] }] }, orgId: "$org._id", logo: "$org.logo_url", requests: 1, _id: 0 } }
+            { $project: { name: { $cond: [{ $eq: ["$_id", null] }, "Classgrid Platform", { $ifNull: ["$org.name", "Unknown Org"] }] }, orgId: { $cond: [{ $eq: ["$_id", null] }, "classgrid", "$org._id"] }, logo: "$org.logo_url", requests: 1, _id: 0 } }
         ]);
-        const orgsBreakdown = orgData.map(o => ({ name: o.name, orgId: o.orgId, logo: o.logo, value: o.requests, requests: o.requests }));
+        const orgsBreakdown = orgData.map(o => ({ name: o.name, orgId: o.orgId || "classgrid", logo: o.logo, value: o.requests, requests: o.requests }));
 
         // Status Breakdown
         const statusData = await AiUsageLog.aggregate([
