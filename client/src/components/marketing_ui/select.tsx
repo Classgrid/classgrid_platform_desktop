@@ -124,7 +124,7 @@ function SelectContent({
         alignItemWithTrigger={alignItemWithTrigger}
         collisionPadding={0}
         sticky="always"
-        className="isolate z-50"
+        className="isolate z-[9999]"
       >
         <SelectPrimitive.Popup
           data-slot="select-content"
