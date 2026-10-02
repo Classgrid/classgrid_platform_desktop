@@ -64,6 +64,7 @@ import {
 
 import { Search, Calendar as CalendarIcon, ChevronDown, MoreHorizontal } from "lucide-react";
 import { EditOrganizationDailyLimit } from "../components/EditOrganizationDailyLimit";
+import { ResetOrganizationDailyLimit } from "../components/ResetOrganizationDailyLimit";
 
 // If UI table isn't found, fallback to simple HTML table styled with Tailwind
 const dummyData = [
@@ -77,7 +78,8 @@ const dummyData = [
 export function SandboxPage() {
   return (
     <div className="min-h-screen w-full">
-      <div className="px-6 pt-6 pb-2 max-w-3xl">
+      <div className="px-6 pt-6 pb-2 max-w-3xl flex flex-col gap-4">
+        <ResetOrganizationDailyLimit />
         <EditOrganizationDailyLimit />
       </div>
       
