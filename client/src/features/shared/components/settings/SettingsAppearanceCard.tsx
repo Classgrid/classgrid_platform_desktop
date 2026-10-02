@@ -45,7 +45,7 @@ import React from "react";
 import { Moon, Eye } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/marketing_ui/switch";
-import { useUserProfile, useUpdateProfile } from "../queries/useUserProfile";
+import { useUserProfile, useUpdateProfile } from "../../queries/useUserProfile";
 import { toast } from "sonner";
 
 export function SettingsAppearanceCard() {
