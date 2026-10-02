@@ -38,8 +38,6 @@ const TABS = [
   { id: "plugins", label: "Plugins", icon: Plug },
   { id: "images", label: "Images", icon: ImageIcon },
   { id: "skills", label: "Skills", icon: Zap },
-  { id: "prompts", label: "Prompts", icon: MessageSquare },
-  { id: "settings", label: "Settings", icon: Settings2 },
   { id: "usage", label: "Usage", icon: Activity },
   { id: "credits", label: "AI Credits", icon: CreditCard },
   { id: "upgrade", label: "Upgrade", icon: ArrowUpCircle },
