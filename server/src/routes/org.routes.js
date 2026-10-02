@@ -3371,6 +3371,17 @@ router.patch("/branding", isAuthenticated, requireRole("org_admin"), async (req,
         await redis.del(`user:profile:${req.user._id}`);
         await redis.del(`user:profile:v2:${req.user._id}`);
 
+        try {
+            const { getIO } = await import("../services/socket.service.js");
+            const io = getIO();
+            if (io) {
+                // Inform all connected users in this org to refresh their profiles/branding
+                io.to(`org:${orgId}`).emit("user_profile_updated");
+            }
+        } catch (socketErr) {
+            console.error("[Org Branding Socket Error]:", socketErr.message);
+        }
+
         // Invalidate the in-memory branding cache (used by branding-resolver for HTML injection)
         // so the next page load picks up the new favicon/title immediately.
         if (updatedOrg.subdomain) {
