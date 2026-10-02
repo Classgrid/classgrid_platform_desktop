@@ -42,12 +42,31 @@
  */
 
 import React from "react";
-import { Moon } from "lucide-react";
+import { Moon, Eye } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/marketing_ui/switch";
+import { useUserProfile, useUpdateProfile } from "../queries/useUserProfile";
+import { toast } from "sonner";
 
 export function SettingsAppearanceCard() {
   const { theme, setTheme, resolvedTheme } = useTheme();
+  
+  const { data: userProfile } = useUserProfile();
+  const updateProfile = useUpdateProfile();
+
+  // If metadata.show_role_in_sidebar is explicitly false, it is hidden. Otherwise true.
+  const showRole = (userProfile as any)?.metadata?.show_role_in_sidebar !== false;
+
+  const handleToggleRole = (checked: boolean) => {
+    updateProfile.mutate(
+      { metadata: { ...(userProfile as any)?.metadata, show_role_in_sidebar: checked } } as any,
+      {
+        onSuccess: () => {
+          toast.success("Sidebar appearance updated.");
+        }
+      }
+    );
+  };
 
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm mb-6">
@@ -58,15 +77,29 @@ export function SettingsAppearanceCard() {
         <p className="text-sm text-muted-foreground mt-1">Customize how Classgrid looks on your device.</p>
       </div>
       
-      <div className="flex items-center justify-between p-5">
-        <div className="flex flex-col gap-1">
-          <span className="font-semibold text-sm text-foreground">Dark Mode</span>
-          <span className="text-xs text-muted-foreground">Enable dark theme for the dashboard</span>
+      <div className="flex flex-col">
+        <div className="flex items-center justify-between p-5 border-b border-border">
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold text-sm text-foreground">Dark Mode</span>
+            <span className="text-xs text-muted-foreground">Enable dark theme for the dashboard</span>
+          </div>
+          <Switch 
+            checked={resolvedTheme === "dark"} 
+            onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")} 
+          />
         </div>
-        <Switch 
-          checked={resolvedTheme === "dark"} 
-          onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")} 
-        />
+        
+        <div className="flex items-center justify-between p-5">
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold text-sm text-foreground">Show Role in Sidebar</span>
+            <span className="text-xs text-muted-foreground">Display your active role (e.g. Super Admin) under the workspace name</span>
+          </div>
+          <Switch 
+            checked={showRole} 
+            onCheckedChange={handleToggleRole}
+            disabled={updateProfile.isPending}
+          />
+        </div>
       </div>
     </div>
   );

@@ -62,7 +62,7 @@ import {
 } from "@/components/marketing_ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from "@/components/marketing_ui/sidebar";
 
-export function SidebarSwitcher({ user }: { user: { role?: string; name?: string; sidebar_name?: string; additional_roles?: string[]; organization?: { sidebar_name?: string; name?: string; logo_url?: string; sidebar_logo_url?: string } } | null }) {
+export function SidebarSwitcher({ user }: { user: { role?: string; name?: string; sidebar_name?: string; additional_roles?: string[]; organization?: { sidebar_name?: string; name?: string; logo_url?: string; sidebar_logo_url?: string }, metadata?: Record<string, any> } | null }) {
   const { isMobile } = useSidebar();
   const queryClient = useQueryClient();
   const [isSwitching, setIsSwitching] = useState(false);
@@ -121,9 +121,11 @@ export function SidebarSwitcher({ user }: { user: { role?: string; name?: string
                 <span className="font-semibold text-foreground whitespace-normal break-words leading-tight">
                   {orgName}
                 </span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {formatRole(currentRole)}
-                </span>
+                {user?.metadata?.show_role_in_sidebar !== false && (
+                  <span className="truncate text-xs text-muted-foreground">
+                    {formatRole(currentRole)}
+                  </span>
+                )}
               </div>
               <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
           </DropdownMenuTrigger>
@@ -193,3 +195,4 @@ export function SidebarSwitcher({ user }: { user: { role?: string; name?: string
     </SidebarMenu>
   );
 }
+
