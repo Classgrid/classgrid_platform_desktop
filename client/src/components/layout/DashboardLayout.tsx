@@ -203,6 +203,7 @@ export function DashboardLayout({ children, role, user }: DashboardLayoutProps) 
     const handleProfileUpdated = () => {
       queryClient.invalidateQueries({ queryKey: ["current-user"] });
       queryClient.invalidateQueries({ queryKey: ["global-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
     };
 
     socket.on("user_profile_updated", handleProfileUpdated);

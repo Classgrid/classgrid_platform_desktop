@@ -92,7 +92,7 @@ export function SettingsAppearanceCard() {
         <div className="flex items-center justify-between p-5">
           <div className="flex flex-col gap-1">
             <span className="font-semibold text-sm text-foreground">Show Role in Sidebar</span>
-            <span className="text-xs text-muted-foreground">Display your active role (e.g. Super Admin) under the workspace name</span>
+            <span className="text-xs text-muted-foreground">Display your active role (e.g. Admin) under the workspace name</span>
           </div>
           <Switch 
             checked={showRole} 
