@@ -106,6 +106,25 @@ export const getMcpTools = () => [
     }
   },
   {
+    name: 'update_ai_preferences',
+    description: 'Update the user\'s AI chat preferences (e.g. tone, verbosity, formatting, nickname). Use this when the user asks you to change how you talk to them.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        tone: { type: 'string', description: 'Tone of voice (e.g. balanced, friendly, professional, strict).' },
+        verbosity: { type: 'string', description: 'Length of responses (e.g. balanced, concise, detailed).' },
+        format: { type: 'string', description: 'Response format (e.g. markdown, plain).' },
+        emoji: { type: 'string', description: 'Emoji usage (e.g. default, none, lots).' },
+        level: { type: 'string', description: 'Explanation level (e.g. intermediate, beginner, expert).' },
+        nickname: { type: 'string', description: 'What to call the user.' },
+        occupation: { type: 'string', description: 'The user\'s role or occupation.' },
+        aboutMe: { type: 'string', description: 'Background info about the user.' },
+        howToRespond: { type: 'string', description: 'Special instructions on how to respond.' },
+        activeDefaults: { type: 'array', items: { type: 'string' }, description: 'List of active default skill IDs (e.g. whatsapp, github, sanity).' }
+      }
+    }
+  },
+  {
     name: 'unified_db_query',
     description: `Executes a query against MongoDB or Supabase. MANDATORY RULES:
 1. You MUST ALWAYS provide the 'fields' parameter with ONLY the specific fields you need (e.g. ["name", "email"]). NEVER request all fields.
@@ -1145,6 +1164,37 @@ export const handleToolCall = async (name, args, context = {}) => {
   };
 
   try {
+    if (name === 'update_ai_preferences') {
+      try {
+        const User = (await import('../models/User.js')).default;
+        const user = await User.findOne({ email: userEmail });
+        if (!user) return { content: [{ type: 'text', text: 'Error: User not found.' }] };
+
+        const updateObj = {};
+        for (const key of ['tone', 'verbosity', 'format', 'emoji', 'level', 'nickname', 'occupation', 'aboutMe', 'howToRespond', 'activeDefaults']) {
+          if (args[key] !== undefined) {
+            updateObj[`ai_preferences.${key}`] = args[key];
+          }
+        }
+
+        if (Object.keys(updateObj).length > 0) {
+          await User.updateOne({ _id: user._id }, { $set: updateObj });
+          
+          // Try to emit socket update if io exists
+          try {
+            const { getIO } = await import('../services/socket.service.js');
+            getIO().to(user._id.toString()).emit('ai:preferences_updated');
+          } catch (err) {
+            console.error("Socket emit failed", err);
+          }
+        }
+
+        return { content: [{ type: 'text', text: `Preferences updated successfully. The new preferences are now active.` }] };
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Error updating preferences: ${err.message}` }] };
+      }
+    }
+
     if (name === 'create_skill') {
       try {
         const AiSkill = (await import('../models/AiSkill.js')).default;
