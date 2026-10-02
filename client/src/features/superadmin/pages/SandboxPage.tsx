@@ -91,12 +91,18 @@ const SANDBOX_ORGS = [
 ];
 
 import { SetupUsageCredits } from "../components/SetupUsageCredits";
+import { GlobalAiConfigPanel } from "../components/GlobalAiConfigPanel";
+import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
+import { AiUsageBar } from "@/components/ai/components/AiUsageBar";
 
 export function SandboxPage() {
   const [isGrantCreditsOpen, setIsGrantCreditsOpen] = React.useState(false);
   return (
     <div className="min-h-screen w-full">
       <div className="px-6 pt-6 pb-2 max-w-3xl flex flex-col gap-4">
+        <GlobalAiConfigPanel />
+        <AiUsageBar initialData={{type: 'pro', used: 250, limit: 1000, remaining: 750, freeData: {used: 50, limit: 100, remaining: 50}}} />
+        <SuperadminFilterBar />
         <SetupUsageCredits />
         <ResetOrganizationDailyLimit />
         <EditOrganizationDailyLimit />
