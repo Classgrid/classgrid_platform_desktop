@@ -2424,6 +2424,7 @@ export const getCurrentUser = async (req, res) => {
                 id: req.realUser._id,
                 role: req.realUser.role,
             } : null,
+            metadata: req.user.metadata || {},
             google_access_token: req.user.google_access_token || null,
             zoom_access_token: req.user.zoom_access_token || null,
             token: generateToken(req.user, req, req.authRememberMe === true)

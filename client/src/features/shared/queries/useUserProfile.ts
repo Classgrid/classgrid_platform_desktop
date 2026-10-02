@@ -70,6 +70,7 @@ export type ProfileData = {
   lastLoginAt?: string;
   createdAt?: string;
   profile_completed?: boolean;
+  metadata?: any;
   pushNotifications?: { global: boolean; sidebarPanelEnabled?: boolean };
   organization_id?: {
     id: string;
