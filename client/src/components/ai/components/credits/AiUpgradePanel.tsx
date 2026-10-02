@@ -6,7 +6,6 @@ import { Zap, ArrowUpCircle, Wallet, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
-import { Slider } from "@/components/marketing_ui/slider";
 import { toast } from "sonner";
 
 export function AiUpgradePanel() {
@@ -105,19 +104,6 @@ export function AiUpgradePanel() {
                     className="w-full h-14 pl-9 pr-4 text-xl font-bold rounded-lg"
                   />
                 </div>
-                <div className="mt-4 px-1">
-                  <Slider
-                    min={1}
-                    max={10000}
-                    step={100}
-                    value={[customAmount]}
-                    onValueChange={(val: number[]) => setCustomAmountStr(String(val[0]))}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>₹1</span>
-                    <span>₹10,000</span>
-                  </div>
-                </div>
                 
                 <div className="mt-6 p-4 bg-muted border border-border rounded-lg flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">You will receive:</span>
@@ -133,12 +119,12 @@ export function AiUpgradePanel() {
                 )}
               </div>
 
-              <div className="flex justify-start pt-4 mt-2">
+              <div className="flex justify-end pt-4 mt-2">
                 <Button 
                   variant="ghost"
                   onClick={handleTopUp} 
                   disabled={!isValidAmount || topUpMutation.isPending}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="w-full text-muted-foreground hover:text-foreground"
                 >
                   {topUpMutation.isPending ? "Processing..." : "Purchase Credits"}
                 </Button>
