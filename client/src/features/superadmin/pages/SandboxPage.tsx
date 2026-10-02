@@ -63,6 +63,7 @@ import {
 } from "@/components/ui/table";
 
 import { Search, Calendar as CalendarIcon, ChevronDown, MoreHorizontal } from "lucide-react";
+import { EditOrganizationDailyLimit } from "../components/EditOrganizationDailyLimit";
 
 // If UI table isn't found, fallback to simple HTML table styled with Tailwind
 const dummyData = [
@@ -76,6 +77,9 @@ const dummyData = [
 export function SandboxPage() {
   return (
     <div className="min-h-screen w-full">
+      <div className="px-6 pt-6 pb-2 max-w-3xl">
+        <EditOrganizationDailyLimit />
+      </div>
       
       {/* ═══ VERCEL EXACT DUMMY FILTER BAR ═══ */}
       <div className="flex flex-nowrap items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide w-full max-w-full text-sm px-6 pt-6">
