@@ -98,7 +98,7 @@ export function AiUpgradePanel() {
                     <BlueSlider
                       min={1}
                       max={10000}
-                      step={100}
+                      step={1}
                       value={customAmount}
                       onValueChange={(val: number) => setCustomAmountStr(String(val))}
                     />
