@@ -4347,6 +4347,27 @@ export const deleteSkill = async (req, res) => {
     }
 };
 
+export const updateSkill = async (req, res) => {
+    try {
+        const AiSkill = (await import("../models/AiSkill.js")).default;
+        const { name, instructions } = req.body;
+        if (!name || !instructions) return res.status(400).json({ error: "Name and instructions required" });
+        
+        const skill = await AiSkill.findOneAndUpdate(
+            { _id: req.params.id, userId: req.user.id, is_default: false },
+            { $set: { name, instructions } },
+            { new: true }
+        );
+        
+        if (!skill) return res.status(404).json({ error: "Skill not found or access denied" });
+        
+        res.json({ success: true, skill });
+    } catch (e) {
+        console.error("Error updating skill:", e);
+        res.status(500).json({ error: "Failed to update skill" });
+    }
+};
+
 export const getPreferences = async (req, res) => {
     try {
         const User = (await import("../models/User.js")).default;

@@ -106,6 +106,19 @@ export const getMcpTools = () => [
     }
   },
   {
+    name: 'update_skill',
+    description: 'Update the name or instructions of an existing custom AI skill.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        skill_id: { type: 'string', description: 'The MongoDB ObjectId of the skill to update.' },
+        name: { type: 'string', description: 'The new name for the skill.' },
+        instructions: { type: 'string', description: 'The new instructions for the skill.' }
+      },
+      required: ['skill_id', 'name', 'instructions']
+    }
+  },
+  {
     name: 'update_ai_preferences',
     description: 'Update the user\'s AI chat preferences (e.g. tone, verbosity, formatting, nickname). Use this when the user asks you to change how you talk to them.',
     inputSchema: {
@@ -1262,6 +1275,26 @@ export const handleToolCall = async (name, args, context = {}) => {
         return { content: [{ type: 'text', text: `Skill deleted successfully.` }] };
       } catch (err) {
         return { content: [{ type: 'text', text: `Error deleting skill: ${err.message}` }] };
+      }
+    }
+
+    if (name === 'update_skill') {
+      try {
+        const AiSkill = (await import('../models/AiSkill.js')).default;
+        const User = (await import('../models/User.js')).default;
+        const user = await User.findOne({ email: userEmail });
+        if (!user) return { content: [{ type: 'text', text: 'Error: User not found.' }] };
+
+        const updated = await AiSkill.findOneAndUpdate(
+          { _id: args.skill_id, userId: user._id, is_default: false },
+          { $set: { name: args.name, instructions: args.instructions } },
+          { new: true }
+        );
+        if (!updated) return { content: [{ type: 'text', text: 'Error: Skill not found or access denied.' }] };
+
+        return { content: [{ type: 'text', text: `Skill "${args.name}" updated successfully.` }] };
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Error updating skill: ${err.message}` }] };
       }
     }
 
