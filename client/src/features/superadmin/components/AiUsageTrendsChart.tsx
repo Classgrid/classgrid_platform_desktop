@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
-import { TrendingUp, TrendingDown, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown, MessageSquare } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -13,17 +13,13 @@ import {
 } from 'recharts';
 
 const DUMMY_CHART_DATA = [
-  { date: "Oct 1", input: 1200000, output: 20000 },
-  { date: "Oct 4", input: 0, output: 0 },
-  { date: "Oct 7", input: 0, output: 0 },
-  { date: "Oct 10", input: 0, output: 0 },
-  { date: "Oct 13", input: 0, output: 0 },
-  { date: "Oct 16", input: 0, output: 0 },
-  { date: "Oct 19", input: 0, output: 0 },
-  { date: "Oct 22", input: 0, output: 0 },
-  { date: "Oct 25", input: 0, output: 0 },
-  { date: "Oct 28", input: 0, output: 0 },
-  { date: "Oct 31", input: 0, output: 0 },
+  { date: "Oct 1", chats: 120 },
+  { date: "Oct 2", chats: 150 },
+  { date: "Oct 3", chats: 80 },
+  { date: "Oct 4", chats: 200 },
+  { date: "Oct 5", chats: 90 },
+  { date: "Oct 6", chats: 310 }, // Most Active
+  { date: "Oct 7", chats: 40 },  // Least Used
 ];
 
 export function AiUsageTrendsChart() {
@@ -32,9 +28,9 @@ export function AiUsageTrendsChart() {
       {/* Chart Card */}
       <Card className="border border-border shadow-sm overflow-hidden bg-card">
         <CardHeader className="bg-muted/10 border-b border-border pb-4">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <Activity className="w-5 h-5 text-blue-500" />
-            7-Day Platform Usage Trends
+          <CardTitle className="text-lg font-semibold flex items-center gap-2 text-foreground">
+            <MessageSquare className="w-5 h-5 text-blue-500" />
+            Daily Chat Trend
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 bg-[#0a0a0a] dark:bg-[#0a0a0a]">
@@ -69,8 +65,7 @@ export function AiUsageTrendsChart() {
                   iconType="square" 
                   wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: '#888888' }}
                 />
-                <Bar dataKey="input" name="Input Tokens" stackId="a" fill="#f97316" barSize={12} />
-                <Bar dataKey="output" name="Output Tokens" stackId="a" fill="#3b82f6" barSize={12} radius={[2, 2, 0, 0]} />
+                <Bar dataKey="chats" name="Total Chats" fill="#3b82f6" barSize={24} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -86,9 +81,9 @@ export function AiUsageTrendsChart() {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-foreground">Most Active Day</span>
-            <span className="text-xs text-muted-foreground mt-0.5">Oct 1, 2026</span>
+            <span className="text-xs text-muted-foreground mt-0.5">Oct 6, 2026</span>
             <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1">
-              1,220,000 <span className="text-xs font-normal">tokens</span>
+              310 <span className="text-xs font-normal">chats</span>
             </span>
           </div>
         </div>
@@ -100,9 +95,9 @@ export function AiUsageTrendsChart() {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-foreground">Least Used Day</span>
-            <span className="text-xs text-muted-foreground mt-0.5">Oct 4, 2026</span>
+            <span className="text-xs text-muted-foreground mt-0.5">Oct 7, 2026</span>
             <span className="text-lg font-bold text-rose-600 dark:text-rose-400 mt-1">
-              0 <span className="text-xs font-normal">tokens</span>
+              40 <span className="text-xs font-normal">chats</span>
             </span>
           </div>
         </div>
