@@ -90,7 +90,11 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+import { useQueryClient } from "@tanstack/react-query";
+import socketClient from "@/lib/socketClient";
+
 export function AiUsageDashboardPage() {
+  const queryClient = useQueryClient();
   const [path, setPath] = useState<PathState>({});
   const [showOrgReset, setShowOrgReset] = useState(false);
   const [showOrgBlock, setShowOrgBlock] = useState(false);
@@ -104,6 +108,31 @@ export function AiUsageDashboardPage() {
   const [chatsTime, setChatsTime] = useState<"daily" | "weekly" | "monthly">("daily");
   const [orgsTime, setOrgsTime] = useState<"daily" | "weekly" | "monthly">("daily");
   const [usersTime, setUsersTime] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [spendingCurrency, setSpendingCurrency] = useState<"USD" | "INR">("USD");
+
+  useEffect(() => {
+    socketClient.joinAiUsageDashboard();
+    const socket = socketClient.getSocket();
+    
+    if (socket) {
+      socket.on("ai_usage_updated", () => {
+         // Invalidate EVERY query related to AI usage to ensure 100% live updates across all graphs and drilldowns
+         queryClient.invalidateQueries({ queryKey: ["ai-usage-global"] });
+         queryClient.invalidateQueries({ queryKey: ["ai-usage-orgs"] });
+         queryClient.invalidateQueries({ queryKey: ["ai-usage-org"] });
+         queryClient.invalidateQueries({ queryKey: ["ai-usage-org-users"] });
+         queryClient.invalidateQueries({ queryKey: ["ai-usage-user"] });
+         queryClient.invalidateQueries({ queryKey: ["ai-usage-models"] });
+      });
+    }
+
+    return () => {
+      socketClient.leaveAiUsageDashboard();
+      if (socket) {
+        socket.off("ai_usage_updated");
+      }
+    };
+  }, [queryClient]);
   
   const resetOrgMutation = useResetOrgUsage();
   const blockOrgMutation = useBlockAiOrg();
@@ -332,7 +361,56 @@ export function AiUsageDashboardPage() {
           {/* Bar Chart 3: Cost Spend Trend */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle>Cost Spend Trend (INR Revenue)</CardTitle>
+              <CardTitle>Daily Credits Spending</CardTitle>
+              <div className="flex items-center gap-4">
+                <NikhilTimeCalendar value={dateFilter} onChange={setDateFilter as any} showTime={false} placeholder="Select Date" className="w-[160px] h-9 border border-input bg-background" />
+                <Select value={spendingCurrency} onValueChange={setSpendingCurrency as any}>
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue placeholder="Currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="INR">INR (₹)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={usageTrend || []} barCategoryGap="30%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="currentColor" 
+                      className="text-xs opacity-50" 
+                      tickLine={false} 
+                      axisLine={false}
+                      minTickGap={40}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                      }}
+                    />
+                    <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
+                    <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<UniversalTooltip />} />
+                    <Bar 
+                      dataKey={spendingCurrency === "USD" ? "costUSD" : "costINR"} 
+                      name={`Cost (${spendingCurrency})`} 
+                      fill="#10b981" 
+                      radius={[2, 2, 0, 0]} 
+                      maxBarSize={12} 
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Bar Chart 4: Top-up Revenue (INR) */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle>Top-up Revenue (INR)</CardTitle>
               <NikhilTimeCalendar value={dateFilter} onChange={setDateFilter as any} showTime={false} placeholder="Select Date" className="w-[160px] h-9 border border-input bg-background" />
             </CardHeader>
             <CardContent>
@@ -354,14 +432,14 @@ export function AiUsageDashboardPage() {
                     />
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
                     <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<UniversalTooltip />} />
-                    <Bar dataKey="revenue" name="Cost (INR)" fill="#10b981" radius={[2, 2, 0, 0]} maxBarSize={12} />
+                    <Bar dataKey="revenue" name="Revenue (INR)" fill="#8b5cf6" radius={[2, 2, 0, 0]} maxBarSize={12} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
 
-          {/* Bar Chart 4: Active Organizations */}
+          {/* Bar Chart 5: Active Organizations */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Active Organizations</CardTitle>
@@ -488,7 +566,7 @@ export function AiUsageDashboardPage() {
                                             uData: usersBreakdown?.find((u: any) => u.userId === id || u._id === id || u.name === id) || { name: 'Unknown User', value: 0 }
                                         }))
                                         .sort((a: any, b: any) => (b.uData.value || 0) - (a.uData.value || 0))
-                                        .slice(0, 3)
+                                        .slice(0, 10)
                                         .map(({ id, uData }: any) => (
                                          <div key={id} className="flex flex-col space-y-1 mb-2 border-b border-border/50 pb-2 last:border-0 last:pb-0">
                                             <div className="flex items-center space-x-2">
