@@ -52,7 +52,7 @@
  * ─────────────────────────────────────────────────────────
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Table,
   TableBody,
@@ -62,16 +62,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { Search, Calendar as CalendarIcon, ChevronDown, MoreHorizontal } from "lucide-react";
+import { Search, Calendar as CalendarIcon, ChevronDown, MoreHorizontal, LayoutTemplate } from "lucide-react";
 import { EditOrganizationDailyLimit } from "../components/EditOrganizationDailyLimit";
 import { ResetOrganizationDailyLimit } from "../components/ResetOrganizationDailyLimit";
-import { GlobalAiConfigPanel } from "../components/GlobalAiConfigPanel";
-import { AiUsageBar } from "@/components/ai/components/AiUsageBar";
-import { SetupUsageCredits } from "../components/SetupUsageCredits";
 import { BlockOrganizationAiUsage } from "../components/BlockOrganizationAiUsage";
-import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
-import { GrantCreditsModal } from "../components/GrantCredits";
+import { GrantCreditsModal, OrgRow } from "../components/GrantCredits";
 import { Button } from "@/components/marketing_ui/button";
+
 
 // If UI table isn't found, fallback to simple HTML table styled with Tailwind
 const dummyData = [
@@ -82,23 +79,53 @@ const dummyData = [
   { id: "T-1005", name: "Vikram Reddy", email: "vikram@example.com", orgType: "College", status: "Open", date: "Jul 21, 2026" },
 ];
 
-export function SandboxPage() {
-  const [showGrantModal, setShowGrantModal] = useState(false);
 
+// Sandbox-only dummy org data (for testing GrantCredits modal)
+const SANDBOX_ORGS = [
+  { id: "1", name: "Rahul Sharma", orgName: "Sunrise Academy", email: "rahul@sunriseacademy.in", role: "Admin", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul" },
+  { id: "2", name: "Priya Patel", orgName: "Greenwood School", email: "priya@greenwood.in", role: "Owner", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Priya" },
+  { id: "3", name: "Amit Kumar", orgName: "Elite Coaching Centre", email: "amit@elitecoach.in", role: "Member", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Amit" },
+  { id: "4", name: "Neha Singh", orgName: "Bright Minds College", email: "neha@brightminds.in", role: "Admin", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha" },
+  { id: "5", name: "Vikram Reddy", orgName: "TechGuru Institute", email: "vikram@techguru.in", role: "Owner", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Vikram" },
+  { id: "6", name: "Sana Khan", orgName: "Al-Noor School", email: "sana@alnoor.in", role: "Member", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sana" },
+];
+
+import { SetupUsageCredits } from "../components/SetupUsageCredits";
+
+export function SandboxPage() {
+  const [isGrantCreditsOpen, setIsGrantCreditsOpen] = React.useState(false);
   return (
     <div className="min-h-screen w-full">
       <div className="px-6 pt-6 pb-2 max-w-3xl flex flex-col gap-4">
-        <GlobalAiConfigPanel />
-        <AiUsageBar initialData={{type: 'pro', used: 250, limit: 1000, remaining: 750, freeData: {used: 50, limit: 100, remaining: 50}}} />
-        <SetupUsageCredits orgId="dummy" orgName="Dummy Org" currentPoolLimit={100} currentUserWeeklyLimit={50} />
+        <SetupUsageCredits />
         <ResetOrganizationDailyLimit />
         <EditOrganizationDailyLimit />
-        <BlockOrganizationAiUsage orgId="dummy" orgName="Dummy Org" isBlocked={false} />
-        <SuperadminFilterBar />
-        <div>
-          <Button onClick={() => setShowGrantModal(true)}>Open Grant Credits Modal</Button>
-          <GrantCreditsModal isOpen={showGrantModal} onClose={() => setShowGrantModal(false)} users={[]} />
+        <BlockOrganizationAiUsage />
+        
+        <div className="border border-border rounded-xl mt-4 shadow-sm">
+          <div className="p-6 bg-card flex flex-col gap-6">
+            <div className="flex flex-col gap-1.5">
+              <h3 className="text-lg font-semibold text-foreground tracking-tight">
+                Grant Organization Credits
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Open the AI Hub Panel to securely grant tokens to an organization.
+              </p>
+            </div>
+          </div>
+          <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end">
+            <Button variant="outline" onClick={() => setIsGrantCreditsOpen(true)}>
+              <LayoutTemplate className="w-4 h-4 mr-2" />
+              Open Grant Credits Panel
+            </Button>
+          </div>
         </div>
+
+        <GrantCreditsModal 
+          isOpen={isGrantCreditsOpen} 
+          onClose={() => setIsGrantCreditsOpen(false)}
+          orgs={SANDBOX_ORGS}
+        />
       </div>
       
       {/* ═══ VERCEL EXACT DUMMY FILTER BAR ═══ */}
