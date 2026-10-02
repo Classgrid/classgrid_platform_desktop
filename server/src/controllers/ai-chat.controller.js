@@ -4063,6 +4063,35 @@ export const generateImage = async (req, res) => {
                 // Save assistant image response
                 await saveMessage(activeSessionId, 'assistant', `[IMAGE_GENERATION_COMPLETE: ${prompt} : ${r2Url}]`);
             }
+            
+            // Log to AiUsageLog for dashboard analytics
+            try {
+                const User = (await import('../models/User.js')).default;
+                const AiUsageLog = (await import('../models/AiUsageLog.js')).default;
+                const { getIO } = await import('../services/socket.service.js');
+                
+                const user = await User.findOne({ email: userEmail });
+                if (user) {
+                    await AiUsageLog.create({
+                        organization_id: user.organization_id || null,
+                        userId: user._id,
+                        provider: "cloudflare",
+                        model: "@cf/black-forest-labs/flux-1-schnell",
+                        feature: "other",
+                        promptTokens: 1, // Store as 1 token for simple accounting
+                        completionTokens: 0,
+                        totalTokens: 1,
+                        success: true
+                    });
+                    
+                    const io = getIO();
+                    if (io) {
+                        io.to("superadmin:ai_usage").emit("ai_usage_updated");
+                    }
+                }
+            } catch (logErr) {
+                console.error("Failed to log image generation usage:", logErr);
+            }
         }
 
         res.json({ imageUrl: r2Url, sessionId: activeSessionId });
