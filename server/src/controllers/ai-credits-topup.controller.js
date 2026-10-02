@@ -110,7 +110,7 @@ export const createTopupOrder = async (req, res) => {
             currency: "INR",
             razorpay_key_id: process.env.RAZORPAY_KEY_ID, // Platform Key
             payment_type: "AI_TOPUP",
-            return_url: "close_window",
+            return_url: `${req.headers.origin || "https://app.classgrid.in"}?ai_payment=success`,
             clientIp: req.ip,
             userAgent: String(req.headers["user-agent"] || "").slice(0, 300),
             context: { label: "AI Credits Top-Up", payerName: payerName, phone: organization.billing_settings?.phone || "" },

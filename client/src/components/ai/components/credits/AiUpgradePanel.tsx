@@ -38,7 +38,7 @@ export function AiUpgradePanel() {
     try {
       const response = await topUpMutation.mutateAsync(customAmount);
       if (response && response.checkout_url) {
-        window.open(response.checkout_url, "_blank");
+        window.location.href = response.checkout_url;
       }
     } catch (error) {
       toast.error("Failed to initiate top-up. Please try again.");

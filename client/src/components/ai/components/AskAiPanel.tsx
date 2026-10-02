@@ -1603,6 +1603,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setIsAiHubOpen(true);
     };
     window.addEventListener('open-ai-hub', handleOpenAiHub);
+
+    // Handle post-payment redirect
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("ai_payment") === "success") {
+      setAiHubInitialTab("credits");
+      setIsAiHubOpen(true);
+      // Let the AiUpgradePanel handle the toast via another mechanism, or just show it here:
+      toast.success("Payment successful! AI Credits have been added to your account.");
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+
     return () => window.removeEventListener('open-ai-hub', handleOpenAiHub);
   }, []);
 
