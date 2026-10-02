@@ -56,16 +56,16 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
   const [newSkillInstructions, setNewSkillInstructions] = useState("");
 
   const DEFAULT_SKILLS = [
-    { id: 'privacy', name: 'Student Data Privacy Guard', desc: 'Strictly redact all student PII (phone numbers, addresses, grades) before generating reports or exporting data.' },
-    { id: 'ferpa', name: 'FERPA Compliance Checker', desc: 'Scan all drafted communications and data queries for potential FERPA compliance violations.' },
-    { id: 'curriculum', name: 'CBSE/ICSE Aligner', desc: 'Ensure all generated lesson plans, quizzes, and academic content align with standard curriculum guidelines.' },
-    { id: 'finance', name: 'Fee Defaulter Empathy', desc: 'Maintain a highly empathetic and respectful tone when drafting fee reminders for parents.' },
-    { id: 'multilingual', name: 'Bilingual Parent Communicator', desc: 'Always provide a regional language translation when drafting WhatsApp broadcasts for parents.' },
-    { id: 'socratic', name: 'Socratic Tutor Mode', desc: 'Never give students direct answers. Guide them with step-by-step hints to foster critical thinking.' },
-    { id: 'infosec', name: 'Infrastructure Security Auditor', desc: 'Proactively highlight vulnerabilities and security risks when analyzing Vercel logs or database queries.' },
-    { id: 'plagiarism', name: 'Plagiarism & AI Detector', desc: 'Proactively evaluate submitted student text for potential plagiarism or heavy AI-generated patterns.' },
-    { id: 'inclusive', name: 'Inclusive Educator', desc: 'Ensure all generated content uses inclusive language and provides accommodations for neurodivergent students.' },
-    { id: 'sql', name: 'SQL Schema Optimizer', desc: 'When querying Supabase, optimize SQL for performance and suggest indexing for high-scale school data.' },
+    { id: 'whatsapp', name: 'WhatsApp Broadcaster', desc: 'When drafting parent announcements, automatically format it with bullet points perfect for WhatsApp Business.' },
+    { id: 'drive_class', name: 'Classroom & Drive Coordinator', desc: 'When sharing study materials, automatically search Google Drive for PDFs and prepare them for Google Classroom.' },
+    { id: 'notion', name: 'Notion Knowledge Base Builder', desc: 'When saving a policy or document, automatically format it as a markdown wiki page ready to push to Notion.' },
+    { id: 'vercel_supabase', name: 'Vercel & Supabase Monitor', desc: 'When debugging server issues, proactively check Vercel deployment logs and query Supabase for errors.' },
+    { id: 'calendar_meet', name: 'Calendar & Meet Scheduler', desc: 'When needing a meeting, prioritize checking Google Calendar for free slots and include a Google Meet link.' },
+    { id: 'social_media', name: 'Social Media Manager', desc: 'When promoting a school event, draft a short Instagram caption with emojis and a longer Facebook post.' },
+    { id: 'slack_teams', name: 'Slack & Teams Updater', desc: 'When a critical incident occurs, draft a concise summary ready to be blasted to Staff Slack or Teams.' },
+    { id: 'sanity', name: 'Sanity CMS Publisher', desc: 'When writing a school blog post, format the content to perfectly match our Sanity CMS schema requirements.' },
+    { id: 'github', name: 'GitHub Code Reviewer', desc: 'When looking at codebase issues, suggest fixes that strictly align with our GitHub repository linting rules.' },
+    { id: 'youtube', name: 'YouTube Curriculum Finder', desc: 'When looking for supplemental explanations, automatically search YouTube for high-quality educational videos.' },
   ];
 
   // We can just store preferences in localStorage for now, as it's UI config
