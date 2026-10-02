@@ -34,16 +34,22 @@ export const createTopupOrder = async (req, res) => {
     
     try {
         const { amount_inr } = req.body;
-        const organizationId = req.user.organization_id;
+        let organizationId = req.user.organization_id;
 
-        // TODO: Minimum amount lowered from 100 to 1 for testing purposes. Revert to 100 in production.
         if (!amount_inr || amount_inr < 1 || amount_inr > 10000) {
             return res.status(400).json({ success: false, error: "Amount must be between ₹1 and ₹10,000" });
         }
 
-        const organization = await Organization.findById(organizationId)
-            .select("name billing_settings")
-            .lean();
+        // Fallback for Super Admins who don't have an organization_id attached directly
+        let organization = null;
+        if (organizationId) {
+            organization = await Organization.findById(organizationId).select("name billing_settings").lean();
+        } else if (req.user.role === "super_admin") {
+            organization = await Organization.findOne({ name: /Classgrid/i, status: "active" }).sort({ createdAt: 1 }).select("name billing_settings").lean();
+            if (organization) {
+                organizationId = organization._id;
+            }
+        }
             
         if (!organization) {
             return res.status(404).json({ success: false, error: "Organization not found" });
