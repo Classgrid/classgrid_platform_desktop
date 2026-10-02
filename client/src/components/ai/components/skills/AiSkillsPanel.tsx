@@ -56,16 +56,16 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
   const [newSkillInstructions, setNewSkillInstructions] = useState("");
 
   const DEFAULT_SKILLS = [
-    { id: 'socratic', name: 'Socratic Thinker', desc: 'Ask guiding questions to encourage critical thinking instead of direct answers.' },
-    { id: 'steps', name: 'Step-by-Step Solver', desc: 'Break complex solutions down into clearly numbered, logical steps.' },
-    { id: 'truth', name: 'Strict Truthfulness', desc: 'Explicitly state "I don\'t know" instead of guessing if unsure.' },
-    { id: 'action', name: 'Action-Oriented', desc: 'Always conclude with a clear, actionable next step.' },
-    { id: 'brevity', name: 'Strict Brevity', desc: 'Skip all pleasantries and greetings. Deliver only the direct answer.' },
-    { id: 'privacy', name: 'Data Privacy Guard', desc: 'Redact all Personally Identifiable Information (PII) before outputting.' },
-    { id: 'polite', name: 'Polite Corrector', desc: 'Correct user mistakes politely, constructively, and without condescension.' },
-    { id: 'citation', name: 'Source Citation', desc: 'Always explicitly cite the tool, database, or document used.' },
-    { id: 'a11y', name: 'Accessibility First', desc: 'Ensure all provided UI code meets standard accessibility guidelines.' },
-    { id: 'review', name: 'Constructive Reviewer', desc: 'Use the compliment sandwich method when reviewing work.' },
+    { id: 'privacy', name: 'Student Data Privacy Guard', desc: 'Strictly redact all student PII (phone numbers, addresses, grades) before generating reports or exporting data.' },
+    { id: 'ferpa', name: 'FERPA Compliance Checker', desc: 'Scan all drafted communications and data queries for potential FERPA compliance violations.' },
+    { id: 'curriculum', name: 'CBSE/ICSE Aligner', desc: 'Ensure all generated lesson plans, quizzes, and academic content align with standard curriculum guidelines.' },
+    { id: 'finance', name: 'Fee Defaulter Empathy', desc: 'Maintain a highly empathetic and respectful tone when drafting fee reminders for parents.' },
+    { id: 'multilingual', name: 'Bilingual Parent Communicator', desc: 'Always provide a regional language translation when drafting WhatsApp broadcasts for parents.' },
+    { id: 'socratic', name: 'Socratic Tutor Mode', desc: 'Never give students direct answers. Guide them with step-by-step hints to foster critical thinking.' },
+    { id: 'infosec', name: 'Infrastructure Security Auditor', desc: 'Proactively highlight vulnerabilities and security risks when analyzing Vercel logs or database queries.' },
+    { id: 'plagiarism', name: 'Plagiarism & AI Detector', desc: 'Proactively evaluate submitted student text for potential plagiarism or heavy AI-generated patterns.' },
+    { id: 'inclusive', name: 'Inclusive Educator', desc: 'Ensure all generated content uses inclusive language and provides accommodations for neurodivergent students.' },
+    { id: 'sql', name: 'SQL Schema Optimizer', desc: 'When querying Supabase, optimize SQL for performance and suggest indexing for high-scale school data.' },
   ];
 
   // We can just store preferences in localStorage for now, as it's UI config
