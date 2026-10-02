@@ -2,8 +2,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { getSocket } from '@/lib/socketClient';
 
-export const AiUsageBar = () => {
-    const [usageData, setUsageData] = useState<any>({
+export const AiUsageBar = ({ initialData }: { initialData?: any }) => {
+    const [usageData, setUsageData] = useState<any>(initialData || {
         type: 'free',
         used: 0,
         limit: 100000,
@@ -11,9 +11,10 @@ export const AiUsageBar = () => {
         resetDate: null,
         freeData: null
     });
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!initialData);
 
     const fetchUsage = async () => {
+        if (initialData) return;
         try {
             const res = await apiClient.get('/api/ai/my-usage');
             if (res.data) {

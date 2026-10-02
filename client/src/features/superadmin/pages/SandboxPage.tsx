@@ -53,14 +53,14 @@
  */
 
 import React, { useState } from 'react';
-import { GlobalAiConfigPanel } from "../../../../../saved_ai_components/GlobalAiConfigPanel";
-import { AiUsageBar } from "../../../../../saved_ai_components/AiUsageBar";
-import { SetupUsageCredits } from "../../../../../saved_ai_components/SetupUsageCredits";
-import { ResetOrganizationDailyLimit } from "../../../../../saved_ai_components/ResetOrganizationDailyLimit";
-import { BlockOrganizationAiUsage } from "../../../../../saved_ai_components/BlockOrganizationAiUsage";
-import { EditOrganizationDailyLimit } from "../../../../../saved_ai_components/EditOrganizationDailyLimit";
-import { SuperadminFilterBar } from "../../../../../saved_ai_components/SuperadminFilterBar";
-import { GrantCreditsModal } from "../../../../../saved_ai_components/GrantCredits";
+import { GlobalAiConfigPanel } from "@/features/superadmin/components/GlobalAiConfigPanel";
+import { AiUsageBar } from "@/components/ai/components/AiUsageBar";
+import { SetupUsageCredits } from "@/features/superadmin/components/SetupUsageCredits";
+import { ResetOrganizationDailyLimit } from "@/features/superadmin/components/ResetOrganizationDailyLimit";
+import { BlockOrganizationAiUsage } from "@/features/superadmin/components/BlockOrganizationAiUsage";
+import { EditOrganizationDailyLimit } from "@/features/superadmin/components/EditOrganizationDailyLimit";
+import { SuperadminFilterBar } from "@/features/superadmin/components/SuperadminFilterBar";
+import { GrantCreditsModal } from "@/features/superadmin/components/GrantCredits";
 import { Button } from "@/components/marketing_ui/button";
 
 export function SandboxPage() {

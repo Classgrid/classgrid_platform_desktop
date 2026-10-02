@@ -3,32 +3,39 @@ import { Button } from "@/components/marketing_ui/button";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { BlueSlider } from "@/components/marketing_ui/BlueSlider";
 import { toast } from "sonner";
+import { useUpdateOrgAiLimits } from "@/features/superadmin/queries/useAiUsage";
 
-export function EditOrganizationDailyLimit() {
+export interface EditOrganizationDailyLimitProps {
+  orgId: string;
+  orgName: string;
+  currentPoolLimit: number;
+  currentUserWeeklyLimit: number;
+}
+
+export function EditOrganizationDailyLimit({ orgId, orgName, currentPoolLimit, currentUserWeeklyLimit }: EditOrganizationDailyLimitProps) {
   const [open, setOpen] = useState(false);
-  const [organizationName, setOrganizationName] = useState("");
-  const [newLimit, setNewLimit] = useState(500000); // Default to 5 Lakhs
-  const [isPending, setIsPending] = useState(false);
+  const [newLimit, setNewLimit] = useState(currentPoolLimit || 500000);
+  const [userWeeklyLimit, setUserWeeklyLimit] = useState(currentUserWeeklyLimit || 100000);
+  
+  const updateLimitsMutation = useUpdateOrgAiLimits();
 
-  // Mock old limit for demonstration
-  const oldLimit = 500000;
+  const oldLimit = currentPoolLimit || 500000;
   
   // Calculate percentage change
-  const percentageChange = ((newLimit - oldLimit) / oldLimit) * 100;
+  const percentageChange = oldLimit > 0 ? ((newLimit - oldLimit) / oldLimit) * 100 : 0;
   const isIncrease = newLimit > oldLimit;
   const isDecrease = newLimit < oldLimit;
 
-  const allComplete = organizationName.length > 0;
-
   const handleConfirm = () => {
-    setIsPending(true);
-    setTimeout(() => {
-      setIsPending(false);
-      toast.success("Organization daily limit has been updated successfully.");
-      setOpen(false);
-      setOrganizationName("");
-      setNewLimit(500000);
-    }, 1000);
+    updateLimitsMutation.mutate({ 
+      orgId, 
+      data: { pro_pool_limit: newLimit, free_weekly_limit_per_user: userWeeklyLimit } 
+    }, {
+      onSuccess: () => {
+        toast.success(`Limits for ${orgName} updated successfully.`);
+        setOpen(false);
+      }
+    });
   };
 
   const formatNumber = (num: number) => {
@@ -37,21 +44,21 @@ export function EditOrganizationDailyLimit() {
 
   return (
     <>
-      <div className="border border-border rounded-xl overflow-hidden mt-4 shadow-sm">
-        <div className="p-6 bg-card flex flex-col gap-6">
+      <div className="border border-border rounded-xl overflow-hidden mt-2 shadow-sm h-full flex flex-col">
+        <div className="p-6 bg-card flex flex-col gap-6 flex-1">
           <div className="flex flex-col gap-1.5">
             <h3 className="text-lg font-semibold text-foreground tracking-tight">
-              Edit Organization Daily Limit
+              Manage Organization Limits
             </h3>
             <p className="text-sm text-muted-foreground">
-              Visually increase or decrease the AI token limits for a specific organization using the slider.
+              Visually increase or decrease the AI token limits for {orgName}.
             </p>
           </div>
         </div>
 
-        <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end">
-          <Button variant="default" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setOpen(true)}>
-            Edit Limit
+        <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end mt-auto">
+          <Button variant="outline" onClick={() => setOpen(true)}>
+            Edit Limits
           </Button>
         </div>
       </div>
@@ -59,31 +66,18 @@ export function EditOrganizationDailyLimit() {
       <DangerConfirmDialog
         open={open}
         onOpenChange={setOpen}
-        title="Edit Organization Daily Limit"
-        description="Adjust the daily AI token limit. This takes effect immediately."
+        title={`Edit Limits: ${orgName}`}
+        description="Adjust the AI token limits. This takes effect immediately."
         warningMessage="Large increases could impact your overall billing."
-        actionLabel="Save New Limit"
+        actionLabel="Save Limits"
         cancelLabel="Cancel"
-        isLoading={isPending}
+        isLoading={updateLimitsMutation.isPending}
         onConfirm={handleConfirm}
         variant="warning"
-        isConfirmDisabled={!allComplete}
       >
         <div className="flex flex-col gap-6 pt-4">
-          <div className="flex flex-col gap-2.5">
-            <label className="text-sm text-foreground/80 font-medium">Organization Name</label>
-            <input
-              type="text"
-              value={organizationName}
-              onChange={(e) => setOrganizationName(e.target.value)}
-              placeholder="e.g. Classgrid Demo School"
-              className="h-10 w-full rounded-md border bg-background dark:bg-black px-3 text-sm text-foreground outline-none transition-all duration-200 focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 border-input"
-              disabled={isPending}
-              autoFocus
-            />
-          </div>
-
           <div className="flex flex-col gap-4 p-4 border border-border/50 rounded-lg bg-muted/30">
+            <h4 className="text-sm font-semibold text-foreground">Monthly Pro Pool (Organization Wide)</h4>
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Old Limit</span>
               <span className="font-semibold">{formatNumber(oldLimit)} tokens</span>
@@ -103,7 +97,7 @@ export function EditOrganizationDailyLimit() {
                 step={5000}
                 value={newLimit}
                 onValueChange={setNewLimit}
-                disabled={isPending}
+                disabled={updateLimitsMutation.isPending}
               />
               <div className="flex justify-between text-xs text-muted-foreground mt-1">
                 <span>5K</span>
@@ -119,12 +113,24 @@ export function EditOrganizationDailyLimit() {
                 </span>
               </div>
             )}
-            {percentageChange === 0 && (
-              <div className="mt-2 text-sm font-medium flex items-center justify-between p-2 rounded-md bg-muted text-muted-foreground">
-                <span>Difference:</span>
-                <span>0% (Unchanged)</span>
+          </div>
+
+          <div className="flex flex-col gap-4 p-4 border border-border/50 rounded-lg bg-muted/30">
+             <h4 className="text-sm font-semibold text-foreground">Free 7-Day Limit (Per User)</h4>
+             <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium">Weekly Limit</span>
+                <span className="font-bold text-lg text-blue-600 dark:text-blue-400">
+                  {formatNumber(userWeeklyLimit)} tokens
+                </span>
               </div>
-            )}
+              <BlueSlider
+                min={10000}
+                max={5000000} 
+                step={10000}
+                value={userWeeklyLimit}
+                onValueChange={setUserWeeklyLimit}
+                disabled={updateLimitsMutation.isPending}
+              />
           </div>
         </div>
       </DangerConfirmDialog>
