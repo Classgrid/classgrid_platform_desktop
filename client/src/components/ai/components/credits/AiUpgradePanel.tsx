@@ -5,6 +5,7 @@ import { formatNumber } from "@/lib/utils";
 import { Zap, ArrowUpCircle, Wallet, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { Button } from "@/components/marketing_ui/button";
+import { BlueSlider } from "@/components/marketing_ui/BlueSlider";
 import { toast } from "sonner";
 
 export function AiUpgradePanel() {
@@ -94,14 +95,12 @@ export function AiUpgradePanel() {
                 </label>
                 <div className="flex items-center gap-6">
                   <div className="flex-1 px-1">
-                    <input
-                      type="range"
+                    <BlueSlider
                       min={1}
                       max={10000}
                       step={100}
                       value={customAmount}
-                      onChange={(e) => setCustomAmountStr(e.target.value)}
-                      className="w-full h-2 bg-indigo-500/20 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/50"
+                      onValueChange={(val: number) => setCustomAmountStr(String(val))}
                     />
                     <div className="flex justify-between text-xs text-muted-foreground mt-2 font-medium">
                       <span>₹1</span>
