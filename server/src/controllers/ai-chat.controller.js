@@ -3118,6 +3118,12 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                             completionTokens: outputTokens || 0,
                             totalTokens: estimatedTokens,
                             success: true
+                        }).then(async () => {
+                            try {
+                                const { getIO } = await import('../services/socket.service.js');
+                                const io = getIO();
+                                if (io) io.to("superadmin:ai_usage").emit("ai_usage_updated");
+                            } catch(e) {}
                         }).catch(err => console.error("AiUsageLog Error:", err));
                     }
                 }

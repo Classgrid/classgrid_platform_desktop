@@ -47,6 +47,7 @@ import OpenAI from 'openai';
 import accessLogger from '../config/logger.js';
 import { asyncContext } from '../utils/async-context.js';
 import AiUsageLog from '../models/AiUsageLog.js';
+import { getIO } from './socket.service.js';
 
 const groq = new Groq({ apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN, baseURL: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1` });
 
@@ -394,6 +395,11 @@ export async function getChatReply(message, modelArg = 'groq', mode = 'chat', cl
             completionTokens: outputTokens,
             totalTokens: inputTokens + outputTokens,
             success: true
+        }).then(() => {
+            try {
+                const io = getIO();
+                if (io) io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            } catch(e) {}
         }).catch(err => console.error("AiUsageLog Error:", err));
     }
 
@@ -513,6 +519,11 @@ export async function getVisionReply(message, base64Image, mimeType) {
             completionTokens: outputTokens,
             totalTokens: inputTokens + outputTokens,
             success: true
+        }).then(() => {
+            try {
+                const io = getIO();
+                if (io) io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            } catch(e) {}
         }).catch(err => console.error("AiUsageLog Error:", err));
     }
 

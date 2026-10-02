@@ -199,6 +199,15 @@ export const initSocket = (server) => {
             socket.leave("superadmin:storage");
         });
 
+        // --- Superadmin AI Usage Dashboard Realtime Updates ---
+        socket.on("join_ai_usage_dashboard", () => {
+            socket.join("superadmin:ai_usage");
+        });
+
+        socket.on("leave_ai_usage_dashboard", () => {
+            socket.leave("superadmin:ai_usage");
+        });
+
         socket.on("leave_classroom", (classroomId) => {
             const roomName = `${orgId}:${classroomId}`;
             socket.leave(roomName);
