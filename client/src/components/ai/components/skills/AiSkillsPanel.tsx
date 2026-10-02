@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Plus, Trash2, Edit2, Zap, Save, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Edit2, Zap, Save, ChevronDown, Pencil, Loader2 } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { Textarea } from "@/components/marketing_ui/textarea";
 import { Switch } from "@/components/marketing_ui/switch";
 import { toast } from "sonner";
+import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
+
 
 const CustomSelect = ({ value, onChange, options }: { value: string, onChange: (val: string) => void, options: { value: string, label: string }[] }) => {
   const [open, setOpen] = useState(false);
@@ -55,6 +57,13 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
   const [newSkillName, setNewSkillName] = useState("");
   const [newSkillInstructions, setNewSkillInstructions] = useState("");
 
+  const [deleteSkillId, setDeleteSkillId] = useState<string | null>(null);
+  const [isDeletingSkill, setIsDeletingSkill] = useState(false);
+  
+  const [editSkillId, setEditSkillId] = useState<string | null>(null);
+  const [editSkillName, setEditSkillName] = useState("");
+  const [editSkillInstructions, setEditSkillInstructions] = useState("");
+  const [isEditingSkill, setIsEditingSkill] = useState(false);
   const DEFAULT_SKILLS = [
     { id: 'dual_notify', name: 'Dual Notifications', desc: 'Should the AI send email and WhatsApp notifications at the same time?' },
     { id: 'auto_meet', name: 'Auto-Meet Links', desc: 'Should the AI automatically create a Google Meet link for every meeting?' },
@@ -169,7 +178,8 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
     }
   };
 
-  const deleteSkill = async (id: string) => {
+  const handleDeleteSkill = async (id: string) => {
+    setIsDeletingSkill(true);
     try {
       const res = await fetch(`${backendUrl}/api/ai/skills/${id}`, {
         method: 'DELETE',
@@ -177,10 +187,39 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
       });
       if (res.ok) {
         toast.success("Skill deleted");
+        setDeleteSkillId(null);
         fetchSkills();
+      } else {
+        toast.error("Failed to delete skill");
       }
     } catch (e) {
       toast.error("Failed to delete skill");
+    } finally {
+      setIsDeletingSkill(false);
+    }
+  };
+
+  const updateSkill = async () => {
+    if (!editSkillId || !editSkillName.trim() || !editSkillInstructions.trim()) return;
+    setIsEditingSkill(true);
+    try {
+      const res = await fetch(`${backendUrl}/api/ai/skills/${editSkillId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: editSkillName, instructions: editSkillInstructions })
+      });
+      if (res.ok) {
+        toast.success("Skill updated successfully!");
+        setEditSkillId(null);
+        fetchSkills();
+      } else {
+        toast.error("Failed to update skill");
+      }
+    } catch (e) {
+      toast.error("Failed to update skill");
+    } finally {
+      setIsEditingSkill(false);
     }
   };
 
@@ -397,20 +436,59 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
             <div className="flex flex-col divide-y divide-border/50">
               {skills.map(skill => (
                 <div key={skill._id} className="group flex items-start justify-between py-4">
-                  <div className="space-y-1">
-                    <h5 className="text-sm font-medium flex items-center gap-2">
-                      {skill.name}
-                    </h5>
-                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{skill.instructions}</p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all"
-                    onClick={() => deleteSkill(skill._id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {editSkillId === skill._id ? (
+                    <div className="w-full space-y-3">
+                      <Input 
+                        value={editSkillName}
+                        onChange={(e) => setEditSkillName(e.target.value)}
+                        placeholder="Skill Name"
+                      />
+                      <Textarea 
+                        value={editSkillInstructions}
+                        onChange={(e) => setEditSkillInstructions(e.target.value)}
+                        rows={3}
+                        className="resize-none"
+                        placeholder="Skill Instructions"
+                      />
+                      <div className="flex items-center justify-end gap-2 pt-2">
+                        <Button variant="ghost" size="sm" onClick={() => setEditSkillId(null)}>Cancel</Button>
+                        <Button size="sm" onClick={updateSkill} disabled={isEditingSkill}>
+                          {isEditingSkill ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-1 pr-4 w-full">
+                        <h5 className="text-sm font-medium flex items-center gap-2">
+                          {skill.name}
+                        </h5>
+                        <p className="text-xs text-muted-foreground whitespace-pre-wrap">{skill.instructions}</p>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            setEditSkillId(skill._id);
+                            setEditSkillName(skill.name);
+                            setEditSkillInstructions(skill.instructions);
+                          }}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                          onClick={() => setDeleteSkillId(skill._id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
               {loading && <p className="text-sm text-muted-foreground py-4">Loading skills...</p>}
@@ -418,6 +496,16 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
           </section>
         )}
       </div>
+      <DangerConfirmDialog
+        open={deleteSkillId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteSkillId(null); }}
+        title="Delete custom skill"
+        description="This will permanently delete this custom skill. This action cannot be undone."
+        warningMessage="This skill will be permanently deleted."
+        actionLabel="Delete skill"
+        isLoading={isDeletingSkill}
+        onConfirm={() => { if (deleteSkillId) handleDeleteSkill(deleteSkillId); }}
+      />
     </div>
   );
 }
