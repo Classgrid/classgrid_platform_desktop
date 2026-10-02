@@ -36,7 +36,7 @@ const CustomSelect = ({ value, onChange, options }: { value: string, onChange: (
           {options.map(opt => (
             <div 
               key={opt.value}
-              onClick={() => { onChange(opt.value); setOpen(false); }}
+              onClick={() => { onChange(opt.value); toast.success("Preferences saved"); setOpen(false); }}
               className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors ${opt.value === value ? 'bg-muted/50 font-medium text-foreground' : 'text-muted-foreground'}`}
             >
               {opt.label}
@@ -86,10 +86,9 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
     };
   });
 
-  const savePreferences = () => {
+  useEffect(() => {
     localStorage.setItem('classgrid_ai_prefs', JSON.stringify(prefs));
-    toast.success("Preferences saved successfully!");
-  };
+  }, [prefs]);
 
   const toggleDefaultSkill = (id: string) => {
     setPrefs((prev: any) => ({
@@ -98,6 +97,7 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
         ? prev.activeDefaults.filter((s: string) => s !== id)
         : [...prev.activeDefaults, id]
     }));
+    toast.success("Preferences saved");
   };
 
   const fetchSkills = async () => {
@@ -260,6 +260,7 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
                 placeholder="What should AI call you?" 
                 value={prefs.nickname} 
                 onChange={(e) => setPrefs({...prefs, nickname: e.target.value})} 
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { toast.success("Preferences saved"); e.currentTarget.blur(); } }}
               />
             </div>
             <div className="space-y-1.5">
@@ -268,6 +269,7 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
                 placeholder="What is your role?" 
                 value={prefs.occupation} 
                 onChange={(e) => setPrefs({...prefs, occupation: e.target.value})} 
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { toast.success("Preferences saved"); e.currentTarget.blur(); } }}
               />
             </div>
           </div>
@@ -281,6 +283,7 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
               placeholder="Tell us your goals, what you are working on, or any background context..."
               value={prefs.aboutMe}
               onChange={(e) => setPrefs({...prefs, aboutMe: e.target.value})}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { toast.success("Preferences saved"); e.currentTarget.blur(); } }}
             />
           </div>
 
@@ -292,6 +295,7 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
               placeholder="Add any specific formatting rules, topics to avoid, or custom instructions..."
               value={prefs.howToRespond}
               onChange={(e) => setPrefs({...prefs, howToRespond: e.target.value})}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { toast.success("Preferences saved"); e.currentTarget.blur(); } }}
             />
           </div>
         </section>
@@ -349,7 +353,12 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
                 />
                 <div className="flex items-center justify-end gap-2 pt-2">
                   <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>Cancel</Button>
-                  <Button size="sm" onClick={createSkill}>Save Skill</Button>
+                  <button 
+                    className="relative h-10 rounded-lg border-border bg-accent px-4 md:px-6 text-sm font-medium tracking-tight text-foreground/90 transition-all duration-200 hover:bg-slate-200 dark:hover:bg-accent/80 hover:border-border hover:text-foreground cursor-pointer" 
+                    onClick={createSkill}
+                  >
+                    Save Skill
+                  </button>
                 </div>
               </div>
             </div>
@@ -383,13 +392,6 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
             </div>
           </section>
         )}
-        {/* SAVE BUTTON */}
-        <div className="pt-6 border-t border-border mt-4 flex justify-end">
-          <Button onClick={savePreferences} className="gap-2 px-6">
-            <Save className="w-4 h-4" />
-            Save Preferences
-          </Button>
-        </div>
       </div>
     </div>
   );
