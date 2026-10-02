@@ -53,84 +53,145 @@
  */
 
 import React, { useState } from 'react';
-import { GlobalAiConfigPanel } from "@/features/superadmin/components/GlobalAiConfigPanel";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+import { Search, Calendar as CalendarIcon, ChevronDown, MoreHorizontal } from "lucide-react";
+import { EditOrganizationDailyLimit } from "../components/EditOrganizationDailyLimit";
+import { ResetOrganizationDailyLimit } from "../components/ResetOrganizationDailyLimit";
+import { GlobalAiConfigPanel } from "../components/GlobalAiConfigPanel";
 import { AiUsageBar } from "@/components/ai/components/AiUsageBar";
-import { SetupUsageCredits } from "@/features/superadmin/components/SetupUsageCredits";
-import { ResetOrganizationDailyLimit } from "@/features/superadmin/components/ResetOrganizationDailyLimit";
-import { BlockOrganizationAiUsage } from "@/features/superadmin/components/BlockOrganizationAiUsage";
-import { EditOrganizationDailyLimit } from "@/features/superadmin/components/EditOrganizationDailyLimit";
-import { SuperadminFilterBar } from "@/features/superadmin/components/SuperadminFilterBar";
-import { GrantCreditsModal } from "@/features/superadmin/components/GrantCredits";
+import { SetupUsageCredits } from "../components/SetupUsageCredits";
+import { BlockOrganizationAiUsage } from "../components/BlockOrganizationAiUsage";
+import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
+import { GrantCreditsModal } from "../components/GrantCredits";
 import { Button } from "@/components/marketing_ui/button";
+
+// If UI table isn't found, fallback to simple HTML table styled with Tailwind
+const dummyData = [
+  { id: "T-1001", name: "Rahul Sharma", email: "rahul@example.com", orgType: "College", status: "Open", date: "Jul 25, 2026" },
+  { id: "T-1002", name: "Priya Patel", email: "priya@example.com", orgType: "School", status: "Resolved", date: "Jul 24, 2026" },
+  { id: "T-1003", name: "Amit Kumar", email: "amit@example.com", orgType: "Coaching", status: "In Progress", date: "Jul 23, 2026" },
+  { id: "T-1004", name: "Neha Singh", email: "neha@example.com", orgType: "School", status: "Closed", date: "Jul 22, 2026" },
+  { id: "T-1005", name: "Vikram Reddy", email: "vikram@example.com", orgType: "College", status: "Open", date: "Jul 21, 2026" },
+];
 
 export function SandboxPage() {
   const [showGrantModal, setShowGrantModal] = useState(false);
 
   return (
-    <div className="min-h-screen w-full bg-background p-8 space-y-12">
-      <div className="max-w-4xl mx-auto space-y-12 pb-24">
+    <div className="min-h-screen w-full">
+      <div className="px-6 pt-6 pb-2 max-w-3xl flex flex-col gap-6">
+        <div className="p-4 border rounded-lg bg-card"><GlobalAiConfigPanel /></div>
+        <div className="p-4 border rounded-lg bg-card"><AiUsageBar initialData={{type: 'pro', used: 250, limit: 1000, remaining: 750, freeData: {used: 50, limit: 100, remaining: 50}}} /></div>
+        <div className="p-4 border rounded-lg bg-card"><SetupUsageCredits orgId="dummy" orgName="Dummy Org" currentPoolLimit={100} currentUserWeeklyLimit={50} /></div>
+        <div className="p-4 border rounded-lg bg-card"><ResetOrganizationDailyLimit orgId="dummy" orgName="Dummy Org" /></div>
+        <div className="p-4 border rounded-lg bg-card"><EditOrganizationDailyLimit orgId="dummy" orgName="Dummy Org" currentPoolLimit={100} currentUserWeeklyLimit={50} /></div>
+        <div className="p-4 border rounded-lg bg-card"><BlockOrganizationAiUsage orgId="dummy" orgName="Dummy Org" isBlocked={false} /></div>
+        <div className="p-4 border rounded-lg bg-card"><SuperadminFilterBar /></div>
+        <div className="p-4 border rounded-lg bg-card">
+          <Button onClick={() => setShowGrantModal(true)}>Open Grant Credits Modal</Button>
+          <GrantCreditsModal isOpen={showGrantModal} onClose={() => setShowGrantModal(false)} users={[]} />
+        </div>
+      </div>
+      
+      {/* ═══ VERCEL EXACT DUMMY FILTER BAR ═══ */}
+      <div className="flex flex-nowrap items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide w-full max-w-full text-sm px-6 pt-6">
         
-        <div>
-          <h2 className="text-2xl font-bold mb-4">Superadmin Filter Bar</h2>
-          <SuperadminFilterBar />
-        </div>
-
-        <div>
-          <h2 className="text-2xl font-bold mb-4">Global AI Config Panel</h2>
-          <GlobalAiConfigPanel />
-        </div>
-
-        <div>
-          <h2 className="text-2xl font-bold mb-4">AI Usage Bar</h2>
-          <AiUsageBar 
-             initialData={{
-                type: 'pro',
-                used: 25000,
-                limit: 100000,
-                remaining: 75000,
-                freeData: {
-                   used: 5000,
-                   limit: 10000,
-                   remaining: 5000
-                }
-             }} 
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h2 className="text-xl font-bold mb-4">Setup Usage Credits</h2>
-            <SetupUsageCredits orgId="dummy-org" orgName="Dummy Org" currentPoolLimit={100000} currentUserWeeklyLimit={5000} />
+        {/* All Branches */}
+        <button className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors">
+          <div className="flex items-center text-muted-foreground">
+            <Search size={14} className="mr-2" />
+            <span className="truncate">All Branc...</span>
           </div>
-          
-          <div className="flex flex-col gap-6">
-            <div>
-              <h2 className="text-xl font-bold mb-4">Reset Organization Daily Limit</h2>
-              <ResetOrganizationDailyLimit orgId="dummy-org" orgName="Dummy Org" />
-            </div>
+          <ChevronDown size={14} className="text-muted-foreground ml-2 shrink-0" />
+        </button>
 
-            <div>
-              <h2 className="text-xl font-bold mb-4">Edit Organization Daily Limit</h2>
-              <EditOrganizationDailyLimit orgId="dummy-org" orgName="Dummy Org" currentPoolLimit={100000} currentUserWeeklyLimit={5000} />
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold mb-4">Block Organization AI Usage</h2>
-              <BlockOrganizationAiUsage orgId="dummy-org" orgName="Dummy Org" isBlocked={false} />
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold mb-4">Grant Credits Modal</h2>
-              <Button onClick={() => setShowGrantModal(true)}>Open Grant Credits Modal</Button>
-              <GrantCreditsModal 
-                isOpen={showGrantModal} 
-                onClose={() => setShowGrantModal(false)} 
-                users={[{ id: "1", name: "User 1", email: "user1@test.com", role: "Student" }]}
-              />
-            </div>
+        {/* All Authors */}
+        <button className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors">
+          <div className="flex items-center text-muted-foreground">
+            <Search size={14} className="mr-2" />
+            <span className="truncate">All Autho...</span>
           </div>
-        </div>
+          <ChevronDown size={14} className="text-muted-foreground ml-2 shrink-0" />
+        </button>
 
+        {/* All Environments */}
+        <button className="flex h-9 min-w-[150px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-foreground">
+          <span className="truncate">All Environments</span>
+          <ChevronDown size={14} className="text-muted-foreground ml-2 shrink-0" />
+        </button>
+
+        {/* Select Date Range */}
+        <button className="flex h-9 min-w-[200px] flex-[2] items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-muted-foreground">
+          <CalendarIcon size={14} className="mr-2 shrink-0" />
+          <span className="truncate">Select Date Range</span>
+        </button>
+
+        {/* Status */}
+        <button className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors">
+          <div className="flex items-center">
+            {/* Colored dots */}
+            <div className="flex -space-x-1.5 mr-2">
+              <div className="w-3 h-3 rounded-full bg-emerald-500 border border-background z-30" />
+              <div className="w-3 h-3 rounded-full bg-red-500 border border-background z-20" />
+              <div className="w-3 h-3 rounded-full bg-amber-500 border border-background z-10" />
+              <div className="w-3 h-3 rounded-full bg-slate-200 border border-background z-0" />
+            </div>
+            <span className="text-foreground">Status</span>
+            <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-foreground">6/7</span>
+          </div>
+          <ChevronDown size={14} className="text-muted-foreground ml-2 shrink-0" />
+        </button>
+
+        {/* More Options */}
+        <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-transparent shadow-sm hover:bg-accent/50 transition-colors">
+          <MoreHorizontal size={14} className="text-foreground" />
+        </button>
+
+      </div>
+
+      <div className="overflow-hidden bg-card border-t border-border">
+        <table className="w-full text-sm text-left">
+          <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
+            <tr>
+              <th className="px-6 py-4 font-medium">Ticket ID</th>
+              <th className="px-6 py-4 font-medium">Name</th>
+              <th className="px-6 py-4 font-medium">Email</th>
+              <th className="px-6 py-4 font-medium">Org Type</th>
+              <th className="px-6 py-4 font-medium">Status</th>
+              <th className="px-6 py-4 font-medium text-right">Date</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {/* Generate more rows to make the table big size */}
+            {[...dummyData, ...dummyData, ...dummyData].map((row, index) => (
+              <tr key={`${row.id}-${index}`} className="hover:bg-muted/30 transition-colors">
+                <td className="px-6 py-4 font-medium text-foreground">{row.id}</td>
+                <td className="px-6 py-4 text-foreground">{row.name}</td>
+                <td className="px-6 py-4 text-muted-foreground">{row.email}</td>
+                <td className="px-6 py-4 text-muted-foreground">{row.orgType}</td>
+                <td className="px-6 py-4">
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    row.status === 'Open' ? 'bg-blue-500/10 text-blue-500' :
+                    row.status === 'Resolved' ? 'bg-emerald-500/10 text-emerald-500' :
+                    row.status === 'In Progress' ? 'bg-amber-500/10 text-amber-500' :
+                    'bg-slate-500/10 text-slate-500'
+                  }`}>
+                    {row.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right text-muted-foreground">{row.date}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
