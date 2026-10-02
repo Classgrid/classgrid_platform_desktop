@@ -83,33 +83,15 @@ export function AiUpgradePanel() {
             </div>
 
             {/* Top-up Form */}
-            <div className="max-w-xl">
+            <div>
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <ArrowUpCircle className="w-5 h-5 text-amber-500" />
-                Select or Enter Top-Up Amount
+                Custom Top-Up Amount
               </h3>
               
               <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-6">
-                
-                {/* Preset Options */}
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                  {[500, 1000, 5000].map(amount => (
-                    <button
-                      key={amount}
-                      onClick={() => setCustomAmountStr(amount.toString())}
-                      className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all ${
-                        customAmountStr === amount.toString()
-                          ? "border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-                          : "border-border hover:border-indigo-300 dark:hover:border-indigo-700 bg-muted/30"
-                      }`}
-                    >
-                      ₹{formatNumber(amount)}
-                    </button>
-                  ))}
-                </div>
-
                 <label className="block text-sm font-medium text-foreground mb-3">
-                  Custom Amount (₹1 - ₹10,000)
+                  Enter Amount (₹1 - ₹10,000)
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-lg z-10">₹</span>
@@ -119,14 +101,14 @@ export function AiUpgradePanel() {
                     max={10000}
                     value={customAmountStr}
                     onChange={(e) => setCustomAmountStr(e.target.value)}
-                    className="w-full h-14 pl-10 pr-4 text-xl font-bold rounded-lg border-2 focus-visible:border-indigo-500 focus-visible:ring-indigo-500/20"
+                    className="w-full h-14 pl-9 pr-4 text-xl font-bold rounded-lg"
                   />
                 </div>
                 
-                <div className="mt-6 p-4 bg-muted/50 border border-border rounded-lg flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground font-medium">You will receive:</span>
-                  <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
-                    <Zap className="w-5 h-5" />
+                <div className="mt-6 p-4 bg-muted border border-border rounded-lg flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">You will receive:</span>
+                  <span className="text-lg font-bold text-foreground flex items-center gap-1.5">
+                    <Wallet className="w-5 h-5 text-muted-foreground" />
                     {formatNumber(expectedTokens)} Credits
                   </span>
                 </div>
@@ -137,13 +119,14 @@ export function AiUpgradePanel() {
                 )}
               </div>
 
-              <div className="flex justify-start">
+              <div className="flex justify-end pt-4 mt-2">
                 <Button 
+                  variant="ghost"
                   onClick={handleTopUp} 
                   disabled={!isValidAmount || topUpMutation.isPending}
-                  className="px-8 py-6 text-base font-semibold shadow-md bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all"
+                  className="w-full text-muted-foreground hover:text-foreground"
                 >
-                  {topUpMutation.isPending ? "Processing..." : "Purchase AI Credits"}
+                  {topUpMutation.isPending ? "Processing..." : "Purchase Credits"}
                 </Button>
               </div>
             </div>
