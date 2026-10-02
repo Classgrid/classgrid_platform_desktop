@@ -3708,7 +3708,7 @@ export const submitAiFeedback = async (req, res) => {
         if (process.env.SLACK_WEBHOOK_URL) {
             const axios = (await import("axios")).default;
 
-            const emoji = type === "positive" ? "ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ‚Â" : type === "negative" ? "ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ…Â½" : "ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â¬";
+            const emoji = type === "positive" ? "👍" : type === "negative" ? "👎" : "💬";
             const color = type === "positive" ? "#36a64f" : type === "negative" ? "#e01e5a" : "#439fe0";
 
             const blocks = [
