@@ -207,7 +207,7 @@ export function LibraryPage() {
   return (
     <div className="flex flex-col h-full bg-background text-foreground overflow-y-auto">
       {/* Header */}
-      <div className="px-6 py-8 border-b border-border/50 sticky top-0 bg-background/95 backdrop-blur z-40">
+      <div className="px-6 pt-2 pb-6 border-b border-border/50 sticky top-0 bg-background/95 backdrop-blur z-40">
         <div className="max-w-6xl mx-auto w-full">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
