@@ -97,8 +97,12 @@ const PRIMARY_SUPER_ADMIN_EMAIL = (process.env.SUPER_ADMIN_EMAIL || "support@cla
 // All routes require super_admin role
 router.use(isAuthenticated, requireRole("super_admin"));
 
+import { getGlobalAiConfig, updateGlobalAiConfig } from "../controllers/super-admin/ai-global-config.controller.js";
+
 router.use("/notifications-sys", notificationRoutes);
 router.use("/ai-usage", aiUsageRoutes);
+router.get("/ai-global-config", getGlobalAiConfig);
+router.put("/ai-global-config", updateGlobalAiConfig);
 
 // Canonical contract. Authentication, billing permission, and validation apply
 // to both canonical routes and the temporary backward-compatible aliases.

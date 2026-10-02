@@ -5,6 +5,31 @@ import AiUsageLog from "../../models/AiUsageLog.js";
 import { primarySupabaseClient as supabase } from "../../config/supabaseClient.js";
 import mongoose from "mongoose";
 
+// In-memory cache for the dynamic exchange rate (updates every 12 hours)
+let cachedUsdToInr = 96.32;
+let lastExchangeFetchTime = 0;
+
+async function getLiveUsdToInrRate() {
+    const now = Date.now();
+    // Use cached rate if it was fetched within the last 12 hours
+    if (now - lastExchangeFetchTime < 12 * 60 * 60 * 1000) {
+        return cachedUsdToInr;
+    }
+    try {
+        // Free API to get live exchange rates (no API key required)
+        const res = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+        const data = await res.json();
+        if (data && data.rates && data.rates.INR) {
+            cachedUsdToInr = data.rates.INR;
+            lastExchangeFetchTime = now;
+            console.log(`[AI Usage] Updated live USD to INR rate: ₹${cachedUsdToInr}`);
+        }
+    } catch (error) {
+        console.error("[AI Usage] Failed to fetch live exchange rate, using cached/fallback rate.", error);
+    }
+    return cachedUsdToInr;
+}
+
 // PHASE 6: Super Admin Global AI Usage Controller
 
 export const getGlobalStats = async (req, res) => {
@@ -160,8 +185,8 @@ export const getGlobalStats = async (req, res) => {
             // Fallback: use the cheapest text model rates if model is unrecognised
             "default": { prompt: 0.027, completion: 0.201 }
         };
-        // USD to INR exchange rate (update periodically or fetch dynamically if needed)
-        const USD_TO_INR = 84;
+        // USD to INR exchange rate fetched dynamically from a live API
+        const USD_TO_INR = await getLiveUsdToInrRate();
 
         const dailyUsageByModel = await AiUsageLog.aggregate([
             { $match: logMatch },

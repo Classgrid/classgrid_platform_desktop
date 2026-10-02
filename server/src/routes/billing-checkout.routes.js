@@ -52,8 +52,8 @@ import { detectFraud, parseUserAgent } from "../services/fraud.service.js";
 import razorpayService from "../services/razorpay.service.js";
 import { finalizeCapturedPayment } from "../services/billing-payment-finalization.service.js";
 import { sendEmail, sendTemplateEmail } from "../services/aws-ses.service.js";
-import { baseTemplate } from "../services/email-templates.service.js";
-import { generateInvoicePdfBuffer } from "../services/pdf-invoice.service.js";
+import { baseTemplate, getAiCreditUserReceiptHtml, getAiCreditAdminNotificationHtml } from "../services/email-templates.service.js";
+import { generateInvoicePdfBuffer, generateAiReceiptPdfBuffer } from "../services/pdf-invoice.service.js";
 import { generalLimiter } from "../middleware/rateLimiter.js";
 import {
     formatPaise,
@@ -240,14 +240,9 @@ router.post("/confirm", async (req, res) => {
         const amountFormatted = formatPaise(handoff.amountPaise, handoff.currency);
         const paidAt = new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
 
-        // Atomically increment the training transaction counter in MongoDB
-        const counter = await PaymentCounter.findOneAndUpdate(
-            { key: "demo_training_count" },
-            { $inc: { count: 1 }, $set: { lastUpdatedAt: new Date() } },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-        const txNumber = counter.count;
-        const txTarget = counter.target || 500;
+        // Remove PaymentCounter ML stuff
+        const txNumber = 1;
+        const txTarget = 500;
 
         // Lookup payer's IP for Attempt Details in admin email
         const payerIp = req.ip || "Unknown";
@@ -263,74 +258,62 @@ router.post("/confirm", async (req, res) => {
 
         let attachments = [];
         try {
-            const invoice = await SaasInvoice.findById(handoff.referenceId).lean();
-            if (invoice) {
-                const pdfBuffer = await generateInvoicePdfBuffer(invoice, organization);
-
+            if (handoff.payment_type === "AI_TOPUP") {
+                const creditsAdded = (handoff.amountPaise / 100) * 5000;
+                const pdfBuffer = await generateAiReceiptPdfBuffer({
+                    amountFormatted,
+                    creditsAdded,
+                    paymentId: providerPayment.id,
+                    paidAt: paidAt + " IST",
+                    payerName,
+                    payerEmail: handoff.email
+                });
+                
                 attachments.push({
-                    filename: `Classgrid_Invoice_${invoice.invoiceNumber}.pdf`,
+                    filename: `Classgrid_AI_Receipt_${providerPayment.id}.pdf`,
                     content: pdfBuffer,
                     contentType: "application/pdf"
                 });
-                console.log(`[Billing Checkout] ✅ PDF receipt generated: ${invoice.invoiceNumber} (${pdfBuffer.length} bytes)`);
+                console.log(`[Billing Checkout] ✅ AI PDF receipt generated: ${providerPayment.id} (${pdfBuffer.length} bytes)`);
             } else {
-                console.warn("[Billing Checkout] No invoice found for referenceId:", handoff.referenceId);
+                const invoice = await SaasInvoice.findById(handoff.referenceId).lean();
+                if (invoice) {
+                    const pdfBuffer = await generateInvoicePdfBuffer(invoice, organization);
+
+                    attachments.push({
+                        filename: `Classgrid_Invoice_${invoice.invoiceNumber}.pdf`,
+                        content: pdfBuffer,
+                        contentType: "application/pdf"
+                    });
+                    console.log(`[Billing Checkout] ✅ PDF receipt generated: ${invoice.invoiceNumber} (${pdfBuffer.length} bytes)`);
+                } else {
+                    console.warn("[Billing Checkout] No invoice found for referenceId:", handoff.referenceId);
+                }
             }
         } catch (err) {
             console.error("[Billing Checkout] Failed to generate PDF for email attachment:", err.message, err.stack);
         }
 
-        // Send a direct confirmation email (no template dependency)
         const emailTitle = `Payment Successful — ${amountFormatted} | Classgrid`;
-        const adminEmailTitle = `✅ Transaction #${txNumber} of ${txTarget} — ${amountFormatted} | Classgrid`;
-        const emailBody = `
-            <p>Hello ${payerName},</p>
-            <p>Your payment to <strong>${orgName}</strong> was completed successfully through Classgrid.</p>
-            <table style="border-collapse:collapse;width:100%;max-width:420px;margin:16px 0;">
-              <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Amount Paid</td><td style="padding:6px 12px;color:#059669;font-weight:700;">${amountFormatted}</td></tr>
-              <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Payment ID</td><td style="padding:6px 12px;font-family:monospace;">${providerPayment.id}</td></tr>
-              <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Payment Method</td><td style="padding:6px 12px;">${providerPayment.method || "Razorpay"}</td></tr>
-              <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Paid At</td><td style="padding:6px 12px;">${paidAt} IST</td></tr>
-              <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Organization</td><td style="padding:6px 12px;">${orgName}</td></tr>
-            </table>
-            <p>Your subscription remains active. Keep this email for your records.</p>
-            <p style="color:#9ca3af;font-size:12px;">This is an automated receipt from Classgrid Billing.</p>
-        `;
+        const adminEmailTitle = `New AI Credit Purchase: ${amountFormatted} from ${payerName}`;
 
-        const adminEmailBody = `
-            <div style="background:#f0fdf4;border-left:4px solid #22c55e;padding:12px 16px;margin-bottom:20px;border-radius:4px;">
-                <p style="margin:0;font-size:18px;font-weight:700;color:#15803d;">Transaction #${txNumber} of ${txTarget}</p>
-                <p style="margin:4px 0 0;font-size:13px;color:#166534;">${txTarget - txNumber} more transactions needed to complete the training dataset.</p>
-            </div>
-            <p>Hello Nikhil,</p>
-            <p>A new payment was successfully processed. Here are the details:</p>
-            <table style="border-collapse:collapse;width:100%;max-width:420px;margin:16px 0;">
-              <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Training Progress</td><td style="padding:6px 12px;color:#059669;font-weight:700;">#${txNumber} / ${txTarget}</td></tr>
-              <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Amount Paid</td><td style="padding:6px 12px;color:#059669;font-weight:700;">${amountFormatted}</td></tr>
-              <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Payment ID</td><td style="padding:6px 12px;font-family:monospace;">${providerPayment.id}</td></tr>
-              <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Payment Method</td><td style="padding:6px 12px;">${providerPayment.method || "Razorpay"}</td></tr>
-              <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Paid At</td><td style="padding:6px 12px;">${paidAt} IST</td></tr>
-              <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Payer</td><td style="padding:6px 12px;">${payerName} (${handoff.email})</td></tr>
-              <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Organization</td><td style="padding:6px 12px;">${orgName}</td></tr>
-            </table>
+        const creditsReceivedStr = handoff.payment_type === "AI_TOPUP" ? Number((handoff.amountPaise / 100) * 5000).toLocaleString() : "";
+        
+        const compiledHtml = getAiCreditUserReceiptHtml(payerName, amountFormatted, creditsReceivedStr, providerPayment.id, paidAt);
+        
+        const adminCompiledHtml = getAiCreditAdminNotificationHtml(
+            payerName, 
+            handoff.email, 
+            amountFormatted, 
+            creditsReceivedStr, 
+            providerPayment.id, 
+            payerDevice, 
+            payerLocation, 
+            payerIp, 
+            attemptTime
+        );
 
-            <div style="margin-top:20px;border-top:2px dashed #e5e7eb;padding-top:16px;">
-                <h3 style="margin:0 0 10px 0;font-size:14px;color:#111827;">Attempt Details</h3>
-                <table style="width:100%;border-collapse:collapse;">
-                    <tr><td style="padding:5px 0;font-weight:600;color:#4b5563;width:35%;">Device</td><td style="padding:5px 0;color:#111827;">${payerDevice}</td></tr>
-                    <tr><td style="padding:5px 0;font-weight:600;color:#4b5563;">Location</td><td style="padding:5px 0;color:#111827;">${payerLocation}</td></tr>
-                    <tr><td style="padding:5px 0;font-weight:600;color:#4b5563;">IP Address</td><td style="padding:5px 0;color:#111827;font-family:monospace;">${payerIp} (${payerIsp})</td></tr>
-                    <tr><td style="padding:5px 0;font-weight:600;color:#4b5563;">Time</td><td style="padding:5px 0;color:#111827;">${attemptTime}</td></tr>
-                </table>
-            </div>
-
-            ${txNumber >= txTarget ? `<p style="color:#15803d;font-weight:bold;font-size:16px;margin-top:20px;">🎉 500 transactions complete! You can now run train_model.py to train the XGBoost model.</p>` : ""}
-        `;
-
-        const compiledHtml = baseTemplate({ content: emailBody, title: emailTitle });
-        const adminCompiledHtml = baseTemplate({ content: adminEmailBody, title: adminEmailTitle });
-
-        // Send receipt to user
+        // Send receipt to user (HTML-based email with beautiful template)
         await sendEmail({
             to: handoff.email,
             subject: emailTitle,
@@ -344,9 +327,9 @@ router.post("/confirm", async (req, res) => {
             console.warn("[Billing Checkout] Payment captured but confirmation email failed:", emailErr.message);
         });
 
-        // Send separate admin notification with transaction counter
+        // Send separate admin notification
         sendEmail({
-            to: "nikhil.shinde@classgrid.in",
+            to: "team@classgrid.in",
             subject: adminEmailTitle,
             fromName: "Classgrid Billing",
             fromEmail: "billing@classgrid.in",
@@ -354,8 +337,6 @@ router.post("/confirm", async (req, res) => {
         }).catch((emailErr) => {
             console.warn("[Billing Checkout] Admin notification email failed:", emailErr.message);
         });
-
-        console.log(`[Billing Checkout] 📊 Training counter: ${txNumber}/${txTarget}`);
 
         return res.json({
             success: true,

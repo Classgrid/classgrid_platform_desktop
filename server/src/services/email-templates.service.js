@@ -2797,3 +2797,69 @@ export const getFailedPaymentEmailHtml = (amountInr, errorDescription, paymentId
   return erpBaseTemplate({ content, title: "Payment Failed", orgName });
 };
 
+// ------------- AI CREDITS: USER RECEIPT -------------
+export const getAiCreditUserReceiptHtml = (payerName, amountFormatted, creditsReceived, paymentId, paidAt) => {
+  const content = `
+    <p>Hello ${payerName},</p>
+    <p>Your purchase of AI Credits was completed successfully. The credits have been instantly added to your account.</p>
+    <table style="border-collapse:collapse;width:100%;max-width:420px;margin:16px 0;">
+      <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Amount Paid</td><td style="padding:6px 12px;color:#059669;font-weight:700;">${amountFormatted}</td></tr>
+      <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Credits Received</td><td style="padding:6px 12px;font-weight:700;">${creditsReceived} Credits</td></tr>
+      <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Payment ID</td><td style="padding:6px 12px;font-family:monospace;">${paymentId}</td></tr>
+      <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Paid At</td><td style="padding:6px 12px;">${paidAt} IST</td></tr>
+    </table>
+    <p>Thank you for your purchase.</p>
+    <p style="color:#9ca3af;font-size:12px;">This is an automated receipt from Classgrid.</p>
+  `;
+  return baseTemplate({
+    content,
+    title: `Payment Successful — ${amountFormatted} | Classgrid`
+  });
+};
+
+// ------------- AI CREDITS: ADMIN NOTIFICATION -------------
+export const getAiCreditAdminNotificationHtml = (payerName, payerEmail, amountFormatted, creditsPurchased, paymentId, payerDevice, payerLocation, payerIp, attemptTime) => {
+  const content = `
+    <div style="background:#f8fafc;border-left:4px solid #3b82f6;padding:12px 16px;margin-bottom:20px;border-radius:4px;">
+        <p style="margin:0;font-size:18px;font-weight:700;color:#1d4ed8;">New AI Credit Purchase!</p>
+    </div>
+    <p>Hello Nikhil,</p>
+    <p>A user has just successfully purchased AI Credits. Here are the details:</p>
+    <table style="border-collapse:collapse;width:100%;max-width:420px;margin:16px 0;">
+      <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Amount</td><td style="padding:6px 12px;color:#059669;font-weight:700;">${amountFormatted}</td></tr>
+      <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Credits Purchased</td><td style="padding:6px 12px;font-weight:700;">${creditsPurchased} Credits</td></tr>
+      <tr style="background:#f9fafb;"><td style="padding:6px 12px;font-weight:600;color:#374151;">Purchaser</td><td style="padding:6px 12px;">${payerName} (${payerEmail})</td></tr>
+      <tr><td style="padding:6px 12px;font-weight:600;color:#374151;">Payment ID</td><td style="padding:6px 12px;font-family:monospace;">${paymentId}</td></tr>
+    </table>
+
+    <div style="margin-top:20px;border-top:2px dashed #e5e7eb;padding-top:16px;">
+        <h3 style="margin:0 0 10px 0;font-size:14px;color:#111827;">Attempt Security Details</h3>
+        <table style="width:100%;border-collapse:collapse;">
+            <tr><td style="padding:5px 0;font-weight:600;color:#4b5563;width:35%;">Device</td><td style="padding:5px 0;color:#111827;">${payerDevice}</td></tr>
+            <tr><td style="padding:5px 0;font-weight:600;color:#4b5563;">Location</td><td style="padding:5px 0;color:#111827;">${payerLocation}</td></tr>
+            <tr><td style="padding:5px 0;font-weight:600;color:#4b5563;">IP Address</td><td style="padding:5px 0;color:#111827;font-family:monospace;">${payerIp}</td></tr>
+            <tr><td style="padding:5px 0;font-weight:600;color:#4b5563;">Time</td><td style="padding:5px 0;color:#111827;">${attemptTime}</td></tr>
+        </table>
+    </div>
+  `;
+  return baseTemplate({
+    content,
+    title: `New AI Credit Purchase: ${amountFormatted} from ${payerName}`
+  });
+};
+
+
+// ------------- AI CREDITS: GIFT CREDITS -------------
+export const getAiCreditGiftHtml = (userName, creditsGifted, message) => {
+    return getEmailWrapper(`
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div style="background: #dbeafe; color: #1d4ed8; padding: 12px; border-radius: 8px; display: inline-block; font-weight: 700; font-size: 16px;">
+                🎁 You Received a Gift!
+            </div>
+        </div>
+        <p>Hi ${userName},</p>
+        <p>Good news! <strong>${creditsGifted} AI Credits</strong> have been gifted to your account by the Classgrid Platform Team.</p>
+        ${message ? `<p style="background: #f9fafb; padding: 16px; border-left: 4px solid #3b82f6; font-style: italic; color: #4b5563; border-radius: 4px;">"${message}"</p>` : ""}
+        <p>These credits are immediately available for you to use across all AI features.</p>
+    `);
+};

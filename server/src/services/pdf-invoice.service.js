@@ -192,3 +192,121 @@ export const generateInvoicePdfBuffer = async (invoice, org) => {
     
     return pdfBuffer;
 };
+
+export const generateAiReceiptPdfBuffer = async (paymentDetails) => {
+    let logoSrc = 'https://classgrid.in/logo.png';
+    try {
+        const localLogoPath = path.resolve(process.cwd(), '../client/public/logo.png');
+        if (fs.existsSync(localLogoPath)) {
+            logoSrc = 'data:image/png;base64,' + fs.readFileSync(localLogoPath).toString('base64');
+        }
+    } catch (e) {
+        console.error("Failed to load local logo for PDF", e);
+    }
+
+    const {
+        amountFormatted,
+        creditsAdded,
+        paymentId,
+        paidAt,
+        payerName,
+        payerEmail
+    } = paymentDetails;
+
+    // Generate clean HTML for the AI Receipt
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>AI Credit Receipt</title>
+            <style>
+                body { font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; color: #333; margin: 0; padding: 40px; }
+                .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; box-shadow: 0 0 10px rgba(0, 0, 0, .15); }
+                .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 20px; }
+                .title { font-size: 26px; font-weight: bold; color: #2563eb; }
+                .details { text-align: right; }
+                .bill-to { margin-bottom: 30px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+                th { background-color: #f9fafb; font-weight: bold; }
+                .right { text-align: right; }
+                .total-row { font-weight: bold; font-size: 18px; }
+                .footer { text-align: center; color: #777; font-size: 12px; margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; }
+            </style>
+        </head>
+        <body>
+            <div class="invoice-box">
+                <div class="header">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                            <img src="${logoSrc}" alt="Classgrid Logo" style="height: 48px; width: auto; object-fit: contain;" onerror="this.onerror=null; this.src='https://billing.classgrid.in/logo.png';"/>
+                        </div>
+                        <div class="title" style="margin: 0;">AI Credit Purchase Receipt</div>
+                        <div style="margin-top: 8px; font-size: 14px; color: #666;">Payment ID: ${paymentId}</div>
+                    </div>
+                    <div class="details">
+                        <div><strong>Classgrid AI</strong></div>
+                        <div>support@classgrid.in</div>
+                        <div>Date: ${paidAt}</div>
+                    </div>
+                </div>
+
+                <div class="bill-to">
+                    <h3>Purchaser:</h3>
+                    <div><strong>${payerName}</strong></div>
+                    <div>${payerEmail}</div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th class="right">Credits Added</th>
+                            <th class="right">Amount Paid</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Classgrid AI Credits Top-Up</td>
+                            <td class="right">${Number(creditsAdded).toLocaleString()} Credits</td>
+                            <td class="right">${amountFormatted}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table style="width: 50%; margin-left: auto;">
+                    <tr class="total-row">
+                        <td>Total Amount Paid:</td>
+                        <td class="right">${amountFormatted}</td>
+                    </tr>
+                </table>
+
+                <div class="footer">
+                    Thank you for your purchase. Your credits have been instantly added to your account.<br>
+                    For any billing inquiries, please contact support@classgrid.in.
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+
+    const browser = await puppeteer.launch({
+        headless: "new",
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+    });
+    
+    const page = await browser.newPage();
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    
+    const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
+    });
+    
+    await browser.close();
+    
+    return pdfBuffer;
+};

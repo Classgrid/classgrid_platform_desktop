@@ -53,6 +53,16 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
     }
   }, [isOpen, initialTab]);
 
+  React.useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "CLASSGRID_PAYMENT_SUCCESS") {
+        setActiveTab("credits");
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
   const [selectedPlugin, setSelectedPlugin] = useState<any>(null);
   const [connectedPlugins, setConnectedPlugins] = useState<string[]>([]);
   const [isConnecting, setIsConnecting] = useState(false);

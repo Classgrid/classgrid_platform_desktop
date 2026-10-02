@@ -1,9 +1,13 @@
 import User from "../../models/User.js";
 import Organization from "../../models/Organization.js";
+import GlobalAiConfig from "../../models/GlobalAiConfig.js";
 
 // GET /api/super-admin/ai/usage
 export const getAiUsageStats = async (req, res) => {
     try {
+        const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" }) || { global_user_weekly_limit: 100000 };
+        const defaultLimit = globalConfig.global_user_weekly_limit;
+
         // Aggregate usage across all users, grouping by Organization Name -> Role
         const usageData = await User.aggregate([
             {
@@ -29,7 +33,7 @@ export const getAiUsageStats = async (req, res) => {
                     },
                     totalUsers: { $sum: 1 },
                     totalUsedTokens: { $sum: { $ifNull: ["$ai_tokens.used_this_week", 0] } },
-                    totalLimit: { $sum: { $ifNull: ["$ai_tokens.free_weekly_limit", 100000] } }
+                    totalLimit: { $sum: { $ifNull: ["$ai_tokens.free_weekly_limit", defaultLimit] } }
                 }
             },
             {

@@ -1,6 +1,7 @@
 import Organization from "../../models/Organization.js";
 import User from "../../models/User.js";
 import AiCreditTransaction from "../../models/AiCreditTransaction.js";
+import GlobalAiConfig from "../../models/GlobalAiConfig.js";
 import { primarySupabaseClient as supabase } from "../../config/supabaseClient.js";
 import mongoose from "mongoose";
 
@@ -63,10 +64,15 @@ export const getOrgAiDetail = async (req, res) => {
     try {
         const { orgId } = req.params;
         
+        const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" }) || {
+            global_pro_pool_limit: 500000,
+            global_user_weekly_limit: 100000
+        };
+
         let orgName = "Classgrid (Platform Team)";
         let isBlocked = false;
-        let poolLimit = 0;
-        let userWeeklyLimit = 100000;
+        let poolLimit = globalConfig.global_pro_pool_limit;
+        let userWeeklyLimit = globalConfig.global_user_weekly_limit;
         let userQuery = {};
 
         if (orgId === "classgrid") {
@@ -83,8 +89,11 @@ export const getOrgAiDetail = async (req, res) => {
             }
             orgName = org.name;
             isBlocked = org.ai_config?.is_ai_blocked || false;
-            poolLimit = org.ai_config?.pro_pool_limit || 0;
-            userWeeklyLimit = org.ai_config?.free_weekly_limit_per_user || 100000;
+            
+            if (org.ai_config?.custom_limits_enabled) {
+                poolLimit = org.ai_config.pro_pool_limit || globalConfig.global_pro_pool_limit;
+                userWeeklyLimit = org.ai_config.free_weekly_limit_per_user || globalConfig.global_user_weekly_limit;
+            }
             userQuery = { organization_id: orgId };
         }
 

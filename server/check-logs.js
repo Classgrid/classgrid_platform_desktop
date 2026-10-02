@@ -1,42 +1,32 @@
+import 'dotenv/config';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import AiUsageLog from './src/models/AiUsageLog.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, '.env') });
-
-mongoose.connect(process.env.MONGO_URI).then(async () => {
-    const AiUsageLog = (await import('./src/models/AiUsageLog.js')).default;
-    const User = (await import('./src/models/User.js')).default;
+async function run() {
+    await mongoose.connect(process.env.MONGODB_URI);
     
-    // Find Nikhil
-    const nikhil = await User.findOne({ email: /nikhil/i });
-    if (!nikhil) {
-        console.log("Nikhil not found");
-        process.exit(1);
+    // Get all logs for today
+    const logs = await AiUsageLog.find({}).sort({createdAt: 1});
+    console.log('Total Logs in DB:', logs.length);
+    
+    if(logs.length > 0) {
+        console.log('First Log Ever:', logs[0].createdAt);
+        console.log('Last Log Ever:', logs[logs.length-1].createdAt);
+        
+        // Let's filter for just Oct 2
+        const oct2Logs = logs.filter(l => new Date(l.createdAt).getTime() >= new Date('2026-10-01T18:30:00Z').getTime());
+        console.log('--- OCT 2 LOGS ---');
+        console.log('Count:', oct2Logs.length);
+        if (oct2Logs.length > 0) {
+            console.log('First Log (Oct 2):', oct2Logs[0].createdAt);
+            console.log('Last Log (Oct 2):', oct2Logs[oct2Logs.length-1].createdAt);
+            
+            const totalTokens = oct2Logs.reduce((sum, log) => sum + log.totalTokens, 0);
+            console.log('Total Tokens (Oct 2):', totalTokens);
+        }
     }
-    
-    console.log("Nikhil ID:", nikhil._id);
-    console.log("Nikhil Total Tokens:", nikhil.ai_tokens?.total_ai_tokens_used);
-    
-    const logs = await AiUsageLog.find({ userId: nikhil._id }).sort({ createdAt: -1 }).limit(5);
-    console.log("Recent logs for Nikhil:", logs.length);
-    if (logs.length > 0) {
-        console.log("Latest log date:", logs[0].createdAt);
-    }
-    
-    const allLogsLast3Days = await AiUsageLog.find({ 
-        createdAt: { $gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) } 
-    }).populate('userId', 'name email');
-    
-    console.log("\nAll users in AiUsageLog from last 3 days:");
-    const usersCount = {};
-    for(let l of allLogsLast3Days) {
-        let name = l.userId ? l.userId.name : 'Unknown';
-        usersCount[name] = (usersCount[name] || 0) + 1;
-    }
-    console.log(usersCount);
     
     process.exit(0);
-}).catch(console.error);
+}
+
+run().catch(console.error);
