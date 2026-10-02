@@ -1075,16 +1075,16 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                 const customSkills = await AiSkill.find({ userId, is_active: true }).lean();
                 
                 const DEFAULT_SKILLS_MAP = {
-                    'whatsapp': 'When drafting parent announcements, automatically format it with bullet points perfect for WhatsApp Business.',
-                    'drive_class': 'When sharing study materials, automatically search Google Drive for PDFs and prepare them for Google Classroom.',
-                    'notion': 'When saving a policy or document, automatically format it as a markdown wiki page ready to push to Notion.',
-                    'vercel_supabase': 'When debugging server issues, proactively check Vercel deployment logs and query Supabase for errors.',
-                    'calendar_meet': 'When needing a meeting, prioritize checking Google Calendar for free slots and include a Google Meet link.',
-                    'social_media': 'When promoting a school event, draft a short Instagram caption with emojis and a longer Facebook post.',
-                    'slack_teams': 'When a critical incident occurs, draft a concise summary ready to be blasted to Staff Slack or Teams.',
-                    'sanity': 'When writing a school blog post, format the content to perfectly match our Sanity CMS schema requirements.',
-                    'github': 'When looking at codebase issues, suggest fixes that strictly align with our GitHub repository linting rules.',
-                    'youtube': 'When looking for supplemental explanations, automatically search YouTube for high-quality educational videos.'
+                    'dual_notify': 'When notifying users, automatically send email and WhatsApp notifications at the same time.',
+                    'auto_meet': 'Automatically create a Google Meet link for every meeting scheduled.',
+                    'drive_upload': 'Upload all generated reports directly to Google Drive.',
+                    'slack_alert': 'Notify the Staff Slack channel for any emergency alerts or critical incidents.',
+                    'dual_social': 'Post all announcements to both Facebook and Instagram simultaneously.',
+                    'auto_calendar': 'Automatically add reminders to Google Calendar for upcoming events.',
+                    'notion_format': 'Always format saved policies and documents as Notion markdown pages.',
+                    'youtube_attach': 'Attach a YouTube tutorial link whenever explaining a complex topic.',
+                    'gmail_priority': 'Strictly prioritize searching Gmail before searching the web for information.',
+                    'regional_translation': 'Automatically provide a regional language translation for all WhatsApp broadcasts.'
                 };
                 
                 if (activeSkillIds.length > 0 || customSkills.length > 0) {

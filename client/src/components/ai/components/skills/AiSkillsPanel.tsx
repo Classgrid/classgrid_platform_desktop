@@ -56,38 +56,54 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
   const [newSkillInstructions, setNewSkillInstructions] = useState("");
 
   const DEFAULT_SKILLS = [
-    { id: 'whatsapp', name: 'WhatsApp Broadcaster', desc: 'When drafting parent announcements, automatically format it with bullet points perfect for WhatsApp Business.' },
-    { id: 'drive_class', name: 'Classroom & Drive Coordinator', desc: 'When sharing study materials, automatically search Google Drive for PDFs and prepare them for Google Classroom.' },
-    { id: 'notion', name: 'Notion Knowledge Base Builder', desc: 'When saving a policy or document, automatically format it as a markdown wiki page ready to push to Notion.' },
-    { id: 'vercel_supabase', name: 'Vercel & Supabase Monitor', desc: 'When debugging server issues, proactively check Vercel deployment logs and query Supabase for errors.' },
-    { id: 'calendar_meet', name: 'Calendar & Meet Scheduler', desc: 'When needing a meeting, prioritize checking Google Calendar for free slots and include a Google Meet link.' },
-    { id: 'social_media', name: 'Social Media Manager', desc: 'When promoting a school event, draft a short Instagram caption with emojis and a longer Facebook post.' },
-    { id: 'slack_teams', name: 'Slack & Teams Updater', desc: 'When a critical incident occurs, draft a concise summary ready to be blasted to Staff Slack or Teams.' },
-    { id: 'sanity', name: 'Sanity CMS Publisher', desc: 'When writing a school blog post, format the content to perfectly match our Sanity CMS schema requirements.' },
-    { id: 'github', name: 'GitHub Code Reviewer', desc: 'When looking at codebase issues, suggest fixes that strictly align with our GitHub repository linting rules.' },
-    { id: 'youtube', name: 'YouTube Curriculum Finder', desc: 'When looking for supplemental explanations, automatically search YouTube for high-quality educational videos.' },
+    { id: 'dual_notify', name: 'Dual Notifications', desc: 'Should the AI send email and WhatsApp notifications at the same time?' },
+    { id: 'auto_meet', name: 'Auto-Meet Links', desc: 'Should the AI automatically create a Google Meet link for every meeting?' },
+    { id: 'drive_upload', name: 'Auto-Drive Upload', desc: 'Should the AI upload all generated reports to your Google Drive?' },
+    { id: 'slack_alert', name: 'Slack Emergency Alerts', desc: 'Should the AI notify the Staff Slack channel for emergency alerts?' },
+    { id: 'dual_social', name: 'Dual Social Posts', desc: 'Should the AI post announcements to both Facebook and Instagram?' },
+    { id: 'auto_calendar', name: 'Auto-Calendar Reminders', desc: 'Should the AI automatically add reminders to your Google Calendar?' },
+    { id: 'notion_format', name: 'Notion Policy Formatting', desc: 'Should the AI always format saved policies as Notion markdown pages?' },
+    { id: 'youtube_attach', name: 'YouTube Tutorials', desc: 'Should the AI attach a YouTube tutorial link whenever explaining a complex topic?' },
+    { id: 'gmail_priority', name: 'Gmail Search Priority', desc: 'Should the AI strictly prioritize searching your Gmail before searching the web?' },
+    { id: 'regional_translation', name: 'Regional Translation', desc: 'Should the AI automatically provide a regional language translation for WhatsApp broadcasts?' },
   ];
 
-  // We can just store preferences in localStorage for now, as it's UI config
-  const [prefs, setPrefs] = useState(() => {
-    const saved = localStorage.getItem('classgrid_ai_prefs');
-    if (saved) return JSON.parse(saved);
-    return {
-      tone: 'balanced',
-      verbosity: 'balanced',
-      format: 'markdown',
-      emoji: 'default',
-      level: 'intermediate',
-      aboutMe: '',
-      howToRespond: '',
-      nickname: '',
-      occupation: '',
-      activeDefaults: ['truth', 'privacy']
-    };
+  const [prefs, setPrefs] = useState({
+    tone: 'balanced',
+    verbosity: 'balanced',
+    format: 'markdown',
+    emoji: 'default',
+    level: 'intermediate',
+    aboutMe: '',
+    howToRespond: '',
+    nickname: '',
+    occupation: '',
+    activeDefaults: []
   });
 
+  const isInitialMount = useRef(true);
+
   useEffect(() => {
-    localStorage.setItem('classgrid_ai_prefs', JSON.stringify(prefs));
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    
+    const savePrefsToBackend = async () => {
+      try {
+        await fetch(`${backendUrl}/api/ai/preferences`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(prefs)
+        });
+      } catch (e) {
+        console.error("Error saving preferences", e);
+      }
+    };
+    
+    const timeoutId = setTimeout(savePrefsToBackend, 500);
+    return () => clearTimeout(timeoutId);
   }, [prefs]);
 
   const toggleDefaultSkill = (id: string) => {
@@ -101,11 +117,6 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
   };
 
   const fetchSkills = async () => {
-    // We would normally fetch from our new backend endpoint here.
-    // For now, since the AI manages it via MCP, we'll implement a basic fetch if there's a REST endpoint.
-    // Since we didn't build a REST endpoint in org.routes yet, let's just display what we have or mock it.
-    // Wait, the user asked for this page to show the skills. We need a REST route to fetch them.
-    // I will simulate it and then build the REST route next.
     try {
       const res = await fetch(`${backendUrl}/api/ai/skills`, { credentials: 'include' });
       if (res.ok) {
@@ -120,6 +131,20 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
   };
 
   useEffect(() => {
+    const fetchPrefs = async () => {
+      try {
+        const res = await fetch(`${backendUrl}/api/ai/preferences`, { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.preferences && Object.keys(data.preferences).length > 0) {
+            setPrefs(prev => ({ ...prev, ...data.preferences }));
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchPrefs();
     fetchSkills();
   }, []);
 
