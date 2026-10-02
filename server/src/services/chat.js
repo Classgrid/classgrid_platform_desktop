@@ -384,14 +384,14 @@ export async function getChatReply(message, modelArg = 'groq', mode = 'chat', cl
     
     // Log AI Usage
     const context = asyncContext.getStore();
-    if (context?.orgId && context?.userId) {
+    if (context?.userId) {
         AiUsageLog.create({
-            organization_id: context.orgId,
+            organization_id: context.orgId || null,
             userId: context.userId,
             provider: 'groq',
             model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
-            inputTokens,
-            outputTokens,
+            promptTokens: inputTokens,
+            completionTokens: outputTokens,
             totalTokens: inputTokens + outputTokens,
             success: true
         }).catch(err => console.error("AiUsageLog Error:", err));
@@ -491,7 +491,7 @@ export async function getVisionReply(message, base64Image, mimeType) {
     
     // Log AI Usage
     const context = asyncContext.getStore();
-    if (context?.orgId && context?.userId) {
+    if (context?.userId) {
         let inputTokens = 0;
         let outputTokens = 0;
         try {
@@ -505,12 +505,12 @@ export async function getVisionReply(message, base64Image, mimeType) {
             outputTokens = 0;
         }
         AiUsageLog.create({
-            organization_id: context.orgId,
+            organization_id: context.orgId || null,
             userId: context.userId,
             provider: 'cloudflare',
             model: '@cf/meta/llama-3.2-11b-vision-instruct',
-            inputTokens,
-            outputTokens,
+            promptTokens: inputTokens,
+            completionTokens: outputTokens,
             totalTokens: inputTokens + outputTokens,
             success: true
         }).catch(err => console.error("AiUsageLog Error:", err));

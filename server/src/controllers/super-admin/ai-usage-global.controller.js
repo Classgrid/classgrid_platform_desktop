@@ -141,11 +141,60 @@ export const getGlobalStats = async (req, res) => {
         dailyRevenue.forEach(d => {
             revenueMap[d._id] = d.totalRevenue;
         });
+        
+        // Calculate Cloudflare cost per day using OFFICIAL published $/million token rates.
+        // Source: https://developers.cloudflare.com/workers-ai/models/
+        // These are the ONLY models actually used in the codebase.
+        // promptTokens + completionTokens are REAL values saved by gpt-tokenizer on each request.
+        const CF_PRICING_USD_PER_M = {
+            // Official Cloudflare published rates (USD per million tokens)
+            "@cf/deepseek-ai/deepseek-v4-pro-0813": { prompt: 1.32,  completion: 3.96  },
+            "@cf/meta/llama-3.2-11b-vision-instruct": { prompt: 0.049, completion: 0.676 },
+            "@cf/meta/llama-3.2-1b-instruct":           { prompt: 0.027, completion: 0.201 },
+            "@cf/meta/llama-3.1-8b-instruct-fp8-fast":  { prompt: 0.045, completion: 0.384 },
+            "@cf/meta/llama-3.3-70b-instruct-fp8-fast": { prompt: 0.293, completion: 2.253 },
+            // Fallback: use the cheapest text model rates if model is unrecognised
+            "default": { prompt: 0.027, completion: 0.201 }
+        };
+        // USD to INR exchange rate (update periodically or fetch dynamically if needed)
+        const USD_TO_INR = 84;
+
+        const dailyUsageByModel = await AiUsageLog.aggregate([
+            { $match: logMatch },
+            {
+                $group: {
+                    _id: {
+                        date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
+                        model: "$model"
+                    },
+                    promptTokens:     { $sum: "$promptTokens" },
+                    completionTokens: { $sum: "$completionTokens" }
+                }
+            }
+        ]);
+
+        const costMap = {};
+        dailyUsageByModel.forEach(d => {
+            const date  = d._id.date;
+            const model = d._id.model;
+            const rates = CF_PRICING_USD_PER_M[model] || CF_PRICING_USD_PER_M["default"];
+
+            // Cost = (real_tokens / 1,000,000) * price_per_million
+            const promptCostUSD     = ((d.promptTokens     || 0) / 1_000_000) * rates.prompt;
+            const completionCostUSD = ((d.completionTokens || 0) / 1_000_000) * rates.completion;
+            const totalCostUSD = promptCostUSD + completionCostUSD;
+            const totalCostINR = totalCostUSD * USD_TO_INR;
+
+            if (!costMap[date]) costMap[date] = { costUSD: 0, costINR: 0 };
+            costMap[date].costUSD += totalCostUSD;
+            costMap[date].costINR += totalCostINR;
+        });
 
         const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
         const usageTrend = Array.from({ length: daysInMonth }, (_, i) => {
             const d = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
             const t = trendMap[d] || {};
+            const c = costMap[d] || { costUSD: 0, costINR: 0 };
             return {
                 date: d,
                 credits: t.totalTokens || 0,
@@ -156,7 +205,9 @@ export const getGlobalStats = async (req, res) => {
                 activeOrgs: t.activeOrgs || 0,
                 activeUsersList: t.activeUsersList || [],
                 activeOrgsList: t.activeOrgsList || [],
-                revenue: revenueMap[d] || 0
+                revenue: revenueMap[d] || 0,
+                costUSD: parseFloat(c.costUSD.toFixed(6)),
+                costINR: parseFloat(c.costINR.toFixed(4))
             };
         });
 
@@ -196,7 +247,7 @@ export const getGlobalStats = async (req, res) => {
             { $group: { _id: "$organization_id", requests: { $sum: 1 } } },
             { $lookup: { from: "organizations", localField: "_id", foreignField: "_id", as: "org" } },
             { $unwind: { path: "$org", preserveNullAndEmptyArrays: true } },
-            { $project: { name: { $cond: [{ $eq: ["$_id", null] }, "Classgrid Platform", { $ifNull: ["$org.name", "Unknown Org"] }] }, orgId: "$org._id", logo: "$org.logo", requests: 1, _id: 0 } }
+            { $project: { name: { $cond: [{ $eq: ["$_id", null] }, "Classgrid Platform", { $ifNull: ["$org.name", "Unknown Org"] }] }, orgId: "$org._id", logo: "$org.logo_url", requests: 1, _id: 0 } }
         ]);
         const orgsBreakdown = orgData.map(o => ({ name: o.name, orgId: o.orgId, logo: o.logo, value: o.requests, requests: o.requests }));
 

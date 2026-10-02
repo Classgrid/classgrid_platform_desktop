@@ -55,7 +55,6 @@ const aiUsageLogSchema = new mongoose.Schema(
         organization_id: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Organization",
-            required: true,
             index: true,
         },
         userId: {

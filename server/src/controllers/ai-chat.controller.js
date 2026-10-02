@@ -3107,15 +3107,15 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                     }
 
                     // Log to AiUsageLog for dashboard analytics
-                    if (userTokens && userTokens.organization_id) {
+                    if (userTokens) {
                         AiUsageLog.create({
-                            organization_id: userTokens.organization_id,
+                            organization_id: userTokens.organization_id || null,
                             userId: userId,
                             provider: 'cloudflare',
                             model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
                             feature: 'chat_ai',
-                            inputTokens: inputTokens || 0,
-                            outputTokens: outputTokens || 0,
+                            promptTokens: inputTokens || 0,
+                            completionTokens: outputTokens || 0,
                             totalTokens: estimatedTokens,
                             success: true
                         }).catch(err => console.error("AiUsageLog Error:", err));
