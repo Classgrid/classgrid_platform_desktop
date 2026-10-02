@@ -94,6 +94,7 @@ import { SetupUsageCredits } from "../components/SetupUsageCredits";
 import { GlobalAiConfigPanel } from "../components/GlobalAiConfigPanel";
 import { SuperadminFilterBar } from "../components/SuperadminFilterBar";
 import { AiUsageBar } from "@/components/ai/components/AiUsageBar";
+import { AiUsageTrendsChart } from "../components/AiUsageTrendsChart";
 
 export function SandboxPage() {
   const [isGrantCreditsOpen, setIsGrantCreditsOpen] = React.useState(false);
@@ -102,6 +103,7 @@ export function SandboxPage() {
       <div className="px-6 pt-6 pb-2 max-w-3xl flex flex-col gap-4">
         <GlobalAiConfigPanel />
         <AiUsageBar initialData={{type: 'pro', used: 250, limit: 1000, remaining: 750, freeData: {used: 50, limit: 100, remaining: 50}}} />
+        <AiUsageTrendsChart />
         <SuperadminFilterBar />
         <SetupUsageCredits />
         <ResetOrganizationDailyLimit />
@@ -134,10 +136,9 @@ export function SandboxPage() {
         />
       </div>
       
-      {/* ═══ VERCEL EXACT DUMMY FILTER BAR ═══ */}
+      {/* 
       <div className="flex flex-nowrap items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide w-full max-w-full text-sm px-6 pt-6">
         
-        {/* All Branches */}
         <button className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors">
           <div className="flex items-center text-muted-foreground">
             <Search size={14} className="mr-2" />
@@ -146,7 +147,6 @@ export function SandboxPage() {
           <ChevronDown size={14} className="text-muted-foreground ml-2 shrink-0" />
         </button>
 
-        {/* All Authors */}
         <button className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors">
           <div className="flex items-center text-muted-foreground">
             <Search size={14} className="mr-2" />
@@ -155,22 +155,18 @@ export function SandboxPage() {
           <ChevronDown size={14} className="text-muted-foreground ml-2 shrink-0" />
         </button>
 
-        {/* All Environments */}
         <button className="flex h-9 min-w-[150px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-foreground">
           <span className="truncate">All Environments</span>
           <ChevronDown size={14} className="text-muted-foreground ml-2 shrink-0" />
         </button>
 
-        {/* Select Date Range */}
         <button className="flex h-9 min-w-[200px] flex-[2] items-center rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors text-muted-foreground">
           <CalendarIcon size={14} className="mr-2 shrink-0" />
           <span className="truncate">Select Date Range</span>
         </button>
 
-        {/* Status */}
         <button className="flex h-9 min-w-[140px] flex-1 items-center justify-between rounded-md border border-border bg-transparent px-3 py-1 shadow-sm hover:bg-accent/50 transition-colors">
           <div className="flex items-center">
-            {/* Colored dots */}
             <div className="flex -space-x-1.5 mr-2">
               <div className="w-3 h-3 rounded-full bg-emerald-500 border border-background z-30" />
               <div className="w-3 h-3 rounded-full bg-red-500 border border-background z-20" />
@@ -183,7 +179,6 @@ export function SandboxPage() {
           <ChevronDown size={14} className="text-muted-foreground ml-2 shrink-0" />
         </button>
 
-        {/* More Options */}
         <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-transparent shadow-sm hover:bg-accent/50 transition-colors">
           <MoreHorizontal size={14} className="text-foreground" />
         </button>
@@ -203,7 +198,6 @@ export function SandboxPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {/* Generate more rows to make the table big size */}
             {[...dummyData, ...dummyData, ...dummyData].map((row, index) => (
               <tr key={`${row.id}-${index}`} className="hover:bg-muted/30 transition-colors">
                 <td className="px-6 py-4 font-medium text-foreground">{row.id}</td>
@@ -226,6 +220,7 @@ export function SandboxPage() {
           </tbody>
         </table>
       </div>
+      */}
     </div>
   );
 }
