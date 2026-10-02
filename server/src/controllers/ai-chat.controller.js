@@ -694,12 +694,27 @@ export const streamAskAi = async (req, res) => {
 
         // 2a. If not incognito and no session exists, create one
         if (!isIncognito && !sessionId && body.question) {
-            const title = body.question.length > 50 ? body.question.substring(0, 47) + "..." : body.question;
-            const session = await createSession(userEmail, title, false);
+            let initialTitle = body.question;
+            let skipAutoTitle = false;
+            
+            if (initialTitle.trim().startsWith("[SYSTEM: I have successfully connected ")) {
+                const match = initialTitle.match(/connected (.*?)! Please/);
+                initialTitle = match ? `${match[1]} Connected` : "Integration Connected";
+                skipAutoTitle = true;
+            } else if (initialTitle.trim().startsWith("[SYSTEM:")) {
+                initialTitle = "System Event";
+                skipAutoTitle = true;
+            } else {
+                initialTitle = initialTitle.length > 50 ? initialTitle.substring(0, 47) + "..." : initialTitle;
+            }
+            
+            const session = await createSession(userEmail, initialTitle, false);
             if (session) {
                 sessionId = session.id;
                 // Generate a real title in the background (delayed 5s to avoid competing with main LLM call for API rate limits)
-                setTimeout(() => generateSessionTitle(sessionId, body.question).catch(console.error), 5000);
+                if (!skipAutoTitle) {
+                    setTimeout(() => generateSessionTitle(sessionId, body.question).catch(console.error), 5000);
+                }
 
                 // Send back the sessionId immediately so the frontend sidebar can update instantly
                 res.write(`data: ${JSON.stringify({ type: "session_info", sessionId })}\n\n`);

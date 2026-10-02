@@ -5043,6 +5043,64 @@ export const handleToolCall = async (name, args, context = {}) => {
       const { operation, query, limit = 10, pageId } = args;
       const { userEmail = '' } = context;
 
+      const parseMarkdownToNotionBlocks = (text) => {
+        if (!text) return [];
+        const blocks = [];
+        const lines = text.split('\n');
+        
+        const parseRichText = (str) => {
+          const tokens = [];
+          let current = '';
+          let i = 0;
+          while (i < str.length) {
+            if (str.substr(i, 2) === '**') {
+              if (current) tokens.push({ type: 'text', text: { content: current } });
+              current = '';
+              i += 2;
+              let boldText = '';
+              while (i < str.length && str.substr(i, 2) !== '**') { boldText += str[i]; i++; }
+              if (str.substr(i, 2) === '**') i += 2;
+              tokens.push({ type: 'text', text: { content: boldText }, annotations: { bold: true } });
+            } else if (str[i] === '`') {
+              if (current) tokens.push({ type: 'text', text: { content: current } });
+              current = '';
+              i++;
+              let codeText = '';
+              while (i < str.length && str[i] !== '`') { codeText += str[i]; i++; }
+              if (str[i] === '`') i++;
+              tokens.push({ type: 'text', text: { content: codeText }, annotations: { code: true } });
+            } else {
+              current += str[i];
+              i++;
+            }
+          }
+          if (current) tokens.push({ type: 'text', text: { content: current } });
+          return tokens.length > 0 ? tokens : [{ type: 'text', text: { content: " " } }];
+        };
+
+        for (let line of lines) {
+          line = line.trim();
+          if (!line) continue;
+          if (line.startsWith('# ')) {
+            blocks.push({ object: 'block', type: 'heading_1', heading_1: { rich_text: parseRichText(line.substring(2)) } });
+          } else if (line.startsWith('## ')) {
+            blocks.push({ object: 'block', type: 'heading_2', heading_2: { rich_text: parseRichText(line.substring(3)) } });
+          } else if (line.startsWith('### ')) {
+            blocks.push({ object: 'block', type: 'heading_3', heading_3: { rich_text: parseRichText(line.substring(4)) } });
+          } else if (line.startsWith('- ') || line.startsWith('* ')) {
+            blocks.push({ object: 'block', type: 'bulleted_list_item', bulleted_list_item: { rich_text: parseRichText(line.substring(2)) } });
+          } else if (/^\d+\.\s/.test(line)) {
+            blocks.push({ object: 'block', type: 'numbered_list_item', numbered_list_item: { rich_text: parseRichText(line.replace(/^\d+\.\s/, '')) } });
+          } else if (line.startsWith('> ')) {
+            blocks.push({ object: 'block', type: 'quote', quote: { rich_text: parseRichText(line.substring(2)) } });
+          } else {
+            blocks.push({ object: 'block', type: 'paragraph', paragraph: { rich_text: parseRichText(line) } });
+          }
+        }
+        const maxBlocks = blocks.slice(0, 100);
+        return maxBlocks.length > 0 ? maxBlocks : [{ object: 'block', type: 'paragraph', paragraph: { rich_text: [{ type: 'text', text: { content: "Empty page created by Classgrid AI" } }] } }];
+      };
+
       const user = await mongoose.models.User.findOne({ email: userEmail });
       if (!user || (!user.notion_access_token && !user.notion_refresh_token)) {
         return { content: [{ type: 'text', text: `Error: No Notion connection found. Please connect your Notion account first.` }] };
@@ -5106,20 +5164,7 @@ export const handleToolCall = async (name, args, context = {}) => {
                 }
               ]
             },
-            children: [
-              {
-                object: 'block',
-                type: 'paragraph',
-                paragraph: {
-                  rich_text: [
-                    {
-                      type: 'text',
-                      text: { content: args.content || "Empty page created by Classgrid AI" }
-                    }
-                  ]
-                }
-              }
-            ]
+            children: parseMarkdownToNotionBlocks(args.content)
           };
 
           const res = await fetch('https://api.notion.com/v1/pages', {
@@ -5136,20 +5181,7 @@ export const handleToolCall = async (name, args, context = {}) => {
           if (!args.content) throw new Error("content is required for update_page");
 
           const payload = {
-            children: [
-              {
-                object: 'block',
-                type: 'paragraph',
-                paragraph: {
-                  rich_text: [
-                    {
-                      type: 'text',
-                      text: { content: args.content }
-                    }
-                  ]
-                }
-              }
-            ]
+            children: parseMarkdownToNotionBlocks(args.content)
           };
 
           const res = await fetch(`https://api.notion.com/v1/blocks/${args.pageId}/children`, {
