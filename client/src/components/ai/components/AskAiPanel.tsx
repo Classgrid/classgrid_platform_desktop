@@ -3649,6 +3649,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           <>
             {messages.map((rawMessage, index) => {
               if (rawMessage.hidden) return null;
+              if (rawMessage.role === 'user' && typeof rawMessage.content === 'string' && rawMessage.content.trim().startsWith('[SYSTEM:')) return null;
 
               // Parse pasted text out of the content dynamically to reconstruct chips on page refresh
               const message = { ...rawMessage };
