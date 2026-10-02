@@ -87,15 +87,15 @@ export function SandboxPage() {
 
   return (
     <div className="min-h-screen w-full">
-      <div className="px-6 pt-6 pb-2 max-w-3xl flex flex-col gap-6">
-        <div className="p-4 border rounded-lg bg-card"><GlobalAiConfigPanel /></div>
-        <div className="p-4 border rounded-lg bg-card"><AiUsageBar initialData={{type: 'pro', used: 250, limit: 1000, remaining: 750, freeData: {used: 50, limit: 100, remaining: 50}}} /></div>
-        <div className="p-4 border rounded-lg bg-card"><SetupUsageCredits orgId="dummy" orgName="Dummy Org" currentPoolLimit={100} currentUserWeeklyLimit={50} /></div>
-        <div className="p-4 border rounded-lg bg-card"><ResetOrganizationDailyLimit orgId="dummy" orgName="Dummy Org" /></div>
-        <div className="p-4 border rounded-lg bg-card"><EditOrganizationDailyLimit orgId="dummy" orgName="Dummy Org" currentPoolLimit={100} currentUserWeeklyLimit={50} /></div>
-        <div className="p-4 border rounded-lg bg-card"><BlockOrganizationAiUsage orgId="dummy" orgName="Dummy Org" isBlocked={false} /></div>
-        <div className="p-4 border rounded-lg bg-card"><SuperadminFilterBar /></div>
-        <div className="p-4 border rounded-lg bg-card">
+      <div className="px-6 pt-6 pb-2 max-w-3xl flex flex-col gap-4">
+        <GlobalAiConfigPanel />
+        <AiUsageBar initialData={{type: 'pro', used: 250, limit: 1000, remaining: 750, freeData: {used: 50, limit: 100, remaining: 50}}} />
+        <SetupUsageCredits orgId="dummy" orgName="Dummy Org" currentPoolLimit={100} currentUserWeeklyLimit={50} />
+        <ResetOrganizationDailyLimit />
+        <EditOrganizationDailyLimit />
+        <BlockOrganizationAiUsage orgId="dummy" orgName="Dummy Org" isBlocked={false} />
+        <SuperadminFilterBar />
+        <div>
           <Button onClick={() => setShowGrantModal(true)}>Open Grant Credits Modal</Button>
           <GrantCreditsModal isOpen={showGrantModal} onClose={() => setShowGrantModal(false)} users={[]} />
         </div>
