@@ -725,15 +725,30 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                   ) : (
                     sharePreviewMessages
                       .filter((msg: any) => {
-                        if (msg.role === 'user') return true;
-                        const contentStr = typeof msg.content === 'object' && msg.content !== null ? msg.content.content || JSON.stringify(msg.content) : String(msg.content || '');
+                        let contentStr = typeof msg.content === 'object' && msg.content !== null ? msg.content.content || JSON.stringify(msg.content) : String(msg.content || '');
+                        if (typeof contentStr === 'string' && contentStr.trim().startsWith('{')) {
+                           try {
+                             const parsed = JSON.parse(contentStr);
+                             if (parsed && typeof parsed.content === 'string') contentStr = parsed.content;
+                           } catch(e) {}
+                        }
+                        if (msg.role === 'user') {
+                            if (contentStr.trim().startsWith('[SYSTEM:')) return false;
+                            return true;
+                        }
                         const textOnly = contentStr.replace(/```[\s\S]*?```/g, "").trim();
                         return textOnly.length > 0;
                       })
                       .slice(0, 4)
                       .map((msg: any, idx: number) => {
                       const isUser = msg.role === 'user';
-                      const safeContent = typeof msg.content === 'object' && msg.content !== null ? msg.content.content || JSON.stringify(msg.content) : String(msg.content || '');
+                      let safeContent = typeof msg.content === 'object' && msg.content !== null ? msg.content.content || JSON.stringify(msg.content) : String(msg.content || '');
+                      if (typeof safeContent === 'string' && safeContent.trim().startsWith('{')) {
+                           try {
+                             const parsed = JSON.parse(safeContent);
+                             if (parsed && typeof parsed.content === 'string') safeContent = parsed.content;
+                           } catch(e) {}
+                      }
                       return (
                         <div key={idx} className={isUser ? "bg-[#f1f1ef] dark:bg-[#2C2C2C] px-[14px] py-[6px] rounded-[16px] max-w-[85%] self-end" : "text-[15px] leading-[1.6] text-[#2C2C2B] dark:text-[#F0EFED] w-full"}>
                           {isUser ? (

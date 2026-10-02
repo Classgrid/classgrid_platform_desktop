@@ -3332,11 +3332,22 @@ const formatApprovalCard = (content) => {
         try {
             const inner = JSON.parse(textToFormat);
             if (inner && inner.classgrid_ai_message) {
+                // Extract only the clean content, stripping thought/steps/tool data
                 textToFormat = inner.content || "";
             }
         } catch (e) {
             // Ignore parse error, it's just normal text
         }
+    }
+
+    // If content is still a JSON blob after parsing (e.g. nested or malformed), try once more
+    if (typeof textToFormat === 'string' && textToFormat.trim().startsWith('{')) {
+        try {
+            const blob = JSON.parse(textToFormat);
+            if (blob && typeof blob.content === 'string') {
+                textToFormat = blob.content;
+            }
+        } catch (e) { /* not JSON, continue */ }
     }
 
     const replacer = (match, jsonString) => {
@@ -3476,7 +3487,13 @@ export const createPublicShare = async (req, res) => {
                             content: formatApprovalCard(m.content || ""),
                             created_at: m.created_at
                         }))
-                        .filter(m => m.content),
+                        // Filter out empty content and system messages
+                        .filter(m => {
+                            if (!m.content) return false;
+                            // Hide internal system messages from shared view
+                            if (m.role === 'user' && m.content.trim().startsWith('[SYSTEM:')) return false;
+                            return true;
+                        }),
                     shareId // Pass the pre-generated ID
                 );
                 console.info(`[Chat API] ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Public share created in background: ${shareUrl} for session ${id}`);
