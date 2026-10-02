@@ -96,6 +96,10 @@ export const getGlobalStats = async (req, res) => {
             { name: "@cf/runwayml/stable-diffusion-v1-5-img2img", type: "Img2Img", usage: "Image Editing", value: Math.floor(audioTokens * 0.05) }
         ];
 
+        const Organization = (await import('../../models/Organization.js')).default;
+        const mainOrg = await Organization.findOne({ name: /Classgrid/i, status: "active" }).sort({ createdAt: 1 });
+        const mainOrgId = mainOrg ? mainOrg._id : null;
+
         // Daily Trend: Fetch Tokens, Requests, Active Users, Active Orgs from AiUsageLog
         const dailyUsage = await AiUsageLog.aggregate([
             { $match: logMatch },
@@ -107,7 +111,7 @@ export const getGlobalStats = async (req, res) => {
                     completionTokens: { $sum: "$completionTokens" },
                     requests: { $sum: 1 },
                     uniqueUsers: { $addToSet: "$userId" },
-                    uniqueOrgs: { $addToSet: { $cond: [{ $eq: ["$organization_id", null] }, "classgrid", "$organization_id"] } }
+                    uniqueOrgs: { $addToSet: { $cond: [{ $eq: ["$organization_id", null] }, mainOrgId, "$organization_id"] } }
                 }
             }
         ]);
@@ -223,7 +227,7 @@ export const getGlobalStats = async (req, res) => {
             { $match: logMatch },
             { $group: { _id: "$model", requests: { $sum: 1 }, tokens: { $sum: "$totalTokens" } } }
         ]);
-        let modelsBreakdown = modelData.map(m => ({ name: m._id || "unknown", requests: m.requests, value: m.tokens }));
+        let modelsBreakdown = modelData.map(m => ({ name: m._id || "unknown", requests: m.requests, value: m.requests }));
 
         if (modelsBreakdown.length === 0) {
             const totalTokensFallback = Math.floor(totalCreditsSpent * 100);
@@ -244,12 +248,13 @@ export const getGlobalStats = async (req, res) => {
         // Org Breakdown
         const orgData = await AiUsageLog.aggregate([
             { $match: logMatch },
-            { $group: { _id: "$organization_id", requests: { $sum: 1 } } },
+            // Group by organization_id, mapping null to mainOrgId
+            { $group: { _id: { $cond: [{ $eq: ["$organization_id", null] }, mainOrgId, "$organization_id"] }, requests: { $sum: 1 } } },
             { $lookup: { from: "organizations", localField: "_id", foreignField: "_id", as: "org" } },
             { $unwind: { path: "$org", preserveNullAndEmptyArrays: true } },
-            { $project: { name: { $cond: [{ $eq: ["$_id", null] }, "Classgrid Platform", { $ifNull: ["$org.name", "Unknown Org"] }] }, orgId: { $cond: [{ $eq: ["$_id", null] }, "classgrid", "$org._id"] }, logo: "$org.logo_url", requests: 1, _id: 0 } }
+            { $project: { name: { $ifNull: ["$org.name", "Unknown Org"] }, orgId: "$_id", logo: "$org.logo_url", requests: 1, _id: 0 } }
         ]);
-        const orgsBreakdown = orgData.map(o => ({ name: o.name, orgId: o.orgId || "classgrid", logo: o.logo, value: o.requests, requests: o.requests }));
+        const orgsBreakdown = orgData.map(o => ({ name: o.name, orgId: o.orgId, logo: o.logo, value: o.requests, requests: o.requests }));
 
         // Status Breakdown
         const statusData = await AiUsageLog.aggregate([
