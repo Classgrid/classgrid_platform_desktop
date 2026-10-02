@@ -1,25 +1,41 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/marketing_ui/card";
 import { Button } from "@/components/marketing_ui/button";
-import { Settings, Save, AlertCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/marketing_ui/dialog";
 import { Input } from "@/components/marketing_ui/input";
+import { Label } from "@/components/marketing_ui/label";
+import { BlueSlider } from "@/components/marketing_ui/BlueSlider";
 import { toast } from "sonner";
+import { Spinner } from "@/components/marketing_ui/spinner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient as api } from "@/lib/apiClient";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 
 export function GlobalAiConfigPanel() {
   const queryClient = useQueryClient();
-  const [config, setConfig] = useState({
-    defaultOrgProPoolLimit: 500000,
-    defaultUserWeeklyFreeLimit: 100000,
-    defaultUserWeeklyImageLimit: 20
-  });
+  
+  // State for Pools
+  const [individualUsage, setIndividualUsage] = useState(100000);
+  const [orgPool, setOrgPool] = useState(500000);
+  const [images, setImages] = useState(20);
+  const [whatsapp, setWhatsapp] = useState(10); // Added for UI parity
+
+  // Loading States
+  const [openIndividual, setOpenIndividual] = useState(false);
+  const [openOrg, setOpenOrg] = useState(false);
+  const [openImages, setOpenImages] = useState(false);
+  const [openWhatsapp, setOpenWhatsapp] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["globalAiConfig"],
     queryFn: async () => {
-      // Create an endpoint in the super-admin ai usage controller to get config
       const res = await api.get("/api/v1/super-admin/ai/config");
       return res.data?.data;
     }
@@ -27,11 +43,10 @@ export function GlobalAiConfigPanel() {
 
   useEffect(() => {
     if (data) {
-      setConfig({
-        defaultOrgProPoolLimit: data.default_org_pro_pool_limit || 500000,
-        defaultUserWeeklyFreeLimit: data.default_user_weekly_free_limit || 100000,
-        defaultUserWeeklyImageLimit: data.default_user_weekly_image_limit || 20
-      });
+      setOrgPool(data.default_org_pro_pool_limit || 500000);
+      setIndividualUsage(data.default_user_weekly_free_limit || 100000);
+      setImages(data.default_user_weekly_image_limit || 20);
+      setWhatsapp(data.default_whatsapp_limit || 10);
     }
   }, [data]);
 
@@ -41,7 +56,6 @@ export function GlobalAiConfigPanel() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success("Global AI Limits updated successfully");
       queryClient.invalidateQueries({ queryKey: ["globalAiConfig"] });
     },
     onError: () => {
@@ -49,21 +63,21 @@ export function GlobalAiConfigPanel() {
     }
   });
 
-  const handleSave = () => {
+  const handleSave = (
+    setOpen: (v: boolean) => void,
+    successMessage: string
+  ) => {
     updateConfigMutation.mutate({
-      default_org_pro_pool_limit: config.defaultOrgProPoolLimit,
-      default_user_weekly_free_limit: config.defaultUserWeeklyFreeLimit,
-      default_user_weekly_image_limit: config.defaultUserWeeklyImageLimit
+      default_org_pro_pool_limit: orgPool,
+      default_user_weekly_free_limit: individualUsage,
+      default_user_weekly_image_limit: images,
+      default_whatsapp_limit: whatsapp
+    }, {
+      onSuccess: () => {
+        toast.success(successMessage);
+        setOpen(false);
+      }
     });
-  };
-
-  const handleNumberChange = (field: string, value: string) => {
-    const num = parseInt(value.replace(/,/g, ''), 10);
-    if (!isNaN(num)) {
-      setConfig(prev => ({ ...prev, [field]: num }));
-    } else if (value === "") {
-      setConfig(prev => ({ ...prev, [field]: 0 }));
-    }
   };
 
   if (isLoading) {
@@ -71,71 +85,157 @@ export function GlobalAiConfigPanel() {
   }
 
   return (
-    <Card className="mb-6 border-amber-500/20 bg-amber-500/5">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-bold flex items-center gap-2 text-amber-700 dark:text-amber-500">
-          <Settings className="w-5 h-5" />
-          Global AI Fallback Limits
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          These limits act as the default across the entire platform for newly created organizations and users. 
-          Custom overrides set on specific organizations will bypass these global limits.
-        </p>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-foreground">Organization Monthly Pro Pool</label>
-            <div className="relative">
-              <Input 
-                value={new Intl.NumberFormat('en-IN').format(config.defaultOrgProPoolLimit)} 
-                onChange={(e) => handleNumberChange("defaultOrgProPoolLimit", e.target.value)}
-                className="pl-4 font-mono font-bold text-amber-600 dark:text-amber-400"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">Default shared pool for entire orgs</p>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-foreground">User Weekly Free Pool</label>
-            <div className="relative">
-              <Input 
-                value={new Intl.NumberFormat('en-IN').format(config.defaultUserWeeklyFreeLimit)} 
-                onChange={(e) => handleNumberChange("defaultUserWeeklyFreeLimit", e.target.value)}
-                className="pl-4 font-mono font-bold text-blue-600 dark:text-blue-400"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">Weekly free tokens per individual user</p>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-foreground">User Weekly Free Images</label>
-            <div className="relative">
-              <Input 
-                value={new Intl.NumberFormat('en-IN').format(config.defaultUserWeeklyImageLimit)} 
-                onChange={(e) => handleNumberChange("defaultUserWeeklyImageLimit", e.target.value)}
-                className="pl-4 font-mono font-bold text-purple-600 dark:text-purple-400"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">Weekly free image generations</p>
-          </div>
+    <div className="flex flex-col gap-6">
+      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden h-full">
+        <div className="p-5 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">Global AI Fallback Limits</h2>
+          <p className="text-sm text-muted-foreground">Manage global default limits and quotas for all organizations.</p>
         </div>
 
-        <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-md">
-            <AlertCircle className="w-4 h-4" />
-            Changes apply globally immediately.
+        <div className="p-0 flex flex-col h-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border border-b border-border flex-1">
+            {/* Individual Usage */}
+            <Dialog open={openIndividual} onOpenChange={setOpenIndividual}>
+              <DialogTrigger asChild>
+                <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
+                  <span className="text-sm font-medium text-muted-foreground">Individual Daily Usage</span>
+                  <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                    {individualUsage.toLocaleString()} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens</span>
+                  </span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Edit Global Individual Limit</DialogTitle>
+                  <DialogDescription>Adjust the global 7-day token limit for individuals.</DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-3 py-4">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-semibold">Individual 7-Day Usage</Label>
+                    <span className="text-sm font-bold text-blue-600">{individualUsage.toLocaleString()}</span>
+                  </div>
+                  <BlueSlider min={1000} max={500000} step={1000} value={individualUsage} onValueChange={setIndividualUsage} disabled={updateConfigMutation.isPending} />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" type="button" onClick={() => setOpenIndividual(false)} disabled={updateConfigMutation.isPending}>Cancel</Button>
+                  <Button type="button" onClick={() => handleSave(setOpenIndividual, "Global individual limit saved successfully!")} disabled={updateConfigMutation.isPending}>
+                    {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
+                    Save changes
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Organization Pool */}
+            <Dialog open={openOrg} onOpenChange={setOpenOrg}>
+              <DialogTrigger asChild>
+                <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
+                  <span className="text-sm font-medium text-muted-foreground">Organization Pool</span>
+                  <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                    {orgPool.toLocaleString()} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens</span>
+                  </span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Edit Global Organization Pool</DialogTitle>
+                  <DialogDescription>Adjust the global shared token limit for organizations.</DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-3 py-4">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-semibold">Organization Shared Pool</Label>
+                    <span className="text-sm font-bold text-blue-600">{orgPool.toLocaleString()}</span>
+                  </div>
+                  <BlueSlider min={10000} max={5000000} step={10000} value={orgPool} onValueChange={setOrgPool} disabled={updateConfigMutation.isPending} />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" type="button" onClick={() => setOpenOrg(false)} disabled={updateConfigMutation.isPending}>Cancel</Button>
+                  <Button type="button" onClick={() => handleSave(setOpenOrg, "Global organization pool limit saved successfully!")} disabled={updateConfigMutation.isPending}>
+                    {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
+                    Save changes
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
-          <Button 
-            onClick={handleSave} 
-            disabled={updateConfigMutation.isPending}
-            className="bg-amber-600 hover:bg-amber-700 text-white"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {updateConfigMutation.isPending ? "Saving..." : "Save Global Limits"}
-          </Button>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border flex-1">
+            {/* Image Generations */}
+            <Dialog open={openImages} onOpenChange={setOpenImages}>
+              <DialogTrigger asChild>
+                <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
+                  <span className="text-sm font-medium text-muted-foreground">Image Generations</span>
+                  <span className="text-xl font-bold text-foreground">
+                    {images} <span className="text-sm font-normal text-muted-foreground ml-1">Images</span>
+                  </span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Edit Global Image Limits</DialogTitle>
+                  <DialogDescription>Make changes to the global Image generation limits.</DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-2 py-4">
+                  <Label htmlFor="images" className="text-sm font-medium">Image Generations</Label>
+                  <Input 
+                    id="images" 
+                    type="number"
+                    min={0}
+                    value={images} 
+                    onChange={(e) => setImages(Number(e.target.value))} 
+                    placeholder="e.g. 20" 
+                    disabled={updateConfigMutation.isPending}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" type="button" onClick={() => setOpenImages(false)} disabled={updateConfigMutation.isPending}>Cancel</Button>
+                  <Button type="button" onClick={() => handleSave(setOpenImages, "Global image limit saved successfully!")} disabled={updateConfigMutation.isPending}>
+                    {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
+                    Save changes
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* WhatsApp Scheduling */}
+            <Dialog open={openWhatsapp} onOpenChange={setOpenWhatsapp}>
+              <DialogTrigger asChild>
+                <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
+                  <span className="text-sm font-medium text-muted-foreground">WhatsApp Scheduling</span>
+                  <span className="text-xl font-bold text-foreground">
+                    {whatsapp} <span className="text-sm font-normal text-muted-foreground ml-1">Messages</span>
+                  </span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Edit Global WhatsApp Limits</DialogTitle>
+                  <DialogDescription>Make changes to the global WhatsApp Scheduling limits.</DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-2 py-4">
+                  <Label htmlFor="whatsapp" className="text-sm font-medium">WhatsApp Scheduling</Label>
+                  <Input 
+                    id="whatsapp" 
+                    type="number"
+                    min={0}
+                    value={whatsapp} 
+                    onChange={(e) => setWhatsapp(Number(e.target.value))} 
+                    placeholder="e.g. 10" 
+                    disabled={updateConfigMutation.isPending}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" type="button" onClick={() => setOpenWhatsapp(false)} disabled={updateConfigMutation.isPending}>Cancel</Button>
+                  <Button type="button" onClick={() => handleSave(setOpenWhatsapp, "Global WhatsApp limit saved successfully!")} disabled={updateConfigMutation.isPending}>
+                    {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
+                    Save changes
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
