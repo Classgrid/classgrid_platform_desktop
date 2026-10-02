@@ -126,7 +126,6 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col">
       <h3 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
-        <Zap className="w-6 h-6 text-purple-500" />
         AI Skills & Personalization
       </h3>
       <p className="text-sm text-muted-foreground mb-6 max-w-xl">
@@ -301,7 +300,6 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
             <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
               <div className="border-b border-border pb-3 mb-2 flex items-center justify-between">
                 <h4 className="font-semibold text-lg flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-purple-500" />
                   Create Custom Skill
                 </h4>
               </div>
@@ -336,7 +334,6 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
                 <div key={skill._id} className="group flex items-start justify-between py-4">
                   <div className="space-y-1">
                     <h5 className="text-sm font-medium flex items-center gap-2">
-                      <Zap className="w-3.5 h-3.5 text-purple-500" />
                       {skill.name}
                     </h5>
                     <p className="text-xs text-muted-foreground whitespace-pre-wrap">{skill.instructions}</p>
