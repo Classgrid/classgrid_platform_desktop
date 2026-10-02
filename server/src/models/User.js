@@ -691,6 +691,27 @@ const userSchema = new mongoose.Schema(
       ai_image_free_weekly_used: { type: Number, default: 0 },
       total_ai_tokens_used: { type: Number, default: 0 }
     },
+    // 🧠 AI Chat Customization & Defaults
+    ai_preferences: {
+      tone: { type: String, default: 'balanced' },
+      verbosity: { type: String, default: 'balanced' },
+      format: { type: String, default: 'markdown' },
+      emoji: { type: String, default: 'default' },
+      level: { type: String, default: 'intermediate' },
+      nickname: { type: String, default: '' },
+      occupation: { type: String, default: '' },
+      aboutMe: { type: String, default: '' },
+      howToRespond: { type: String, default: '' },
+      activeDefaults: { type: [String], default: ['truth', 'privacy'] }
+    },
+    // 🧠 Custom AI Skills
+    ai_custom_skills: [
+      {
+        name: { type: String, required: true },
+        instructions: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now }
+      }
+    ],
     metadata: {
       type: mongoose.Schema.Types.Mixed,
       default: {},

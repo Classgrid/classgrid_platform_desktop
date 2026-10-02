@@ -1044,6 +1044,67 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
             }
         }
 
+        // --- INJECT AI SKILLS & PREFERENCES ---
+        if (userId) {
+            try {
+                const User = (await import("../models/User.js")).default;
+                const AiSkill = (await import("../models/AiSkill.js")).default;
+                
+                const userPrefsDoc = await User.findById(userId).select("ai_preferences").lean();
+                const prefs = userPrefsDoc?.ai_preferences || {};
+                
+                let hasPrefs = false;
+                let prefsText = `\n\n<user_preferences>\n`;
+                if (prefs.tone && prefs.tone !== 'balanced') { prefsText += `- Tone: ${prefs.tone}\n`; hasPrefs = true; }
+                if (prefs.verbosity && prefs.verbosity !== 'balanced') { prefsText += `- Verbosity: ${prefs.verbosity}\n`; hasPrefs = true; }
+                if (prefs.format && prefs.format !== 'markdown') { prefsText += `- Formatting: ${prefs.format}\n`; hasPrefs = true; }
+                if (prefs.emoji && prefs.emoji !== 'default') { prefsText += `- Emoji Usage: ${prefs.emoji}\n`; hasPrefs = true; }
+                if (prefs.level && prefs.level !== 'intermediate') { prefsText += `- Explanation Level: ${prefs.level}\n`; hasPrefs = true; }
+                if (prefs.nickname) { prefsText += `- Call me: ${prefs.nickname}\n`; hasPrefs = true; }
+                if (prefs.occupation) { prefsText += `- My Role: ${prefs.occupation}\n`; hasPrefs = true; }
+                if (prefs.aboutMe) { prefsText += `- About Me: ${prefs.aboutMe}\n`; hasPrefs = true; }
+                if (prefs.howToRespond) { prefsText += `- Special Response Instructions: ${prefs.howToRespond}\n`; hasPrefs = true; }
+                prefsText += `</user_preferences>\n`;
+                
+                if (hasPrefs) {
+                    dynamicSystemPrompt += prefsText;
+                }
+                
+                // Inject Active Skills
+                const activeSkillIds = prefs.activeDefaults || [];
+                const customSkills = await AiSkill.find({ userId, is_active: true }).lean();
+                
+                const DEFAULT_SKILLS_MAP = {
+                    'whatsapp': 'When drafting parent announcements, automatically format it with bullet points perfect for WhatsApp Business.',
+                    'drive_class': 'When sharing study materials, automatically search Google Drive for PDFs and prepare them for Google Classroom.',
+                    'notion': 'When saving a policy or document, automatically format it as a markdown wiki page ready to push to Notion.',
+                    'vercel_supabase': 'When debugging server issues, proactively check Vercel deployment logs and query Supabase for errors.',
+                    'calendar_meet': 'When needing a meeting, prioritize checking Google Calendar for free slots and include a Google Meet link.',
+                    'social_media': 'When promoting a school event, draft a short Instagram caption with emojis and a longer Facebook post.',
+                    'slack_teams': 'When a critical incident occurs, draft a concise summary ready to be blasted to Staff Slack or Teams.',
+                    'sanity': 'When writing a school blog post, format the content to perfectly match our Sanity CMS schema requirements.',
+                    'github': 'When looking at codebase issues, suggest fixes that strictly align with our GitHub repository linting rules.',
+                    'youtube': 'When looking for supplemental explanations, automatically search YouTube for high-quality educational videos.'
+                };
+                
+                if (activeSkillIds.length > 0 || customSkills.length > 0) {
+                    dynamicSystemPrompt += `\n<active_skills_instructions>\nYOU MUST OBEY THESE CUSTOM INSTRUCTIONS:\n`;
+                    activeSkillIds.forEach(id => {
+                        if (DEFAULT_SKILLS_MAP[id]) {
+                            dynamicSystemPrompt += `- ${DEFAULT_SKILLS_MAP[id]}\n`;
+                        }
+                    });
+                    customSkills.forEach(skill => {
+                        dynamicSystemPrompt += `- ${skill.name}: ${skill.instructions}\n`;
+                    });
+                    dynamicSystemPrompt += `</active_skills_instructions>\n`;
+                }
+
+            } catch(e) {
+                console.error("Error loading AI Preferences:", e);
+            }
+        }
+
         // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
         // ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ…â€™ COMPREHENSIVE PLUGIN & INTEGRATION STATUS INJECTION (50-100 LINES)
         // Fetches real-time token data from DB and builds a full status dashboard
@@ -4286,6 +4347,44 @@ export const deleteSkill = async (req, res) => {
     }
 };
 
-// Trigger GitHub Actions backend deployment 2
+export const getPreferences = async (req, res) => {
+    try {
+        const User = (await import("../models/User.js")).default;
+        const user = await User.findById(req.user.id).select("ai_preferences").lean();
+        res.json({ preferences: user?.ai_preferences || {} });
+    } catch (e) {
+        console.error("Error fetching preferences:", e);
+        res.status(500).json({ error: "Failed to fetch preferences" });
+    }
+};
 
-// Vercel triggerdjvnsdjnkj
+export const updatePreferences = async (req, res) => {
+    try {
+        const User = (await import("../models/User.js")).default;
+        const { tone, verbosity, format, emoji, level, nickname, occupation, aboutMe, howToRespond, activeDefaults } = req.body;
+        
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user.id,
+            { 
+                $set: { 
+                    "ai_preferences.tone": tone,
+                    "ai_preferences.verbosity": verbosity,
+                    "ai_preferences.format": format,
+                    "ai_preferences.emoji": emoji,
+                    "ai_preferences.level": level,
+                    "ai_preferences.nickname": nickname,
+                    "ai_preferences.occupation": occupation,
+                    "ai_preferences.aboutMe": aboutMe,
+                    "ai_preferences.howToRespond": howToRespond,
+                    "ai_preferences.activeDefaults": activeDefaults || []
+                } 
+            },
+            { new: true }
+        ).select("ai_preferences").lean();
+
+        res.json({ success: true, preferences: updatedUser.ai_preferences });
+    } catch (e) {
+        console.error("Error updating preferences:", e);
+        res.status(500).json({ error: "Failed to update preferences" });
+    }
+};
