@@ -463,23 +463,32 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     const User = (await import("../models/User.js")).default;
                     const user = await User.findById(userId).populate("organization_id");
                     
-                    await AiCreditTransaction.create({
-                        userId: userId,
-                        orgId: organizationId,
-                        amount_inr: amountInr,
-                        credits_added: creditsAdded,
-                        razorpay_payment_id: paymentId,
-                        razorpay_order_id: orderId,
-                        type: "topup",
-                        status: "success",
-                        userName: user?.name || "Unknown",
-                        userEmail: paymentEntity.email || user?.email || "",
-                        userMobile: paymentEntity.contact || user?.phoneNumber || "",
-                        userRole: user?.role || "",
-                        organizationName: user?.organization_id?.name || "",
-                        paymentMethod: paymentEntity.method || "",
-                        paymentTime: paymentEntity.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
-                    });
+                    let aiTxn;
+                    try {
+                        aiTxn = await AiCreditTransaction.create({
+                            userId: userId,
+                            orgId: organizationId,
+                            amount_inr: amountInr,
+                            credits_added: creditsAdded,
+                            razorpay_payment_id: paymentId,
+                            razorpay_order_id: orderId,
+                            type: "topup",
+                            status: "success",
+                            userName: user?.name || "Unknown",
+                            userEmail: paymentEntity.email || user?.email || "",
+                            userMobile: paymentEntity.contact || user?.phoneNumber || "",
+                            userRole: user?.role || "",
+                            organizationName: user?.organization_id?.name || "",
+                            paymentMethod: paymentEntity.method || "",
+                            paymentTime: paymentEntity.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
+                        });
+                    } catch (dupErr) {
+                        if (dupErr.code === 11000) {
+                            console.log(`[Razorpay Webhook] Caught concurrent duplicate AI Top-Up payment ${paymentId}, skipping`);
+                            break;
+                        }
+                        throw dupErr;
+                    }
 
                     // Set start date only if this is the first purchase, always extend end date to 30 days from now
                     const now = new Date();
@@ -504,7 +513,7 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                     await User.findByIdAndUpdate(userId, updateOps);
 
                     const PaymentOrder = (await import("../models/PaymentOrder.js")).default;
-                    await PaymentOrder.findOneAndUpdate({ providerOrderId: orderId }, { status: "PAID" });
+                    const pOrder = await PaymentOrder.findOneAndUpdate({ providerOrderId: orderId }, { status: "PAID" }, { new: true });
 
                     // Format payment method string properly
                     let methodStr = paymentEntity.method || "";
@@ -560,7 +569,7 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                             method: paymentEntity.method || "card",
                             vpa: paymentEntity.vpa || null,
                             bankReference: bankRrn,
-                            paymentOrderId: orderId, // Some default schema fields to avoid validation errors
+                            paymentOrderId: pOrder ? pOrder._id : new mongoose.Types.ObjectId(), // Use real mongo ID or generate fake to avoid BSON error
                             paymentAttemptId: new mongoose.Types.ObjectId() // Fake attempt ID if missing, since this is a direct top-up bypass
                         });
                     } catch (e) {
