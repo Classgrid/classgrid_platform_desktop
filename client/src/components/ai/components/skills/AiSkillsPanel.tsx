@@ -452,9 +452,13 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
                       />
                       <div className="flex items-center justify-end gap-2 pt-2">
                         <Button variant="ghost" size="sm" onClick={() => setEditSkillId(null)}>Cancel</Button>
-                        <Button size="sm" onClick={updateSkill} disabled={isEditingSkill}>
-                          {isEditingSkill ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
-                        </Button>
+                        <button 
+                          className="relative h-10 rounded-lg border-border bg-accent px-4 md:px-6 text-sm font-medium tracking-tight text-foreground/90 transition-all duration-200 hover:bg-slate-200 dark:hover:bg-accent/80 hover:border-border hover:text-foreground cursor-pointer disabled:opacity-50" 
+                          onClick={updateSkill} 
+                          disabled={isEditingSkill}
+                        >
+                          {isEditingSkill ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Save"}
+                        </button>
                       </div>
                     </div>
                   ) : (
