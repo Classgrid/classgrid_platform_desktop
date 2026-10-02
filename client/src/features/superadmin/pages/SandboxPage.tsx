@@ -97,39 +97,57 @@ import { AiUsageBar } from "@/components/ai/components/AiUsageBar";
 import { AiUsageTrendsChart } from "../components/AiUsageTrendsChart";
 import { AiTokenUsageChart } from "../components/AiTokenUsageChart";
 
+import { TopAiUsersTable } from "../components/TopAiUsersTable";
+
 export function SandboxPage() {
   const [isGrantCreditsOpen, setIsGrantCreditsOpen] = React.useState(false);
   return (
-    <div className="min-h-screen w-full">
-      <div className="px-6 pt-6 pb-2 max-w-3xl flex flex-col gap-4">
-        <GlobalAiConfigPanel />
-        <AiUsageBar initialData={{type: 'pro', used: 250, limit: 1000, remaining: 750, freeData: {used: 50, limit: 100, remaining: 50}}} />
-        <AiUsageTrendsChart />
-        <AiTokenUsageChart />
-        <SuperadminFilterBar />
-        <SetupUsageCredits />
-        <ResetOrganizationDailyLimit />
-        <EditOrganizationDailyLimit />
-        <BlockOrganizationAiUsage />
+    <div className="min-h-screen w-full bg-[#050505]">
+      <div className="px-6 pt-6 pb-2 w-full max-w-6xl mx-auto flex flex-col gap-6">
         
-        <div className="border border-border rounded-xl mt-4 shadow-sm">
-          <div className="p-6 bg-card flex flex-col gap-6">
+        {/* 1, 2, 3 */}
+        <AiUsageTrendsChart />
+
+        {/* 4 */}
+        <AiUsageBar initialData={{type: 'pro', used: 250, limit: 1000, remaining: 750, freeData: {used: 50, limit: 100, remaining: 50}}} />
+
+        {/* 5 */}
+        <TopAiUsersTable />
+
+        {/* 6 */}
+        <SetupUsageCredits />
+
+        {/* 7 */}
+        <div className="border border-border rounded-xl shadow-sm bg-[#0a0a0a]">
+          <div className="p-6 bg-card flex flex-col gap-6 bg-[#0a0a0a]">
             <div className="flex flex-col gap-1.5">
-              <h3 className="text-lg font-semibold text-foreground tracking-tight">
+              <h3 className="text-lg font-semibold text-white tracking-tight">
                 Grant Organization Credits
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-400">
                 Open the AI Hub Panel to securely grant tokens to an organization.
               </p>
             </div>
           </div>
-          <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end">
-            <Button variant="outline" onClick={() => setIsGrantCreditsOpen(true)}>
+          <div className="p-4 bg-[#111111] border-t border-[#222222] flex items-center justify-end">
+            <Button variant="outline" onClick={() => setIsGrantCreditsOpen(true)} className="bg-black border-[#222222] text-white hover:bg-[#1a1a1a]">
               <LayoutTemplate className="w-4 h-4 mr-2" />
               Open Grant Credits Panel
             </Button>
           </div>
         </div>
+
+        {/* 8 */}
+        <ResetOrganizationDailyLimit />
+
+        {/* 9 */}
+        <EditOrganizationDailyLimit />
+
+        {/* 10 */}
+        <BlockOrganizationAiUsage />
+
+        {/* 11 */}
+        <GlobalAiConfigPanel />
 
         <GrantCreditsModal 
           isOpen={isGrantCreditsOpen} 

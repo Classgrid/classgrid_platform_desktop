@@ -28,10 +28,10 @@ const DUMMY_CHART_DATA = [
 
 export function AiTokenUsageChart() {
   return (
-    <Card className="border border-border shadow-sm overflow-hidden bg-card">
-      <CardHeader className="bg-muted/10 border-b border-border pb-4">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2 text-foreground">
-          <Database className="w-5 h-5 text-orange-500" />
+    <Card className="border border-[#222222] shadow-sm overflow-hidden bg-[#0a0a0a] dark:bg-[#0a0a0a]">
+      <CardHeader className="border-b border-[#222222] pb-4 bg-[#0a0a0a]">
+        <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
+          <Database className="w-5 h-5 text-[#ea580c]" />
           Token Usage Over Time
         </CardTitle>
       </CardHeader>
@@ -67,8 +67,8 @@ export function AiTokenUsageChart() {
                 iconType="square" 
                 wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: '#888888' }}
               />
-              <Bar dataKey="input" name="Input Tokens" stackId="a" fill="#ea580c" barSize={12} />
-              <Bar dataKey="output" name="Output Tokens" stackId="a" fill="#3b82f6" barSize={12} radius={[2, 2, 0, 0]} />
+              <Bar dataKey="input" name="Input Tokens" stackId="a" fill="#ea580c" barSize={24} />
+              <Bar dataKey="output" name="Output Tokens" stackId="a" fill="#3b82f6" barSize={24} radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
