@@ -121,7 +121,7 @@ CHAT HISTORY:
 ${historyText}`;
 
         const response = await openai.chat.completions.create({
-            /* model: "open-mistral-nemo" */
+            model: "open-mistral-nemo",
             messages: [{ role: "user", content: prompt }]
         });
 

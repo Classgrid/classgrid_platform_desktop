@@ -53,3 +53,27 @@ Migrate hardcoded fallback values into a dynamic Cloudflare KV store (or DB conf
 
 ## Next Steps
 (Awaiting further specific instructions on which file to tackle first...)
+Global vs Custom Org Limits:
+
+Global limits configurable on the first page.
+Ability to open an organization's specific details page and override those defaults with a custom limit.
+Usage Progress Bars:
+
+0 to 100% Global progress bar on the first page showing total platform usage.
+Re-using the exact "Blue Bar" component from the AI Credits page to show Tokens Used vs Tokens Remaining individually on each organization's page.
+User Tracking & Top Users Table:
+
+A table on the Org details page showing the top users, with a filter so Super Admins can sort by Role (faculty vs student, etc).
+Individual user views showing their exact usage slice.
+Analytics Charts:
+
+Bar graphs showing the "Most Active Day" and "Least Used Days".
+Security Controls (Block AI & Reset):
+
+A toggle to entirely Block AI for a specific organization (immediately showing "AI Stopped" and dropping all API requests for them).
+A "Reset Credits" button.
+Super Admin Gifting:
+
+A new feature allowing you to override the standard "purchase" flow. You can go to any user's profile and "Gift" them credits directly.
+It will automatically show up correctly in their Billing History table.
+It will trigger an automatic email to them letting them know the
