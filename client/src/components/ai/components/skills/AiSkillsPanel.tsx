@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Plus, Trash2, Edit2, Zap, Save, ChevronDown, Pencil, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit2, Zap, Save, ChevronDown, Pencil } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { Input } from "@/components/marketing_ui/input";
 import { Textarea } from "@/components/marketing_ui/textarea";
 import { Switch } from "@/components/marketing_ui/switch";
 import { toast } from "sonner";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
-
-
+import { Spinner } from "@/components/marketing_ui/spinner";
 const CustomSelect = ({ value, onChange, options }: { value: string, onChange: (val: string) => void, options: { value: string, label: string }[] }) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -457,7 +456,7 @@ export function AiSkillsPanel({ backendUrl }: { backendUrl: string }) {
                           onClick={updateSkill} 
                           disabled={isEditingSkill}
                         >
-                          {isEditingSkill ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Save"}
+                          {isEditingSkill ? <Spinner className="w-4 h-4 mx-auto" /> : "Save"}
                         </button>
                       </div>
                     </div>
