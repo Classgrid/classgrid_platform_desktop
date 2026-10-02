@@ -48,7 +48,7 @@ import {
     chatWithSyllabus, 
     getMyPersona 
 } from "../controllers/ai.controller.js";
-import { streamAskAi, getChatSessions, getChatSession, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession, createPublicShare, getPublicShare, submitAiFeedback, getAgentReviews, updateAgentReviewStatus, processAgentReviewsCron, deleteAgentReview, bulkDeleteAgentReviews, generateImage, getMyGeneratedImages, deleteGeneratedImage, getMyUsage, getOrgUsage } from "../controllers/ai-chat.controller.js";
+import { streamAskAi, getChatSessions, getChatSession, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession, createPublicShare, getPublicShare, submitAiFeedback, getAgentReviews, updateAgentReviewStatus, processAgentReviewsCron, deleteAgentReview, bulkDeleteAgentReviews, generateImage, getMyGeneratedImages, deleteGeneratedImage, getMyUsage, getOrgUsage, getSkills, createSkill, deleteSkill } from "../controllers/ai-chat.controller.js";
 
 import aiTopUpRoutes from "./ai-credits-topup.routes.js";
 import aiCreditsRoutes from "./ai-credits.routes.js";
@@ -84,6 +84,11 @@ router.get("/cron-process-reviews", processAgentReviewsCron);
 router.post("/generate-image", isAuthenticated, generateImage);
 router.get("/my-images", isAuthenticated, getMyGeneratedImages);
 router.delete("/my-images/:id", isAuthenticated, deleteGeneratedImage);
+
+// AI Skills
+router.get("/skills", isAuthenticated, getSkills);
+router.post("/skills", isAuthenticated, createSkill);
+router.delete("/skills/:id", isAuthenticated, deleteSkill);
 
 // Token Usage Tracking
 router.get("/my-usage", isAuthenticated, getMyUsage);

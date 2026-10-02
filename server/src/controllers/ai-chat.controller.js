@@ -2403,6 +2403,26 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                     // These handlers wire up the integration tool schemas to the actual
                     // MCP handleToolCall function. Without these, the AI can "see" the tools
                     // but can't execute them ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â causing "All providers failed" errors.
+                    create_skill: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('create_skill', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    list_skills: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('list_skills', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    read_skill: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('read_skill', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
+                    delete_skill: async (args) => {
+                        const userEmail = req.user?.email || body.userEmail || '';
+                        const result = await handleToolCall('delete_skill', args, { userEmail });
+                        return result.isError ? result.content[0].text : result.content[0].text;
+                    },
                     google_workspace_connector: async (args) => {
                         const userEmail = req.user?.email || body.userEmail || '';
                         const result = await handleToolCall('google_workspace_connector', args, { userEmail });
@@ -4221,6 +4241,48 @@ export const getOrgUsage = async (req, res) => {
     } catch (e) {
         console.error("Error getting Org usage:", e);
         res.status(500).json({ error: "Failed to fetch org token usage" });
+    }
+};
+
+export const getSkills = async (req, res) => {
+    try {
+        const AiSkill = (await import("../models/AiSkill.js")).default;
+        const skills = await AiSkill.find({ userId: req.user.id }).lean();
+        res.json({ skills });
+    } catch (e) {
+        console.error("Error fetching skills:", e);
+        res.status(500).json({ error: "Failed to fetch skills" });
+    }
+};
+
+export const createSkill = async (req, res) => {
+    try {
+        const AiSkill = (await import("../models/AiSkill.js")).default;
+        const { name, instructions } = req.body;
+        if (!name || !instructions) return res.status(400).json({ error: "Name and instructions required" });
+        const skill = await AiSkill.create({
+            userId: req.user.id,
+            organization_id: req.user.organization_id,
+            name,
+            instructions,
+            is_active: true,
+            is_default: false
+        });
+        res.json({ success: true, skill });
+    } catch (e) {
+        console.error("Error creating skill:", e);
+        res.status(500).json({ error: "Failed to create skill" });
+    }
+};
+
+export const deleteSkill = async (req, res) => {
+    try {
+        const AiSkill = (await import("../models/AiSkill.js")).default;
+        await AiSkill.findOneAndDelete({ _id: req.params.id, userId: req.user.id, is_default: false });
+        res.json({ success: true });
+    } catch (e) {
+        console.error("Error deleting skill:", e);
+        res.status(500).json({ error: "Failed to delete skill" });
     }
 };
 

@@ -26,6 +26,7 @@ import { AiImagesGallery } from "./AiImagesGallery";
 import { AiUsageBar } from "./AiUsageBar";
 import { AiCreditsPanel } from "./credits/AiCreditsPanel";
 import { AiUpgradePanel } from "./credits/AiUpgradePanel";
+import { AiSkillsPanel } from "./skills/AiSkillsPanel";
 
 interface AiHubModalProps {
   isOpen: boolean;
@@ -631,6 +632,10 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
                 ) : activeTab === "upgrade" ? (
                   <div className="h-full flex-1 -m-8">
                     <AiUpgradePanel />
+                  </div>
+                ) : activeTab === "skills" ? (
+                  <div className="h-full flex-1">
+                    <AiSkillsPanel backendUrl={backendUrl} />
                   </div>
                 ) : (
                   <>

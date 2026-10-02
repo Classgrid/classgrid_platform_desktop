@@ -1268,6 +1268,31 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
           }
         }
 
+        if (language === "skill" && !inline) {
+          try {
+            const skillData = JSON5.parse(String(children));
+            return (
+              <div 
+                className="my-4 w-full rounded-xl border border-border/50 hover:border-border hover:bg-muted/10 bg-card p-4 shadow-sm relative z-10 overflow-hidden cursor-pointer transition-colors"
+                onClick={() => {
+                   window.dispatchEvent(new CustomEvent('open-ai-hub', { detail: { tab: 'skills' } }));
+                }}
+              >
+                <div className="flex items-center gap-3 mb-1.5">
+                  <div className="p-2 bg-muted/50 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                  </div>
+                  <h4 className="font-semibold text-[15px]">{skillData.name || "Custom Skill"}</h4>
+                </div>
+                <p className="text-[13px] text-muted-foreground ml-[46px]">{skillData.instructions || "Click to manage your AI skills."}</p>
+              </div>
+            );
+          } catch (e: any) {
+            if (isTypingRef.current) return <CraftingBlock />;
+            return null;
+          }
+        }
+
         if (isApprovalLang) {
           try {
             let parsedProps = JSON5.parse(String(children));
@@ -1568,6 +1593,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [showFilesPanel, setShowFilesPanel] = useState(false);
   const [isAiHubOpen, setIsAiHubOpen] = useState(false);
   const [aiHubInitialTab, setAiHubInitialTab] = useState<string>("plugins");
+
+  useEffect(() => {
+    const handleOpenAiHub = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.tab) {
+        setAiHubInitialTab(customEvent.detail.tab);
+      }
+      setIsAiHubOpen(true);
+    };
+    window.addEventListener('open-ai-hub', handleOpenAiHub);
+    return () => window.removeEventListener('open-ai-hub', handleOpenAiHub);
+  }, []);
 
   // @ mention state
   const [atMenuOpen, setAtMenuOpen] = useState(false);

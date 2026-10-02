@@ -67,6 +67,45 @@ async function getMetaLongLivedToken() {
 
 export const getMcpTools = () => [
   {
+    name: 'create_skill',
+    description: 'Create a new custom AI skill (instruction set) for the user. Use this when the user asks you to remember a rule, format, or instruction for future conversations.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'A short, descriptive name for the skill (e.g. "Math Tutor", "Code Reviewer").' },
+        instructions: { type: 'string', description: 'The detailed instructions or rules for this skill.' }
+      },
+      required: ['name', 'instructions']
+    }
+  },
+  {
+    name: 'list_skills',
+    description: 'List all custom AI skills (instruction sets) available to the user.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'read_skill',
+    description: 'Read the detailed instructions of a specific custom AI skill.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        skill_id: { type: 'string', description: 'The MongoDB ObjectId of the skill to read.' }
+      },
+      required: ['skill_id']
+    }
+  },
+  {
+    name: 'delete_skill',
+    description: 'Delete a custom AI skill.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        skill_id: { type: 'string', description: 'The MongoDB ObjectId of the skill to delete.' }
+      },
+      required: ['skill_id']
+    }
+  },
+  {
     name: 'unified_db_query',
     description: `Executes a query against MongoDB or Supabase. MANDATORY RULES:
 1. You MUST ALWAYS provide the 'fields' parameter with ONLY the specific fields you need (e.g. ["name", "email"]). NEVER request all fields.
@@ -1106,6 +1145,76 @@ export const handleToolCall = async (name, args, context = {}) => {
   };
 
   try {
+    if (name === 'create_skill') {
+      try {
+        const AiSkill = (await import('../models/AiSkill.js')).default;
+        const User = (await import('../models/User.js')).default;
+        const user = await User.findOne({ email: userEmail });
+        if (!user) return { content: [{ type: 'text', text: 'Error: User not found.' }] };
+
+        const newSkill = await AiSkill.create({
+          userId: user._id,
+          organization_id: user.organization_id,
+          name: args.name,
+          instructions: args.instructions,
+          is_active: true,
+          is_default: false
+        });
+        return { content: [{ type: 'text', text: `Skill "${args.name}" created successfully. YOU MUST NOW output exactly this to the user:\n\nCreated skill\n\`\`\`skill\n{"name": "${args.name}", "instructions": "${args.instructions}"}\n\`\`\`` }] };
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Error creating skill: ${err.message}` }] };
+      }
+    }
+
+    if (name === 'list_skills') {
+      try {
+        const AiSkill = (await import('../models/AiSkill.js')).default;
+        const User = (await import('../models/User.js')).default;
+        const user = await User.findOne({ email: userEmail });
+        if (!user) return { content: [{ type: 'text', text: 'Error: User not found.' }] };
+
+        const skills = await AiSkill.find({ userId: user._id }).lean();
+        if (skills.length === 0) return { content: [{ type: 'text', text: 'No skills found for this user.' }] };
+
+        const summary = skills.map(s => `- ID: ${s._id}, Name: ${s.name}, Active: ${s.is_active}, Default: ${s.is_default}`).join('\n');
+        return { content: [{ type: 'text', text: `Skills found:\n${summary}` }] };
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Error listing skills: ${err.message}` }] };
+      }
+    }
+
+    if (name === 'read_skill') {
+      try {
+        const AiSkill = (await import('../models/AiSkill.js')).default;
+        const User = (await import('../models/User.js')).default;
+        const user = await User.findOne({ email: userEmail });
+        if (!user) return { content: [{ type: 'text', text: 'Error: User not found.' }] };
+
+        const skill = await AiSkill.findOne({ _id: args.skill_id, userId: user._id }).lean();
+        if (!skill) return { content: [{ type: 'text', text: 'Error: Skill not found or access denied.' }] };
+
+        return { content: [{ type: 'text', text: `Skill Name: ${skill.name}\nInstructions: ${skill.instructions}` }] };
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Error reading skill: ${err.message}` }] };
+      }
+    }
+
+    if (name === 'delete_skill') {
+      try {
+        const AiSkill = (await import('../models/AiSkill.js')).default;
+        const User = (await import('../models/User.js')).default;
+        const user = await User.findOne({ email: userEmail });
+        if (!user) return { content: [{ type: 'text', text: 'Error: User not found.' }] };
+
+        const deleted = await AiSkill.findOneAndDelete({ _id: args.skill_id, userId: user._id, is_default: false });
+        if (!deleted) return { content: [{ type: 'text', text: 'Error: Skill not found, already deleted, or cannot delete a default skill.' }] };
+
+        return { content: [{ type: 'text', text: `Skill deleted successfully.` }] };
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Error deleting skill: ${err.message}` }] };
+      }
+    }
+
     if (name === 'get_my_profile') {
       try {
         const User = (await import('../models/User.js')).default;
