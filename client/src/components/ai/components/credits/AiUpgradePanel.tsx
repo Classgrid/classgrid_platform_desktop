@@ -5,7 +5,7 @@ import { formatNumber } from "@/lib/utils";
 import { Zap, ArrowUpCircle, Wallet, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { Button } from "@/components/marketing_ui/button";
-import { Input } from "@/components/marketing_ui/input";
+import { Slider } from "@/components/marketing_ui/slider";
 import { toast } from "sonner";
 
 export function AiUpgradePanel() {
@@ -93,16 +93,19 @@ export function AiUpgradePanel() {
                 <label className="block text-sm font-medium text-foreground mb-3">
                   Enter Amount (₹1 - ₹10,000)
                 </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-lg z-10">₹</span>
-                  <Input 
-                    type="number"
-                    min={1}
-                    max={10000}
-                    value={customAmountStr}
-                    onChange={(e) => setCustomAmountStr(e.target.value)}
-                    className="w-full h-14 pl-9 pr-4 text-xl font-bold rounded-lg"
-                  />
+                <div className="flex items-center gap-6">
+                  <div className="flex-1">
+                    <Slider
+                      min={1}
+                      max={10000}
+                      step={10}
+                      value={[customAmount]}
+                      onValueChange={(val: number[]) => setCustomAmountStr(String(val[0]))}
+                    />
+                  </div>
+                  <div className="shrink-0 w-24 text-right">
+                    <span className="text-2xl font-bold text-foreground">₹{formatNumber(customAmount)}</span>
+                  </div>
                 </div>
                 
                 <div className="mt-6 p-4 bg-muted border border-border rounded-lg flex items-center justify-between">
@@ -119,12 +122,12 @@ export function AiUpgradePanel() {
                 )}
               </div>
 
-              <div className="flex justify-end pt-4 mt-2">
+              <div className="flex justify-start pt-4 mt-2">
                 <Button 
                   variant="ghost"
                   onClick={handleTopUp} 
                   disabled={!isValidAmount || topUpMutation.isPending}
-                  className="w-full text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground border border-border/50 shadow-sm px-6"
                 >
                   {topUpMutation.isPending ? "Processing..." : "Purchase Credits"}
                 </Button>
