@@ -3369,6 +3369,7 @@ router.patch("/branding", isAuthenticated, requireRole("org_admin"), async (req,
             await redis.del(`branding:${String(updatedOrg.subdomain).toLowerCase().trim()}`);
         }
         await redis.del(`user:profile:${req.user._id}`);
+        await redis.del(`user:profile:v2:${req.user._id}`);
 
         // Invalidate the in-memory branding cache (used by branding-resolver for HTML injection)
         // so the next page load picks up the new favicon/title immediately.

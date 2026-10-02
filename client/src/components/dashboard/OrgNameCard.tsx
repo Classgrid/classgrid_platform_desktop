@@ -169,7 +169,9 @@ export function OrgNameCard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["org-branding"] });
-      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["global-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["current-user"] });
       toast.success("Organization name updated successfully");
     },
     onError: (error: any) => {
