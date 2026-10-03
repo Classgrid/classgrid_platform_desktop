@@ -44,6 +44,11 @@ export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUse
   const [openImages, setOpenImages] = useState(false);
   const [openWhatsapp, setOpenWhatsapp] = useState(false);
 
+  React.useEffect(() => { if (!openIndividual) setIndividualUsage(currentUserWeeklyLimit ?? 0); }, [openIndividual, currentUserWeeklyLimit]);
+  React.useEffect(() => { if (!openOrg) setOrgPool(currentPoolLimit ?? 0); }, [openOrg, currentPoolLimit]);
+  React.useEffect(() => { if (!openImages) setImages(currentImageLimit ?? 0); }, [openImages, currentImageLimit]);
+  React.useEffect(() => { if (!openWhatsapp) setWhatsapp(currentWhatsappLimit ?? 0); }, [openWhatsapp, currentWhatsappLimit]);
+
   const updateLimitsMutation = useUpdateOrgAiLimits();
 
   const handleToggleCustomLimits = (checked: boolean) => {
