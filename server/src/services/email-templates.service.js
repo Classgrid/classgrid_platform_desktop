@@ -2851,7 +2851,7 @@ export const getAiCreditAdminNotificationHtml = (payerName, payerEmail, amountFo
 
 // ------------- AI CREDITS: GRANTED NOTIFICATION -------------
 export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance, expireDateStr = "No expiration") => {
-    return getEmailWrapper(`
+    const content = `
         <p>Hi ${userName},</p>
         <p>Good news! We have successfully added <strong>${creditsAdded} AI credits</strong> to your account.</p>
         
@@ -2865,7 +2865,8 @@ export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance, exp
         <p>If you have any questions or need more credits, just reply to this email.</p>
         
         <p>Best regards,<br>The Classgrid Support Team</p>
-    `);
+    `;
+    return baseTemplate({ content, title: "Your AI Credits Have Been Granted!" });
 };
 
 export const getAiCreditGrantedPlainText = (userName, creditsAdded, totalBalance, expireDateStr = "No expiration") => {
