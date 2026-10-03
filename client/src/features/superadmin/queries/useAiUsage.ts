@@ -24,7 +24,7 @@ export const aiUsageApi = {
   blockOrg: (orgId: string, blocked: boolean) => api.put(`/api/super-admin/ai-usage/orgs/${orgId}/block`, { blocked }).then(res => res.data),
   resetUserUsage: (userId: string) => api.post(`/api/super-admin/ai-usage/users/${userId}/reset`).then(res => res.data),
   resetOrgUsage: (orgId: string) => api.post(`/api/super-admin/ai-usage/orgs/${orgId}/reset`).then(res => res.data),
-  grantCredits: (userId: string, amount: number) => api.post(`/api/super-admin/ai-usage/users/${userId}/grant`, { amount }).then(res => res.data),
+  grantCredits: (userId: string, amount: number, options?: { sendEmail?: boolean; startDate?: string; endDate?: string }) => api.post(`/api/super-admin/ai-usage/users/${userId}/grant`, { amount, ...options }).then(res => res.data),
   deleteUserData: (userId: string) => api.delete(`/api/super-admin/ai-usage/users/${userId}/data`).then(res => res.data),
   updateOrgLimits: (orgId: string, data: { pro_pool_limit: number, free_weekly_limit_per_user: number, image_generation_limit?: number, whatsapp_scheduling_limit?: number }) => api.put(`/api/super-admin/ai-usage/orgs/${orgId}/limits`, data).then(res => res.data),
 };
@@ -91,7 +91,7 @@ export const useBlockAiOrg = () => {
 export const useGrantAiCredits = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ userId, amount }: { userId: string, amount: number }) => aiUsageApi.grantCredits(userId, amount),
+    mutationFn: ({ userId, amount, options }: { userId: string, amount: number, options?: { sendEmail?: boolean; startDate?: string; endDate?: string } }) => aiUsageApi.grantCredits(userId, amount, options),
     onSuccess: (_, { userId }) => {
       toast.success("Action completed successfully.");
       queryClient.invalidateQueries({ queryKey: ["ai-usage-user", userId] });

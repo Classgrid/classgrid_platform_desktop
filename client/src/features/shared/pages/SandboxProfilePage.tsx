@@ -42,6 +42,7 @@
  */
 
 import React from "react";
+import { DobleTimeSlet } from "@/components/marketing_ui/doble_time_slet";
 import { ContextualProfile } from "@/features/shared/components/ContextualProfile";
 
 export default function SandboxProfilePage() {
@@ -129,6 +130,15 @@ export default function SandboxProfilePage() {
             structureType="engineering" 
             isSelfView={true} 
           />
+        </div>
+
+        {/* Example: Doble Time Slet Calendar */}
+        <div className="border rounded-xl bg-background shadow-sm p-6 space-y-4 mt-8">
+          <h2 className="text-xl font-semibold border-b pb-2">Example: Doble Time Slet Calendar</h2>
+          <p className="text-sm text-muted-foreground">
+            Testing the new DobleTimeSlet calendar component.
+          </p>
+          <DobleTimeSlet mode="single" />
         </div>
 
       </div>

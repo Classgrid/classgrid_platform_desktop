@@ -5,6 +5,9 @@ import { SuperadminFilterBar } from "@/features/superadmin/components/Superadmin
 import { BlueSlider } from "@/components/marketing_ui/BlueSlider";
 import { DataTable } from "@/components/marketing_ui/data-table";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from "@/components/marketing_ui/select";
+import { NikhilDateCalendar } from "@/components/marketing_ui/nikhil_date_calendar";
+import { Switch } from "@/components/marketing_ui/switch";
+import { useGrantAiCredits } from "@/features/superadmin/queries/useAiUsage";
 
 // ── Types ──────────────────────────────────────────────────────
 export interface OrgRow {
@@ -39,6 +42,10 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [], isOrgMode = fals
   const [isSeparateMode, setIsSeparateMode] = useState(false);
   const [rowCredits, setRowCredits] = useState<Record<string, number>>({});
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>();
+  const [sendEmail, setSendEmail] = useState(true);
+  const grantCreditsMutation = useGrantAiCredits();
 
   // Filter orgs
   const filteredRows = useMemo(() => {
@@ -262,15 +269,32 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [], isOrgMode = fals
                     animate={{ opacity: 1, y: 0, height: "auto" }}
                     exit={{ opacity: 0, y: 12, height: 0 }}
                     transition={{ duration: 0.25 }}
-                    className="shrink-0 flex items-center justify-between border-t border-border pt-4 mt-2"
+                    className="shrink-0 flex items-center justify-between border-t border-border pt-4 mt-2 gap-4"
                   >
-                    <div className="text-sm">
+                    <div className="text-sm shrink-0">
                       <span className="font-semibold text-foreground">{selectedOrgs.length}</span>{" "}
                       <span className="text-muted-foreground">organizations selected</span>
                     </div>
+
+                    <div className="flex-1 flex items-center justify-end gap-6 max-w-[500px]">
+                        <div className="flex items-center gap-2 shrink-0">
+                           <span className="text-sm font-medium whitespace-nowrap text-foreground">Send Email</span>
+                           <Switch checked={sendEmail} onCheckedChange={setSendEmail} />
+                        </div>
+                        <div className="flex-1 min-w-[220px]">
+                            <NikhilDateCalendar 
+                                value={dateRange} 
+                                onChange={setDateRange} 
+                                popDirection="up" 
+                                className="w-full" 
+                                placeholder="Start Date & Expiry Date"
+                            />
+                        </div>
+                    </div>
+
                     <button 
                       onClick={() => setIsConfirmModalOpen(true)}
-                      className="h-10 px-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all shadow-sm active:scale-[0.98]"
+                      className="h-10 px-8 shrink-0 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all shadow-sm active:scale-[0.98]"
                     >
                       Grant Credits
                     </button>
@@ -381,16 +405,35 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [], isOrgMode = fals
               {/* Action */}
               <div className="p-4 border-t border-border bg-card">
                 <button 
-                  onClick={() => {
-                    setIsConfirmModalOpen(false);
-                    onClose();
+                  onClick={async () => {
+                    const promises = selectedOrgs.map(org => {
+                      const orgCredits = isSeparateMode ? (rowCredits[org.id] || 500) : credits;
+                      return grantCreditsMutation.mutateAsync({
+                        userId: org.id,
+                        amount: orgCredits,
+                        options: {
+                          sendEmail,
+                          startDate: dateRange?.from ? dateRange.from.toISOString() : undefined,
+                          endDate: dateRange?.to ? dateRange.to.toISOString() : undefined
+                        }
+                      });
+                    });
+
+                    try {
+                      await Promise.all(promises);
+                      setIsConfirmModalOpen(false);
+                      onClose();
+                    } catch (e) {
+                      console.error(e);
+                    }
                   }}
-                  className="w-full h-11 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all shadow-sm active:scale-[0.98]"
+                  disabled={grantCreditsMutation.isPending}
+                  className="w-full h-11 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold transition-all shadow-sm active:scale-[0.98]"
                 >
-                  {isSeparateMode 
+                  {grantCreditsMutation.isPending ? "Granting..." : (isSeparateMode 
                     ? `Grant Custom Credits to ${selectedOrgs.length} ${selectedOrgs.length === 1 ? 'organization' : 'organizations'}`
                     : `Grant ${formatCredits(credits)} Credits to ${selectedOrgs.length} ${selectedOrgs.length === 1 ? 'organization' : 'organizations'}`
-                  }
+                  )}
                 </button>
               </div>
             </div>

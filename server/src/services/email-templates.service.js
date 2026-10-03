@@ -2850,7 +2850,7 @@ export const getAiCreditAdminNotificationHtml = (payerName, payerEmail, amountFo
 
 
 // ------------- AI CREDITS: GRANTED NOTIFICATION -------------
-export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance) => {
+export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance, expireDateStr = "No expiration") => {
     return getEmailWrapper(`
         <p>Hi ${userName},</p>
         <p>Good news! We have successfully added <strong>${creditsAdded} AI credits</strong> to your account.</p>
@@ -2858,7 +2858,7 @@ export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance) => 
         <ul style="color: #374151; padding-left: 20px; line-height: 1.6; margin: 16px 0;">
             <li><strong>Credits Added:</strong> ${creditsAdded} AI Credits</li>
             <li><strong>New Total Balance:</strong> ${totalBalance} Credits</li>
-            <li><strong>Expiration Date:</strong> No expiration</li>
+            <li><strong>Expiration Date:</strong> ${expireDateStr}</li>
         </ul>
         
         <p>You can now use your credits to generate content, run AI tools, and use all available smart features. To check your current usage at any time, go to your AIHUB CREDITS.</p>
@@ -2868,14 +2868,14 @@ export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance) => 
     `);
 };
 
-export const getAiCreditGrantedPlainText = (userName, creditsAdded, totalBalance) => {
+export const getAiCreditGrantedPlainText = (userName, creditsAdded, totalBalance, expireDateStr = "No expiration") => {
     return `Hi ${userName},
 
 Good news! We have successfully added ${creditsAdded} AI credits to your account.
 
 • Credits Added: ${creditsAdded} AI Credits
 • New Total Balance: ${totalBalance} Credits
-• Expiration Date: No expiration
+• Expiration Date: ${expireDateStr}
 
 You can now use your credits to generate content, run AI tools, and use all available smart features. To check your current usage at any time, go to your AIHUB CREDITS.
 

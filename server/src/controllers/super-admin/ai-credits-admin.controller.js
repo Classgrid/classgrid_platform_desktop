@@ -107,7 +107,7 @@ export const resetOrgUsage = async (req, res) => {
 export const grantCredits = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { amount } = req.body; // Token amount
+        const { amount, sendEmail: shouldSendEmail = true, startDate, endDate } = req.body; // Token amount and options
 
         if (!mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({ success: false, error: "Invalid user ID" });
@@ -116,11 +116,29 @@ export const grantCredits = async (req, res) => {
             return res.status(400).json({ success: false, error: "Invalid amount" });
         }
 
-        const user = await User.findByIdAndUpdate(
-            userId, 
-            { $inc: { "ai_tokens.ai_credits_balance": amount } }, 
-            { new: true }
-        );
+        const updateObj = { 
+            $inc: { 
+                "ai_tokens.promotion_credits_balance": amount,
+                "ai_tokens.total_promotion_credits_granted": amount
+            },
+            $set: {}
+        };
+        
+        if (startDate) {
+            updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date(startDate);
+        } else {
+            updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date();
+        }
+        
+        if (endDate) {
+            updateObj.$set["ai_tokens.promotion_credits_end_date"] = new Date(endDate);
+        } else {
+            // Nullify or keep as is if not provided? Better to let it be or nullify it if they don't provide it
+            // Assuming no expiration if endDate is not provided
+            updateObj.$set["ai_tokens.promotion_credits_end_date"] = null;
+        }
+
+        const user = await User.findByIdAndUpdate(userId, updateObj, { new: true });
 
         if (!user) return res.status(404).json({ success: false, error: "User not found" });
 
@@ -136,11 +154,20 @@ export const grantCredits = async (req, res) => {
             status: "success"
         });
 
-        if (user.email) {
+        if (user.email && shouldSendEmail) {
             try {
-                const totalBalance = user.ai_tokens.ai_credits_balance.toLocaleString();
-                const emailHtml = getAiCreditGrantedHtml(user.name || user.email, amount.toLocaleString(), totalBalance);
-                const emailText = getAiCreditGrantedPlainText(user.name || user.email, amount.toLocaleString(), totalBalance);
+                const totalTokens = (user.ai_tokens.ai_credits_balance + user.ai_tokens.promotion_credits_balance) || 0;
+                const totalBalance = totalTokens.toLocaleString();
+                
+                // Format expiration date for email
+                let expireDateStr = "No expiration";
+                if (endDate) {
+                    const d = new Date(endDate);
+                    expireDateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                }
+                
+                const emailHtml = getAiCreditGrantedHtml(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr);
+                const emailText = getAiCreditGrantedPlainText(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr);
                 await sendEmail({
                     to: user.email,
                     subject: `Your AI Credits Have Been Granted!`,

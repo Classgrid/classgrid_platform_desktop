@@ -3127,63 +3127,19 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                 if (estimatedTokens > 0) {
                     const User = (await import("../models/User.js")).default;
                     const Organization = (await import("../models/Organization.js")).default;
-                    const userTokens = await User.findById(userId).select("ai_tokens organization_id");
-
-                    let deductedFromPro = false;
-                    let currentRemaining = 0;
-                    let updateType = 'free';
-
-                    if (userTokens && userTokens.organization_id) {
-                        const org = await Organization.findById(userTokens.organization_id).select("ai_config");
-                        if (org && org.ai_config) {
-                            const proRemaining = org.ai_config.pro_pool_limit - org.ai_config.pro_used_this_period;
-                            // FIX: Only trust req.user.role to prevent body spoofing
-                            const roleStr = req.user?.role;
-
-                            // FIX: Ensure pro pool actually has enough tokens for this request to prevent negative balance
-                            if (proRemaining >= estimatedTokens && (org.ai_config.pro_enabled_roles?.includes(roleStr) || org.ai_config.pro_enabled_users?.includes(userId))) {
-                                // FIX: Use atomic $inc and {new: true} to get the true post-update remaining balance
-                                const updatedOrg = await Organization.findByIdAndUpdate(userTokens.organization_id, {
-                                    $inc: { "ai_config.pro_used_this_period": estimatedTokens }
-                                }, { new: true });
-
-                                // Ensure total lifetime tokens is still incremented on the user for dashboard tracking
-                                await User.findByIdAndUpdate(userId, {
-                                    $inc: { "ai_tokens.total_ai_tokens_used": estimatedTokens }
-                                });
-
-                                deductedFromPro = true;
-                                currentRemaining = updatedOrg.ai_config.pro_pool_limit - updatedOrg.ai_config.pro_used_this_period;
-                                updateType = 'pro';
-                            }
-                        }
-                    }
-
-                    if (!deductedFromPro && userTokens && userTokens.ai_tokens) {
-                        const freeRemaining = userTokens.ai_tokens.free_weekly_limit - userTokens.ai_tokens.used_this_week;
-                        // FIX: Clamp the deduction to the remaining balance so we never go negative
-                        const deduction = Math.max(0, Math.min(estimatedTokens, freeRemaining));
-
-                        if (deduction > 0) {
-                            // FIX: Use atomic $inc and {new: true} to get the true post-update remaining balance
-                            const updatedUser = await User.findByIdAndUpdate(userId, {
-                                $inc: { 
-                                    "ai_tokens.used_this_week": deduction,
-                                    "ai_tokens.total_ai_tokens_used": estimatedTokens
-                                }
-                            }, { new: true });
-                            currentRemaining = updatedUser.ai_tokens.free_weekly_limit - updatedUser.ai_tokens.used_this_week;
-                        } else {
-                            currentRemaining = freeRemaining;
-                        }
-                    }
-
-                    // FIX: Emit even if hitting exactly 0 (or negative, if somehow forced)
-                    if (currentRemaining >= 0) {
+                    
+                    // The tokenSource was determined earlier via hasEnoughTokens
+                    const deductionResult = await deductTokens(userId, orgId, estimatedTokens, tokenSource);
+                    
+                    if (deductionResult && deductionResult.success) {
                         const { getIO } = await import('../services/socket.service.js');
                         const io = getIO();
                         if (io) {
-                            io.to(userId).emit("ai_token_update", { remaining: currentRemaining, type: updateType, used: estimatedTokens });
+                            io.to(userId).emit("ai_token_update", { 
+                                remaining: deductionResult.remaining, 
+                                type: deductionResult.type, 
+                                used: estimatedTokens 
+                            });
                         }
                     }
 

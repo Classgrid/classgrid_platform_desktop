@@ -98,13 +98,31 @@ import { AiUsageTrendsChart } from "../components/AiUsageTrendsChart";
 import { AiTokenUsageChart } from "../components/AiTokenUsageChart";
 
 import { TopAiUsersTable } from "../components/TopAiUsersTable";
+import { NikhilDateCalendar } from "@/components/marketing_ui/nikhil_date_calendar";
 
 export function SandboxPage() {
   const [isGrantCreditsOpen, setIsGrantCreditsOpen] = React.useState(false);
+  const [testDate, setTestDate] = React.useState<{from?: Date; to?: Date} | undefined>({ from: new Date() });
   return (
     <div className="min-h-screen w-full bg-[#050505]">
       <div className="px-6 pt-6 pb-2 w-full max-w-6xl mx-auto flex flex-col gap-6">
         
+        {/* Nikhil Date Calendar Test */}
+        <div className="border border-[#222] rounded-xl shadow-sm bg-[#0a0a0a] p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-white tracking-tight">
+            Nikhil Date Calendar
+          </h3>
+          <p className="text-sm text-gray-400">
+            Testing the new pure date calendar component.
+          </p>
+          <div className="w-72">
+            <NikhilDateCalendar 
+              value={testDate} 
+              onChange={setTestDate} 
+            />
+          </div>
+        </div>
+
         {/* 1, 2, 3 */}
         <AiUsageTrendsChart />
 
