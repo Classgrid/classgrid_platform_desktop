@@ -2869,12 +2869,12 @@ export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance) => 
 };
 
 export const getAiCreditGrantedPlainText = (userName, creditsAdded, totalBalance) => {
-    return \`Hi \${userName},
+    return `Hi ${userName},
 
-Good news! We have successfully added \${creditsAdded} AI credits to your account.
+Good news! We have successfully added ${creditsAdded} AI credits to your account.
 
-• Credits Added: \${creditsAdded} AI Credits
-• New Total Balance: \${totalBalance} Credits
+• Credits Added: ${creditsAdded} AI Credits
+• New Total Balance: ${totalBalance} Credits
 • Expiration Date: No expiration
 
 You can now use your credits to generate content, run AI tools, and use all available smart features. To check your current usage at any time, go to your AIHUB CREDITS.
@@ -2882,5 +2882,5 @@ You can now use your credits to generate content, run AI tools, and use all avai
 If you have any questions or need more credits, just reply to this email.
 
 Best regards,
-The Classgrid Support Team\`;
+The Classgrid Support Team`;
 };
