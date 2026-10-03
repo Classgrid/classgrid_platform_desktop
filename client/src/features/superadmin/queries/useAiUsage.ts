@@ -172,3 +172,15 @@ export const useVerifySecurityCode = () => {
     onError: (error: any) => toast.error(error.response?.data?.error || "Invalid or expired security code."),
   });
 };
+
+export const useGlobalGrantedCredits = () => {
+  return useQuery({
+    queryKey: ['global-granted-credits'],
+    queryFn: async () => {
+      const { apiClient } = await import('@/lib/apiClient');
+      const res = await apiClient.get('/api/super-admin/ai-usage/global/granted-credits');
+      return res.data;
+    },
+    staleTime: 60000,
+  });
+};

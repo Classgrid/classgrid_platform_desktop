@@ -89,7 +89,7 @@ export const getUserAiDetail = async (req, res) => {
             return res.status(404).json({ success: false, error: "User not found" });
         }
 
-        const topupHistory = await AiCreditTransaction.find({ userId: userId })
+        const topupHistory = await AiCreditTransaction.find({ userId: userId, type: "topup" })
             .sort({ createdAt: -1 })
             .lean();
 
@@ -101,6 +101,20 @@ export const getUserAiDetail = async (req, res) => {
                 .eq('user_email', user.email);
             
             if (!countError) totalChats = count || 0;
+        }
+
+        let orgPool = null;
+        if (user.role === 'org_admin' || user.role === 'Owner') {
+            if (user.organization_id && user.organization_id._id) {
+                const Organization = (await import("../../models/Organization.js")).default;
+                const org = await Organization.findById(user.organization_id._id).select("ai_config").lean();
+                if (org && org.ai_config) {
+                    orgPool = {
+                        limit: org.ai_config.pro_pool_limit || 0,
+                        used: org.ai_config.pro_pool_used || 0
+                    };
+                }
+            }
         }
 
         res.status(200).json({
@@ -116,6 +130,7 @@ export const getUserAiDetail = async (req, res) => {
                 totalUsage: user.ai_tokens?.total_ai_tokens_used || 0,
                 balance: user.ai_tokens?.ai_credits_balance || 0,
                 ai_tokens: user.ai_tokens,
+                orgPool: orgPool,
                 totalChats,
                 topupHistory: topupHistory.map(t => ({
                     id: t._id,

@@ -195,7 +195,7 @@ export const grantCredits = async (req, res) => {
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
         }
-        res.status(200).json({ success: true, message: `${amount} credits granted to user.` });
+        res.status(200).json({ success: true, message: `${amount} credits granted to user. Email notification handled.` });
     } catch (error) {
         console.error("Grant Credits Error:", error);
         res.status(500).json({ success: false, error: "Failed to grant credits" });
@@ -549,6 +549,50 @@ export const verifySecurityCode = async (req, res) => {
         res.status(200).json({ success: true, message: "Security code verified successfully" });
     } catch (error) {
         console.error("Error in verifySecurityCode:", error);
+        res.status(500).json({ success: false, error: "Internal server error" });
+    }
+};
+
+
+
+export const removeGrantedCredits = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const User = (await import("../../models/User.js")).default;
+        
+        await User.findByIdAndUpdate(userId, {
+            $set: { "ai_tokens.promotion_credits_balance": 0 }
+        });
+
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+        }
+        res.status(200).json({ success: true, message: "Granted credits removed successfully" });
+    } catch (error) {
+        console.error("Remove Granted Credits Error:", error);
+        res.status(500).json({ success: false, error: "Internal server error" });
+    }
+};
+
+export const pauseGrantedCredits = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { isPaused } = req.body; // true to pause, false to unpause
+        
+        const User = (await import("../../models/User.js")).default;
+        
+        await User.findByIdAndUpdate(userId, {
+            $set: { "ai_tokens.promotion_credits_paused": isPaused }
+        });
+
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+        }
+        res.status(200).json({ success: true, message: `Granted credits ${isPaused ? "paused" : "unpaused"} successfully` });
+    } catch (error) {
+        console.error("Pause Granted Credits Error:", error);
         res.status(500).json({ success: false, error: "Internal server error" });
     }
 };

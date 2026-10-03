@@ -1,0 +1,26 @@
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+dotenv.config();
+
+const run = async () => {
+  await mongoose.connect(process.env.MONGO_URI);
+  const User = (await import('./src/models/User.js')).default;
+  const AiCreditTransaction = (await import('./src/models/AiCreditTransaction.js')).default;
+
+  const user = await User.findOne({ name: 'Nikhil (Test)' });
+  if (user) {
+     const topups = await AiCreditTransaction.find({ userId: user._id, type: 'topup', status: 'success' });
+     const total = topups.reduce((acc, curr) => acc + curr.credits_added, 0);
+     
+     console.log('Found topups for Nikhil (Test). Total:', total);
+     
+     if (total > 0) {
+       await User.findByIdAndUpdate(user._id, {
+           $set: { 'ai_tokens.total_ai_credits_purchased': total }
+       });
+       console.log('Fixed total_ai_credits_purchased to', total);
+     }
+  }
+  process.exit(0);
+};
+run();

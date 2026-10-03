@@ -42,7 +42,8 @@ import {
   useAiUserDetail,
   useResetOrgUsage,
   useBlockAiOrg,
-  useUpdateOrgAiLimits
+  useUpdateOrgAiLimits,
+  useGlobalGrantedCredits
 } from "@/features/superadmin/queries/useAiUsage";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
@@ -201,6 +202,8 @@ export function AiUsageDashboardPage() {
     selectedMonth,
     selectedYear
   );
+
+  const { data: globalGrantedCredits, isLoading: loadingGrantedCredits } = useGlobalGrantedCredits();
 
   const { data: orgTrendStats } = useGlobalAiStats(
     path.orgId,
@@ -909,6 +912,72 @@ export function AiUsageDashboardPage() {
     return <AiUserDetailPanel userDetail={userDetail} />;
   };
 
+  const renderGlobalGrantedCredits = () => {
+    if (loadingGrantedCredits) return <Skeleton className="h-64 w-full" />;
+    if (!globalGrantedCredits || globalGrantedCredits.length === 0) return null;
+    return (
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle className="text-lg text-purple-500">Active Granted Credits</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DataTable 
+            columns={[
+              {
+                key: "user",
+                header: "User",
+                width: "w-[30%]",
+                render: (_: any, row: any) => (
+                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => setPath({ orgId: row.orgId, orgName: "Org", role: "all", userId: row.id, userName: row.name })}>
+                    <img src={row.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name)}&background=random`} alt={row.name} className="w-8 h-8 rounded-full" />
+                    <div className="flex flex-col">
+                      <span className="font-medium hover:underline text-primary">{row.name}</span>
+                      <span className="text-xs text-muted-foreground">{row.email}</span>
+                    </div>
+                  </div>
+                )
+              },
+              {
+                key: "credits",
+                header: "Credits",
+                width: "w-[30%]",
+                render: (_: any, row: any) => (
+                  <div className="flex flex-col">
+                    <span className="font-medium text-foreground">{formatNumber(row.remaining)} / {formatNumber(row.granted)}</span>
+                    <span className="text-xs text-muted-foreground">{Math.round((row.used / row.granted) * 100)}% Used</span>
+                  </div>
+                )
+              },
+              {
+                key: "status",
+                header: "Status",
+                width: "w-[20%]",
+                render: (_: any, row: any) => (
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${row.isPaused ? "bg-amber-500/10 text-amber-500" : "bg-green-500/10 text-green-500"}`}>
+                    {row.isPaused ? "PAUSED" : "ACTIVE"}
+                  </span>
+                )
+              },
+              {
+                key: "dates",
+                header: "Dates",
+                width: "w-[20%]",
+                render: (_: any, row: any) => (
+                  <div className="flex flex-col text-xs text-muted-foreground">
+                    <span>Starts: {row.startDate ? new Date(row.startDate).toLocaleDateString() : "N/A"}</span>
+                    <span>Expires: {row.expirationDate ? new Date(row.expirationDate).toLocaleDateString() : "N/A"}</span>
+                  </div>
+                )
+              }
+            ]}
+            rows={globalGrantedCredits}
+            emptyMessage="No active granted credits."
+          />
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <PageBreadcrumbs
@@ -923,6 +992,8 @@ export function AiUsageDashboardPage() {
       {!path.orgId && renderGlobalStats()}
 
       {!path.orgId && renderLevel0Orgs()}
+      {!path.orgId && renderGlobalGrantedCredits()}
+
       {path.orgId && !path.role && renderLevel1Roles()}
       {path.orgId && path.role && !path.userId && renderLevel2Users()}
       {path.userId && renderLevel3UserDetail()}

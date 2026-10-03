@@ -31,8 +31,12 @@ router.post("/users/:userId/reset", adminController.resetUserUsage);
 router.post("/orgs/:orgId/reset", adminController.resetOrgUsage);
 router.put("/orgs/:orgId/limits", adminController.updateOrgAiLimits);
 router.post("/users/:userId/grant", adminController.grantCredits);
+router.post("/users/:userId/credits/remove", adminController.removeGrantedCredits);
+router.post("/users/:userId/credits/pause", adminController.pauseGrantedCredits);
 router.post("/orgs/:orgId/grant", adminController.grantOrgCredits);
 router.delete("/users/:userId/data", adminController.deleteUserAiData);
+
+router.get("/global/granted-credits", globalController.listActiveGrantedCredits);
 
 // 5. Security / OTP
 router.post("/security-code/request", adminController.requestSecurityCode);

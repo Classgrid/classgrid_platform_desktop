@@ -81,8 +81,114 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
               </div>
             </div>
             
-            <div className="mt-4 border-t border-border/50 pt-4">
-              <AiUsageBar initialData={aiBarData} showExactTokens={true} />
+            <div className="mt-4 border-t border-border/50 pt-4 flex flex-col gap-4">
+              {/* 1. Personal Limits */}
+              {(() => {
+                const limit = userDetail.ai_tokens?.free_weekly_limit || 0;
+                const used = userDetail.ai_tokens?.used_this_week || 0;
+                const percent = limit > 0 ? Math.min(100, Math.max(0, (used / limit) * 100)) : 0;
+                return (
+                  <div className="w-full flex items-start justify-between">
+                    <div className="flex flex-col gap-1 pr-6 min-w-[150px]">
+                      <span className="text-sm font-medium text-foreground">Personal Limits</span>
+                      <span className="text-xs text-muted-foreground">Resets in 7 days</span>
+                    </div>
+                    <div className="flex-1 flex flex-col gap-1.5 mt-1">
+                      <div className="w-full flex items-center justify-between text-xs mb-1">
+                        <span className="font-medium text-foreground">{Math.round(percent)}% Used</span>
+                        <span className="text-muted-foreground font-medium">{formatNumber(used)} / {formatNumber(limit)} Tokens</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${percent}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 2. Paid Credits */}
+              {(() => {
+                const limit = userDetail.ai_tokens?.total_ai_credits_purchased || 0;
+                if (limit <= 0) return null;
+                const remaining = userDetail.ai_tokens?.ai_credits_balance || 0;
+                const used = Math.max(0, limit - remaining);
+                const percent = limit > 0 ? Math.min(100, Math.max(0, (used / limit) * 100)) : 0;
+                return (
+                  <div className="w-full flex items-start justify-between">
+                    <div className="flex flex-col gap-1 pr-6 min-w-[150px]">
+                      <span className="text-sm font-medium text-foreground">Paid Credits</span>
+                      <span className="text-xs text-muted-foreground">Purchased Top-Ups</span>
+                    </div>
+                    <div className="flex-1 flex flex-col gap-1.5 mt-1">
+                      <div className="w-full flex items-center justify-between text-xs mb-1">
+                        <span className="font-medium text-foreground">{Math.round(percent)}% Used</span>
+                        <span className="text-muted-foreground font-medium">{formatNumber(used)} / {formatNumber(limit)} Tokens</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${percent}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 3. Granted Credits */}
+              {(() => {
+                const limit = userDetail.ai_tokens?.total_promotion_credits_granted || 0;
+                const remaining = userDetail.ai_tokens?.promotion_credits_balance || 0;
+                if (limit <= 0 && remaining <= 0) return null;
+                const used = Math.max(0, limit - remaining);
+                const percent = limit > 0 ? Math.min(100, Math.max(0, (used / limit) * 100)) : 0;
+                return (
+                  <div className="w-full flex items-start justify-between">
+                    <div className="flex flex-col gap-1 pr-6 min-w-[150px]">
+                      <span className="text-sm font-medium text-foreground flex items-center gap-2">
+                        Granted Credits
+                        {userDetail.ai_tokens?.promotion_credits_paused && (
+                          <span className="text-[10px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Paused</span>
+                        )}
+                      </span>
+                      <span className="text-xs text-muted-foreground">Promotional limit</span>
+                    </div>
+                    <div className="flex-1 flex flex-col gap-1.5 mt-1">
+                      <div className="w-full flex items-center justify-between text-xs mb-1">
+                        <span className="font-medium text-foreground">{Math.round(percent)}% Used</span>
+                        <span className="text-muted-foreground font-medium">{formatNumber(used)} / {formatNumber(limit)} Tokens</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
+                        <div className="h-full bg-purple-500 rounded-full transition-all" style={{ width: `${percent}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 4. Org Pool (Only for Admin/Owner) */}
+              {(() => {
+                if (userDetail.role !== 'org_admin' && userDetail.role !== 'Owner') return null;
+                if (!userDetail.orgPool) return null;
+                const limit = userDetail.orgPool.limit || 0;
+                const used = userDetail.orgPool.used || 0;
+                const percent = limit > 0 ? Math.min(100, Math.max(0, (used / limit) * 100)) : 0;
+                return (
+                  <div className="w-full flex items-start justify-between">
+                    <div className="flex flex-col gap-1 pr-6 min-w-[150px]">
+                      <span className="text-sm font-medium text-foreground">Org Pool</span>
+                      <span className="text-xs text-muted-foreground">Shared Pro pool</span>
+                    </div>
+                    <div className="flex-1 flex flex-col gap-1.5 mt-1">
+                      <div className="w-full flex items-center justify-between text-xs mb-1">
+                        <span className="font-medium text-foreground">{Math.round(percent)}% Used</span>
+                        <span className="text-muted-foreground font-medium">{formatNumber(used)} / {formatNumber(limit)} Tokens</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
+                        <div className="h-full bg-orange-500 rounded-full transition-all" style={{ width: `${percent}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
             </div>
           </CardContent>
         </Card>
@@ -154,11 +260,8 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
 
           <DataTable 
             columns={billingColumns} 
-            data={userDetail.topupHistory || []} 
-            emptyState={{
-              title: "No payment history",
-              description: "This user hasn't made any purchases yet."
-            }}
+            rows={userDetail.topupHistory || []} 
+            emptyMessage="No payment history. This user hasn't made any purchases yet."
           />
         </CardContent>
       </Card>
@@ -182,6 +285,56 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
           </Button>
         </div>
       </div>
+
+      {userDetail.ai_tokens?.total_promotion_credits_granted > 0 && (
+        <div className="border border-border rounded-xl shadow-sm bg-card">
+          <div className="p-6 flex flex-col gap-6">
+            <div className="flex flex-col gap-1.5">
+              <h3 className="text-lg font-semibold text-foreground tracking-tight text-red-500">
+                Manage Granted Credits
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Remove or pause promotional credits granted to this user. This does not affect paid credits.
+              </p>
+            </div>
+          </div>
+          <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end gap-3">
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
+                try {
+                  const { apiClient } = await import('@/lib/apiClient');
+                  const { toast } = await import('sonner');
+                  await apiClient.post(`/api/super-admin/ai-usage/users/${userDetail.id}/credits/pause`, { isPaused: !isPaused });
+                  toast.success(`Granted credits ${!isPaused ? 'paused' : 'unpaused'} successfully. Please refresh the page.`);
+                } catch (e) {
+                  console.error(e);
+                }
+              }}
+            >
+              {userDetail.ai_tokens?.promotion_credits_paused ? 'Unpause Credits' : 'Pause Credits'}
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={async () => {
+                if (window.confirm("Are you sure you want to remove all remaining granted credits for this user?")) {
+                  try {
+                    const { apiClient } = await import('@/lib/apiClient');
+                    const { toast } = await import('sonner');
+                    await apiClient.post(`/api/super-admin/ai-usage/users/${userDetail.id}/credits/remove`);
+                    toast.success("Granted credits removed successfully. Please refresh the page.");
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }
+              }}
+            >
+              Remove Granted Credits
+            </Button>
+          </div>
+        </div>
+      )}
 
       <BlockUserAiUsage userId={userDetail.id} userName={userDetail.name || userDetail.email} isBlocked={isBlocked} />
       

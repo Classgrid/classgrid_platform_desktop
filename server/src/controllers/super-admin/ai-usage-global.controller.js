@@ -336,3 +336,45 @@ export const getGlobalStats = async (req, res) => {
 export const getModelBreakdown = async (req, res) => {
     res.status(200).json({ success: true, data: [] });
 };
+
+export const listActiveGrantedCredits = async (req, res) => {
+    try {
+        const User = (await import("../../models/User.js")).default;
+        // Find users who have ever been granted promotional credits or currently have a balance
+        const users = await User.find({
+            $or: [
+                { "ai_tokens.total_promotion_credits_granted": { $gt: 0 } },
+                { "ai_tokens.promotion_credits_balance": { $gt: 0 } }
+            ]
+        }).select("name email profile_image ai_tokens organization_id").lean();
+
+        const formatted = users.map(u => {
+            const tokens = u.ai_tokens || {};
+            const granted = tokens.total_promotion_credits_granted || 0;
+            const remaining = tokens.promotion_credits_balance || 0;
+            const paused = tokens.promotion_credits_paused || false;
+            
+            return {
+                id: u._id.toString(),
+                name: u.name || "N/A",
+                email: u.email,
+                avatar: u.profile_image,
+                orgId: u.organization_id?.toString() || null,
+                granted: granted,
+                remaining: remaining,
+                used: Math.max(0, granted - remaining),
+                isPaused: paused,
+                startDate: tokens.promotion_credits_start_date || null,
+                expirationDate: tokens.promotion_credits_end_date || null
+            };
+        });
+
+        // Sort by most credits granted
+        formatted.sort((a, b) => b.granted - a.granted);
+
+        res.status(200).json({ success: true, data: formatted });
+    } catch (error) {
+        console.error("List Active Granted Credits Error:", error);
+        res.status(500).json({ success: false, error: "Internal server error" });
+    }
+};
