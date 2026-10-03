@@ -3016,6 +3016,7 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
         const maxAttempts = 2;
         let currentClient = client;
         let accThought = "";
+        const usageStore = { usage: null }; // Will be populated by fetch-interceptor with real Cloudflare usage
         while (attempt <= maxAttempts) {
             try {
                 if (attempt > 1 && !res.writableEnded) {
@@ -3026,7 +3027,7 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
 
                 console.log(`[AI-DEBUG] ===== GENERATE START ===== attempt=${attempt} question="${(body.question || '').slice(0, 100)}" messagesCount=${messages.length} timestamp=${new Date().toISOString()}`);
                 const generateStartTime = Date.now();
-                answer = await currentClient.generate({
+                answer = await usageStorage.run(usageStore, () => currentClient.generate({
                     messages,
                     maxToolDepth: 100,
                     timeoutMs: isDiagramRequest && attempt === 1 ? 15000 : 1200000,
@@ -3046,7 +3047,7 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                         if (requestAborted || res.writableEnded) return;
                         try { res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`); } catch (e) { }
                     }
-                });
+                }));
 
                 const generateDuration = ((Date.now() - generateStartTime) / 1000).toFixed(1);
                 console.log(`[AI-DEBUG] ===== GENERATE END ===== duration=${generateDuration}s answer=${answer ? `"${String(answer).slice(0, 150)}..."` : 'NULL'} stepsCount=${accSteps.length} thoughtLength=${(accThought || '').length}`);
@@ -3107,23 +3108,31 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                 let calculatedTokens = 0;
                 let inputTokens = 0;
                 let outputTokens = 0;
-                try {
-                    const { encode } = await import('gpt-tokenizer');
-                    if (messages && Array.isArray(messages)) {
-                        for (const msg of messages) {
-                            let contentStr = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
-                            inputTokens += encode(`role: ${msg.role}\ncontent: ${contentStr}`).length;
+
+                // Use real Cloudflare usage data captured by fetch-interceptor (accumulated across all tool call iterations)
+                if (usageStore.usage && usageStore.usage.total_tokens > 0) {
+                    inputTokens = usageStore.usage.prompt_tokens;
+                    outputTokens = usageStore.usage.completion_tokens;
+                    calculatedTokens = usageStore.usage.total_tokens;
+                    console.log(`[AI-TOKEN] Using REAL Cloudflare usage: input=${inputTokens} output=${outputTokens} total=${calculatedTokens}`);
+                } else {
+                    // Fallback to gpt-tokenizer if interceptor didn't capture usage (e.g. Mistral fallback)
+                    try {
+                        const { encode } = await import('gpt-tokenizer');
+                        if (messages && Array.isArray(messages)) {
+                            for (const msg of messages) {
+                                let contentStr = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+                                inputTokens += encode(`role: ${msg.role}\ncontent: ${contentStr}`).length;
+                            }
                         }
+                        outputTokens = encode(`${answer || ""}\n${typeof accThought !== 'undefined' ? (accThought || "") : ""}`).length;
+                        calculatedTokens = inputTokens + outputTokens;
+                        console.log(`[AI-TOKEN] Using gpt-tokenizer estimate: input=${inputTokens} output=${outputTokens} total=${calculatedTokens}`);
+                    } catch (e) {
+                        console.error("[AI-TOKEN] gpt-tokenizer failed, skipping deduction for this message:", e);
+                        calculatedTokens = 0;
                     }
-                    outputTokens = encode(`${answer || ""}\n${typeof accThought !== 'undefined' ? (accThought || "") : ""}`).length;
-                    calculatedTokens = inputTokens + outputTokens;
-                } catch (e) {
-                    console.error("[AI-TOKEN] gpt-tokenizer failed, skipping deduction for this message:", e);
-                    // Do NOT fall back to fake math. If we can't count real tokens, don't charge.
-                    calculatedTokens = 0;
                 }
-                // Cloudflare @cf/ models do NOT return usage in the API response.
-                // Real token count comes from gpt-tokenizer above.
                 const estimatedTokens = calculatedTokens;
                 if (estimatedTokens > 0) {
                     const User = (await import("../models/User.js")).default;

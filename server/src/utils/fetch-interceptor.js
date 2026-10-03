@@ -15,11 +15,13 @@ global.fetch = async (...args) => {
         clone.json().then(data => {
             if (data && data.usage) {
                 // OpenAI / Anthropic / Cloudflare all return standard usage objects
-                store.usage = {
-                    prompt_tokens: data.usage.prompt_tokens || 0,
-                    completion_tokens: data.usage.completion_tokens || 0,
-                    total_tokens: data.usage.total_tokens || 0
-                };
+                // Accumulate across tool-call iterations (each re-sends the full context)
+                if (!store.usage) {
+                    store.usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+                }
+                store.usage.prompt_tokens += data.usage.prompt_tokens || 0;
+                store.usage.completion_tokens += data.usage.completion_tokens || 0;
+                store.usage.total_tokens += data.usage.total_tokens || 0;
             }
         }).catch(() => {
             // Ignore parse errors (e.g. if response is plain text)
