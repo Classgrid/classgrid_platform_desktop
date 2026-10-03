@@ -58,8 +58,8 @@ export function ExtendUserGrantedCredits({ userId, currentExpiry }: { userId: st
           
           <div className="w-[280px]">
              <NikhilDateCalendar
-               value={selectedDate ? { from: selectedDate } : undefined}
-               onChange={(val: any) => setSelectedDate(val?.from || undefined)}
+               value={selectedDate ? { from: selectedDate, to: selectedDate } : undefined}
+               onChange={(val: any) => setSelectedDate(val?.to || val?.from || undefined)}
                placeholder="Select expiration date"
              />
           </div>

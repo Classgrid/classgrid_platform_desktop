@@ -2955,22 +2955,22 @@ export const getGrantedCreditsExtendedHtml = (userName, newExpiryDate, dashboard
 
 export const getGrantedCreditsExtendedPlainText = (userName, newExpiryDate, dashboardUrl = null) => {
   const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
-  return \`AI Credits Extended
+  return `AI Credits Extended
 
-Hi \${userName || 'there'},
+Hi ${userName || 'there'},
 
 Good news! Your Classgrid AI granted credits expiration date has been extended.
 
-New Expiration Date: \${formatDate(newExpiryDate)}
+New Expiration Date: ${formatDate(newExpiryDate)}
 
 You can continue using your AI credits until this new date.
 
-To view your AI usage, go to: \${url}
+To view your AI usage, go to: ${url}
 
 If you have any questions, just reply to this email.
 
 Best regards,
-The Classgrid Team\`;
+The Classgrid Team`;
 };
 
 // ------------- GRANTED CREDITS PAUSED / UNPAUSED -------------

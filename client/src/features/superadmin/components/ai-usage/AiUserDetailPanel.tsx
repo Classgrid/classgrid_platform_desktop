@@ -380,11 +380,11 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                 {
                   key: "actions",
                   header: "Actions",
-                  width: "w-[20%]",
+                  width: "w-[25%]",
                   render: () => {
                     const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
                     return (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 overflow-x-auto pb-1 min-w-0 max-w-full scrollbar-thin scrollbar-thumb-muted-foreground/20 [&>*]:shrink-0">
                         <ExtendUserGrantedCredits userId={userDetail.id} currentExpiry={userDetail.ai_tokens?.promotion_credits_end_date} />
                         <PauseUserGrantedCredits userId={userDetail.id} isPaused={isPaused} />
                         <RemoveUserGrantedCredits userId={userDetail.id} />
