@@ -26,10 +26,16 @@ export const calculateCreditsFromAmount = async (amountInr) => {
 };
 
 export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
-    // 1. Check if user is blocked
-    const user = await User.findById(userId).select('ai_tokens role');
-    if (!user || user.ai_tokens?.is_ai_blocked) {
-        return { allowed: false, reason: "User AI access is blocked." };
+    // 1. Check if user is blocked or suspended
+    const user = await User.findById(userId).select('ai_tokens role status');
+    if (!user) {
+        return { allowed: false, reason: "User not found." };
+    }
+    if (user.ai_tokens?.is_ai_blocked) {
+        return { allowed: false, reason: "User AI access is explicitly blocked." };
+    }
+    if (user.status && user.status !== "active" && user.status !== "pending") {
+        return { allowed: false, reason: `User account is ${user.status}.` };
     }
 
     // FETCH GLOBAL CONFIG
@@ -44,7 +50,14 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     let org = null;
     if (orgId) {
         org = await Organization.findById(orgId).select('ai_config status').lean();
-        if (org && org.status === "active" && !org.ai_config?.is_ai_blocked) {
+        if (org) {
+            if (org.status && org.status !== "active") {
+                 return { allowed: false, reason: `Organization account is ${org.status}.` };
+            }
+            if (org.ai_config?.is_ai_blocked) {
+                 return { allowed: false, reason: "Organization AI access is explicitly blocked." };
+            }
+
             // Apply Org Custom Limit for individual
             if (org.ai_config?.custom_limits_enabled) {
                 if (org.ai_config.free_weekly_limit_per_user !== undefined && org.ai_config.free_weekly_limit_per_user !== null) {
@@ -60,8 +73,6 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
                     return { allowed: true, source: "org_pool" };
                 }
             }
-        } else if (org && org.ai_config?.is_ai_blocked) {
-             return { allowed: false, reason: "Organization AI access is blocked." };
         }
     } else {
         // Virtual Classgrid Organization for platform team/super admins
