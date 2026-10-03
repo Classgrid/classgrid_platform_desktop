@@ -11,6 +11,23 @@ import { getAiCreditGrantedHtml, getAiCreditGrantedPlainText, getSuperAdminSecur
  * Handles mutations: Blocking, Unblocking, Resetting limits, Granting credits.
  */
 
+const getDashboardUrlForUser = async (user) => {
+    let baseUrl = "https://app.classgrid.in";
+    if (user.organization_id) {
+        try {
+            const org = await Organization.findById(user.organization_id);
+            if (org) {
+                if (org.erp_domain && org.erp_domain.domain) {
+                    baseUrl = `https://${org.erp_domain.domain}`;
+                } else if (org.subdomain) {
+                    baseUrl = `https://${org.subdomain}.classgrid.in`;
+                }
+            }
+        } catch(e) { console.error("Error getting org url", e); }
+    }
+    return `${baseUrl}/ai-hub`;
+};
+
 export const blockAiUser = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -184,8 +201,9 @@ export const grantCredits = async (req, res) => {
                 const d = new Date(endDate);
                 const expireDateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 
-                const emailHtml = getAiCreditGrantedHtml(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr);
-                const emailText = getAiCreditGrantedPlainText(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr);
+                const dashboardUrl = await getDashboardUrlForUser(user);
+                const emailHtml = getAiCreditGrantedHtml(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr, dashboardUrl);
+                const emailText = getAiCreditGrantedPlainText(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr, dashboardUrl);
                 await sendEmail({
                     to: user.email,
                     subject: `Your AI Credits Have Been Granted!`,
@@ -299,8 +317,9 @@ export const grantOrgCredits = async (req, res) => {
                 const d = new Date(endDate);
                 const expireDateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 
-                const emailHtml = getAiCreditGrantedHtml(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr);
-                const emailText = getAiCreditGrantedPlainText(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr);
+                const dashboardUrl = await getDashboardUrlForUser(user);
+                const emailHtml = getAiCreditGrantedHtml(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr, dashboardUrl);
+                const emailText = getAiCreditGrantedPlainText(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr, dashboardUrl);
                 await sendEmail({
                     to: user.email,
                     subject: `Your AI Credits Have Been Granted!`,
@@ -582,9 +601,27 @@ export const removeGrantedCredits = async (req, res) => {
         const { userId } = req.params;
         const User = (await import("../../models/User.js")).default;
         
-        await User.findByIdAndUpdate(userId, {
+        const user = await User.findByIdAndUpdate(userId, {
             $set: { "ai_tokens.promotion_credits_balance": 0 }
         });
+
+        if (user && user.email) {
+            try {
+                const { getGrantedCreditsRemovedHtml, getGrantedCreditsRemovedPlainText } = await import("../../services/email-templates.service.js");
+                const { sendEmail: sendSESEmail } = await import("../../services/aws-ses.service.js");
+                const dashboardUrl = await getDashboardUrlForUser(user);
+                await sendSESEmail({
+                    to: user.email,
+                    subject: "Your AI Credits Have Been Removed",
+                    html: getGrantedCreditsRemovedHtml(user.name, dashboardUrl),
+                    text: getGrantedCreditsRemovedPlainText(user.name, dashboardUrl),
+                    userId: user._id,
+                    organizationId: user.organization_id
+                });
+            } catch (emailErr) {
+                console.error("Failed to send remove credit email:", emailErr);
+            }
+        }
 
         const io = req.app.get("io");
         if (io) {
@@ -606,9 +643,27 @@ export const pauseGrantedCredits = async (req, res) => {
         
         const User = (await import("../../models/User.js")).default;
         
-        await User.findByIdAndUpdate(userId, {
+        const user = await User.findByIdAndUpdate(userId, {
             $set: { "ai_tokens.promotion_credits_paused": isPaused }
         });
+
+        if (user && user.email) {
+            try {
+                const { getGrantedCreditsPausedHtml, getGrantedCreditsPausedPlainText } = await import("../../services/email-templates.service.js");
+                const { sendEmail: sendSESEmail } = await import("../../services/aws-ses.service.js");
+                const dashboardUrl = await getDashboardUrlForUser(user);
+                await sendSESEmail({
+                    to: user.email,
+                    subject: `Your AI Credits Have Been ${isPaused ? 'Paused' : 'Resumed'}`,
+                    html: getGrantedCreditsPausedHtml(user.name, isPaused, dashboardUrl),
+                    text: getGrantedCreditsPausedPlainText(user.name, isPaused, dashboardUrl),
+                    userId: user._id,
+                    organizationId: user.organization_id
+                });
+            } catch (emailErr) {
+                console.error("Failed to send pause credit email:", emailErr);
+            }
+        }
 
         const io = req.app.get("io");
         if (io) {
@@ -646,8 +701,9 @@ export const extendGrantedCredits = async (req, res) => {
                 const { getGrantedCreditsExtendedHtml, getGrantedCreditsExtendedPlainText } = await import("../../services/email-templates.service.js");
                 const { sendEmail: sendSESEmail } = await import("../../services/aws-ses.service.js");
 
-                const emailHtml = getGrantedCreditsExtendedHtml(user.name, new Date(endDate));
-                const emailText = getGrantedCreditsExtendedPlainText(user.name, new Date(endDate));
+                const dashboardUrl = await getDashboardUrlForUser(user);
+                const emailHtml = getGrantedCreditsExtendedHtml(user.name, new Date(endDate), dashboardUrl);
+                const emailText = getGrantedCreditsExtendedPlainText(user.name, new Date(endDate), dashboardUrl);
 
                 await sendSESEmail({
                     to: user.email,

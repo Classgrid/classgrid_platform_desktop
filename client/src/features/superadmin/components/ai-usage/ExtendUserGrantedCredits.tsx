@@ -4,9 +4,9 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/marketing_ui/popover";
-import { Calendar } from "@/components/marketing_ui/nikhil_calendar";
+import { NikhilDateCalendar } from "@/components/marketing_ui/nikhil_date_calendar";
 import { format } from "date-fns";
-import { aiUsageQueries } from "../../queries/useAiUsage";
+import { aiUsageApi } from "../../queries/useAiUsage";
 
 export function ExtendUserGrantedCredits({ userId, currentExpiry }: { userId: string, currentExpiry?: string | null }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +23,7 @@ export function ExtendUserGrantedCredits({ userId, currentExpiry }: { userId: st
     }
     setIsLoading(true);
     try {
-      await aiUsageQueries.extendCredits(userId, selectedDate.toISOString());
+      await aiUsageApi.extendCredits(userId, selectedDate.toISOString());
       toast.success("Granted credits expiration extended successfully.");
       queryClient.invalidateQueries({ queryKey: ["aiUsage", "user", userId] });
       queryClient.invalidateQueries({ queryKey: ["aiUsage"] });
@@ -56,18 +56,12 @@ export function ExtendUserGrantedCredits({ userId, currentExpiry }: { userId: st
             <p className="text-xs text-muted-foreground">Select a new expiration date.</p>
           </div>
           
-          <div className="border border-border rounded-xl overflow-hidden shadow-sm">
-            <div className="bg-muted/30 px-4 py-2 border-b border-border">
-                <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-0.5">New Expiry Date</div>
-                <div className="font-semibold text-foreground">{selectedDate ? format(selectedDate, "MMM d, yyyy") : "Select date"}</div>
-            </div>
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              disabled={{ before: new Date() }}
-              className="bg-card"
-            />
+          <div className="w-[280px]">
+             <NikhilDateCalendar
+               value={selectedDate ? { from: selectedDate } : undefined}
+               onChange={(val: any) => setSelectedDate(val?.from || undefined)}
+               placeholder="Select expiration date"
+             />
           </div>
 
           <div className="flex justify-end gap-2 mt-2">

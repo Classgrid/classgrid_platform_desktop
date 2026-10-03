@@ -1,6 +1,6 @@
 /*
  * =========================================================================================
- * 🚨 CRITICAL AI & SYSTEM RULE 🚨
+ * ðŸš¨ CRITICAL AI & SYSTEM RULE ðŸš¨
  * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
  * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
  * =========================================================================================
@@ -16,29 +16,29 @@
  */
 
 /*
- * ─────────────────────────────────────────────────────────
- * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * ðŸš¨ CRITICAL AI AND SYSTEM RULES ðŸš¨
  * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
  * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
  * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
- * ─────────────────────────────────────────────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  */
 
 /*
- * ─────────────────────────────────────────────────────────
- * 🚨 NAMING CONVENTION RULE 🚨
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * ðŸš¨ NAMING CONVENTION RULE ðŸš¨
  * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
  * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
  * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
- * ─────────────────────────────────────────────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  */
 
 /*
- * ─────────────────────────────────────────────────────────
- * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * ðŸš¨ HOSTING & ARCHITECTURE RULE ðŸš¨
  * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
  * 2. FRONTEND IS HOSTED ON VERCEL
- * ─────────────────────────────────────────────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  */
 
 /**
@@ -51,7 +51,7 @@
  */
 
 const getFrontendUrl = () => {
-  return process.env.FRONTEND_URL?.trim() || (process.env.NODE_ENV === "production" ? "https://classgrid.in" : "https://classgrid.in");
+  return process.env.FRONTEND_URL?.trim() || (process.env.NODE_ENV === "production" ? "https://app.classgrid.in" : "https://app.classgrid.in");
 };
 
 const PLATFORM_LOGO_URL = "https://cdn.classgrid.in/Classgrid.png";
@@ -182,7 +182,7 @@ ${content}
 <tr>
 <td style="padding:20px;text-align:center;border-top:1px solid #eaeaea;color:#9ca3af;font-size:12px;">
 ${ignoreText ? `<p style="margin-bottom:12px;color:#9ca3af;font-size:12px;">${ignoreText}</p>` : ''}
-© ${new Date().getFullYear()} Classgrid. All rights reserved.
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.
 </td>
 </tr>
 
@@ -259,7 +259,7 @@ Go to Dashboard
 
 <tr>
 <td style="padding:20px;text-align:center;border-top:1px solid #eaeaea;color:#9ca3af;font-size:12px;">
-© ${new Date().getFullYear()} Classgrid. All rights reserved.
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.
 </td>
 </tr>
 
@@ -332,7 +332,7 @@ Join Classroom
 
 <tr>
 <td style="padding:20px;text-align:center;border-top:1px solid #eaeaea;color:#9ca3af;font-size:12px;">
-© ${new Date().getFullYear()} Classgrid. All rights reserved.
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.
 </td>
 </tr>
 
@@ -404,7 +404,7 @@ export const getFacultyInviteEmailHtml = (facultyName, orgName, verifyLink, orgC
     <p>You have been invited by <strong>${adminName}</strong> (${adminEmail}) to join <strong>${orgName}</strong> as a faculty member on Classgrid.</p>
     
     <div style="background: #ffffff; color: #111111; border: 1px solid #eaeaea; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-      <p style="margin-bottom: 12px; font-weight: 600; color: #111111;">Getting Started — Next Steps</p>
+      <p style="margin-bottom: 12px; font-weight: 600; color: #111111;">Getting Started â€” Next Steps</p>
       <p style="margin-bottom: 8px; font-size: 14px; color: #111111;">1. Click the button below to activate your Faculty account.</p>
       <p style="margin-bottom: 8px; font-size: 14px; color: #111111;">2. Set your secure password.</p>
       <p style="margin-bottom: 0; font-size: 14px; color: #111111;">3. Enter your <strong style="color: #111111;">Faculty Organization Code</strong> (shown below) on the same page to finalize linking.</p>
@@ -426,7 +426,7 @@ export const getOrgApprovalEmailHtml = (orgName, ownerName, organizationCode, ho
     
     <p>Hi ${ownerName || "Admin"},</p>
     
-    <p>Congratulations — your organization has been successfully reviewed and approved. You can now begin onboarding your faculty and students to your official Classgrid workspace.</p>
+    <p>Congratulations â€” your organization has been successfully reviewed and approved. You can now begin onboarding your faculty and students to your official Classgrid workspace.</p>
 
     <div class="box" style="margin-bottom: 24px;">
       <p style="margin-bottom: 12px; font-weight: 600; color: #111111;">?? Admin Account Activation</p>
@@ -465,7 +465,7 @@ export const getOrgApprovalEmailHtml = (orgName, ownerName, organizationCode, ho
       <p style="margin: 0; font-size: 14px; color: #6b7280;">This is not a classroom code.</p>
     </div>
 
-    <h3 style="color:#111111; margin-top:32px;">?? Getting Started — Next Steps</h3>
+    <h3 style="color:#111111; margin-top:32px;">?? Getting Started â€” Next Steps</h3>
     
     <p style="font-weight: 600; color: #111111; margin-bottom: 8px;">1?? For Faculty</p>
     <p style="margin-bottom: 12px;">Send faculty invitations from your Admin Dashboard.</p>
@@ -500,15 +500,15 @@ export const getOrgApprovalEmailHtml = (orgName, ownerName, organizationCode, ho
         <tr>
           <td valign="top" width="40%">
             <strong style="color: #111111; display: block; margin-bottom: 6px;">Management</strong>
-            01 — Overview<br>02 — Faculty<br>03 — Students<br>04 — Classrooms<br>05 — Notes<br>06 — Announcements
+            01 â€” Overview<br>02 â€” Faculty<br>03 â€” Students<br>04 â€” Classrooms<br>05 â€” Notes<br>06 â€” Announcements
           </td>
           <td valign="top" width="30%">
             <strong style="color: #111111; display: block; margin-bottom: 6px;">Insights</strong>
-            07 — Analytics<br>08 — Attendance<br>09 — Billing
+            07 â€” Analytics<br>08 â€” Attendance<br>09 â€” Billing
           </td>
           <td valign="top" width="30%">
             <strong style="color: #111111; display: block; margin-bottom: 6px;">Settings</strong>
-            10 — Organization<br>11 — Security<br>12 — Role Sandbox
+            10 â€” Organization<br>11 â€” Security<br>12 â€” Role Sandbox
           </td>
         </tr>
       </table>
@@ -516,7 +516,7 @@ export const getOrgApprovalEmailHtml = (orgName, ownerName, organizationCode, ho
       <p style="margin-bottom: 0; font-size: 13px; color: #6b7280; font-style: italic;">Bookmarking ensures you can return directly without navigating through the main portal.</p>
     </div>
 
-    <p style="font-size: 14px; color: #6b7280; margin-bottom: 0;">If you need assistance during setup, our support team is always available at:<br><a href="https://classgrid.in/support" style="color:#111111;">https://classgrid.in/support</a></p>
+    <p style="font-size: 14px; color: #6b7280; margin-bottom: 0;">If you need assistance during setup, our support team is always available at:<br><a href="https://app.classgrid.in/support" style="color:#111111;">https://app.classgrid.in/support</a></p>
   `;
   return baseTemplate({
     content,
@@ -540,7 +540,7 @@ export const getOrgAdminInviteHtml = (adminName, orgName, activationLink) => {
     <a href="${activationLink}" class="btn">Activate Admin Account</a>
 
     <p style="margin-top: 28px; font-size: 13px; color: #6b7280;">After activation, you can sign in anytime at <a href="${getFrontendUrl()}/admin/login" style="color:#111111;">/admin/login</a>.</p>
-    <p style="font-size: 13px; color: #6b7280;">If you did not apply for a Classgrid organization, please contact us at <a href="https://classgrid.in/support" style="color:#111111;">https://classgrid.in/support</a>.</p>
+    <p style="font-size: 13px; color: #6b7280;">If you did not apply for a Classgrid organization, please contact us at <a href="https://app.classgrid.in/support" style="color:#111111;">https://app.classgrid.in/support</a>.</p>
   `;
   return baseTemplate({
     content,
@@ -630,7 +630,7 @@ export const getAdminOrgApprovalNotificationHtml = (orgName, ownerEmail, organiz
 export const getOrgApplicationConfirmationHtml = (ownerName, instituteName, plan = "FREE") => {
   const proPaymentBlock = plan === "PRO" ? `
     <div class="box" style="margin-bottom: 16px; border-left: 3px solid #a855f7;">
-      <p style="margin-bottom: 12px; font-weight: 600; color: #171717;">&#128179; Pro Plan — Payment via Razorpay</p>
+      <p style="margin-bottom: 12px; font-weight: 600; color: #171717;">&#128179; Pro Plan â€” Payment via Razorpay</p>
       <p style="margin-bottom: 8px;">&#x2022; Complete your payment securely via <strong>Razorpay</strong> (UPI, cards, net banking, or wallets).</p>
       <p style="margin-bottom: 8px;">&#x2022; Once payment is confirmed, your <strong>Pro plan will be activated automatically</strong>.</p>
       <p style="margin-bottom: 0;">&#x2022; You will receive a confirmation email with your Pro plan details and dashboard access instructions.</p>
@@ -694,10 +694,10 @@ export const getOrgAdminActivatedHtml = (userName, dashboardLink, adminLoginLink
 
     <div class="box" style="margin-bottom: 24px;">
       <p style="margin-bottom: 12px; font-weight: 600; color: #171717;">What you can do now:</p>
-      <p style="margin-bottom: 8px;">&#x2022; <strong>Create Classrooms</strong> — Set up classrooms and generate classroom codes for students.</p>
-      <p style="margin-bottom: 8px;">&#x2022; <strong>Invite Faculty</strong> — Send invitations to faculty members who will teach in your organization.</p>
-      <p style="margin-bottom: 8px;">&#x2022; <strong>Monitor Students</strong> — Track student enrollment and activity across classrooms.</p>
-      <p style="margin-bottom: 0;">&#x2022; <strong>Manage Organization Settings</strong> — Configure your organization details, codes, and preferences.</p>
+      <p style="margin-bottom: 8px;">&#x2022; <strong>Create Classrooms</strong> â€” Set up classrooms and generate classroom codes for students.</p>
+      <p style="margin-bottom: 8px;">&#x2022; <strong>Invite Faculty</strong> â€” Send invitations to faculty members who will teach in your organization.</p>
+      <p style="margin-bottom: 8px;">&#x2022; <strong>Monitor Students</strong> â€” Track student enrollment and activity across classrooms.</p>
+      <p style="margin-bottom: 0;">&#x2022; <strong>Manage Organization Settings</strong> â€” Configure your organization details, codes, and preferences.</p>
     </div>
 
     <a href="${dashboardLink}" class="btn">Go to Admin Dashboard</a>
@@ -788,7 +788,7 @@ export const getPlanActivationHtml = (planName, activationDate, expiryDate, user
 <img src="${PLATFORM_LOGO_URL}" alt="Classgrid" width="48" height="48" style="display:block;margin:0 auto 16px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.2);">>
 
 <p style="margin:10px 0 0;font-size:13px;color:#6b7280;">
-Payment confirmed — premium features unlocked
+Payment confirmed â€” premium features unlocked
 </p>
 </td>
 </tr>
@@ -853,13 +853,13 @@ style="background:#f9f9f9;border:1px solid #eaeaea;border-radius:10px;padding:20
 
 <table width="100%" cellpadding="4" cellspacing="0" style="font-size:13px;color:#374151;">
 <tr>
-<td style="padding:4px 0;">? <strong style="color:#111111;">Smart Attendance</strong> — Live sessions, daily/weekly/monthly reports</td>
+<td style="padding:4px 0;">? <strong style="color:#111111;">Smart Attendance</strong> â€” Live sessions, daily/weekly/monthly reports</td>
 </tr>
 <tr>
-<td style="padding:4px 0;">? <strong style="color:#111111;">Advanced Analytics</strong> — Student performance, engagement trends</td>
+<td style="padding:4px 0;">? <strong style="color:#111111;">Advanced Analytics</strong> â€” Student performance, engagement trends</td>
 </tr>
 <tr>
-<td style="padding:4px 0;">? <strong style="color:#111111;">Priority Support</strong> — Faster response times</td>
+<td style="padding:4px 0;">? <strong style="color:#111111;">Priority Support</strong> â€” Faster response times</td>
 </tr>
 </table>
 
@@ -882,7 +882,7 @@ style="background:#0d1117;border:1px solid #1a3a5c;border-left:3px solid #3b82f6
 <td style="padding:6px 0;"><strong style="color:#60a5fa;">Step 1:</strong> Log in to your <strong style="color:#111111;">Organization Admin Dashboard</strong></td>
 </tr>
 <tr>
-<td style="padding:6px 0;"><strong style="color:#60a5fa;">Step 2:</strong> Go to <strong style="color:#111111;">02 — Faculty</strong> section to invite your faculty members</td>
+<td style="padding:6px 0;"><strong style="color:#60a5fa;">Step 2:</strong> Go to <strong style="color:#111111;">02 â€” Faculty</strong> section to invite your faculty members</td>
 </tr>
 <tr>
 <td style="padding:6px 0;"><strong style="color:#60a5fa;">Step 3:</strong> Share your <strong style="color:#111111;">Student Honor Code</strong> with students (found in Overview)</td>
@@ -891,7 +891,7 @@ style="background:#0d1117;border:1px solid #1a3a5c;border-left:3px solid #3b82f6
 <td style="padding:6px 0;"><strong style="color:#60a5fa;">Step 4:</strong> Faculty creates classrooms ? students join using classroom codes</td>
 </tr>
 <tr>
-<td style="padding:6px 0;"><strong style="color:#60a5fa;">Step 5:</strong> Access <strong style="color:#111111;">07 — Analytics</strong> and <strong style="color:#111111;">08 — Attendance</strong> (PRO features!)</td>
+<td style="padding:6px 0;"><strong style="color:#60a5fa;">Step 5:</strong> Access <strong style="color:#111111;">07 â€” Analytics</strong> and <strong style="color:#111111;">08 â€” Attendance</strong> (PRO features!)</td>
 </tr>
 </table>
 
@@ -924,7 +924,7 @@ Need assistance?
 </p>
 
 <p style="font-size:14px;margin:5px 0 0;">
-<a href="https://classgrid.in/support" style="color:#111111;text-decoration:none;">
+<a href="https://app.classgrid.in/support" style="color:#111111;text-decoration:none;">
 support@classgrid.in
 </a>
 </p>
@@ -940,7 +940,7 @@ Best regards,<br>
 <!-- Footer -->
 <tr>
 <td style="padding:20px;text-align:center;border-top:1px solid #eaeaea;font-size:12px;color:#9ca3af;">
-© ${new Date().getFullYear()} Classgrid. All rights reserved.<br>
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.<br>
 support@classgrid.in
 </td>
 </tr>
@@ -958,7 +958,7 @@ support@classgrid.in
 export const getPlanActivationPlainText = (planName, activationDate, expiryDate, userName = 'User', planDuration = 31) => {
   return `?? Your Classgrid PRO Plan is Now Active
 
-Payment confirmed — premium features unlocked
+Payment confirmed â€” premium features unlocked
 
 Dear ${userName},
 
@@ -971,16 +971,16 @@ Expiry Date: ${formatDate(expiryDate)}
 Plan Duration: ${planDuration} Days
 
 --- PRO FEATURES NOW UNLOCKED ---
-? Smart Attendance — Live sessions, daily/weekly/monthly reports
-? Advanced Analytics — Student performance, engagement trends
-? Priority Support — Faster response times
+? Smart Attendance â€” Live sessions, daily/weekly/monthly reports
+? Advanced Analytics â€” Student performance, engagement trends
+? Priority Support â€” Faster response times
 
 --- HOW TO GET STARTED ---
 Step 1: Log in to your Organization Admin Dashboard
-Step 2: Go to "02 — Faculty" section to invite your faculty members
+Step 2: Go to "02 â€” Faculty" section to invite your faculty members
 Step 3: Share your Student Honor Code with students (found in Overview)
 Step 4: Faculty creates classrooms ? students join using classroom codes
-Step 5: Access "07 — Analytics" and "08 — Attendance" (PRO features!)
+Step 5: Access "07 â€” Analytics" and "08 â€” Attendance" (PRO features!)
 
 Your PRO plan remains active for ${planDuration} days from the activation date. Please renew before expiry to maintain uninterrupted access.
 
@@ -993,7 +993,7 @@ support@classgrid.in
 Best regards,
 The Classgrid Team
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 
@@ -1028,7 +1028,7 @@ Go to Dashboard: ${dashboardUrl}
 
 
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getStudentWelcomePlainText = (userName, dashboardUrl) => {
@@ -1058,7 +1058,7 @@ Join Classroom: ${dashboardUrl}
 
 
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getLoginNotificationPlainText = (user, provider = "manual") => {
@@ -1072,9 +1072,9 @@ Secure My Account: ${getFrontendUrl()}/reset-password
 
 If this was you, you can safely ignore this email.
 
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getVerificationEmailPlainText = (name, verifyLink) => {
@@ -1087,9 +1087,9 @@ Verify Email: ${verifyLink}
 
 If you did not sign up for Classgrid, please ignore this email.
 
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getPasswordResetEmailPlainText = (resetLink) => {
@@ -1101,9 +1101,9 @@ Reset Password: ${resetLink}
 
 If you did not request this password reset, you can safely ignore this email. Your password will remain unchanged.
 
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getFacultyInviteEmailPlainText = (facultyName, orgName, verifyLink, orgCode = null, adminName = "Admin", adminEmail = "") => {
@@ -1112,7 +1112,7 @@ export const getFacultyInviteEmailPlainText = (facultyName, orgName, verifyLink,
 Hi ${facultyName},
 You have been invited by ${adminName} (${adminEmail}) to join ${orgName} as a faculty member on Classgrid.
 
---- GETTING STARTED — NEXT STEPS ---
+--- GETTING STARTED â€” NEXT STEPS ---
 
 1. Click the link below to activate your Faculty account.
 2. Set your secure password and enter your Faculty Organization Code on the same page.
@@ -1123,9 +1123,9 @@ ${orgCode ? `--- YOUR ORGANIZATION CODE ---\n\nFaculty Organization Code: ${orgC
 Activate your Faculty account: ${verifyLink}
 (This link expires in 5 minutes.)
 
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getOrgApprovalEmailPlainText = (orgName, ownerName, organizationCode, honorCode, facultyLimit, frontendUrl) => {
@@ -1133,22 +1133,22 @@ export const getOrgApprovalEmailPlainText = (orgName, ownerName, organizationCod
 
 Hi ${ownerName || "Admin"},
 
-Congratulations — your organization has been successfully reviewed and approved. You can now begin onboarding your faculty and students to your official Classgrid workspace.
+Congratulations â€” your organization has been successfully reviewed and approved. You can now begin onboarding your faculty and students to your official Classgrid workspace.
 
 ?? Admin Account Activation
 
 You will receive a separate email containing your secure Admin Account activation link.
 
 This activation email will:
-• Contain a unique, single-use activation link
-• Be valid for 5 minutes
-• Allow you to securely set your password
-• Automatically log you into your Admin Dashboard after activation
+â€¢ Contain a unique, single-use activation link
+â€¢ Be valid for 5 minutes
+â€¢ Allow you to securely set your password
+â€¢ Automatically log you into your Admin Dashboard after activation
 
 For security reasons:
-• The activation link can only be used once
-• It will expire after the validity period
-• It must not be shared with anyone
+â€¢ The activation link can only be used once
+â€¢ It will expire after the validity period
+â€¢ It must not be shared with anyone
 
 If your activation link expires, you can request a new one from the Admin Login page.
 
@@ -1164,28 +1164,28 @@ Share this with students.
 This allows students to connect directly to your organization without a classroom code.
 This is not a classroom code.
 
-?? Getting Started — Next Steps
+?? Getting Started â€” Next Steps
 
 1?? For Faculty
 Send faculty invitations from your Admin Dashboard.
 Each faculty member will:
-• Receive an invitation email
-• Verify their account
-• Set their password
-• Enter the Faculty Organization Code
+â€¢ Receive an invitation email
+â€¢ Verify their account
+â€¢ Set their password
+â€¢ Enter the Faculty Organization Code
 After completion ? redirected to Faculty Dashboard.
 
 2?? For Students
 Students can join your organization in two ways:
-• Enter the Student Honor Code
+â€¢ Enter the Student Honor Code
   ? Directly connect to your organization
-• Enter a Classroom Code (created by faculty)
+â€¢ Enter a Classroom Code (created by faculty)
   ? Join a specific classroom
   ? Automatically linked to your organization
 
 3?? After Joining
-• Faculty ? Redirected to Faculty Dashboard
-• Students ? Redirected to Student Dashboard
+â€¢ Faculty ? Redirected to Faculty Dashboard
+â€¢ Students ? Redirected to Student Dashboard
 
 ?? Quick Access Tip
 Once your admin account is activated and you log in successfully, we recommend bookmarking your Admin Dashboard link in your browser for faster access.
@@ -1193,29 +1193,29 @@ Once your admin account is activated and you log in successfully, we recommend b
 Your Admin Dashboard allows you to manage:
 
 Management
-01 — Overview
-02 — Faculty
-03 — Students
-04 — Classrooms
-05 — Notes
-06 — Announcements
+01 â€” Overview
+02 â€” Faculty
+03 â€” Students
+04 â€” Classrooms
+05 â€” Notes
+06 â€” Announcements
 
 Insights
-07 — Analytics
-08 — Attendance
-09 — Billing
+07 â€” Analytics
+08 â€” Attendance
+09 â€” Billing
 
 Settings
-10 — Organization
-11 — Security
-12 — Role Sandbox
+10 â€” Organization
+11 â€” Security
+12 â€” Role Sandbox
 
 Bookmarking ensures you can return directly without navigating through the main portal.
 
 If you need assistance during setup, our support team is always available at:
 support@classgrid.in
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getOrgAdminInvitePlainText = (adminName, orgName, activationLink) => {
@@ -1234,11 +1234,11 @@ IMPORTANT:
 - Do not share this link with anyone.
 - After activation, you can sign in anytime at: ${getFrontendUrl()}/admin/login
 
-If you did not apply for a Classgrid organization, please raise a ticket at https://classgrid.in/support.
+If you did not apply for a Classgrid organization, please raise a ticket at https://app.classgrid.in/support.
 
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getAdminOrgApplicationNotificationPlainText = (data) => {
@@ -1250,9 +1250,9 @@ Phone: ${data.phone}
 
 Review Application: ${getFrontendUrl()}/superadmin/login
 
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getAdminOrgApprovalNotificationPlainText = (orgName, ownerEmail, organizationCode, honorCode, dashboardUrl) => {
@@ -1263,15 +1263,15 @@ Student Code: ${honorCode}
 
 View in Admin Panel: ${dashboardUrl}
 
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getOrgApplicationConfirmationPlainText = (ownerName, instituteName, plan = "FREE") => {
-  const proBlock = plan === "PRO" ? `\nPro Plan — Payment via Razorpay:\n  - Complete your payment securely via Razorpay (UPI, cards, net banking, or wallets).\n  - Once payment is confirmed, your Pro plan will be activated automatically.\n  - You will receive a confirmation email with your Pro plan details and dashboard access instructions.\n` : '';
+  const proBlock = plan === "PRO" ? `\nPro Plan â€” Payment via Razorpay:\n  - Complete your payment securely via Razorpay (UPI, cards, net banking, or wallets).\n  - Once payment is confirmed, your Pro plan will be activated automatically.\n  - You will receive a confirmation email with your Pro plan details and dashboard access instructions.\n` : '';
 
-  return `Application Received — ${instituteName}
+  return `Application Received â€” ${instituteName}
 
 Hello ${ownerName},
 
@@ -1297,9 +1297,9 @@ We appreciate your interest in building a structured digital environment with Cl
 Warm regards,
 The Classgrid Team
 
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getOrgRejectionEmailPlainText = (ownerName, instituteName, reason = null) => {
@@ -1308,9 +1308,9 @@ export const getOrgRejectionEmailPlainText = (ownerName, instituteName, reason =
 Hi ${ownerName},
 We have reviewed your application for ${instituteName}. Unfortunately, we are unable to approve it at this time.
 ${reason ? `\nReason: ${reason}\n` : ''}
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getOrgAdminActivatedPlainText = (userName, dashboardLink, adminLoginLink) => {
@@ -1320,16 +1320,16 @@ Hi ${userName},
 Your Organization Admin account on Classgrid is now active.
 
 What you can do now:
-- Create Classrooms — Set up classrooms and generate classroom codes.
-- Invite Faculty — Send invitations to faculty members.
-- Monitor Students — Track enrollment and activity across classrooms.
-- Manage Settings — Configure your organization details and codes.
+- Create Classrooms â€” Set up classrooms and generate classroom codes.
+- Invite Faculty â€” Send invitations to faculty members.
+- Monitor Students â€” Track enrollment and activity across classrooms.
+- Manage Settings â€” Configure your organization details and codes.
 
 Go to Admin Dashboard: ${dashboardLink}
 
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getSuperAdminCredentialsPlainText = (name, email, password, loginLink) => {
@@ -1351,9 +1351,9 @@ Your platform-level controls include:
 
 Login to Super Admin Dashboard: ${loginLink}
 
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getOrgDeleteVerificationEmailPlainText = (orgName, ownerName, verifyLink) => {
@@ -1369,7 +1369,7 @@ ${verifyLink}
 
 If you did not request this, please ignore this email.
 
-— The Classgrid Team
+â€” The Classgrid Team
 support@classgrid.in
   `.trim();
 };
@@ -1405,9 +1405,9 @@ This code is valid for the next 10 minutes. Please do not share it with anyone.
 
 If you did not request this code, you can safely ignore this email.
 
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- CLASSROOM ACTIVITY NOTIFICATION -------------
@@ -1438,7 +1438,7 @@ export const getClassroomActivityEmailHtml = ({ orgName, classroomName, facultyN
 `;
   return baseTemplate({
     content,
-    title: `New ${label} — ${classroomName} `
+    title: `New ${label} â€” ${classroomName} `
   });
 };
 
@@ -1458,7 +1458,7 @@ To manage email notifications, visit: ${getFrontendUrl()}/settings
 
 For contact, mail us at: support @classgrid.in
 
-© ${new Date().getFullYear()} Classgrid.All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid.All rights reserved.`;
 };
 
 // ------------- JOIN REQUEST NOTIFICATION (to Faculty) -------------
@@ -1472,7 +1472,7 @@ export const getJoinRequestEmailHtml = ({ studentName, classroomName, reviewUrl 
 `;
   return baseTemplate({
     content,
-    title: `Join Request — ${classroomName} `
+    title: `Join Request â€” ${classroomName} `
   });
 };
 
@@ -1488,7 +1488,7 @@ To manage email notifications, visit: ${getFrontendUrl()}/settings
 
 For contact, mail us at: support @classgrid.in
 
-© ${new Date().getFullYear()} Classgrid.All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid.All rights reserved.`;
 };
 
 // ------------- JOIN APPROVED NOTIFICATION (to Student) -------------
@@ -1501,7 +1501,7 @@ export const getJoinApprovedEmailHtml = ({ classroomName, classroomUrl }) => {
 `;
   return baseTemplate({
     content,
-    title: `Joined — ${classroomName} `
+    title: `Joined â€” ${classroomName} `
   });
 };
 
@@ -1517,7 +1517,7 @@ To manage email notifications, visit: ${getFrontendUrl()}/settings
 
 For contact, mail us at: support @classgrid.in
 
-© ${new Date().getFullYear()} Classgrid.All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid.All rights reserved.`;
 };
 
 // ------------- ATTENDANCE STARTED NOTIFICATION (to Students) -------------
@@ -1538,12 +1538,12 @@ export const getAttendanceStartedEmailHtml = ({ classroomName, facultyName, clas
 `;
   return baseTemplate({
     content,
-    title: `Attendance Active — ${classroomName}`
+    title: `Attendance Active â€” ${classroomName}`
   });
 };
 
 export const getAttendanceStartedEmailPlainText = ({ classroomName, facultyName, classroomUrl }) => {
-  return `Attendance is Open — ${classroomName}
+  return `Attendance is Open â€” ${classroomName}
 
 Your instructor ${facultyName} has started an attendance session.
 You have 4 MINUTES to mark your attendance.
@@ -1552,9 +1552,9 @@ Mark Attendance Now: ${classroomUrl}
 
 This session expires in 4 minutes. Act quickly!
 
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- ABSENCE NOTIFICATION (to Students) -------------
@@ -1575,12 +1575,12 @@ export const getAbsenceNotificationEmailHtml = ({ classroomName, sessionDate, cl
 `;
   return baseTemplate({
     content,
-    title: `Absent — ${classroomName}`
+    title: `Absent â€” ${classroomName}`
   });
 };
 
 export const getAbsenceNotificationEmailPlainText = ({ classroomName, sessionDate, classroomUrl }) => {
-  return `You Were Marked Absent — ${classroomName}
+  return `You Were Marked Absent â€” ${classroomName}
 
 You were absent from the attendance session on ${sessionDate}.
 
@@ -1590,9 +1590,9 @@ If you believe this is an error, contact your instructor.
 
 View Classroom: ${classroomUrl}
 
-For contact, visit: https://classgrid.in/support
+For contact, visit: https://app.classgrid.in/support
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // -------------------------------------------------
@@ -1637,7 +1637,7 @@ export const getDailyDigestEmailHtml = ({ userName, notifications, grouped, tota
     content: `
   <p style="margin:0 0 6px; font-size:15px; color:#1e293b;">Hi <strong>${userName}</strong>,</p>
     <p style="margin:0 0 20px; color:#64748b; font-size:14px; line-height:1.5;">
-      Here's your ${period.toLowerCase()} summary — <strong>${totalCount}</strong> notification${totalCount > 1 ? "s" : ""} since your last digest.
+      Here's your ${period.toLowerCase()} summary â€” <strong>${totalCount}</strong> notification${totalCount > 1 ? "s" : ""} since your last digest.
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
       ${notifRows}
@@ -1654,17 +1654,17 @@ export const getDailyDigestEmailHtml = ({ userName, notifications, grouped, tota
 
 export const getDailyDigestEmailPlainText = ({ userName, notifications, totalCount, settingsUrl, isWeekly = false }) => {
   const period = isWeekly ? "Weekly" : "Daily";
-  let lines = [`Hi ${userName}, \n`, `Your ${period.toLowerCase()} summary — ${totalCount} notification${totalCount > 1 ? "s" : ""}: \n`];
+  let lines = [`Hi ${userName}, \n`, `Your ${period.toLowerCase()} summary â€” ${totalCount} notification${totalCount > 1 ? "s" : ""}: \n`];
 
   for (const n of notifications.slice(0, 20)) {
     const time = new Date(n.createdAt).toLocaleString("en-IN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" });
-    lines.push(`• ${n.title}: ${n.message?.substring(0, 80) || ""} (${time})`);
+    lines.push(`â€¢ ${n.title}: ${n.message?.substring(0, 80) || ""} (${time})`);
   }
   if (totalCount > 20) lines.push(`\n...and ${totalCount - 20} more`);
 
   lines.push(`\nOpen Dashboard: ${getFrontendUrl()}/classroom`);
   lines.push(`Change preferences: ${settingsUrl}`);
-  lines.push(`\n© ${new Date().getFullYear()} Classgrid. All rights reserved.`);
+  lines.push(`\nÂ© ${new Date().getFullYear()} Classgrid. All rights reserved.`);
 
   return lines.join("\n");
 };
@@ -1770,7 +1770,7 @@ Classgrid pricing is handled separately from this reminder flow. Use the dashboa
 
 
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 // ------------- CONSOLIDATED APPROVAL + ACTIVATION + PLAN EMAIL -------------
 // Merges: getOrgApprovalEmailHtml + getOrgAdminInviteHtml + getPlanActivationHtml
@@ -1788,7 +1788,7 @@ export const getConsolidatedApprovalEmailHtml = ({
   sandboxDuration = 31,
   allocatedDashboards = [],
 }) => {
-  const dashboardLink = subdomain ? `https://${subdomain}.classgrid.in/admin/login` : `https://classgrid.in/admin/login`;
+  const dashboardLink = subdomain ? `https://${subdomain}.classgrid.in/admin/login` : `https://app.classgrid.in/admin/login`;
   const exampleDomain = subdomain ? `${subdomain}.classgrid.in` : `yourname.classgrid.in`;
   
   const dashboardLabels = {
@@ -1813,12 +1813,12 @@ export const getConsolidatedApprovalEmailHtml = ({
     <p>Hi ${adminName || "Admin"},</p>
     
     <p>
-      Congratulations! 🎉 Your Classgrid Sandbox for <strong>${orgName}</strong> is now ready. 
+      Congratulations! ðŸŽ‰ Your Classgrid Sandbox for <strong>${orgName}</strong> is now ready. 
       You have 31 days of full access to explore and experience how your institution can manage its operations from one unified platform.
     </p>
 
     <div class="box" style="margin-bottom:24px; margin-top:24px; border-left: 3px solid #3b82f6;">
-      <p style="margin-bottom:12px; font-weight:600; color:#111111;">📦 Sandbox Details</p>
+      <p style="margin-bottom:12px; font-weight:600; color:#111111;">ðŸ“¦ Sandbox Details</p>
       <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 14px; color: #374151;">
         <tr>
           <td style="padding-bottom:8px; width: 40%; color: #6b7280;">Organization</td>
@@ -1835,17 +1835,17 @@ export const getConsolidatedApprovalEmailHtml = ({
       </table>
     </div>
 
-    <h3 style="color:#111111; margin-top:32px; font-size: 16px;">🛠️ Included Dashboards</h3>
+    <h3 style="color:#111111; margin-top:32px; font-size: 16px;">ðŸ› ï¸ Included Dashboards</h3>
     <ul style="margin-bottom:32px; color:#374151;">
       ${dashboardsList || '<li>All core modules</li>'}
     </ul>
 
-    <h3 style="color:#111111; margin-top:32px; font-size: 16px;">🔐 Welcome to Classgrid!</h3>
+    <h3 style="color:#111111; margin-top:32px; font-size: 16px;">ðŸ” Welcome to Classgrid!</h3>
     <p style="margin-bottom:12px;">
       Click the button below to get started and set up your admin profile.
     </p>
     
-    <a href="${activationLink}" class="btn" style="margin-bottom:12px;">Begin Setup →</a>
+    <a href="${activationLink}" class="btn" style="margin-bottom:12px;">Begin Setup â†’</a>
 
     <p style="margin-top: 32px; margin-bottom: 0;">
       Welcome aboard,<br>
@@ -1891,17 +1891,17 @@ export const getConsolidatedApprovalEmailPlainText = ({
 
   const dashboardLink = subdomain 
     ? `https://${subdomain}.classgrid.in/admin/dashboard`
-    : "https://classgrid.in/admin/dashboard";
+    : "https://app.classgrid.in/admin/dashboard";
 
   return `Hi ${adminName || "Admin"},
 
-Congratulations! 🎉
+Congratulations! ðŸŽ‰
 
 Your Classgrid Sandbox for ${orgName} is now ready.
 
 You have 31 days of full access to explore Classgrid and experience how your institution can manage its operations from one platform.
 
-📦 Sandbox Details
+ðŸ“¦ Sandbox Details
 
 Organization
 ${orgName}
@@ -1912,26 +1912,26 @@ Access Period
 Sandbox Expires
 ${formatDate(expiryDate)}
 
-🛠️ Your Included Dashboards
+ðŸ› ï¸ Your Included Dashboards
 
 Your sandbox has been configured with:
 ${dashboardsList || '- All core modules'}
 
-🔐 Welcome to Classgrid!
+ðŸ” Welcome to Classgrid!
 
 Click the link below to get started and set up your admin profile.
 
-Begin Setup →
+Begin Setup â†’
 ${activationLink}
 
 Need Help?
 Our support team is available if you need assistance with your setup.
-Contact Classgrid Support: https://classgrid.in/support
+Contact Classgrid Support: https://app.classgrid.in/support
 
 Nikhil Shinde | CEO
 Classgrid
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- ACCOUNT SUSPENSION NOTIFICATION -------------
@@ -1948,10 +1948,10 @@ export const getAccountSuspensionEmailHtml = (userName, reason) => {
     <p>While your account is suspended, you will not be able to log in or access any Classgrid services.</p>
 
     <p style="margin-top: 24px;">If you believe this is a mistake or would like to appeal, please contact our support team:</p>
-    <a href="https://classgrid.in/support" class="btn" style="background: #f59e0b; color: #000;">Contact Support</a>
+    <a href="https://app.classgrid.in/support" class="btn" style="background: #f59e0b; color: #000;">Contact Support</a>
 
     <p style="font-size: 13px; color: #6b7280; margin-top: 24px;">
-      Support: <a href="https://classgrid.in/support" style="color:#111111;">https://classgrid.in/support</a>
+      Support: <a href="https://app.classgrid.in/support" style="color:#111111;">https://app.classgrid.in/support</a>
     </p>
   `;
   return baseTemplate({ content, title: 'Account Suspended' });
@@ -1971,7 +1971,7 @@ While your account is suspended, you will not be able to log in or access any Cl
 If you believe this is a mistake or would like to appeal, please contact our support team at:
 support@classgrid.in
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- ACCOUNT DELETION NOTIFICATION -------------
@@ -1988,10 +1988,10 @@ export const getAccountDeletionEmailHtml = (userName, reason) => {
     <p>All your data, including classroom memberships, sessions, and tokens, has been removed from our platform.</p>
 
     <p style="margin-top: 24px;">If you believe this was done in error, please contact our support team immediately:</p>
-    <a href="https://classgrid.in/support" class="btn" style="background: #ef4444;">Contact Support</a>
+    <a href="https://app.classgrid.in/support" class="btn" style="background: #ef4444;">Contact Support</a>
 
     <p style="font-size: 13px; color: #6b7280; margin-top: 24px;">
-      Support: <a href="https://classgrid.in/support" style="color:#111111;">https://classgrid.in/support</a>
+      Support: <a href="https://app.classgrid.in/support" style="color:#111111;">https://app.classgrid.in/support</a>
     </p>
   `;
   return baseTemplate({ content, title: 'Account Deleted' });
@@ -2011,7 +2011,7 @@ All your data, including classroom memberships, sessions, and tokens, has been r
 If you believe this was done in error, please contact our support team immediately at:
 support@classgrid.in
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- GENERIC NOTIFICATION -------------
@@ -2031,7 +2031,7 @@ ${message || "You have a new Classgrid notification."}
 
 ${link ? `Open: ${link}` : ""}
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- DEMO LEAD NOTIFICATIONS -------------
@@ -2061,7 +2061,7 @@ Location: ${[data.city, data.state].filter(Boolean).join(", ") || "Not provided"
 
 ${data.dashboardUrl ? `Open Lead: ${data.dashboardUrl}` : ""}
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getWelcomeProspectHtml = (data = {}) => {
@@ -2083,7 +2083,7 @@ We received your demo request for ${data.institutionName || "your institution"}.
 
 ${data.bookingUrl ? `Book Demo Slot: ${data.bookingUrl}` : ""}
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getDemoMeetingScheduledHtml = (data = {}) => {
@@ -2091,7 +2091,7 @@ export const getDemoMeetingScheduledHtml = (data = {}) => {
   
   const content = `
     <p>Hello ${data.adminName || "there"},</p>
-    <p>We’re writing to let you know that the Classgrid demo meeting for <strong>${data.institutionName || "your institution"}</strong> has been rescheduled.</p>
+    <p>Weâ€™re writing to let you know that the Classgrid demo meeting for <strong>${data.institutionName || "your institution"}</strong> has been rescheduled.</p>
     
     <p>Updated meeting details:</p>
     <div class="box">
@@ -2123,7 +2123,7 @@ export const getDemoMeetingScheduledPlainText = (data = {}) => {
 
 Hello ${data.adminName || "there"},
 
-We’re writing to let you know that the Classgrid demo meeting for ${data.institutionName || "your institution"} has been rescheduled.
+Weâ€™re writing to let you know that the Classgrid demo meeting for ${data.institutionName || "your institution"} has been rescheduled.
 
 Updated meeting details:
 
@@ -2141,7 +2141,7 @@ ${data.repEmail ? `${data.repEmail}` : ""}
 
 
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- ADMISSION FEE RECEIPT -------------
@@ -2194,7 +2194,7 @@ Enrollment Status: Confirmed
 
 This is a computer-generated receipt and does not require a physical signature.
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- NO ACCOUNT SIGN-IN ATTEMPT -------------
@@ -2246,13 +2246,13 @@ Location: ${city}
 Time: ${formatDate(new Date())}
 
 Why did this happen?
-• You may have used a personal email instead of your official institution email.
-• Your institution administrator may not have created your account yet.
+â€¢ You may have used a personal email instead of your official institution email.
+â€¢ Your institution administrator may not have created your account yet.
 
 Next Steps
 If you believe you should have access, please reach out to your institution administrator directly.
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- NEW DEVICE OTP -------------
@@ -2289,7 +2289,7 @@ This code expires in 30 seconds. Enter it on the login page to verify your devic
 
 If you did not attempt to log in, please reset your password immediately.
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- BILLING EMAIL OTP -------------
@@ -2326,7 +2326,7 @@ This code expires in 60 seconds. Enter it in your Billing Profile to verify this
 
 If you did not make this request, please review your organization settings.
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ----------------------------------------------------------------------
@@ -2484,7 +2484,7 @@ export const getErpRoleInvitationHtml = (recipientName, roleTitle, orgName, setu
   const content = `<h2>Official Notice: Role Assignment</h2>
   <p>Dear ${recipientName},</p>
   <p>You have been officially assigned the role of <strong>${roleTitle}</strong> at <strong>${orgName}</strong>.</p>
-  <p>To activate your account and access the institution’s ERP portal, please click the button below and complete your portal setup.</p>
+  <p>To activate your account and access the institutionâ€™s ERP portal, please click the button below and complete your portal setup.</p>
   <a href="${setupLink}" class="btn">Set Up Portal Access</a>
   <p class="text-muted">This invitation link will expire on ${expiryDate}.</p>
   <p>For security reasons, please do not share this email or activation link with anyone.</p>
@@ -2506,7 +2506,7 @@ export const getErpRoleRequestAdminHtml = (adminName, requesterName, requesterEm
   </ul>
   <p>Please review the request and approve or deny it through the ERP portal.</p>
   <a href="${reviewLink}" class="btn">Review Request in ERP</a>
-  <p>For security and accountability, please verify the requester’s identity and role requirements before approving access.</p>
+  <p>For security and accountability, please verify the requesterâ€™s identity and role requirements before approving access.</p>
   <p>If the button does not work, copy and paste the following link into your browser:</p>
   <p><a href="${reviewLink}">${reviewLink}</a></p>`;
   return baseTemplate({ content, title: "Access Request Pending Approval" });
@@ -2781,7 +2781,7 @@ export const erpBaseTemplate = ({ content, title = "Notification", orgName = "In
 export const getFailedPaymentEmailHtml = (amountInr, errorDescription, paymentId, orgName = "Classgrid") => {
   const content = `
     <h2 style="color: #dc2626;">Payment Failed</h2>
-    <p>We attempted to process your payment of <strong>₹${amountInr}</strong>, but unfortunately, it failed.</p>
+    <p>We attempted to process your payment of <strong>â‚¹${amountInr}</strong>, but unfortunately, it failed.</p>
     <p><strong>Reason:</strong> ${errorDescription || "Action Required"}</p>
     <div style="background-color: var(--bg); padding: 15px; border-radius: 6px; margin: 20px 0; border: 1px solid var(--border);">
       <p style="margin: 0; font-size: 14px; color: var(--text-muted);">Payment ID: ${paymentId}</p>
@@ -2813,7 +2813,7 @@ export const getAiCreditUserReceiptHtml = (payerName, amountFormatted, creditsRe
   `;
   return baseTemplate({
     content,
-    title: `Payment Successful — ${amountFormatted} | Classgrid`
+    title: `Payment Successful â€” ${amountFormatted} | Classgrid`
   });
 };
 
@@ -2850,7 +2850,8 @@ export const getAiCreditAdminNotificationHtml = (payerName, payerEmail, amountFo
 
 
 // ------------- AI CREDITS: GRANTED NOTIFICATION -------------
-export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance, expireDateStr = "No expiration") => {
+export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance, expireDateStr = "No expiration", dashboardUrl = null) => {
+    const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
     const content = `
         <p>Hi ${userName},</p>
         <p>Good news! We have successfully added <strong>${creditsAdded} AI credits</strong> to your account.</p>
@@ -2861,7 +2862,7 @@ export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance, exp
             <li><strong>Expiration Date:</strong> ${expireDateStr}</li>
         </ul>
         
-        <p>You can now use your credits to generate content, run AI tools, and use all available smart features. To check your current usage at any time, go to your AIHUB CREDITS.</p>
+        <p>You can now use your credits to generate content, run AI tools, and use all available smart features. To check your current usage at any time, go to your <a href="${url}">AIHUB CREDITS</a>.</p>
         <p>If you have any questions or need more credits, just reply to this email.</p>
         
         <p>Best regards,<br>The Classgrid Support Team</p>
@@ -2869,7 +2870,8 @@ export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance, exp
     return baseTemplate({ content, title: "Your AI Credits Have Been Granted!" });
 };
 
-export const getAiCreditGrantedPlainText = (userName, creditsAdded, totalBalance, expireDateStr = "No expiration") => {
+export const getAiCreditGrantedPlainText = (userName, creditsAdded, totalBalance, expireDateStr = "No expiration", dashboardUrl = null) => {
+    const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
     return `Hi ${userName},
 
 Good news! We have successfully added ${creditsAdded} AI credits to your account.
@@ -2878,7 +2880,7 @@ Good news! We have successfully added ${creditsAdded} AI credits to your account
 • New Total Balance: ${totalBalance} Credits
 • Expiration Date: ${expireDateStr}
 
-You can now use your credits to generate content, run AI tools, and use all available smart features. To check your current usage at any time, go to your AIHUB CREDITS.
+You can now use your credits to generate content, run AI tools, and use all available smart features. To check your current usage at any time, go to your AI Hub: ${url}
 
 If you have any questions or need more credits, just reply to this email.
 
@@ -2923,11 +2925,12 @@ This code will expire in ${expiryMinutes} minutes.
 
 Security Warning: If you did not request this code, immediately secure your account. Never share this code with anyone.
 
-© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- GRANTED CREDITS EXTENDED -------------
-export const getGrantedCreditsExtendedHtml = (userName, newExpiryDate) => {
+export const getGrantedCreditsExtendedHtml = (userName, newExpiryDate, dashboardUrl = null) => {
+  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
   const content = `
     <p>Hi <strong>${userName || 'there'}</strong>,</p>
     <p>Good news! Your Classgrid AI granted credits expiration date has been extended.</p>
@@ -2940,7 +2943,7 @@ export const getGrantedCreditsExtendedHtml = (userName, newExpiryDate) => {
     <p>You can continue using your AI credits for generating content and accessing smart features until this new date.</p>
     
     <p style="margin-top: 24px;">
-      <a href="${getFrontendUrl()}/ai-hub" style="display: inline-block; background-color: #111111; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 14px;">Open AI Hub</a>
+      <a href="${url}" style="display: inline-block; background-color: #111111; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 14px;">Open AI Hub</a>
     </p>
   `;
   return baseTemplate({
@@ -2950,23 +2953,101 @@ export const getGrantedCreditsExtendedHtml = (userName, newExpiryDate) => {
   });
 };
 
-export const getGrantedCreditsExtendedPlainText = (userName, newExpiryDate) => {
-  return `AI Credits Extended
+export const getGrantedCreditsExtendedPlainText = (userName, newExpiryDate, dashboardUrl = null) => {
+  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  return \`AI Credits Extended
 
-Hi ${userName || 'there'},
+Hi \${userName || 'there'},
 
 Good news! Your Classgrid AI granted credits expiration date has been extended.
 
-New Expiration Date: ${formatDate(newExpiryDate)}
+New Expiration Date: \${formatDate(newExpiryDate)}
 
 You can continue using your AI credits until this new date.
 
-To view your AI usage, go to: ${getFrontendUrl()}/ai-hub
+To view your AI usage, go to: \${url}
 
 If you have any questions, just reply to this email.
 
 Best regards,
-The Classgrid Team`;
+The Classgrid Team\`;
 };
 
+// ------------- GRANTED CREDITS PAUSED / UNPAUSED -------------
+export const getGrantedCreditsPausedHtml = (userName, isPaused, dashboardUrl = null) => {
+  const action = isPaused ? "paused" : "resumed";
+  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  const content = `
+    <p>Hi <strong>${userName || 'there'}</strong>,</p>
+    <p>Your Classgrid AI granted credits have been <strong>${action}</strong> by the administrator.</p>
+    
+    <div class="box" style="margin: 24px 0; background-color: ${isPaused ? '#fffbeb' : '#ecfdf5'}; border: 1px solid ${isPaused ? '#fcd34d' : '#6ee7b7'}; border-radius: 8px; padding: 20px; text-align: center;">
+      <p style="margin: 0; font-size: 18px; font-weight: 600; color: ${isPaused ? '#92400e' : '#065f46'};">${isPaused ? 'Credits Paused' : 'Credits Resumed'}</p>
+      <p style="margin: 8px 0 0; font-size: 13px; color: ${isPaused ? '#a16207' : '#047857'};">${isPaused ? 'Your granted credits are temporarily unavailable.' : 'Your granted credits are now active and ready to use.'}</p>
+    </div>
 
+    ${isPaused ? '<p>While paused, you will not be able to use your granted credits. Your free weekly limit still applies.</p>' : '<p>You can now continue using your granted credits as usual.</p>'}
+    
+    <p>If you have any questions, simply reply to this email.</p>
+  `;
+  return baseTemplate({ content, title: 'AI Credits ' + (isPaused ? 'Paused' : 'Resumed') });
+};
+
+export const getGrantedCreditsPausedPlainText = (userName, isPaused, dashboardUrl = null) => {
+  const action = isPaused ? "paused" : "resumed";
+  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  return 'AI Credits ' + (isPaused ? 'Paused' : 'Resumed') + '\n\nHi ' + (userName || 'there') + ',\n\nYour Classgrid AI granted credits have been ' + action + ' by the administrator.\n\n' + (isPaused ? 'While paused, you will not be able to use your granted credits. Your free weekly limit still applies.' : 'You can now continue using your granted credits as usual.') + '\n\nIf you have any questions, just reply to this email.\n\nBest regards,\nThe Classgrid Team';
+};
+
+// ------------- GRANTED CREDITS REMOVED (EXPIRED) -------------
+export const getGrantedCreditsRemovedHtml = (userName, dashboardUrl = null) => {
+  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  const content = `
+    <p>Hi <strong>${userName || 'there'}</strong>,</p>
+    <p>Your Classgrid AI granted credits have been <strong>removed</strong> by the administrator. Your promotional credit balance has been set to zero.</p>
+    
+    <div class="box" style="margin: 24px 0; background-color: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 20px; text-align: center;">
+      <p style="margin: 0; font-size: 18px; font-weight: 600; color: #991b1b;">Credits Removed</p>
+      <p style="margin: 8px 0 0; font-size: 13px; color: #b91c1c;">Your granted credits balance is now 0.</p>
+    </div>
+
+    <p>Your free weekly limit is still available. If you need additional credits, you can purchase them from the AI Hub.</p>
+    
+    <p style="margin-top: 24px;">
+      <a href="${url}" style="display: inline-block; background-color: #111111; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 14px;">Open AI Hub</a>
+    </p>
+  `;
+  return baseTemplate({ content, title: 'AI Credits Removed' });
+};
+
+export const getGrantedCreditsRemovedPlainText = (userName, dashboardUrl = null) => {
+  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  return 'AI Credits Removed\n\nHi ' + (userName || 'there') + ',\n\nYour Classgrid AI granted credits have been removed by the administrator. Your promotional credit balance has been set to zero.\n\nYour free weekly limit is still available. If you need additional credits, you can purchase them from the AI Hub.\n\nTo view your AI usage, go to: ' + url + '\n\nBest regards,\nThe Classgrid Team';
+};
+
+// ------------- GRANTED CREDITS EXPIRY WARNING (2 days before) -------------
+export const getGrantedCreditsExpiryWarningHtml = (userName, expiryDate, remainingCredits, dashboardUrl = null) => {
+  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  const content = `
+    <p>Hi <strong>${userName || 'there'}</strong>,</p>
+    <p>This is a friendly reminder that your Classgrid AI granted credits are <strong>expiring soon</strong>.</p>
+    
+    <div class="box" style="margin: 24px 0; background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 20px;">
+      <h3 style="margin-top: 0; color: #92400e; font-size: 16px; margin-bottom: 12px;">Expiring Soon</h3>
+      <p style="margin: 0 0 8px; font-size: 14px; color: #78350f;"><strong>Expiration Date:</strong> ${formatDate(expiryDate)}</p>
+      <p style="margin: 0; font-size: 14px; color: #78350f;"><strong>Remaining Credits:</strong> ${remainingCredits}</p>
+    </div>
+
+    <p>Make sure to use your remaining credits before they expire. After expiration, your granted credit balance will be set to zero.</p>
+    
+    <p style="margin-top: 24px;">
+      <a href="${url}" style="display: inline-block; background-color: #111111; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 14px;">Use Your Credits</a>
+    </p>
+  `;
+  return baseTemplate({ content, title: 'AI Credits Expiring Soon' });
+};
+
+export const getGrantedCreditsExpiryWarningPlainText = (userName, expiryDate, remainingCredits, dashboardUrl = null) => {
+  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  return 'AI Credits Expiring Soon\n\nHi ' + (userName || 'there') + ',\n\nThis is a friendly reminder that your Classgrid AI granted credits are expiring soon.\n\nExpiration Date: ' + formatDate(expiryDate) + '\nRemaining Credits: ' + remainingCredits + '\n\nMake sure to use your remaining credits before they expire. After expiration, your granted credit balance will be set to zero.\n\nTo use your credits: ' + url + '\n\nBest regards,\nThe Classgrid Team';
+};
