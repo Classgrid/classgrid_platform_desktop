@@ -15,14 +15,17 @@ const DEFAULT_CREDITS_PER_INR = 3000;
 const DEFAULT_IMAGE_GENERATION_COST = 5000;
 
 export const calculateCreditsFromAmount = async (amountInr) => {
-    let multiplier = DEFAULT_CREDITS_PER_INR;
+    let multiplier;
     try {
         const config = await GlobalAiConfig.findOne({ key: "singleton" }).lean();
         if (config && config.credits_per_inr !== undefined && config.credits_per_inr !== null) {
             multiplier = config.credits_per_inr;
+        } else {
+            throw new Error("CRITICAL: Global AI Pricing is not configured. Fallback pricing is forbidden.");
         }
     } catch (err) {
         console.error("Error fetching credits_per_inr:", err);
+        throw err;
     }
     return Math.floor(amountInr * multiplier);
 };

@@ -356,7 +356,7 @@ export function AiUsageDashboardPage() {
                       className="text-xs opacity-50" 
                       tickLine={false} 
                       axisLine={false}
-                      minTickGap={40}
+                      minTickGap={15}
                       tickFormatter={(value) => {
                         const date = new Date(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -408,7 +408,7 @@ export function AiUsageDashboardPage() {
                       className="text-xs opacity-50" 
                       tickLine={false} 
                       axisLine={false}
-                      minTickGap={40}
+                      minTickGap={15}
                       tickFormatter={(value) => {
                         const date = new Date(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -453,7 +453,7 @@ export function AiUsageDashboardPage() {
                       className="text-xs opacity-50" 
                       tickLine={false} 
                       axisLine={false}
-                      minTickGap={40}
+                      minTickGap={15}
                       tickFormatter={(value) => {
                         const date = new Date(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -491,7 +491,7 @@ export function AiUsageDashboardPage() {
                       className="text-xs opacity-50" 
                       tickLine={false} 
                       axisLine={false}
-                      minTickGap={40}
+                      minTickGap={15}
                       tickFormatter={(value) => {
                         const date = new Date(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -532,7 +532,7 @@ export function AiUsageDashboardPage() {
                       className="text-xs opacity-50" 
                       tickLine={false} 
                       axisLine={false}
-                      minTickGap={40}
+                      minTickGap={15}
                       tickFormatter={(value) => {
                         const date = new Date(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -609,7 +609,7 @@ export function AiUsageDashboardPage() {
                       className="text-xs opacity-50" 
                       tickLine={false} 
                       axisLine={false}
-                      minTickGap={40}
+                      minTickGap={15}
                       tickFormatter={(value) => {
                         const date = new Date(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
