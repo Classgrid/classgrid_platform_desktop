@@ -59,6 +59,7 @@ export const useAiOrgUsers = (orgId: string) => useQuery({
   queryKey: ["ai-usage-org-users", orgId],
   queryFn: () => aiUsageApi.getOrgUsers(orgId),
   enabled: !!orgId,
+  refetchInterval: 30000,
 });
 
 export const useAiUserDetail = (userId: string) => useQuery({

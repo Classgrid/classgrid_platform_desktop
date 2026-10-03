@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { DataTable } from "@/components/marketing_ui/data-table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
 import { formatNumber, formatRoleLabel } from "@/lib/utils";
+import { NikhilDateCalendar } from "@/components/marketing_ui/nikhil_date_calendar";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 
 export interface TopAiUsersTableProps {
@@ -15,6 +16,7 @@ export function TopAiUsersTable({ users = [] }: TopAiUsersTableProps) {
   const [search, setSearch] = React.useState("");
   const [roleFilter, setRoleFilter] = React.useState("all");
   const [showAll, setShowAll] = React.useState(false);
+  const [dateRange, setDateRange] = React.useState<{ from?: Date; to?: Date } | undefined>();
 
   // Extract unique roles dynamically from real user data
   const uniqueRoles = useMemo(() => {
@@ -132,6 +134,13 @@ export function TopAiUsersTable({ users = [] }: TopAiUsersTableProps) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-[180px] h-[34px] pl-9 pr-3 bg-black border border-[#222222] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#444444]"
+            />
+          </div>
+          <div className="w-[200px]">
+            <NikhilDateCalendar 
+              value={dateRange}
+              onChange={setDateRange}
+              placeholder="Select Date"
             />
           </div>
           <Select value={roleFilter} onValueChange={setRoleFilter}>
