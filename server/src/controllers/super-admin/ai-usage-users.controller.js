@@ -23,6 +23,18 @@ export const listUsersInOrg = async (req, res) => {
             .select("name email role ai_tokens organization_id profilePicture platformLogo avatarUrl picture photoUrl")
             .lean();
 
+        const userIds = users.map(u => u._id);
+        const latestTransactions = await AiCreditTransaction.aggregate([
+            { $match: { userId: { $in: userIds }, type: { $in: ["topup", "grant"] }, status: "success" } },
+            { $sort: { createdAt: -1 } },
+            { $group: { _id: "$userId", latestTopUp: { $first: "$credits_added" }, date: { $first: "$createdAt" } } }
+        ]);
+
+        const topUpMap = {};
+        latestTransactions.forEach(t => {
+            topUpMap[t._id.toString()] = { amount: t.latestTopUp, date: t.date };
+        });
+
         // Group users by role
         const roles = {};
         users.forEach(user => {
@@ -47,7 +59,8 @@ export const listUsersInOrg = async (req, res) => {
                 role: role,
                 profilePicture: finalProfilePicture,
                 totalUsage: user.ai_tokens?.total_ai_tokens_used || 0,
-                isBlocked: user.ai_tokens?.is_ai_blocked || false
+                isBlocked: user.ai_tokens?.is_ai_blocked || false,
+                recentTopUp: topUpMap[user._id.toString()] ? topUpMap[user._id.toString()].amount : null
             });
         });
 

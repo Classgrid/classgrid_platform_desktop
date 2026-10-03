@@ -55,7 +55,7 @@ export function TopAiUsersTable({ users = [] }: TopAiUsersTableProps) {
       initials: (u.name || u.email || "??").substring(0, 2).toUpperCase(),
       role: u.role ? formatRoleLabel(u.role) : "Unknown Role",
       tokensUsed: formatNumber(u.totalUsage || 0),
-      recentTopUp: "-"
+      recentTopUp: u.recentTopUp ? formatNumber(u.recentTopUp) : "-"
     }));
   }, [users, search, roleFilter, showAll]);
 

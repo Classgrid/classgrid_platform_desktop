@@ -42,29 +42,9 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
         return { allowed: true, source: "weekly_free" };
     }
 
-    // FIFO LOGIC: Determine which came FIRST between Promotion and Paid
-    const promoBalance = user.ai_tokens?.promotion_credits_balance || 0;
-    const paidBalance = user.ai_tokens?.ai_credits_balance || 0;
-    
-    const promoStart = user.ai_tokens?.promotion_credits_start_date ? new Date(user.ai_tokens.promotion_credits_start_date).getTime() : Infinity;
-    const paidStart = user.ai_tokens?.ai_credits_start_date ? new Date(user.ai_tokens.ai_credits_start_date).getTime() : Infinity;
-
-    // 3. FIFO Deduction (Whichever was purchased/granted FIRST gets used FIRST)
-    if (promoBalance >= requiredTokens && paidBalance >= requiredTokens) {
-        if (promoStart <= paidStart) {
-            return { allowed: true, source: "promotion" };
-        } else {
-            return { allowed: true, source: "personal" };
-        }
-    } else if (promoBalance >= requiredTokens) {
-        return { allowed: true, source: "promotion" };
-    } else if (paidBalance >= requiredTokens) {
-        return { allowed: true, source: "personal" };
-    }
-
     /*
-    // --- SHARED ORG POOL IS COMMENTED OUT ---
-    // 5. Check Org pro pool limit (if enabled for user's role/id)
+    // --- SHARED ORG POOL (STEP 2) - COMMENTED OUT FOR NOW ---
+    // Only applies to org_admin users. Consumed AFTER free, BEFORE paid/granted.
     if (orgId) {
         let org = await Organization.findById(orgId).select('ai_config status');
         if (org && org.status === "active" && !org.ai_config?.is_ai_blocked) {
@@ -77,51 +57,75 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     }
     */
 
+    // 3. FIFO LOGIC: Determine which came FIRST between Top-Up (Paid) and Granted (Promotion)
+    const promoBalance = user.ai_tokens?.promotion_credits_balance || 0;
+    const paidBalance = user.ai_tokens?.ai_credits_balance || 0;
+    
+    const promoStart = user.ai_tokens?.promotion_credits_start_date ? new Date(user.ai_tokens.promotion_credits_start_date).getTime() : Infinity;
+    const paidStart = user.ai_tokens?.ai_credits_start_date ? new Date(user.ai_tokens.ai_credits_start_date).getTime() : Infinity;
+
+    // Whichever was purchased/granted FIRST gets used FIRST (FIFO)
+    if (promoBalance >= requiredTokens && paidBalance >= requiredTokens) {
+        if (promoStart <= paidStart) {
+            return { allowed: true, source: "promotion" };
+        } else {
+            return { allowed: true, source: "personal" };
+        }
+    } else if (promoBalance >= requiredTokens) {
+        return { allowed: true, source: "promotion" };
+    } else if (paidBalance >= requiredTokens) {
+        return { allowed: true, source: "personal" };
+    }
+
     return { allowed: false, reason: "Insufficient tokens." };
 };
 
 export const deductTokens = async (userId, orgId, tokenAmount, source) => {
     try {
         if (source === "personal") {
-            await User.findByIdAndUpdate(userId, {
+            const updatedUser = await User.findByIdAndUpdate(userId, {
                 $inc: {
                     "ai_tokens.ai_credits_balance": -tokenAmount,
                     "ai_tokens.total_ai_tokens_used": tokenAmount
                 }
-            });
+            }, { new: true });
+            return { success: true, remaining: updatedUser.ai_tokens.ai_credits_balance, type: "personal" };
         } else if (source === "promotion") {
-            await User.findByIdAndUpdate(userId, {
+            const updatedUser = await User.findByIdAndUpdate(userId, {
                 $inc: {
                     "ai_tokens.promotion_credits_balance": -tokenAmount,
                     "ai_tokens.total_ai_tokens_used": tokenAmount
                 }
-            });
+            }, { new: true });
+            return { success: true, remaining: updatedUser.ai_tokens.promotion_credits_balance, type: "promotion" };
         } else if (source === "weekly_free") {
-            await User.findByIdAndUpdate(userId, {
+            const updatedUser = await User.findByIdAndUpdate(userId, {
                 $inc: {
                     "ai_tokens.used_this_week": tokenAmount,
                     "ai_tokens.total_ai_tokens_used": tokenAmount
                 }
-            });
+            }, { new: true });
+            return { success: true, remaining: updatedUser.ai_tokens.free_weekly_limit - updatedUser.ai_tokens.used_this_week, type: "free" };
         } 
         /*
         // --- SHARED ORG POOL IS COMMENTED OUT ---
         else if (source === "org_pool") {
-            await Organization.findByIdAndUpdate(orgId, {
+            const updatedOrg = await Organization.findByIdAndUpdate(orgId, {
                 $inc: {
                     "ai_config.pro_used_this_period": tokenAmount,
                     "ai_config.total_ai_tokens_used": tokenAmount
                 }
-            });
+            }, { new: true });
             await User.findByIdAndUpdate(userId, {
                 $inc: { "ai_tokens.total_ai_tokens_used": tokenAmount }
             });
+            return { success: true, remaining: updatedOrg.ai_config.pro_pool_limit - updatedOrg.ai_config.pro_used_this_period, type: "pro" };
         }
         */
-        return true;
+        return { success: false, remaining: 0, type: "unknown" };
     } catch (error) {
         console.error("Error deducting tokens:", error);
-        return false;
+        return { success: false, remaining: 0, type: "unknown" };
     }
 };
 
