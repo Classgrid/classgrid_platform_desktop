@@ -37,26 +37,22 @@ export const aiUsageApi = {
 export const useGlobalAiStats = (orgId?: string, month?: number, year?: number) => useQuery({
   queryKey: ["ai-usage-global", orgId, month, year],
   queryFn: () => aiUsageApi.getGlobalStats(orgId, month, year),
-  refetchInterval: 30000,
 });
 
 export const useAiModelBreakdown = () => useQuery({
   queryKey: ["ai-usage-models"],
   queryFn: aiUsageApi.getModelBreakdown,
-  refetchInterval: 30000,
 });
 
 export const useAiUsageOrgs = () => useQuery({
   queryKey: ["ai-usage-orgs"],
   queryFn: aiUsageApi.getOrgs,
-  refetchInterval: 30000,
 });
 
 export const useAiOrgDetail = (orgId: string) => useQuery({
   queryKey: ["ai-usage-org", orgId],
   queryFn: () => aiUsageApi.getOrgDetail(orgId),
   enabled: !!orgId,
-  refetchInterval: 30000,
 });
 
 export const useAiOrgUsers = (orgId: string) => useQuery({
@@ -70,7 +66,6 @@ export const useAiUserDetail = (userId: string) => useQuery({
   queryKey: ["ai-usage-user", userId],
   queryFn: () => aiUsageApi.getUserDetail(userId),
   enabled: !!userId,
-  refetchInterval: 30000,
 });
 
 export const useBlockAiUser = () => {
@@ -187,6 +182,6 @@ export const useGlobalGrantedCredits = () => {
       const res = await apiClient.get('/api/super-admin/ai-usage/global/granted-credits');
       return res.data?.data || [];
     },
-    refetchInterval: 30000,
+    staleTime: 60000,
   });
 };
