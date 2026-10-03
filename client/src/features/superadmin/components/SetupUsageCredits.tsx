@@ -21,16 +21,18 @@ export interface SetupUsageCreditsProps {
   orgName: string;
   currentPoolLimit: number;
   currentUserWeeklyLimit: number;
+  currentImageLimit?: number;
+  currentWhatsappLimit?: number;
 }
 
-export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUserWeeklyLimit }: SetupUsageCreditsProps) {
+export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUserWeeklyLimit, currentImageLimit, currentWhatsappLimit }: SetupUsageCreditsProps) {
   // State for Pools
-  const [individualUsage, setIndividualUsage] = useState(currentUserWeeklyLimit || 100000);
-  const [orgPool, setOrgPool] = useState(currentPoolLimit || 500000);
+  const [individualUsage, setIndividualUsage] = useState(currentUserWeeklyLimit ?? 100000);
+  const [orgPool, setOrgPool] = useState(currentPoolLimit ?? 500000);
 
   // State for Media/Messaging
-  const [images, setImages] = useState<number>(20);
-  const [whatsapp, setWhatsapp] = useState<number>(10);
+  const [images, setImages] = useState<number>(currentImageLimit ?? 20);
+  const [whatsapp, setWhatsapp] = useState<number>(currentWhatsappLimit ?? 10);
 
   // Loading States
   const [openIndividual, setOpenIndividual] = useState(false);

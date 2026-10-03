@@ -762,13 +762,13 @@ export function AiUsageDashboardPage() {
         <AiUsageBar 
           initialData={{
             type: 'pro',
-            used: orgDetail?.totalUsage || 0,
-            limit: orgDetail?.poolLimit || 500000,
-            remaining: Math.max(0, (orgDetail?.poolLimit || 500000) - (orgDetail?.totalUsage || 0)),
+            used: orgDetail?.totalUsage ?? 0,
+            limit: orgDetail?.poolLimit ?? 500000,
+            remaining: Math.max(0, (orgDetail?.poolLimit ?? 500000) - (orgDetail?.totalUsage ?? 0)),
             freeData: {
               used: 0,
-              limit: orgDetail?.userWeeklyLimit || 100000,
-              remaining: orgDetail?.userWeeklyLimit || 100000
+              limit: orgDetail?.userWeeklyLimit ?? 100000,
+              remaining: orgDetail?.userWeeklyLimit ?? 100000
             }
           }}
         />
@@ -780,10 +780,10 @@ export function AiUsageDashboardPage() {
         <SetupUsageCredits 
           orgId={path.orgId || ""} 
           orgName={path.orgName || ""} 
-          currentPoolLimit={orgDetail?.poolLimit || 500000} 
-          currentUserWeeklyLimit={orgDetail?.userWeeklyLimit || 100000}
-          currentImageLimit={orgDetail?.imageLimit || 20}
-          currentWhatsappLimit={orgDetail?.whatsappLimit || 10} 
+          currentPoolLimit={orgDetail?.poolLimit ?? 500000} 
+          currentUserWeeklyLimit={orgDetail?.userWeeklyLimit ?? 100000}
+          currentImageLimit={orgDetail?.imageLimit ?? 20}
+          currentWhatsappLimit={orgDetail?.whatsappLimit ?? 10} 
         />
 
         <div className="border border-border rounded-xl shadow-sm bg-card">
