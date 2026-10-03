@@ -32,15 +32,10 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
         return { allowed: false, reason: "User AI access is blocked." };
     }
 
-    // 2. Check free weekly limit FIRST
-    const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" }).lean() || { global_user_weekly_limit: 100000 };
-    
-    let weeklyLimit = globalConfig.global_user_weekly_limit || 0;
-    if (user.ai_tokens?.custom_limits_enabled) {
-        weeklyLimit = user.ai_tokens.free_weekly_limit || globalConfig.global_user_weekly_limit;
-    }
-
+    // 2. Check free weekly limit FIRST (Always use free before touching paid/promo)
+    // If free limit resets, this will naturally be > 0 and will be used again!
     const usedThisWeek = user.ai_tokens?.used_this_week || 0;
+    const weeklyLimit = user.ai_tokens?.free_weekly_limit || 0;
     if (usedThisWeek + requiredTokens <= weeklyLimit) {
         return { allowed: true, source: "weekly_free" };
     }
