@@ -77,14 +77,14 @@ export async function getHistory(sessionId, depth = DEFAULT_DEPTH) {
 
         // LRANGE with negative index: -safeDepth gets the last N items
         const raw = await redis.lrange(key, -safeDepth, -1);
-        return raw.map(item => {
+        return raw.flatMap(item => {
             try { 
                 const parsed = JSON.parse(item); 
                 if (parsed && typeof parsed.content === 'string' && parsed.content.trim().startsWith('{')) {
                     try {
                         const inner = JSON.parse(parsed.content);
                         if (inner && inner.classgrid_ai_message) {
-                            let contentToReturn = inner.content || '';
+                            parsed.content = inner.content || '';
                             
                             // Safely restore truncated tool memory for the LLM without blowing up the context window
                             if (inner.steps && Array.isArray(inner.steps) && inner.steps.length > 0) {
@@ -99,18 +99,22 @@ export async function getHistory(sessionId, depth = DEFAULT_DEPTH) {
                                 }).filter(Boolean).join('\n');
                                 
                                 if (toolSummaries) {
-                                    contentToReturn += `\n\n[SYSTEM NOTE - YOUR BACKGROUND TOOL MEMORY FOR THIS TURN:\n${toolSummaries}\n(You actually ran these tools. Do not hallucinate that you didn't!)]`;
+                                    return [
+                                        parsed,
+                                        {
+                                            role: 'system',
+                                            content: `[SYSTEM NOTE - YOUR BACKGROUND TOOL MEMORY FOR THIS TURN:\n${toolSummaries}\n(You actually ran these tools. Do not hallucinate that you didn't!)]`
+                                        }
+                                    ];
                                 }
                             }
-                            
-                            parsed.content = contentToReturn;
                         }
                     } catch {}
                 }
-                return parsed;
+                return [parsed];
             }
-            catch { return null; }
-        }).filter(Boolean);
+            catch { return []; }
+        });
 
     } catch (err) {
         console.error(`[ChatHistory] Redis error for session ${sessionId}, falling back to Supabase:`, err?.message);
