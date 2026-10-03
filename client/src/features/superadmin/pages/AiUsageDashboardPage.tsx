@@ -8,6 +8,7 @@ import { Search, Filter, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/marketing_ui/dialog";
+import { DataTable } from "@/components/marketing_ui/data-table";
 import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
 import { 
   Building, 
