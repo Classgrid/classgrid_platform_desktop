@@ -804,7 +804,8 @@ export function AiUsageDashboardPage() {
           currentPoolLimit={orgDetail?.poolLimit ?? 0} 
           currentUserWeeklyLimit={orgDetail?.userWeeklyLimit ?? 0}
           currentImageLimit={orgDetail?.imageLimit ?? 0}
-          currentWhatsappLimit={orgDetail?.whatsappLimit ?? 0} 
+          currentWhatsappLimit={orgDetail?.whatsappLimit ?? 0}
+          customLimitsEnabled={orgDetail?.customLimitsEnabled ?? false}
         />
 
         <div className="border border-border rounded-xl shadow-sm bg-card">

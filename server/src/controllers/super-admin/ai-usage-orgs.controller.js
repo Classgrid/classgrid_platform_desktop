@@ -134,8 +134,10 @@ export const getOrgAiDetail = async (req, res) => {
             }
             orgName = org.name;
             isBlocked = org.ai_config?.is_ai_blocked || false;
+            let customLimitsEnabled = false;
             
             if (org.ai_config?.custom_limits_enabled) {
+                customLimitsEnabled = true;
                 poolLimit = org.ai_config.pro_pool_limit || globalConfig?.global_pro_pool_limit;
                 userWeeklyLimit = org.ai_config.free_weekly_limit_per_user || globalConfig?.global_user_weekly_limit;
             }
@@ -182,6 +184,7 @@ export const getOrgAiDetail = async (req, res) => {
                 id: orgId,
                 name: orgName,
                 isBlocked,
+                customLimitsEnabled: typeof customLimitsEnabled !== 'undefined' ? customLimitsEnabled : false,
                 poolLimit,
                 userWeeklyLimit,
                 imageLimit,

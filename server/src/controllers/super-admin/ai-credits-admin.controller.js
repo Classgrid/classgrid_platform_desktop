@@ -334,7 +334,8 @@ export const updateOrgAiLimits = async (req, res) => {
             pro_pool_limit, 
             free_weekly_limit_per_user,
             image_generation_limit,
-            whatsapp_scheduling_limit 
+            whatsapp_scheduling_limit,
+            custom_limits_enabled
         } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(orgId)) {
@@ -346,6 +347,7 @@ export const updateOrgAiLimits = async (req, res) => {
             "ai_config.free_weekly_limit_per_user": free_weekly_limit_per_user
         };
 
+        if (custom_limits_enabled !== undefined) updateSet["ai_config.custom_limits_enabled"] = custom_limits_enabled;
         if (image_generation_limit !== undefined) updateSet["ai_config.image_generation_limit"] = image_generation_limit;
         if (whatsapp_scheduling_limit !== undefined) updateSet["ai_config.whatsapp_scheduling_limit"] = whatsapp_scheduling_limit;
 

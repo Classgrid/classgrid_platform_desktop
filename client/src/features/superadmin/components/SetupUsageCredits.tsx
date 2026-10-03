@@ -14,6 +14,7 @@ import { Label } from "@/components/marketing_ui/label";
 import { BlueSlider } from "@/components/marketing_ui/BlueSlider";
 import { toast } from "sonner";
 import { Spinner } from "@/components/marketing_ui/spinner";
+import { Switch } from "@/components/marketing_ui/switch";
 import { useUpdateOrgAiLimits } from "@/features/superadmin/queries/useAiUsage";
 
 export interface SetupUsageCreditsProps {
@@ -23,9 +24,11 @@ export interface SetupUsageCreditsProps {
   currentUserWeeklyLimit: number;
   currentImageLimit?: number;
   currentWhatsappLimit?: number;
+  customLimitsEnabled?: boolean;
 }
 
-export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUserWeeklyLimit, currentImageLimit, currentWhatsappLimit }: SetupUsageCreditsProps) {
+export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUserWeeklyLimit, currentImageLimit, currentWhatsappLimit, customLimitsEnabled }: SetupUsageCreditsProps) {
+  const [isCustomLimits, setIsCustomLimits] = useState(customLimitsEnabled ?? false);
   // State for Pools
   const [individualUsage, setIndividualUsage] = useState(currentUserWeeklyLimit ?? 0);
   const [orgPool, setOrgPool] = useState(currentPoolLimit ?? 0);
@@ -41,6 +44,25 @@ export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUse
   const [openWhatsapp, setOpenWhatsapp] = useState(false);
 
   const updateLimitsMutation = useUpdateOrgAiLimits();
+
+  const handleToggleCustomLimits = (checked: boolean) => {
+    setIsCustomLimits(checked);
+    updateLimitsMutation.mutate({
+      orgId,
+      data: { 
+         custom_limits_enabled: checked
+      }
+    }, {
+      onSuccess: () => {
+        toast.success(checked ? "Custom limits enabled for this organization." : "Organization is now following global limits.");
+      },
+      onError: () => {
+        setIsCustomLimits(!checked); // Revert on failure
+        toast.error("Failed to update limit settings.");
+      }
+    });
+  };
+
 
   const handleSave = (
     setOpen: (v: boolean) => void,
@@ -65,9 +87,22 @@ export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUse
   return (
     <div className="flex flex-col gap-6">
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden h-full">
-        <div className="p-5 border-b border-border">
-          <h2 className="text-lg font-semibold text-foreground">Setup Usage Credits</h2>
-          <p className="text-sm text-muted-foreground">Manage default limits and quotas for {orgName}.</p>
+        <div className="p-5 border-b border-border flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Setup Usage Credits</h2>
+            <p className="text-sm text-muted-foreground">Manage default limits and quotas for {orgName}.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Label htmlFor="custom-limits" className="text-sm font-medium whitespace-nowrap">
+              Follow Global Limits
+            </Label>
+            <Switch
+              id="custom-limits"
+              checked={!isCustomLimits}
+              onCheckedChange={(checked) => handleToggleCustomLimits(!checked)}
+              disabled={updateLimitsMutation.isPending}
+            />
+          </div>
         </div>
 
         <div className="p-0 flex flex-col h-full">
@@ -75,7 +110,7 @@ export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUse
             {/* Individual Usage */}
             <Dialog open={openIndividual} onOpenChange={setOpenIndividual}>
               <DialogTrigger asChild>
-                <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
+                <button disabled={!isCustomLimits} className={`bg-card p-5 flex flex-col gap-2 text-left transition-colors ${!isCustomLimits ? "opacity-50 cursor-not-allowed" : "hover:bg-muted/30"}`}>
                   <span className="text-sm font-medium text-muted-foreground">Individual Daily Usage</span>
                   <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
                     {individualUsage.toLocaleString()} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens</span>
@@ -107,7 +142,7 @@ export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUse
             {/* Organization Pool */}
             <Dialog open={openOrg} onOpenChange={setOpenOrg}>
               <DialogTrigger asChild>
-                <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
+                <button disabled={!isCustomLimits} className={`bg-card p-5 flex flex-col gap-2 text-left transition-colors ${!isCustomLimits ? "opacity-50 cursor-not-allowed" : "hover:bg-muted/30"}`}>
                   <span className="text-sm font-medium text-muted-foreground">Organization Pool</span>
                   <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
                     {orgPool.toLocaleString()} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens</span>
@@ -141,7 +176,7 @@ export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUse
             {/* Image Generations */}
             <Dialog open={openImages} onOpenChange={setOpenImages}>
               <DialogTrigger asChild>
-                <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
+                <button disabled={!isCustomLimits} className={`bg-card p-5 flex flex-col gap-2 text-left transition-colors ${!isCustomLimits ? "opacity-50 cursor-not-allowed" : "hover:bg-muted/30"}`}>
                   <span className="text-sm font-medium text-muted-foreground">Image Generations</span>
                   <span className="text-xl font-bold text-foreground">
                     {images} <span className="text-sm font-normal text-muted-foreground ml-1">Images</span>
@@ -178,7 +213,7 @@ export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUse
             {/* WhatsApp Scheduling */}
             <Dialog open={openWhatsapp} onOpenChange={setOpenWhatsapp}>
               <DialogTrigger asChild>
-                <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
+                <button disabled={!isCustomLimits} className={`bg-card p-5 flex flex-col gap-2 text-left transition-colors ${!isCustomLimits ? "opacity-50 cursor-not-allowed" : "hover:bg-muted/30"}`}>
                   <span className="text-sm font-medium text-muted-foreground">WhatsApp Scheduling</span>
                   <span className="text-xl font-bold text-foreground">
                     {whatsapp} <span className="text-sm font-normal text-muted-foreground ml-1">Messages</span>
