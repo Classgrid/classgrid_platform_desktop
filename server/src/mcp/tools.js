@@ -1433,9 +1433,37 @@ export const handleToolCall = async (name, args, context = {}) => {
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
         const currentUser = await User.findOne({ email: finalUserEmail }).select('metadata').lean();
         
-        const youtubeToken = currentUser?.metadata?.youtube_tokens?.access_token;
+        let youtubeToken = currentUser?.metadata?.youtube_tokens?.access_token;
+        const refreshToken = currentUser?.metadata?.youtube_tokens?.refresh_token;
+        const expiryDate = currentUser?.metadata?.youtube_tokens?.expiry_date;
+
         if (!youtubeToken) {
           return { content: [{ type: 'text', text: 'Error: YouTube is not connected or token is missing.' }] };
+        }
+
+        // Auto-refresh token if expired (Google tokens expire every 1 hour)
+        if (refreshToken && expiryDate && Date.now() > expiryDate - 60000) {
+            try {
+                const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        client_id: process.env.GOOGLE_CLIENT_ID,
+                        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+                        refresh_token: refreshToken,
+                        grant_type: 'refresh_token'
+                    })
+                });
+                const tokenData = await tokenRes.json();
+                if (tokenData.access_token) {
+                    youtubeToken = tokenData.access_token;
+                    currentUser.metadata.youtube_tokens.access_token = youtubeToken;
+                    currentUser.metadata.youtube_tokens.expiry_date = Date.now() + (tokenData.expires_in * 1000);
+                    await User.updateOne({ email: finalUserEmail }, { $set: { "metadata.youtube_tokens": currentUser.metadata.youtube_tokens } });
+                }
+            } catch (e) {
+                console.error("YouTube Token Refresh Error:", e);
+            }
         }
 
         const { operation, query, channelId, videoId, maxResults = 10 } = args;
