@@ -99,9 +99,9 @@ export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
   return (
     <div className="flex flex-col gap-4">
       {/* 1. Daily Chat Trend */}
-      <Card className="border border-[#222222] shadow-sm overflow-hidden bg-[#0a0a0a] dark:bg-[#0a0a0a]">
-        <CardHeader className="border-b border-[#222222] pb-4 bg-[#0a0a0a] flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
+      <Card className="border border-border shadow-sm overflow-hidden bg-card">
+        <CardHeader className="border-b border-border pb-4 bg-card flex flex-row items-center justify-between">
+          <CardTitle className="text-lg font-semibold flex items-center gap-2 text-foreground">
             {chatTimePeriod === "daily" ? "Daily" : chatTimePeriod === "weekly" ? "Weekly" : "Monthly"} Chat Trend
           </CardTitle>
           <div className="flex items-center gap-3">
@@ -110,13 +110,13 @@ export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
               onChange={setChatDate as any} 
               showTime={true} 
               placeholder="Select Date" 
-              className="w-[180px] h-9 border border-[#222222] bg-black text-white hover:bg-[#111111]" 
+              className="w-[180px] h-9 border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground" 
             />
             <Select value={chatTimePeriod} onValueChange={setChatTimePeriod as any}>
-              <SelectTrigger className="w-[100px] h-9 border border-[#222222] bg-[#1a1a1a] text-white hover:bg-[#222222]">
+              <SelectTrigger className="w-[100px] h-9 border border-input bg-background text-foreground hover:bg-accent">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#1a1a1a] border-[#222222] text-white">
+              <SelectContent className="bg-popover border-border text-popover-foreground">
                 <SelectItem value="daily">Day</SelectItem>
                 <SelectItem value="weekly">Week</SelectItem>
                 <SelectItem value="monthly">Month</SelectItem>
@@ -124,37 +124,37 @@ export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
             </Select>
           </div>
         </CardHeader>
-        <CardContent className="p-6 bg-[#0a0a0a] dark:bg-[#0a0a0a]">
+        <CardContent className="p-6 bg-card">
           <div className="w-full h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={chatChartData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#222222" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis 
                   dataKey="shortDate" 
-                  stroke="#888888" 
+                  stroke="hsl(var(--muted-foreground))" 
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false} 
                 />
                 <YAxis 
-                  stroke="#888888" 
+                  stroke="hsl(var(--muted-foreground))" 
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false} 
                   tickFormatter={(value) => `${value}`} 
                 />
                 <Tooltip 
-                  cursor={{fill: '#1a1a1a'}}
-                  contentStyle={{ backgroundColor: '#000000', border: '1px solid #333333', borderRadius: '8px' }}
-                  labelStyle={{ color: '#ffffff', fontWeight: 'bold', marginBottom: '8px' }}
+                  cursor={{fill: 'hsl(var(--muted))'}}
+                  contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                  labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold', marginBottom: '8px' }}
                   itemStyle={{ fontSize: '14px', padding: '2px 0' }}
                 />
                 <Legend 
                   iconType="square" 
-                  wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: '#888888' }}
+                  wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: 'hsl(var(--muted-foreground))' }}
                 />
                 <Bar dataKey="requests" name="Total Chats" fill="#ea580c" barSize={12} radius={[2, 2, 0, 0]} />
               </BarChart>
@@ -166,13 +166,13 @@ export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
       {/* 2. Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Most Active */}
-        <div className="bg-[#0a0a0a] dark:bg-[#0a0a0a] border border-[#222222] p-4 rounded-xl shadow-sm flex items-start gap-4">
+        <div className="bg-card border border-border p-4 rounded-xl shadow-sm flex items-start gap-4">
           <div className="p-2.5 rounded-full bg-emerald-500/10 text-emerald-500">
             <TrendingUp className="w-5 h-5" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-white">Most Active Day</span>
-            <span className="text-xs text-[#888888] mt-0.5">{mostActive ? formatDate(mostActive.date) : 'N/A'}</span>
+            <span className="text-sm font-semibold text-foreground">Most Active Day</span>
+            <span className="text-xs text-muted-foreground mt-0.5">{mostActive ? formatDate(mostActive.date) : 'N/A'}</span>
             <span className="text-lg font-bold text-emerald-500 mt-1">
               {mostActive?.requests || 0} <span className="text-xs font-normal">chats</span>
             </span>
@@ -180,13 +180,13 @@ export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
         </div>
 
         {/* Least Used */}
-        <div className="bg-[#0a0a0a] dark:bg-[#0a0a0a] border border-[#222222] p-4 rounded-xl shadow-sm flex items-start gap-4">
+        <div className="bg-card border border-border p-4 rounded-xl shadow-sm flex items-start gap-4">
           <div className="p-2.5 rounded-full bg-rose-500/10 text-rose-500">
             <TrendingDown className="w-5 h-5" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-white">Least Used Day</span>
-            <span className="text-xs text-[#888888] mt-0.5">{leastUsed ? formatDate(leastUsed.date) : 'N/A'}</span>
+            <span className="text-sm font-semibold text-foreground">Least Used Day</span>
+            <span className="text-xs text-muted-foreground mt-0.5">{leastUsed ? formatDate(leastUsed.date) : 'N/A'}</span>
             <span className="text-lg font-bold text-rose-500 mt-1">
               {leastUsed?.requests || 0} <span className="text-xs font-normal">chats</span>
             </span>
@@ -195,9 +195,9 @@ export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
       </div>
 
       {/* 3. Daily Credits Used Trend */}
-      <Card className="border border-[#222222] shadow-sm overflow-hidden bg-[#0a0a0a] dark:bg-[#0a0a0a]">
-        <CardHeader className="border-b border-[#222222] pb-4 bg-[#0a0a0a] flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
+      <Card className="border border-border shadow-sm overflow-hidden bg-card">
+        <CardHeader className="border-b border-border pb-4 bg-card flex flex-row items-center justify-between">
+          <CardTitle className="text-lg font-semibold flex items-center gap-2 text-foreground">
             {creditsTimePeriod === "daily" ? "Daily" : creditsTimePeriod === "weekly" ? "Weekly" : "Monthly"} Credits Used Trend
           </CardTitle>
           <div className="flex items-center gap-3">
@@ -206,13 +206,13 @@ export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
               onChange={setCreditsDate as any} 
               showTime={true} 
               placeholder="Select Date" 
-              className="w-[180px] h-9 border border-[#222222] bg-black text-white hover:bg-[#111111]" 
+              className="w-[180px] h-9 border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground" 
             />
             <Select value={creditsTimePeriod} onValueChange={setCreditsTimePeriod as any}>
-              <SelectTrigger className="w-[100px] h-9 border border-[#222222] bg-[#1a1a1a] text-white hover:bg-[#222222]">
+              <SelectTrigger className="w-[100px] h-9 border border-input bg-background text-foreground hover:bg-accent">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#1a1a1a] border-[#222222] text-white">
+              <SelectContent className="bg-popover border-border text-popover-foreground">
                 <SelectItem value="daily">Day</SelectItem>
                 <SelectItem value="weekly">Week</SelectItem>
                 <SelectItem value="monthly">Month</SelectItem>
@@ -220,37 +220,37 @@ export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
             </Select>
           </div>
         </CardHeader>
-        <CardContent className="p-6 bg-[#0a0a0a] dark:bg-[#0a0a0a]">
+        <CardContent className="p-6 bg-card">
           <div className="w-full h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={creditsChartData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#222222" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis 
                   dataKey="shortDate" 
-                  stroke="#888888" 
+                  stroke="hsl(var(--muted-foreground))" 
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false} 
                 />
                 <YAxis 
-                  stroke="#888888" 
+                  stroke="hsl(var(--muted-foreground))" 
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false} 
                   tickFormatter={(value) => `${value}`} 
                 />
                 <Tooltip 
-                  cursor={{fill: '#1a1a1a'}}
-                  contentStyle={{ backgroundColor: '#000000', border: '1px solid #333333', borderRadius: '8px' }}
-                  labelStyle={{ color: '#ffffff', fontWeight: 'bold', marginBottom: '8px' }}
+                  cursor={{fill: 'hsl(var(--muted))'}}
+                  contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                  labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold', marginBottom: '8px' }}
                   itemStyle={{ fontSize: '14px', padding: '2px 0' }}
                 />
                 <Legend 
                   iconType="square" 
-                  wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: '#888888' }}
+                  wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: 'hsl(var(--muted-foreground))' }}
                 />
                 <Bar dataKey="promptTokens" name="Input Tokens" stackId="a" fill="#ea580c" barSize={12} />
                 <Bar dataKey="completionTokens" name="Output Tokens" stackId="a" fill="#3b82f6" barSize={12} radius={[2, 2, 0, 0]} />
