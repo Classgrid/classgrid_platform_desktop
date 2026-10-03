@@ -188,6 +188,102 @@ export const grantCredits = async (req, res) => {
     }
 };
 
+export const grantOrgCredits = async (req, res) => {
+    try {
+        const { orgId } = req.params;
+        const { amount, sendEmail: shouldSendEmail = true, startDate, endDate } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(orgId)) {
+            return res.status(400).json({ success: false, error: "Invalid org ID" });
+        }
+
+        if (typeof amount !== 'number' || amount <= 0) {
+            return res.status(400).json({ success: false, error: "Invalid amount" });
+        }
+        
+        // Find the org to get the ownerEmail
+        const org = await Organization.findById(orgId);
+        if (!org) return res.status(404).json({ success: false, error: "Organization not found" });
+
+        // Find the owner user
+        let user;
+        if (org.ownerEmail) {
+            user = await User.findOne({ email: org.ownerEmail });
+        }
+        if (!user) {
+            // Fallback: just find the first Admin/Owner for this org
+            user = await User.findOne({ organization_id: orgId, role: { $in: ["Owner", "Admin"] } });
+        }
+        
+        if (!user) return res.status(404).json({ success: false, error: "No owner or admin found for this organization to receive credits." });
+
+        const updateObj = {
+            $inc: { 
+                "ai_tokens.promotion_credits_balance": amount,
+                "ai_tokens.total_promotion_credits_granted": amount
+            },
+            $set: {}
+        };
+        
+        if (startDate) {
+            updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date(startDate);
+        } else {
+            updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date();
+        }
+        
+        if (endDate) {
+            updateObj.$set["ai_tokens.promotion_credits_end_date"] = new Date(endDate);
+        } else {
+            updateObj.$set["ai_tokens.promotion_credits_end_date"] = null;
+        }
+
+        user = await User.findByIdAndUpdate(user._id, updateObj, { new: true });
+
+        // Record the transaction
+        await AiCreditTransaction.create({
+            userId: user._id,
+            orgId: user.organization_id,
+            amount_inr: 0,
+            credits_added: amount,
+            razorpay_payment_id: `grant_org_${new Date().getTime()}`,
+            razorpay_order_id: `admin_grant_org`,
+            type: "grant",
+            status: "success"
+        });
+
+        if (user.email && shouldSendEmail) {
+            try {
+                const totalTokens = (user.ai_tokens.ai_credits_balance + user.ai_tokens.promotion_credits_balance) || 0;
+                const totalBalance = totalTokens.toLocaleString();
+                
+                let expireDateStr = "No expiration";
+                if (endDate) {
+                    const d = new Date(endDate);
+                    expireDateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                }
+                
+                const emailHtml = getAiCreditGrantedHtml(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr);
+                const emailText = getAiCreditGrantedPlainText(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr);
+                await sendEmail({
+                    to: user.email,
+                    subject: `Your AI Credits Have Been Granted!`,
+                    html: emailHtml,
+                    text: emailText,
+                    userId: user._id,
+                    organizationId: user.organization_id
+                });
+            } catch (emailErr) {
+                console.error("Failed to send gift credit email:", emailErr);
+            }
+        }
+
+        return res.status(200).json({ success: true, message: `Granted ${amount} credits to org owner ${user.email}` });
+    } catch (err) {
+        console.error("Error granting org credits:", err);
+        return res.status(500).json({ success: false, error: err.message });
+    }
+};
+
 export const deleteUserAiData = async (req, res) => {
     try {
         const { userId } = req.params;

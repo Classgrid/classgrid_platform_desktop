@@ -31,6 +31,7 @@ router.post("/users/:userId/reset", adminController.resetUserUsage);
 router.post("/orgs/:orgId/reset", adminController.resetOrgUsage);
 router.put("/orgs/:orgId/limits", adminController.updateOrgAiLimits);
 router.post("/users/:userId/grant", adminController.grantCredits);
+router.post("/orgs/:orgId/grant", adminController.grantOrgCredits);
 router.delete("/users/:userId/data", adminController.deleteUserAiData);
 
 export default router;

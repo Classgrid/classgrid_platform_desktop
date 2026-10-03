@@ -25,6 +25,7 @@ export const aiUsageApi = {
   resetUserUsage: (userId: string) => api.post(`/api/super-admin/ai-usage/users/${userId}/reset`).then(res => res.data),
   resetOrgUsage: (orgId: string) => api.post(`/api/super-admin/ai-usage/orgs/${orgId}/reset`).then(res => res.data),
   grantCredits: (userId: string, amount: number, options?: { sendEmail?: boolean; startDate?: string; endDate?: string }) => api.post(`/api/super-admin/ai-usage/users/${userId}/grant`, { amount, ...options }).then(res => res.data),
+  grantOrgCredits: (orgId: string, amount: number, options?: { sendEmail?: boolean; startDate?: string; endDate?: string }) => api.post(`/api/super-admin/ai-usage/orgs/${orgId}/grant`, { amount, ...options }).then(res => res.data),
   deleteUserData: (userId: string) => api.delete(`/api/super-admin/ai-usage/users/${userId}/data`).then(res => res.data),
   updateOrgLimits: (orgId: string, data: { pro_pool_limit: number, free_weekly_limit_per_user: number, image_generation_limit?: number, whatsapp_scheduling_limit?: number }) => api.put(`/api/super-admin/ai-usage/orgs/${orgId}/limits`, data).then(res => res.data),
 };
@@ -95,6 +96,19 @@ export const useGrantAiCredits = () => {
     onSuccess: (_, { userId }) => {
       toast.success("Action completed successfully.");
       queryClient.invalidateQueries({ queryKey: ["ai-usage-user", userId] });
+    },
+    onError: (error) => toast.error("Action failed. " + error.message),
+  });
+};
+
+export const useGrantOrgAiCredits = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orgId, amount, options }: { orgId: string, amount: number, options?: { sendEmail?: boolean; startDate?: string; endDate?: string } }) => aiUsageApi.grantOrgCredits(orgId, amount, options),
+    onSuccess: (_, { orgId }) => {
+      toast.success("Action completed successfully.");
+      queryClient.invalidateQueries({ queryKey: ["ai-usage-orgs"] });
+      queryClient.invalidateQueries({ queryKey: ["ai-usage-org", orgId] });
     },
     onError: (error) => toast.error("Action failed. " + error.message),
   });

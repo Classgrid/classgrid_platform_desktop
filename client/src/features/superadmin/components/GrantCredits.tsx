@@ -7,7 +7,7 @@ import { DataTable } from "@/components/marketing_ui/data-table";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from "@/components/marketing_ui/select";
 import { NikhilDateCalendar } from "@/components/marketing_ui/nikhil_date_calendar";
 import { Switch } from "@/components/marketing_ui/switch";
-import { useGrantAiCredits } from "@/features/superadmin/queries/useAiUsage";
+import { useGrantAiCredits, useGrantOrgAiCredits } from "@/features/superadmin/queries/useAiUsage";
 
 // ── Types ──────────────────────────────────────────────────────
 export interface OrgRow {
@@ -46,6 +46,7 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [], isOrgMode = fals
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>();
   const [sendEmail, setSendEmail] = useState(true);
   const grantCreditsMutation = useGrantAiCredits();
+  const grantOrgCreditsMutation = useGrantOrgAiCredits();
 
   // Filter orgs
   const filteredRows = useMemo(() => {
@@ -408,15 +409,26 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [], isOrgMode = fals
                   onClick={async () => {
                     const promises = selectedOrgs.map(org => {
                       const orgCredits = isSeparateMode ? (rowCredits[org.id] || 500) : credits;
-                      return grantCreditsMutation.mutateAsync({
-                        userId: org.id,
-                        amount: orgCredits,
-                        options: {
-                          sendEmail,
-                          startDate: dateRange?.from ? dateRange.from.toISOString() : undefined,
-                          endDate: dateRange?.to ? dateRange.to.toISOString() : undefined
-                        }
-                      });
+                      
+                      const options = {
+                        sendEmail,
+                        startDate: dateRange?.from ? dateRange.from.toISOString() : undefined,
+                        endDate: dateRange?.to ? dateRange.to.toISOString() : undefined
+                      };
+
+                      if (isOrgMode) {
+                        return grantOrgCreditsMutation.mutateAsync({
+                          orgId: org.id,
+                          amount: orgCredits,
+                          options
+                        });
+                      } else {
+                        return grantCreditsMutation.mutateAsync({
+                          userId: org.id,
+                          amount: orgCredits,
+                          options
+                        });
+                      }
                     });
 
                     try {
@@ -427,10 +439,10 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [], isOrgMode = fals
                       console.error(e);
                     }
                   }}
-                  disabled={grantCreditsMutation.isPending}
+                  disabled={grantCreditsMutation.isPending || grantOrgCreditsMutation.isPending}
                   className="w-full h-11 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold transition-all shadow-sm active:scale-[0.98]"
                 >
-                  {grantCreditsMutation.isPending ? "Granting..." : (isSeparateMode 
+                  {(grantCreditsMutation.isPending || grantOrgCreditsMutation.isPending) ? "Granting..." : (isSeparateMode 
                     ? `Grant Custom Credits to ${selectedOrgs.length} ${selectedOrgs.length === 1 ? 'organization' : 'organizations'}`
                     : `Grant ${formatCredits(credits)} Credits to ${selectedOrgs.length} ${selectedOrgs.length === 1 ? 'organization' : 'organizations'}`
                   )}
