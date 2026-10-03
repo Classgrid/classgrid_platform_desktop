@@ -11,7 +11,7 @@ import { ResetUserDailyLimit } from "../ResetUserDailyLimit";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 import { PauseUserGrantedCredits } from "./PauseUserGrantedCredits";
 import { RemoveUserGrantedCredits } from "./RemoveUserGrantedCredits";
-import { socketClient } from "@/lib/socket";
+import { socketClient } from "@/lib/socketClient";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
