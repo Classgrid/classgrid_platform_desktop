@@ -3147,7 +3147,8 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                     const deductionResult = await deductTokens(userId, orgId, estimatedTokens, tokenSource);
                     
                     if (deductionResult && deductionResult.success) {
-                        console.log(`[AI-TOKEN-DEDUCTION] Deducted=${estimatedTokens} | Available=${deductionResult.limit} | Remaining=${deductionResult.remaining} | Type=${deductionResult.type}`);
+                        const totalUsed = deductionResult.limit - deductionResult.remaining;
+                        console.log(`[AI-TOKEN-DEDUCTION] Current Request Cost: ${estimatedTokens} | Total Limit: ${deductionResult.limit} | Total Used This Week: ${totalUsed} | Total Remaining: ${deductionResult.remaining} | Pool Type: ${deductionResult.type}`);
                         
                         const { getIO } = await import('../services/socket.service.js');
                         const io = getIO();
