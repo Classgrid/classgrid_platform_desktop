@@ -91,7 +91,8 @@ import { initSocket } from "./src/services/socket.service.js";
 import { initLeadStream } from "./src/services/lead-stream.service.js";
 
 // Initialize socket on our HTTP server
-initSocket(server);
+const ioInstance = initSocket(server);
+app.set("io", ioInstance);
 
 // Initialize MongoDB Change Streams for real-time updates
 initLeadStream();
