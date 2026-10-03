@@ -122,7 +122,16 @@ export const getOrgAiDetail = async (req, res) => {
         let poolUsed = 0;
         let userWeeklyUsed = 0;
 
+        let customLimitsEnabled = false;
+
         if (orgId === "classgrid") {
+            if (globalConfig?.classgrid_custom_limits_enabled) {
+                customLimitsEnabled = true;
+                poolLimit = globalConfig.classgrid_pro_pool_limit || globalConfig.global_pro_pool_limit;
+                userWeeklyLimit = globalConfig.classgrid_user_weekly_limit || globalConfig.global_user_weekly_limit;
+                imageLimit = globalConfig.classgrid_image_weekly_limit;
+                whatsappLimit = globalConfig.classgrid_whatsapp_scheduling_limit;
+            }
             userQuery = { 
                 $or: [{ role: 'super_admin' }, { organization_id: null }, { organization_id: { $exists: false } }] 
             };
@@ -136,8 +145,6 @@ export const getOrgAiDetail = async (req, res) => {
             }
             orgName = org.name;
             isBlocked = org.ai_config?.is_ai_blocked || false;
-            let customLimitsEnabled = false;
-            
             if (org.ai_config?.custom_limits_enabled) {
                 customLimitsEnabled = true;
                 poolLimit = org.ai_config.pro_pool_limit || globalConfig?.global_pro_pool_limit;

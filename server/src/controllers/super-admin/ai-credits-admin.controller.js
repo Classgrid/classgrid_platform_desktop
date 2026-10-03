@@ -356,10 +356,11 @@ export const updateOrgAiLimits = async (req, res) => {
 
         if (orgId === "classgrid") {
             const globalUpdateSet = {};
-            if (pro_pool_limit !== undefined) globalUpdateSet.global_pro_pool_limit = pro_pool_limit;
-            if (free_weekly_limit_per_user !== undefined) globalUpdateSet.global_user_weekly_limit = free_weekly_limit_per_user;
-            if (image_generation_limit !== undefined) globalUpdateSet.global_image_weekly_limit = image_generation_limit;
-            if (whatsapp_scheduling_limit !== undefined) globalUpdateSet.global_whatsapp_scheduling_limit = whatsapp_scheduling_limit;
+            if (pro_pool_limit !== undefined) globalUpdateSet.classgrid_pro_pool_limit = pro_pool_limit;
+            if (free_weekly_limit_per_user !== undefined) globalUpdateSet.classgrid_user_weekly_limit = free_weekly_limit_per_user;
+            if (image_generation_limit !== undefined) globalUpdateSet.classgrid_image_weekly_limit = image_generation_limit;
+            if (whatsapp_scheduling_limit !== undefined) globalUpdateSet.classgrid_whatsapp_scheduling_limit = whatsapp_scheduling_limit;
+            if (custom_limits_enabled !== undefined) globalUpdateSet.classgrid_custom_limits_enabled = custom_limits_enabled;
 
             const GlobalAiConfig = (await import("../../models/GlobalAiConfig.js")).default;
             await GlobalAiConfig.findOneAndUpdate(

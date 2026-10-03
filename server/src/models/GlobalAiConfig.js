@@ -33,6 +33,11 @@ const globalAiConfigSchema = new mongoose.Schema(
             type: Number,
             default: 10
         },
+        classgrid_custom_limits_enabled: { type: Boolean, default: false },
+        classgrid_pro_pool_limit: { type: Number },
+        classgrid_user_weekly_limit: { type: Number },
+        classgrid_image_weekly_limit: { type: Number },
+        classgrid_whatsapp_scheduling_limit: { type: Number },
         // --- Pricing & Cost Config ---
         credits_per_inr: { 
             type: Number,

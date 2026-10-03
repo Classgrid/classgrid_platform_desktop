@@ -29,7 +29,7 @@ export interface SetupUsageCreditsProps {
 
 export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUserWeeklyLimit, currentImageLimit, currentWhatsappLimit, customLimitsEnabled }: SetupUsageCreditsProps) {
   const isClassgrid = orgId === "classgrid";
-  const [isCustomLimits, setIsCustomLimits] = useState(isClassgrid ? true : (customLimitsEnabled ?? false));
+  const [isCustomLimits, setIsCustomLimits] = useState(customLimitsEnabled ?? false);
   // State for Pools
   const [individualUsage, setIndividualUsage] = useState(currentUserWeeklyLimit ?? 0);
   const [orgPool, setOrgPool] = useState(currentPoolLimit ?? 0);
@@ -98,19 +98,17 @@ export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUse
             <h2 className="text-lg font-semibold text-foreground">Setup Usage Credits (DEBUG orgId: '{orgId}')</h2>
             <p className="text-sm text-muted-foreground">Manage default limits and quotas for {orgName}.</p>
           </div>
-          {!isClassgrid && (
-            <div className="flex items-center gap-3">
-              <Label htmlFor="custom-limits" className="text-sm font-medium whitespace-nowrap">
-                Follow Global Limits
-              </Label>
-              <Switch
-                id="custom-limits"
-                checked={!isCustomLimits}
-                onCheckedChange={(checked) => handleToggleCustomLimits(!checked)}
-                disabled={updateLimitsMutation.isPending}
-              />
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <Label htmlFor="custom-limits" className="text-sm font-medium whitespace-nowrap">
+              Follow Global Limits
+            </Label>
+            <Switch
+              id="custom-limits"
+              checked={!isCustomLimits}
+              onCheckedChange={(checked) => handleToggleCustomLimits(!checked)}
+              disabled={updateLimitsMutation.isPending}
+            />
+          </div>
         </div>
 
         <div className="p-0 flex flex-col h-full">
