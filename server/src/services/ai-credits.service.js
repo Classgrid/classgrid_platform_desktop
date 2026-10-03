@@ -27,7 +27,7 @@ export const calculateCreditsFromAmount = async (amountInr) => {
 
 export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     // 1. Check if user is blocked
-    const user = await User.findById(userId).select('ai_tokens');
+    const user = await User.findById(userId).select('ai_tokens role');
     if (!user || user.ai_tokens?.is_ai_blocked) {
         return { allowed: false, reason: "User AI access is blocked." };
     }
@@ -40,10 +40,9 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
         return { allowed: true, source: "weekly_free" };
     }
 
-    /*
-    // --- SHARED ORG POOL (STEP 2) - COMMENTED OUT FOR NOW ---
+    // --- SHARED ORG POOL (STEP 2) ---
     // Only applies to org_admin users. Consumed AFTER free, BEFORE paid/granted.
-    if (orgId) {
+    if (orgId && user.role === 'org_admin') {
         let org = await Organization.findById(orgId).select('ai_config status');
         if (org && org.status === "active" && !org.ai_config?.is_ai_blocked) {
             const orgUsed = org.ai_config?.pro_used_this_period || 0;
@@ -53,7 +52,6 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
             }
         }
     }
-    */
 
     // 3. FIFO LOGIC: Determine which came FIRST between Top-Up (Paid) and Granted (Promotion)
     const promoBalance = user.ai_tokens?.promotion_credits_balance || 0;
