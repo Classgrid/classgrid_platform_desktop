@@ -148,6 +148,7 @@ export function AiUsageDashboardPage() {
          queryClient.invalidateQueries({ queryKey: ["ai-usage-org-users"] });
          queryClient.invalidateQueries({ queryKey: ["ai-usage-user"] });
          queryClient.invalidateQueries({ queryKey: ["ai-usage-models"] });
+         queryClient.invalidateQueries({ queryKey: ["globalAiConfig"] });
       });
     }
 

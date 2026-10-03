@@ -72,6 +72,10 @@ export const resetUserUsage = async (req, res) => {
             $set: { "ai_tokens.used_this_week": 0 }
         });
 
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+        }
         res.status(200).json({ success: true, message: "User weekly usage reset to 0." });
     } catch (error) {
         console.error("Reset User Usage Error:", error);
@@ -98,6 +102,10 @@ export const resetOrgUsage = async (req, res) => {
             { $set: { "ai_tokens.used_this_week": 0 } }
         );
 
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+        }
         res.status(200).json({ success: true, message: "Organization and all member usage reset." });
     } catch (error) {
         console.error("Reset Org Usage Error:", error);
@@ -308,6 +316,10 @@ export const deleteUserAiData = async (req, res) => {
             if (error) console.error("Error deleting Supabase chat data:", error);
         }
 
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+        }
         res.status(200).json({ success: true, message: "User AI chat data deleted from Supabase." });
     } catch (error) {
         console.error("Delete User AI Data Error:", error);
@@ -351,6 +363,10 @@ export const updateOrgAiLimits = async (req, res) => {
             { $set: { "ai_tokens.free_weekly_limit": free_weekly_limit_per_user } }
         );
 
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+        }
         res.status(200).json({ success: true, message: "Organization AI limits updated successfully." });
     } catch (error) {
         console.error("Update Org AI Limits Error:", error);
@@ -408,6 +424,10 @@ export const requestSecurityCode = async (req, res) => {
             text: plainText,
         });
 
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+        }
         res.status(200).json({ success: true, message: "Security code sent successfully" });
     } catch (error) {
         console.error("Error in requestSecurityCode:", error);
@@ -450,6 +470,10 @@ export const verifySecurityCode = async (req, res) => {
         securityCode.used = true;
         await securityCode.save();
 
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+        }
         res.status(200).json({ success: true, message: "Security code verified successfully" });
     } catch (error) {
         console.error("Error in verifySecurityCode:", error);
