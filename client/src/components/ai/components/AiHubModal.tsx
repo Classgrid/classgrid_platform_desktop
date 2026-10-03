@@ -39,7 +39,7 @@ const TABS = [
   { id: "plugins", label: "Plugins", icon: Plug },
   { id: "images", label: "Images", icon: ImageIcon },
   { id: "skills", label: "Skills", icon: Zap },
-  { id: "usage", label: "Usage", icon: Activity },
+  // { id: "usage", label: "Usage", icon: Activity }, // Hidden from users
   { id: "credits", label: "AI Credits", icon: CreditCard },
   { id: "upgrade", label: "Upgrade", icon: ArrowUpCircle },
 ];
@@ -623,16 +623,6 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
                     </p>
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
                       <AiImagesGallery backendUrl={backendUrl} />
-                    </div>
-                  </div>
-                ) : activeTab === "usage" ? (
-                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col">
-                    <h3 className="text-2xl font-bold text-foreground mb-2">AI Usage</h3>
-                    <p className="text-sm text-muted-foreground mb-8 max-w-xl">
-                      Monitor your AI token usage and limits across your personal account and organization.
-                    </p>
-                    <div className="w-full max-w-2xl bg-card border border-border rounded-xl p-6 shadow-sm">
-                        <AiUsageBar />
                     </div>
                   </div>
                 ) : activeTab === "credits" ? (
