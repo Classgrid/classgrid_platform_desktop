@@ -4258,7 +4258,7 @@ export const getMyUsage = async (req, res) => {
                 }
 
                 const proRemaining = poolLimit - org.ai_config.pro_used_this_period;
-                if (proRemaining > 0 && (org.ai_config.pro_enabled_roles?.includes(userTokens.role) || org.ai_config.pro_enabled_users?.includes(req.user.id))) {
+                if (proRemaining > 0 && userTokens.role !== 'super_admin' && (org.ai_config.pro_enabled_roles?.includes(userTokens.role) || org.ai_config.pro_enabled_users?.includes(req.user.id))) {
                     return res.json({
                         type: 'pro',
                         used: org.ai_config.pro_used_this_period,
