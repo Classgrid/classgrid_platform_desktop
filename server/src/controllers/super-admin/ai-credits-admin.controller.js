@@ -379,13 +379,13 @@ export const requestSecurityCode = async (req, res) => {
         const code = Math.floor(100000 + Math.random() * 900000).toString();
 
         // Invalidate old unused codes for this admin
-        await AdminSecurityCode.deleteMany({ superAdminId: req.user.id });
+        // No longer deleting old codes to avoid race conditions.
 
         // Expires in 10 minutes
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
         await AdminSecurityCode.create({
-            superAdminId: req.user.id,
+            superAdminId: req.user._id,
             email,
             code,
             action: action || "GENERAL_AI_MUTATION",
@@ -427,9 +427,9 @@ export const verifySecurityCode = async (req, res) => {
              return res.status(400).json({ success: false, error: "Security code is required" });
         }
 
-        const securityCode = await AdminSecurityCode.findOne({
-            superAdminId: req.user.id,
-            code,
+        const trimmedCode = code ? code.toString().trim() : ""; console.log("SUPER ADMIN ID:", req.user._id, "CODE:", trimmedCode); const securityCode = await AdminSecurityCode.findOne({
+            superAdminId: req.user._id,
+            code: trimmedCode,
             used: false,
             expiresAt: { $gt: new Date() }
         });
@@ -456,3 +456,4 @@ export const verifySecurityCode = async (req, res) => {
         res.status(500).json({ success: false, error: "Internal server error" });
     }
 };
+
