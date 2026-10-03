@@ -3109,6 +3109,11 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                 let inputTokens = 0;
                 let outputTokens = 0;
 
+                // Ensure all background fetch interceptor stream parsing has finished
+                if (usageStore.promises && usageStore.promises.length > 0) {
+                    await Promise.all(usageStore.promises);
+                }
+
                 // Use real Cloudflare usage data captured by fetch-interceptor (accumulated across all tool call iterations)
                 if (usageStore.usage && usageStore.usage.total_tokens > 0) {
                     inputTokens = usageStore.usage.prompt_tokens;

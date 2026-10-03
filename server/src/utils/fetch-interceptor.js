@@ -10,9 +10,11 @@ global.fetch = async (...args) => {
     
     // If we are tracking usage in this async context
     if (store) {
+        if (!store.promises) store.promises = [];
+        
         // We MUST clone because reading the stream locks it for the original caller
         const clone = res.clone();
-        clone.json().then(data => {
+        const p = clone.json().then(data => {
             if (data && data.usage) {
                 // OpenAI / Anthropic / Cloudflare all return standard usage objects
                 // Accumulate across tool-call iterations (each re-sends the full context)
@@ -26,6 +28,7 @@ global.fetch = async (...args) => {
         }).catch(() => {
             // Ignore parse errors (e.g. if response is plain text)
         });
+        store.promises.push(p);
     }
     
     return res;
