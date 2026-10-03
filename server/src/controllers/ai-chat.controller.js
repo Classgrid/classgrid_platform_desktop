@@ -504,7 +504,7 @@ async function generateSessionTitle(sessionId, question) {
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
                     apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
-                    /* model: "open-mistral-nemo" */
+                    model: "open-mistral-nemo"
                 }]
         });
         const answer = await client.generate({
@@ -1572,7 +1572,7 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                     name: "mistral",
                     url: "https://api.mistral.ai/v1/chat/completions",
                     apiKey: process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2 || "",
-                    /* model: "open-mistral-nemo" */
+                    model: "open-mistral-nemo",
                     timeoutMs: 60000
                 }],
             verbose: true,

@@ -7,6 +7,7 @@ import { useBlockAiUser, useResetUserUsage, useRequestSecurityCode, useVerifySec
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { toast } from "sonner";
 import { AiUsageBar } from "@/components/ai/components/AiUsageBar";
+import { DataTable } from "@/components/marketing_ui/data-table";
 import { GrantCreditsModal } from "../../components/GrantCredits";
 
 export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
@@ -72,6 +73,37 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
       remaining: Math.max(0, (userDetail.ai_tokens?.free_weekly_limit || 0) - (userDetail.ai_tokens?.used_this_week || 0))
     }
   };
+
+  const billingColumns = [
+    {
+      key: "date",
+      header: "Date & Time",
+      width: "w-[25%]",
+      render: (_: any, row: any) => <span>{new Date(row.date).toLocaleString()}</span>
+    },
+    {
+      key: "amount_inr",
+      header: "Amount",
+      width: "w-[25%]",
+      render: (_: any, row: any) => <span>?{row.amount_inr}</span>
+    },
+    {
+      key: "credits_added",
+      header: "Credits Bought",
+      width: "w-[25%]",
+      render: (_: any, row: any) => <span>{formatNumber(row.credits_added)}</span>
+    },
+    {
+      key: "status",
+      header: "Status",
+      width: "w-[25%]",
+      render: (_: any, row: any) => (
+        <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500">
+          {row.status.toUpperCase()}
+        </span>
+      )
+    }
+  ];
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-300">
