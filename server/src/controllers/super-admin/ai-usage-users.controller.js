@@ -108,29 +108,33 @@ export const getUserAiDetail = async (req, res) => {
         
         try {
             const GlobalAiConfig = (await import("../../models/GlobalAiConfig.js")).default;
-            const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" }).select("free_weekly_limit_per_user").lean();
-            if (globalConfig && globalConfig.free_weekly_limit_per_user !== undefined) {
-                effectiveFreeLimit = globalConfig.free_weekly_limit_per_user;
-            }
-        } catch (e) {
-            console.error("Error fetching GlobalAiConfig:", e);
-        }
+            const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" }).select("global_user_weekly_limit classgrid_custom_limits_enabled classgrid_user_weekly_limit").lean() || {};
+            
+            effectiveFreeLimit = globalConfig.global_user_weekly_limit || 0;
 
-        if (user.organization_id && user.organization_id._id) {
-            const Organization = (await import("../../models/Organization.js")).default;
-            const org = await Organization.findById(user.organization_id._id).select("ai_config").lean();
-            if (org && org.ai_config) {
-                if (org.ai_config.free_weekly_limit_per_user !== undefined) {
-                    effectiveFreeLimit = org.ai_config.free_weekly_limit_per_user;
+            if (user.organization_id && user.organization_id._id) {
+                const Organization = (await import("../../models/Organization.js")).default;
+                const org = await Organization.findById(user.organization_id._id).select("ai_config").lean();
+                if (org && org.ai_config) {
+                    if (org.ai_config.custom_limits_enabled && org.ai_config.free_weekly_limit_per_user !== undefined && org.ai_config.free_weekly_limit_per_user !== null) {
+                        effectiveFreeLimit = org.ai_config.free_weekly_limit_per_user;
+                    }
+                    
+                    if (user.role === 'org_admin' || user.role === 'Owner') {
+                        orgPool = {
+                            limit: org.ai_config.pro_pool_limit || 0,
+                            used: org.ai_config.pro_pool_used || 0
+                        };
+                    }
                 }
-                
-                if (user.role === 'org_admin' || user.role === 'Owner') {
-                    orgPool = {
-                        limit: org.ai_config.pro_pool_limit || 0,
-                        used: org.ai_config.pro_pool_used || 0
-                    };
+            } else {
+                if (globalConfig.classgrid_custom_limits_enabled && globalConfig.classgrid_user_weekly_limit !== undefined && globalConfig.classgrid_user_weekly_limit !== null) {
+                    effectiveFreeLimit = globalConfig.classgrid_user_weekly_limit;
                 }
             }
+
+        } catch (e) {
+            console.error("Error fetching configs:", e);
         }
 
         if (user.ai_tokens) {
