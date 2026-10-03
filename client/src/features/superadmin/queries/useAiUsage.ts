@@ -28,6 +28,10 @@ export const aiUsageApi = {
   grantOrgCredits: (orgId: string, amount: number, options?: { sendEmail?: boolean; startDate?: string; endDate?: string }) => api.post(`/api/super-admin/ai-usage/orgs/${orgId}/grant`, { amount, ...options }).then(res => res.data),
   deleteUserData: (userId: string) => api.delete(`/api/super-admin/ai-usage/users/${userId}/data`).then(res => res.data),
   updateOrgLimits: (orgId: string, data: { pro_pool_limit: number, free_weekly_limit_per_user: number, image_generation_limit?: number, whatsapp_scheduling_limit?: number }) => api.put(`/api/super-admin/ai-usage/orgs/${orgId}/limits`, data).then(res => res.data),
+  
+  // Security OTP
+  requestSecurityCode: (action: string, orgId?: string) => api.post(`/api/super-admin/ai-usage/security-code/request`, { action, orgId }).then(res => res.data),
+  verifySecurityCode: (code: string, action: string, orgId?: string) => api.post(`/api/super-admin/ai-usage/security-code/verify`, { code, action, orgId }).then(res => res.data),
 };
 
 export const useGlobalAiStats = (orgId?: string, month?: number, year?: number) => useQuery({
@@ -149,5 +153,22 @@ export const useUpdateOrgAiLimits = () => {
       queryClient.invalidateQueries({ queryKey: ["ai-usage-orgs"] });
     },
     onError: (error) => toast.error("Failed to update limits. " + error.message),
+  });
+};
+
+export const useRequestSecurityCode = () => {
+  return useMutation({
+    mutationFn: ({ action, orgId }: { action: string, orgId?: string }) => aiUsageApi.requestSecurityCode(action, orgId),
+    onSuccess: () => {
+      toast.success("Security code sent to your email.");
+    },
+    onError: (error) => toast.error("Failed to request security code. " + error.message),
+  });
+};
+
+export const useVerifySecurityCode = () => {
+  return useMutation({
+    mutationFn: ({ code, action, orgId }: { code: string, action: string, orgId?: string }) => aiUsageApi.verifySecurityCode(code, action, orgId),
+    onError: (error) => toast.error("Invalid or expired security code."),
   });
 };

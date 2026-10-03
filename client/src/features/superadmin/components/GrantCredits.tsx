@@ -7,7 +7,7 @@ import { DataTable } from "@/components/marketing_ui/data-table";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from "@/components/marketing_ui/select";
 import { NikhilDateCalendar } from "@/components/marketing_ui/nikhil_date_calendar";
 import { Switch } from "@/components/marketing_ui/switch";
-import { useGrantAiCredits, useGrantOrgAiCredits } from "@/features/superadmin/queries/useAiUsage";
+import { useGrantAiCredits, useGrantOrgAiCredits, useRequestSecurityCode, useVerifySecurityCode } from "@/features/superadmin/queries/useAiUsage";
 
 // ── Types ──────────────────────────────────────────────────────
 export interface OrgRow {
@@ -42,11 +42,15 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [], isOrgMode = fals
   const [isSeparateMode, setIsSeparateMode] = useState(false);
   const [rowCredits, setRowCredits] = useState<Record<string, number>>({});
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
   
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>();
   const [sendEmail, setSendEmail] = useState(true);
   const grantCreditsMutation = useGrantAiCredits();
   const grantOrgCreditsMutation = useGrantOrgAiCredits();
+  const requestSecurityCode = useRequestSecurityCode();
+  const verifySecurityCode = useVerifySecurityCode();
 
   // Filter orgs
   const filteredRows = useMemo(() => {
@@ -407,36 +411,12 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [], isOrgMode = fals
               <div className="p-4 border-t border-border bg-card">
                 <button 
                   onClick={async () => {
-                    const promises = selectedOrgs.map(org => {
-                      const orgCredits = isSeparateMode ? (rowCredits[org.id] || 500) : credits;
-                      
-                      const options = {
-                        sendEmail,
-                        startDate: dateRange?.from ? dateRange.from.toISOString() : undefined,
-                        endDate: dateRange?.to ? dateRange.to.toISOString() : undefined
-                      };
-
-                      if (isOrgMode) {
-                        return grantOrgCreditsMutation.mutateAsync({
-                          orgId: org.id,
-                          amount: orgCredits,
-                          options
-                        });
-                      } else {
-                        return grantCreditsMutation.mutateAsync({
-                          userId: org.id,
-                          amount: orgCredits,
-                          options
-                        });
-                      }
-                    });
-
                     try {
-                      await Promise.all(promises);
+                      await requestSecurityCode.mutateAsync({ action: "GENERAL_AI_MUTATION" });
+                      setShowOtpModal(true);
                       setIsConfirmModalOpen(false);
-                      onClose();
                     } catch (e) {
-                      console.error(e);
+                      console.error("Failed to request OTP", e);
                     }
                   }}
                   disabled={grantCreditsMutation.isPending || grantOrgCreditsMutation.isPending}
@@ -448,6 +428,97 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [], isOrgMode = fals
                   )}
                 </button>
               </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* ── OTP Security Modal ── */}
+      {showOtpModal && (
+        <motion.div
+          key="grant-credits-otp-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-[700] flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setShowOtpModal(false)}
+        >
+          {/* Backdrop Blur */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
+          {/* Modal Content */}
+          <motion.div
+            onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="w-full max-w-sm bg-background border border-border rounded-xl shadow-2xl overflow-hidden relative flex flex-col"
+          >
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-base font-semibold text-foreground">Security Verification</h2>
+              <button
+                onClick={() => setShowOtpModal(false)}
+                className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="p-6 flex flex-col items-center">
+              <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-4">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <p className="text-sm text-center text-muted-foreground mb-6">
+                A 6-digit security code has been sent to your Super Admin email address. Enter it below to authorize this action.
+              </p>
+              
+              <input
+                type="text"
+                maxLength={6}
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="000000"
+                className="w-full text-center text-3xl font-mono tracking-widest bg-muted/50 border border-border rounded-lg py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
+              />
+
+              <button 
+                onClick={async () => {
+                  try {
+                    // 1. Verify Code
+                    await verifySecurityCode.mutateAsync({ code: otpCode, action: "GENERAL_AI_MUTATION" });
+                    
+                    // 2. If valid, proceed with Grants
+                    const promises = selectedOrgs.map(org => {
+                      const orgCredits = isSeparateMode ? (rowCredits[org.id] || 500) : credits;
+                      const options = {
+                        sendEmail,
+                        startDate: dateRange?.from ? dateRange.from.toISOString() : undefined,
+                        endDate: dateRange?.to ? dateRange.to.toISOString() : undefined
+                      };
+
+                      if (isOrgMode) {
+                        return grantOrgCreditsMutation.mutateAsync({ orgId: org.id, amount: orgCredits, options });
+                      } else {
+                        return grantCreditsMutation.mutateAsync({ userId: org.id, amount: orgCredits, options });
+                      }
+                    });
+
+                    await Promise.all(promises);
+                    setShowOtpModal(false);
+                    onClose();
+                  } catch (e) {
+                    console.error("OTP Verification Failed", e);
+                  }
+                }}
+                disabled={otpCode.length < 6 || verifySecurityCode.isPending || grantCreditsMutation.isPending || grantOrgCreditsMutation.isPending}
+                className="w-full h-11 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold transition-all shadow-sm active:scale-[0.98]"
+              >
+                {verifySecurityCode.isPending ? "Verifying..." : "Verify & Grant Credits"}
+              </button>
             </div>
           </motion.div>
         </motion.div>
