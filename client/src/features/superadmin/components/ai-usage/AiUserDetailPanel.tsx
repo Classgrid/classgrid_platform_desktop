@@ -3,69 +3,23 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/marketing_ui/button";
 import { AlertTriangle, Zap, LayoutTemplate } from "lucide-react";
 import { formatNumber, formatRoleLabel } from "@/lib/utils";
-import { useBlockAiUser, useResetUserUsage, useRequestSecurityCode, useVerifySecurityCode } from "../../queries/useAiUsage";
-import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
-import { toast } from "sonner";
 import { AiUsageBar } from "@/components/ai/components/AiUsageBar";
-import { DataTable } from "@/components/marketing_ui/data-table";
 import { GrantCreditsModal } from "../../components/GrantCredits";
+import { DataTable } from "@/components/marketing_ui/data-table";
+import { BlockUserAiUsage } from "../BlockUserAiUsage";
+import { ResetUserDailyLimit } from "../ResetUserDailyLimit";
 
 export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
-  const blockUserMutation = useBlockAiUser();
-  const resetUserMutation = useResetUserUsage();
-  
-  const requestSecurityCode = useRequestSecurityCode();
-  const verifySecurityCode = useVerifySecurityCode();
-
-  // State for Block
-  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
-  const [blockCode, setBlockCode] = useState("");
-
-  // State for Reset
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [resetCode, setResetCode] = useState("");
-
-  // State for Grant
   const [isGrantCreditsOpen, setIsGrantCreditsOpen] = useState(false);
 
   if (!userDetail) return null;
 
   const isBlocked = userDetail.isBlocked;
 
-  const handleToggleBlock = async () => {
-    try {
-      await verifySecurityCode.mutateAsync({ code: blockCode, action: "BLOCK_USER_AI", orgId: undefined });
-      blockUserMutation.mutate({ userId: userDetail.id, blocked: !isBlocked }, {
-        onSuccess: () => {
-          toast.success(`User AI access has been ${!isBlocked ? 'blocked' : 'unblocked'} successfully.`);
-          setShowBlockConfirm(false);
-          setBlockCode("");
-        }
-      });
-    } catch (e) {
-      console.error("OTP verification failed", e);
-    }
-  };
-
-  const handleResetLimit = async () => {
-    try {
-      await verifySecurityCode.mutateAsync({ code: resetCode, action: "RESET_USER_USAGE", orgId: undefined });
-      resetUserMutation.mutate(userDetail.id, {
-        onSuccess: () => {
-          toast.success(`Usage for user has been reset successfully.`);
-          setShowResetConfirm(false);
-          setResetCode("");
-        }
-      });
-    } catch (e) {
-      console.error("OTP verification failed", e);
-    }
-  };
-
   const aiBarData = {
     type: 'pro',
     used: userDetail.totalUsage || 0,
-    limit: userDetail.ai_tokens?.ai_credits_balance || 0, // Fallback if no org pool
+    limit: userDetail.ai_tokens?.ai_credits_balance || 0, 
     remaining: userDetail.balance || 0,
     freeData: {
       used: userDetail.ai_tokens?.used_this_week || 0,
@@ -190,7 +144,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
              </div>
              <div className="bg-muted/30 p-4 rounded-lg border border-border/50">
                 <div className="text-sm text-muted-foreground mb-1">Total Credits Bought</div>
-                <div className="text-2xl font-bold">{formatNumber(userDetail.topupHistory?.reduce((acc: number, t: any) => acc + (t.credits_added || 0), 0) || 0)}</div>
+                <div className="text-2xl font-bold">{formatNumber(userDetail.topupHistory?.reduce((acc: any, t: any) => acc + (t.credits_added || 0), 0) || 0)}</div>
              </div>
              <div className="bg-muted/30 p-4 rounded-lg border border-border/50">
                 <div className="text-sm text-muted-foreground mb-1">Available Credits</div>
@@ -198,32 +152,14 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
              </div>
           </div>
 
-          <div className="rounded-md border">
-             <div className="bg-muted/50 px-4 py-3 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider grid grid-cols-4">
-                <div>Date & Time</div>
-                <div>Amount</div>
-                <div>Credits Bought</div>
-                <div>Status</div>
-             </div>
-             <div className="divide-y max-h-[300px] overflow-y-auto">
-                {userDetail.topupHistory?.length === 0 ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground">No payment history found.</div>
-                ) : (
-                  userDetail.topupHistory?.map((tx: any) => (
-                    <div key={tx.id} className="px-4 py-3 text-sm grid grid-cols-4 items-center hover:bg-muted/30">
-                      <div>{new Date(tx.date).toLocaleString()}</div>
-                      <div>₹{tx.amount_inr}</div>
-                      <div>{formatNumber(tx.credits_added)}</div>
-                      <div>
-                        <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500">
-                          {tx.status.toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )}
-             </div>
-          </div>
+          <DataTable 
+            columns={billingColumns} 
+            data={userDetail.topupHistory || []} 
+            emptyState={{
+              title: "No payment history",
+              description: "This user hasn't made any purchases yet."
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -247,127 +183,9 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
         </div>
       </div>
 
-      {/* Block Access Card */}
-      <div className={`border rounded-xl overflow-hidden shadow-sm h-full flex flex-col ${isBlocked ? 'border-rose-500/20' : 'border-border'}`}>
-        <div className={`p-6 flex flex-col gap-6 flex-1 ${isBlocked ? 'bg-rose-500/5' : 'bg-card'}`}>
-          <div className="flex flex-col gap-1.5">
-            <h3 className={`text-lg font-semibold tracking-tight ${isBlocked ? 'text-rose-700 dark:text-rose-400' : 'text-foreground'}`}>
-              {isBlocked ? "AI Access Blocked" : "Block User AI Usage"}
-            </h3>
-            <p className={`text-sm ${isBlocked ? 'text-rose-600/80 dark:text-rose-400/80' : 'text-muted-foreground'}`}>
-              {isBlocked 
-                ? "All AI usage is suspended for this user. You can unblock them by entering your security code." 
-                : "Immediately revoke all AI platform access for this user. This requires a Super Admin security code."}
-            </p>
-          </div>
-        </div>
-
-        <div className={`p-4 border-t flex items-center justify-end mt-auto ${isBlocked ? 'bg-rose-500/10 border-rose-500/20' : 'bg-muted/20 border-border'}`}>
-          <Button 
-            variant={isBlocked ? "default" : "destructive"} 
-            className={isBlocked ? "bg-rose-600 hover:bg-rose-700 text-white" : ""}
-            onClick={async () => {
-              try {
-                await requestSecurityCode.mutateAsync({ action: "BLOCK_USER_AI", orgId: undefined });
-                setShowBlockConfirm(true);
-              } catch (e) {
-                console.error("Failed to request OTP", e);
-              }
-            }}
-            disabled={requestSecurityCode.isPending}
-          >
-            {requestSecurityCode.isPending ? "Sending Code..." : (isBlocked ? "Unblock Access" : "Block Access")}
-          </Button>
-        </div>
-      </div>
-
-      {/* Reset Usage Card */}
-      <div className="border border-border rounded-xl overflow-hidden shadow-sm h-full flex flex-col mt-2">
-        <div className="p-6 bg-card flex flex-col gap-6 flex-1">
-          <div className="flex flex-col gap-1.5">
-            <h3 className="text-lg font-semibold text-foreground tracking-tight">
-              Reset User Usage
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Force reset the AI token consumption tracking for {userDetail.name || "this user"}. This requires a Super Admin security code.
-            </p>
-          </div>
-        </div>
-
-        <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end mt-auto">
-          <Button 
-            variant="outline" 
-            onClick={async () => {
-              try {
-                await requestSecurityCode.mutateAsync({ action: "RESET_USER_USAGE", orgId: undefined });
-                setShowResetConfirm(true);
-              } catch (e) {
-                console.error("Failed to request OTP", e);
-              }
-            }}
-            disabled={requestSecurityCode.isPending}
-          >
-            {requestSecurityCode.isPending ? "Sending Code..." : "Reset Limit"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Dialogs */}
-      <DangerConfirmDialog
-        open={showBlockConfirm}
-        onOpenChange={setShowBlockConfirm}
-        title={isBlocked ? `Unblock ${userDetail.name}?` : `Block ${userDetail.name}?`}
-        description="Please provide your Super Admin security code to proceed."
-        warningMessage={isBlocked ? undefined : "This action will instantly block all AI access for this user."}
-        actionLabel={isBlocked ? "Unblock" : "Block"}
-        cancelLabel="Cancel"
-        isLoading={blockUserMutation.isPending}
-        onConfirm={handleToggleBlock}
-        variant={isBlocked ? "default" : "destructive"}
-        isConfirmDisabled={blockCode.length !== 6}
-      >
-        <div className="flex flex-col gap-5 pt-2">
-          <div className="flex flex-col gap-2.5">
-            <label className="text-sm text-foreground/80">Enter code to confirm</label>
-            <input
-              type="password"
-              value={blockCode}
-              onChange={(e) => setBlockCode(e.target.value)}
-              placeholder="Security Code"
-              className="h-10 w-full rounded-md border bg-background dark:bg-black px-3 text-sm text-foreground outline-none transition-all duration-200 focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 border-input"
-              disabled={blockUserMutation.isPending}
-            />
-          </div>
-        </div>
-      </DangerConfirmDialog>
-
-      <DangerConfirmDialog
-        open={showResetConfirm}
-        onOpenChange={setShowResetConfirm}
-        title={`Reset ${userDetail.name} Usage`}
-        description="Please provide your Super Admin security code to proceed."
-        warningMessage="This action will instantly overwrite the user's token consumption tracking, resetting their weekly usage back to 0."
-        actionLabel="Reset Usage"
-        cancelLabel="Cancel"
-        isLoading={resetUserMutation.isPending}
-        onConfirm={handleResetLimit}
-        variant="warning"
-        isConfirmDisabled={resetCode.length !== 6}
-      >
-        <div className="flex flex-col gap-5 pt-2">
-          <div className="flex flex-col gap-2.5">
-            <label className="text-sm text-foreground/80">Enter code to reset usage</label>
-            <input
-              type="password"
-              value={resetCode}
-              onChange={(e) => setResetCode(e.target.value)}
-              placeholder="Security Code"
-              className="h-10 w-full rounded-md border bg-background dark:bg-black px-3 text-sm text-foreground outline-none transition-all duration-200 focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 border-input"
-              disabled={resetUserMutation.isPending}
-            />
-          </div>
-        </div>
-      </DangerConfirmDialog>
+      <BlockUserAiUsage userId={userDetail.id} userName={userDetail.name || userDetail.email} isBlocked={isBlocked} />
+      
+      <ResetUserDailyLimit userId={userDetail.id} userName={userDetail.name || userDetail.email} />
 
       <GrantCreditsModal 
         isOpen={isGrantCreditsOpen} 
@@ -381,7 +199,6 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
           avatar: userDetail.profilePicture
         }]}
       />
-
     </div>
   );
 }

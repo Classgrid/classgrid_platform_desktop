@@ -1,0 +1,103 @@
+import React, { useState } from "react";
+import { Button } from "@/components/marketing_ui/button";
+import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
+import { toast } from "sonner";
+import { useBlockAiUser, useRequestSecurityCode, useVerifySecurityCode } from "@/features/superadmin/queries/useAiUsage";
+
+export interface BlockUserAiUsageProps {
+  userId: string;
+  userName: string;
+  isBlocked: boolean;
+}
+
+export function BlockUserAiUsage({ userId, userName, isBlocked }: BlockUserAiUsageProps) {
+  const [open, setOpen] = useState(false);
+  const [securityCode, setSecurityCode] = useState("");
+  
+  const blockMutation = useBlockAiUser();
+  const requestSecurityCode = useRequestSecurityCode();
+  const verifySecurityCode = useVerifySecurityCode();
+
+  const allComplete = securityCode.length === 6;
+
+  const handleConfirm = async () => {
+    try {
+      await verifySecurityCode.mutateAsync({ code: securityCode, action: "BLOCK_USER_AI", orgId: undefined });
+
+      blockMutation.mutate({ userId, blocked: !isBlocked }, {
+        onSuccess: () => {
+          toast.success(`User AI access has been ${!isBlocked ? 'blocked' : 'unblocked'} successfully.`);
+          setOpen(false);
+          setSecurityCode("");
+        }
+      });
+    } catch (e) {
+      console.error("OTP verification failed", e);
+    }
+  };
+
+  return (
+    <>
+      <div className={`border rounded-xl overflow-hidden shadow-sm h-full flex flex-col ${isBlocked ? 'border-rose-500/20' : 'border-border'}`}>
+        <div className={`p-6 flex flex-col gap-6 flex-1 ${isBlocked ? 'bg-rose-500/5' : 'bg-card'}`}>
+          <div className="flex flex-col gap-1.5">
+            <h3 className={`text-lg font-semibold tracking-tight ${isBlocked ? 'text-rose-700 dark:text-rose-400' : 'text-foreground'}`}>
+              {isBlocked ? "AI Access Blocked" : "Block User AI Usage"}
+            </h3>
+            <p className={`text-sm ${isBlocked ? 'text-rose-600/80 dark:text-rose-400/80' : 'text-muted-foreground'}`}>
+              {isBlocked 
+                ? "All AI usage is suspended for this user. You can unblock them by entering your security code." 
+                : "Immediately revoke all AI platform access for this user. This requires a Super Admin security code."}
+            </p>
+          </div>
+        </div>
+
+        <div className={`p-4 border-t flex items-center justify-end mt-auto ${isBlocked ? 'bg-rose-500/10 border-rose-500/20' : 'bg-muted/20 border-border'}`}>
+          <Button 
+            variant={isBlocked ? "default" : "destructive"} 
+            className={isBlocked ? "bg-rose-600 hover:bg-rose-700 text-white" : ""}
+            onClick={async () => {
+              try {
+                await requestSecurityCode.mutateAsync({ action: "BLOCK_USER_AI", orgId: undefined });
+                setOpen(true);
+              } catch (e) {
+                console.error("Failed to request OTP", e);
+              }
+            }}
+            disabled={requestSecurityCode.isPending}
+          >
+            {requestSecurityCode.isPending ? "Sending Code..." : (isBlocked ? "Unblock Access" : "Block Access")}
+          </Button>
+        </div>
+      </div>
+
+      <DangerConfirmDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={`${isBlocked ? 'Unblock' : 'Block'} AI Usage for ${userName}`}
+        description={`Please provide your security code to proceed with ${isBlocked ? 'unblocking' : 'blocking'}.`}
+        warningMessage={isBlocked ? "This will restore AI access for this user." : "This action will instantly block this user from using any AI features."}
+        actionLabel={isBlocked ? "Unblock Access" : "Block Access"}
+        cancelLabel="Cancel"
+        isLoading={blockMutation.isPending}
+        onConfirm={handleConfirm}
+        variant={isBlocked ? "warning" : "danger"}
+        isConfirmDisabled={!allComplete}
+      >
+        <div className="flex flex-col gap-5 pt-2">
+          <div className="flex flex-col gap-2.5">
+            <label className="text-sm text-foreground/80">Enter Super Admin Security Code</label>
+            <input
+              type="password"
+              value={securityCode}
+              onChange={(e) => setSecurityCode(e.target.value)}
+              placeholder="Security Code"
+              className="h-10 w-full rounded-md border bg-background dark:bg-black px-3 text-sm text-foreground outline-none transition-all duration-200 focus:ring-1 focus:ring-red-500/50 focus:border-red-500/50 border-input"
+              disabled={blockMutation.isPending}
+            />
+          </div>
+        </div>
+      </DangerConfirmDialog>
+    </>
+  );
+}
