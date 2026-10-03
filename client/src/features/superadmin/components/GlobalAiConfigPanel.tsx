@@ -18,7 +18,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient as api } from "@/lib/apiClient";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 
-export function GlobalAiConfigPanel() {
+export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: React.ReactNode }) {
   const queryClient = useQueryClient();
   
   // State for Pools
@@ -93,8 +93,9 @@ export function GlobalAiConfigPanel() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+    <>
+      <div className="flex flex-col gap-6 mb-6">
+        <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
         <div className="p-5 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">Global AI Fallback Limits</h2>
           <p className="text-sm text-muted-foreground">Manage global default limits and quotas for all organizations.</p>
@@ -244,7 +245,11 @@ export function GlobalAiConfigPanel() {
           </div>
         </div>
       </div>
+      
+      {grantCreditsNode}
+      </div>
 
+      <div className="flex flex-col gap-6 mb-6">
       {/* Credits per INR Panel */}
       <div className="border border-border rounded-xl shadow-sm bg-card flex flex-col justify-between">
         <div className="p-5">
@@ -328,6 +333,7 @@ export function GlobalAiConfigPanel() {
           </Dialog>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

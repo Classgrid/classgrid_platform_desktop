@@ -305,23 +305,24 @@ export function AiUsageDashboardPage() {
         </div>
 
         {/* Global Limits & Grant Credits */}
-        <div className="grid gap-6 md:grid-cols-2 mb-6">
-          <GlobalAiConfigPanel />
-          <div className="border border-border rounded-xl shadow-sm bg-card h-full flex flex-col justify-between">
-            <div className="p-5">
-              <h3 className="text-lg font-semibold text-foreground tracking-tight">Grant Global Credits</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Open the AI Hub Panel to securely grant tokens across all organizations.
-              </p>
+        <GlobalAiConfigPanel 
+          grantCreditsNode={
+            <div className="border border-border rounded-xl shadow-sm bg-card flex flex-col justify-between">
+              <div className="p-5">
+                <h3 className="text-lg font-semibold text-foreground tracking-tight">Grant Global Credits</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Open the AI Hub Panel to securely grant tokens across all organizations.
+                </p>
+              </div>
+              <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end">
+                <Button variant="outline" onClick={() => setIsGlobalGrantCreditsOpen(true)}>
+                  <LayoutTemplate className="w-4 h-4 mr-2" />
+                  Open Global Grant Panel
+                </Button>
+              </div>
             </div>
-            <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end">
-              <Button variant="outline" onClick={() => setIsGlobalGrantCreditsOpen(true)}>
-                <LayoutTemplate className="w-4 h-4 mr-2" />
-                Open Global Grant Panel
-              </Button>
-            </div>
-          </div>
-        </div>
+          }
+        />
 
 
 
