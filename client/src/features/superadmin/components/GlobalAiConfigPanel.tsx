@@ -139,7 +139,6 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
                   />
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" type="button" onClick={() => { setIndividualUsage(data?.global_user_weekly_limit ?? 0); setOpenIndividual(false); }} disabled={updateConfigMutation.isPending}>Cancel</Button>
                   <Button type="button" onClick={() => handleSave(setOpenIndividual, "Global individual limit saved successfully!")} disabled={updateConfigMutation.isPending}>
                     {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
                     Save changes
@@ -184,7 +183,6 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
                   />
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" type="button" onClick={() => { setOrgPool(data?.global_pro_pool_limit ?? 0); setOpenOrg(false); }} disabled={updateConfigMutation.isPending}>Cancel</Button>
                   <Button type="button" onClick={() => handleSave(setOpenOrg, "Global organization pool limit saved successfully!")} disabled={updateConfigMutation.isPending}>
                     {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
                     Save changes
@@ -226,7 +224,6 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
                   />
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" type="button" onClick={() => { setImages(data?.global_image_weekly_limit ?? 0); setOpenImages(false); }} disabled={updateConfigMutation.isPending}>Cancel</Button>
                   <Button type="button" onClick={() => handleSave(setOpenImages, "Global image limit saved successfully!")} disabled={updateConfigMutation.isPending}>
                     {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
                     Save changes
@@ -266,7 +263,6 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
                   />
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" type="button" onClick={() => { setWhatsapp(data?.global_whatsapp_scheduling_limit ?? 0); setOpenWhatsapp(false); }} disabled={updateConfigMutation.isPending}>Cancel</Button>
                   <Button type="button" onClick={() => handleSave(setOpenWhatsapp, "Global WhatsApp limit saved successfully!")} disabled={updateConfigMutation.isPending}>
                     {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
                     Save changes
@@ -316,7 +312,6 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
                 />
               </div>
               <DialogFooter>
-                <Button variant="outline" type="button" onClick={() => { setCreditsPerInr(data?.credits_per_inr ?? 0); setOpenCreditsPerInr(false); }} disabled={updateConfigMutation.isPending}>Cancel</Button>
                 <Button type="button" onClick={() => handleSave(setOpenCreditsPerInr, "Global Pricing updated successfully!")} disabled={updateConfigMutation.isPending}>
                   {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
                   Save changes
@@ -361,7 +356,6 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
                 />
               </div>
               <DialogFooter>
-                <Button variant="outline" type="button" onClick={() => { setImageCost(data?.image_generation_token_cost ?? 0); setOpenImageCost(false); }} disabled={updateConfigMutation.isPending}>Cancel</Button>
                 <Button type="button" onClick={() => handleSave(setOpenImageCost, "Global Image Cost updated successfully!")} disabled={updateConfigMutation.isPending}>
                   {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
                   Save changes

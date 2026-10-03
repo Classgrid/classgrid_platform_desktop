@@ -32,25 +32,46 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
         return { allowed: false, reason: "User AI access is blocked." };
     }
 
-    // 2. Check free weekly limit FIRST (Always use free before touching paid/promo)
-    // If free limit resets, this will naturally be > 0 and will be used again!
-    const usedThisWeek = user.ai_tokens?.used_this_week || 0;
-    const weeklyLimit = user.ai_tokens?.free_weekly_limit || 0;
-    if (usedThisWeek + requiredTokens <= weeklyLimit) {
-        return { allowed: true, source: "weekly_free" };
+    // FETCH GLOBAL CONFIG
+    const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" }).select("global_user_weekly_limit global_ai_blocked").lean() || {};
+    if (globalConfig.global_ai_blocked) {
+        return { allowed: false, reason: "AI access is globally blocked by administrators." };
     }
 
-    // --- SHARED ORG POOL (STEP 2) ---
-    // Only applies to org_admin users. Consumed AFTER free, BEFORE paid/granted.
-    if (orgId && user.role === 'org_admin') {
-        let org = await Organization.findById(orgId).select('ai_config status');
+    let weeklyLimit = globalConfig.global_user_weekly_limit || 0;
+    
+    // --- SHARED ORG POOL & ORG CUSTOM LIMITS (STEP 2) ---
+    let org = null;
+    if (orgId) {
+        org = await Organization.findById(orgId).select('ai_config status').lean();
         if (org && org.status === "active" && !org.ai_config?.is_ai_blocked) {
-            const orgUsed = org.ai_config?.pro_used_this_period || 0;
-            const orgLimit = org.ai_config?.pro_pool_limit || 0;
-            if (orgUsed + requiredTokens <= orgLimit) {
-                return { allowed: true, source: "org_pool" };
+            // Apply Org Custom Limit for individual
+            if (org.ai_config?.custom_limits_enabled) {
+                weeklyLimit = org.ai_config.user_weekly_limit || weeklyLimit;
             }
+
+            // Check Org Pool (if org_admin)
+            if (user.role === 'org_admin') {
+                const orgUsed = org.ai_config?.pro_used_this_period || 0;
+                const orgLimit = org.ai_config?.pro_pool_limit || 0;
+                if (orgUsed + requiredTokens <= orgLimit) {
+                    return { allowed: true, source: "org_pool" };
+                }
+            }
+        } else if (org && org.ai_config?.is_ai_blocked) {
+             return { allowed: false, reason: "Organization AI access is blocked." };
         }
+    }
+
+    // Apply User Custom Limit (Overrides Org and Global)
+    if (user.ai_tokens?.custom_limits_enabled) {
+        weeklyLimit = user.ai_tokens.free_weekly_limit || weeklyLimit;
+    }
+
+    // 2. Check free weekly limit FIRST (Always use free before touching paid/promo)
+    const usedThisWeek = user.ai_tokens?.used_this_week || 0;
+    if (usedThisWeek + requiredTokens <= weeklyLimit) {
+        return { allowed: true, source: "weekly_free" };
     }
 
     // 3. FIFO LOGIC: Determine which came FIRST between Top-Up (Paid) and Granted (Promotion)
