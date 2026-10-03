@@ -127,18 +127,22 @@ export function AiCreditsPanel() {
                 
                 {issuedAmount > 0 && (
                   <div className="mt-8 pt-6 border-t border-border">
-                    <div className="flex justify-between text-sm mb-3">
-                      <div className="flex gap-4">
-                        <span className="text-muted-foreground">Credits Used: <strong className="text-foreground">{formatNumber(usedAmount)}</strong></span>
-                        <span className="text-muted-foreground">Credits Remaining: <strong className="text-foreground">{formatNumber(remainingAmount)}</strong></span>
+                    <div className="flex flex-col gap-1.5 w-full">
+                      <div className="w-full flex items-center justify-between text-xs">
+                        <span className="font-medium text-foreground">
+                          {Math.round(percentUsed)}% Used
+                        </span>
+                        <div className="flex gap-4 text-muted-foreground">
+                          <span>Used: <strong className="font-medium">{formatNumber(usedAmount)}</strong></span>
+                          <span>Remaining: <strong className="font-medium">{formatNumber(remainingAmount)}</strong></span>
+                        </div>
                       </div>
-                      <span className="font-medium text-muted-foreground">{Math.round(percentUsed)}% Used</span>
-                    </div>
-                    <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className={cn("h-full rounded-full transition-all duration-500", typeBgClass)}
-                        style={{ width: `${percentUsed}%` }}
-                      />
+                      <div className="w-full h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
+                        <div 
+                          className={cn("h-full rounded-full transition-all duration-500", typeBgClass)}
+                          style={{ width: `${percentUsed}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
