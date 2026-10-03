@@ -255,17 +255,17 @@ export function AiCreditsPanel() {
                             
                             if (txn.type === 'grant') {
                               const promoPool = balance?.pools?.find((p: any) => p.creditType === "Promotion");
-                              if (!promoPool || promoPool.status === 'Expired' || promoPool.amountRemaining <= 0) {
-                                displayStatus = 'Removed / Expired';
+                              if (!promoPool) {
+                                displayStatus = 'Removed';
+                                colorClass = 'bg-red-500/10 text-red-600';
+                              } else if (promoPool.status === 'Expired' || promoPool.amountRemaining <= 0) {
+                                displayStatus = 'Expired';
                                 colorClass = 'bg-red-500/10 text-red-600';
                               } else if (promoPool.status === 'Paused') {
                                 displayStatus = 'Paused';
                                 colorClass = 'bg-amber-500/10 text-amber-600';
                               } else {
-                                // If active, we can check if it was extended by comparing dates if we wanted, 
-                                // but for now we label it 'Granted' or 'Extended' based on user preference.
-                                // We'll just show 'Granted / Active' as the standard success state.
-                                displayStatus = 'Granted / Active';
+                                displayStatus = 'Granted';
                                 colorClass = 'bg-emerald-500/10 text-emerald-600';
                               }
                             }
