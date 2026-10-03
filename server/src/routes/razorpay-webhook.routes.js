@@ -576,6 +576,15 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                         console.error("[Razorpay Webhook] Could not create PaymentTransaction for AI Top-Up:", e.message);
                     }
 
+                    const io = req.app.get("io");
+                    if (io) {
+                        io.to(userId.toString()).emit("ai_token_update");
+                        io.to("superadmin:ai_usage").emit("ai_usage_updated");
+                        if (organizationId) {
+                            io.to(`org:${organizationId}`).emit("ai_token_update");
+                        }
+                    }
+
                     console.log(`[Razorpay Webhook] ✅ AI Top-Up successful! ${creditsAdded} credits added to User ${userId}`);
                 }
 
