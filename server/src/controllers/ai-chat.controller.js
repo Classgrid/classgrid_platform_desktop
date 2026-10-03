@@ -4233,7 +4233,7 @@ export const getMyUsage = async (req, res) => {
         if (userTokens.organization_id) {
             org = await Organization.findById(userTokens.organization_id).select("ai_config");
             if (org && org.ai_config?.custom_limits_enabled) {
-                freeLimit = org.ai_config.user_weekly_limit || globalConfig.global_user_weekly_limit;
+                freeLimit = org.ai_config.free_weekly_limit_per_user || globalConfig.global_user_weekly_limit;
             }
         }
 

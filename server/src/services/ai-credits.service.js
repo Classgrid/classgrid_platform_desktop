@@ -47,7 +47,7 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
         if (org && org.status === "active" && !org.ai_config?.is_ai_blocked) {
             // Apply Org Custom Limit for individual
             if (org.ai_config?.custom_limits_enabled) {
-                weeklyLimit = org.ai_config.user_weekly_limit || weeklyLimit;
+                weeklyLimit = org.ai_config.free_weekly_limit_per_user || weeklyLimit;
             }
 
             // Check Org Pool (if org_admin)
