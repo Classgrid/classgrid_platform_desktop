@@ -93,6 +93,13 @@ export const getUserAiDetail = async (req, res) => {
             .sort({ createdAt: -1 })
             .lean();
 
+        const promotionHistory = await AiCreditTransaction.find({ 
+            userId: userId, 
+            type: { $in: ["grant", "pause", "resume", "extend", "revoke"] } 
+        })
+            .sort({ createdAt: -1 })
+            .lean();
+
         let totalChats = 0;
         if (user.email) {
             const { count, error: countError } = await supabase
@@ -165,7 +172,31 @@ export const getUserAiDetail = async (req, res) => {
                     credits_added: t.credits_added,
                     status: t.status,
                     date: t.createdAt
-                }))
+                })),
+                promotionHistory: (function() {
+                    const history = promotionHistory.map(t => ({
+                        id: t._id,
+                        type: t.type,
+                        credits_added: t.credits_added,
+                        status: t.status,
+                        date: t.createdAt,
+                        metadata: t.metadata || {}
+                    }));
+                    
+                    // If they have granted credits but no 'grant' transaction in the history yet (e.g. legacy data)
+                    if (user.ai_tokens?.total_promotion_credits_granted > 0 && !history.some(h => h.type === 'grant')) {
+                        history.push({
+                            id: 'legacy_grant',
+                            type: 'grant',
+                            credits_added: user.ai_tokens.total_promotion_credits_granted,
+                            status: 'success',
+                            date: user.ai_tokens.promotion_credits_start_date || new Date().toISOString(),
+                            metadata: {}
+                        });
+                        history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                    }
+                    return history;
+                })()
             }
         });
     } catch (error) {

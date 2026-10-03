@@ -12,6 +12,7 @@ import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 import { PauseUserGrantedCredits } from "./PauseUserGrantedCredits";
 import { RemoveUserGrantedCredits } from "./RemoveUserGrantedCredits";
 import { ExtendUserGrantedCredits } from "./ExtendUserGrantedCredits";
+import { ViewGrantedCreditsDetails } from "./ViewGrantedCreditsDetails";
 import socketClient from "@/lib/socketClient";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -383,8 +384,12 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                   width: "w-[25%]",
                   render: () => {
                     const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
+                    const limit = userDetail.ai_tokens?.total_promotion_credits_granted || 0;
+                    const remaining = userDetail.ai_tokens?.promotion_credits_balance || 0;
+                    const used = Math.max(0, limit - remaining);
                     return (
                       <div className="flex items-center gap-2 overflow-x-auto pb-1 min-w-0 max-w-full scrollbar-thin scrollbar-thumb-muted-foreground/20 [&>*]:shrink-0">
+                        <ViewGrantedCreditsDetails used={used} limit={limit} history={userDetail.promotionHistory || []} />
                         <ExtendUserGrantedCredits userId={userDetail.id} currentExpiry={userDetail.ai_tokens?.promotion_credits_end_date} />
                         <PauseUserGrantedCredits userId={userDetail.id} isPaused={isPaused} />
                         <RemoveUserGrantedCredits userId={userDetail.id} />

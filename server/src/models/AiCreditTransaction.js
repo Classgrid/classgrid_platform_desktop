@@ -34,7 +34,7 @@ const aiCreditTransactionSchema = new mongoose.Schema(
         },
         type: {
             type: String,
-            enum: ["topup", "grant", "refund", "adjustment"],
+            enum: ["topup", "grant", "refund", "adjustment", "pause", "resume", "extend", "revoke"],
             default: "topup",
         },
         status: {
