@@ -3150,11 +3150,24 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                         const { getIO } = await import('../services/socket.service.js');
                         const io = getIO();
                         if (io) {
+                            // Emit global usage update to superadmin
+                            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+
+                            // Emit personal usage update to user
                             io.to(userId).emit("ai_token_update", { 
                                 remaining: deductionResult.remaining, 
                                 type: deductionResult.type, 
                                 used: estimatedTokens 
                             });
+                        }
+                        
+                        if (!res.writableEnded) {
+                            res.write(`data: ${JSON.stringify({ 
+                                type: "usage_stats", 
+                                total_available: deductionResult.limit, 
+                                total_deducted: estimatedTokens,
+                                total_remaining: deductionResult.remaining
+                            })}\n\n`);
                         }
                     }
 

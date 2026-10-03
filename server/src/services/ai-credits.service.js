@@ -123,7 +123,7 @@ export const deductTokens = async (userId, orgId, tokenAmount, source) => {
                     "ai_tokens.total_ai_tokens_used": tokenAmount
                 }
             }, { new: true });
-            result = { success: true, remaining: updatedUser.ai_tokens.ai_credits_balance, type: "personal" };
+            result = { success: true, remaining: updatedUser.ai_tokens.ai_credits_balance, limit: updatedUser.ai_tokens.ai_credits_balance + tokenAmount, type: "personal" };
         } else if (source === "promotion") {
             const updatedUser = await User.findByIdAndUpdate(userId, {
                 $inc: {
@@ -131,7 +131,7 @@ export const deductTokens = async (userId, orgId, tokenAmount, source) => {
                     "ai_tokens.total_ai_tokens_used": tokenAmount
                 }
             }, { new: true });
-            result = { success: true, remaining: updatedUser.ai_tokens.promotion_credits_balance, type: "promotion" };
+            result = { success: true, remaining: updatedUser.ai_tokens.promotion_credits_balance, limit: updatedUser.ai_tokens.promotion_credits_balance + tokenAmount, type: "promotion" };
         } else if (source === "weekly_free") {
             const updatedUser = await User.findByIdAndUpdate(userId, {
                 $inc: {
@@ -139,7 +139,7 @@ export const deductTokens = async (userId, orgId, tokenAmount, source) => {
                     "ai_tokens.total_ai_tokens_used": tokenAmount
                 }
             }, { new: true });
-            result = { success: true, remaining: updatedUser.ai_tokens.free_weekly_limit - updatedUser.ai_tokens.used_this_week, type: "free" };
+            result = { success: true, remaining: updatedUser.ai_tokens.free_weekly_limit - updatedUser.ai_tokens.used_this_week, limit: updatedUser.ai_tokens.free_weekly_limit, type: "free" };
         } else if (source === "org_pool") {
             const Organization = (await import("../models/Organization.js")).default;
             const updatedOrg = await Organization.findByIdAndUpdate(orgId, {
@@ -151,7 +151,7 @@ export const deductTokens = async (userId, orgId, tokenAmount, source) => {
             await User.findByIdAndUpdate(userId, {
                 $inc: { "ai_tokens.total_ai_tokens_used": tokenAmount }
             });
-            result = { success: true, remaining: updatedOrg.ai_config.pro_pool_limit - updatedOrg.ai_config.pro_used_this_period, type: "pro" };
+            result = { success: true, remaining: updatedOrg.ai_config.pro_pool_limit - updatedOrg.ai_config.pro_used_this_period, limit: updatedOrg.ai_config.pro_pool_limit, type: "pro" };
         }
 
         if (result.success) {
