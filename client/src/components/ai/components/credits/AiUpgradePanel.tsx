@@ -29,7 +29,8 @@ export function AiUpgradePanel() {
   const [customAmountStr, setCustomAmountStr] = useState<string>("1");
   
   const customAmount = parseInt(customAmountStr) || 0;
-  const expectedTokens = customAmount * 5000;
+  const creditsPerInr = balance?.credits_per_inr ?? 5000;
+  const expectedTokens = customAmount * creditsPerInr;
   // TODO: Minimum amount lowered from 100 to 1 for testing purposes. Revert to 100 in production.
   const isValidAmount = customAmount >= 1 && customAmount <= 10000;
 

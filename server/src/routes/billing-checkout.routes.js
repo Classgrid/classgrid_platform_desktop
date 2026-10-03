@@ -297,7 +297,12 @@ router.post("/confirm", async (req, res) => {
         const emailTitle = `Payment Successful — ${amountFormatted} | Classgrid`;
         const adminEmailTitle = `New AI Credit Purchase: ${amountFormatted} from ${payerName}`;
 
-        const creditsReceivedStr = handoff.payment_type === "AI_TOPUP" ? Number((handoff.amountPaise / 100) * 5000).toLocaleString() : "";
+        let creditsReceivedStr = "";
+        if (handoff.payment_type === "AI_TOPUP") {
+            const { calculateCreditsFromAmount } = await import("../services/ai-credits.service.js");
+            const creditsAdded = await calculateCreditsFromAmount(handoff.amountPaise / 100);
+            creditsReceivedStr = creditsAdded.toLocaleString();
+        }
         
         const compiledHtml = getAiCreditUserReceiptHtml(payerName, amountFormatted, creditsReceivedStr, providerPayment.id, paidAt);
         

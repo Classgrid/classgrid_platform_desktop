@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import AiCreditTransaction from "../models/AiCreditTransaction.js";
+import GlobalAiConfig from "../models/GlobalAiConfig.js";
 
 /**
  * PHASE 13: End User AI Credits Controller
@@ -74,6 +75,9 @@ export const getMyCredits = async (req, res) => {
             });
         }
 
+        const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" }).lean();
+        const creditsPerInr = globalConfig?.credits_per_inr ?? 5000;
+
         res.status(200).json({
             success: true,
             data: {
@@ -83,7 +87,8 @@ export const getMyCredits = async (req, res) => {
                 ai_credits_used: usedAmount,
                 ai_credits_start_date: tokens.ai_credits_start_date || null,
                 ai_credits_end_date: tokens.ai_credits_end_date || null,
-                pools: pools
+                pools: pools,
+                credits_per_inr: creditsPerInr
             }
         });
     } catch (error) {
