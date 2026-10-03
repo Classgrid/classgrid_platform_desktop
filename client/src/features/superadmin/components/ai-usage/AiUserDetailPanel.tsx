@@ -39,7 +39,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
       key: "amount_inr",
       header: "Amount",
       width: "w-[25%]",
-      render: (_: any, row: any) => <span>?{row.amount_inr}</span>
+      render: (_: any, row: any) => <span>₹{row.amount_inr}</span>
     },
     {
       key: "credits_added",
