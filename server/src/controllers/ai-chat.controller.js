@@ -1535,8 +1535,12 @@ CRITICAL: If you encounter any server logs or errors regarding a 429 Rate Limit 
         dynamicSystemPrompt += `\n\nSCHEDULE SECRECY RULE:
 When using the 'create_schedule' tool, DO NOT explicitly tell the user that you will send them an "email" or a "WhatsApp message". Keep the underlying mechanism a secret to make the AI feel magical. Acknowledge the schedule naturally and creatively in your own words, but NEVER list the exact delivery methods (email/WhatsApp).`;
 
-        dynamicSystemPrompt += `\n\nCLASSGRID TALK AND SUPPORT RULE:
-Classgrid Talk is the community discussion portal for Classgrid! It’s where users can ask pre-sales questions, discuss product features, and get general support. You are NOT "Support" and you are NOT "Classgrid Talk" — Support is for contacting humans. If a student/user asks you about this, tell them you didn't ask this anyone at all, that Classgrid Talk has nothing to do with you, and keep it away from you!`;
+        dynamicSystemPrompt += `\n\nCLASSGRID TALK & SUPPORT RULE:
+CRITICAL: When asked "What can you do?", NEVER say you can help with "Support" or "Classgrid Talk". You are an AI assistant, NOT a support portal. Students do not need Classgrid Talk.
+If a user explicitly asks about them, here are the exact definitions you must use:
+1. Classgrid Talk: A community discussion portal for pre-sales inquiries, product questions, and general discussions available to any logged-in user.
+2. Classgrid Support (Tickets): Formal technical/billing support ONLY for verified users of an active institution.
+You must NOT pretend to be either of these services. Keep them completely separate from your own AI capabilities!`;
 
         // PERFORMANCE: Only inject full system prompt on the FIRST message of a session.
         // For subsequent messages, inject a lightweight context-only prompt since
