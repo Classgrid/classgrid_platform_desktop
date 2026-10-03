@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/marketing_ui/button";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { toast } from "sonner";
-import { useBlockAiOrg } from "@/features/superadmin/queries/useAiUsage";
+import { useBlockAiOrg, useRequestSecurityCode, useVerifySecurityCode } from "@/features/superadmin/queries/useAiUsage";
 
 export interface BlockOrganizationAiUsageProps {
   orgId: string;
@@ -15,17 +15,25 @@ export function BlockOrganizationAiUsage({ orgId, orgName, isBlocked }: BlockOrg
   const [securityCode, setSecurityCode] = useState("");
   
   const blockMutation = useBlockAiOrg();
+  const requestSecurityCode = useRequestSecurityCode();
+  const verifySecurityCode = useVerifySecurityCode();
 
-  const allComplete = securityCode.length > 0;
+  const allComplete = securityCode.length === 6;
 
-  const handleConfirm = () => {
-    blockMutation.mutate({ orgId, isBlocked: !isBlocked }, {
-      onSuccess: () => {
-        toast.success(`Organization AI access has been ${!isBlocked ? 'blocked' : 'unblocked'} successfully.`);
-        setOpen(false);
-        setSecurityCode("");
-      }
-    });
+  const handleConfirm = async () => {
+    try {
+      await verifySecurityCode.mutateAsync({ code: securityCode, action: "BLOCK_ORG_AI", orgId });
+
+      blockMutation.mutate({ orgId, isBlocked: !isBlocked }, {
+        onSuccess: () => {
+          toast.success(`Organization AI access has been ${!isBlocked ? 'blocked' : 'unblocked'} successfully.`);
+          setOpen(false);
+          setSecurityCode("");
+        }
+      });
+    } catch (e) {
+      console.error("OTP verification failed", e);
+    }
   };
 
   return (
@@ -45,8 +53,19 @@ export function BlockOrganizationAiUsage({ orgId, orgName, isBlocked }: BlockOrg
         </div>
 
         <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end mt-auto">
-          <Button variant={isBlocked ? "outline" : "destructive"} onClick={() => setOpen(true)}>
-            {isBlocked ? "Unblock AI Access" : "Block AI Access"}
+          <Button 
+            variant={isBlocked ? "outline" : "destructive"} 
+            onClick={async () => {
+              try {
+                await requestSecurityCode.mutateAsync({ action: "BLOCK_ORG_AI", orgId });
+                setOpen(true);
+              } catch (e) {
+                console.error("Failed to request OTP", e);
+              }
+            }}
+            disabled={requestSecurityCode.isPending}
+          >
+            {requestSecurityCode.isPending ? "Sending Code..." : (isBlocked ? "Unblock AI Access" : "Block AI Access")}
           </Button>
         </div>
       </div>
