@@ -11,21 +11,16 @@ import Organization from "../models/Organization.js";
 
 import GlobalAiConfig from "../models/GlobalAiConfig.js";
 
-const DEFAULT_CREDITS_PER_INR = 3000;
-const DEFAULT_IMAGE_GENERATION_COST = 5000;
 
 export const calculateCreditsFromAmount = async (amountInr) => {
-    let multiplier;
+    let multiplier = 0;
     try {
         const config = await GlobalAiConfig.findOne({ key: "singleton" }).lean();
         if (config && config.credits_per_inr !== undefined && config.credits_per_inr !== null) {
             multiplier = config.credits_per_inr;
-        } else {
-            throw new Error("CRITICAL: Global AI Pricing is not configured. Fallback pricing is forbidden.");
         }
     } catch (err) {
         console.error("Error fetching credits_per_inr:", err);
-        throw err;
     }
     return Math.floor(amountInr * multiplier);
 };
@@ -153,5 +148,5 @@ export const getImageGenerationCost = async () => {
     } catch (err) {
         console.error("Error fetching image_generation_token_cost:", err);
     }
-    return DEFAULT_IMAGE_GENERATION_COST;
+    return 0;
 };
