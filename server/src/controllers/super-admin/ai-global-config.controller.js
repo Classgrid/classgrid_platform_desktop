@@ -68,6 +68,8 @@ export const updateGlobalAiConfig = async (req, res) => {
         const io = req.app.get("io");
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            // Broadcast to all online users to fetch their new limits
+            io.emit("ai_token_update");
         }
 
         res.status(200).json({ success: true, message: "Global AI Limits updated successfully.", config });
