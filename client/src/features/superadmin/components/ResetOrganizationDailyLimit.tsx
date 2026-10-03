@@ -19,7 +19,7 @@ export function ResetOrganizationDailyLimit({ orgId, orgName }: ResetOrganizatio
   const requestSecurityCode = useRequestSecurityCode();
   const verifySecurityCode = useVerifySecurityCode();
 
-  const allComplete = securityCode.length === 6 && resetAmount !== null;
+  
 
   const handleConfirm = async () => {
     try {
@@ -74,42 +74,18 @@ export function ResetOrganizationDailyLimit({ orgId, orgName }: ResetOrganizatio
         open={open}
         onOpenChange={setOpen}
         title={`Reset ${orgName} Usage`}
-        description="Please provide your security code and the target limit to proceed."
-        warningMessage="This action will instantly overwrite the organization's token consumption tracking."
-        actionLabel="Reset Limit"
+        description="Please provide your Super Admin security code to proceed."
+        warningMessage="This action will instantly overwrite the organization's token consumption tracking, resetting their usage back to 0."
+        actionLabel="Reset Usage"
         cancelLabel="Cancel"
         isLoading={resetMutation.isPending}
         onConfirm={handleConfirm}
         variant="warning"
-        isConfirmDisabled={!allComplete}
+        isConfirmDisabled={securityCode.length !== 6}
       >
         <div className="flex flex-col gap-5 pt-2">
           <div className="flex flex-col gap-2.5">
-            <div className="flex justify-between items-center">
-              <label className="text-sm text-foreground/80">Enter amount for resetting into before</label>
-              <span className="font-bold text-amber-600 dark:text-amber-500">
-                {new Intl.NumberFormat('en-IN').format(resetAmount)} tokens
-              </span>
-            </div>
-            <div className="pt-2">
-              <BlueSlider
-                min={5000}
-                max={100000000} // 10 Crore
-                step={5000}
-                value={resetAmount}
-                onValueChange={setResetAmount}
-                disabled={resetMutation.isPending}
-                className="accent-amber-600 hover:accent-amber-700" 
-              />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>5K</span>
-                <span>10 Cr</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2.5">
-            <label className="text-sm text-foreground/80">Enter code to reset limit</label>
+            <label className="text-sm text-foreground/80">Enter code to reset usage</label>
             <input
               type="password"
               value={securityCode}

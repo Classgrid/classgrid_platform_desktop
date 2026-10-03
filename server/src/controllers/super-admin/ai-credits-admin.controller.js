@@ -28,6 +28,10 @@ export const blockAiUser = async (req, res) => {
 
         if (!user) return res.status(404).json({ success: false, error: "User not found" });
 
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+        }
         res.status(200).json({ success: true, message: `User AI access ${isBlocked ? 'blocked' : 'unblocked'}` });
     } catch (error) {
         console.error("Block AI User Error:", error);
@@ -52,6 +56,10 @@ export const blockAiOrg = async (req, res) => {
 
         if (!org) return res.status(404).json({ success: false, error: "Organization not found" });
 
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+        }
         res.status(200).json({ success: true, message: `Organization AI access ${isBlocked ? 'blocked' : 'unblocked'}` });
     } catch (error) {
         console.error("Block AI Org Error:", error);
@@ -183,6 +191,10 @@ export const grantCredits = async (req, res) => {
             }
         }
 
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+        }
         res.status(200).json({ success: true, message: `${amount} credits granted to user.` });
     } catch (error) {
         console.error("Grant Credits Error:", error);
@@ -292,6 +304,10 @@ export const grantOrgCredits = async (req, res) => {
             }
         }
 
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+        }
         return res.status(200).json({ success: true, message: `Granted ${amount} credits to org owner ${user.email}` });
     } catch (err) {
         console.error("Error granting org credits:", err);
