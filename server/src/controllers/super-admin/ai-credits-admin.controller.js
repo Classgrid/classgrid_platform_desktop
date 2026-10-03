@@ -138,20 +138,23 @@ export const grantCredits = async (req, res) => {
             updateObj.$set["ai_tokens.promotion_credits_end_date"] = null;
         }
 
-        const user = await User.findByIdAndUpdate(userId, updateObj, { new: true });
+        const user = await User.findByIdAndUpdate(userId, updateObj, { returnDocument: 'after' });
 
         if (!user) return res.status(404).json({ success: false, error: "User not found" });
 
         // Record the transaction
         await AiCreditTransaction.create({
             userId: user._id,
-            orgId: user.organization_id,
+            orgId: user.organization_id || null,
             amount_inr: 0, // Manual grant is free
             credits_added: amount,
             razorpay_payment_id: `grant_${new Date().getTime()}`,
             razorpay_order_id: `admin_grant`,
             type: "grant",
-            status: "success"
+            status: "success",
+            userName: user.name || "",
+            userEmail: user.email || "",
+            organizationName: user.organization_id ? "" : "Classgrid (Platform Team)"
         });
 
         if (user.email && shouldSendEmail) {
@@ -193,26 +196,44 @@ export const grantOrgCredits = async (req, res) => {
         const { orgId } = req.params;
         const { amount, sendEmail: shouldSendEmail = true, startDate, endDate } = req.body;
 
-        if (!mongoose.Types.ObjectId.isValid(orgId)) {
-            return res.status(400).json({ success: false, error: "Invalid org ID" });
-        }
-
         if (typeof amount !== 'number' || amount <= 0) {
             return res.status(400).json({ success: false, error: "Invalid amount" });
         }
-        
-        // Find the org to get the ownerEmail
-        const org = await Organization.findById(orgId);
-        if (!org) return res.status(404).json({ success: false, error: "Organization not found" });
 
-        // Find the owner user
         let user;
-        if (org.ownerEmail) {
-            user = await User.findOne({ email: org.ownerEmail });
-        }
-        if (!user) {
-            // Fallback: just find the first Admin/Owner for this org
-            user = await User.findOne({ organization_id: orgId, role: { $in: ["Owner", "Admin"] } });
+        let orgNameStr = "";
+
+        if (orgId === "classgrid") {
+            orgNameStr = "Classgrid (Platform Team)";
+            if (req.body.email) {
+                user = await User.findOne({ email: req.body.email });
+            }
+            if (!user) {
+                user = await User.findOne({ role: "super_admin", email: req.body.email || "nikhil.shinde@classgrid.in" });
+            }
+            if (!user) {
+                user = await User.findOne({ $or: [{ role: 'super_admin' }, { organization_id: null }, { organization_id: { $exists: false } }] });
+            }
+        } else {
+            if (!mongoose.Types.ObjectId.isValid(orgId)) {
+                return res.status(400).json({ success: false, error: "Invalid org ID" });
+            }
+            const org = await Organization.findById(orgId);
+            if (!org) return res.status(404).json({ success: false, error: "Organization not found" });
+            
+            orgNameStr = org.name || "";
+            if (req.body.email) {
+                user = await User.findOne({ email: req.body.email });
+            }
+            if (!user && org.ownerEmail) {
+                user = await User.findOne({ email: org.ownerEmail });
+            }
+            if (!user) {
+                user = await User.findOne({ organization_id: orgId, role: { $in: ["Owner", "Admin", "org_admin"] } });
+            }
+            if (!user) {
+                user = await User.findOne({ organization_id: orgId });
+            }
         }
         
         if (!user) return res.status(404).json({ success: false, error: "No owner or admin found for this organization to receive credits." });
@@ -237,18 +258,21 @@ export const grantOrgCredits = async (req, res) => {
             updateObj.$set["ai_tokens.promotion_credits_end_date"] = null;
         }
 
-        user = await User.findByIdAndUpdate(user._id, updateObj, { new: true });
+        user = await User.findByIdAndUpdate(user._id, updateObj, { returnDocument: 'after' });
 
         // Record the transaction
         await AiCreditTransaction.create({
             userId: user._id,
-            orgId: user.organization_id,
+            orgId: user.organization_id || null,
             amount_inr: 0,
             credits_added: amount,
             razorpay_payment_id: `grant_org_${new Date().getTime()}`,
             razorpay_order_id: `admin_grant_org`,
             type: "grant",
-            status: "success"
+            status: "success",
+            userName: user.name || "",
+            userEmail: user.email || "",
+            organizationName: orgNameStr
         });
 
         if (user.email && shouldSendEmail) {

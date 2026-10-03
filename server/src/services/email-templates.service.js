@@ -2884,3 +2884,44 @@ If you have any questions or need more credits, just reply to this email.
 Best regards,
 The Classgrid Support Team`;
 };
+
+// ------------- SUPER ADMIN SECURITY VERIFICATION OTP -------------
+export const getSuperAdminSecurityOtpHtml = (adminName, otp, actionDescription, expiryMinutes = 10) => {
+  const content = `
+    <p>Hi <strong>${adminName || 'Super Admin'}</strong>,</p>
+    <p>A sensitive Super Admin operation has been initiated${actionDescription ? ` for <strong>${actionDescription}</strong>` : ''}.</p>
+    <p>Please enter the one-time security verification code below to authorize this action:</p>
+
+    <div class="box" style="text-align:center; margin: 24px 0; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
+      <div class="meta" style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 8px;">Super Admin Security Code</div>
+      <span class="code" style="font-size: 32px; letter-spacing: 8px; font-weight: 800; color: #0f172a; font-family: monospace;">${otp}</span>
+      <p style="margin-top: 12px; font-size: 13px; color: #64748b; margin-bottom: 0;">This code will expire in <strong style="color: #0f172a;">${expiryMinutes} minutes</strong>.</p>
+    </div>
+
+    <p style="font-size: 13px; color: #dc2626; margin-top: 20px; padding: 12px; background-color: #fef2f2; border-radius: 6px; border-left: 3px solid #dc2626;">
+      <strong>Security Warning:</strong> If you did not request this code, immediately change your password and revoke active sessions. Never share this code with anyone.
+    </p>
+  `;
+  return baseTemplate({
+    content,
+    title: 'Super Admin Security Code',
+    ignoreText: 'If you did not request this action, please secure your Super Admin account immediately.'
+  });
+};
+
+export const getSuperAdminSecurityOtpPlainText = (adminName, otp, actionDescription, expiryMinutes = 10) => {
+  return `Super Admin Security Verification
+
+Hi ${adminName || 'Super Admin'},
+
+A sensitive Super Admin operation has been initiated${actionDescription ? ` for ${actionDescription}` : ''}.
+
+Your One-Time Security Code: ${otp}
+
+This code will expire in ${expiryMinutes} minutes.
+
+Security Warning: If you did not request this code, immediately secure your account. Never share this code with anyone.
+
+© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+};
+
