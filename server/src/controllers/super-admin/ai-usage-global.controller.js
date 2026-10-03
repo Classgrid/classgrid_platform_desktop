@@ -305,9 +305,9 @@ export const getGlobalStats = async (req, res) => {
             { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
             { $lookup: { from: "organizations", localField: "_id.orgId", foreignField: "_id", as: "org" } },
             { $unwind: { path: "$org", preserveNullAndEmptyArrays: true } },
-            { $project: { name: { $ifNull: ["$user.name", "$user.email"] }, email: "$user.email", profilePicture: "$user.profilePicture", fallbackName: "Unknown User", orgName: { $cond: [{ $eq: ["$_id.orgId", null] }, "Classgrid Platform", { $ifNull: ["$org.name", "Unknown Org"] }] }, userId: "$_id.userId", requests: 1, _id: 0 } }
+            { $project: { name: { $ifNull: ["$user.name", "$user.email"] }, email: "$user.email", role: "$user.role", profilePicture: "$user.profilePicture", fallbackName: "Unknown User", orgName: { $cond: [{ $eq: ["$_id.orgId", null] }, "Classgrid Platform", { $ifNull: ["$org.name", "Unknown Org"] }] }, userId: "$_id.userId", requests: 1, _id: 0 } }
         ]);
-        const usersBreakdown = userData.map(u => ({ name: u.name || u.fallbackName, email: u.email, profilePicture: u.profilePicture, orgName: u.orgName, userId: u.userId, value: u.requests, requests: u.requests }));
+        const usersBreakdown = userData.map(u => ({ name: u.name || u.fallbackName, email: u.email, role: u.role, profilePicture: u.profilePicture, orgName: u.orgName, userId: u.userId, value: u.requests, requests: u.requests }));
 
         res.status(200).json({
             success: true,

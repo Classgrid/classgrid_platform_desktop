@@ -26,7 +26,7 @@ export const aiUsageApi = {
   resetOrgUsage: (orgId: string) => api.post(`/api/super-admin/ai-usage/orgs/${orgId}/reset`).then(res => res.data),
   grantCredits: (userId: string, amount: number) => api.post(`/api/super-admin/ai-usage/users/${userId}/grant`, { amount }).then(res => res.data),
   deleteUserData: (userId: string) => api.delete(`/api/super-admin/ai-usage/users/${userId}/data`).then(res => res.data),
-  updateOrgLimits: (orgId: string, data: { pro_pool_limit: number, free_weekly_limit_per_user: number }) => api.put(`/api/super-admin/ai-usage/orgs/${orgId}/limits`, data).then(res => res.data),
+  updateOrgLimits: (orgId: string, data: { pro_pool_limit: number, free_weekly_limit_per_user: number, image_generation_limit?: number, whatsapp_scheduling_limit?: number }) => api.put(`/api/super-admin/ai-usage/orgs/${orgId}/limits`, data).then(res => res.data),
 };
 
 export const useGlobalAiStats = (orgId?: string, month?: number, year?: number) => useQuery({
@@ -128,7 +128,7 @@ export const useResetOrgUsage = () => {
 export const useUpdateOrgAiLimits = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ orgId, data }: { orgId: string, data: { pro_pool_limit: number, free_weekly_limit_per_user: number } }) => aiUsageApi.updateOrgLimits(orgId, data),
+    mutationFn: ({ orgId, data }: { orgId: string, data: { pro_pool_limit: number, free_weekly_limit_per_user: number, image_generation_limit?: number, whatsapp_scheduling_limit?: number } }) => aiUsageApi.updateOrgLimits(orgId, data),
     onSuccess: (_, { orgId }) => {
       toast.success("Organization AI limits updated successfully.");
       queryClient.invalidateQueries({ queryKey: ["ai-usage-org", orgId] });

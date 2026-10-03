@@ -26,33 +26,39 @@ export function GlobalAiConfigPanel() {
   const [orgPool, setOrgPool] = useState(500000);
   const [images, setImages] = useState(20);
   const [whatsapp, setWhatsapp] = useState(10); // Added for UI parity
+  const [creditsPerInr, setCreditsPerInr] = useState(3000);
+  const [imageCost, setImageCost] = useState(5000);
 
   // Loading States
   const [openIndividual, setOpenIndividual] = useState(false);
   const [openOrg, setOpenOrg] = useState(false);
   const [openImages, setOpenImages] = useState(false);
   const [openWhatsapp, setOpenWhatsapp] = useState(false);
+  const [openCreditsPerInr, setOpenCreditsPerInr] = useState(false);
+  const [openImageCost, setOpenImageCost] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["globalAiConfig"],
     queryFn: async () => {
-      const res = await api.get("/api/v1/super-admin/ai/config");
-      return res.data?.data;
+      const res = await api.get("/api/v1/super-admin/ai-global-config");
+      return res.data?.config;
     }
   });
 
   useEffect(() => {
     if (data) {
-      setOrgPool(data.default_org_pro_pool_limit || 500000);
-      setIndividualUsage(data.default_user_weekly_free_limit || 100000);
-      setImages(data.default_user_weekly_image_limit || 20);
-      setWhatsapp(data.default_whatsapp_limit || 10);
+      setOrgPool(data.global_pro_pool_limit || 500000);
+      setIndividualUsage(data.global_user_weekly_limit || 100000);
+      setImages(data.global_image_weekly_limit || 20);
+      setWhatsapp(data.global_whatsapp_scheduling_limit || 10);
+      if (data.credits_per_inr) setCreditsPerInr(data.credits_per_inr);
+      if (data.image_generation_token_cost) setImageCost(data.image_generation_token_cost);
     }
   }, [data]);
 
   const updateConfigMutation = useMutation({
     mutationFn: async (newConfig: any) => {
-      const res = await api.put("/api/v1/super-admin/ai/config", newConfig);
+      const res = await api.put("/api/v1/super-admin/ai-global-config", newConfig);
       return res.data;
     },
     onSuccess: () => {
@@ -68,10 +74,12 @@ export function GlobalAiConfigPanel() {
     successMessage: string
   ) => {
     updateConfigMutation.mutate({
-      default_org_pro_pool_limit: orgPool,
-      default_user_weekly_free_limit: individualUsage,
-      default_user_weekly_image_limit: images,
-      default_whatsapp_limit: whatsapp
+      global_pro_pool_limit: orgPool,
+      global_user_weekly_limit: individualUsage,
+      global_image_weekly_limit: images,
+      global_whatsapp_scheduling_limit: whatsapp,
+      credits_per_inr: creditsPerInr,
+      image_generation_token_cost: imageCost
     }, {
       onSuccess: () => {
         toast.success(successMessage);
@@ -227,6 +235,81 @@ export function GlobalAiConfigPanel() {
                 <DialogFooter>
                   <Button variant="outline" type="button" onClick={() => setOpenWhatsapp(false)} disabled={updateConfigMutation.isPending}>Cancel</Button>
                   <Button type="button" onClick={() => handleSave(setOpenWhatsapp, "Global WhatsApp limit saved successfully!")} disabled={updateConfigMutation.isPending}>
+                    {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
+                    Save changes
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border flex-1">
+            {/* Credits Per INR */}
+            <Dialog open={openCreditsPerInr} onOpenChange={setOpenCreditsPerInr}>
+              <DialogTrigger asChild>
+                <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
+                  <span className="text-sm font-medium text-muted-foreground">Credits per INR</span>
+                  <span className="text-xl font-bold text-foreground">
+                    {creditsPerInr} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens/₹1</span>
+                  </span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Edit Pricing: Credits per INR</DialogTitle>
+                  <DialogDescription>Define how many tokens users receive per ₹1 purchased.</DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-2 py-4">
+                  <Label htmlFor="creditsPerInr" className="text-sm font-medium">Credits per INR</Label>
+                  <Input 
+                    id="creditsPerInr" 
+                    type="number"
+                    min={1}
+                    value={creditsPerInr} 
+                    onChange={(e) => setCreditsPerInr(Number(e.target.value))} 
+                    placeholder="e.g. 3000" 
+                    disabled={updateConfigMutation.isPending}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" type="button" onClick={() => setOpenCreditsPerInr(false)} disabled={updateConfigMutation.isPending}>Cancel</Button>
+                  <Button type="button" onClick={() => handleSave(setOpenCreditsPerInr, "Global Pricing updated successfully!")} disabled={updateConfigMutation.isPending}>
+                    {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
+                    Save changes
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Image Generation Token Cost */}
+            <Dialog open={openImageCost} onOpenChange={setOpenImageCost}>
+              <DialogTrigger asChild>
+                <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
+                  <span className="text-sm font-medium text-muted-foreground">Image Generation Cost</span>
+                  <span className="text-xl font-bold text-foreground">
+                    {imageCost} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens/Image</span>
+                  </span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Edit Image Generation Cost</DialogTitle>
+                  <DialogDescription>Set how many tokens are deducted per AI image generation.</DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-2 py-4">
+                  <Label htmlFor="imageCost" className="text-sm font-medium">Token Cost per Image</Label>
+                  <Input 
+                    id="imageCost" 
+                    type="number"
+                    min={0}
+                    value={imageCost} 
+                    onChange={(e) => setImageCost(Number(e.target.value))} 
+                    placeholder="e.g. 5000" 
+                    disabled={updateConfigMutation.isPending}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" type="button" onClick={() => setOpenImageCost(false)} disabled={updateConfigMutation.isPending}>Cancel</Button>
+                  <Button type="button" onClick={() => handleSave(setOpenImageCost, "Global Image Cost updated successfully!")} disabled={updateConfigMutation.isPending}>
                     {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
                     Save changes
                   </Button>

@@ -17,17 +17,43 @@ const globalAiConfigSchema = new mongoose.Schema(
             default: "singleton", // Enforces a single document store
         },
         // --- Tokens & Usage Limits ---
-        global_pro_pool_limit: { 
-            type: Number, 
-            default: 500000 
+        global_pro_pool_limit: {
+            type: Number,
+            default: 500000
         },
-        global_user_weekly_limit: { 
-            type: Number, 
-            default: 100000 
+        global_user_weekly_limit: {
+            type: Number,
+            default: 100000
         },
-        global_image_weekly_limit: { 
-            type: Number, 
-            default: 20 
+        global_image_weekly_limit: {
+            type: Number,
+            default: 20
+        },
+        global_whatsapp_scheduling_limit: {
+            type: Number,
+            default: 10
+        },
+        // --- Pricing & Cost Config ---
+        credits_per_inr: { 
+            type: Number,
+            default: 3000
+        },
+        image_generation_token_cost: { 
+            type: Number,
+            default: 5000
+        },
+        // Cloudflare official costs (USD) - for reference & margin calculation
+        cf_input_cost_per_million: { 
+            type: Number,
+            default: 1.32  // DeepSeek V4 Pro input
+        },
+        cf_output_cost_per_million: { 
+            type: Number,
+            default: 3.96  // DeepSeek V4 Pro output
+        },
+        cf_image_cost_per_unit: { 
+            type: Number,
+            default: 0.0005  // Flux-1-Schnell per image
         },
         // --- Access Controls ---
         global_ai_blocked: {

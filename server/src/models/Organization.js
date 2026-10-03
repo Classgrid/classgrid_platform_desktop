@@ -615,8 +615,10 @@ const organizationSchema = new mongoose.Schema(
         ai_config: {
             custom_limits_enabled: { type: Boolean, default: false }, // If false, fallback to GlobalAiConfig
             is_ai_blocked: { type: Boolean, default: false },
-            pro_pool_limit: { type: Number, default: 500000 },
-            free_weekly_limit_per_user: { type: Number, default: 100000 },
+            pro_pool_limit: { type: Number },
+            free_weekly_limit_per_user: { type: Number },
+            image_generation_limit: { type: Number },
+            whatsapp_scheduling_limit: { type: Number },
             pro_used_this_period: { type: Number, default: 0 },
             total_ai_tokens_used: { type: Number, default: 0 },
             pro_reset_date: { type: Date, default: () => { const d = new Date(); d.setHours(d.getHours() + 4); return d; } },

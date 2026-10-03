@@ -20,6 +20,7 @@ export interface GrantCreditsModalProps {
   isOpen: boolean;
   onClose: () => void;
   orgs?: OrgRow[];
+  isOrgMode?: boolean;
 }
 
 const ROLES = ["All Roles", "Admin", "Owner", "Member"];
@@ -30,7 +31,7 @@ const formatCredits = (n: number) => {
   return n.toLocaleString("en-IN");
 };
 
-export function GrantCreditsModal({ isOpen, onClose, orgs = [] }: GrantCreditsModalProps) {
+export function GrantCreditsModal({ isOpen, onClose, orgs = [], isOrgMode = false }: GrantCreditsModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("All Roles");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -69,16 +70,18 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [] }: GrantCreditsMo
             <img
               src={row.avatar}
               alt={row.name}
-              className="w-8 h-8 rounded-full border border-border bg-muted shrink-0 object-cover"
+              className={`w-8 h-8 ${isOrgMode ? 'rounded-md object-contain p-1' : 'rounded-full object-cover'} border border-border bg-muted shrink-0`}
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-muted border border-border shrink-0 flex items-center justify-center text-xs font-semibold text-muted-foreground">
+            <div className={`w-8 h-8 ${isOrgMode ? 'rounded-md' : 'rounded-full'} bg-muted border border-border shrink-0 flex items-center justify-center text-xs font-semibold text-muted-foreground`}>
               {row.name[0]}
             </div>
           )}
           <div className="flex flex-col min-w-0">
             <span className="text-sm font-semibold text-foreground truncate">{row.name}</span>
-            <span className="text-xs text-muted-foreground truncate">{row.orgName}</span>
+            {(!isOrgMode || row.name !== row.orgName) && (
+              <span className="text-xs text-muted-foreground truncate">{row.orgName}</span>
+            )}
           </div>
         </div>
       ),
@@ -87,7 +90,7 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [] }: GrantCreditsMo
       key: "email",
       header: "Email",
       width: "w-64",
-      render: (val: string) => (
+      render: (val: string) => val ? (
         <a
           href={`mailto:${val}`}
           onClick={(e) => e.stopPropagation()}
@@ -96,15 +99,17 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [] }: GrantCreditsMo
           {val}
           <ExternalLink className="w-3 h-3 shrink-0" />
         </a>
+      ) : (
+        <span className="text-xs text-muted-foreground italic">No Email Provided</span>
       ),
     },
     {
       key: "role",
-      header: "Role",
+      header: isOrgMode ? "ID" : "Role",
       width: "w-32",
-      render: (val: string) => (
-        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
-          {val}
+      render: (val: string, row: OrgRow) => (
+        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground inline-block" title={isOrgMode ? row.id : val}>
+          {isOrgMode ? row.id : val}
         </span>
       ),
     },
@@ -188,20 +193,22 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [] }: GrantCreditsMo
                 onSearchChange={setSearchQuery}
                 searchPlaceholder="Search by name, email or org..."
               >
-                <Select value={roleFilter} onValueChange={(val) => setRoleFilter(val as string)}>
-                  <SelectTrigger className="h-9 px-3 w-[140px] rounded-full border border-dashed border-border bg-transparent shadow-sm">
-                    <SelectValue placeholder="All Roles" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[400]">
-                    <SelectGroup>
-                      {ROLES.map((r) => (
-                        <SelectItem key={r} value={r}>
-                          {r}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                {!isOrgMode && (
+                  <Select value={roleFilter} onValueChange={(val) => setRoleFilter(val as string)}>
+                    <SelectTrigger className="h-9 px-3 w-[140px] rounded-full border border-dashed border-border bg-transparent shadow-sm">
+                      <SelectValue placeholder="All Roles" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[400]">
+                      <SelectGroup>
+                        {ROLES.map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {r}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                )}
                 <Select 
                   value={isSeparateMode ? "separate" : ""} 
                   onValueChange={(val) => {

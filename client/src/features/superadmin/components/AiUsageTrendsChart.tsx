@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing_ui/card";
-import { TrendingUp, TrendingDown, Calendar, ChevronDown } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
 import {
@@ -14,29 +14,87 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
-const DUMMY_CHATS_DATA = [
-  { date: "Oct 1", chats: 120 },
-  { date: "Oct 2", chats: 150 },
-  { date: "Oct 3", chats: 80 },
-  { date: "Oct 4", chats: 200 },
-  { date: "Oct 5", chats: 90 },
-  { date: "Oct 6", chats: 310 }, // Most Active
-  { date: "Oct 7", chats: 40 },  // Least Used
-];
+export interface AiUsageTrendsChartProps {
+  data?: any[];
+}
 
-const DUMMY_CREDITS_DATA = [
-  { date: "Oct 1", input: 8000, output: 2000 },
-  { date: "Oct 2", input: 9200, output: 1500 },
-  { date: "Oct 3", input: 6000, output: 1000 },
-  { date: "Oct 4", input: 11000, output: 3000 },
-  { date: "Oct 5", input: 6000, output: 2000 },
-  { date: "Oct 6", input: 14000, output: 4000 },
-  { date: "Oct 7", input: 200, output: 50 },
-];
+export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
+  const [chatDate, setChatDate] = React.useState<Date | undefined>();
+  const [creditsDate, setCreditsDate] = React.useState<Date | undefined>();
+  const [chatTimePeriod, setChatTimePeriod] = React.useState<"daily" | "weekly" | "monthly">("daily");
+  const [creditsTimePeriod, setCreditsTimePeriod] = React.useState<"daily" | "weekly" | "monthly">("daily");
 
-export function AiUsageTrendsChart() {
-  const [chatDate, setChatDate] = React.useState<Date | undefined>(new Date());
-  const [creditsDate, setCreditsDate] = React.useState<Date | undefined>(new Date());
+  const { mostActive, leastUsed, chartData } = useMemo(() => {
+    if (!data || data.length === 0) {
+      return { mostActive: null, leastUsed: null, chartData: [] };
+    }
+
+    const validData = data.filter(d => d.requests !== undefined);
+    if (validData.length === 0) {
+      return { mostActive: null, leastUsed: null, chartData: data };
+    }
+
+    let max = validData[0];
+    let min = validData[0];
+
+    validData.forEach(d => {
+      if ((d.requests || 0) > (max.requests || 0)) max = d;
+      if ((d.requests || 0) < (min.requests || 0)) min = d;
+    });
+
+    return { mostActive: max, leastUsed: min, chartData: data };
+  }, [data]);
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const formatShortDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  // Aggregate data by time period
+  const getAggregatedData = (rawData: any[], period: "daily" | "weekly" | "monthly") => {
+    if (!rawData || rawData.length === 0) return [];
+    
+    const formatted = rawData.map(d => ({
+      ...d,
+      shortDate: formatShortDate(d.date)
+    }));
+
+    if (period === "daily") return formatted;
+
+    const aggregated: Record<string, any> = {};
+    
+    rawData.forEach(d => {
+      let key = d.date;
+      if (period === "weekly") {
+        const date = new Date(d.date);
+        if (isNaN(date.getTime())) return;
+        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+        const week = Math.ceil((date.getDate() + firstDay.getDay()) / 7);
+        key = `Week ${week} (${date.toLocaleString('default', { month: 'short' })})`;
+      } else if (period === "monthly") {
+        const date = new Date(d.date);
+        if (isNaN(date.getTime())) return;
+        key = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+      }
+
+      if (!aggregated[key]) {
+        aggregated[key] = { shortDate: key, requests: 0, promptTokens: 0, completionTokens: 0 };
+      }
+      aggregated[key].requests += d.requests || 0;
+      aggregated[key].promptTokens += d.promptTokens || 0;
+      aggregated[key].completionTokens += d.completionTokens || 0;
+    });
+
+    return Object.values(aggregated);
+  };
+
+  const chatChartData = useMemo(() => getAggregatedData(chartData, chatTimePeriod), [chartData, chatTimePeriod]);
+  const creditsChartData = useMemo(() => getAggregatedData(chartData, creditsTimePeriod), [chartData, creditsTimePeriod]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -44,23 +102,24 @@ export function AiUsageTrendsChart() {
       <Card className="border border-[#222222] shadow-sm overflow-hidden bg-[#0a0a0a] dark:bg-[#0a0a0a]">
         <CardHeader className="border-b border-[#222222] pb-4 bg-[#0a0a0a] flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
-            Daily Chat Trend
+            {chatTimePeriod === "daily" ? "Daily" : chatTimePeriod === "weekly" ? "Weekly" : "Monthly"} Chat Trend
           </CardTitle>
           <div className="flex items-center gap-3">
             <NikhilTimeCalendar 
               value={chatDate} 
               onChange={setChatDate as any} 
-              showTime={false} 
+              showTime={true} 
               placeholder="Select Date" 
-              className="w-[140px] h-9 border border-[#222222] bg-black text-white hover:bg-[#111111]" 
+              className="w-[180px] h-9 border border-[#222222] bg-black text-white hover:bg-[#111111]" 
             />
-            <Select defaultValue="USD">
-              <SelectTrigger className="w-[80px] h-9 border border-[#222222] bg-[#1a1a1a] text-white hover:bg-[#222222]">
+            <Select value={chatTimePeriod} onValueChange={setChatTimePeriod as any}>
+              <SelectTrigger className="w-[100px] h-9 border border-[#222222] bg-[#1a1a1a] text-white hover:bg-[#222222]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-[#1a1a1a] border-[#222222] text-white">
-                <SelectItem value="USD">USD</SelectItem>
-                <SelectItem value="EUR">EUR</SelectItem>
+                <SelectItem value="daily">Day</SelectItem>
+                <SelectItem value="weekly">Week</SelectItem>
+                <SelectItem value="monthly">Month</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -69,12 +128,12 @@ export function AiUsageTrendsChart() {
           <div className="w-full h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={DUMMY_CHATS_DATA}
+                data={chatChartData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#222222" vertical={false} />
                 <XAxis 
-                  dataKey="date" 
+                  dataKey="shortDate" 
                   stroke="#888888" 
                   fontSize={12} 
                   tickLine={false} 
@@ -97,7 +156,7 @@ export function AiUsageTrendsChart() {
                   iconType="square" 
                   wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: '#888888' }}
                 />
-                <Bar dataKey="chats" name="Total Chats" fill="#ea580c" barSize={12} radius={[2, 2, 0, 0]} />
+                <Bar dataKey="requests" name="Total Chats" fill="#ea580c" barSize={12} radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -113,9 +172,9 @@ export function AiUsageTrendsChart() {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-white">Most Active Day</span>
-            <span className="text-xs text-[#888888] mt-0.5">Oct 6, 2026</span>
+            <span className="text-xs text-[#888888] mt-0.5">{mostActive ? formatDate(mostActive.date) : 'N/A'}</span>
             <span className="text-lg font-bold text-emerald-500 mt-1">
-              310 <span className="text-xs font-normal">chats</span>
+              {mostActive?.requests || 0} <span className="text-xs font-normal">chats</span>
             </span>
           </div>
         </div>
@@ -127,9 +186,9 @@ export function AiUsageTrendsChart() {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-white">Least Used Day</span>
-            <span className="text-xs text-[#888888] mt-0.5">Oct 7, 2026</span>
+            <span className="text-xs text-[#888888] mt-0.5">{leastUsed ? formatDate(leastUsed.date) : 'N/A'}</span>
             <span className="text-lg font-bold text-rose-500 mt-1">
-              40 <span className="text-xs font-normal">chats</span>
+              {leastUsed?.requests || 0} <span className="text-xs font-normal">chats</span>
             </span>
           </div>
         </div>
@@ -139,23 +198,24 @@ export function AiUsageTrendsChart() {
       <Card className="border border-[#222222] shadow-sm overflow-hidden bg-[#0a0a0a] dark:bg-[#0a0a0a]">
         <CardHeader className="border-b border-[#222222] pb-4 bg-[#0a0a0a] flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
-            Daily Credits Used Trend
+            {creditsTimePeriod === "daily" ? "Daily" : creditsTimePeriod === "weekly" ? "Weekly" : "Monthly"} Credits Used Trend
           </CardTitle>
           <div className="flex items-center gap-3">
             <NikhilTimeCalendar 
               value={creditsDate} 
               onChange={setCreditsDate as any} 
-              showTime={false} 
+              showTime={true} 
               placeholder="Select Date" 
-              className="w-[140px] h-9 border border-[#222222] bg-black text-white hover:bg-[#111111]" 
+              className="w-[180px] h-9 border border-[#222222] bg-black text-white hover:bg-[#111111]" 
             />
-            <Select defaultValue="USD">
-              <SelectTrigger className="w-[80px] h-9 border border-[#222222] bg-[#1a1a1a] text-white hover:bg-[#222222]">
+            <Select value={creditsTimePeriod} onValueChange={setCreditsTimePeriod as any}>
+              <SelectTrigger className="w-[100px] h-9 border border-[#222222] bg-[#1a1a1a] text-white hover:bg-[#222222]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-[#1a1a1a] border-[#222222] text-white">
-                <SelectItem value="USD">USD</SelectItem>
-                <SelectItem value="EUR">EUR</SelectItem>
+                <SelectItem value="daily">Day</SelectItem>
+                <SelectItem value="weekly">Week</SelectItem>
+                <SelectItem value="monthly">Month</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -164,12 +224,12 @@ export function AiUsageTrendsChart() {
           <div className="w-full h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={DUMMY_CREDITS_DATA}
+                data={creditsChartData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#222222" vertical={false} />
                 <XAxis 
-                  dataKey="date" 
+                  dataKey="shortDate" 
                   stroke="#888888" 
                   fontSize={12} 
                   tickLine={false} 
@@ -192,8 +252,8 @@ export function AiUsageTrendsChart() {
                   iconType="square" 
                   wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: '#888888' }}
                 />
-                <Bar dataKey="input" name="Input Credits" stackId="a" fill="#ea580c" barSize={12} />
-                <Bar dataKey="output" name="Output Credits" stackId="a" fill="#3b82f6" barSize={12} radius={[2, 2, 0, 0]} />
+                <Bar dataKey="promptTokens" name="Input Tokens" stackId="a" fill="#ea580c" barSize={12} />
+                <Bar dataKey="completionTokens" name="Output Tokens" stackId="a" fill="#3b82f6" barSize={12} radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -202,3 +262,4 @@ export function AiUsageTrendsChart() {
     </div>
   );
 }
+

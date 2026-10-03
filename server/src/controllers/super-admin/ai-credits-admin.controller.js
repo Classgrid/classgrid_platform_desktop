@@ -2,6 +2,8 @@ import User from "../../models/User.js";
 import Organization from "../../models/Organization.js";
 import AiCreditTransaction from "../../models/AiCreditTransaction.js";
 import mongoose from "mongoose";
+import { sendEmail } from "../../services/aws-ses.service.js";
+import { getAiCreditGrantedHtml, getAiCreditGrantedPlainText } from "../../services/email-templates.service.js";
 
 /**
  * PHASE 9: Super Admin AI Credits Admin Controller
@@ -134,6 +136,24 @@ export const grantCredits = async (req, res) => {
             status: "success"
         });
 
+        if (user.email) {
+            try {
+                const totalBalance = user.ai_tokens.ai_credits_balance.toLocaleString();
+                const emailHtml = getAiCreditGrantedHtml(user.name || user.email, amount.toLocaleString(), totalBalance);
+                const emailText = getAiCreditGrantedPlainText(user.name || user.email, amount.toLocaleString(), totalBalance);
+                await sendEmail({
+                    to: user.email,
+                    subject: `Your AI Credits Have Been Granted!`,
+                    html: emailHtml,
+                    text: emailText,
+                    userId: user._id,
+                    organizationId: user.organization_id
+                });
+            } catch (emailErr) {
+                console.error("Failed to send gift credit email:", emailErr);
+            }
+        }
+
         res.status(200).json({ success: true, message: `${amount} credits granted to user.` });
     } catch (error) {
         console.error("Grant Credits Error:", error);
@@ -168,20 +188,28 @@ export const deleteUserAiData = async (req, res) => {
 export const updateOrgAiLimits = async (req, res) => {
     try {
         const { orgId } = req.params;
-        const { pro_pool_limit, free_weekly_limit_per_user } = req.body;
+        const { 
+            pro_pool_limit, 
+            free_weekly_limit_per_user,
+            image_generation_limit,
+            whatsapp_scheduling_limit 
+        } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(orgId)) {
             return res.status(400).json({ success: false, error: "Invalid org ID" });
         }
 
+        const updateSet = {
+            "ai_config.pro_pool_limit": pro_pool_limit,
+            "ai_config.free_weekly_limit_per_user": free_weekly_limit_per_user
+        };
+
+        if (image_generation_limit !== undefined) updateSet["ai_config.image_generation_limit"] = image_generation_limit;
+        if (whatsapp_scheduling_limit !== undefined) updateSet["ai_config.whatsapp_scheduling_limit"] = whatsapp_scheduling_limit;
+
         const org = await Organization.findByIdAndUpdate(
             orgId,
-            { 
-                $set: { 
-                    "ai_config.pro_pool_limit": pro_pool_limit,
-                    "ai_config.free_weekly_limit_per_user": free_weekly_limit_per_user
-                } 
-            },
+            { $set: updateSet },
             { new: true }
         );
 

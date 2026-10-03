@@ -457,8 +457,8 @@ router.post("/razorpay", express.raw({ type: "application/json" }), async (req, 
                         break;
                     }
 
-                    const CREDITS_PER_INR = 5000;
-                    const creditsAdded = Math.floor(amountInr * CREDITS_PER_INR);
+                    const { calculateCreditsFromAmount } = await import("../services/ai-credits.service.js");
+                    const creditsAdded = await calculateCreditsFromAmount(amountInr);
 
                     const User = (await import("../models/User.js")).default;
                     const user = await User.findById(userId).populate("organization_id");

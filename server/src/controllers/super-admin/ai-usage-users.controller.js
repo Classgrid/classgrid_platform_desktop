@@ -11,7 +11,7 @@ export const listUsersInOrg = async (req, res) => {
         let query = {};
         
         if (orgId === "classgrid") {
-            query = { $or: [{ role: 'super_admin' }, { organization_id: null }, { organization_id: { $exists: false } }] };
+            query = { $or: [{ organization_id: null }, { organization_id: { $exists: false } }] };
         } else {
             if (!mongoose.Types.ObjectId.isValid(orgId)) {
                 return res.status(400).json({ success: false, error: "Invalid organization ID" });
@@ -20,7 +20,7 @@ export const listUsersInOrg = async (req, res) => {
         }
 
         const users = await User.find(query)
-            .select("name email role ai_tokens organization_id")
+            .select("name email role ai_tokens organization_id profilePicture platformLogo avatarUrl picture photoUrl")
             .lean();
 
         // Group users by role
@@ -37,10 +37,15 @@ export const listUsersInOrg = async (req, res) => {
             }
             roles[role].userCount += 1;
             roles[role].totalUsage += (user.ai_tokens?.total_ai_tokens_used || 0);
+            
+            const finalProfilePicture = user.profilePicture || user.platformLogo || user.photoUrl || user.avatarUrl || user.picture || null;
+            
             roles[role].users.push({
                 id: user._id,
                 name: user.name,
                 email: user.email,
+                role: role,
+                profilePicture: finalProfilePicture,
                 totalUsage: user.ai_tokens?.total_ai_tokens_used || 0,
                 isBlocked: user.ai_tokens?.is_ai_blocked || false
             });
@@ -63,7 +68,8 @@ export const getUserAiDetail = async (req, res) => {
         }
 
         const user = await User.findById(userId)
-            .select("name email role ai_tokens organization_id")
+            .select("name email role ai_tokens organization_id profilePicture")
+            .populate("organization_id", "name")
             .lean();
 
         if (!user) {
@@ -91,6 +97,8 @@ export const getUserAiDetail = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                profilePicture: user.profilePicture || null,
+                orgName: user.organization_id?.name || "Classgrid (Platform Team)",
                 isBlocked: user.ai_tokens?.is_ai_blocked || false,
                 totalUsage: user.ai_tokens?.total_ai_tokens_used || 0,
                 balance: user.ai_tokens?.ai_credits_balance || 0,

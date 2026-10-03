@@ -18,8 +18,22 @@ import {
   User as UserIcon,
   Cpu,
   Database,
-  HardDrive
+  HardDrive,
+  LayoutTemplate
 } from "lucide-react";
+
+import { AiUsageTrendsChart } from "@/features/superadmin/components/AiUsageTrendsChart";
+import { AiUsageBar } from "@/components/ai/components/AiUsageBar";
+import { TopAiUsersTable } from "@/features/superadmin/components/TopAiUsersTable";
+import { SetupUsageCredits } from "@/features/superadmin/components/SetupUsageCredits";
+import { GrantCreditsModal } from "@/features/superadmin/components/GrantCredits";
+import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/apiClient";
+import { GlobalAiConfigPanel } from "@/features/superadmin/components/GlobalAiConfigPanel";
+import { ResetOrganizationDailyLimit } from "@/features/superadmin/components/ResetOrganizationDailyLimit";
+import { EditOrganizationDailyLimit } from "@/features/superadmin/components/EditOrganizationDailyLimit";
+import { BlockOrganizationAiUsage } from "@/features/superadmin/components/BlockOrganizationAiUsage";
 import { 
   useGlobalAiStats, 
   useAiUsageOrgs, 
@@ -95,6 +109,7 @@ import socketClient from "@/lib/socketClient";
 
 export function AiUsageDashboardPage() {
   const queryClient = useQueryClient();
+  const { data: currentUser } = useCurrentUser();
   const [path, setPath] = useState<PathState>({});
   const [showOrgReset, setShowOrgReset] = useState(false);
   const [showOrgBlock, setShowOrgBlock] = useState(false);
@@ -104,6 +119,8 @@ export function AiUsageDashboardPage() {
   const [orgTypeFilter, setOrgTypeFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<Date | undefined>();
   const [selectedGlobalOrgId, setSelectedGlobalOrgId] = useState<string>("all");
+  const [isGlobalGrantCreditsOpen, setIsGlobalGrantCreditsOpen] = useState(false);
+  const [isOrgGrantCreditsOpen, setIsOrgGrantCreditsOpen] = useState(false);
 
   const [chatsTime, setChatsTime] = useState<"daily" | "weekly" | "monthly">("daily");
   const [orgsTime, setOrgsTime] = useState<"daily" | "weekly" | "monthly">("daily");
@@ -138,10 +155,40 @@ export function AiUsageDashboardPage() {
   const blockOrgMutation = useBlockAiOrg();
   const updateLimitsMutation = useUpdateOrgAiLimits();
 
+  const { data: globalUsersFallback } = useQuery({
+    queryKey: ["global-users-fallback"],
+    queryFn: () => apiClient.get<any>("/api/super-admin/users", { params: { limit: 1000 } }).then(r => r.data),
+    staleTime: 300_000,
+  });
+
+  const getFallbackPhoto = (email: string) => {
+    if (!globalUsersFallback?.data) return null;
+    const found = globalUsersFallback.data.find((u: any) => u.email === email);
+    return found?.profilePicture || null;
+  };
+
+  const getFallbackOrgLogo = (orgId: string) => {
+    if (!globalUsersFallback?.data) return null;
+    const foundUserInOrg = globalUsersFallback.data.find((u: any) => u.organization_id === orgId);
+    return foundUserInOrg?.organizationLogo || null;
+  };
+
+  const getFallbackAdminEmail = (orgId: string) => {
+    if (!globalUsersFallback?.data) return null;
+    const foundAdminInOrg = globalUsersFallback.data.find((u: any) => u.organization_id === orgId && (u.role === "org_admin" || u.role === "super_admin"));
+    return foundAdminInOrg?.email || null;
+  };
+
   const selectedMonth = dateFilter ? dateFilter.getMonth() + 1 : undefined;
   const selectedYear = dateFilter ? dateFilter.getFullYear() : undefined;
   const { data: globalStats, isLoading: globalLoading } = useGlobalAiStats(
     selectedGlobalOrgId !== "all" ? selectedGlobalOrgId : undefined,
+    selectedMonth,
+    selectedYear
+  );
+
+  const { data: orgTrendStats } = useGlobalAiStats(
+    path.orgId,
     selectedMonth,
     selectedYear
   );
@@ -255,6 +302,25 @@ export function AiUsageDashboardPage() {
               <div className="text-sm text-muted-foreground mt-1">Total Chat Sessions</div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Global Limits & Grant Credits */}
+        <div className="grid gap-6 md:grid-cols-2 mb-6">
+          <GlobalAiConfigPanel />
+          <div className="border border-border rounded-xl shadow-sm bg-card h-full flex flex-col justify-between">
+            <div className="p-5">
+              <h3 className="text-lg font-semibold text-foreground tracking-tight">Grant Global Credits</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Open the AI Hub Panel to securely grant tokens across all organizations.
+              </p>
+            </div>
+            <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end">
+              <Button variant="outline" onClick={() => setIsGlobalGrantCreditsOpen(true)}>
+                <LayoutTemplate className="w-4 h-4 mr-2" />
+                Open Global Grant Panel
+              </Button>
+            </div>
+          </div>
         </div>
 
 
@@ -624,6 +690,20 @@ export function AiUsageDashboardPage() {
             </Card>
           </div>
 
+          <GrantCreditsModal 
+            isOpen={isGlobalGrantCreditsOpen} 
+            onClose={() => setIsGlobalGrantCreditsOpen(false)}
+            isOrgMode={true}
+            orgs={orgs?.map((org: any) => ({
+              id: org.id,
+              name: org.adminName || org.name,
+              orgName: org.name,
+              email: org.adminEmail || getFallbackAdminEmail(org.id) || "",
+              role: org.id,
+              avatar: org.logo || getFallbackOrgLogo(org.id) || (org.id === "classgrid" ? currentUser?.platformLogo || currentUser?.profilePicture : "")
+            })) || []}
+          />
+
 
         </div>
       </div>
@@ -676,124 +756,77 @@ export function AiUsageDashboardPage() {
 
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card className="bg-emerald-500/10 border-emerald-500/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-emerald-700 dark:text-emerald-400 text-sm font-medium flex items-center">
-                <Activity className="w-4 h-4 mr-2" />
-                Monthly Org AI Pool
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
-                {formatNumber(orgDetail?.poolLimit || 500000)}
-              </div>
-              <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1">Tokens shared across all users</p>
-              <Button 
-                variant="outline"
-                className="w-full mt-4 bg-white/50 hover:bg-white/80 dark:bg-black/50 dark:hover:bg-black/80 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
-                onClick={() => setShowOrgReset(true)}
-                disabled={resetOrgMutation.isPending}
-              >
-                Reset Organization Usage
-              </Button>
-            </CardContent>
-          </Card>
+        <AiUsageTrendsChart data={orgTrendStats?.usageTrend} />
+        
+        <AiUsageBar 
+          initialData={{
+            type: 'pro',
+            used: orgDetail?.totalUsage || 0,
+            limit: orgDetail?.poolLimit || 500000,
+            remaining: Math.max(0, (orgDetail?.poolLimit || 500000) - (orgDetail?.totalUsage || 0)),
+            freeData: {
+              used: 0,
+              limit: orgDetail?.userWeeklyLimit || 100000,
+              remaining: orgDetail?.userWeeklyLimit || 100000
+            }
+          }}
+        />
+        <TopAiUsersTable users={orgUsers?.flatMap((roleGroup: any) => roleGroup.users?.map((u: any) => ({ 
+          ...u, 
+          role: u.role || roleGroup.roleName,
+          profilePicture: u.profilePicture || getFallbackPhoto(u.email) || (u.id === currentUser?._id ? (currentUser?.profilePicture || currentUser?.platformLogo) : null)
+        }))) || []} />
+        <SetupUsageCredits 
+          orgId={path.orgId || ""} 
+          orgName={path.orgName || ""} 
+          currentPoolLimit={orgDetail?.poolLimit || 500000} 
+          currentUserWeeklyLimit={orgDetail?.userWeeklyLimit || 100000}
+          currentImageLimit={orgDetail?.imageLimit || 20}
+          currentWhatsappLimit={orgDetail?.whatsappLimit || 10} 
+        />
 
-          <Card className="bg-blue-500/10 border-blue-500/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-blue-700 dark:text-blue-400 text-sm font-medium flex items-center">
-                <UserIcon className="w-4 h-4 mr-2" />
-                7-Day Free User Limit
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
-                {formatNumber(orgDetail?.userWeeklyLimit || 100000)}
-              </div>
-              <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">Free tokens per individual user</p>
-              <Dialog open={showLimitsDialog} onOpenChange={setShowLimitsDialog}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline"
-                    className="w-full mt-4 bg-white/50 hover:bg-white/80 dark:bg-black/50 dark:hover:bg-black/80 text-blue-700 dark:text-blue-400 border-blue-500/30"
-                    onClick={() => setTempLimits({ poolLimit: orgDetail?.poolLimit || 0, userWeeklyLimit: orgDetail?.userWeeklyLimit || 0 })}
-                  >
-                    Manage Organization Limits
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Manage AI Pool Limits</DialogTitle>
-                    <DialogDescription>
-                      Update the token allocations for the entire organization and the individual weekly user limit.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <label className="text-right text-sm font-medium">Org (Monthly)</label>
-                      <Input
-                        type="number"
-                        value={tempLimits.poolLimit}
-                        onChange={(e) => setTempLimits(prev => ({ ...prev, poolLimit: Number(e.target.value) }))}
-                        className="col-span-3"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <label className="text-right text-sm font-medium">User (Weekly)</label>
-                      <Input
-                        type="number"
-                        value={tempLimits.userWeeklyLimit}
-                        onChange={(e) => setTempLimits(prev => ({ ...prev, userWeeklyLimit: Number(e.target.value) }))}
-                        className="col-span-3"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowLimitsDialog(false)}>Cancel</Button>
-                    <Button 
-                      onClick={() => {
-                        updateLimitsMutation.mutate({ 
-                          orgId: path.orgId || "", 
-                          data: { pro_pool_limit: tempLimits.poolLimit, free_weekly_limit_per_user: tempLimits.userWeeklyLimit } 
-                        });
-                        setShowLimitsDialog(false);
-                      }}
-                      disabled={updateLimitsMutation.isPending}
-                    >
-                      Save Changes
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </CardContent>
-          </Card>
-
-          <Card className={isOrgBlocked ? "bg-rose-500/10 border-rose-500/20" : "bg-slate-500/10 border-slate-500/20"}>
-            <CardHeader className="pb-2">
-              <CardTitle className={isOrgBlocked ? "text-rose-700 dark:text-rose-400 text-sm font-medium flex items-center" : "text-slate-700 dark:text-slate-400 text-sm font-medium flex items-center"}>
-                <Shield className="w-4 h-4 mr-2" />
-                Security & Access
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className={isOrgBlocked ? "text-xl font-bold text-rose-700 dark:text-rose-400" : "text-xl font-bold text-slate-700 dark:text-slate-400"}>
-                {isOrgBlocked ? "BLOCKED" : "ACTIVE"}
-              </div>
-              <p className={isOrgBlocked ? "text-xs text-rose-600/80 dark:text-rose-400/80 mt-1" : "text-xs text-slate-600/80 dark:text-slate-400/80 mt-1"}>
-                {isOrgBlocked ? "All AI usage is suspended" : "Users can access AI features"}
+        <div className="border border-border rounded-xl shadow-sm bg-card">
+          <div className="p-6 flex flex-col gap-6">
+            <div className="flex flex-col gap-1.5">
+              <h3 className="text-lg font-semibold text-foreground tracking-tight">
+                Grant Organization Credits
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Open the AI Hub Panel to securely grant tokens to {path.orgName}.
               </p>
-              <Button 
-                variant="outline"
-                className={isOrgBlocked ? "w-full mt-4 bg-white/50 hover:bg-white/80 dark:bg-black/50 dark:hover:bg-black/80 text-rose-700 dark:text-rose-400 border-rose-500/30" : "w-full mt-4 bg-white/50 hover:bg-white/80 dark:bg-black/50 dark:hover:bg-black/80 text-slate-700 dark:text-slate-400 border-slate-500/30"}
-                onClick={() => setShowOrgBlock(true)}
-                disabled={blockOrgMutation.isPending}
-              >
-                {isOrgBlocked ? "Unblock Organization" : "Block Organization"}
-              </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+          <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end">
+            <Button variant="outline" onClick={() => setIsOrgGrantCreditsOpen(true)}>
+              <LayoutTemplate className="w-4 h-4 mr-2" />
+              Open Grant Credits Panel
+            </Button>
+          </div>
         </div>
+
+        <ResetOrganizationDailyLimit orgId={path.orgId || ""} orgName={path.orgName || ""} />
+
+        <EditOrganizationDailyLimit 
+          orgId={path.orgId || ""} 
+          orgName={path.orgName || ""} 
+          currentPoolLimit={orgDetail?.poolLimit} 
+          currentUserWeeklyLimit={orgDetail?.userWeeklyLimit} 
+        />
+
+        <BlockOrganizationAiUsage orgId={path.orgId || ""} orgName={path.orgName || ""} isBlocked={isOrgBlocked} />
+
+        <GrantCreditsModal 
+          isOpen={isOrgGrantCreditsOpen} 
+          onClose={() => setIsOrgGrantCreditsOpen(false)}
+          orgs={orgUsers?.flatMap((role: any) => role.users.map((u: any) => ({
+            id: u.id,
+            name: u.name,
+            orgName: path.orgName || "",
+            email: u.email,
+            role: formatRoleLabel(u.role || role.roleName || "User"),
+            avatar: u.profilePicture || getFallbackPhoto(u.email) || (u.id === currentUser?._id ? (currentUser?.profilePicture || currentUser?.platformLogo) : null)
+          }))) || []}
+        />
 
         <Card>
           <CardHeader>
@@ -862,15 +895,6 @@ export function AiUsageDashboardPage() {
           ...(path.userName ? [{ label: path.userName }] : [])
         ]}
       />
-
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">AI Usage & Credits</h2>
-          <p className="text-muted-foreground mt-2">
-            Monitor global token consumption, organization limits, and AI top-up revenue.
-          </p>
-        </div>
-      </div>
 
       {!path.orgId && renderGlobalStats()}
 

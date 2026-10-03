@@ -9,11 +9,22 @@ import Organization from "../models/Organization.js";
  * Conversion: ₹100 = 500,000 Credits
  */
 
-const CREDITS_PER_INR = 5000;
-const IMAGE_GENERATION_COST = 20000;
+import GlobalAiConfig from "../models/GlobalAiConfig.js";
 
-export const calculateCreditsFromAmount = (amountInr) => {
-    return Math.floor(amountInr * CREDITS_PER_INR);
+const DEFAULT_CREDITS_PER_INR = 3000;
+const DEFAULT_IMAGE_GENERATION_COST = 5000;
+
+export const calculateCreditsFromAmount = async (amountInr) => {
+    let multiplier = DEFAULT_CREDITS_PER_INR;
+    try {
+        const config = await GlobalAiConfig.findOne({ key: "singleton" });
+        if (config && config.credits_per_inr) {
+            multiplier = config.credits_per_inr;
+        }
+    } catch (err) {
+        console.error("Error fetching credits_per_inr:", err);
+    }
+    return Math.floor(amountInr * multiplier);
 };
 
 export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
@@ -23,36 +34,48 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
         return { allowed: false, reason: "User AI access is blocked." };
     }
 
-    // 2. Check if org is blocked
-    let org = null;
-    if (orgId) {
-        org = await Organization.findById(orgId).select('ai_config status');
-        if (org && (org.status !== "active" || org.ai_config?.is_ai_blocked)) {
-            return { allowed: false, reason: "Organization AI access is blocked or inactive." };
-        }
-    }
-
-    // 3. Check free weekly limit FIRST (So users don't waste paid credits if they have free ones)
+    // 2. Check free weekly limit FIRST (Always use free before touching paid/promo)
+    // If free limit resets, this will naturally be > 0 and will be used again!
     const usedThisWeek = user.ai_tokens?.used_this_week || 0;
     const weeklyLimit = user.ai_tokens?.free_weekly_limit || 0;
     if (usedThisWeek + requiredTokens <= weeklyLimit) {
         return { allowed: true, source: "weekly_free" };
     }
 
-    // 4. Check personal balance NEXT (Paid credits)
-    if (user.ai_tokens?.ai_credits_balance >= requiredTokens) {
+    // FIFO LOGIC: Determine which came FIRST between Promotion and Paid
+    const promoBalance = user.ai_tokens?.promotion_credits_balance || 0;
+    const paidBalance = user.ai_tokens?.ai_credits_balance || 0;
+    
+    const promoStart = user.ai_tokens?.promotion_credits_start_date ? new Date(user.ai_tokens.promotion_credits_start_date).getTime() : Infinity;
+    const paidStart = user.ai_tokens?.ai_credits_start_date ? new Date(user.ai_tokens.ai_credits_start_date).getTime() : Infinity;
+
+    // 3. FIFO Deduction (Whichever was purchased/granted FIRST gets used FIRST)
+    if (promoBalance >= requiredTokens && paidBalance >= requiredTokens) {
+        if (promoStart <= paidStart) {
+            return { allowed: true, source: "promotion" };
+        } else {
+            return { allowed: true, source: "personal" };
+        }
+    } else if (promoBalance >= requiredTokens) {
+        return { allowed: true, source: "promotion" };
+    } else if (paidBalance >= requiredTokens) {
         return { allowed: true, source: "personal" };
     }
 
+    /*
+    // --- SHARED ORG POOL IS COMMENTED OUT ---
     // 5. Check Org pro pool limit (if enabled for user's role/id)
-    if (org) {
-        const orgUsed = org.ai_config?.pro_used_this_period || 0;
-        const orgLimit = org.ai_config?.pro_pool_limit || 0;
-        
-        if (orgUsed + requiredTokens <= orgLimit) {
-            return { allowed: true, source: "org_pool" };
+    if (orgId) {
+        let org = await Organization.findById(orgId).select('ai_config status');
+        if (org && org.status === "active" && !org.ai_config?.is_ai_blocked) {
+            const orgUsed = org.ai_config?.pro_used_this_period || 0;
+            const orgLimit = org.ai_config?.pro_pool_limit || 0;
+            if (orgUsed + requiredTokens <= orgLimit) {
+                return { allowed: true, source: "org_pool" };
+            }
         }
     }
+    */
 
     return { allowed: false, reason: "Insufficient tokens." };
 };
@@ -66,6 +89,13 @@ export const deductTokens = async (userId, orgId, tokenAmount, source) => {
                     "ai_tokens.total_ai_tokens_used": tokenAmount
                 }
             });
+        } else if (source === "promotion") {
+            await User.findByIdAndUpdate(userId, {
+                $inc: {
+                    "ai_tokens.promotion_credits_balance": -tokenAmount,
+                    "ai_tokens.total_ai_tokens_used": tokenAmount
+                }
+            });
         } else if (source === "weekly_free") {
             await User.findByIdAndUpdate(userId, {
                 $inc: {
@@ -73,20 +103,21 @@ export const deductTokens = async (userId, orgId, tokenAmount, source) => {
                     "ai_tokens.total_ai_tokens_used": tokenAmount
                 }
             });
-        } else if (source === "org_pool") {
+        } 
+        /*
+        // --- SHARED ORG POOL IS COMMENTED OUT ---
+        else if (source === "org_pool") {
             await Organization.findByIdAndUpdate(orgId, {
                 $inc: {
                     "ai_config.pro_used_this_period": tokenAmount,
                     "ai_config.total_ai_tokens_used": tokenAmount
                 }
             });
-            // Still track global usage for the user
             await User.findByIdAndUpdate(userId, {
-                $inc: {
-                    "ai_tokens.total_ai_tokens_used": tokenAmount
-                }
+                $inc: { "ai_tokens.total_ai_tokens_used": tokenAmount }
             });
         }
+        */
         return true;
     } catch (error) {
         console.error("Error deducting tokens:", error);
@@ -106,6 +137,14 @@ export const addCredits = async (userId, amountToAdd) => {
     }
 };
 
-export const getImageGenerationCost = () => {
-    return IMAGE_GENERATION_COST;
+export const getImageGenerationCost = async () => {
+    try {
+        const config = await GlobalAiConfig.findOne({ key: "singleton" });
+        if (config && config.image_generation_token_cost) {
+            return config.image_generation_token_cost;
+        }
+    } catch (err) {
+        console.error("Error fetching image_generation_token_cost:", err);
+    }
+    return DEFAULT_IMAGE_GENERATION_COST;
 };

@@ -2849,18 +2849,38 @@ export const getAiCreditAdminNotificationHtml = (payerName, payerEmail, amountFo
 };
 
 
-// ------------- AI CREDITS: MANUAL ALLOCATION -------------
-export const getAiCreditAllocationHtml = (userName, creditsAllocated, message) => {
+// ------------- AI CREDITS: GRANTED NOTIFICATION -------------
+export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance) => {
     return getEmailWrapper(`
-        <div style="text-align: center; margin-bottom: 24px;">
-            <div style="background: #eef2ff; color: #4f46e5; padding: 12px; border-radius: 8px; display: inline-block; font-weight: 700; font-size: 16px; border: 1px solid #c7d2fe;">
-                ✨ Bonus AI Credits Added
-            </div>
-        </div>
         <p>Hi ${userName},</p>
-        <p>Great news! We've just added <strong>${creditsAllocated} AI Credits</strong> to your account.</p>
-        ${message ? `<p style="background: #f9fafb; padding: 16px; border-left: 4px solid #4f46e5; font-style: italic; color: #4b5563; border-radius: 4px;">"${message}"</p>` : ""}
-        <p>These credits have been added to your balance and are ready to use right away.</p>
-        <p>Happy exploring!<br>The Classgrid Team</p>
+        <p>Good news! We have successfully added <strong>${creditsAdded} AI credits</strong> to your account.</p>
+        
+        <ul style="color: #374151; padding-left: 20px; line-height: 1.6; margin: 16px 0;">
+            <li><strong>Credits Added:</strong> ${creditsAdded} AI Credits</li>
+            <li><strong>New Total Balance:</strong> ${totalBalance} Credits</li>
+            <li><strong>Expiration Date:</strong> No expiration</li>
+        </ul>
+        
+        <p>You can now use your credits to generate content, run AI tools, and use all available smart features. To check your current usage at any time, go to your AIHUB CREDITS.</p>
+        <p>If you have any questions or need more credits, just reply to this email.</p>
+        
+        <p>Best regards,<br>The Classgrid Support Team</p>
     `);
+};
+
+export const getAiCreditGrantedPlainText = (userName, creditsAdded, totalBalance) => {
+    return \`Hi \${userName},
+
+Good news! We have successfully added \${creditsAdded} AI credits to your account.
+
+• Credits Added: \${creditsAdded} AI Credits
+• New Total Balance: \${totalBalance} Credits
+• Expiration Date: No expiration
+
+You can now use your credits to generate content, run AI tools, and use all available smart features. To check your current usage at any time, go to your AIHUB CREDITS.
+
+If you have any questions or need more credits, just reply to this email.
+
+Best regards,
+The Classgrid Support Team\`;
 };

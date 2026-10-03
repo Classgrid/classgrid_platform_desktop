@@ -20,23 +20,29 @@ export const listOrgsWithAiUsage = async (req, res) => {
 
         // 2. Fetch those specific users from MongoDB and populate their Organization
         const users = await User.find({ email: { $in: activeEmails } })
-            .select("name email role ai_tokens organization_id")
-            .populate("organization_id", "name ai_config")
+            .select("name email role ai_tokens organization_id profilePicture platformLogo")
+            .populate("organization_id", "name ai_config logo_url ownerEmail ownerName")
             .lean();
 
         // 3. Group by Organization (and handle Super Admins properly)
         const orgMap = {};
 
         users.forEach(u => {
-            let orgId, orgName, isBlocked = false;
+            let orgId, orgName, isBlocked = false, logo = null, adminEmail = "", adminName = "";
 
-            if (u.role === 'super_admin' || !u.organization_id) {
+            if (!u.organization_id) {
                 orgId = "classgrid";
                 orgName = "Classgrid (Platform Team)";
+                logo = u.platformLogo || u.profilePicture || null;
+                adminEmail = u.email || "";
+                adminName = u.name || "";
             } else {
                 orgId = u.organization_id._id.toString();
                 orgName = u.organization_id.name;
                 isBlocked = u.organization_id.ai_config?.is_ai_blocked || false;
+                logo = u.organization_id.logo_url || null;
+                adminEmail = u.organization_id.ownerEmail || ""; 
+                adminName = u.organization_id.ownerName || "";
             }
 
             if (!orgMap[orgId]) {
@@ -44,12 +50,51 @@ export const listOrgsWithAiUsage = async (req, res) => {
                     id: orgId,
                     name: orgName,
                     totalUsage: 0,
-                    isBlocked: isBlocked
+                    isBlocked: isBlocked,
+                    logo: logo,
+                    adminEmail: adminEmail,
+                    adminName: adminName
                 };
+            } else {
+                if (!orgMap[orgId].adminEmail && adminEmail) {
+                    orgMap[orgId].adminEmail = adminEmail;
+                }
+                if (!orgMap[orgId].adminName && adminName) {
+                    orgMap[orgId].adminName = adminName;
+                }
+                if (!orgMap[orgId].logo && logo) {
+                    orgMap[orgId].logo = logo;
+                }
             }
 
             // Sum up their total token usage to show on the folder
             orgMap[orgId].totalUsage += (u.ai_tokens?.total_ai_tokens_used || 0);
+        });
+        // 4. For any real organization missing adminEmail or logo, fetch them directly
+        const orgIdsToFetch = Object.keys(orgMap).filter(id => id !== "classgrid");
+        
+        // Fetch direct organization data in case populate missed it
+        const realOrgs = await Organization.find({ _id: { $in: orgIdsToFetch } }).select("logo_url ownerEmail ownerName").lean();
+        realOrgs.forEach(org => {
+            const id = org._id.toString();
+            if (orgMap[id]) {
+                if (!orgMap[id].logo && org.logo_url) orgMap[id].logo = org.logo_url;
+                if (!orgMap[id].adminEmail && org.ownerEmail) orgMap[id].adminEmail = org.ownerEmail;
+                if (!orgMap[id].adminName && org.ownerName) orgMap[id].adminName = org.ownerName;
+            }
+        });
+        
+        // Fetch user with org_admin role if ownerEmail is still missing
+        const orgAdmins = await User.find({ organization_id: { $in: orgIdsToFetch }, role: "org_admin" })
+            .select("email name organization_id profilePicture")
+            .lean();
+            
+        orgAdmins.forEach(admin => {
+            const id = admin.organization_id.toString();
+            if (orgMap[id]) {
+                if (!orgMap[id].adminEmail) orgMap[id].adminEmail = admin.email;
+                if (!orgMap[id].adminName) orgMap[id].adminName = admin.name;
+            }
         });
 
         res.status(200).json({ success: true, data: Object.values(orgMap) });
@@ -64,16 +109,16 @@ export const getOrgAiDetail = async (req, res) => {
     try {
         const { orgId } = req.params;
         
-        const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" }) || {
-            global_pro_pool_limit: 500000,
-            global_user_weekly_limit: 100000
-        };
+        const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" });
 
         let orgName = "Classgrid (Platform Team)";
         let isBlocked = false;
-        let poolLimit = globalConfig.global_pro_pool_limit;
-        let userWeeklyLimit = globalConfig.global_user_weekly_limit;
+        let poolLimit = globalConfig?.global_pro_pool_limit;
+        let userWeeklyLimit = globalConfig?.global_user_weekly_limit;
         let userQuery = {};
+
+        let imageLimit;
+        let whatsappLimit;
 
         if (orgId === "classgrid") {
             userQuery = { 
@@ -91,9 +136,11 @@ export const getOrgAiDetail = async (req, res) => {
             isBlocked = org.ai_config?.is_ai_blocked || false;
             
             if (org.ai_config?.custom_limits_enabled) {
-                poolLimit = org.ai_config.pro_pool_limit || globalConfig.global_pro_pool_limit;
-                userWeeklyLimit = org.ai_config.free_weekly_limit_per_user || globalConfig.global_user_weekly_limit;
+                poolLimit = org.ai_config.pro_pool_limit || globalConfig?.global_pro_pool_limit;
+                userWeeklyLimit = org.ai_config.free_weekly_limit_per_user || globalConfig?.global_user_weekly_limit;
             }
+            imageLimit = org.ai_config?.image_generation_limit;
+            whatsappLimit = org.ai_config?.whatsapp_scheduling_limit;
             userQuery = { organization_id: orgId };
         }
 
@@ -137,6 +184,8 @@ export const getOrgAiDetail = async (req, res) => {
                 isBlocked,
                 poolLimit,
                 userWeeklyLimit,
+                imageLimit,
+                whatsappLimit,
                 totalUsage,
                 totalRevenue,
                 totalTopUpCredits,
