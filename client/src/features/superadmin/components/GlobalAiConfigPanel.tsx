@@ -123,7 +123,7 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
                     <Label className="text-sm font-semibold">Individual 7-Day Usage</Label>
                     <span className="text-sm font-bold text-blue-600">{individualUsage.toLocaleString()}</span>
                   </div>
-                  <BlueSlider min={1000} max={500000} step={1000} value={individualUsage} onValueChange={setIndividualUsage} disabled={updateConfigMutation.isPending} />
+                  <BlueSlider min={1000} max={100000000} step={10000} value={individualUsage} onValueChange={setIndividualUsage} disabled={updateConfigMutation.isPending} />
                 </div>
                 <DialogFooter>
                   <Button variant="outline" type="button" onClick={() => setOpenIndividual(false)} disabled={updateConfigMutation.isPending}>Cancel</Button>
@@ -155,7 +155,7 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
                     <Label className="text-sm font-semibold">Organization Shared Pool</Label>
                     <span className="text-sm font-bold text-blue-600">{orgPool.toLocaleString()}</span>
                   </div>
-                  <BlueSlider min={10000} max={5000000} step={10000} value={orgPool} onValueChange={setOrgPool} disabled={updateConfigMutation.isPending} />
+                  <BlueSlider min={10000} max={100000000} step={10000} value={orgPool} onValueChange={setOrgPool} disabled={updateConfigMutation.isPending} />
                 </div>
                 <DialogFooter>
                   <Button variant="outline" type="button" onClick={() => setOpenOrg(false)} disabled={updateConfigMutation.isPending}>Cancel</Button>
