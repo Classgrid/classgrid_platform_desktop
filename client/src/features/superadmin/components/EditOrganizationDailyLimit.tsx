@@ -14,12 +14,12 @@ export interface EditOrganizationDailyLimitProps {
 
 export function EditOrganizationDailyLimit({ orgId, orgName, currentPoolLimit, currentUserWeeklyLimit }: EditOrganizationDailyLimitProps) {
   const [open, setOpen] = useState(false);
-  const [newLimit, setNewLimit] = useState(currentPoolLimit || 500000);
-  const [userWeeklyLimit, setUserWeeklyLimit] = useState(currentUserWeeklyLimit || 100000);
+  const [newLimit, setNewLimit] = useState(currentPoolLimit ?? 0);
+  const [userWeeklyLimit, setUserWeeklyLimit] = useState(currentUserWeeklyLimit ?? 0);
   
   const updateLimitsMutation = useUpdateOrgAiLimits();
 
-  const oldLimit = currentPoolLimit || 500000;
+  const oldLimit = currentPoolLimit ?? 0;
   
   // Calculate percentage change
   const percentageChange = oldLimit > 0 ? ((newLimit - oldLimit) / oldLimit) * 100 : 0;
