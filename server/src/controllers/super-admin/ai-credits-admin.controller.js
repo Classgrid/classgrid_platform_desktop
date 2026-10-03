@@ -393,8 +393,13 @@ export const requestSecurityCode = async (req, res) => {
             expiresAt
         });
 
-        const html = getSuperAdminSecurityOtpHtml({ code, action, orgId });
-        const plainText = getSuperAdminSecurityOtpPlainText({ code, action, orgId });
+        let actionDescription = action;
+        if (action === "RESET_ORG_USAGE") actionDescription = `Resetting AI Usage Limit for Organization: ${orgId || 'Unknown'}`;
+        if (action === "BLOCK_ORG_AI") actionDescription = `Changing AI Block status for Organization: ${orgId || 'Unknown'}`;
+        if (action === "GENERAL_AI_MUTATION") actionDescription = `Granting AI Credits`;
+
+        const html = getSuperAdminSecurityOtpHtml(req.user.name || "Admin", code, actionDescription, 10);
+        const plainText = getSuperAdminSecurityOtpPlainText(req.user.name || "Admin", code, actionDescription, 10);
 
         await sendEmail({
             toAddresses: [email],
