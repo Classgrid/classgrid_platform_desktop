@@ -1,3 +1,5 @@
+// Trigger deploy verification - Oct 4 2026
+// Trigger deploy verification - Oct 4 2026
 import React, { useState, useEffect } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/marketing_ui/button";
