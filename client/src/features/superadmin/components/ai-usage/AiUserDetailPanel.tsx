@@ -324,7 +324,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                 {
                   key: "grantedBy",
                   header: "Granted By",
-                  width: "w-[30%]",
+                  width: "w-[25%]",
                   render: () => (
                     <div className="flex items-center gap-3">
                       <img 
@@ -345,8 +345,8 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                   width: "w-[20%]",
                   render: () => (
                     <div className="flex flex-col text-xs text-muted-foreground">
-                      <span className="truncate">Starts: {userDetail.ai_tokens?.promotion_credits_granted_at ? new Date(userDetail.ai_tokens.promotion_credits_granted_at).toLocaleDateString() : "N/A"}</span>
-                      <span className="truncate">Expires: {userDetail.ai_tokens?.promotion_credits_expiration ? new Date(userDetail.ai_tokens.promotion_credits_expiration).toLocaleDateString() : "N/A"}</span>
+                      <span className="truncate">Starts: {userDetail.ai_tokens?.promotion_credits_start_date ? new Date(userDetail.ai_tokens.promotion_credits_start_date).toLocaleDateString() : "N/A"}</span>
+                      <span className="truncate">Expires: {userDetail.ai_tokens?.promotion_credits_end_date ? new Date(userDetail.ai_tokens.promotion_credits_end_date).toLocaleDateString() : "N/A"}</span>
                     </div>
                   )
                 },
@@ -379,7 +379,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                 {
                   key: "actions",
                   header: "Actions",
-                  width: "w-[15%]",
+                  width: "w-[20%]",
                   render: () => {
                     const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
                     return (

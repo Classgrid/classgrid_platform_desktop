@@ -687,6 +687,7 @@ const userSchema = new mongoose.Schema(
       total_promotion_credits_granted: { type: Number, default: 0 },
       promotion_credits_start_date: { type: Date, default: null },
       promotion_credits_end_date: { type: Date, default: null },
+      promotion_credits_paused: { type: Boolean, default: false },
 
       ai_image_free_weekly_limit: { type: Number, default: 20 },
       ai_image_free_weekly_used: { type: Number, default: 0 },
