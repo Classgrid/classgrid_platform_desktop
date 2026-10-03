@@ -3147,6 +3147,8 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                     const deductionResult = await deductTokens(userId, orgId, estimatedTokens, tokenSource);
                     
                     if (deductionResult && deductionResult.success) {
+                        console.log(`[AI-TOKEN-DEDUCTION] Deducted=${estimatedTokens} | Available=${deductionResult.limit} | Remaining=${deductionResult.remaining} | Type=${deductionResult.type}`);
+                        
                         const { getIO } = await import('../services/socket.service.js');
                         const io = getIO();
                         if (io) {
@@ -3159,15 +3161,6 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                                 type: deductionResult.type, 
                                 used: estimatedTokens 
                             });
-                        }
-                        
-                        if (!res.writableEnded) {
-                            res.write(`data: ${JSON.stringify({ 
-                                type: "usage_stats", 
-                                total_available: deductionResult.limit, 
-                                total_deducted: estimatedTokens,
-                                total_remaining: deductionResult.remaining
-                            })}\n\n`);
                         }
                     }
 
