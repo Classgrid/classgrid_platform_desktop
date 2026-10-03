@@ -916,6 +916,9 @@ export function AiUsageDashboardPage() {
   const renderGlobalGrantedCredits = () => {
     if (loadingGrantedCredits) return <Skeleton className="h-64 w-full" />;
     if (!globalGrantedCredits || globalGrantedCredits.length === 0) return null;
+    const orgCredits = globalGrantedCredits.filter((c: any) => c.orgId === path.orgId);
+    if (orgCredits.length === 0) return null;
+    
     return (
       <Card className="mt-8">
         <CardHeader>
@@ -930,7 +933,7 @@ export function AiUsageDashboardPage() {
                 width: "w-[30%]",
                 render: (_: any, row: any) => (
                   <div className="flex items-center gap-3 cursor-pointer" onClick={() => setPath({ orgId: row.orgId, orgName: "Org", role: "all", userId: row.id, userName: row.name })}>
-                    <img src={row.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name)}&background=random`} alt={row.name} className="w-8 h-8 rounded-full" />
+                    <img src={getFallbackPhoto(row.email) || row.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name)}&background=random`} alt={row.name} className="w-8 h-8 rounded-full" />
                     <div className="flex flex-col">
                       <span className="font-medium hover:underline text-primary">{row.name}</span>
                       <span className="text-xs text-muted-foreground">{row.email}</span>
@@ -971,7 +974,7 @@ export function AiUsageDashboardPage() {
                 )
               }
             ]}
-            rows={globalGrantedCredits}
+            rows={orgCredits}
             emptyMessage="No active granted credits."
           />
         </CardContent>
@@ -993,8 +996,8 @@ export function AiUsageDashboardPage() {
       {!path.orgId && renderGlobalStats()}
 
       {!path.orgId && renderLevel0Orgs()}
-      {!path.orgId && renderGlobalGrantedCredits()}
 
+      {path.orgId && !path.role && renderGlobalGrantedCredits()}
       {path.orgId && !path.role && renderLevel1Roles()}
       {path.orgId && path.role && !path.userId && renderLevel2Users()}
       {path.userId && renderLevel3UserDetail()}

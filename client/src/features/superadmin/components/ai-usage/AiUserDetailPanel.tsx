@@ -287,53 +287,109 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
       </div>
 
       {userDetail.ai_tokens?.total_promotion_credits_granted > 0 && (
-        <div className="border border-border rounded-xl shadow-sm bg-card">
-          <div className="p-6 flex flex-col gap-6">
-            <div className="flex flex-col gap-1.5">
-              <h3 className="text-lg font-semibold text-foreground tracking-tight text-red-500">
-                Manage Granted Credits
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Remove or pause promotional credits granted to this user. This does not affect paid credits.
-              </p>
-            </div>
-          </div>
-          <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end gap-3">
-            <Button 
-              variant="outline" 
-              onClick={async () => {
-                const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
-                try {
-                  const { apiClient } = await import('@/lib/apiClient');
-                  const { toast } = await import('sonner');
-                  await apiClient.post(`/api/super-admin/ai-usage/users/${userDetail.id}/credits/pause`, { isPaused: !isPaused });
-                  toast.success(`Granted credits ${!isPaused ? 'paused' : 'unpaused'} successfully. Please refresh the page.`);
-                } catch (e) {
-                  console.error(e);
-                }
-              }}
-            >
-              {userDetail.ai_tokens?.promotion_credits_paused ? 'Unpause Credits' : 'Pause Credits'}
-            </Button>
-            <Button 
-              variant="destructive"
-              onClick={async () => {
-                if (window.confirm("Are you sure you want to remove all remaining granted credits for this user?")) {
-                  try {
-                    const { apiClient } = await import('@/lib/apiClient');
-                    const { toast } = await import('sonner');
-                    await apiClient.post(`/api/super-admin/ai-usage/users/${userDetail.id}/credits/remove`);
-                    toast.success("Granted credits removed successfully. Please refresh the page.");
-                  } catch (e) {
-                    console.error(e);
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-purple-500">Active Granted Credits</CardTitle>
+            <CardDescription>Promotional AI credits granted to this user</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DataTable 
+              columns={[
+                {
+                  key: "grantedBy",
+                  header: "Granted By",
+                  width: "w-[15%]",
+                  render: () => <span className="font-medium">Super Admin</span>
+                },
+                {
+                  key: "dates",
+                  header: "Dates",
+                  width: "w-[20%]",
+                  render: () => (
+                    <div className="flex flex-col text-xs text-muted-foreground">
+                      <span>Starts: {userDetail.ai_tokens?.promotion_credits_granted_at ? new Date(userDetail.ai_tokens.promotion_credits_granted_at).toLocaleDateString() : "N/A"}</span>
+                      <span>Expires: {userDetail.ai_tokens?.promotion_credits_expiration ? new Date(userDetail.ai_tokens.promotion_credits_expiration).toLocaleDateString() : "N/A"}</span>
+                    </div>
+                  )
+                },
+                {
+                  key: "credits",
+                  header: "Credits",
+                  width: "w-[20%]",
+                  render: () => {
+                    const limit = userDetail.ai_tokens?.total_promotion_credits_granted || 0;
+                    const remaining = userDetail.ai_tokens?.promotion_credits_balance || 0;
+                    const used = Math.max(0, limit - remaining);
+                    return (
+                      <div className="flex flex-col">
+                        <span className="font-medium text-foreground">{formatNumber(remaining)} / {formatNumber(limit)}</span>
+                        <span className="text-xs text-muted-foreground">{limit > 0 ? Math.round((used / limit) * 100) : 0}% Used</span>
+                      </div>
+                    )
+                  }
+                },
+                {
+                  key: "status",
+                  header: "Status",
+                  width: "w-[15%]",
+                  render: () => (
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${userDetail.ai_tokens?.promotion_credits_paused ? "bg-amber-500/10 text-amber-500" : "bg-green-500/10 text-green-500"}`}>
+                      {userDetail.ai_tokens?.promotion_credits_paused ? "PAUSED" : "ACTIVE"}
+                    </span>
+                  )
+                },
+                {
+                  key: "actions",
+                  header: "Actions",
+                  width: "w-[30%]",
+                  render: () => {
+                    const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
+                    return (
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          size="sm"
+                          variant="outline" 
+                          onClick={async () => {
+                            try {
+                              const { apiClient } = await import('@/lib/apiClient');
+                              const { toast } = await import('sonner');
+                              await apiClient.post(`/api/super-admin/ai-usage/users/${userDetail.id}/credits/pause`, { isPaused: !isPaused });
+                              toast.success(`Granted credits ${!isPaused ? 'paused' : 'unpaused'} successfully. Please refresh the page.`);
+                            } catch (e) {
+                              console.error(e);
+                            }
+                          }}
+                        >
+                          {isPaused ? 'Unpause' : 'Pause'}
+                        </Button>
+                        <Button 
+                          size="sm"
+                          variant="destructive"
+                          onClick={async () => {
+                            if (window.confirm("Are you sure you want to remove all remaining granted credits for this user?")) {
+                              try {
+                                const { apiClient } = await import('@/lib/apiClient');
+                                const { toast } = await import('sonner');
+                                await apiClient.post(`/api/super-admin/ai-usage/users/${userDetail.id}/credits/remove`);
+                                toast.success("Granted credits removed successfully. Please refresh the page.");
+                              } catch (e) {
+                                console.error(e);
+                              }
+                            }
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    )
                   }
                 }
-              }}
-            >
-              Remove Granted Credits
-            </Button>
-          </div>
-        </div>
+              ]} 
+              rows={[{ id: 1 }]} 
+              emptyMessage="No active granted credits."
+            />
+          </CardContent>
+        </Card>
       )}
 
       <BlockUserAiUsage userId={userDetail.id} userName={userDetail.name || userDetail.email} isBlocked={isBlocked} />
