@@ -48,7 +48,7 @@ import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-di
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { formatNumber, formatRoleLabel } from "@/lib/utils";
 import { AiUserDetailPanel } from "@/features/superadmin/components/ai-usage/AiUserDetailPanel";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Legend, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Legend, Pie, Cell, ReferenceLine } from "recharts";
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
 
@@ -113,6 +113,12 @@ const parseLocalDate = (dateStr: string) => {
     return new Date(year, month - 1, day);
   }
   return new Date(dateStr);
+};
+
+// Today's date in YYYY-MM-DD format (IST), matching the backend aggregation key
+const getTodayStr = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 };
 
 export function AiUsageDashboardPage() {
@@ -394,6 +400,7 @@ export function AiUsageDashboardPage() {
                         }}
                     />
                     <Bar dataKey="requests" name="AI Requests" fill="#f59e0b" radius={[2, 2, 0, 0]} maxBarSize={12} />
+                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" label={{ value: "TODAY", position: "top", fontSize: 10, fill: "#22c55e", fontWeight: "bold" }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -428,6 +435,7 @@ export function AiUsageDashboardPage() {
                     <Bar dataKey="promptTokens" name="Input Tokens" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} maxBarSize={12} />
                     <Bar dataKey="completionTokens" name="Output Tokens" stackId="a" fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={12} />
                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" label={{ value: "TODAY", position: "top", fontSize: 10, fill: "#22c55e", fontWeight: "bold" }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -477,6 +485,7 @@ export function AiUsageDashboardPage() {
                       radius={[2, 2, 0, 0]} 
                       maxBarSize={12} 
                     />
+                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" label={{ value: "TODAY", position: "top", fontSize: 10, fill: "#22c55e", fontWeight: "bold" }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -509,6 +518,7 @@ export function AiUsageDashboardPage() {
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
                     <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<UniversalTooltip />} />
                     <Bar dataKey="revenue" name="Revenue (INR)" fill="#8b5cf6" radius={[2, 2, 0, 0]} maxBarSize={12} />
+                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" label={{ value: "TODAY", position: "top", fontSize: 10, fill: "#22c55e", fontWeight: "bold" }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -586,6 +596,7 @@ export function AiUsageDashboardPage() {
                         return null;
                     }} />
                     <Bar dataKey="activeOrgs" name="Active Organizations" fill="#2563eb" radius={[2, 2, 0, 0]} maxBarSize={12} />
+                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" label={{ value: "TODAY", position: "top", fontSize: 10, fill: "#22c55e", fontWeight: "bold" }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -672,6 +683,7 @@ export function AiUsageDashboardPage() {
                         return null;
                     }} />
                     <Bar dataKey="activeUsers" name="Active Users" fill="#8b5cf6" radius={[2, 2, 0, 0]} maxBarSize={12} />
+                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" label={{ value: "TODAY", position: "top", fontSize: 10, fill: "#22c55e", fontWeight: "bold" }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

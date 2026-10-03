@@ -447,14 +447,37 @@ export const verifySecurityCode = async (req, res) => {
              return res.status(400).json({ success: false, error: "Security code is required" });
         }
 
-        const trimmedCode = code ? code.toString().trim() : ""; console.log("SUPER ADMIN ID:", req.user._id, "CODE:", trimmedCode); const securityCode = await AdminSecurityCode.findOne({
-            superAdminId: req.user._id,
+        const trimmedCode = code.toString().trim();
+        const userId = req.user._id.toString();
+        
+        console.log("[SecurityCode] Verify attempt:", { userId, trimmedCode, action, orgId });
+
+        // BROAD QUERY: Find by code only, then validate ownership manually
+        // This avoids ObjectId vs String type mismatch issues with superAdminId
+        const allMatchingCodes = await AdminSecurityCode.find({
             code: trimmedCode,
             used: false,
             expiresAt: { $gt: new Date() }
-        });
+        }).sort({ createdAt: -1 });
+
+        console.log("[SecurityCode] Found matching codes:", allMatchingCodes.length);
+
+        // Find the one that belongs to this user (compare as strings to avoid type issues)
+        const securityCode = allMatchingCodes.find(
+            c => c.superAdminId?.toString() === userId
+        );
 
         if (!securityCode) {
+            // Extra debug: check if there are ANY codes for this user at all
+            const userCodes = await AdminSecurityCode.find({}).then(
+                codes => codes.filter(c => c.superAdminId?.toString() === userId)
+            );
+            console.log("[SecurityCode] FAIL - All codes for this user:", userCodes.map(c => ({
+                code: c.code,
+                used: c.used,
+                expired: c.expiresAt < new Date(),
+                expiresAt: c.expiresAt
+            })));
             return res.status(400).json({ success: false, error: "Invalid or expired security code" });
         }
 
@@ -469,6 +492,7 @@ export const verifySecurityCode = async (req, res) => {
         // Mark as used
         securityCode.used = true;
         await securityCode.save();
+        console.log("[SecurityCode] SUCCESS - Code verified and marked as used");
 
         const io = req.app.get("io");
         if (io) {
