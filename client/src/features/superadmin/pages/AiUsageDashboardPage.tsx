@@ -128,10 +128,10 @@ export function AiUsageDashboardPage() {
   const [spendingCurrency, setSpendingCurrency] = useState<"USD" | "INR">("USD");
 
   useEffect(() => {
-    socketClient.joinAiUsageDashboard();
     const socket = socketClient.getSocket();
     
     if (socket) {
+      socketClient.joinAiUsageDashboard();
       socket.on("ai_usage_updated", () => {
          // Invalidate EVERY query related to AI usage to ensure 100% live updates across all graphs and drilldowns
          queryClient.invalidateQueries({ queryKey: ["ai-usage-global"] });
