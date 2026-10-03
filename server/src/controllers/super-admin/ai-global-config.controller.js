@@ -65,6 +65,11 @@ export const updateGlobalAiConfig = async (req, res) => {
 
         await config.save();
 
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+        }
+
         res.status(200).json({ success: true, message: "Global AI Limits updated successfully.", config });
     } catch (error) {
         console.error("[updateGlobalAiConfig] Error:", error);

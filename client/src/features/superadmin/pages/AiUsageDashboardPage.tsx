@@ -107,6 +107,14 @@ const CustomTooltip = ({ active, payload }: any) => {
 import { useQueryClient } from "@tanstack/react-query";
 import socketClient from "@/lib/socketClient";
 
+const parseLocalDate = (dateStr: string) => {
+  if (typeof dateStr === 'string' && dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+  return new Date(dateStr);
+};
+
 export function AiUsageDashboardPage() {
   const queryClient = useQueryClient();
   const { data: currentUser } = useCurrentUser();
