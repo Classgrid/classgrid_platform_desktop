@@ -33,7 +33,7 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     }
 
     // FETCH GLOBAL CONFIG
-    const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" }).select("global_user_weekly_limit global_ai_blocked").lean() || {};
+    const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" }).select("global_user_weekly_limit global_ai_blocked classgrid_custom_limits_enabled classgrid_user_weekly_limit").lean() || {};
     if (globalConfig.global_ai_blocked) {
         return { allowed: false, reason: "AI access is globally blocked by administrators." };
     }
@@ -60,6 +60,11 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
             }
         } else if (org && org.ai_config?.is_ai_blocked) {
              return { allowed: false, reason: "Organization AI access is blocked." };
+        }
+    } else {
+        // Virtual Classgrid Organization for platform team/super admins
+        if (globalConfig.classgrid_custom_limits_enabled) {
+            weeklyLimit = globalConfig.classgrid_user_weekly_limit || weeklyLimit;
         }
     }
 

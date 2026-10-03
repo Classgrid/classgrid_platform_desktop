@@ -4235,6 +4235,11 @@ export const getMyUsage = async (req, res) => {
             if (org && org.ai_config?.custom_limits_enabled) {
                 freeLimit = org.ai_config.free_weekly_limit_per_user || globalConfig.global_user_weekly_limit;
             }
+        } else {
+            // Virtual Classgrid Organization for platform team/super admins
+            if (globalConfig.classgrid_custom_limits_enabled) {
+                freeLimit = globalConfig.classgrid_user_weekly_limit || globalConfig.global_user_weekly_limit;
+            }
         }
 
         if (userTokens?.ai_tokens?.custom_limits_enabled) {
