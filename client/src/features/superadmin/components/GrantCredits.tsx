@@ -409,6 +409,11 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [], isOrgMode = fals
 
               {/* Action */}
               <div className="p-4 border-t border-border bg-card">
+                {!dateRange?.from || !dateRange?.to ? (
+                  <div className="text-center text-sm text-red-500 mb-2 font-medium">
+                    You must select a Start Date and Expiry Date to grant credits.
+                  </div>
+                ) : null}
                 <button 
                   onClick={async () => {
                     try {
@@ -419,7 +424,7 @@ export function GrantCreditsModal({ isOpen, onClose, orgs = [], isOrgMode = fals
                       console.error("Failed to request OTP", e);
                     }
                   }}
-                  disabled={grantCreditsMutation.isPending || grantOrgCreditsMutation.isPending}
+                  disabled={grantCreditsMutation.isPending || grantOrgCreditsMutation.isPending || !dateRange?.from || !dateRange?.to}
                   className="w-full h-11 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold transition-all shadow-sm active:scale-[0.98]"
                 >
                   {(grantCreditsMutation.isPending || grantOrgCreditsMutation.isPending) ? "Granting..." : (isSeparateMode 

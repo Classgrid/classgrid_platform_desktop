@@ -125,19 +125,12 @@ export const grantCredits = async (req, res) => {
             $set: {}
         };
         
-        if (startDate) {
-            updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date(startDate);
-        } else {
-            updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date();
+        if (!startDate || !endDate) {
+            return res.status(400).json({ success: false, error: "Both start date and expiry date are strictly required." });
         }
         
-        if (endDate) {
-            updateObj.$set["ai_tokens.promotion_credits_end_date"] = new Date(endDate);
-        } else {
-            // Nullify or keep as is if not provided? Better to let it be or nullify it if they don't provide it
-            // Assuming no expiration if endDate is not provided
-            updateObj.$set["ai_tokens.promotion_credits_end_date"] = null;
-        }
+        updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date(startDate);
+        updateObj.$set["ai_tokens.promotion_credits_end_date"] = new Date(endDate);
 
         const user = await User.findByIdAndUpdate(userId, updateObj, { returnDocument: 'after' });
 
@@ -164,11 +157,8 @@ export const grantCredits = async (req, res) => {
                 const totalBalance = totalTokens.toLocaleString();
                 
                 // Format expiration date for email
-                let expireDateStr = "No expiration";
-                if (endDate) {
-                    const d = new Date(endDate);
-                    expireDateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                }
+                const d = new Date(endDate);
+                const expireDateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 
                 const emailHtml = getAiCreditGrantedHtml(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr);
                 const emailText = getAiCreditGrantedPlainText(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr);
@@ -247,17 +237,12 @@ export const grantOrgCredits = async (req, res) => {
             $set: {}
         };
         
-        if (startDate) {
-            updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date(startDate);
-        } else {
-            updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date();
+        if (!startDate || !endDate) {
+            return res.status(400).json({ success: false, error: "Both start date and expiry date are strictly required." });
         }
         
-        if (endDate) {
-            updateObj.$set["ai_tokens.promotion_credits_end_date"] = new Date(endDate);
-        } else {
-            updateObj.$set["ai_tokens.promotion_credits_end_date"] = null;
-        }
+        updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date(startDate);
+        updateObj.$set["ai_tokens.promotion_credits_end_date"] = new Date(endDate);
 
         user = await User.findByIdAndUpdate(user._id, updateObj, { returnDocument: 'after' });
 
@@ -281,11 +266,8 @@ export const grantOrgCredits = async (req, res) => {
                 const totalTokens = (user.ai_tokens.ai_credits_balance + user.ai_tokens.promotion_credits_balance) || 0;
                 const totalBalance = totalTokens.toLocaleString();
                 
-                let expireDateStr = "No expiration";
-                if (endDate) {
-                    const d = new Date(endDate);
-                    expireDateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                }
+                const d = new Date(endDate);
+                const expireDateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 
                 const emailHtml = getAiCreditGrantedHtml(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr);
                 const emailText = getAiCreditGrantedPlainText(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr);
