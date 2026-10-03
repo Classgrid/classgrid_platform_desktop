@@ -199,6 +199,15 @@ export const initSocket = (server) => {
             socket.leave("superadmin:storage");
         });
 
+        socket.on("join_superadmin_ai_usage", () => {
+            socket.join("superadmin:ai_usage");
+            console.log(`Super admin socket ${socket.userId} joined superadmin:ai_usage`);
+        });
+
+        socket.on("leave_superadmin_ai_usage", () => {
+            socket.leave("superadmin:ai_usage");
+        });
+
         // --- Superadmin AI Usage Dashboard Realtime Updates ---
         socket.on("join_ai_usage_dashboard", () => {
             socket.join("superadmin:ai_usage");

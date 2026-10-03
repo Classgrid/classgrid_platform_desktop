@@ -26,45 +26,17 @@ export const AiUsageBar = ({ initialData, showExactTokens }: { initialData?: any
         }
     };
 
-    // Always fetch fresh on mount + poll every 30 seconds as safeguard
+    // Only fetch fresh on mount
     useEffect(() => {
         fetchUsage();
-        const interval = setInterval(fetchUsage, 30000);
-        return () => clearInterval(interval);
     }, []);
 
     useEffect(() => {
         const socket = getSocket();
         if (!socket) return;
 
-        const handleTokenUpdate = (data: any) => {
-            setUsageData((prev: any) => {
-                if (data.type === 'pro' && prev.type === 'pro') {
-                    return {
-                        ...prev,
-                        used: prev.used + (data.used || 0),
-                        remaining: data.remaining
-                    };
-                } else if (data.type === 'free') {
-                    if (prev.type === 'pro' && prev.freeData) {
-                        return {
-                            ...prev,
-                            freeData: {
-                                ...prev.freeData,
-                                used: prev.freeData.used + (data.used || 0),
-                                remaining: data.remaining
-                            }
-                        };
-                    } else {
-                        return {
-                            ...prev,
-                            used: prev.used + (data.used || 0),
-                            remaining: data.remaining
-                        };
-                    }
-                }
-                return prev;
-            });
+        const handleTokenUpdate = () => {
+            fetchUsage();
         };
 
         socket.on('ai_token_update', handleTokenUpdate);
