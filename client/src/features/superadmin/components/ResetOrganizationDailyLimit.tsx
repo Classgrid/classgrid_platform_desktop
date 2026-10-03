@@ -3,7 +3,7 @@ import { Button } from "@/components/marketing_ui/button";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { BlueSlider } from "@/components/marketing_ui/BlueSlider";
 import { toast } from "sonner";
-import { useResetOrgUsage } from "@/features/superadmin/queries/useAiUsage";
+import { useResetOrgUsage, useRequestSecurityCode, useVerifySecurityCode } from "@/features/superadmin/queries/useAiUsage";
 
 export interface ResetOrganizationDailyLimitProps {
   orgId: string;
@@ -16,18 +16,26 @@ export function ResetOrganizationDailyLimit({ orgId, orgName }: ResetOrganizatio
   const [resetAmount, setResetAmount] = useState(5000);
   
   const resetMutation = useResetOrgUsage();
+  const requestSecurityCode = useRequestSecurityCode();
+  const verifySecurityCode = useVerifySecurityCode();
 
-  const allComplete = securityCode.length > 0 && resetAmount !== null;
+  const allComplete = securityCode.length === 6 && resetAmount !== null;
 
-  const handleConfirm = () => {
-    resetMutation.mutate(orgId, {
-      onSuccess: () => {
-        toast.success(`Usage for ${orgName} has been reset successfully.`);
-        setOpen(false);
-        setSecurityCode("");
-        setResetAmount(5000);
-      }
-    });
+  const handleConfirm = async () => {
+    try {
+      await verifySecurityCode.mutateAsync({ code: securityCode, action: "RESET_ORG_USAGE", orgId });
+      
+      resetMutation.mutate(orgId, {
+        onSuccess: () => {
+          toast.success(`Usage for ${orgName} has been reset successfully.`);
+          setOpen(false);
+          setSecurityCode("");
+          setResetAmount(5000);
+        }
+      });
+    } catch (e) {
+      console.error("OTP verification failed", e);
+    }
   };
 
   return (
@@ -45,8 +53,19 @@ export function ResetOrganizationDailyLimit({ orgId, orgName }: ResetOrganizatio
         </div>
 
         <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end mt-auto">
-          <Button variant="outline" onClick={() => setOpen(true)}>
-            Reset Limit
+          <Button 
+            variant="outline" 
+            onClick={async () => {
+              try {
+                await requestSecurityCode.mutateAsync({ action: "RESET_ORG_USAGE", orgId });
+                setOpen(true);
+              } catch (e) {
+                console.error("Failed to request OTP", e);
+              }
+            }}
+            disabled={requestSecurityCode.isPending}
+          >
+            {requestSecurityCode.isPending ? "Sending Code..." : "Reset Limit"}
           </Button>
         </div>
       </div>
