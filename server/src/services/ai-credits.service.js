@@ -74,7 +74,23 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     }
 
     // 2. Check free weekly limit FIRST (Always use free before touching paid/promo)
-    const usedThisWeek = user.ai_tokens?.used_this_week || 0;
+    let usedThisWeek = user.ai_tokens?.used_this_week || 0;
+    let weekResetDate = user.ai_tokens?.week_reset_date ? new Date(user.ai_tokens.week_reset_date).getTime() : 0;
+    
+    // Auto-Reset logic if 7 days have passed
+    if (Date.now() >= weekResetDate) {
+        usedThisWeek = 0;
+        const newResetDate = new Date();
+        newResetDate.setDate(newResetDate.getDate() + 7);
+        // Async update DB but don't block the chat flow
+        User.findByIdAndUpdate(userId, { 
+            $set: { 
+                "ai_tokens.used_this_week": 0,
+                "ai_tokens.week_reset_date": newResetDate
+            }
+        }).catch(e => console.error("Auto-reset error:", e));
+    }
+
     if (usedThisWeek + requiredTokens <= weeklyLimit) {
         return { allowed: true, source: "weekly_free" };
     }
