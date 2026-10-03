@@ -40,7 +40,7 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
   const { data, isLoading } = useQuery({
     queryKey: ["globalAiConfig"],
     queryFn: async () => {
-      const res = await api.get("/api/v1/super-admin/ai-global-config");
+      const res = await api.get("/api/super-admin/ai-global-config");
       return res.data?.config;
     }
   });
@@ -58,7 +58,7 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
 
   const updateConfigMutation = useMutation({
     mutationFn: async (newConfig: any) => {
-      const res = await api.put("/api/v1/super-admin/ai-global-config", newConfig);
+      const res = await api.put("/api/super-admin/ai-global-config", newConfig);
       return res.data;
     },
     onSuccess: () => {
