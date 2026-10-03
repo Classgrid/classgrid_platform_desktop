@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 const fs = require('fs');
 const pdfParse = require('pdf-parse');
 const Tesseract = require('tesseract.js');

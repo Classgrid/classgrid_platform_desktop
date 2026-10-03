@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 // Trigger deploy verification - Oct 4 2026
 // Trigger deploy verification - Oct 4 2026
 import React, { useState, useEffect } from "react";

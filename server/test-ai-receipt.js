@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import { generateAiReceiptPdfBuffer } from './src/services/pdf-invoice.service.js';
 import { sendEmail } from './src/services/aws-ses.service.js';
 

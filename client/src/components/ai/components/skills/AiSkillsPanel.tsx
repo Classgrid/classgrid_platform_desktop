@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import React, { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, Edit2, Zap, Save, ChevronDown, Pencil } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";

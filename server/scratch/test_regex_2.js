@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 const tests = [
   "policy\n\n,\n\ntutorial", // What I tested
   "policy  \n,\n  tutorial", // Markdown line breaks

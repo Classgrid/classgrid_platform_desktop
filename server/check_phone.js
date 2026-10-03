@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import('./config/db.js').then(async (m) => {
     await m.default();
     const mongoose = (await import('mongoose')).default;

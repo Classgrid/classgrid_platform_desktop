@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import express from "express";
 import * as globalController from "../../controllers/super-admin/ai-usage-global.controller.js";
 import * as orgController from "../../controllers/super-admin/ai-usage-orgs.controller.js";

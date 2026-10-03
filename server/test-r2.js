@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import { uploadBufferToR2 } from './src/config/r2Client.js';
 import dotenv from 'dotenv';
 dotenv.config({ path: './.env' });

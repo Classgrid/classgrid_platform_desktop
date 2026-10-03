@@ -1,3 +1,5 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
+// Trigger deploy verification - Oct 4 2026
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 export const usageStorage = new AsyncLocalStorage();

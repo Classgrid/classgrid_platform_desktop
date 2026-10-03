@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import Organization from "../models/Organization.js";

@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import AiSchedule from '../models/AiSchedule.js';
 
 export const getMySchedules = async (req, res) => {

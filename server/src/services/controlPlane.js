@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import Trajectory from '../models/Trajectory.js';
 import { buildQueue } from '../queues/buildQueue.js';
 import { deployToR2 } from './deploy.js';

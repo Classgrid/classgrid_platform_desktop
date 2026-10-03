@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import AiUsageLog from "./src/models/AiUsageLog.js";

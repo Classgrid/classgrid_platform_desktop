@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import User from "../models/User.js";
 import AiCreditTransaction from "../models/AiCreditTransaction.js";
 import GlobalAiConfig from "../models/GlobalAiConfig.js";

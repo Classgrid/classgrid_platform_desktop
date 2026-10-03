@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 async function testSandbox() {
     const sandboxUrl = 'https://autumn-sky-3042.nikhil-shinde-6b9.workers.dev';
     

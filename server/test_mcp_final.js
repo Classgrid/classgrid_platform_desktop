@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import mongoose from 'mongoose';
 import { handleToolCall } from './src/mcp/tools.js';
 

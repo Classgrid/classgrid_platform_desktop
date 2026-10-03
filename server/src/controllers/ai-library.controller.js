@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import AiLibraryFile from '../models/AiLibraryFile.js';
 import UserStorageQuota from '../models/UserStorageQuota.js';
 import { uploadBufferToR2, deleteFromR2 } from '../config/r2Client.js';

@@ -1,3 +1,4 @@
+// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import React, { useState } from "react";
 import { useMyAiBalance, useInitiateAiTopUp } from "@/components/ai/queries/useAiCredits";
 import { useQueryClient } from "@tanstack/react-query";
