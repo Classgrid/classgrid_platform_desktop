@@ -784,13 +784,13 @@ export function AiUsageDashboardPage() {
           showExactTokens={true}
           initialData={{
             type: 'pro',
-            used: orgDetail?.totalUsage ?? 0,
+            used: orgDetail?.poolUsed ?? 0,
             limit: orgDetail?.poolLimit ?? 0,
-            remaining: Math.max(0, (orgDetail?.poolLimit ?? 0) - (orgDetail?.totalUsage ?? 0)),
+            remaining: Math.max(0, (orgDetail?.poolLimit ?? 0) - (orgDetail?.poolUsed ?? 0)),
             freeData: {
-              used: 0,
+              used: orgDetail?.userWeeklyUsed ?? 0,
               limit: orgDetail?.userWeeklyLimit ?? 0,
-              remaining: orgDetail?.userWeeklyLimit ?? 0
+              remaining: Math.max(0, (orgDetail?.userWeeklyLimit ?? 0) - (orgDetail?.userWeeklyUsed ?? 0))
             }
           }}
         />

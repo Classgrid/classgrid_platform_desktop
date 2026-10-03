@@ -119,6 +119,8 @@ export const getOrgAiDetail = async (req, res) => {
 
         let imageLimit;
         let whatsappLimit;
+        let poolUsed = 0;
+        let userWeeklyUsed = 0;
 
         if (orgId === "classgrid") {
             userQuery = { 
@@ -143,6 +145,7 @@ export const getOrgAiDetail = async (req, res) => {
             }
             imageLimit = org.ai_config?.image_generation_limit;
             whatsappLimit = org.ai_config?.whatsapp_scheduling_limit;
+            poolUsed = org.ai_config?.pro_used_this_period || 0;
             userQuery = { organization_id: orgId };
         }
 
@@ -166,6 +169,7 @@ export const getOrgAiDetail = async (req, res) => {
         let totalUsage = 0;
         users.forEach(u => {
             totalUsage += (u.ai_tokens?.total_ai_tokens_used || 0);
+            userWeeklyUsed += (u.ai_tokens?.used_this_week || 0);
         });
 
         let totalChats = 0;
@@ -190,6 +194,8 @@ export const getOrgAiDetail = async (req, res) => {
                 imageLimit,
                 whatsappLimit,
                 totalUsage,
+                poolUsed,
+                userWeeklyUsed,
                 totalRevenue,
                 totalTopUpCredits,
                 totalChats
