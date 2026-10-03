@@ -67,9 +67,9 @@ export function AiCreditsPanel() {
         <div className="space-y-6 mb-6">
           {balance?.pools?.filter((p: any) => p.creditType !== "Free").map((pool: any) => {
             const issuedAmount = pool.issuedAmount || 0;
-            const remainingAmount = pool.amountRemaining || 0;
+            const remainingAmount = Math.max(0, pool.amountRemaining || 0);
             const estimatedRemaining = pool.estimatedAmountRemaining || 0;
-            const usedAmount = Math.max(0, issuedAmount - remainingAmount);
+            const usedAmount = Math.min(issuedAmount, Math.max(0, issuedAmount - (pool.amountRemaining || 0)));
             const rawPercent = issuedAmount > 0 ? (usedAmount / issuedAmount) * 100 : 0;
             const percentUsed = Math.min(100, rawPercent);
             
