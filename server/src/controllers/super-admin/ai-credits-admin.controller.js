@@ -31,6 +31,8 @@ export const blockAiUser = async (req, res) => {
         const io = req.app.get("io");
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
         res.status(200).json({ success: true, message: `User AI access ${isBlocked ? 'blocked' : 'unblocked'}` });
     } catch (error) {
@@ -59,6 +61,8 @@ export const blockAiOrg = async (req, res) => {
         const io = req.app.get("io");
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
         res.status(200).json({ success: true, message: `Organization AI access ${isBlocked ? 'blocked' : 'unblocked'}` });
     } catch (error) {
@@ -83,6 +87,8 @@ export const resetUserUsage = async (req, res) => {
         const io = req.app.get("io");
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
         res.status(200).json({ success: true, message: "User weekly usage reset to 0." });
     } catch (error) {
@@ -113,6 +119,8 @@ export const resetOrgUsage = async (req, res) => {
         const io = req.app.get("io");
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
         res.status(200).json({ success: true, message: "Organization and all member usage reset." });
     } catch (error) {
@@ -194,6 +202,8 @@ export const grantCredits = async (req, res) => {
         const io = req.app.get("io");
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
         res.status(200).json({ success: true, message: `${amount} credits granted to user. Email notification handled.` });
     } catch (error) {
@@ -307,6 +317,8 @@ export const grantOrgCredits = async (req, res) => {
         const io = req.app.get("io");
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
         return res.status(200).json({ success: true, message: `Granted ${amount} credits to org owner ${user.email}` });
     } catch (err) {
@@ -335,6 +347,8 @@ export const deleteUserAiData = async (req, res) => {
         const io = req.app.get("io");
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
         res.status(200).json({ success: true, message: "User AI chat data deleted from Supabase." });
     } catch (error) {
@@ -378,6 +392,8 @@ export const updateOrgAiLimits = async (req, res) => {
 
             const io = req.app.get("io");
             if (io) io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
 
             return res.status(200).json({ success: true, message: "Global AI limits updated successfully." });
         }
@@ -412,6 +428,8 @@ export const updateOrgAiLimits = async (req, res) => {
         const io = req.app.get("io");
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
         res.status(200).json({ success: true, message: "Organization AI limits updated successfully." });
     } catch (error) {
@@ -475,6 +493,8 @@ export const requestSecurityCode = async (req, res) => {
         const io = req.app.get("io");
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
         res.status(200).json({ success: true, message: "Security code sent successfully" });
     } catch (error) {
@@ -545,6 +565,8 @@ export const verifySecurityCode = async (req, res) => {
         const io = req.app.get("io");
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
         res.status(200).json({ success: true, message: "Security code verified successfully" });
     } catch (error) {
@@ -567,6 +589,8 @@ export const removeGrantedCredits = async (req, res) => {
         const io = req.app.get("io");
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
         res.status(200).json({ success: true, message: "Granted credits removed successfully" });
     } catch (error) {
@@ -589,6 +613,8 @@ export const pauseGrantedCredits = async (req, res) => {
         const io = req.app.get("io");
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
         res.status(200).json({ success: true, message: `Granted credits ${isPaused ? "paused" : "unpaused"} successfully` });
     } catch (error) {

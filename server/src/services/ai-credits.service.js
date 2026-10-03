@@ -141,6 +141,15 @@ export const addCredits = async (userId, amountToAdd) => {
         const user = await User.findByIdAndUpdate(userId, {
             $inc: { "ai_tokens.ai_credits_balance": amountToAdd }
         }, { new: true });
+        
+        import("../services/socket.service.js").then(({ getIO }) => {
+            const io = getIO();
+            if (io) {
+                io.to(userId.toString()).emit("ai_token_update");
+                io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            }
+        }).catch(err => console.error("Socket error in addCredits:", err));
+        
         return user;
     } catch (error) {
         console.error("Error adding credits:", error);

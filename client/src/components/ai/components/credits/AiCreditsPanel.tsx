@@ -12,11 +12,30 @@ import { Button } from "@/components/marketing_ui/button";
 import { format } from "date-fns";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
 
+import { getSocket } from "@/lib/socketClient";
+import { useQueryClient } from "@tanstack/react-query";
+
 export function AiCreditsPanel() {
+  const queryClient = useQueryClient();
   const { data: balance, isLoading: balanceLoading } = useMyAiBalance();
   const { data: history, isLoading: historyLoading } = useMyAiHistory();
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+
+  React.useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    
+    const handleUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ["my-ai-balance"] });
+      queryClient.invalidateQueries({ queryKey: ["my-ai-history"] });
+    };
+
+    socket.on("ai_token_update", handleUpdate);
+    return () => {
+      socket.off("ai_token_update", handleUpdate);
+    };
+  }, [queryClient]);
 
   if (balanceLoading) {
     return <div className="p-8 space-y-4"><Skeleton className="h-32 w-full" /><Skeleton className="h-64 w-full" /></div>;
