@@ -42,34 +42,48 @@ export const getMyCredits = async (req, res) => {
 
         // Promotion Credits
         const totalPromoGranted = tokens.total_promotion_credits_granted || 0;
-        const promoBalance = tokens.promotion_credits_balance || 0;
+        let promoBalance = tokens.promotion_credits_balance || 0;
+        let promoStatus = "Active";
+        const promoEndDate = tokens.promotion_credits_end_date ? new Date(tokens.promotion_credits_end_date) : null;
+        if (promoEndDate && promoEndDate.getTime() < now.getTime()) {
+            promoStatus = "Expired";
+            promoBalance = 0;
+        }
+
         if (totalPromoGranted > 0 || promoBalance > 0) {
             pools.push({
                 creditId: `PRM-${user._id.toString().substring(0, 10).toUpperCase()}`,
                 creditType: "Promotion",
-                status: "Active",
+                status: promoStatus,
                 issuedAmount: totalPromoGranted,
                 amountRemaining: promoBalance,
                 estimatedAmountRemaining: promoBalance,
                 startDate: tokens.promotion_credits_start_date ? new Date(tokens.promotion_credits_start_date).toISOString() : now.toISOString(),
-                expirationDate: tokens.promotion_credits_end_date ? new Date(tokens.promotion_credits_end_date).toISOString() : null
+                expirationDate: promoEndDate ? promoEndDate.toISOString() : null
             });
         }
 
         // Paid Credits
-        if (totalPurchased > 0 || balance > 0) {
-            const paidStartDate = tokens.ai_credits_start_date ? new Date(tokens.ai_credits_start_date) : now;
-            const paidExpirationDate = tokens.ai_credits_end_date 
-                ? new Date(tokens.ai_credits_end_date) 
-                : new Date(paidStartDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days validity
+        let paidBalance = balance;
+        let paidStatus = "Active";
+        const paidStartDate = tokens.ai_credits_start_date ? new Date(tokens.ai_credits_start_date) : now;
+        const paidExpirationDate = tokens.ai_credits_end_date 
+            ? new Date(tokens.ai_credits_end_date) 
+            : new Date(paidStartDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days validity
+        
+        if (paidExpirationDate.getTime() < now.getTime()) {
+            paidStatus = "Expired";
+            paidBalance = 0;
+        }
 
+        if (totalPurchased > 0 || paidBalance > 0) {
             pools.push({
                 creditId: `PAID-${user._id.toString().substring(0, 10).toUpperCase()}`,
                 creditType: "Paid",
-                status: "Active",
+                status: paidStatus,
                 issuedAmount: totalPurchased,
-                amountRemaining: balance,
-                estimatedAmountRemaining: balance,
+                amountRemaining: paidBalance,
+                estimatedAmountRemaining: paidBalance,
                 startDate: paidStartDate.toISOString(),
                 expirationDate: paidExpirationDate.toISOString()
             });

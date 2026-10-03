@@ -4271,7 +4271,52 @@ export const getMyUsage = async (req, res) => {
             }
         }
 
-        const remaining = freeLimit - userTokens.ai_tokens.used_this_week;
+        const remaining = freeLimit - (userTokens.ai_tokens.used_this_week || 0);
+
+        if (remaining <= 0) {
+            const now = new Date().getTime();
+            
+            let promoBalance = userTokens.ai_tokens.promotion_credits_balance || 0;
+            if (userTokens.ai_tokens.promotion_credits_end_date && new Date(userTokens.ai_tokens.promotion_credits_end_date).getTime() < now) {
+                promoBalance = 0; // Expired
+            }
+            
+            let paidBalance = userTokens.ai_tokens.ai_credits_balance || 0;
+            if (userTokens.ai_tokens.ai_credits_end_date && new Date(userTokens.ai_tokens.ai_credits_end_date).getTime() < now) {
+                paidBalance = 0; // Expired
+            }
+            
+            const promoStart = userTokens.ai_tokens.promotion_credits_start_date ? new Date(userTokens.ai_tokens.promotion_credits_start_date).getTime() : Infinity;
+            const paidStart = userTokens.ai_tokens.ai_credits_start_date ? new Date(userTokens.ai_tokens.ai_credits_start_date).getTime() : Infinity;
+
+            if (promoBalance > 0 || paidBalance > 0) {
+                let activeType = "personal";
+                let balance = paidBalance;
+                let limit = userTokens.ai_tokens.total_ai_credits_purchased || 0;
+
+                if (promoBalance > 0 && paidBalance > 0) {
+                    if (promoStart <= paidStart) {
+                        activeType = "promotion";
+                        balance = promoBalance;
+                        limit = userTokens.ai_tokens.total_promotion_credits_granted || 0;
+                    }
+                } else if (promoBalance > 0) {
+                    activeType = "promotion";
+                    balance = promoBalance;
+                    limit = userTokens.ai_tokens.total_promotion_credits_granted || 0;
+                }
+
+                return res.json({
+                    type: activeType,
+                    used: Math.max(0, limit - balance),
+                    limit: limit,
+                    remaining: balance,
+                    resetDate: null,
+                    freeData
+                });
+            }
+        }
+
         return res.json({
             type: 'free',
             used: userTokens.ai_tokens.used_this_week,
