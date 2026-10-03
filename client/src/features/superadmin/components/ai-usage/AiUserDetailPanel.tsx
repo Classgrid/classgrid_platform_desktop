@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/marketing_ui/card";
 import { Button } from "@/components/marketing_ui/button";
 import { AlertTriangle, Zap, LayoutTemplate } from "lucide-react";
@@ -11,10 +11,32 @@ import { ResetUserDailyLimit } from "../ResetUserDailyLimit";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 import { PauseUserGrantedCredits } from "./PauseUserGrantedCredits";
 import { RemoveUserGrantedCredits } from "./RemoveUserGrantedCredits";
+import { socketClient } from "@/lib/socket";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
   const [isGrantCreditsOpen, setIsGrantCreditsOpen] = useState(false);
   const { data: currentUser } = useCurrentUser();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const socket = socketClient.getSocket();
+    if (socket) {
+      socket.on("ai_usage_updated", () => {
+         queryClient.invalidateQueries({ queryKey: ["ai-usage-user"] });
+      });
+      socket.on("ai_token_update", () => {
+         queryClient.invalidateQueries({ queryKey: ["ai-usage-user"] });
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off("ai_usage_updated");
+        socket.off("ai_token_update");
+      }
+    };
+  }, [queryClient]);
 
   if (!userDetail) return null;
 

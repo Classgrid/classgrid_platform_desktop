@@ -133,10 +133,11 @@ export const initSocket = (server) => {
         }
 
         // Join global organization room for org-wide broadcasts (e.g. new public groups)
-        socket.join(`org:${orgId}`);
+        const effectiveOrgId = orgId || "classgrid";
+        socket.join(`org:${effectiveOrgId}`);
 
         // Join personal room for private direct messages
-        socket.join(`${orgId}:${socket.userId}`);
+        socket.join(`${effectiveOrgId}:${socket.userId}`);
         socket.join(socket.userId.toString());
 
         socket.on("join_classroom", (classroomId) => {
