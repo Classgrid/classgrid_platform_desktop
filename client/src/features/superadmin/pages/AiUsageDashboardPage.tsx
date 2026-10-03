@@ -856,6 +856,8 @@ export function AiUsageDashboardPage() {
           }))) || []}
         />
 
+        {renderGlobalGrantedCredits()}
+
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">{path.orgName} — Usage Roles</CardTitle>
@@ -997,7 +999,6 @@ export function AiUsageDashboardPage() {
 
       {!path.orgId && renderLevel0Orgs()}
 
-      {path.orgId && !path.role && renderGlobalGrantedCredits()}
       {path.orgId && !path.role && renderLevel1Roles()}
       {path.orgId && path.role && !path.userId && renderLevel2Users()}
       {path.userId && renderLevel3UserDetail()}
