@@ -179,7 +179,7 @@ export const useGlobalGrantedCredits = () => {
     queryFn: async () => {
       const { apiClient } = await import('@/lib/apiClient');
       const res = await apiClient.get('/api/super-admin/ai-usage/global/granted-credits');
-      return res.data;
+      return res.data?.data || [];
     },
     staleTime: 60000,
   });
