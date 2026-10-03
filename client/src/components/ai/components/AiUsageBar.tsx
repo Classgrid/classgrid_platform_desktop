@@ -116,11 +116,6 @@ export const AiUsageBar = ({ initialData }: { initialData?: any }) => {
                         <span className="font-medium text-foreground">
                             {Math.round(usageData.type === 'pro' ? percentUsedFree : percentUsed)}% Used
                         </span>
-                        <span className="text-muted-foreground">
-                            {usageData.type === 'pro' 
-                                ? `${(usageData.freeData?.used || 0).toLocaleString()} / ${(usageData.freeData?.limit || 0).toLocaleString()}` 
-                                : `${(usageData.used || 0).toLocaleString()} / ${(usageData.limit || 0).toLocaleString()}`} tokens
-                        </span>
                     </div>
                     <div className="w-full h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
                         <div 
@@ -147,9 +142,6 @@ export const AiUsageBar = ({ initialData }: { initialData?: any }) => {
                         <div className="w-full flex items-center justify-between text-xs">
                             <span className="font-medium text-foreground">
                                 {Math.round(percentUsed)}% Used
-                            </span>
-                            <span className="text-muted-foreground">
-                                {(usageData.used || 0).toLocaleString()} / {(usageData.limit || 0).toLocaleString()} tokens
                             </span>
                         </div>
                         <div className="w-full h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
