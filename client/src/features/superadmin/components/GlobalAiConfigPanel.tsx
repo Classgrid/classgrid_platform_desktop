@@ -104,12 +104,15 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
         <div className="p-0 flex flex-col">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border border-b border-border">
             {/* Individual Usage */}
-            <Dialog open={openIndividual} onOpenChange={setOpenIndividual}>
+            <Dialog open={openIndividual} onOpenChange={(open) => {
+              if (!open) setIndividualUsage(data?.global_user_weekly_limit ?? 0);
+              setOpenIndividual(open);
+            }}>
               <DialogTrigger asChild>
                 <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
                   <span className="text-sm font-medium text-muted-foreground">Individual Daily Usage</span>
                   <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                    {individualUsage.toLocaleString()} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens</span>
+                    {(data?.global_user_weekly_limit ?? 0).toLocaleString()} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens</span>
                   </span>
                 </button>
               </DialogTrigger>
@@ -146,12 +149,15 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
             </Dialog>
 
             {/* Organization Pool */}
-            <Dialog open={openOrg} onOpenChange={setOpenOrg}>
+            <Dialog open={openOrg} onOpenChange={(open) => {
+              if (!open) setOrgPool(data?.global_pro_pool_limit ?? 0);
+              setOpenOrg(open);
+            }}>
               <DialogTrigger asChild>
                 <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
                   <span className="text-sm font-medium text-muted-foreground">Organization Pool</span>
                   <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                    {orgPool.toLocaleString()} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens</span>
+                    {(data?.global_pro_pool_limit ?? 0).toLocaleString()} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens</span>
                   </span>
                 </button>
               </DialogTrigger>
@@ -190,12 +196,15 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border">
             {/* Image Generations */}
-            <Dialog open={openImages} onOpenChange={setOpenImages}>
+            <Dialog open={openImages} onOpenChange={(open) => {
+              if (!open) setImages(data?.global_image_weekly_limit ?? 0);
+              setOpenImages(open);
+            }}>
               <DialogTrigger asChild>
                 <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
                   <span className="text-sm font-medium text-muted-foreground">Image Generations</span>
                   <span className="text-xl font-bold text-foreground">
-                    {images} <span className="text-sm font-normal text-muted-foreground ml-1">Images</span>
+                    {(data?.global_image_weekly_limit ?? 0).toLocaleString()} <span className="text-sm font-normal text-muted-foreground ml-1">Images</span>
                   </span>
                 </button>
               </DialogTrigger>
@@ -227,12 +236,15 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
             </Dialog>
 
             {/* WhatsApp Scheduling */}
-            <Dialog open={openWhatsapp} onOpenChange={setOpenWhatsapp}>
+            <Dialog open={openWhatsapp} onOpenChange={(open) => {
+              if (!open) setWhatsapp(data?.global_whatsapp_scheduling_limit ?? 0);
+              setOpenWhatsapp(open);
+            }}>
               <DialogTrigger asChild>
                 <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
                   <span className="text-sm font-medium text-muted-foreground">WhatsApp Scheduling</span>
                   <span className="text-xl font-bold text-foreground">
-                    {whatsapp} <span className="text-sm font-normal text-muted-foreground ml-1">Messages</span>
+                    {(data?.global_whatsapp_scheduling_limit ?? 0).toLocaleString()} <span className="text-sm font-normal text-muted-foreground ml-1">Messages</span>
                   </span>
                 </button>
               </DialogTrigger>
@@ -275,11 +287,14 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
         <div className="p-5">
           <h3 className="text-lg font-semibold text-foreground tracking-tight">Credits per INR</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Define how many tokens users receive per ₹1 purchased. Current: <strong>{creditsPerInr} Tokens/₹1</strong>
+            Define how many tokens users receive per ₹1 purchased. Current: <strong>{data?.credits_per_inr ?? 0} Tokens/₹1</strong>
           </p>
         </div>
         <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end">
-          <Dialog open={openCreditsPerInr} onOpenChange={setOpenCreditsPerInr}>
+          <Dialog open={openCreditsPerInr} onOpenChange={(open) => {
+            if (!open) setCreditsPerInr(data?.credits_per_inr ?? 0);
+            setOpenCreditsPerInr(open);
+          }}>
             <DialogTrigger asChild>
               <Button variant="outline">Edit Rate</Button>
             </DialogTrigger>
@@ -317,11 +332,14 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
         <div className="p-5">
           <h3 className="text-lg font-semibold text-foreground tracking-tight">Image Generation Cost</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Set how many tokens are deducted per AI image generation. Current: <strong>{imageCost} Tokens/Image</strong>
+            Set how many tokens are deducted per AI image generation. Current: <strong>{data?.image_generation_token_cost ?? 0} Tokens/Image</strong>
           </p>
         </div>
         <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end">
-          <Dialog open={openImageCost} onOpenChange={setOpenImageCost}>
+          <Dialog open={openImageCost} onOpenChange={(open) => {
+            if (!open) setImageCost(data?.image_generation_token_cost ?? 0);
+            setOpenImageCost(open);
+          }}>
             <DialogTrigger asChild>
               <Button variant="outline">Edit Cost</Button>
             </DialogTrigger>
