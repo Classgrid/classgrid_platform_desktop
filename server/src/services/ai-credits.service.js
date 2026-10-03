@@ -104,10 +104,8 @@ export const deductTokens = async (userId, orgId, tokenAmount, source) => {
                 }
             }, { new: true });
             return { success: true, remaining: updatedUser.ai_tokens.free_weekly_limit - updatedUser.ai_tokens.used_this_week, type: "free" };
-        } 
-        /*
-        // --- SHARED ORG POOL IS COMMENTED OUT ---
-        else if (source === "org_pool") {
+        } else if (source === "org_pool") {
+            const Organization = (await import("../models/Organization.js")).default;
             const updatedOrg = await Organization.findByIdAndUpdate(orgId, {
                 $inc: {
                     "ai_config.pro_used_this_period": tokenAmount,
@@ -119,7 +117,6 @@ export const deductTokens = async (userId, orgId, tokenAmount, source) => {
             });
             return { success: true, remaining: updatedOrg.ai_config.pro_pool_limit - updatedOrg.ai_config.pro_used_this_period, type: "pro" };
         }
-        */
         return { success: false, remaining: 0, type: "unknown" };
     } catch (error) {
         console.error("Error deducting tokens:", error);
