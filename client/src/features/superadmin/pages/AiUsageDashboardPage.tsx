@@ -400,7 +400,7 @@ export function AiUsageDashboardPage() {
                         }}
                     />
                     <Bar dataKey="requests" name="AI Requests" fill="#f59e0b" radius={[2, 2, 0, 0]} maxBarSize={12} />
-                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" label={{ value: "TODAY", position: "top", fontSize: 10, fill: "#22c55e", fontWeight: "bold" }} />
+                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -435,7 +435,7 @@ export function AiUsageDashboardPage() {
                     <Bar dataKey="promptTokens" name="Input Tokens" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} maxBarSize={12} />
                     <Bar dataKey="completionTokens" name="Output Tokens" stackId="a" fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={12} />
                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" label={{ value: "TODAY", position: "top", fontSize: 10, fill: "#22c55e", fontWeight: "bold" }} />
+                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -485,7 +485,7 @@ export function AiUsageDashboardPage() {
                       radius={[2, 2, 0, 0]} 
                       maxBarSize={12} 
                     />
-                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" label={{ value: "TODAY", position: "top", fontSize: 10, fill: "#22c55e", fontWeight: "bold" }} />
+                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -518,7 +518,7 @@ export function AiUsageDashboardPage() {
                     <YAxis stroke="currentColor" className="text-xs opacity-50" tickLine={false} axisLine={false} />
                     <RechartsTooltip cursor={{ fill: 'currentColor', opacity: 0.05 }} content={<UniversalTooltip />} />
                     <Bar dataKey="revenue" name="Revenue (INR)" fill="#8b5cf6" radius={[2, 2, 0, 0]} maxBarSize={12} />
-                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" label={{ value: "TODAY", position: "top", fontSize: 10, fill: "#22c55e", fontWeight: "bold" }} />
+                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -596,7 +596,7 @@ export function AiUsageDashboardPage() {
                         return null;
                     }} />
                     <Bar dataKey="activeOrgs" name="Active Organizations" fill="#2563eb" radius={[2, 2, 0, 0]} maxBarSize={12} />
-                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" label={{ value: "TODAY", position: "top", fontSize: 10, fill: "#22c55e", fontWeight: "bold" }} />
+                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -683,7 +683,7 @@ export function AiUsageDashboardPage() {
                         return null;
                     }} />
                     <Bar dataKey="activeUsers" name="Active Users" fill="#8b5cf6" radius={[2, 2, 0, 0]} maxBarSize={12} />
-                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" label={{ value: "TODAY", position: "top", fontSize: 10, fill: "#22c55e", fontWeight: "bold" }} />
+                                      <ReferenceLine x={getTodayStr()} stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
