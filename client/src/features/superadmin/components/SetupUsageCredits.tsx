@@ -28,7 +28,8 @@ export interface SetupUsageCreditsProps {
 }
 
 export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUserWeeklyLimit, currentImageLimit, currentWhatsappLimit, customLimitsEnabled }: SetupUsageCreditsProps) {
-  const [isCustomLimits, setIsCustomLimits] = useState(customLimitsEnabled ?? false);
+  const isClassgrid = orgId === "classgrid";
+  const [isCustomLimits, setIsCustomLimits] = useState(isClassgrid ? true : (customLimitsEnabled ?? false));
   // State for Pools
   const [individualUsage, setIndividualUsage] = useState(currentUserWeeklyLimit ?? 0);
   const [orgPool, setOrgPool] = useState(currentPoolLimit ?? 0);
@@ -89,20 +90,22 @@ export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUse
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden h-full">
         <div className="p-5 border-b border-border flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Setup Usage Credits</h2>
+            <h2 className="text-lg font-semibold text-foreground">Setup Usage Credits (DEBUG orgId: '{orgId}')</h2>
             <p className="text-sm text-muted-foreground">Manage default limits and quotas for {orgName}.</p>
           </div>
-          <div className="flex items-center gap-3">
-            <Label htmlFor="custom-limits" className="text-sm font-medium whitespace-nowrap">
-              Follow Global Limits
-            </Label>
-            <Switch
-              id="custom-limits"
-              checked={!isCustomLimits}
-              onCheckedChange={(checked) => handleToggleCustomLimits(!checked)}
-              disabled={updateLimitsMutation.isPending}
-            />
-          </div>
+          {!isClassgrid && (
+            <div className="flex items-center gap-3">
+              <Label htmlFor="custom-limits" className="text-sm font-medium whitespace-nowrap">
+                Follow Global Limits
+              </Label>
+              <Switch
+                id="custom-limits"
+                checked={!isCustomLimits}
+                onCheckedChange={(checked) => handleToggleCustomLimits(!checked)}
+                disabled={updateLimitsMutation.isPending}
+              />
+            </div>
+          )}
         </div>
 
         <div className="p-0 flex flex-col h-full">
@@ -127,7 +130,7 @@ export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUse
                     <Label className="text-sm font-semibold">Individual 7-Day Usage</Label>
                     <span className="text-sm font-bold text-blue-600">{individualUsage.toLocaleString()}</span>
                   </div>
-                  <BlueSlider min={1000} max={500000} step={1000} value={individualUsage} onValueChange={setIndividualUsage} disabled={updateLimitsMutation.isPending} />
+                  <BlueSlider min={1000} max={100000000} step={10000} value={individualUsage} onValueChange={setIndividualUsage} disabled={updateLimitsMutation.isPending} />
                 </div>
                 <DialogFooter>
                   <Button variant="outline" type="button" onClick={() => setOpenIndividual(false)} disabled={updateLimitsMutation.isPending}>Cancel</Button>
@@ -159,7 +162,7 @@ export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUse
                     <Label className="text-sm font-semibold">Organization Shared Pool</Label>
                     <span className="text-sm font-bold text-blue-600">{orgPool.toLocaleString()}</span>
                   </div>
-                  <BlueSlider min={10000} max={5000000} step={10000} value={orgPool} onValueChange={setOrgPool} disabled={updateLimitsMutation.isPending} />
+                  <BlueSlider min={10000} max={100000000} step={10000} value={orgPool} onValueChange={setOrgPool} disabled={updateLimitsMutation.isPending} />
                 </div>
                 <DialogFooter>
                   <Button variant="outline" type="button" onClick={() => setOpenOrg(false)} disabled={updateLimitsMutation.isPending}>Cancel</Button>
