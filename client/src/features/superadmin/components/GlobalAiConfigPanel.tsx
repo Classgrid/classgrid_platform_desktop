@@ -94,14 +94,14 @@ export function GlobalAiConfigPanel() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden h-full">
+      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
         <div className="p-5 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">Global AI Fallback Limits</h2>
           <p className="text-sm text-muted-foreground">Manage global default limits and quotas for all organizations.</p>
         </div>
 
-        <div className="p-0 flex flex-col h-full">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border border-b border-border flex-1">
+        <div className="p-0 flex flex-col">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border border-b border-border">
             {/* Individual Usage */}
             <Dialog open={openIndividual} onOpenChange={setOpenIndividual}>
               <DialogTrigger asChild>
@@ -167,7 +167,7 @@ export function GlobalAiConfigPanel() {
             </Dialog>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border">
             {/* Image Generations */}
             <Dialog open={openImages} onOpenChange={setOpenImages}>
               <DialogTrigger asChild>
@@ -242,81 +242,90 @@ export function GlobalAiConfigPanel() {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border flex-1">
-            {/* Credits Per INR */}
-            <Dialog open={openCreditsPerInr} onOpenChange={setOpenCreditsPerInr}>
-              <DialogTrigger asChild>
-                <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
-                  <span className="text-sm font-medium text-muted-foreground">Credits per INR</span>
-                  <span className="text-xl font-bold text-foreground">
-                    {creditsPerInr} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens/₹1</span>
-                  </span>
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-sm">
-                <DialogHeader>
-                  <DialogTitle>Edit Pricing: Credits per INR</DialogTitle>
-                  <DialogDescription>Define how many tokens users receive per ₹1 purchased.</DialogDescription>
-                </DialogHeader>
-                <div className="flex flex-col gap-2 py-4">
-                  <Label htmlFor="creditsPerInr" className="text-sm font-medium">Credits per INR</Label>
-                  <Input 
-                    id="creditsPerInr" 
-                    type="number"
-                    min={1}
-                    value={creditsPerInr} 
-                    onChange={(e) => setCreditsPerInr(Number(e.target.value))} 
-                    placeholder="e.g. 3000" 
-                    disabled={updateConfigMutation.isPending}
-                  />
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" type="button" onClick={() => setOpenCreditsPerInr(false)} disabled={updateConfigMutation.isPending}>Cancel</Button>
-                  <Button type="button" onClick={() => handleSave(setOpenCreditsPerInr, "Global Pricing updated successfully!")} disabled={updateConfigMutation.isPending}>
-                    {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
-                    Save changes
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+        </div>
+      </div>
 
-            {/* Image Generation Token Cost */}
-            <Dialog open={openImageCost} onOpenChange={setOpenImageCost}>
-              <DialogTrigger asChild>
-                <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
-                  <span className="text-sm font-medium text-muted-foreground">Image Generation Cost</span>
-                  <span className="text-xl font-bold text-foreground">
-                    {imageCost} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens/Image</span>
-                  </span>
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-sm">
-                <DialogHeader>
-                  <DialogTitle>Edit Image Generation Cost</DialogTitle>
-                  <DialogDescription>Set how many tokens are deducted per AI image generation.</DialogDescription>
-                </DialogHeader>
-                <div className="flex flex-col gap-2 py-4">
-                  <Label htmlFor="imageCost" className="text-sm font-medium">Token Cost per Image</Label>
-                  <Input 
-                    id="imageCost" 
-                    type="number"
-                    min={0}
-                    value={imageCost} 
-                    onChange={(e) => setImageCost(Number(e.target.value))} 
-                    placeholder="e.g. 5000" 
-                    disabled={updateConfigMutation.isPending}
-                  />
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" type="button" onClick={() => setOpenImageCost(false)} disabled={updateConfigMutation.isPending}>Cancel</Button>
-                  <Button type="button" onClick={() => handleSave(setOpenImageCost, "Global Image Cost updated successfully!")} disabled={updateConfigMutation.isPending}>
-                    {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
-                    Save changes
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+      {/* Credits per INR Panel */}
+      <div className="border border-border rounded-xl shadow-sm bg-card flex flex-col justify-between">
+        <div className="p-5">
+          <h3 className="text-lg font-semibold text-foreground tracking-tight">Credits per INR</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Define how many tokens users receive per ₹1 purchased. Current: <strong>{creditsPerInr} Tokens/₹1</strong>
+          </p>
+        </div>
+        <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end">
+          <Dialog open={openCreditsPerInr} onOpenChange={setOpenCreditsPerInr}>
+            <DialogTrigger asChild>
+              <Button variant="outline">Edit Rate</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Edit Pricing: Credits per INR</DialogTitle>
+                <DialogDescription>Define how many tokens users receive per ₹1 purchased.</DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-2 py-4">
+                <Label htmlFor="creditsPerInr" className="text-sm font-medium">Credits per INR</Label>
+                <Input 
+                  id="creditsPerInr" 
+                  type="number"
+                  min={1}
+                  value={creditsPerInr} 
+                  onChange={(e) => setCreditsPerInr(Number(e.target.value))} 
+                  placeholder="e.g. 3000" 
+                  disabled={updateConfigMutation.isPending}
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" type="button" onClick={() => setOpenCreditsPerInr(false)} disabled={updateConfigMutation.isPending}>Cancel</Button>
+                <Button type="button" onClick={() => handleSave(setOpenCreditsPerInr, "Global Pricing updated successfully!")} disabled={updateConfigMutation.isPending}>
+                  {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
+                  Save changes
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Image Generation Token Cost Panel */}
+      <div className="border border-border rounded-xl shadow-sm bg-card flex flex-col justify-between">
+        <div className="p-5">
+          <h3 className="text-lg font-semibold text-foreground tracking-tight">Image Generation Cost</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Set how many tokens are deducted per AI image generation. Current: <strong>{imageCost} Tokens/Image</strong>
+          </p>
+        </div>
+        <div className="p-4 bg-muted/20 border-t border-border flex items-center justify-end">
+          <Dialog open={openImageCost} onOpenChange={setOpenImageCost}>
+            <DialogTrigger asChild>
+              <Button variant="outline">Edit Cost</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Edit Image Generation Cost</DialogTitle>
+                <DialogDescription>Set how many tokens are deducted per AI image generation.</DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-2 py-4">
+                <Label htmlFor="imageCost" className="text-sm font-medium">Token Cost per Image</Label>
+                <Input 
+                  id="imageCost" 
+                  type="number"
+                  min={0}
+                  value={imageCost} 
+                  onChange={(e) => setImageCost(Number(e.target.value))} 
+                  placeholder="e.g. 5000" 
+                  disabled={updateConfigMutation.isPending}
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" type="button" onClick={() => setOpenImageCost(false)} disabled={updateConfigMutation.isPending}>Cancel</Button>
+                <Button type="button" onClick={() => handleSave(setOpenImageCost, "Global Image Cost updated successfully!")} disabled={updateConfigMutation.isPending}>
+                  {updateConfigMutation.isPending && <Spinner className="w-4 h-4 mr-2" />}
+                  Save changes
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
