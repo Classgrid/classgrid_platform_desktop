@@ -104,17 +104,40 @@ export const getUserAiDetail = async (req, res) => {
         }
 
         let orgPool = null;
-        if (user.role === 'org_admin' || user.role === 'Owner') {
-            if (user.organization_id && user.organization_id._id) {
-                const Organization = (await import("../../models/Organization.js")).default;
-                const org = await Organization.findById(user.organization_id._id).select("ai_config").lean();
-                if (org && org.ai_config) {
+        let effectiveFreeLimit = 100000;
+        
+        try {
+            const GlobalAiConfig = (await import("../../models/GlobalAiConfig.js")).default;
+            const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" }).select("free_weekly_limit_per_user").lean();
+            if (globalConfig && globalConfig.free_weekly_limit_per_user !== undefined) {
+                effectiveFreeLimit = globalConfig.free_weekly_limit_per_user;
+            }
+        } catch (e) {
+            console.error("Error fetching GlobalAiConfig:", e);
+        }
+
+        if (user.organization_id && user.organization_id._id) {
+            const Organization = (await import("../../models/Organization.js")).default;
+            const org = await Organization.findById(user.organization_id._id).select("ai_config").lean();
+            if (org && org.ai_config) {
+                if (org.ai_config.free_weekly_limit_per_user !== undefined) {
+                    effectiveFreeLimit = org.ai_config.free_weekly_limit_per_user;
+                }
+                
+                if (user.role === 'org_admin' || user.role === 'Owner') {
                     orgPool = {
                         limit: org.ai_config.pro_pool_limit || 0,
                         used: org.ai_config.pro_pool_used || 0
                     };
                 }
             }
+        }
+
+        if (user.ai_tokens) {
+            if (user.ai_tokens.custom_limits_enabled && user.ai_tokens.free_weekly_limit !== undefined) {
+                effectiveFreeLimit = user.ai_tokens.free_weekly_limit || effectiveFreeLimit;
+            }
+            user.ai_tokens.free_weekly_limit = effectiveFreeLimit;
         }
 
         res.status(200).json({
