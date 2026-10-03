@@ -111,7 +111,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
             <div className="mt-4 border-t border-border/50 pt-4 flex flex-col gap-4">
               {/* 1. Personal Limits */}
               {(() => {
-                const limit = userDetail.ai_tokens?.free_weekly_limit || 100000;
+                const limit = userDetail.ai_tokens?.free_weekly_limit ?? 0;
                 const used = userDetail.ai_tokens?.used_this_week || 0;
                 const percent = limit > 0 ? Math.min(100, Math.max(0, (used / limit) * 100)) : 0;
                 return (

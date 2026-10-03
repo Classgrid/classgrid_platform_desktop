@@ -134,8 +134,8 @@ export const getUserAiDetail = async (req, res) => {
         }
 
         if (user.ai_tokens) {
-            if (user.ai_tokens.custom_limits_enabled && user.ai_tokens.free_weekly_limit !== undefined) {
-                effectiveFreeLimit = user.ai_tokens.free_weekly_limit || effectiveFreeLimit;
+            if (user.ai_tokens.custom_limits_enabled && user.ai_tokens.free_weekly_limit !== undefined && user.ai_tokens.free_weekly_limit !== null) {
+                effectiveFreeLimit = user.ai_tokens.free_weekly_limit;
             }
             user.ai_tokens.free_weekly_limit = effectiveFreeLimit;
         }

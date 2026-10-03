@@ -24,7 +24,7 @@ export function BlockUserAiUsage({ userId, userName, isBlocked }: BlockUserAiUsa
     try {
       await verifySecurityCode.mutateAsync({ code: securityCode, action: "BLOCK_USER_AI", orgId: undefined });
 
-      blockMutation.mutate({ userId, blocked: !isBlocked }, {
+      blockMutation.mutate({ userId, isBlocked: !isBlocked }, {
         onSuccess: () => {
           toast.success(`User AI access has been ${!isBlocked ? 'blocked' : 'unblocked'} successfully.`);
           setOpen(false);

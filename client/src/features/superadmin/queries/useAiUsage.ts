@@ -19,9 +19,8 @@ export const aiUsageApi = {
   getOrgUsers: (orgId: string) => api.get(`/api/super-admin/ai-usage/orgs/${orgId}/users`).then(res => res.data.data),
   getUserDetail: (userId: string) => api.get(`/api/super-admin/ai-usage/users/${userId}/detail`).then(res => res.data.data),
 
-  // Mutations
-  blockUser: (userId: string, blocked: boolean) => api.put(`/api/super-admin/ai-usage/users/${userId}/block`, { blocked }).then(res => res.data),
-  blockOrg: (orgId: string, blocked: boolean) => api.put(`/api/super-admin/ai-usage/orgs/${orgId}/block`, { blocked }).then(res => res.data),
+  blockUser: (userId: string, isBlocked: boolean) => api.put(`/api/super-admin/ai-usage/users/${userId}/block`, { isBlocked }).then(res => res.data),
+  blockOrg: (orgId: string, isBlocked: boolean) => api.put(`/api/super-admin/ai-usage/orgs/${orgId}/block`, { isBlocked }).then(res => res.data),
   resetUserUsage: (userId: string) => api.post(`/api/super-admin/ai-usage/users/${userId}/reset`).then(res => res.data),
   resetOrgUsage: (orgId: string) => api.post(`/api/super-admin/ai-usage/orgs/${orgId}/reset`).then(res => res.data),
   grantCredits: (userId: string, amount: number, options?: { sendEmail?: boolean; startDate?: string; endDate?: string }) => api.post(`/api/super-admin/ai-usage/users/${userId}/grant`, { amount, ...options }).then(res => res.data),
@@ -72,7 +71,7 @@ export const useAiUserDetail = (userId: string) => useQuery({
 export const useBlockAiUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ userId, blocked }: { userId: string, blocked: boolean }) => aiUsageApi.blockUser(userId, blocked),
+    mutationFn: ({ userId, isBlocked }: { userId: string, isBlocked: boolean }) => aiUsageApi.blockUser(userId, isBlocked),
     onSuccess: (_, { userId }) => {
       toast.success("Action completed successfully.");
       queryClient.invalidateQueries({ queryKey: ["ai-usage-user", userId] });
@@ -85,7 +84,7 @@ export const useBlockAiUser = () => {
 export const useBlockAiOrg = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ orgId, blocked }: { orgId: string, blocked: boolean }) => aiUsageApi.blockOrg(orgId, blocked),
+    mutationFn: ({ orgId, isBlocked }: { orgId: string, isBlocked: boolean }) => aiUsageApi.blockOrg(orgId, isBlocked),
     onSuccess: (_, { orgId }) => {
       toast.success("Action completed successfully.");
       queryClient.invalidateQueries({ queryKey: ["ai-usage-org", orgId] });

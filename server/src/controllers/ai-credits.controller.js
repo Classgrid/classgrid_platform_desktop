@@ -32,9 +32,9 @@ export const getMyCredits = async (req, res) => {
                 creditId: `FREE-${user._id.toString().substring(0, 10).toUpperCase()}`,
                 creditType: "Free",
                 status: "Active",
-                issuedAmount: tokens.free_weekly_limit || 100000,
-                amountRemaining: Math.max(0, (tokens.free_weekly_limit || 100000) - (tokens.used_this_week || 0)),
-                estimatedAmountRemaining: Math.max(0, (tokens.free_weekly_limit || 100000) - (tokens.used_this_week || 0)),
+                issuedAmount: tokens.free_weekly_limit ?? 100000,
+                amountRemaining: Math.max(0, (tokens.free_weekly_limit ?? 100000) - (tokens.used_this_week || 0)),
+                estimatedAmountRemaining: Math.max(0, (tokens.free_weekly_limit ?? 100000) - (tokens.used_this_week || 0)),
                 startDate: freeStartDate.toISOString(),
                 expirationDate: freeEndDate.toISOString()
             }

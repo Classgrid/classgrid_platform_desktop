@@ -4267,7 +4267,9 @@ export const getMyUsage = async (req, res) => {
         }
 
         if (userTokens?.ai_tokens?.custom_limits_enabled) {
-            freeLimit = userTokens.ai_tokens.free_weekly_limit || freeLimit;
+            if (userTokens.ai_tokens.free_weekly_limit !== undefined && userTokens.ai_tokens.free_weekly_limit !== null) {
+                freeLimit = userTokens.ai_tokens.free_weekly_limit;
+            }
         }
 
         if (!userTokens || !userTokens.ai_tokens) {
