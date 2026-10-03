@@ -148,7 +148,7 @@ export const grantCredits = async (req, res) => {
         updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date(startDate);
         updateObj.$set["ai_tokens.promotion_credits_end_date"] = new Date(endDate);
 
-        const user = await User.findByIdAndUpdate(userId, updateObj, { returnDocument: 'after' });
+        const user = await User.findByIdAndUpdate(userId, updateObj, { new: true });
 
         if (!user) return res.status(404).json({ success: false, error: "User not found" });
 
@@ -264,7 +264,7 @@ export const grantOrgCredits = async (req, res) => {
         updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date(startDate);
         updateObj.$set["ai_tokens.promotion_credits_end_date"] = new Date(endDate);
 
-        user = await User.findByIdAndUpdate(user._id, updateObj, { returnDocument: 'after' });
+        user = await User.findByIdAndUpdate(user._id, updateObj, { new: true });
 
         // Record the transaction
         await AiCreditTransaction.create({

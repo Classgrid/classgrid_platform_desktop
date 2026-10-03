@@ -10,7 +10,8 @@ const aiCreditTransactionSchema = new mongoose.Schema(
         orgId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Organization",
-            required: true,
+            required: false,
+            default: null,
         },
         amount_inr: {
             type: Number,
