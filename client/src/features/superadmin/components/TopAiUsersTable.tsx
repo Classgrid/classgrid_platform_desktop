@@ -93,8 +93,8 @@ export function TopAiUsersTable({ users = [] }: TopAiUsersTableProps) {
             </div>
           )}
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-medium text-white">{row.name}</span>
-            <span className="text-xs text-gray-500 break-all">{row.email}</span>
+            <span className="text-sm font-medium text-foreground">{row.name}</span>
+            <span className="text-xs text-muted-foreground break-all">{row.email}</span>
           </div>
         </div>
       )
@@ -103,37 +103,37 @@ export function TopAiUsersTable({ users = [] }: TopAiUsersTableProps) {
       key: "role",
       header: "ROLE",
       width: "w-[15%]",
-      render: (value: string) => <span className="text-gray-300">{value}</span>
+      render: (value: string) => <span className="text-muted-foreground">{value}</span>
     },
     {
       key: "tokensUsed",
       header: "TOKENS USED",
       width: "w-[20%]",
-      render: (value: string) => <span className="text-gray-300 font-medium">{value}</span>
+      render: (value: string) => <span className="text-muted-foreground font-medium">{value}</span>
     },
     {
       key: "recentTopUp",
       header: "RECENT TOP-UP",
       width: "w-[20%]",
-      render: (value: string) => <span className="text-gray-400">{value}</span>
+      render: (value: string) => <span className="text-muted-foreground">{value}</span>
     }
   ];
 
   return (
-    <Card className="border border-[#222222] shadow-sm overflow-hidden bg-[#0a0a0a] dark:bg-[#0a0a0a]">
-      <CardHeader className="border-b border-[#222222] pb-4 bg-[#0a0a0a] flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2 text-white">
+    <Card className="border border-border shadow-sm overflow-hidden bg-card">
+      <CardHeader className="border-b border-border pb-4 bg-card flex flex-row items-center justify-between">
+        <CardTitle className="text-lg font-semibold flex items-center gap-2 text-foreground">
           TOP AI USERS
         </CardTitle>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
               placeholder="Search Filter..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-[180px] h-[34px] pl-9 pr-3 bg-black border border-[#222222] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#444444]"
+              className="w-[180px] h-[34px] pl-9 pr-3 bg-background border border-input rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
           <div className="w-[200px]">
@@ -144,10 +144,10 @@ export function TopAiUsersTable({ users = [] }: TopAiUsersTableProps) {
             />
           </div>
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[140px] h-[34px] bg-[#1a1a1a] border-[#222222] text-white hover:bg-[#222222]">
+            <SelectTrigger className="w-[140px] h-[34px] bg-background border-input text-foreground hover:bg-accent hover:text-accent-foreground">
               <SelectValue placeholder="Role Filter" />
             </SelectTrigger>
-            <SelectContent className="bg-[#1a1a1a] border-[#222222] text-white">
+            <SelectContent className="bg-popover border-border text-popover-foreground">
               <SelectItem value="all">All Roles</SelectItem>
               {uniqueRoles.map(role => (
                 <SelectItem key={role} value={role}>{formatRoleLabel(role)}</SelectItem>
@@ -156,16 +156,16 @@ export function TopAiUsersTable({ users = [] }: TopAiUsersTableProps) {
           </Select>
         </div>
       </CardHeader>
-      <CardContent className="p-0 bg-[#0a0a0a] dark:bg-[#0a0a0a] flex flex-col">
+      <CardContent className="p-0 bg-card flex flex-col">
         <DataTable 
           columns={columns} 
           rows={formattedUsers} 
           className="border-0 rounded-none bg-transparent"
         />
         {!showAll && totalFiltered > 10 && (
-          <div className="p-4 border-t border-[#222222] flex justify-center">
+          <div className="p-4 border-t border-border flex justify-center">
             <button 
-              className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setShowAll(true)}
             >
               View All Users ({totalFiltered})
@@ -173,9 +173,9 @@ export function TopAiUsersTable({ users = [] }: TopAiUsersTableProps) {
           </div>
         )}
         {showAll && totalFiltered > 10 && (
-          <div className="p-4 border-t border-[#222222] flex justify-center">
+          <div className="p-4 border-t border-border flex justify-center">
             <button 
-              className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setShowAll(false)}
             >
               Show Less

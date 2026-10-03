@@ -18,6 +18,22 @@ export interface AiUsageTrendsChartProps {
   data?: any[];
 }
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-card border border-border rounded-lg p-3 shadow-md">
+        <p className="text-foreground font-bold mb-2">{label}</p>
+        {payload.map((entry: any, index: number) => (
+          <p key={index} style={{ color: entry.color }} className="text-sm py-0.5">
+            {entry.name} : {entry.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
   const [chatDate, setChatDate] = React.useState<Date | undefined>();
   const [creditsDate, setCreditsDate] = React.useState<Date | undefined>();
@@ -131,30 +147,28 @@ export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
                 data={chatChartData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#888888" strokeOpacity={0.2} vertical={false} />
                 <XAxis 
                   dataKey="shortDate" 
-                  stroke="hsl(var(--muted-foreground))" 
+                  stroke="#888888" 
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false} 
                 />
                 <YAxis 
-                  stroke="hsl(var(--muted-foreground))" 
+                  stroke="#888888" 
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false} 
                   tickFormatter={(value) => `${value}`} 
                 />
                 <Tooltip 
-                  cursor={{fill: 'hsl(var(--muted))'}}
-                  contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
-                  labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold', marginBottom: '8px' }}
-                  itemStyle={{ fontSize: '14px', padding: '2px 0' }}
+                  cursor={{fill: '#88888833'}}
+                  content={<CustomTooltip />}
                 />
                 <Legend 
                   iconType="square" 
-                  wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: 'hsl(var(--muted-foreground))' }}
+                  wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: '#888888' }}
                 />
                 <Bar dataKey="requests" name="Total Chats" fill="#ea580c" barSize={12} radius={[2, 2, 0, 0]} />
               </BarChart>
@@ -227,30 +241,28 @@ export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
                 data={creditsChartData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#888888" strokeOpacity={0.2} vertical={false} />
                 <XAxis 
                   dataKey="shortDate" 
-                  stroke="hsl(var(--muted-foreground))" 
+                  stroke="#888888" 
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false} 
                 />
                 <YAxis 
-                  stroke="hsl(var(--muted-foreground))" 
+                  stroke="#888888" 
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false} 
                   tickFormatter={(value) => `${value}`} 
                 />
                 <Tooltip 
-                  cursor={{fill: 'hsl(var(--muted))'}}
-                  contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
-                  labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold', marginBottom: '8px' }}
-                  itemStyle={{ fontSize: '14px', padding: '2px 0' }}
+                  cursor={{fill: '#88888833'}}
+                  content={<CustomTooltip />}
                 />
                 <Legend 
                   iconType="square" 
-                  wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: 'hsl(var(--muted-foreground))' }}
+                  wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: '#888888' }}
                 />
                 <Bar dataKey="promptTokens" name="Input Tokens" stackId="a" fill="#ea580c" barSize={12} />
                 <Bar dataKey="completionTokens" name="Output Tokens" stackId="a" fill="#3b82f6" barSize={12} radius={[2, 2, 0, 0]} />
