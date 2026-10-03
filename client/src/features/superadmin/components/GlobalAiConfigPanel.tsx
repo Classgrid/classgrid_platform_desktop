@@ -47,12 +47,12 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
 
   useEffect(() => {
     if (data) {
-      setOrgPool(data.global_pro_pool_limit || 500000);
-      setIndividualUsage(data.global_user_weekly_limit || 100000);
-      setImages(data.global_image_weekly_limit || 20);
-      setWhatsapp(data.global_whatsapp_scheduling_limit || 10);
-      if (data.credits_per_inr) setCreditsPerInr(data.credits_per_inr);
-      if (data.image_generation_token_cost) setImageCost(data.image_generation_token_cost);
+      setOrgPool(data.global_pro_pool_limit ?? 500000);
+      setIndividualUsage(data.global_user_weekly_limit ?? 100000);
+      setImages(data.global_image_weekly_limit ?? 20);
+      setWhatsapp(data.global_whatsapp_scheduling_limit ?? 10);
+      if (data.credits_per_inr !== undefined) setCreditsPerInr(data.credits_per_inr);
+      if (data.image_generation_token_cost !== undefined) setImageCost(data.image_generation_token_cost);
     }
   }, [data]);
 
