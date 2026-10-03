@@ -17,8 +17,8 @@ const DEFAULT_IMAGE_GENERATION_COST = 5000;
 export const calculateCreditsFromAmount = async (amountInr) => {
     let multiplier = DEFAULT_CREDITS_PER_INR;
     try {
-        const config = await GlobalAiConfig.findOne({ key: "singleton" });
-        if (config && config.credits_per_inr) {
+        const config = await GlobalAiConfig.findOne({ key: "singleton" }).lean();
+        if (config && config.credits_per_inr !== undefined && config.credits_per_inr !== null) {
             multiplier = config.credits_per_inr;
         }
     } catch (err) {
@@ -143,8 +143,8 @@ export const addCredits = async (userId, amountToAdd) => {
 
 export const getImageGenerationCost = async () => {
     try {
-        const config = await GlobalAiConfig.findOne({ key: "singleton" });
-        if (config && config.image_generation_token_cost) {
+        const config = await GlobalAiConfig.findOne({ key: "singleton" }).lean();
+        if (config && config.image_generation_token_cost !== undefined && config.image_generation_token_cost !== null) {
             return config.image_generation_token_cost;
         }
     } catch (err) {
