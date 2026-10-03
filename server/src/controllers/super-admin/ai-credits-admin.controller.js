@@ -354,6 +354,33 @@ export const updateOrgAiLimits = async (req, res) => {
             custom_limits_enabled
         } = req.body;
 
+        if (orgId === "classgrid") {
+            const globalUpdateSet = {};
+            if (pro_pool_limit !== undefined) globalUpdateSet.global_pro_pool_limit = pro_pool_limit;
+            if (free_weekly_limit_per_user !== undefined) globalUpdateSet.global_user_weekly_limit = free_weekly_limit_per_user;
+            if (image_generation_limit !== undefined) globalUpdateSet.global_image_weekly_limit = image_generation_limit;
+            if (whatsapp_scheduling_limit !== undefined) globalUpdateSet.global_whatsapp_scheduling_limit = whatsapp_scheduling_limit;
+
+            const GlobalAiConfig = (await import("../../models/GlobalAiConfig.js")).default;
+            await GlobalAiConfig.findOneAndUpdate(
+                { key: "singleton" },
+                { $set: globalUpdateSet },
+                { upsert: true }
+            );
+
+            if (free_weekly_limit_per_user !== undefined) {
+                await User.updateMany(
+                    { $or: [{ role: 'super_admin' }, { organization_id: null }, { organization_id: { $exists: false } }] },
+                    { $set: { "ai_tokens.free_weekly_limit": free_weekly_limit_per_user } }
+                );
+            }
+
+            const io = req.app.get("io");
+            if (io) io.to("superadmin:ai_usage").emit("ai_usage_updated");
+
+            return res.status(200).json({ success: true, message: "Global AI limits updated successfully." });
+        }
+
         if (!mongoose.Types.ObjectId.isValid(orgId)) {
             return res.status(400).json({ success: false, error: "Invalid org ID" });
         }
