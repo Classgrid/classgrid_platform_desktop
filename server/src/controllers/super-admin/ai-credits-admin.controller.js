@@ -25,7 +25,28 @@ const getDashboardUrlForUser = async (user) => {
             }
         } catch(e) { console.error("Error getting org url", e); }
     }
-    return `${baseUrl}/ai-hub`;
+    
+    let agentPath = "/student/agent";
+    switch(user.role) {
+        case "super_admin":
+        case "co_super_admin": agentPath = "/superadmin/agent"; break;
+        case "org_admin":
+        case "admin": agentPath = "/org/admin/agent"; break;
+        case "teacher":
+        case "faculty":
+        case "hod":
+        case "principal":
+        case "vice_principal": agentPath = "/faculty/agent"; break;
+        case "library_manager": agentPath = "/dept/library/agent"; break;
+        case "hostel_warden": agentPath = "/dept/hostel/agent"; break;
+        case "hr_manager": agentPath = "/dept/hr/agent"; break;
+        case "attendance_manager": agentPath = "/dept/attendance/agent"; break;
+        case "fees_admin":
+        case "accountant": agentPath = "/dept/fees/agent"; break;
+        case "exams_admin": agentPath = "/dept/exams/agent"; break;
+        case "admissions_admin": agentPath = "/dept/admissions/agent"; break;
+    }
+    return `${baseUrl}${agentPath}`;
 };
 
 export const blockAiUser = async (req, res) => {
