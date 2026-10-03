@@ -31,18 +31,22 @@ export function RemoveUserGrantedCredits({ userId }: { userId: string }) {
       <Button 
         size="sm"
         variant="destructive"
-        onClick={() => setIsDialogOpen(true)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsDialogOpen(true);
+        }}
       >
         Remove
       </Button>
       
       <DangerConfirmDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
         onConfirm={handleRemove}
         title="Remove Granted Credits"
         description="Are you sure you want to remove all remaining granted credits for this user? This action cannot be undone and will revoke their active promotional credits immediately."
-        confirmText="Yes, Remove Credits"
+        actionLabel="Yes, Remove Credits"
+        warningMessage="The user's granted balance will be permanently set to zero."
         isLoading={isLoading}
       />
     </>

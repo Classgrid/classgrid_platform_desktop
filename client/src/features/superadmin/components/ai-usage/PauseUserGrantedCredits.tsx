@@ -9,7 +9,8 @@ export function PauseUserGrantedCredits({ userId, isPaused }: { userId: string, 
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
 
-  const handlePause = async () => {
+  const handlePause = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     setIsLoading(true);
     try {
       await apiClient.post(`/api/super-admin/ai-usage/users/${userId}/credits/pause`, { isPaused: !isPaused });
