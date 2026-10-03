@@ -70,17 +70,15 @@ export function AiCreditsPanel() {
             const remainingAmount = pool.amountRemaining || 0;
             const estimatedRemaining = pool.estimatedAmountRemaining || 0;
             const usedAmount = Math.max(0, issuedAmount - remainingAmount);
-            const percentUsed = issuedAmount > 0 ? (usedAmount / issuedAmount) * 100 : 0;
+            const rawPercent = issuedAmount > 0 ? (usedAmount / issuedAmount) * 100 : 0;
+            const percentUsed = Math.min(100, rawPercent);
             
             const isPromo = pool.creditType === "Promotion";
             const isPaid = pool.creditType === "Paid";
             
-            let typeColorClass = "text-emerald-500";
-            let typeBgClass = "bg-emerald-500";
-            if (isPromo) {
-              typeColorClass = "text-purple-500";
-              typeBgClass = "bg-purple-500";
-            }
+            // User requested to only use blue bar (bg-blue-500) to match the main Usage page
+            let typeColorClass = "text-blue-500";
+            let typeBgClass = "bg-blue-500";
 
             return (
               <div key={pool.creditId} className="bg-card border border-border rounded-xl p-6 shadow-sm relative overflow-hidden">
