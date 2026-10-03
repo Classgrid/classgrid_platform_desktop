@@ -8,9 +8,13 @@ import { GrantCreditsModal } from "../../components/GrantCredits";
 import { DataTable } from "@/components/marketing_ui/data-table";
 import { BlockUserAiUsage } from "../BlockUserAiUsage";
 import { ResetUserDailyLimit } from "../ResetUserDailyLimit";
+import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
+import { PauseUserGrantedCredits } from "./PauseUserGrantedCredits";
+import { RemoveUserGrantedCredits } from "./RemoveUserGrantedCredits";
 
 export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
   const [isGrantCreditsOpen, setIsGrantCreditsOpen] = useState(false);
+  const { data: currentUser } = useCurrentUser();
 
   if (!userDetail) return null;
 
@@ -299,7 +303,19 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                   key: "grantedBy",
                   header: "Granted By",
                   width: "w-[15%]",
-                  render: () => <span className="font-medium">Super Admin</span>
+                  render: () => (
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={currentUser?.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.name || "Super Admin")}&background=random`} 
+                        alt={currentUser?.name || "Super Admin"} 
+                        className="w-8 h-8 rounded-full object-cover" 
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-medium text-foreground">{currentUser?.name || "Super Admin"}</span>
+                        <span className="text-xs text-muted-foreground">{currentUser?.email || ""}</span>
+                      </div>
+                    </div>
+                  )
                 },
                 {
                   key: "dates",
@@ -346,40 +362,8 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                     const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
                     return (
                       <div className="flex items-center gap-2">
-                        <Button 
-                          size="sm"
-                          variant="outline" 
-                          onClick={async () => {
-                            try {
-                              const { apiClient } = await import('@/lib/apiClient');
-                              const { toast } = await import('sonner');
-                              await apiClient.post(`/api/super-admin/ai-usage/users/${userDetail.id}/credits/pause`, { isPaused: !isPaused });
-                              toast.success(`Granted credits ${!isPaused ? 'paused' : 'unpaused'} successfully. Please refresh the page.`);
-                            } catch (e) {
-                              console.error(e);
-                            }
-                          }}
-                        >
-                          {isPaused ? 'Unpause' : 'Pause'}
-                        </Button>
-                        <Button 
-                          size="sm"
-                          variant="destructive"
-                          onClick={async () => {
-                            if (window.confirm("Are you sure you want to remove all remaining granted credits for this user?")) {
-                              try {
-                                const { apiClient } = await import('@/lib/apiClient');
-                                const { toast } = await import('sonner');
-                                await apiClient.post(`/api/super-admin/ai-usage/users/${userDetail.id}/credits/remove`);
-                                toast.success("Granted credits removed successfully. Please refresh the page.");
-                              } catch (e) {
-                                console.error(e);
-                              }
-                            }
-                          }}
-                        >
-                          Remove
-                        </Button>
+                        <PauseUserGrantedCredits userId={userDetail.id} isPaused={isPaused} />
+                        <RemoveUserGrantedCredits userId={userDetail.id} />
                       </div>
                     )
                   }

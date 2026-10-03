@@ -14,7 +14,6 @@ export const AiUsageBar = ({ initialData, showExactTokens }: { initialData?: any
     const [loading, setLoading] = useState(!initialData);
 
     const fetchUsage = async () => {
-        if (initialData) return;
         try {
             const res = await apiClient.get('/api/ai/my-usage');
             if (res.data) {
@@ -27,8 +26,11 @@ export const AiUsageBar = ({ initialData, showExactTokens }: { initialData?: any
         }
     };
 
+    // Always fetch fresh on mount + poll every 30 seconds as safeguard
     useEffect(() => {
         fetchUsage();
+        const interval = setInterval(fetchUsage, 30000);
+        return () => clearInterval(interval);
     }, []);
 
     useEffect(() => {
