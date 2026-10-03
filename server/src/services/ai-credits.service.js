@@ -47,7 +47,9 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
         if (org && org.status === "active" && !org.ai_config?.is_ai_blocked) {
             // Apply Org Custom Limit for individual
             if (org.ai_config?.custom_limits_enabled) {
-                weeklyLimit = org.ai_config.free_weekly_limit_per_user || weeklyLimit;
+                if (org.ai_config.free_weekly_limit_per_user !== undefined && org.ai_config.free_weekly_limit_per_user !== null) {
+                    weeklyLimit = org.ai_config.free_weekly_limit_per_user;
+                }
             }
 
             // Check Org Pool (if org_admin)
@@ -64,13 +66,17 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     } else {
         // Virtual Classgrid Organization for platform team/super admins
         if (globalConfig.classgrid_custom_limits_enabled) {
-            weeklyLimit = globalConfig.classgrid_user_weekly_limit || weeklyLimit;
+            if (globalConfig.classgrid_user_weekly_limit !== undefined && globalConfig.classgrid_user_weekly_limit !== null) {
+                weeklyLimit = globalConfig.classgrid_user_weekly_limit;
+            }
         }
     }
 
     // Apply User Custom Limit (Overrides Org and Global)
     if (user.ai_tokens?.custom_limits_enabled) {
-        weeklyLimit = user.ai_tokens.free_weekly_limit || weeklyLimit;
+        if (user.ai_tokens.free_weekly_limit !== undefined && user.ai_tokens.free_weekly_limit !== null) {
+            weeklyLimit = user.ai_tokens.free_weekly_limit;
+        }
     }
 
     // 2. Check free weekly limit FIRST (Always use free before touching paid/promo)
