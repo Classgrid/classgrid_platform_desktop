@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { getSocket } from '@/lib/socketClient';
 
-export const AiUsageBar = ({ initialData }: { initialData?: any }) => {
+export const AiUsageBar = ({ initialData, showExactTokens }: { initialData?: any, showExactTokens?: boolean }) => {
     const [usageData, setUsageData] = useState<any>(initialData || {
         type: 'free',
         used: 0,

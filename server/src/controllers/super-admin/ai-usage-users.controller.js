@@ -115,6 +115,7 @@ export const getUserAiDetail = async (req, res) => {
                 isBlocked: user.ai_tokens?.is_ai_blocked || false,
                 totalUsage: user.ai_tokens?.total_ai_tokens_used || 0,
                 balance: user.ai_tokens?.ai_credits_balance || 0,
+                ai_tokens: user.ai_tokens,
                 totalChats,
                 topupHistory: topupHistory.map(t => ({
                     id: t._id,
