@@ -206,7 +206,12 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
       if (data.messages) {
         let transcript = "";
         data.messages.forEach((msg: any) => {
-          transcript += `${msg.role === 'user' ? 'You' : 'Classgrid AI'}:\n${msg.content}\n\n`;
+          let cleanContent = msg.content;
+          if (cleanContent) {
+            cleanContent = cleanContent.replace(/\[IMAGE_GENERATION_COMPLETE:\s*([\s\S]*?)\s*\|\s*(https?:\/\/[^\]]+)\]/g, '[Generated Image: $1]($2)');
+            cleanContent = cleanContent.replace(/\[IMAGE_GENERATION_COMPLETE:\s*([\s\S]*?)\s*:\s*(https?:\/\/[^\]]+)\]/g, '[Generated Image: $1]($2)');
+            transcript += `${msg.role === 'user' ? 'You' : 'Classgrid AI'}:\n${cleanContent}\n\n`;
+          }
         });
         await navigator.clipboard.writeText(transcript);
         setCopiedSuccess(true);
@@ -251,7 +256,12 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
       if (data.messages) {
         let transcript = "";
         data.messages.forEach((msg: any) => {
-          transcript += `${msg.role === 'user' ? 'You' : 'Classgrid AI'}:\n${msg.content}\n\n`;
+          let cleanContent = msg.content;
+          if (cleanContent) {
+            cleanContent = cleanContent.replace(/\[IMAGE_GENERATION_COMPLETE:\s*([\s\S]*?)\s*\|\s*(https?:\/\/[^\]]+)\]/g, '[Generated Image: $1]($2)');
+            cleanContent = cleanContent.replace(/\[IMAGE_GENERATION_COMPLETE:\s*([\s\S]*?)\s*:\s*(https?:\/\/[^\]]+)\]/g, '[Generated Image: $1]($2)');
+            transcript += `${msg.role === 'user' ? 'You' : 'Classgrid AI'}:\n${cleanContent}\n\n`;
+          }
         });
         await navigator.clipboard.writeText(transcript);
         toast.success("Plain text copied to clipboard!");

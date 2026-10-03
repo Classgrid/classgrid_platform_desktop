@@ -3456,8 +3456,15 @@ export const shareChatSession = async (req, res) => {
         let transcript = `Chat Transcript: ${session.title}\n\n`;
         transcript += `Exported on ${new Date().toLocaleString()}\n\n---\n\n`;
         messages.filter(msg => msg.role === 'user' || msg.role === 'assistant').forEach((msg) => {
-            const cleanContent = formatApprovalCard(msg.content || "");
+            let cleanContent = formatApprovalCard(msg.content || "");
+            
+            // Format Image Generation Tags to clean markdown
             if (cleanContent) {
+                cleanContent = cleanContent.replace(/\[IMAGE_GENERATION_COMPLETE:\s*([^|:]+)[|:]\s*([^\]]*(?:\]\([^)]+\))?)\]/g, (match, prompt, urlPart) => {
+                    const urlMatch = urlPart.match(/https?:\/\/[^\s)\]]+/);
+                    const url = urlMatch ? urlMatch[0] : urlPart.trim();
+                    return `[Generated Image: ${prompt.trim()}](${url})`;
+                });
                 transcript += `${msg.role === 'user' ? 'You' : 'Classgrid AI'}:\n${cleanContent}\n\n`;
             }
         });

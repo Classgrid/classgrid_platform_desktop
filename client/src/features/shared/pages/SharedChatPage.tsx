@@ -52,6 +52,8 @@ interface SharedChat {
 
 const preprocessLaTeX = (content: string) => {
   if (!content) return "";
+  content = content.replace(/\[IMAGE_GENERATION_COMPLETE:\s*([\s\S]*?)\s*\|\s*(https?:\/\/[^\]]+)\]/g, '![$1]($2)');
+  content = content.replace(/\[IMAGE_GENERATION_COMPLETE:\s*([\s\S]*?)\s*:\s*(https?:\/\/[^\]]+)\]/g, '![$1]($2)');
   return content
     .replace(/\\\[/g, () => '$$')
     .replace(/\\\]/g, () => '$$')
