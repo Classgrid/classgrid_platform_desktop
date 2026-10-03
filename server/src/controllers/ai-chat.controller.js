@@ -654,6 +654,7 @@ export const streamAskAi = async (req, res) => {
         // historyDepth: how many messages to give the LLM context (default 25, max 500)
         let historyDepth = Math.min(parseInt(body.historyDepth, 10) || 25, 500);
         let messages = [];
+        let dynamicSystemPrompt = ""; // Initialize early so long_term_memory and schedule_context can append to it before SYSTEM_PROMPT is set at line 766
 
         const userEmail = req.user?.email || body.userEmail || 'unknown@classgrid.in';
 
@@ -763,7 +764,7 @@ export const streamAskAi = async (req, res) => {
             messages.push({ role: "user", content });
         }
 
-        let dynamicSystemPrompt = SYSTEM_PROMPT + `
+        dynamicSystemPrompt = SYSTEM_PROMPT + `
 
 CRITICAL AI RULE: always use nodejs script to insert, edit, delete, or manage rag documents. never use the tool.
 
@@ -3144,25 +3145,23 @@ When using the 'create_schedule' tool, DO NOT explicitly tell the user that you 
                     }
 
                     // Log to AiUsageLog for dashboard analytics
-                    if (userTokens) {
-                        AiUsageLog.create({
-                            organization_id: userTokens.organization_id || null,
-                            userId: userId,
-                            provider: 'cloudflare',
-                            model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
-                            feature: 'chat_ai',
-                            promptTokens: inputTokens || 0,
-                            completionTokens: outputTokens || 0,
-                            totalTokens: estimatedTokens,
-                            success: true
-                        }).then(async () => {
-                            try {
-                                const { getIO } = await import('../services/socket.service.js');
-                                const io = getIO();
-                                if (io) io.to("superadmin:ai_usage").emit("ai_usage_updated");
-                            } catch(e) {}
-                        }).catch(err => console.error("AiUsageLog Error:", err));
-                    }
+                    AiUsageLog.create({
+                        organization_id: orgId || null,
+                        userId: userId,
+                        provider: 'cloudflare',
+                        model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
+                        feature: 'chat_ai',
+                        promptTokens: inputTokens || 0,
+                        completionTokens: outputTokens || 0,
+                        totalTokens: estimatedTokens,
+                        success: true
+                    }).then(async () => {
+                        try {
+                            const { getIO } = await import('../services/socket.service.js');
+                            const io = getIO();
+                            if (io) io.to("superadmin:ai_usage").emit("ai_usage_updated");
+                        } catch(e) {}
+                    }).catch(err => console.error("AiUsageLog Error:", err));
                 }
             }
         } catch (e) {
