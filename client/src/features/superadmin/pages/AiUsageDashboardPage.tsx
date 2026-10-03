@@ -254,7 +254,7 @@ export function AiUsageDashboardPage() {
 
     const UniversalTooltip = ({ active, payload, label }: any) => {
       if (active && payload && payload.length) {
-        const date = new Date(label);
+        const date = parseLocalDate(label);
         const displayLabel = isNaN(date.getTime()) ? label : date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
         return (
           <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50">
@@ -358,7 +358,7 @@ export function AiUsageDashboardPage() {
                       axisLine={false}
                       minTickGap={15}
                       tickFormatter={(value) => {
-                        const date = new Date(value);
+                        const date = parseLocalDate(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                       }}
                     />
@@ -367,7 +367,7 @@ export function AiUsageDashboardPage() {
                         cursor={{ fill: 'currentColor', opacity: 0.05 }}
                         content={({ active, payload, label }) => {
                           if (active && payload && payload.length) {
-                            const date = new Date(label);
+                            const date = parseLocalDate(label);
                             const displayLabel = isNaN(date.getTime()) ? label : date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
                             return (
                               <div className="bg-background border border-border rounded-lg shadow-sm p-3 text-sm flex flex-col gap-2 z-50">
@@ -410,7 +410,7 @@ export function AiUsageDashboardPage() {
                       axisLine={false}
                       minTickGap={15}
                       tickFormatter={(value) => {
-                        const date = new Date(value);
+                        const date = parseLocalDate(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                       }}
                     />
@@ -455,7 +455,7 @@ export function AiUsageDashboardPage() {
                       axisLine={false}
                       minTickGap={15}
                       tickFormatter={(value) => {
-                        const date = new Date(value);
+                        const date = parseLocalDate(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                       }}
                     />
@@ -493,7 +493,7 @@ export function AiUsageDashboardPage() {
                       axisLine={false}
                       minTickGap={15}
                       tickFormatter={(value) => {
-                        const date = new Date(value);
+                        const date = parseLocalDate(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                       }}
                     />
@@ -534,7 +534,7 @@ export function AiUsageDashboardPage() {
                       axisLine={false}
                       minTickGap={15}
                       tickFormatter={(value) => {
-                        const date = new Date(value);
+                        const date = parseLocalDate(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                       }}
                     />
@@ -611,7 +611,7 @@ export function AiUsageDashboardPage() {
                       axisLine={false}
                       minTickGap={15}
                       tickFormatter={(value) => {
-                        const date = new Date(value);
+                        const date = parseLocalDate(value);
                         return isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                       }}
                     />
