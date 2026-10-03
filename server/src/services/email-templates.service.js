@@ -2926,5 +2926,47 @@ Security Warning: If you did not request this code, immediately secure your acco
 © ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
- 
- 
+// ------------- GRANTED CREDITS EXTENDED -------------
+export const getGrantedCreditsExtendedHtml = (userName, newExpiryDate) => {
+  const content = `
+    <p>Hi <strong>${userName || 'there'}</strong>,</p>
+    <p>Good news! Your Classgrid AI granted credits expiration date has been extended.</p>
+    
+    <div class="box" style="margin: 24px 0; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
+      <h3 style="margin-top: 0; color: #0f172a; font-size: 16px; margin-bottom: 12px;">New Expiration Date</h3>
+      <p style="margin: 0; font-size: 18px; font-weight: 600; color: #4338ca;">${formatDate(newExpiryDate)}</p>
+    </div>
+
+    <p>You can continue using your AI credits for generating content and accessing smart features until this new date.</p>
+    
+    <p style="margin-top: 24px;">
+      <a href="${getFrontendUrl()}/ai-hub" style="display: inline-block; background-color: #111111; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 14px;">Open AI Hub</a>
+    </p>
+  `;
+  return baseTemplate({
+    content,
+    title: 'AI Credits Extended',
+    ignoreText: 'If you have any questions about your credits, simply reply to this email.'
+  });
+};
+
+export const getGrantedCreditsExtendedPlainText = (userName, newExpiryDate) => {
+  return `AI Credits Extended
+
+Hi ${userName || 'there'},
+
+Good news! Your Classgrid AI granted credits expiration date has been extended.
+
+New Expiration Date: ${formatDate(newExpiryDate)}
+
+You can continue using your AI credits until this new date.
+
+To view your AI usage, go to: ${getFrontendUrl()}/ai-hub
+
+If you have any questions, just reply to this email.
+
+Best regards,
+The Classgrid Team`;
+};
+
+

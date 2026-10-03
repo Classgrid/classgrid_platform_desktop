@@ -26,6 +26,7 @@ export const aiUsageApi = {
   resetOrgUsage: (orgId: string) => api.post(`/api/super-admin/ai-usage/orgs/${orgId}/reset`).then(res => res.data),
   grantCredits: (userId: string, amount: number, options?: { sendEmail?: boolean; startDate?: string; endDate?: string }) => api.post(`/api/super-admin/ai-usage/users/${userId}/grant`, { amount, ...options }).then(res => res.data),
   grantOrgCredits: (orgId: string, amount: number, options?: { sendEmail?: boolean; startDate?: string; endDate?: string }) => api.post(`/api/super-admin/ai-usage/orgs/${orgId}/grant`, { amount, ...options }).then(res => res.data),
+  extendCredits: (userId: string, endDate: string) => api.put(`/api/super-admin/ai-usage/users/${userId}/credits/extend`, { endDate }).then(res => res.data),
   deleteUserData: (userId: string) => api.delete(`/api/super-admin/ai-usage/users/${userId}/data`).then(res => res.data),
   updateOrgLimits: (orgId: string, data: { pro_pool_limit: number, free_weekly_limit_per_user: number, image_generation_limit?: number, whatsapp_scheduling_limit?: number }) => api.put(`/api/super-admin/ai-usage/orgs/${orgId}/limits`, data).then(res => res.data),
   

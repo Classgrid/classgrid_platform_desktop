@@ -11,6 +11,7 @@ import { ResetUserDailyLimit } from "../ResetUserDailyLimit";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 import { PauseUserGrantedCredits } from "./PauseUserGrantedCredits";
 import { RemoveUserGrantedCredits } from "./RemoveUserGrantedCredits";
+import { ExtendUserGrantedCredits } from "./ExtendUserGrantedCredits";
 import socketClient from "@/lib/socketClient";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -345,8 +346,8 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                   width: "w-[20%]",
                   render: () => (
                     <div className="flex flex-col text-xs text-muted-foreground">
-                      <span className="truncate">Starts: {userDetail.ai_tokens?.promotion_credits_start_date ? new Date(userDetail.ai_tokens.promotion_credits_start_date).toLocaleDateString() : "N/A"}</span>
-                      <span className="truncate">Expires: {userDetail.ai_tokens?.promotion_credits_end_date ? new Date(userDetail.ai_tokens.promotion_credits_end_date).toLocaleDateString() : "N/A"}</span>
+                      <span className="truncate">Starts: {userDetail.ai_tokens?.promotion_credits_start_date ? new Date(userDetail.ai_tokens.promotion_credits_start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A"}</span>
+                      <span className="truncate">Expires: {userDetail.ai_tokens?.promotion_credits_end_date ? new Date(userDetail.ai_tokens.promotion_credits_end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A"}</span>
                     </div>
                   )
                 },
@@ -384,6 +385,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                     const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
                     return (
                       <div className="flex items-center gap-2">
+                        <ExtendUserGrantedCredits userId={userDetail.id} currentExpiry={userDetail.ai_tokens?.promotion_credits_end_date} />
                         <PauseUserGrantedCredits userId={userDetail.id} isPaused={isPaused} />
                         <RemoveUserGrantedCredits userId={userDetail.id} />
                       </div>

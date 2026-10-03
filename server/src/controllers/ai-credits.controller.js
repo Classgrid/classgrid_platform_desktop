@@ -45,9 +45,19 @@ export const getMyCredits = async (req, res) => {
         let promoBalance = tokens.promotion_credits_balance || 0;
         let promoStatus = "Active";
         const promoEndDate = tokens.promotion_credits_end_date ? new Date(tokens.promotion_credits_end_date) : null;
-        if (promoEndDate && promoEndDate.getTime() < now.getTime()) {
+        const promoPaused = tokens.promotion_credits_paused || false;
+        
+        // Determine correct status
+        if (promoBalance <= 0 && totalPromoGranted > 0) {
             promoStatus = "Expired";
             promoBalance = 0;
+        } else if (promoEndDate && promoEndDate.getTime() < now.getTime()) {
+            promoStatus = "Expired";
+            promoBalance = 0;
+        } else if (promoPaused) {
+            promoStatus = "Paused";
+        } else {
+            promoStatus = "Active";
         }
 
         if (totalPromoGranted > 0 || promoBalance > 0) {

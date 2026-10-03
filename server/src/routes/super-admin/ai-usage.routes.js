@@ -33,6 +33,7 @@ router.put("/orgs/:orgId/limits", adminController.updateOrgAiLimits);
 router.post("/users/:userId/grant", adminController.grantCredits);
 router.post("/users/:userId/credits/remove", adminController.removeGrantedCredits);
 router.post("/users/:userId/credits/pause", adminController.pauseGrantedCredits);
+router.put("/users/:userId/credits/extend", adminController.extendGrantedCredits);
 router.post("/orgs/:orgId/grant", adminController.grantOrgCredits);
 router.delete("/users/:userId/data", adminController.deleteUserAiData);
 

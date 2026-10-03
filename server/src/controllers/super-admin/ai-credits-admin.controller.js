@@ -614,7 +614,6 @@ export const pauseGrantedCredits = async (req, res) => {
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
             if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
-            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
         res.status(200).json({ success: true, message: `Granted credits ${isPaused ? "paused" : "unpaused"} successfully` });
     } catch (error) {
@@ -623,3 +622,54 @@ export const pauseGrantedCredits = async (req, res) => {
     }
 };
 
+export const extendGrantedCredits = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { endDate, sendEmail = true } = req.body;
+
+        if (!endDate) {
+            return res.status(400).json({ success: false, error: "End date is required" });
+        }
+
+        const User = (await import("../../models/User.js")).default;
+        
+        const user = await User.findByIdAndUpdate(userId, {
+            $set: { "ai_tokens.promotion_credits_end_date": new Date(endDate) }
+        }, { new: true });
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: "User not found" });
+        }
+
+        if (sendEmail && user.email) {
+            try {
+                const { getGrantedCreditsExtendedHtml, getGrantedCreditsExtendedPlainText } = await import("../../services/email-templates.service.js");
+                const { sendEmail: sendSESEmail } = await import("../../services/aws-ses.service.js");
+
+                const emailHtml = getGrantedCreditsExtendedHtml(user.name, new Date(endDate));
+                const emailText = getGrantedCreditsExtendedPlainText(user.name, new Date(endDate));
+
+                await sendSESEmail({
+                    to: user.email,
+                    subject: "Your AI Credits Have Been Extended!",
+                    html: emailHtml,
+                    text: emailText,
+                    userId: user._id,
+                    organizationId: user.organization_id
+                });
+            } catch (emailErr) {
+                console.error("Failed to send extend credit email:", emailErr);
+            }
+        }
+
+        const io = req.app.get("io");
+        if (io) {
+            io.to("superadmin:ai_usage").emit("ai_usage_updated");
+            if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
+        }
+        res.status(200).json({ success: true, message: "Granted credits extended successfully" });
+    } catch (error) {
+        console.error("Extend Granted Credits Error:", error);
+        res.status(500).json({ success: false, error: "Internal server error" });
+    }
+};
