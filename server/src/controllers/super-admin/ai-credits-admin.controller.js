@@ -430,6 +430,8 @@ export const requestSecurityCode = async (req, res) => {
         let actionDescription = action;
         if (action === "RESET_ORG_USAGE") actionDescription = `Resetting AI Usage Limit for Organization: ${orgId || 'Unknown'}`;
         if (action === "BLOCK_ORG_AI") actionDescription = `Changing AI Block status for Organization: ${orgId || 'Unknown'}`;
+        if (action === "RESET_USER_USAGE") actionDescription = `Resetting AI Usage Limit for User`;
+        if (action === "BLOCK_USER_AI") actionDescription = `Changing AI Block status for User`;
         if (action === "GENERAL_AI_MUTATION") actionDescription = `Granting AI Credits`;
 
         const html = getSuperAdminSecurityOtpHtml(req.user.name || "Admin", code, actionDescription, 10);
