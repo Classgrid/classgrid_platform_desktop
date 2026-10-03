@@ -34,4 +34,8 @@ router.post("/users/:userId/grant", adminController.grantCredits);
 router.post("/orgs/:orgId/grant", adminController.grantOrgCredits);
 router.delete("/users/:userId/data", adminController.deleteUserAiData);
 
+// 5. Security / OTP
+router.post("/security-code/request", adminController.requestSecurityCode);
+router.post("/security-code/verify", adminController.verifySecurityCode);
+
 export default router;

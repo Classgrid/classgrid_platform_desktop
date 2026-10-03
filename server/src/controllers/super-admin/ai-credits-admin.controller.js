@@ -2,8 +2,9 @@ import User from "../../models/User.js";
 import Organization from "../../models/Organization.js";
 import AiCreditTransaction from "../../models/AiCreditTransaction.js";
 import mongoose from "mongoose";
+import AdminSecurityCode from "../../models/AdminSecurityCode.js";
 import { sendEmail } from "../../services/aws-ses.service.js";
-import { getAiCreditGrantedHtml, getAiCreditGrantedPlainText } from "../../services/email-templates.service.js";
+import { getAiCreditGrantedHtml, getAiCreditGrantedPlainText, getSuperAdminSecurityOtpHtml, getSuperAdminSecurityOtpPlainText } from "../../services/email-templates.service.js";
 
 /**
  * PHASE 9: Super Admin AI Credits Admin Controller
@@ -372,5 +373,99 @@ export const updateOrgAiLimits = async (req, res) => {
     } catch (error) {
         console.error("Update Org AI Limits Error:", error);
         res.status(500).json({ success: false, error: "Failed to update org AI limits" });
+    }
+};
+
+// ==========================================
+// SECURITY / OTP ENDPOINTS
+// ==========================================
+
+export const requestSecurityCode = async (req, res) => {
+    try {
+        const { action, orgId } = req.body;
+        // Check if user is authenticated and super admin
+        if (!req.user || req.user.role !== 'super_admin') {
+            return res.status(403).json({ success: false, error: "Unauthorized" });
+        }
+
+        const email = req.user.email;
+        if (!email) {
+            return res.status(400).json({ success: false, error: "Super Admin email not found" });
+        }
+
+        // Generate 6-digit code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Invalidate old unused codes for this admin
+        await AdminSecurityCode.deleteMany({ superAdminId: req.user.id });
+
+        // Expires in 10 minutes
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+        await AdminSecurityCode.create({
+            superAdminId: req.user.id,
+            email,
+            code,
+            action: action || "GENERAL_AI_MUTATION",
+            orgId: orgId || null,
+            expiresAt
+        });
+
+        const html = getSuperAdminSecurityOtpHtml({ code, action, orgId });
+        const plainText = getSuperAdminSecurityOtpPlainText({ code, action, orgId });
+
+        await sendEmail({
+            toAddresses: [email],
+            subject: "Classgrid Super Admin Security Code (OTP)",
+            htmlBody: html,
+            textBody: plainText,
+        });
+
+        res.status(200).json({ success: true, message: "Security code sent successfully" });
+    } catch (error) {
+        console.error("Error in requestSecurityCode:", error);
+        res.status(500).json({ success: false, error: "Internal server error" });
+    }
+};
+
+export const verifySecurityCode = async (req, res) => {
+    try {
+        const { code, action, orgId } = req.body;
+        
+        if (!req.user || req.user.role !== 'super_admin') {
+            return res.status(403).json({ success: false, error: "Unauthorized" });
+        }
+
+        if (!code) {
+             return res.status(400).json({ success: false, error: "Security code is required" });
+        }
+
+        const securityCode = await AdminSecurityCode.findOne({
+            superAdminId: req.user.id,
+            code,
+            used: false,
+            expiresAt: { $gt: new Date() }
+        });
+
+        if (!securityCode) {
+            return res.status(400).json({ success: false, error: "Invalid or expired security code" });
+        }
+
+        if (action && securityCode.action !== action) {
+             return res.status(400).json({ success: false, error: "Invalid action for this security code" });
+        }
+
+        if (orgId && securityCode.orgId !== orgId && securityCode.orgId !== null) {
+             return res.status(400).json({ success: false, error: "Invalid organization for this security code" });
+        }
+
+        // Mark as used
+        securityCode.used = true;
+        await securityCode.save();
+
+        res.status(200).json({ success: true, message: "Security code verified successfully" });
+    } catch (error) {
+        console.error("Error in verifySecurityCode:", error);
+        res.status(500).json({ success: false, error: "Internal server error" });
     }
 };
