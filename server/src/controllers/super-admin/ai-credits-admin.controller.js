@@ -402,10 +402,10 @@ export const requestSecurityCode = async (req, res) => {
         const plainText = getSuperAdminSecurityOtpPlainText(req.user.name || "Admin", code, actionDescription, 10);
 
         await sendEmail({
-            toAddresses: [email],
+            to: email,
             subject: "Classgrid Super Admin Security Code (OTP)",
-            htmlBody: html,
-            textBody: plainText,
+            html: html,
+            text: plainText,
         });
 
         res.status(200).json({ success: true, message: "Security code sent successfully" });
