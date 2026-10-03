@@ -324,17 +324,17 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                 {
                   key: "grantedBy",
                   header: "Granted By",
-                  width: "w-[15%]",
+                  width: "w-[30%]",
                   render: () => (
                     <div className="flex items-center gap-3">
                       <img 
                         src={currentUser?.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.name || "Super Admin")}&background=random`} 
                         alt={currentUser?.name || "Super Admin"} 
-                        className="w-8 h-8 rounded-full object-cover" 
+                        className="w-8 h-8 rounded-full object-cover shrink-0" 
                       />
-                      <div className="flex flex-col">
-                        <span className="font-medium text-foreground">{currentUser?.name || "Super Admin"}</span>
-                        <span className="text-xs text-muted-foreground">{currentUser?.email || ""}</span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-medium text-foreground truncate">{currentUser?.name || "Super Admin"}</span>
+                        <span className="text-xs text-muted-foreground truncate">{currentUser?.email || ""}</span>
                       </div>
                     </div>
                   )
@@ -345,22 +345,22 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                   width: "w-[20%]",
                   render: () => (
                     <div className="flex flex-col text-xs text-muted-foreground">
-                      <span>Starts: {userDetail.ai_tokens?.promotion_credits_granted_at ? new Date(userDetail.ai_tokens.promotion_credits_granted_at).toLocaleDateString() : "N/A"}</span>
-                      <span>Expires: {userDetail.ai_tokens?.promotion_credits_expiration ? new Date(userDetail.ai_tokens.promotion_credits_expiration).toLocaleDateString() : "N/A"}</span>
+                      <span className="truncate">Starts: {userDetail.ai_tokens?.promotion_credits_granted_at ? new Date(userDetail.ai_tokens.promotion_credits_granted_at).toLocaleDateString() : "N/A"}</span>
+                      <span className="truncate">Expires: {userDetail.ai_tokens?.promotion_credits_expiration ? new Date(userDetail.ai_tokens.promotion_credits_expiration).toLocaleDateString() : "N/A"}</span>
                     </div>
                   )
                 },
                 {
                   key: "credits",
                   header: "Credits",
-                  width: "w-[20%]",
+                  width: "w-[25%]",
                   render: () => {
                     const limit = userDetail.ai_tokens?.total_promotion_credits_granted || 0;
                     const remaining = userDetail.ai_tokens?.promotion_credits_balance || 0;
                     const used = Math.max(0, limit - remaining);
                     return (
                       <div className="flex flex-col">
-                        <span className="font-medium text-foreground">{formatNumber(remaining)} / {formatNumber(limit)}</span>
+                        <span className="font-medium text-foreground">{formatNumber(used)} / {formatNumber(limit)}</span>
                         <span className="text-xs text-muted-foreground">{limit > 0 ? Math.round((used / limit) * 100) : 0}% Used</span>
                       </div>
                     )
@@ -369,7 +369,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                 {
                   key: "status",
                   header: "Status",
-                  width: "w-[15%]",
+                  width: "w-[10%]",
                   render: () => (
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${userDetail.ai_tokens?.promotion_credits_paused ? "bg-amber-500/10 text-amber-500" : "bg-green-500/10 text-green-500"}`}>
                       {userDetail.ai_tokens?.promotion_credits_paused ? "PAUSED" : "ACTIVE"}
@@ -379,7 +379,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                 {
                   key: "actions",
                   header: "Actions",
-                  width: "w-[30%]",
+                  width: "w-[15%]",
                   render: () => {
                     const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
                     return (

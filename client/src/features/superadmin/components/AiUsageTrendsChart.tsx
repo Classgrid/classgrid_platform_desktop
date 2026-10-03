@@ -147,28 +147,28 @@ export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
                 data={chatChartData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#888888" strokeOpacity={0.2} vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis 
                   dataKey="shortDate" 
-                  stroke="#888888" 
+                  stroke="var(--muted-foreground)" 
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false} 
                 />
                 <YAxis 
-                  stroke="#888888" 
+                  stroke="var(--muted-foreground)" 
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false} 
                   tickFormatter={(value) => `${value}`} 
                 />
                 <Tooltip 
-                  cursor={{fill: '#88888833'}}
+                  cursor={{fill: 'var(--muted)'}}
                   content={<CustomTooltip />}
                 />
                 <Legend 
                   iconType="square" 
-                  wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: '#888888' }}
+                  wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: 'var(--muted-foreground)' }}
                 />
                 <Bar dataKey="requests" name="Total Chats" fill="#ea580c" barSize={12} radius={[2, 2, 0, 0]} />
               </BarChart>
@@ -241,28 +241,28 @@ export function AiUsageTrendsChart({ data = [] }: AiUsageTrendsChartProps) {
                 data={creditsChartData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#888888" strokeOpacity={0.2} vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis 
                   dataKey="shortDate" 
-                  stroke="#888888" 
+                  stroke="var(--muted-foreground)" 
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false} 
                 />
                 <YAxis 
-                  stroke="#888888" 
+                  stroke="var(--muted-foreground)" 
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false} 
                   tickFormatter={(value) => `${value}`} 
                 />
                 <Tooltip 
-                  cursor={{fill: '#88888833'}}
+                  cursor={{fill: 'var(--muted)'}}
                   content={<CustomTooltip />}
                 />
                 <Legend 
                   iconType="square" 
-                  wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: '#888888' }}
+                  wrapperStyle={{ paddingTop: '20px', fontSize: '14px', color: 'var(--muted-foreground)' }}
                 />
                 <Bar dataKey="promptTokens" name="Input Tokens" stackId="a" fill="#ea580c" barSize={12} />
                 <Bar dataKey="completionTokens" name="Output Tokens" stackId="a" fill="#3b82f6" barSize={12} radius={[2, 2, 0, 0]} />
