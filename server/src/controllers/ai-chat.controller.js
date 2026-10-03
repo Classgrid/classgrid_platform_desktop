@@ -4228,8 +4228,17 @@ export const getMyUsage = async (req, res) => {
         const userTokens = await User.findById(req.user.id).select("ai_tokens organization_id role");
         
         let freeLimit = globalConfig.global_user_weekly_limit;
+        
+        let org = null;
+        if (userTokens.organization_id) {
+            org = await Organization.findById(userTokens.organization_id).select("ai_config");
+            if (org && org.ai_config?.custom_limits_enabled) {
+                freeLimit = org.ai_config.user_weekly_limit || globalConfig.global_user_weekly_limit;
+            }
+        }
+
         if (userTokens?.ai_tokens?.custom_limits_enabled) {
-            freeLimit = userTokens.ai_tokens.free_weekly_limit || globalConfig.global_user_weekly_limit;
+            freeLimit = userTokens.ai_tokens.free_weekly_limit || freeLimit;
         }
 
         if (!userTokens || !userTokens.ai_tokens) {
@@ -4245,7 +4254,6 @@ export const getMyUsage = async (req, res) => {
 
         // Return Pro pool if allowed
         if (userTokens.organization_id) {
-            const org = await Organization.findById(userTokens.organization_id).select("ai_config");
             if (org && org.ai_config) {
                 const isOrgBlocked = org.ai_config.is_ai_blocked || globalConfig.global_ai_blocked;
                 if (isOrgBlocked) {
