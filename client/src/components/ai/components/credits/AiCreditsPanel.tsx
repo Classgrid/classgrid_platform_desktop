@@ -247,13 +247,35 @@ export function AiCreditsPanel() {
                           +{formatNumber(txn.credits_added)}
                         </TableCell>
                         <TableCell>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            txn.status === 'success' ? 'bg-emerald-500/10 text-emerald-600' : 
-                            txn.status === 'pending' ? 'bg-amber-500/10 text-amber-600' : 
-                            'bg-red-500/10 text-red-600'
-                          }`}>
-                            {txn.status || 'unknown'}
-                          </span>
+                          {(() => {
+                            let displayStatus = txn.status;
+                            let colorClass = txn.status === 'success' ? 'bg-emerald-500/10 text-emerald-600' : 
+                                             txn.status === 'pending' ? 'bg-amber-500/10 text-amber-600' : 
+                                             'bg-red-500/10 text-red-600';
+                            
+                            if (txn.type === 'grant') {
+                              const promoPool = balance?.pools?.find((p: any) => p.creditType === "Promotion");
+                              if (!promoPool || promoPool.status === 'Expired' || promoPool.amountRemaining <= 0) {
+                                displayStatus = 'Removed / Expired';
+                                colorClass = 'bg-red-500/10 text-red-600';
+                              } else if (promoPool.status === 'Paused') {
+                                displayStatus = 'Paused';
+                                colorClass = 'bg-amber-500/10 text-amber-600';
+                              } else {
+                                // If active, we can check if it was extended by comparing dates if we wanted, 
+                                // but for now we label it 'Granted' or 'Extended' based on user preference.
+                                // We'll just show 'Granted / Active' as the standard success state.
+                                displayStatus = 'Granted / Active';
+                                colorClass = 'bg-emerald-500/10 text-emerald-600';
+                              }
+                            }
+
+                            return (
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+                                {displayStatus}
+                              </span>
+                            );
+                          })()}
                         </TableCell>
                       </TableRow>
                     ))

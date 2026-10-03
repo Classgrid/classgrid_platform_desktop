@@ -2851,7 +2851,7 @@ export const getAiCreditAdminNotificationHtml = (payerName, payerEmail, amountFo
 
 // ------------- AI CREDITS: GRANTED NOTIFICATION -------------
 export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance, expireDateStr = "No expiration", dashboardUrl = null) => {
-    const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+    const url = dashboardUrl || (getFrontendUrl() + '/student/agent');
     const content = `
         <p>Hi ${userName},</p>
         <p>Good news! We have successfully added <strong>${creditsAdded} AI credits</strong> to your account.</p>
@@ -2871,7 +2871,7 @@ export const getAiCreditGrantedHtml = (userName, creditsAdded, totalBalance, exp
 };
 
 export const getAiCreditGrantedPlainText = (userName, creditsAdded, totalBalance, expireDateStr = "No expiration", dashboardUrl = null) => {
-    const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+    const url = dashboardUrl || (getFrontendUrl() + '/student/agent');
     return `Hi ${userName},
 
 Good news! We have successfully added ${creditsAdded} AI credits to your account.
@@ -2930,7 +2930,7 @@ Security Warning: If you did not request this code, immediately secure your acco
 
 // ------------- GRANTED CREDITS EXTENDED -------------
 export const getGrantedCreditsExtendedHtml = (userName, newExpiryDate, dashboardUrl = null) => {
-  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  const url = dashboardUrl || (getFrontendUrl() + '/student/agent');
   const content = `
     <p>Hi <strong>${userName || 'there'}</strong>,</p>
     <p>Good news! Your Classgrid AI granted credits expiration date has been extended.</p>
@@ -2954,7 +2954,7 @@ export const getGrantedCreditsExtendedHtml = (userName, newExpiryDate, dashboard
 };
 
 export const getGrantedCreditsExtendedPlainText = (userName, newExpiryDate, dashboardUrl = null) => {
-  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  const url = dashboardUrl || (getFrontendUrl() + '/student/agent');
   return `AI Credits Extended
 
 Hi ${userName || 'there'},
@@ -2976,7 +2976,7 @@ The Classgrid Team`;
 // ------------- GRANTED CREDITS PAUSED / UNPAUSED -------------
 export const getGrantedCreditsPausedHtml = (userName, isPaused, dashboardUrl = null) => {
   const action = isPaused ? "paused" : "resumed";
-  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  const url = dashboardUrl || (getFrontendUrl() + '/student/agent');
   const content = `
     <p>Hi <strong>${userName || 'there'}</strong>,</p>
     <p>Your Classgrid AI granted credits have been <strong>${action}</strong> by the administrator.</p>
@@ -2995,13 +2995,13 @@ export const getGrantedCreditsPausedHtml = (userName, isPaused, dashboardUrl = n
 
 export const getGrantedCreditsPausedPlainText = (userName, isPaused, dashboardUrl = null) => {
   const action = isPaused ? "paused" : "resumed";
-  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  const url = dashboardUrl || (getFrontendUrl() + '/student/agent');
   return 'AI Credits ' + (isPaused ? 'Paused' : 'Resumed') + '\n\nHi ' + (userName || 'there') + ',\n\nYour Classgrid AI granted credits have been ' + action + ' by the administrator.\n\n' + (isPaused ? 'While paused, you will not be able to use your granted credits. Your free weekly limit still applies.' : 'You can now continue using your granted credits as usual.') + '\n\nIf you have any questions, just reply to this email.\n\nBest regards,\nThe Classgrid Team';
 };
 
 // ------------- GRANTED CREDITS REMOVED (EXPIRED) -------------
 export const getGrantedCreditsRemovedHtml = (userName, dashboardUrl = null) => {
-  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  const url = dashboardUrl || (getFrontendUrl() + '/student/agent');
   const content = `
     <p>Hi <strong>${userName || 'there'}</strong>,</p>
     <p>Your Classgrid AI granted credits have been <strong>removed</strong> by the administrator. Your promotional credit balance has been set to zero.</p>
@@ -3021,13 +3021,13 @@ export const getGrantedCreditsRemovedHtml = (userName, dashboardUrl = null) => {
 };
 
 export const getGrantedCreditsRemovedPlainText = (userName, dashboardUrl = null) => {
-  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  const url = dashboardUrl || (getFrontendUrl() + '/student/agent');
   return 'AI Credits Removed\n\nHi ' + (userName || 'there') + ',\n\nYour Classgrid AI granted credits have been removed by the administrator. Your promotional credit balance has been set to zero.\n\nYour free weekly limit is still available. If you need additional credits, you can purchase them from the AI Hub.\n\nTo view your AI usage, go to: ' + url + '\n\nBest regards,\nThe Classgrid Team';
 };
 
 // ------------- GRANTED CREDITS EXPIRY WARNING (2 days before) -------------
 export const getGrantedCreditsExpiryWarningHtml = (userName, expiryDate, remainingCredits, dashboardUrl = null) => {
-  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  const url = dashboardUrl || (getFrontendUrl() + '/student/agent');
   const content = `
     <p>Hi <strong>${userName || 'there'}</strong>,</p>
     <p>This is a friendly reminder that your Classgrid AI granted credits are <strong>expiring soon</strong>.</p>
@@ -3048,6 +3048,6 @@ export const getGrantedCreditsExpiryWarningHtml = (userName, expiryDate, remaini
 };
 
 export const getGrantedCreditsExpiryWarningPlainText = (userName, expiryDate, remainingCredits, dashboardUrl = null) => {
-  const url = dashboardUrl || (getFrontendUrl() + '/ai-hub');
+  const url = dashboardUrl || (getFrontendUrl() + '/student/agent');
   return 'AI Credits Expiring Soon\n\nHi ' + (userName || 'there') + ',\n\nThis is a friendly reminder that your Classgrid AI granted credits are expiring soon.\n\nExpiration Date: ' + formatDate(expiryDate) + '\nRemaining Credits: ' + remainingCredits + '\n\nMake sure to use your remaining credits before they expire. After expiration, your granted credit balance will be set to zero.\n\nTo use your credits: ' + url + '\n\nBest regards,\nThe Classgrid Team';
 };
