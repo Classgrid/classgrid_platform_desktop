@@ -169,6 +169,6 @@ export const useRequestSecurityCode = () => {
 export const useVerifySecurityCode = () => {
   return useMutation({
     mutationFn: ({ code, action, orgId }: { code: string, action: string, orgId?: string }) => aiUsageApi.verifySecurityCode(code, action, orgId),
-    onError: (error) => toast.error("Invalid or expired security code."),
+    onError: (error: any) => toast.error(error.response?.data?.error || "Invalid or expired security code."),
   });
 };

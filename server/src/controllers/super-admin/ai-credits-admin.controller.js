@@ -498,7 +498,7 @@ export const verifySecurityCode = async (req, res) => {
                 expired: c.expiresAt < new Date(),
                 expiresAt: c.expiresAt
             })));
-            return res.status(400).json({ success: false, error: "Invalid or expired security code" });
+            return res.status(400).json({ success: false, error: `Code not found for user. Codes matched: ${allMatchingCodes.length}. User codes exist: ${userCodes.length > 0}` });
         }
 
         if (action && securityCode.action !== action) {

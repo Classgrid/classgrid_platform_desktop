@@ -781,6 +781,7 @@ export function AiUsageDashboardPage() {
         <AiUsageTrendsChart data={orgTrendStats?.usageTrend} />
         
         <AiUsageBar 
+          showExactTokens={true}
           initialData={{
             type: 'pro',
             used: orgDetail?.totalUsage ?? 0,

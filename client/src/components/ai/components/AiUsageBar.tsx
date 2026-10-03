@@ -112,10 +112,17 @@ export const AiUsageBar = ({ initialData, showExactTokens }: { initialData?: any
                 </div>
                 
                 <div className="flex-1 flex flex-col gap-1.5 mt-1">
-                    <div className="w-full flex items-center justify-between text-xs">
+                    <div className="w-full flex items-center justify-between text-xs mb-1">
                         <span className="font-medium text-foreground">
                             {Math.round(usageData.type === 'pro' ? percentUsedFree : percentUsed)}% Used
                         </span>
+                        {showExactTokens && (
+                            <span className="text-muted-foreground font-medium">
+                                {usageData.type === 'pro' 
+                                    ? `${(usageData.freeData?.used || 0).toLocaleString()} / ${(usageData.freeData?.limit || 0).toLocaleString()} Tokens`
+                                    : `${(usageData.used || 0).toLocaleString()} / ${(usageData.limit || 0).toLocaleString()} Tokens`}
+                            </span>
+                        )}
                     </div>
                     <div className="w-full h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
                         <div 
@@ -139,10 +146,15 @@ export const AiUsageBar = ({ initialData, showExactTokens }: { initialData?: any
                     </div>
                     
                     <div className="flex-1 flex flex-col gap-1.5 mt-1">
-                        <div className="w-full flex items-center justify-between text-xs">
+                        <div className="w-full flex items-center justify-between text-xs mb-1">
                             <span className="font-medium text-foreground">
                                 {Math.round(percentUsed)}% Used
                             </span>
+                            {showExactTokens && (
+                                <span className="text-muted-foreground font-medium">
+                                    {(usageData.used || 0).toLocaleString()} / {(usageData.limit || 0).toLocaleString()} Tokens
+                                </span>
+                            )}
                         </div>
                         <div className="w-full h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
                             <div 
