@@ -730,13 +730,16 @@ export const extendGrantedCredits = async (req, res) => {
 
         const User = (await import("../../models/User.js")).default;
         
+        const oldUser = await User.findById(userId);
+        if (!oldUser) {
+            return res.status(404).json({ success: false, error: "User not found" });
+        }
+        
+        const oldEndDate = oldUser.ai_tokens?.promotion_credits_end_date;
+
         const user = await User.findByIdAndUpdate(userId, {
             $set: { "ai_tokens.promotion_credits_end_date": new Date(endDate) }
         }, { new: true });
-
-        if (!user) {
-            return res.status(404).json({ success: false, error: "User not found" });
-        }
 
         const AiCreditTransaction = (await import("../../models/AiCreditTransaction.js")).default;
         await AiCreditTransaction.findOneAndUpdate(
@@ -744,6 +747,21 @@ export const extendGrantedCredits = async (req, res) => {
             { $set: { status: "active" } },
             { sort: { createdAt: -1 }, returnDocument: "after" }
         );
+
+        await AiCreditTransaction.create({
+            userId: user._id,
+            orgId: user.organization_id,
+            amount_inr: 0,
+            credits_added: 0,
+            razorpay_payment_id: "EXTEND_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+            razorpay_order_id: "EXTEND_ORDER",
+            type: "extend",
+            status: "success",
+            metadata: {
+                oldEndDate: oldEndDate,
+                newEndDate: new Date(endDate)
+            }
+        });
 
         if (sendEmail && user.email) {
             try {
