@@ -602,6 +602,7 @@ export const streamAskAi = async (req, res) => {
 
     const userId = req.user?.id || body.userId;
     let tokenSource = "personal";
+    let availableTokensToGenerate = 8192;
     let orgId = null;
 
     if (userId) {
@@ -623,6 +624,9 @@ export const streamAskAi = async (req, res) => {
                 return;
             }
             tokenSource = check.source;
+            if (check.remaining !== undefined) {
+                availableTokensToGenerate = Math.min(8192, check.remaining);
+            }
         } catch (err) {
             console.error("Quota check error:", err);
         }
@@ -1597,7 +1601,7 @@ Furthermore, you are a helpful AI Assistant, NOT a pre-sales representative! NEV
                 }],
             verbose: true,
             maxToolDepth: 1000,
-            defaultMaxTokens: 8192,
+            defaultMaxTokens: Math.max(1, availableTokensToGenerate),
             tools: [
                 ...getMcpTools()
                     .filter(t => !t.name.endsWith('_connector') || allowedConnectorNames.has(t.name))

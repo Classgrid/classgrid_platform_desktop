@@ -145,7 +145,7 @@ export function AiCreditsPanel() {
                   
                 </div>
                 
-                {issuedAmount > 0 && pool.status !== 'Revoked' && pool.status !== 'Expired' && (
+                {issuedAmount > 0 && pool.status !== 'Revoked' && (
                   <div className="mt-8 pt-6 border-t border-border">
                     <div className="flex flex-col gap-1.5 w-full">
                       <div className="w-full flex items-center justify-between text-xs">

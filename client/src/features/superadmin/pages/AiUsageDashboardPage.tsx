@@ -952,7 +952,7 @@ export function AiUsageDashboardPage() {
                 width: "w-[30%]",
                 render: (_: any, row: any) => (
                   <div className="flex flex-col">
-                    <span className="font-medium text-foreground">{formatNumber(row.remaining)} / {formatNumber(row.granted)}</span>
+                    <span className="font-medium text-foreground">{formatNumber(row.used)} / {formatNumber(row.granted)}</span>
                     <span className="text-xs text-muted-foreground">{Math.round((row.used / row.granted) * 100)}% Used</span>
                   </div>
                 )

@@ -71,7 +71,7 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
                 const orgUsed = org.ai_config?.pro_used_this_period || 0;
                 const orgLimit = org.ai_config?.pro_pool_limit || 0;
                 if (orgUsed + requiredTokens <= orgLimit) {
-                    return { allowed: true, source: "org_pool" };
+                    return { allowed: true, source: "org_pool", remaining: orgLimit - orgUsed };
                 }
             }
         }
@@ -110,7 +110,7 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     }
 
     if (usedThisWeek + requiredTokens <= weeklyLimit) {
-        return { allowed: true, source: "weekly_free" };
+        return { allowed: true, source: "weekly_free", remaining: weeklyLimit - usedThisWeek };
     }
 
     // 3. FIFO LOGIC: Determine which came FIRST between Top-Up (Paid) and Granted (Promotion)
@@ -136,14 +136,14 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     // Whichever was purchased/granted FIRST gets used FIRST (FIFO)
     if (promoBalance >= requiredTokens && paidBalance >= requiredTokens) {
         if (promoStart <= paidStart) {
-            return { allowed: true, source: "promotion" };
+            return { allowed: true, source: "promotion", remaining: promoBalance };
         } else {
-            return { allowed: true, source: "personal" };
+            return { allowed: true, source: "personal", remaining: paidBalance };
         }
     } else if (promoBalance >= requiredTokens) {
-        return { allowed: true, source: "promotion" };
+        return { allowed: true, source: "promotion", remaining: promoBalance };
     } else if (paidBalance >= requiredTokens) {
-        return { allowed: true, source: "personal" };
+        return { allowed: true, source: "personal", remaining: paidBalance };
     }
 
     return { allowed: false, reason: "Insufficient tokens." };

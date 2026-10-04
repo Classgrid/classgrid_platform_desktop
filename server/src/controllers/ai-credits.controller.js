@@ -55,7 +55,7 @@ export const getMyCredits = async (req, res) => {
             promoStatus = "Revoked";
             promoBalance = 0;
         } else if (promoBalance <= 0 && totalPromoGranted > 0) {
-            promoStatus = "Expired";
+            promoStatus = "Exhausted";
             promoBalance = 0;
         } else if (promoEndDate && promoEndDate.getTime() < now.getTime()) {
             promoStatus = "Expired";
