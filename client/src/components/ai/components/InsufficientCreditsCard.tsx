@@ -36,7 +36,7 @@ export function InsufficientCreditsCard({
 
       {/* Body Text */}
       <p className="mb-5 text-[15px] leading-relaxed text-muted-foreground">
-        You need at least 50 AI Credits to send messages. To continue using the AI now,
+        You need at least 10,000 AI Credits to send messages. To continue using the AI now,
         purchase more AI Credits. Your plan's baseline quota will refresh on {formattedDate}.
       </p>
 
