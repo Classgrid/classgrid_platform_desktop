@@ -131,7 +131,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-10">
           {/* Backdrop - NO BLUR */}
           <div 
-            className="absolute inset-0 bg-black/70" 
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm" 
             onClick={() => setIsOpen(false)}
           />
           
@@ -175,7 +175,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
                              {/* Base inactive line */}
                              <div className="absolute inset-0 bg-border/40" />
                              {/* Active overlay line */}
-                             <div className={`absolute inset-y-0 left-0 bg-emerald-500 transition-all duration-700 ${isCompleted ? 'w-full' : 'w-0'}`} />
+                             <div className={`absolute inset-y-0 left-0 bg-primary transition-all duration-700 ${isCompleted ? 'w-full' : 'w-0'}`} />
                           </div>
                         )}
 
@@ -183,9 +183,9 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
                         <div 
                           className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 bg-background transition-colors duration-300
                             ${isCompleted 
-                              ? "bg-foreground border-foreground text-background" 
+                              ? "bg-primary border-primary text-white" 
                               : isActive 
-                                ? "border-foreground text-foreground shadow-[0_0_0_4px_rgba(255,255,255,0.05)] dark:shadow-[0_0_0_4px_rgba(0,0,0,0.2)]" 
+                                ? "border-primary text-primary shadow-[0_0_0_4px_rgba(16,185,129,0.1)] dark:shadow-[0_0_0_4px_rgba(16,185,129,0.2)]" 
                                 : "border-border text-muted-foreground"}
                           `}
                         >
@@ -220,7 +220,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
             <div className="p-4 px-6 border-t border-border bg-background rounded-b-lg flex items-center gap-4">
               <div className="h-1.5 w-full bg-border/40 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-foreground transition-all duration-1000" 
+                  className="h-full bg-primary transition-all duration-1000" 
                   style={{ width: `${progressPercentage}%` }}
                 />
               </div>
