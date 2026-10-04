@@ -238,7 +238,7 @@ export function AiCreditsPanel() {
                         <TableCell className="whitespace-nowrap">
                           {format(new Date(txn.createdAt), "MMM dd, yyyy h:mm a")}
                         </TableCell>                          <TableCell className="font-medium">
-                            {txn.type === "topup" ? "Top-Up" : txn.type === "grant" ? "Credit Grant" : "Adjustment"}
+                            {txn.type === "topup" ? "Top-Up" : "Credit Grant"}
                           </TableCell>
                         <TableCell className="text-muted-foreground">
                           {txn.amount_inr ? `₹${formatNumber(txn.amount_inr)}` : "-"}
