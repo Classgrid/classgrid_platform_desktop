@@ -351,6 +351,7 @@ export function CheckoutPage() {
             </div>
           </div>
         </section>
+        <FailedRedirect returnUrl={returnUrl} />
       </div>
     );
   }
@@ -684,6 +685,30 @@ function SuccessRedirect({ returnUrl }: { returnUrl: string | null }) {
         window.close();
       } else if (returnUrl) {
         window.location.href = returnUrl;
+      }
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [returnUrl]);
+  return null;
+}
+
+function FailedRedirect({ returnUrl }: { returnUrl: string | null }) {
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (returnUrl) {
+        if (returnUrl === "close_window") {
+          window.close();
+        } else {
+          try {
+            const urlObj = new URL(returnUrl, window.location.origin);
+            urlObj.searchParams.set("ai_payment", "failed");
+            window.location.href = urlObj.toString();
+          } catch(e) {
+            window.location.href = returnUrl + (returnUrl.includes("?") ? "&" : "?") + "ai_payment=failed";
+          }
+        }
+      } else {
+        window.history.back();
       }
     }, 4000);
     return () => clearTimeout(timer);
