@@ -4321,6 +4321,10 @@ export const getMyUsage = async (req, res) => {
             let promoBalance = userTokens.ai_tokens.promotion_credits_balance || 0;
             if (userTokens.ai_tokens.promotion_credits_end_date && new Date(userTokens.ai_tokens.promotion_credits_end_date).getTime() < now) {
                 promoBalance = 0; // Expired
+            } else if (userTokens.ai_tokens.promotion_credits_revoked) {
+                promoBalance = 0; // Revoked
+            } else if (userTokens.ai_tokens.promotion_credits_paused) {
+                promoBalance = 0; // Paused
             }
             
             let paidBalance = userTokens.ai_tokens.ai_credits_balance || 0;
