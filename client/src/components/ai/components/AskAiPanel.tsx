@@ -4277,7 +4277,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                       <h3 className="font-semibold text-red-500">Access Blocked</h3>
                                     </div>
                                     <p className="text-sm text-foreground/80">
-                                      Your AI access has been suspended. Please contact your organization's support for more information.
+                                      Your AI access has been suspended. Please contact our support team or email us at support@classgrid.in
                                     </p>
                                   </div>
                                 </div>
