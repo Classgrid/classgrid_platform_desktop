@@ -961,11 +961,30 @@ export function AiUsageDashboardPage() {
                 key: "status",
                 header: "Status",
                 width: "w-[20%]",
-                render: (_: any, row: any) => (
-                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${row.isPaused ? "bg-amber-500/10 text-amber-500" : "bg-green-500/10 text-green-500"}`}>
-                    {row.isPaused ? "PAUSED" : "ACTIVE"}
-                  </span>
-                )
+                render: (_: any, row: any) => {
+                  const isExpired = row.expirationDate && new Date(row.expirationDate).getTime() < Date.now();
+                  const isRevoked = row.granted === 0;
+
+                  let statusLabel = "ACTIVE";
+                  let statusClass = "bg-green-500/10 text-green-500";
+
+                  if (isRevoked) {
+                    statusLabel = "REVOKED";
+                    statusClass = "bg-red-500/10 text-red-500";
+                  } else if (row.isPaused) {
+                    statusLabel = "PAUSED";
+                    statusClass = "bg-amber-500/10 text-amber-500";
+                  } else if (isExpired) {
+                    statusLabel = "EXPIRED";
+                    statusClass = "bg-red-500/10 text-red-500";
+                  }
+
+                  return (
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${statusClass}`}>
+                      {statusLabel}
+                    </span>
+                  );
+                }
               },
               {
                 key: "dates",
