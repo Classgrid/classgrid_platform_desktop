@@ -373,11 +373,39 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                   key: "status",
                   header: "Status",
                   width: "w-[10%]",
-                  render: () => (
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${userDetail.ai_tokens?.promotion_credits_paused ? "bg-amber-500/10 text-amber-500" : "bg-green-500/10 text-green-500"}`}>
-                      {userDetail.ai_tokens?.promotion_credits_paused ? "PAUSED" : "ACTIVE"}
-                    </span>
-                  )
+                  render: () => {
+                    const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
+                    const limit = userDetail.ai_tokens?.total_promotion_credits_granted || 0;
+                    const remaining = userDetail.ai_tokens?.promotion_credits_balance || 0;
+                    const used = Math.max(0, limit - remaining);
+                    const endDate = userDetail.ai_tokens?.promotion_credits_end_date;
+                    const isExpired = endDate && new Date(endDate).getTime() < Date.now();
+                    const isExhausted = limit > 0 && remaining <= 0;
+                    const isRevoked = limit === 0 && userDetail.promotionHistory && userDetail.promotionHistory.length > 0;
+
+                    let statusLabel = "ACTIVE";
+                    let statusClass = "bg-green-500/10 text-green-500";
+
+                    if (isRevoked) {
+                      statusLabel = "REVOKED";
+                      statusClass = "bg-red-500/10 text-red-500";
+                    } else if (isPaused) {
+                      statusLabel = "PAUSED";
+                      statusClass = "bg-amber-500/10 text-amber-500";
+                    } else if (isExhausted) {
+                      statusLabel = "EXHAUSTED";
+                      statusClass = "bg-red-500/10 text-red-500";
+                    } else if (isExpired) {
+                      statusLabel = "EXPIRED";
+                      statusClass = "bg-red-500/10 text-red-500";
+                    }
+
+                    return (
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${statusClass}`}>
+                        {statusLabel}
+                      </span>
+                    );
+                  }
                 },
                 {
                   key: "actions",
