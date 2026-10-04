@@ -24,11 +24,11 @@ const getDashboardUrlForUser = async (user) => {
                     baseUrl = `https://${org.subdomain}.classgrid.in`;
                 }
             }
-        } catch(e) { console.error("Error getting org url", e); }
+        } catch (e) { console.error("Error getting org url", e); }
     }
-    
+
     let agentPath = "/student/agent";
-    switch(user.role) {
+    switch (user.role) {
         case "super_admin":
         case "co_super_admin": agentPath = "/superadmin/agent"; break;
         case "org_admin":
@@ -60,8 +60,8 @@ export const blockAiUser = async (req, res) => {
         }
 
         const user = await User.findByIdAndUpdate(
-            userId, 
-            { $set: { "ai_tokens.is_ai_blocked": isBlocked } }, 
+            userId,
+            { $set: { "ai_tokens.is_ai_blocked": isBlocked } },
             { new: true }
         );
 
@@ -90,8 +90,8 @@ export const blockAiOrg = async (req, res) => {
         }
 
         const org = await Organization.findByIdAndUpdate(
-            orgId, 
-            { $set: { "ai_config.is_ai_blocked": isBlocked } }, 
+            orgId,
+            { $set: { "ai_config.is_ai_blocked": isBlocked } },
             { new: true }
         );
 
@@ -180,21 +180,20 @@ export const grantCredits = async (req, res) => {
             return res.status(400).json({ success: false, error: "Invalid amount" });
         }
 
-        const updateObj = { 
-            $inc: { 
+        const updateObj = {
+            $inc: {
                 "ai_tokens.promotion_credits_balance": amount,
                 "ai_tokens.total_promotion_credits_granted": amount
             },
             $set: {}
         };
-        
+
         if (!startDate || !endDate) {
             return res.status(400).json({ success: false, error: "Both start date and expiry date are strictly required." });
         }
-        
+
         updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date(startDate);
         updateObj.$set["ai_tokens.promotion_credits_end_date"] = new Date(endDate);
-        updateObj.$set["ai_tokens.promotion_credits_revoked"] = false;
 
         const user = await User.findByIdAndUpdate(userId, updateObj, { new: true });
 
@@ -219,11 +218,11 @@ export const grantCredits = async (req, res) => {
             try {
                 const totalTokens = (user.ai_tokens.ai_credits_balance + user.ai_tokens.promotion_credits_balance) || 0;
                 const totalBalance = totalTokens.toLocaleString();
-                
+
                 // Format expiration date for email
                 const d = new Date(endDate);
                 const expireDateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                
+
                 const dashboardUrl = await getDashboardUrlForUser(user);
                 const emailHtml = getAiCreditGrantedHtml(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr, dashboardUrl);
                 const emailText = getAiCreditGrantedPlainText(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr, dashboardUrl);
@@ -282,7 +281,7 @@ export const grantOrgCredits = async (req, res) => {
             }
             const org = await Organization.findById(orgId);
             if (!org) return res.status(404).json({ success: false, error: "Organization not found" });
-            
+
             orgNameStr = org.name || "";
             if (req.body.email) {
                 user = await User.findOne({ email: req.body.email });
@@ -297,24 +296,23 @@ export const grantOrgCredits = async (req, res) => {
                 user = await User.findOne({ organization_id: orgId });
             }
         }
-        
+
         if (!user) return res.status(404).json({ success: false, error: "No owner or admin found for this organization to receive credits." });
 
         const updateObj = {
-            $inc: { 
+            $inc: {
                 "ai_tokens.promotion_credits_balance": amount,
                 "ai_tokens.total_promotion_credits_granted": amount
             },
             $set: {}
         };
-        
+
         if (!startDate || !endDate) {
             return res.status(400).json({ success: false, error: "Both start date and expiry date are strictly required." });
         }
-        
+
         updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date(startDate);
         updateObj.$set["ai_tokens.promotion_credits_end_date"] = new Date(endDate);
-        updateObj.$set["ai_tokens.promotion_credits_revoked"] = false;
 
         user = await User.findByIdAndUpdate(user._id, updateObj, { new: true });
 
@@ -337,10 +335,10 @@ export const grantOrgCredits = async (req, res) => {
             try {
                 const totalTokens = (user.ai_tokens.ai_credits_balance + user.ai_tokens.promotion_credits_balance) || 0;
                 const totalBalance = totalTokens.toLocaleString();
-                
+
                 const d = new Date(endDate);
                 const expireDateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                
+
                 const dashboardUrl = await getDashboardUrlForUser(user);
                 const emailHtml = getAiCreditGrantedHtml(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr, dashboardUrl);
                 const emailText = getAiCreditGrantedPlainText(user.name || user.email, amount.toLocaleString(), totalBalance, expireDateStr, dashboardUrl);
@@ -374,7 +372,7 @@ export const deleteUserAiData = async (req, res) => {
     try {
         const { userId } = req.params;
         const user = await User.findById(userId);
-        
+
         if (!user) return res.status(404).json({ success: false, error: "User not found" });
 
         // Delete from Supabase
@@ -383,7 +381,7 @@ export const deleteUserAiData = async (req, res) => {
                 .from('ai_chat_sessions')
                 .delete()
                 .eq('user_email', user.email);
-            
+
             if (error) console.error("Error deleting Supabase chat data:", error);
         }
 
@@ -403,8 +401,8 @@ export const deleteUserAiData = async (req, res) => {
 export const updateOrgAiLimits = async (req, res) => {
     try {
         const { orgId } = req.params;
-        const { 
-            pro_pool_limit, 
+        const {
+            pro_pool_limit,
             free_weekly_limit_per_user,
             image_generation_limit,
             whatsapp_scheduling_limit,
@@ -549,18 +547,18 @@ export const requestSecurityCode = async (req, res) => {
 export const verifySecurityCode = async (req, res) => {
     try {
         const { code, action, orgId } = req.body;
-        
+
         if (!req.user || req.user.role !== 'super_admin') {
             return res.status(403).json({ success: false, error: "Unauthorized" });
         }
 
         if (!code) {
-             return res.status(400).json({ success: false, error: "Security code is required" });
+            return res.status(400).json({ success: false, error: "Security code is required" });
         }
 
         const trimmedCode = code.toString().trim();
         const userId = req.user._id.toString();
-        
+
         console.log("[SecurityCode] Verify attempt:", { userId, trimmedCode, action, orgId });
 
         // BROAD QUERY: Find by code only, then validate ownership manually
@@ -593,11 +591,11 @@ export const verifySecurityCode = async (req, res) => {
         }
 
         if (action && securityCode.action !== action) {
-             return res.status(400).json({ success: false, error: "Invalid action for this security code" });
+            return res.status(400).json({ success: false, error: "Invalid action for this security code" });
         }
 
         if (orgId && securityCode.orgId !== orgId && securityCode.orgId !== null) {
-             return res.status(400).json({ success: false, error: "Invalid organization for this security code" });
+            return res.status(400).json({ success: false, error: "Invalid organization for this security code" });
         }
 
         // Mark as used
@@ -624,7 +622,7 @@ export const removeGrantedCredits = async (req, res) => {
     try {
         const { userId, transactionId } = req.params;
         const AiCreditTransaction = (await import("../../models/AiCreditTransaction.js")).default;
-        
+
         const txn = await AiCreditTransaction.findOne({ _id: transactionId, userId, type: "grant" });
         if (!txn || txn.status === "revoked") {
             return res.status(400).json({ success: false, error: "Transaction not found or already revoked" });
@@ -635,7 +633,7 @@ export const removeGrantedCredits = async (req, res) => {
 
         const User = (await import("../../models/User.js")).default;
         const user = await User.findByIdAndUpdate(userId, {
-            $inc: { 
+            $inc: {
                 "ai_tokens.promotion_credits_balance": -(txn.credits_added || 0),
                 "ai_tokens.total_promotion_credits_granted": -(txn.credits_added || 0)
             }
@@ -675,31 +673,35 @@ export const pauseGrantedCredits = async (req, res) => {
     try {
         const { userId, transactionId } = req.params;
         const { isPaused } = req.body; // true to pause, false to unpause
-        
+
         const AiCreditTransaction = (await import("../../models/AiCreditTransaction.js")).default;
         const txn = await AiCreditTransaction.findOne({ _id: transactionId, userId, type: "grant" });
-        
+
         if (!txn || txn.status === "revoked") {
             return res.status(400).json({ success: false, error: "Transaction not found or revoked" });
         }
-        
+
         const User = (await import("../../models/User.js")).default;
         const user = await User.findById(userId);
-        
+
         if (isPaused && txn.status !== "paused") {
             txn.status = "paused";
             await txn.save();
-            await User.findByIdAndUpdate(userId, { $inc: { 
-                "ai_tokens.promotion_credits_balance": -(txn.credits_added || 0),
-                "ai_tokens.total_promotion_credits_granted": -(txn.credits_added || 0)
-            } });
+            await User.findByIdAndUpdate(userId, {
+                $inc: {
+                    "ai_tokens.promotion_credits_balance": -(txn.credits_added || 0),
+                    "ai_tokens.total_promotion_credits_granted": -(txn.credits_added || 0)
+                }
+            });
         } else if (!isPaused && txn.status === "paused") {
             txn.status = "success";
             await txn.save();
-            await User.findByIdAndUpdate(userId, { $inc: { 
-                "ai_tokens.promotion_credits_balance": (txn.credits_added || 0),
-                "ai_tokens.total_promotion_credits_granted": (txn.credits_added || 0)
-            } });
+            await User.findByIdAndUpdate(userId, {
+                $inc: {
+                    "ai_tokens.promotion_credits_balance": (txn.credits_added || 0),
+                    "ai_tokens.total_promotion_credits_granted": (txn.credits_added || 0)
+                }
+            });
         }
 
         if (user && user.email) {
@@ -742,12 +744,12 @@ export const extendGrantedCredits = async (req, res) => {
         }
 
         const User = (await import("../../models/User.js")).default;
-        
+
         const oldUser = await User.findById(userId);
         if (!oldUser) {
             return res.status(404).json({ success: false, error: "User not found" });
         }
-        
+
         const oldEndDate = oldUser.ai_tokens?.promotion_credits_end_date;
 
         const user = await User.findByIdAndUpdate(userId, {
@@ -809,4 +811,3 @@ export const extendGrantedCredits = async (req, res) => {
         res.status(500).json({ success: false, error: "Internal server error" });
     }
 };
-
