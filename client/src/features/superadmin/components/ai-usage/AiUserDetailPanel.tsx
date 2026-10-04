@@ -395,29 +395,48 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                   key: "status",
                   header: "Pool Status",
                   width: "w-[10%]",
-                  render: () => {
+                  render: (_: any, row: any) => {
                     const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
-                    const limit = userDetail.ai_tokens?.total_promotion_credits_granted || 0;
-                    const remaining = userDetail.ai_tokens?.promotion_credits_balance || 0;
+                    const isRevoked = userDetail.ai_tokens?.promotion_credits_revoked;
                     const endDate = userDetail.ai_tokens?.promotion_credits_end_date;
                     const isExpired = endDate && new Date(endDate).getTime() < Date.now();
-                    const isRevoked = userDetail.ai_tokens?.promotion_credits_revoked;
+
+                    // Waterfall: walk through grants oldest-first, consume used credits
+                    const allGrants = (userDetail.promotionHistory || [])
+                      .filter((h: any) => h.type === 'grant' || h.type === 'granted')
+                      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                    const totalGranted = allGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
+                    const remaining = userDetail.ai_tokens?.promotion_credits_balance || 0;
+                    let usedBudget = Math.max(0, totalGranted - remaining);
 
                     let statusLabel = "ACTIVE";
                     let statusClass = "bg-green-500/10 text-green-500";
 
-                    if (isRevoked) {
-                      statusLabel = "REVOKED";
-                      statusClass = "bg-red-500/10 text-red-500";
-                    } else if (remaining <= 0 && limit > 0) {
-                      statusLabel = "EXHAUSTED";
-                      statusClass = "bg-slate-500/10 text-slate-600 dark:text-slate-400";
-                    } else if (isExpired) {
-                      statusLabel = "EXPIRED";
-                      statusClass = "bg-red-500/10 text-red-500";
-                    } else if (isPaused) {
-                      statusLabel = "PAUSED";
-                      statusClass = "bg-amber-500/10 text-amber-500";
+                    for (const g of allGrants) {
+                      const amt = g.credits_added || 0;
+                      const gId = g._id || g.id;
+                      const rowId = row._id || row.id;
+                      if (gId === rowId || String(gId) === String(rowId)) {
+                        if (isRevoked) {
+                          statusLabel = "REVOKED";
+                          statusClass = "bg-red-500/10 text-red-500";
+                        } else if (usedBudget >= amt) {
+                          statusLabel = "EXHAUSTED";
+                          statusClass = "bg-slate-500/10 text-slate-600 dark:text-slate-400";
+                        } else if (isExpired) {
+                          statusLabel = "EXPIRED";
+                          statusClass = "bg-red-500/10 text-red-500";
+                        } else if (isPaused) {
+                          statusLabel = "PAUSED";
+                          statusClass = "bg-amber-500/10 text-amber-500";
+                        }
+                        break;
+                      }
+                      if (usedBudget >= amt) {
+                        usedBudget -= amt;
+                      } else {
+                        usedBudget = 0;
+                      }
                     }
 
                     return (

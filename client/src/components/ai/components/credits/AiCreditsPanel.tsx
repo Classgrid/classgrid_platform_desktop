@@ -289,28 +289,74 @@ export function AiCreditsPanel() {
                             }
 
                             if (txn.type === 'grant' && (lowerStatus === 'success' || lowerStatus === 'active')) {
+                              // Waterfall: walk through all grants oldest-first, consume used credits
+                              const allGrants = (filteredHistory || [])
+                                .filter((t: any) => t.type === 'grant' && (t.status?.toLowerCase() === 'success' || t.status?.toLowerCase() === 'active'))
+                                .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
                               const promoPool = balance?.pools?.find((p: any) => p.creditType === "Promotion");
-                              if (promoPool) {
-                                if (promoPool.amountRemaining <= 0) {
-                                  displayStatus = 'Exhausted';
-                                  colorClass = 'bg-slate-500/10 text-slate-600 dark:text-slate-400';
-                                } else if (promoPool.status === 'Expired' || (promoPool.expirationDate && new Date(promoPool.expirationDate).getTime() < new Date().getTime())) {
-                                  displayStatus = 'Expired';
-                                  colorClass = 'bg-red-500/10 text-red-600';
-                                } else if (promoPool.status === 'Paused') {
-                                  displayStatus = 'Paused';
-                                  colorClass = 'bg-amber-500/10 text-amber-600';
+                              const totalGranted = allGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
+                              const poolRemaining = promoPool?.amountRemaining ?? 0;
+                              let usedBudget = Math.max(0, totalGranted - poolRemaining);
+
+                              // Walk oldest-first and consume
+                              for (const g of allGrants) {
+                                const amt = g.credits_added || 0;
+                                if (g._id === txn._id) {
+                                  // This is the current row
+                                  if (promoPool?.status === 'Revoked') {
+                                    displayStatus = 'Revoked';
+                                    colorClass = 'bg-red-500/10 text-red-600';
+                                  } else if (usedBudget >= amt) {
+                                    displayStatus = 'Exhausted';
+                                    colorClass = 'bg-slate-500/10 text-slate-600 dark:text-slate-400';
+                                  } else if (promoPool?.status === 'Paused') {
+                                    displayStatus = 'Paused';
+                                    colorClass = 'bg-amber-500/10 text-amber-600';
+                                  } else if (promoPool?.expirationDate && new Date(promoPool.expirationDate).getTime() < Date.now()) {
+                                    displayStatus = 'Expired';
+                                    colorClass = 'bg-red-500/10 text-red-600';
+                                  } else {
+                                    displayStatus = 'Active';
+                                    colorClass = 'bg-emerald-500/10 text-emerald-600';
+                                  }
+                                  break;
+                                }
+                                // Consume this grant's credits from the used budget
+                                if (usedBudget >= amt) {
+                                  usedBudget -= amt;
+                                } else {
+                                  usedBudget = 0;
                                 }
                               }
                             } else if (txn.type === 'topup' && (lowerStatus === 'success' || lowerStatus === 'active')) {
-                              const purchasedPool = balance?.pools?.find((p: any) => p.creditType === "Paid");
-                              if (purchasedPool) {
-                                if (purchasedPool.amountRemaining <= 0) {
-                                  displayStatus = 'Exhausted';
-                                  colorClass = 'bg-slate-500/10 text-slate-600 dark:text-slate-400';
-                                } else if (purchasedPool.status === 'Expired' || (purchasedPool.expirationDate && new Date(purchasedPool.expirationDate).getTime() < new Date().getTime())) {
-                                  displayStatus = 'Expired';
-                                  colorClass = 'bg-red-500/10 text-red-600';
+                              // Waterfall: walk through all topups oldest-first, consume used credits
+                              const allTopups = (filteredHistory || [])
+                                .filter((t: any) => t.type === 'topup' && (t.status?.toLowerCase() === 'success' || t.status?.toLowerCase() === 'active'))
+                                .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                              const paidPool = balance?.pools?.find((p: any) => p.creditType === "Paid");
+                              const totalPurchased = allTopups.reduce((s: number, t: any) => s + (t.credits_added || 0), 0);
+                              const paidRemaining = paidPool?.amountRemaining ?? 0;
+                              let usedBudget = Math.max(0, totalPurchased - paidRemaining);
+
+                              for (const t of allTopups) {
+                                const amt = t.credits_added || 0;
+                                if (t._id === txn._id) {
+                                  if (usedBudget >= amt) {
+                                    displayStatus = 'Exhausted';
+                                    colorClass = 'bg-slate-500/10 text-slate-600 dark:text-slate-400';
+                                  } else if (paidPool?.expirationDate && new Date(paidPool.expirationDate).getTime() < Date.now()) {
+                                    displayStatus = 'Expired';
+                                    colorClass = 'bg-red-500/10 text-red-600';
+                                  } else {
+                                    displayStatus = 'Active';
+                                    colorClass = 'bg-emerald-500/10 text-emerald-600';
+                                  }
+                                  break;
+                                }
+                                if (usedBudget >= amt) {
+                                  usedBudget -= amt;
+                                } else {
+                                  usedBudget = 0;
                                 }
                               }
                             }
