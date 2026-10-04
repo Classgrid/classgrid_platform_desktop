@@ -249,24 +249,42 @@ export function AiCreditsPanel() {
                         <TableCell>
                           {(() => {
                             let displayStatus = txn.status;
-                            let colorClass = txn.status === 'success' ? 'bg-emerald-500/10 text-emerald-600' : 
-                                             txn.status === 'pending' ? 'bg-amber-500/10 text-amber-600' : 
-                                             'bg-red-500/10 text-red-600';
-                            
-                            if (txn.type === 'grant') {
+                            let colorClass = 'bg-muted text-muted-foreground';
+
+                            if (txn.status === 'revoked') {
+                              displayStatus = 'Revoked';
+                              colorClass = 'bg-red-500/10 text-red-600';
+                            } else if (txn.status === 'paused') {
+                              displayStatus = 'Paused';
+                              colorClass = 'bg-amber-500/10 text-amber-600';
+                            } else if (txn.status === 'expired') {
+                              displayStatus = 'Expired';
+                              colorClass = 'bg-red-500/10 text-red-600';
+                            } else if (txn.status === 'success' || txn.status === 'active') {
+                              displayStatus = 'Active';
+                              colorClass = 'bg-emerald-500/10 text-emerald-600';
+                            } else if (txn.status === 'pending') {
+                              displayStatus = 'Pending';
+                              colorClass = 'bg-amber-500/10 text-amber-600';
+                            } else if (txn.status === 'failed') {
+                              displayStatus = 'Failed';
+                              colorClass = 'bg-red-500/10 text-red-600';
+                            }
+
+                            if (txn.type === 'grant' && (txn.status === 'success' || txn.status === 'active')) {
                               const promoPool = balance?.pools?.find((p: any) => p.creditType === "Promotion");
-                              if (!promoPool) {
-                                displayStatus = 'Removed';
-                                colorClass = 'bg-red-500/10 text-red-600';
-                              } else if (promoPool.status === 'Expired' || promoPool.amountRemaining <= 0) {
+                              if (!promoPool || promoPool.status === 'Expired' || promoPool.amountRemaining <= 0) {
                                 displayStatus = 'Expired';
                                 colorClass = 'bg-red-500/10 text-red-600';
                               } else if (promoPool.status === 'Paused') {
                                 displayStatus = 'Paused';
                                 colorClass = 'bg-amber-500/10 text-amber-600';
-                              } else {
-                                displayStatus = 'Granted';
-                                colorClass = 'bg-emerald-500/10 text-emerald-600';
+                              }
+                            } else if (txn.type === 'topup' && (txn.status === 'success' || txn.status === 'active')) {
+                              const purchasedPool = balance?.pools?.find((p: any) => p.creditType === "Purchased");
+                              if (!purchasedPool || purchasedPool.status === 'Expired' || purchasedPool.amountRemaining <= 0) {
+                                displayStatus = 'Expired';
+                                colorClass = 'bg-red-500/10 text-red-600';
                               }
                             }
 
