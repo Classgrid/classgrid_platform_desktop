@@ -432,9 +432,13 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                     const allGrants = (userDetail.promotionHistory || [])
                       .filter((h: any) => h.type === 'grant' || h.type === 'granted')
                       .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
-                    const totalGranted = allGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
+                    const activeGrants = allGrants.filter((g: any) => {
+                      const s = (g.status || '').toLowerCase();
+                      return s !== 'revoked' && s !== 'paused' && !isRevoked && !isPaused;
+                    });
+                    const totalActiveGranted = activeGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
                     const remaining = userDetail.ai_tokens?.promotion_credits_balance || 0;
-                    let usedBudget = Math.max(0, totalGranted - remaining);
+                    let usedBudget = Math.max(0, totalActiveGranted - remaining);
 
                     let statusLabel = "ACTIVE";
                     let statusClass = "bg-green-500/10 text-green-500";
@@ -443,6 +447,10 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                       const amt = g.credits_added || 0;
                       const gId = g._id || g.id;
                       const rowId = row._id || row.id;
+                      
+                      const gStatus = (g.status || '').toLowerCase();
+                      const isGrantActive = gStatus !== 'revoked' && gStatus !== 'paused' && !isRevoked && !isPaused;
+
                       if (gId === rowId || String(gId) === String(rowId)) {
                         // Check individual row status AND global flags
                         const rowStatus = (row.status || g.status || '').toLowerCase();
@@ -453,7 +461,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                         } else if (isPaused || rowStatus === 'paused') {
                           statusLabel = "PAUSED";
                           statusClass = "bg-amber-500/10 text-amber-500";
-                        } else if (usedBudget >= amt) {
+                        } else if (usedBudget >= amt && isGrantActive) {
                           statusLabel = "EXHAUSTED";
                           statusClass = "bg-slate-500/10 text-slate-600 dark:text-slate-400";
                         } else if (isExpired || rowStatus === 'expired') {
@@ -462,10 +470,13 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                         }
                         break;
                       }
-                      if (usedBudget >= amt) {
-                        usedBudget -= amt;
-                      } else {
-                        usedBudget = 0;
+                      
+                      if (isGrantActive) {
+                          if (usedBudget >= amt) {
+                            usedBudget -= amt;
+                          } else {
+                            usedBudget = 0;
+                          }
                       }
                     }
 

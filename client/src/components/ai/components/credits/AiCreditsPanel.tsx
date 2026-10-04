@@ -103,19 +103,30 @@ export function AiCreditsPanel() {
               const allGrants = history
                 .filter((t: any) => t.type === 'grant')
                 .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-              const totalGranted = allGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
-              let usedBudget = Math.max(0, totalGranted - (pool.amountRemaining || 0));
+              const activeGrants = allGrants.filter((g: any) => {
+                  const s = (g.status || '').toLowerCase();
+                  return s !== 'revoked' && s !== 'paused';
+              });
+              
+              const totalActiveGranted = activeGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
+              let usedBudget = Math.max(0, totalActiveGranted - (pool.amountRemaining || 0));
               
               for (const g of allGrants) {
                 const amt = g.credits_added || 0;
-                if (usedBudget < amt) {
+                const gStatus = (g.status || '').toLowerCase();
+                const isGrantActive = gStatus !== 'revoked' && gStatus !== 'paused';
+                
+                if (usedBudget < amt && isGrantActive) {
                   const lowerStatus = g.status?.toLowerCase() || '';
                   if (lowerStatus === 'revoked') dynamicStatus = 'Revoked';
                   else if (lowerStatus === 'paused') dynamicStatus = 'Paused';
                   else if (lowerStatus === 'expired') dynamicStatus = 'Expired';
                   break;
                 }
-                usedBudget -= amt;
+                
+                if (isGrantActive) {
+                    usedBudget -= amt;
+                }
               }
             } else if (isPaid && history) {
               const allTopups = history

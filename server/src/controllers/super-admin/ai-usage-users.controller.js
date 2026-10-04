@@ -101,6 +101,31 @@ export const getUserAiDetail = async (req, res) => {
             .sort({ createdAt: -1 })
             .lean();
 
+        let totalActive = 0;
+        promotionHistory.forEach(g => {
+            if (g.type === "grant" && g.status === "success") {
+                totalActive += (g.credits_added || 0);
+            }
+        });
+        
+        const used = (user.ai_tokens?.total_promotion_credits_granted || 0) - (user.ai_tokens?.promotion_credits_balance || 0);
+        const correctedBalance = Math.max(0, totalActive - Math.max(0, used));
+        
+        if (
+            user.ai_tokens?.promotion_credits_balance !== correctedBalance || 
+            user.ai_tokens?.total_promotion_credits_granted !== totalActive
+        ) {
+            await User.findByIdAndUpdate(userId, {
+                $set: {
+                    "ai_tokens.promotion_credits_balance": correctedBalance,
+                    "ai_tokens.total_promotion_credits_granted": totalActive
+                }
+            });
+            if (!user.ai_tokens) user.ai_tokens = {};
+            user.ai_tokens.promotion_credits_balance = correctedBalance;
+            user.ai_tokens.total_promotion_credits_granted = totalActive;
+        }
+
         let totalChats = 0;
         if (user.email) {
             const { count, error: countError } = await supabase
