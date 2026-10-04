@@ -251,27 +251,38 @@ export function AiCreditsPanel() {
                             let displayStatus = txn.status;
                             let colorClass = 'bg-muted text-muted-foreground';
 
-                            if (txn.status === 'revoked') {
+                            const lowerStatus = txn.status?.toLowerCase() || '';
+
+                            if (lowerStatus === 'revoked') {
                               displayStatus = 'Revoked';
                               colorClass = 'bg-red-500/10 text-red-600';
-                            } else if (txn.status === 'paused') {
+                            } else if (lowerStatus === 'paused') {
                               displayStatus = 'Paused';
                               colorClass = 'bg-amber-500/10 text-amber-600';
-                            } else if (txn.status === 'expired') {
+                            } else if (lowerStatus === 'expired') {
                               displayStatus = 'Expired';
                               colorClass = 'bg-red-500/10 text-red-600';
-                            } else if (txn.status === 'success' || txn.status === 'active') {
-                              displayStatus = 'Active';
-                              colorClass = 'bg-emerald-500/10 text-emerald-600';
-                            } else if (txn.status === 'pending') {
+                            } else if (lowerStatus === 'success' || lowerStatus === 'active') {
+                              const now = new Date().getTime();
+                              const isTopup = txn.type === "topup";
+                              const endDateStr = isTopup ? balanceData?.ai_credits_end_date : balanceData?.promotion_credits_end_date;
+                              
+                              if (endDateStr && new Date(endDateStr).getTime() < now) {
+                                  displayStatus = 'Expired';
+                                  colorClass = 'bg-red-500/10 text-red-600';
+                              } else {
+                                  displayStatus = 'Active';
+                                  colorClass = 'bg-emerald-500/10 text-emerald-600';
+                              }
+                            } else if (lowerStatus === 'pending') {
                               displayStatus = 'Pending';
                               colorClass = 'bg-amber-500/10 text-amber-600';
-                            } else if (txn.status === 'failed') {
+                            } else if (lowerStatus === 'failed') {
                               displayStatus = 'Failed';
                               colorClass = 'bg-red-500/10 text-red-600';
                             }
 
-                            if (txn.type === 'grant' && (txn.status === 'success' || txn.status === 'active')) {
+                            if (txn.type === 'grant' && (lowerStatus === 'success' || lowerStatus === 'active')) {
                               const promoPool = balance?.pools?.find((p: any) => p.creditType === "Promotion");
                               if (!promoPool || promoPool.status === 'Expired' || promoPool.amountRemaining <= 0) {
                                 displayStatus = 'Expired';
@@ -280,8 +291,8 @@ export function AiCreditsPanel() {
                                 displayStatus = 'Paused';
                                 colorClass = 'bg-amber-500/10 text-amber-600';
                               }
-                            } else if (txn.type === 'topup' && (txn.status === 'success' || txn.status === 'active')) {
-                              const purchasedPool = balance?.pools?.find((p: any) => p.creditType === "Purchased");
+                            } else if (txn.type === 'topup' && (lowerStatus === 'success' || lowerStatus === 'active')) {
+                              const purchasedPool = balance?.pools?.find((p: any) => p.creditType === "Paid");
                               if (!purchasedPool || purchasedPool.status === 'Expired' || purchasedPool.amountRemaining <= 0) {
                                 displayStatus = 'Expired';
                                 colorClass = 'bg-red-500/10 text-red-600';

@@ -80,11 +80,32 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
       key: "status",
       header: "Status",
       width: "w-[25%]",
-      render: (_: any, row: any) => (
-        <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500">
-          {row.status.toUpperCase()}
-        </span>
-      )
+      render: (_: any, row: any) => {
+        let displayStatus = row.status?.toLowerCase() || '';
+        let colorClass = 'bg-muted text-muted-foreground';
+
+        if (displayStatus === 'success' || displayStatus === 'active') {
+            const now = new Date().getTime();
+            const endDateStr = userDetail?.ai_tokens?.ai_credits_end_date;
+            
+            if (endDateStr && new Date(endDateStr).getTime() < now) {
+                displayStatus = 'Expired';
+                colorClass = 'bg-red-500/10 text-red-600';
+            } else {
+                displayStatus = 'Active';
+                colorClass = 'bg-emerald-500/10 text-emerald-600';
+            }
+        } else if (displayStatus === 'failed') {
+            displayStatus = 'Failed';
+            colorClass = 'bg-red-500/10 text-red-600';
+        }
+
+        return (
+          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
+            {displayStatus}
+          </span>
+        );
+      }
     }
   ];
 

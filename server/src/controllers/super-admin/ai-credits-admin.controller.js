@@ -631,19 +631,11 @@ export const removeGrantedCredits = async (req, res) => {
         
         if (user) {
             const AiCreditTransaction = (await import("../../models/AiCreditTransaction.js")).default;
-            await AiCreditTransaction.create({
-                userId: user._id,
-                orgId: user.organization_id || null,
-                amount_inr: 0,
-                credits_added: 0,
-                razorpay_payment_id: `revoke_${new Date().getTime()}`,
-                razorpay_order_id: `admin_revoke`,
-                type: "revoke",
-                status: "success",
-                userName: user.name || "",
-                userEmail: user.email || "",
-                organizationName: user.organization_id ? "" : "Classgrid (Platform Team)"
-            });
+            await AiCreditTransaction.findOneAndUpdate(
+                { userId: user._id, type: "grant" },
+                { $set: { status: "revoked" } },
+                { sort: { createdAt: -1 }, returnDocument: "after" }
+            );
         }
 
         if (user && user.email) {
@@ -690,19 +682,11 @@ export const pauseGrantedCredits = async (req, res) => {
 
         if (user) {
             const AiCreditTransaction = (await import("../../models/AiCreditTransaction.js")).default;
-            await AiCreditTransaction.create({
-                userId: user._id,
-                orgId: user.organization_id || null,
-                amount_inr: 0,
-                credits_added: 0,
-                razorpay_payment_id: `${isPaused ? 'pause' : 'resume'}_${new Date().getTime()}`,
-                razorpay_order_id: `admin_${isPaused ? 'pause' : 'resume'}`,
-                type: isPaused ? "pause" : "resume",
-                status: "success",
-                userName: user.name || "",
-                userEmail: user.email || "",
-                organizationName: user.organization_id ? "" : "Classgrid (Platform Team)"
-            });
+            await AiCreditTransaction.findOneAndUpdate(
+                { userId: user._id, type: "grant" },
+                { $set: { status: isPaused ? "paused" : "active" } },
+                { sort: { createdAt: -1 }, returnDocument: "after" }
+            );
         }
 
         if (user && user.email) {
@@ -755,20 +739,11 @@ export const extendGrantedCredits = async (req, res) => {
         }
 
         const AiCreditTransaction = (await import("../../models/AiCreditTransaction.js")).default;
-        await AiCreditTransaction.create({
-            userId: user._id,
-            orgId: user.organization_id || null,
-            amount_inr: 0,
-            credits_added: 0,
-            razorpay_payment_id: `extend_${new Date().getTime()}`,
-            razorpay_order_id: `admin_extend`,
-            type: "extend",
-            status: "success",
-            metadata: { newEndDate: new Date(endDate).toISOString() },
-            userName: user.name || "",
-            userEmail: user.email || "",
-            organizationName: user.organization_id ? "" : "Classgrid (Platform Team)"
-        });
+        await AiCreditTransaction.findOneAndUpdate(
+            { userId: user._id, type: "grant" },
+            { $set: { status: "active" } },
+            { sort: { createdAt: -1 }, returnDocument: "after" }
+        );
 
         if (sendEmail && user.email) {
             try {
