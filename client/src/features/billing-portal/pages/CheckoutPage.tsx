@@ -43,7 +43,7 @@ import React, { useState, useEffect } from "react";
  * ─────────────────────────────────────────────────────────
  */
 
-import { useEffect, useState, useRef } from "react";
+import { useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
