@@ -101,7 +101,8 @@ export function CheckoutPage() {
   useEffect(() => {
     const localTheme = localStorage.getItem("vite-ui-theme");
     const themeCookie = document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1];
-    const themeToUse = themeCookie || localTheme;
+    const urlTheme = new URLSearchParams(window.location.search).get('theme');
+    const themeToUse = urlTheme || themeCookie || localTheme;
 
     if (themeToUse === "dark") {
       document.documentElement.classList.add("dark");

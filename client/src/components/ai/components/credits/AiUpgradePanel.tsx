@@ -40,7 +40,14 @@ export function AiUpgradePanel() {
     try {
       const response = await topUpMutation.mutateAsync(customAmount);
       if (response && response.checkout_url) {
-        window.location.href = response.checkout_url;
+        try {
+          const urlObj = new URL(response.checkout_url);
+          const theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
+          urlObj.searchParams.set("theme", theme);
+          window.location.href = urlObj.toString();
+        } catch (e) {
+          window.location.href = response.checkout_url;
+        }
       }
     } catch (error) {
       toast.error("Failed to initiate top-up. Please try again.");

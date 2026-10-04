@@ -57,7 +57,12 @@
  * DO NOT overwrite the dynamic subdomain routing logic.
  * ==============================================================================
  */
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+
+function NavigateWithQuery({ to, replace }: { to: string, replace?: boolean }) {
+  const { search } = useLocation();
+  return <Navigate to={{ pathname: to, search }} replace={replace} />;
+}
 import { CandidatePortalPage } from "@/features/admission-portal/pages/CandidatePortalPage";
 import { ParentTrackerPage } from "@/features/admission-portal/pages/ParentTrackerPage";
 
@@ -224,9 +229,9 @@ export function AppRouter() {
   if (isBilling) {
     return (
       <Routes>
-        <Route path="/" element={<Navigate to="/checkout" replace />} />
+        <Route path="/" element={<NavigateWithQuery to="/checkout" replace />} />
         <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="*" element={<Navigate to="/checkout" replace />} />
+        <Route path="*" element={<NavigateWithQuery to="/checkout" replace />} />
       </Routes>
     );
   }
@@ -288,7 +293,7 @@ export function AppRouter() {
         
         {/* NEW SUPER ADMIN SHELL */}
         <Route element={<SuperAdminLayout />}>
-          <Route path="/superadmin/dashboard" element={<Navigate to="/superadmin/agent" replace />} />
+          <Route path="/superadmin/dashboard" element={<NavigateWithQuery to="/superadmin/agent" replace />} />
           <Route path="/superadmin/agent" element={<DashboardHomePage />} />
           <Route path="/superadmin/agent/:sessionId" element={<DashboardHomePage />} />
           <Route path="/superadmin/agent/:sessionId/*" element={<DashboardHomePage />} />
@@ -309,7 +314,7 @@ export function AppRouter() {
           <Route path="/superadmin/leads/:id" element={<LeadDetailsPage />} />
           {/* NEW BILLING ROUTES */}
           <Route path="/super-admin/billing" element={<BillingShell />}>
-            <Route index element={<Navigate to="/super-admin/billing/plans" replace />} />
+            <Route index element={<NavigateWithQuery to="/super-admin/billing/plans" replace />} />
             <Route path="plans" element={<PlansAndBillingPage />} />
             <Route path="revenue" element={<RevenuePage />} />
             <Route path="transactions" element={<TransactionsPage />} />
@@ -318,16 +323,16 @@ export function AppRouter() {
             <Route path="failed-payments/:id" element={<FailedPaymentDetailsPage />} />
             <Route path="fraud-logs" element={<FraudLogsPage />} />
           </Route>
-          <Route path="/superadmin/billing" element={<Navigate to="/super-admin/billing/plans" replace />} />
-          <Route path="/superadmin/billing/plans" element={<Navigate to="/super-admin/billing/plans" replace />} />
-          <Route path="/superadmin/billing/revenue" element={<Navigate to="/super-admin/billing/revenue" replace />} />
-          <Route path="/superadmin/billing/transactions" element={<Navigate to="/super-admin/billing/transactions" replace />} />
-          <Route path="/superadmin/billing/failed-payments" element={<Navigate to="/super-admin/billing/failed-payments" replace />} />
+          <Route path="/superadmin/billing" element={<NavigateWithQuery to="/super-admin/billing/plans" replace />} />
+          <Route path="/superadmin/billing/plans" element={<NavigateWithQuery to="/super-admin/billing/plans" replace />} />
+          <Route path="/superadmin/billing/revenue" element={<NavigateWithQuery to="/super-admin/billing/revenue" replace />} />
+          <Route path="/superadmin/billing/transactions" element={<NavigateWithQuery to="/super-admin/billing/transactions" replace />} />
+          <Route path="/superadmin/billing/failed-payments" element={<NavigateWithQuery to="/super-admin/billing/failed-payments" replace />} />
           
           {/* LEGACY REDIRECTS (if users visit the old URLs) */}
-          <Route path="/superadmin/revenue" element={<Navigate to="/super-admin/billing/revenue" replace />} />
-          <Route path="/superadmin/transactions" element={<Navigate to="/super-admin/billing/transactions" replace />} />
-          <Route path="/superadmin/failed-payments" element={<Navigate to="/super-admin/billing/failed-payments" replace />} />
+          <Route path="/superadmin/revenue" element={<NavigateWithQuery to="/super-admin/billing/revenue" replace />} />
+          <Route path="/superadmin/transactions" element={<NavigateWithQuery to="/super-admin/billing/transactions" replace />} />
+          <Route path="/superadmin/failed-payments" element={<NavigateWithQuery to="/super-admin/billing/failed-payments" replace />} />
           <Route path="/superadmin/users" element={<UsersPage />} />
           <Route path="/superadmin/global-users" element={<GlobalUsersPage />} />
           <Route path="/superadmin/global-users/:userId" element={<UserDetailPage />} />
@@ -357,13 +362,13 @@ export function AppRouter() {
           <Route path="/superadmin/subscribers/:email" element={<SubscriberDetailsPage />} />
           
 
-          <Route path="/superadmin/organizations" element={<Navigate to="/superadmin/orgs" replace />} />
-          <Route path="/superadmin/*" element={<Navigate to="/superadmin/dashboard" replace />} />
+          <Route path="/superadmin/organizations" element={<NavigateWithQuery to="/superadmin/orgs" replace />} />
+          <Route path="/superadmin/*" element={<NavigateWithQuery to="/superadmin/dashboard" replace />} />
         </Route>
 
         {/* VERCEL STYLE SUPER ADMIN STORAGE SHELL */}
         <Route path="/superadmin/storage" element={<StorageLayout />}>
-          <Route index element={<Navigate to="files" replace />} />
+          <Route index element={<NavigateWithQuery to="files" replace />} />
           <Route path="files" element={<StorageFilesPage />} />
           <Route path="analytics" element={<StorageAnalyticsPage />} />
           <Route path="s3" element={<StorageS3ConfigPage />} />
@@ -377,7 +382,7 @@ export function AppRouter() {
           <Route path="/org/admin/chat" element={<ChatPage />} />
           <Route path="/org/website" element={<WebsiteCMSPage />} />
           <Route path="/org/audit" element={<AuditPage />} />
-          <Route path="/org/admin/dashboard" element={<Navigate to="/org/admin/agent" replace />} />
+          <Route path="/org/admin/dashboard" element={<NavigateWithQuery to="/org/admin/agent" replace />} />
           <Route path="/org/admin/agent" element={<OrgAdminDashboard />} />
           <Route path="/org/admin/agent/:sessionId" element={<OrgAdminDashboard />} />
           <Route path="/org/admin/agent/:sessionId/*" element={<OrgAdminDashboard />} />
@@ -393,14 +398,14 @@ export function AppRouter() {
           <Route path="/org/*" element={<ComingSoonPage />} />
           
           {/* Legacy redirects for compatibility */}
-          <Route path="/org/settings" element={<Navigate to="/org/admin/settings" replace />} />
-          <Route path="/org/profile" element={<Navigate to="/org/admin/profile" replace />} />
-          <Route path="/org/chat" element={<Navigate to="/org/admin/chat" replace />} />
-          <Route path="/org/dashboard" element={<Navigate to="/org/admin/dashboard" replace />} />
+          <Route path="/org/settings" element={<NavigateWithQuery to="/org/admin/settings" replace />} />
+          <Route path="/org/profile" element={<NavigateWithQuery to="/org/admin/profile" replace />} />
+          <Route path="/org/chat" element={<NavigateWithQuery to="/org/admin/chat" replace />} />
+          <Route path="/org/dashboard" element={<NavigateWithQuery to="/org/admin/dashboard" replace />} />
         </Route>
 
         <Route path="/" element={<DefaultDashboardRedirect />} />
-        <Route path="/admin/dashboard" element={<Navigate to="/org/admin/dashboard" replace />} />
+        <Route path="/admin/dashboard" element={<NavigateWithQuery to="/org/admin/dashboard" replace />} />
 
         {/* ── DYNAMIC ROLE LAYOUT (Wraps all 10 Dept Dashboards & Common Pages) ── */}
         <Route element={<DynamicRoleLayout />}>
@@ -415,7 +420,7 @@ export function AppRouter() {
           <Route path="/faculty/website" element={<WebsiteCMSPage />} />
 
           {/* 3. Admissions Department Dashboard */}
-          <Route path="/dept/admissions/dashboard" element={<Navigate to="/dept/admissions/agent" replace />} />
+          <Route path="/dept/admissions/dashboard" element={<NavigateWithQuery to="/dept/admissions/agent" replace />} />
           <Route path="/dept/admissions/agent" element={<AdmissionDashboardRouter />} />
           <Route path="/dept/admissions/agent/:sessionId" element={<AdmissionDashboardRouter />} />
           <Route path="/dept/admissions/agent/:sessionId/*" element={<AdmissionDashboardRouter />} />
@@ -441,44 +446,44 @@ export function AppRouter() {
           <Route path="/dept/admissions/bulk" element={<BulkSmsPage />} />
 
           {/* 4. Fees Department Dashboard */}
-          <Route path="/dept/fees/dashboard" element={<Navigate to="/dept/fees/agent" replace />} />
+          <Route path="/dept/fees/dashboard" element={<NavigateWithQuery to="/dept/fees/agent" replace />} />
           <Route path="/dept/fees/agent" element={<FeesDashboardRouter />} />
           <Route path="/dept/fees/agent/:sessionId" element={<FeesDashboardRouter />} />
           <Route path="/dept/fees/agent/:sessionId/*" element={<FeesDashboardRouter />} />
 
           {/* 5. Examination Department Dashboard */}
-          <Route path="/dept/exams/dashboard" element={<Navigate to="/dept/exams/agent" replace />} />
+          <Route path="/dept/exams/dashboard" element={<NavigateWithQuery to="/dept/exams/agent" replace />} />
           <Route path="/dept/exams/agent" element={<ExamsDashboardRouter />} />
           <Route path="/dept/exams/agent/:sessionId" element={<ExamsDashboardRouter />} />
           <Route path="/dept/exams/agent/:sessionId/*" element={<ExamsDashboardRouter />} />
           <Route path="/dept/exams/results" element={<ResultsProcessingPage />} />
 
           {/* 6. Library Department Dashboard */}
-          <Route path="/dept/library/dashboard" element={<Navigate to="/dept/library/agent" replace />} />
+          <Route path="/dept/library/dashboard" element={<NavigateWithQuery to="/dept/library/agent" replace />} />
           <Route path="/dept/library/agent" element={<LibraryDashboardRouter />} />
           <Route path="/dept/library/agent/:sessionId" element={<LibraryDashboardRouter />} />
           <Route path="/dept/library/agent/:sessionId/*" element={<LibraryDashboardRouter />} />
 
           {/* 7. Attendance Department Dashboard */}
-          <Route path="/dept/attendance/dashboard" element={<Navigate to="/dept/attendance/agent" replace />} />
+          <Route path="/dept/attendance/dashboard" element={<NavigateWithQuery to="/dept/attendance/agent" replace />} />
           <Route path="/dept/attendance/agent" element={<AttendanceDashboardRouter />} />
           <Route path="/dept/attendance/agent/:sessionId" element={<AttendanceDashboardRouter />} />
           <Route path="/dept/attendance/agent/:sessionId/*" element={<AttendanceDashboardRouter />} />
 
           {/* 8. HR & Payroll Department Dashboard */}
-          <Route path="/dept/hr/dashboard" element={<Navigate to="/dept/hr/agent" replace />} />
+          <Route path="/dept/hr/dashboard" element={<NavigateWithQuery to="/dept/hr/agent" replace />} />
           <Route path="/dept/hr/agent" element={<HRDashboardRouter />} />
           <Route path="/dept/hr/agent/:sessionId" element={<HRDashboardRouter />} />
           <Route path="/dept/hr/agent/:sessionId/*" element={<HRDashboardRouter />} />
 
           {/* 9. Hostel & Transport Dashboard */}
-          <Route path="/dept/hostel/dashboard" element={<Navigate to="/dept/hostel/agent" replace />} />
+          <Route path="/dept/hostel/dashboard" element={<NavigateWithQuery to="/dept/hostel/agent" replace />} />
           <Route path="/dept/hostel/agent" element={<HostelDashboardPage />} />
           <Route path="/dept/hostel/agent/:sessionId" element={<HostelDashboardPage />} />
           <Route path="/dept/hostel/agent/:sessionId/*" element={<HostelDashboardPage />} />
 
           {/* 10. Faculty Dashboard */}
-          <Route path="/faculty/dashboard" element={<Navigate to="/faculty/agent" replace />} />
+          <Route path="/faculty/dashboard" element={<NavigateWithQuery to="/faculty/agent" replace />} />
           <Route path="/faculty/agent" element={<FacultyHomePage />} />
           <Route path="/faculty/agent/:sessionId" element={<FacultyHomePage />} />
           <Route path="/faculty/agent/:sessionId/*" element={<FacultyHomePage />} />
@@ -486,7 +491,7 @@ export function AppRouter() {
           <Route path="/exam/grading" element={<ExamGradingPage />} />
 
           {/* 11. Student Dashboard */}
-          <Route path="/student/dashboard" element={<Navigate to="/student/agent" replace />} />
+          <Route path="/student/dashboard" element={<NavigateWithQuery to="/student/agent" replace />} />
           <Route path="/student/agent" element={<StudentHomePage />} />
           <Route path="/student/agent/:sessionId" element={<StudentHomePage />} />
           <Route path="/student/agent/:sessionId/*" element={<StudentHomePage />} />
@@ -543,5 +548,5 @@ function DefaultDashboardRedirect() {
 
   // (Removed ERP Domain Guard to allow Admins to use the ERP domain)
 
-  return <Navigate to={getRedirectPath(user?.role)} replace />;
+  return <NavigateWithQuery to={getRedirectPath(user?.role)} replace />;
 }
