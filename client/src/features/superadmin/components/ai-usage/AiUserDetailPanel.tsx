@@ -380,7 +380,6 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                     const used = Math.max(0, limit - remaining);
                     const endDate = userDetail.ai_tokens?.promotion_credits_end_date;
                     const isExpired = endDate && new Date(endDate).getTime() < Date.now();
-                    const isExhausted = limit > 0 && remaining <= 0;
                     const isRevoked = limit === 0 && userDetail.promotionHistory && userDetail.promotionHistory.length > 0;
 
                     let statusLabel = "ACTIVE";
@@ -392,9 +391,6 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                     } else if (isPaused) {
                       statusLabel = "PAUSED";
                       statusClass = "bg-amber-500/10 text-amber-500";
-                    } else if (isExhausted) {
-                      statusLabel = "EXHAUSTED";
-                      statusClass = "bg-red-500/10 text-red-500";
                     } else if (isExpired) {
                       statusLabel = "EXPIRED";
                       statusClass = "bg-red-500/10 text-red-500";

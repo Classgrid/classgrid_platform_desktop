@@ -357,5 +357,82 @@ router.post("/confirm", async (req, res) => {
     }
 });
 
+router.post("/failed", async (req, res) => {
+    try {
+        const { token: rawToken, error_description } = req.body;
+        if (!rawToken) {
+            return res.status(400).json({ success: false, error: "Missing token" });
+        }
+
+        const handoff = await BillingHandoff.findOne({
+            ...activeTokenQuery(rawToken, req)
+        }).select("+token +otp").lean();
+        
+        if (!handoff) return res.status(404).json({ success: false, error: "Invalid session" });
+
+        const organization = await Organization.findById(handoff.organization_id).lean() || { name: handoff.context?.organizationName || "Organization" };
+        const payerName = handoff.context?.payerName || "Payer";
+        const amountFormatted = formatPaise(handoff.amountPaise, handoff.currency);
+        const attemptTime = new Date().toLocaleString('en-IN', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) + ' IST';
+        
+        const payerIp = req.ip || "Unknown";
+        const payerDevice = parseUserAgent(req.headers["user-agent"]);
+
+        const adminEmailTitle = `[FAILED] AI Credit Purchase: ${amountFormatted} from ${payerName}`;
+        const adminCompiledHtml = `
+            <div style="font-family: sans-serif; padding: 20px;">
+                <h2 style="color: #d97706;">Payment Failed or Cancelled</h2>
+                <p><strong>Name:</strong> ${payerName}</p>
+                <p><strong>Email:</strong> ${handoff.email}</p>
+                <p><strong>Amount:</strong> ${amountFormatted}</p>
+                <p><strong>Error:</strong> ${error_description || "User Cancelled"}</p>
+                <p><strong>Time:</strong> ${attemptTime}</p>
+                <p><strong>IP:</strong> ${payerIp}</p>
+                <p><strong>Device:</strong> ${payerDevice}</p>
+            </div>
+        `;
+
+        await sendEmail({
+            to: "team@classgrid.in",
+            subject: adminEmailTitle,
+            fromName: "Classgrid Billing",
+            fromEmail: "billing@classgrid.in",
+            html: adminCompiledHtml,
+        }).catch((emailErr) => {
+            console.warn("[Billing Checkout] Admin failed notification email failed:", emailErr.message);
+        });
+
+        // Also send to the user if email is present
+        if (handoff.email) {
+            const userEmailTitle = `Payment Failed — ${amountFormatted} | Classgrid`;
+            const userCompiledHtml = `
+                <div style="font-family: sans-serif; padding: 20px;">
+                    <h2 style="color: #d97706;">Payment Failed</h2>
+                    <p>Hi ${payerName},</p>
+                    <p>Your attempt to purchase ${amountFormatted} in AI credits was not successful.</p>
+                    <p><strong>Reason:</strong> ${error_description || "Transaction cancelled."}</p>
+                    <p>If you have any questions, please contact our support.</p>
+                    <br/>
+                    <p>Thanks,<br/>Classgrid Team</p>
+                </div>
+            `;
+            await sendEmail({
+                to: handoff.email,
+                subject: userEmailTitle,
+                fromName: "Classgrid Billing",
+                fromEmail: "billing@classgrid.in",
+                html: userCompiledHtml,
+                organizationId: handoff.organization_id,
+            }).catch((emailErr) => {
+                console.warn("[Billing Checkout] User failed notification email failed:", emailErr.message);
+            });
+        }
+
+        return res.json({ success: true });
+    } catch (error) {
+        return checkoutError(res, error);
+    }
+});
+
 export default router;
 
