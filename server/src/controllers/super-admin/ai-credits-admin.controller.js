@@ -631,10 +631,9 @@ export const removeGrantedCredits = async (req, res) => {
         
         if (user) {
             const AiCreditTransaction = (await import("../../models/AiCreditTransaction.js")).default;
-            await AiCreditTransaction.findOneAndUpdate(
+            await AiCreditTransaction.updateMany(
                 { userId: user._id, type: "grant" },
-                { $set: { status: "revoked" } },
-                { sort: { createdAt: -1 }, returnDocument: "after" }
+                { $set: { status: "revoked" } }
             );
         }
 
@@ -682,10 +681,9 @@ export const pauseGrantedCredits = async (req, res) => {
 
         if (user) {
             const AiCreditTransaction = (await import("../../models/AiCreditTransaction.js")).default;
-            await AiCreditTransaction.findOneAndUpdate(
+            await AiCreditTransaction.updateMany(
                 { userId: user._id, type: "grant" },
-                { $set: { status: isPaused ? "paused" : "active" } },
-                { sort: { createdAt: -1 }, returnDocument: "after" }
+                { $set: { status: isPaused ? "paused" : "active" } }
             );
         }
 
