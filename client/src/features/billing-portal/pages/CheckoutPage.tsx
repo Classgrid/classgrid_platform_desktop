@@ -209,6 +209,7 @@ export function CheckoutPage() {
         email: customerEmail, 
         return_url 
       } = response.data.data || response.data;
+      setReturnUrl(return_url);
       
       const options = {
         key: razorpay_key_id,
@@ -689,4 +690,3 @@ function SuccessRedirect({ returnUrl }: { returnUrl: string | null }) {
   }, [returnUrl]);
   return null;
 }
-\n      setReturnUrl(return_url);
