@@ -612,7 +612,7 @@ export const streamAskAi = async (req, res) => {
             orgId = userTokens?.organization_id;
 
             const isDiagramRequest = false; // from original code
-            const estimatedCost = isDiagramRequest ? 500 : 50; // Assume minimum starting cost
+            const estimatedCost = isDiagramRequest ? 25000 : 10000; // Require minimum 10k tokens to cover massive system prompt input cost
 
             const check = await hasEnoughTokens(userId, orgId, estimatedCost);
             if (!check.allowed) {
