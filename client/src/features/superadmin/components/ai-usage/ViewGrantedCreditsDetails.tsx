@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Info, Check, X, Clock, CalendarDays } from "lucide-react";
+import { Info, Check, X, Clock, CalendarDays, Rocket } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 
 interface ViewGrantedCreditsDetailsProps {
@@ -14,6 +14,12 @@ interface ViewGrantedCreditsDetailsProps {
     metadata: any;
   }>;
 }
+
+const formatDateTime = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', { 
+    month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' 
+  });
+};
 
 export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedCreditsDetailsProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -34,7 +40,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
       generatedSteps.push({
         id: "granted",
         title: "Granted",
-        description: new Date(grantEvent.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        description: formatDateTime(grantEvent.date),
         isCompleted: true,
         isActive: false,
       });
@@ -48,13 +54,13 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
       });
     }
 
-    // Step 2 & Middle Steps
+    // Middle Steps
     const middleEvents = sortedHistory.filter(h => h.type !== "granted");
     for (const event of middleEvents) {
       generatedSteps.push({
         id: event.id,
         title: event.type === "paused" ? "Paused" : event.type === "resumed" ? "Resumed" : event.type === "revoked" ? "Revoked" : event.type === "extended" ? "Extended" : event.type,
-        description: new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        description: formatDateTime(event.date),
         isCompleted: true,
         isActive: false,
       });
@@ -122,83 +128,83 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
       </Button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-10 animate-in fade-in duration-200">
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-10">
+          {/* Backdrop - NO BLUR */}
           <div 
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
+            className="absolute inset-0 bg-black/70" 
             onClick={() => setIsOpen(false)}
           />
           
-          {/* Custom Modal Card */}
-          <div className="relative w-full max-w-6xl bg-background border border-border shadow-2xl rounded-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+          {/* Main Card */}
+          <div className="relative w-full max-w-6xl bg-background border border-border shadow-2xl rounded-lg flex flex-col">
             
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border/50 bg-muted/20">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-500">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-foreground tracking-tight">Audit Timeline</h2>
-                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
-                    {timeline.currentStep} of {totalSteps} completed
-                  </p>
-                </div>
+            {/* Header matching the Pipeline screenshot */}
+            <div className="flex items-center justify-between p-4 px-6 border-b border-border bg-background rounded-t-lg">
+              <div className="flex items-center gap-2">
+                <Rocket className="w-4 h-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold text-foreground tracking-tight">Audit Timeline</h2>
+                <span className="text-muted-foreground text-xs ml-2">·</span>
+                <span className="text-xs text-muted-foreground ml-2">
+                  {timeline.currentStep} of {totalSteps} completed
+                </span>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="rounded-full hover:bg-muted">
-                <X className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:bg-muted" onClick={() => setIsOpen(false)}>
+                <X className="w-4 h-4" />
               </Button>
             </div>
 
-            {/* Custom Scratch-Built Timeline */}
-            <div className="p-10 pb-20 overflow-x-auto">
+            {/* Stepper Content Area */}
+            <div className="p-10 pt-16 pb-16 bg-background flex flex-col w-full overflow-x-auto">
               {(!history || history.length === 0) ? (
                 <div className="text-sm text-muted-foreground italic bg-muted/10 p-4 rounded-lg border border-border/30 text-center">
                   No timeline records found.
                 </div>
               ) : (
-                <div className="relative w-full flex items-center justify-between min-w-[600px] max-w-5xl mx-auto pt-10">
-                  
-                  {/* Background Track */}
-                  <div className="absolute left-0 right-0 top-16 h-[2px] bg-border/40 -z-10" />
-                  
-                  {/* Active Track */}
-                  <div 
-                    className="absolute left-0 top-16 h-[2px] bg-emerald-500 -z-10 transition-all duration-1000 ease-in-out" 
-                    style={{ width: `${progressPercentage}%` }} 
-                  />
-
-                  {/* Steps */}
+                <div className="flex items-start w-full min-w-[700px] justify-between relative px-8">
                   {timeline.steps.map((step, index) => {
                     const isCompleted = index < timeline.currentStep;
                     const isActive = index === timeline.currentStep;
+                    const isNextCompleted = (index + 1) < timeline.currentStep;
                     
                     return (
-                      <div key={index} className="flex flex-col items-center relative group w-32">
-                        {/* Circle */}
+                      <div key={index} className="flex flex-col items-center relative flex-1">
+                        
+                        {/* Connecting Line (drawn to the right of the current node, except for the last node) */}
+                        {index !== totalSteps - 1 && (
+                          <div className="absolute top-5 left-[50%] right-[-50%] h-[2px] z-0">
+                             {/* Base inactive line */}
+                             <div className="absolute inset-0 bg-border/40" />
+                             {/* Active overlay line */}
+                             <div className={`absolute inset-y-0 left-0 bg-emerald-500 transition-all duration-700 ${isCompleted ? 'w-full' : 'w-0'}`} />
+                          </div>
+                        )}
+
+                        {/* Node Circle */}
                         <div 
-                          className={`flex items-center justify-center w-12 h-12 rounded-full border-[3px] shadow-sm transition-all duration-500 bg-background
-                            ${isCompleted ? "border-emerald-500 text-emerald-500" : 
-                              isActive ? "border-emerald-500 text-emerald-500 ring-4 ring-emerald-500/20" : 
-                              "border-border text-muted-foreground"}
+                          className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 bg-background transition-colors duration-300
+                            ${isCompleted 
+                              ? "bg-foreground border-foreground text-background" 
+                              : isActive 
+                                ? "border-foreground text-foreground shadow-[0_0_0_4px_rgba(255,255,255,0.05)] dark:shadow-[0_0_0_4px_rgba(0,0,0,0.2)]" 
+                                : "border-border text-muted-foreground"}
                           `}
                         >
                           {isCompleted ? (
-                            <Check className="w-6 h-6 stroke-[3]" />
+                            <Check className="w-5 h-5 stroke-[3]" />
                           ) : (
-                            <span className={`text-lg font-bold ${isActive ? "animate-pulse" : ""}`}>{index + 1}</span>
+                            <span className="text-sm font-semibold">{index + 1}</span>
                           )}
                         </div>
 
-                        {/* Text */}
-                        <div className="absolute top-16 mt-4 flex flex-col items-center text-center w-40">
-                          <span className={`text-sm font-bold tracking-wide uppercase transition-colors
-                            ${isActive || isCompleted ? "text-foreground" : "text-muted-foreground/50"}`}
+                        {/* Title & Description */}
+                        <div className="mt-4 flex flex-col items-center text-center max-w-[120px]">
+                          <span className={`text-sm font-medium
+                            ${isActive || isCompleted ? "text-foreground" : "text-muted-foreground"}`}
                           >
                             {step.title}
                           </span>
                           {step.description && (
-                            <span className="text-xs text-muted-foreground mt-2 font-medium">
+                            <span className="text-xs text-muted-foreground mt-2 leading-relaxed">
                               {step.description}
                             </span>
                           )}
@@ -210,18 +216,19 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
               )}
             </div>
 
-            {/* Bottom Progress Bar */}
-            <div className="p-6 border-t border-border/50 bg-muted/10 flex items-center gap-4">
-              <div className="h-2 w-full bg-border/40 rounded-full overflow-hidden">
+            {/* Bottom Progress Bar area */}
+            <div className="p-4 px-6 border-t border-border bg-background rounded-b-lg flex items-center gap-4">
+              <div className="h-1.5 w-full bg-border/40 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-emerald-500 transition-all duration-1000" 
+                  className="h-full bg-foreground transition-all duration-1000" 
                   style={{ width: `${progressPercentage}%` }}
                 />
               </div>
-              <span className="text-sm font-semibold text-muted-foreground min-w-[3rem] text-right">
+              <span className="text-xs font-medium text-muted-foreground w-8 text-right">
                 {Math.round(progressPercentage)}%
               </span>
             </div>
+
           </div>
         </div>
       )}
