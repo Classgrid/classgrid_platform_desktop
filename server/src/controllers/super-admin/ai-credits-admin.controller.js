@@ -120,7 +120,7 @@ export const resetUserUsage = async (req, res) => {
 
         // Resets their used_this_week counter to 0
         await User.findByIdAndUpdate(userId, {
-            $set: { "ai_tokens.used_this_week": 0 }
+            $set: { "ai_tokens.used_this_week": 0, "ai_image_free_weekly_used": 0 }
         });
 
         const io = req.app.get("io");
@@ -152,7 +152,7 @@ export const resetOrgUsage = async (req, res) => {
         // Optionally reset ALL users in this org's weekly limits
         await User.updateMany(
             { organization_id: orgId },
-            { $set: { "ai_tokens.used_this_week": 0 } }
+            { $set: { "ai_tokens.used_this_week": 0, "ai_image_free_weekly_used": 0 } }
         );
 
         const io = req.app.get("io");
@@ -796,3 +796,4 @@ export const extendGrantedCredits = async (req, res) => {
         res.status(500).json({ success: false, error: "Internal server error" });
     }
 };
+

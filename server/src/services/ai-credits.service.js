@@ -104,7 +104,8 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
         User.findByIdAndUpdate(userId, { 
             $set: { 
                 "ai_tokens.used_this_week": 0,
-                "ai_tokens.week_reset_date": newResetDate
+                "ai_tokens.week_reset_date": newResetDate,
+                "ai_image_free_weekly_used": 0
             }
         }).catch(e => console.error("Auto-reset error:", e));
     }
@@ -275,3 +276,4 @@ export const getImageGenerationCost = async () => {
     }
     return 0;
 };
+
