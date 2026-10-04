@@ -423,60 +423,57 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                   header: "Pool Status",
                   width: "w-[10%]",
                   render: (_: any, row: any) => {
-                    const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
-                    const isRevoked = userDetail.ai_tokens?.promotion_credits_revoked;
-                    const endDate = userDetail.ai_tokens?.promotion_credits_end_date;
-                    const isExpired = endDate && new Date(endDate).getTime() < Date.now();
-
-                    // Waterfall: walk through grants oldest-first, consume used credits
-                    const allGrants = (userDetail.promotionHistory || [])
-                      .filter((h: any) => h.type === 'grant' || h.type === 'granted')
-                      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
-                    const activeGrants = allGrants.filter((g: any) => {
-                      const s = (g.status || '').toLowerCase();
-                      return s !== 'revoked' && s !== 'paused' && !isRevoked && !isPaused;
-                    });
-                    const totalActiveGranted = activeGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
-                    const remaining = userDetail.ai_tokens?.promotion_credits_balance || 0;
-                    let usedBudget = Math.max(0, totalActiveGranted - remaining);
-
+                    const rowStatus = (row.status || '').toLowerCase();
+                    
                     let statusLabel = "ACTIVE";
                     let statusClass = "bg-green-500/10 text-green-500";
 
-                    for (const g of allGrants) {
-                      const amt = g.credits_added || 0;
-                      const gId = g._id || g.id;
-                      const rowId = row._id || row.id;
+                    if (rowStatus === 'revoked') {
+                      statusLabel = "REVOKED";
+                      statusClass = "bg-red-500/10 text-red-500";
+                    } else if (rowStatus === 'paused') {
+                      statusLabel = "PAUSED";
+                      statusClass = "bg-amber-500/10 text-amber-500";
+                    } else if (rowStatus === 'expired') {
+                      statusLabel = "EXPIRED";
+                      statusClass = "bg-red-500/10 text-red-500";
+                    } else {
+                      // For active/success grants, check if exhausted via waterfall
+                      const allGrants = [...(userDetail.promotionHistory || [])]
+                        .filter((h: any) => h.type === 'grant' || h.type === 'granted')
+                        .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
                       
-                      const gStatus = (g.status || '').toLowerCase();
-                      const isGrantActive = gStatus !== 'revoked' && gStatus !== 'paused' && !isRevoked && !isPaused;
-
-                      if (gId === rowId || String(gId) === String(rowId)) {
-                        // Check individual row status AND global flags
-                        const rowStatus = (row.status || g.status || '').toLowerCase();
-                        
-                        if (isRevoked || rowStatus === 'revoked') {
-                          statusLabel = "REVOKED";
-                          statusClass = "bg-red-500/10 text-red-500";
-                        } else if (isPaused || rowStatus === 'paused') {
-                          statusLabel = "PAUSED";
-                          statusClass = "bg-amber-500/10 text-amber-500";
-                        } else if (usedBudget >= amt && isGrantActive) {
-                          statusLabel = "EXHAUSTED";
-                          statusClass = "bg-slate-500/10 text-slate-600 dark:text-slate-400";
-                        } else if (isExpired || rowStatus === 'expired') {
-                          statusLabel = "EXPIRED";
-                          statusClass = "bg-red-500/10 text-red-500";
+                      const activeGrants = allGrants.filter((g: any) => {
+                        const s = (g.status || '').toLowerCase();
+                        return s === 'success' || s === 'pending' || s === 'active';
+                      });
+                      const totalActiveGranted = activeGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
+                      const remaining = userDetail.ai_tokens?.promotion_credits_balance || 0;
+                      let usedBudget = Math.max(0, totalActiveGranted - remaining);
+                      
+                      for (const g of activeGrants) {
+                        const amt = g.credits_added || 0;
+                        const gId = g._id || g.id;
+                        const rowId = row._id || row.id;
+                        if (String(gId) === String(rowId)) {
+                          if (usedBudget >= amt) {
+                            statusLabel = "EXHAUSTED";
+                            statusClass = "bg-slate-500/10 text-slate-600 dark:text-slate-400";
+                          }
+                          break;
                         }
-                        break;
+                        if (usedBudget >= amt) {
+                          usedBudget -= amt;
+                        } else {
+                          usedBudget = 0;
+                        }
                       }
                       
-                      if (isGrantActive) {
-                          if (usedBudget >= amt) {
-                            usedBudget -= amt;
-                          } else {
-                            usedBudget = 0;
-                          }
+                      // Check expiry on the individual row
+                      const endDate = row.metadata?.endDate || row.endDate;
+                      if (endDate && new Date(endDate).getTime() < Date.now() && statusLabel === "ACTIVE") {
+                        statusLabel = "EXPIRED";
+                        statusClass = "bg-red-500/10 text-red-500";
                       }
                     }
 
@@ -492,25 +489,23 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                   header: "Pool Actions",
                   width: "w-[25%]",
                   render: (_: any, row: any) => {
-                    const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
-                    const limit = userDetail.ai_tokens?.total_promotion_credits_granted || 0;
-                    const remaining = userDetail.ai_tokens?.promotion_credits_balance || 0;
-                    const used = Math.max(0, limit - remaining);
-                    const isRevoked = userDetail.ai_tokens?.promotion_credits_revoked;
+                    const rowStatus = (row.status || '').toLowerCase();
+                    const isRowRevoked = rowStatus === 'revoked';
+                    const isRowPaused = rowStatus === 'paused';
+                    const limit = row.credits_added || 0;
 
                     let statusLabel = "ACTIVE";
-                    if (isRevoked) statusLabel = "REVOKED";
-                    else if (remaining <= 0 && limit > 0) statusLabel = "EXHAUSTED";
-                    else if (userDetail.ai_tokens?.promotion_credits_end_date && new Date(userDetail.ai_tokens.promotion_credits_end_date).getTime() < Date.now()) statusLabel = "EXPIRED";
-                    else if (isPaused) statusLabel = "PAUSED";
+                    if (isRowRevoked) statusLabel = "REVOKED";
+                    else if (isRowPaused) statusLabel = "PAUSED";
+                    else if (rowStatus === 'expired') statusLabel = "EXPIRED";
 
                       return (
                         <div className="flex items-center gap-2 overflow-x-auto pb-1 min-w-0 max-w-full scrollbar-thin scrollbar-thumb-muted-foreground/20 [&>*]:shrink-0">
-                          <ViewGrantedCreditsDetails used={used} limit={limit} history={userDetail.promotionHistory || []} status={statusLabel} />
-                          {!isRevoked && (
+                          <ViewGrantedCreditsDetails used={0} limit={limit} history={userDetail.promotionHistory || []} status={statusLabel} />
+                          {!isRowRevoked && (
                             <>
-                              <ExtendUserGrantedCredits userId={userDetail.id} currentExpiry={userDetail.ai_tokens?.promotion_credits_end_date} />
-                              <PauseUserGrantedCredits userId={userDetail.id} transactionId={row.id || row._id} isPaused={(row.status || '').toLowerCase() === 'paused'} />
+                              <ExtendUserGrantedCredits userId={userDetail.id} currentExpiry={row.metadata?.endDate || row.endDate || userDetail.ai_tokens?.promotion_credits_end_date} />
+                              <PauseUserGrantedCredits userId={userDetail.id} transactionId={row.id || row._id} isPaused={isRowPaused} />
                               <RemoveUserGrantedCredits userId={userDetail.id} transactionId={row.id || row._id} />
                             </>
                           )}
