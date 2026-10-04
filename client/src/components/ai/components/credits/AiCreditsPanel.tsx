@@ -288,10 +288,10 @@ export function AiCreditsPanel() {
                               colorClass = 'bg-red-500/10 text-red-600';
                             }
 
-                            if (txn.type === 'grant' && (lowerStatus === 'success' || lowerStatus === 'active')) {
-                              // Waterfall: walk through all grants oldest-first, consume used credits
+                            if (txn.type === 'grant' && !['failed', 'pending'].includes(lowerStatus)) {
+                              // Waterfall: walk through all valid grants oldest-first
                               const allGrants = (filteredHistory || [])
-                                .filter((t: any) => t.type === 'grant' && (t.status?.toLowerCase() === 'success' || t.status?.toLowerCase() === 'active'))
+                                .filter((t: any) => t.type === 'grant' && !['failed', 'pending'].includes(t.status?.toLowerCase() || ''))
                                 .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
                               const promoPool = balance?.pools?.find((p: any) => p.creditType === "Promotion");
                               const totalGranted = allGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
@@ -303,15 +303,15 @@ export function AiCreditsPanel() {
                                 const amt = g.credits_added || 0;
                                 if (g._id === txn._id) {
                                   // This is the current row
-                                  if (promoPool?.status === 'Revoked') {
+                                  if (promoPool?.status === 'Revoked' || lowerStatus === 'revoked') {
                                     displayStatus = 'Revoked';
                                     colorClass = 'bg-red-500/10 text-red-600';
+                                  } else if (promoPool?.status === 'Paused' || lowerStatus === 'paused') {
+                                    displayStatus = 'Paused';
+                                    colorClass = 'bg-amber-500/10 text-amber-600';
                                   } else if (usedBudget >= amt) {
                                     displayStatus = 'Exhausted';
                                     colorClass = 'bg-slate-500/10 text-slate-600 dark:text-slate-400';
-                                  } else if (promoPool?.status === 'Paused') {
-                                    displayStatus = 'Paused';
-                                    colorClass = 'bg-amber-500/10 text-amber-600';
                                   } else if (promoPool?.expirationDate && new Date(promoPool.expirationDate).getTime() < Date.now()) {
                                     displayStatus = 'Expired';
                                     colorClass = 'bg-red-500/10 text-red-600';
@@ -328,10 +328,10 @@ export function AiCreditsPanel() {
                                   usedBudget = 0;
                                 }
                               }
-                            } else if (txn.type === 'topup' && (lowerStatus === 'success' || lowerStatus === 'active')) {
-                              // Waterfall: walk through all topups oldest-first, consume used credits
+                            } else if (txn.type === 'topup' && !['failed', 'pending'].includes(lowerStatus)) {
+                              // Waterfall: walk through all valid topups oldest-first
                               const allTopups = (filteredHistory || [])
-                                .filter((t: any) => t.type === 'topup' && (t.status?.toLowerCase() === 'success' || t.status?.toLowerCase() === 'active'))
+                                .filter((t: any) => t.type === 'topup' && !['failed', 'pending'].includes(t.status?.toLowerCase() || ''))
                                 .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
                               const paidPool = balance?.pools?.find((p: any) => p.creditType === "Paid");
                               const totalPurchased = allTopups.reduce((s: number, t: any) => s + (t.credits_added || 0), 0);
@@ -341,7 +341,13 @@ export function AiCreditsPanel() {
                               for (const t of allTopups) {
                                 const amt = t.credits_added || 0;
                                 if (t._id === txn._id) {
-                                  if (usedBudget >= amt) {
+                                  if (lowerStatus === 'revoked') {
+                                    displayStatus = 'Revoked';
+                                    colorClass = 'bg-red-500/10 text-red-600';
+                                  } else if (lowerStatus === 'paused') {
+                                    displayStatus = 'Paused';
+                                    colorClass = 'bg-amber-500/10 text-amber-600';
+                                  } else if (usedBudget >= amt) {
                                     displayStatus = 'Exhausted';
                                     colorClass = 'bg-slate-500/10 text-slate-600 dark:text-slate-400';
                                   } else if (paidPool?.expirationDate && new Date(paidPool.expirationDate).getTime() < Date.now()) {
