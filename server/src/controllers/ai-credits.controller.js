@@ -87,7 +87,10 @@ export const getMyCredits = async (req, res) => {
             ? new Date(tokens.ai_credits_end_date) 
             : new Date(paidStartDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days validity
         
-        if (paidExpirationDate.getTime() < now.getTime()) {
+        if (paidBalance <= 0 && totalPurchased > 0) {
+            paidStatus = "Exhausted";
+            paidBalance = 0;
+        } else if (paidExpirationDate.getTime() < now.getTime()) {
             paidStatus = "Expired";
             paidBalance = 0;
         }
