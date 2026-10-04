@@ -84,9 +84,9 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
     if (!isRevoked) {
       if (isExhausted) {
         generatedSteps.push({
-          id: "expired",
-          title: "Expired",
-          description: "All credits consumed or reached expiry date.",
+          id: "exhausted",
+          title: "Exhausted",
+          description: "All credits consumed.",
           date: lastDate,
           isCompleted: false,
           isActive: true,

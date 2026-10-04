@@ -119,7 +119,13 @@ export function AiCreditsPanel() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-8">
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Status</div>
-                    <div className="font-medium text-foreground">{pool.status}</div>
+                    <div className="font-medium text-foreground">
+                      {pool.status === 'Active' && pool.amountRemaining <= 0 
+                        ? 'Exhausted' 
+                        : pool.status === 'Active' && pool.expirationDate && new Date(pool.expirationDate).getTime() < new Date().getTime()
+                          ? 'Expired'
+                          : pool.status}
+                    </div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Start date</div>
@@ -284,18 +290,28 @@ export function AiCreditsPanel() {
 
                             if (txn.type === 'grant' && (lowerStatus === 'success' || lowerStatus === 'active')) {
                               const promoPool = balance?.pools?.find((p: any) => p.creditType === "Promotion");
-                              if (!promoPool || promoPool.status === 'Expired' || promoPool.amountRemaining <= 0) {
-                                displayStatus = 'Expired';
-                                colorClass = 'bg-red-500/10 text-red-600';
-                              } else if (promoPool.status === 'Paused') {
-                                displayStatus = 'Paused';
-                                colorClass = 'bg-amber-500/10 text-amber-600';
+                              if (promoPool) {
+                                if (promoPool.amountRemaining <= 0) {
+                                  displayStatus = 'Exhausted';
+                                  colorClass = 'bg-slate-500/10 text-slate-600 dark:text-slate-400';
+                                } else if (promoPool.status === 'Expired' || (promoPool.expirationDate && new Date(promoPool.expirationDate).getTime() < new Date().getTime())) {
+                                  displayStatus = 'Expired';
+                                  colorClass = 'bg-red-500/10 text-red-600';
+                                } else if (promoPool.status === 'Paused') {
+                                  displayStatus = 'Paused';
+                                  colorClass = 'bg-amber-500/10 text-amber-600';
+                                }
                               }
                             } else if (txn.type === 'topup' && (lowerStatus === 'success' || lowerStatus === 'active')) {
                               const purchasedPool = balance?.pools?.find((p: any) => p.creditType === "Paid");
-                              if (!purchasedPool || purchasedPool.status === 'Expired' || purchasedPool.amountRemaining <= 0) {
-                                displayStatus = 'Expired';
-                                colorClass = 'bg-red-500/10 text-red-600';
+                              if (purchasedPool) {
+                                if (purchasedPool.amountRemaining <= 0) {
+                                  displayStatus = 'Exhausted';
+                                  colorClass = 'bg-slate-500/10 text-slate-600 dark:text-slate-400';
+                                } else if (purchasedPool.status === 'Expired' || (purchasedPool.expirationDate && new Date(purchasedPool.expirationDate).getTime() < new Date().getTime())) {
+                                  displayStatus = 'Expired';
+                                  colorClass = 'bg-red-500/10 text-red-600';
+                                }
                               }
                             }
 
