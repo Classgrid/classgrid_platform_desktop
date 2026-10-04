@@ -87,8 +87,12 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
         if (displayStatus === 'success' || displayStatus === 'active') {
             const now = new Date().getTime();
             const endDateStr = userDetail?.ai_tokens?.ai_credits_end_date;
+            const remaining = userDetail?.ai_tokens?.ai_credits_balance || 0;
             
-            if (endDateStr && new Date(endDateStr).getTime() < now) {
+            if (remaining <= 0) {
+                displayStatus = 'Exhausted';
+                colorClass = 'bg-slate-500/10 text-slate-600 dark:text-slate-400';
+            } else if (endDateStr && new Date(endDateStr).getTime() < now) {
                 displayStatus = 'Expired';
                 colorClass = 'bg-red-500/10 text-red-600';
             } else {
@@ -408,12 +412,15 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                     if (isRevoked) {
                       statusLabel = "REVOKED";
                       statusClass = "bg-red-500/10 text-red-500";
-                    } else if (isPaused) {
-                      statusLabel = "PAUSED";
-                      statusClass = "bg-amber-500/10 text-amber-500";
+                    } else if (remaining <= 0 && limit > 0) {
+                      statusLabel = "EXHAUSTED";
+                      statusClass = "bg-slate-500/10 text-slate-600 dark:text-slate-400";
                     } else if (isExpired) {
                       statusLabel = "EXPIRED";
                       statusClass = "bg-red-500/10 text-red-500";
+                    } else if (isPaused) {
+                      statusLabel = "PAUSED";
+                      statusClass = "bg-amber-500/10 text-amber-500";
                     }
 
                     return (
