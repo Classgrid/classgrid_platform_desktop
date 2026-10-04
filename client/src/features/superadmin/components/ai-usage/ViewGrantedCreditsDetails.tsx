@@ -49,19 +49,29 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
       generatedSteps.push({
         id: "granted",
         title: "Granted",
-        description: "Initial Grant",
+        description: "Initial credit allocation for AI operations.",
+        date: sortedHistory.length > 0 ? formatDateTime(sortedHistory[0].date) : "Unknown Date",
         isCompleted: true,
         isActive: false,
       });
     }
 
     // Middle Steps
-    const middleEvents = sortedHistory.filter(h => h.type !== "granted");
+    const middleEvents = sortedHistory.filter(h => h.type !== "grant" && h.type !== "granted");
     for (const event of middleEvents) {
+      const displayTitle = event.type.charAt(0).toUpperCase() + event.type.slice(1) + (event.type.endsWith("e") ? "d" : event.type.endsWith("t") ? "ed" : "ed");
+      
+      let description = `Credits were ${event.type} by system administrator.`;
+      if (event.type === "extend" && event.metadata) {
+         const oldDate = event.metadata.oldEndDate ? formatDateTime(event.metadata.oldEndDate) : "Unknown";
+         const newDate = event.metadata.newEndDate ? formatDateTime(event.metadata.newEndDate) : formatDateTime(event.date);
+         description = `Extended from ${oldDate} to ${newDate}.`;
+      }
+
       generatedSteps.push({
         id: event.id,
-        title: event.type === "paused" ? "Paused" : event.type === "resumed" ? "Resumed" : event.type === "revoked" ? "Revoked" : event.type === "extended" ? "Extended" : event.type,
-        description: `Credits were ${event.type} by system administrator.`,
+        title: displayTitle.replace("d", "d").replace("grantded", "Granted").replace("revokeded", "Revoked").replace("pauseded", "Paused").replace("resumeded", "Resumed").replace("extendeded", "Extended"),
+        description: description,
         date: formatDateTime(event.date),
         isCompleted: true,
         isActive: false,
@@ -69,17 +79,20 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
     }
 
     // Final Status Step
+    const lastDate = sortedHistory.length > 0 ? formatDateTime(sortedHistory[sortedHistory.length - 1].date) : "Today";
+    
     if (!isRevoked) {
       if (isExhausted) {
         generatedSteps.push({
           id: "expired",
           title: "Expired",
           description: "All credits consumed or reached expiry date.",
+          date: lastDate,
           isCompleted: false,
           isActive: true,
         });
       } else if (isCurrentlyPaused) {
-        const last = generatedSteps.filter(s => s.title === "Paused").pop();
+        const last = generatedSteps.filter(s => s.title.includes("Pause")).pop();
         if (last) {
            last.isActive = true;
            last.isCompleted = false;
@@ -88,6 +101,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
           id: "expiration",
           title: "Expiration",
           description: "Pending",
+          date: "Future",
           isCompleted: false,
           isActive: false,
         });
@@ -96,6 +110,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
           id: "active",
           title: "Active",
           description: "Consuming credits",
+          date: lastDate,
           isCompleted: false,
           isActive: true,
         });
@@ -103,6 +118,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
           id: "expiration",
           title: "Expiration",
           description: "Pending",
+          date: "Future",
           isCompleted: false,
           isActive: false,
         });
