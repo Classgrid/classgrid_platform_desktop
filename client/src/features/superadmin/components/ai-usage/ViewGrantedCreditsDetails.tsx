@@ -48,6 +48,8 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
       case "resume": return "Access Resumed";
       case "revoke": return "Credits Revoked";
       case "extend": return "Duration Extended";
+      case "block": return "User Blocked";
+      case "purchase": return "Credits Purchased";
       default: return "Action Recorded";
     }
   };
@@ -55,10 +57,134 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
   const getDescription = (item: any) => {
     switch(item.type) {
       case "grant": return `Granted ${formatNumber(item.credits_added)} credits.`;
-      case "extend": return `Extended expiration to ${item.metadata?.newEndDate ? new Date(item.metadata.newEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}.`;
+      case "extend": return `Extended to ${item.metadata?.newEndDate ? new Date(item.metadata.newEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}.`;
       default: return null;
     }
   };
+
+  const getTimelineSteps = () => {
+    if (!history || history.length === 0) return { steps: [], currentStep: 0 };
+    
+    const generatedSteps: { title: string; description: string; isCompleted: boolean; isActive: boolean; id: string }[] = [];
+    
+    // 1. Granted
+    const grantEvent = history.find(h => h.type === "grant");
+    generatedSteps.push({
+      id: "grant",
+      title: "Credits Granted",
+      description: grantEvent ? new Date(grantEvent.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "Unknown",
+      isCompleted: true,
+      isActive: false,
+    });
+
+    // 2. Process chronological events
+    const sortedHistory = [...history].filter(h => h.type !== "grant").sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    let isCurrentlyPaused = false;
+    
+    sortedHistory.forEach((ev, idx) => {
+      if (ev.type === "pause") {
+         isCurrentlyPaused = true;
+         generatedSteps.push({
+           id: `pause-${idx}`,
+           title: "Paused",
+           description: new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+           isCompleted: true,
+           isActive: false,
+         });
+      } else if (ev.type === "resume") {
+         isCurrentlyPaused = false;
+         generatedSteps.push({
+           id: `resume-${idx}`,
+           title: "Resumed",
+           description: new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+           isCompleted: true,
+           isActive: false,
+         });
+      } else if (ev.type === "extend") {
+         generatedSteps.push({
+           id: `extend-${idx}`,
+           title: "Extended",
+           description: `${new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} ${getDescription(ev) || ''}`,
+           isCompleted: true,
+           isActive: false,
+         });
+      } else if (ev.type === "revoke") {
+         generatedSteps.push({
+           id: `revoke-${idx}`,
+           title: "Revoked",
+           description: new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+           isCompleted: true,
+           isActive: false,
+         });
+      } else {
+         generatedSteps.push({
+           id: `event-${idx}`,
+           title: getTitle(ev.type),
+           description: new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+           isCompleted: true,
+           isActive: false,
+         });
+      }
+    });
+
+    // 3. Determine terminal/current state
+    const isRevoked = history.some(h => h.type === "revoke");
+    const isExhausted = limit > 0 && used >= limit;
+
+    if (isRevoked) {
+      const last = generatedSteps[generatedSteps.length - 1];
+      if (last.title === "Revoked") {
+         last.isActive = true;
+         last.isCompleted = false;
+      }
+    } else if (isExhausted) {
+      generatedSteps.push({
+        id: "exhausted",
+        title: "Exhausted",
+        description: "All credits used",
+        isCompleted: false,
+        isActive: true,
+      });
+    } else if (isCurrentlyPaused) {
+      const last = generatedSteps.filter(s => s.title === "Paused").pop();
+      if (last) {
+         last.isActive = true;
+         last.isCompleted = false;
+      }
+      generatedSteps.push({
+        id: "expiration",
+        title: "Expiration",
+        description: "Pending",
+        isCompleted: false,
+        isActive: false,
+      });
+    } else {
+      generatedSteps.push({
+        id: "active",
+        title: "Active",
+        description: "Consuming credits",
+        isCompleted: false,
+        isActive: true,
+      });
+      generatedSteps.push({
+        id: "expiration",
+        title: "Expiration",
+        description: "Pending",
+        isCompleted: false,
+        isActive: false,
+      });
+    }
+
+    const activeIndex = generatedSteps.findIndex(s => s.isActive);
+    const currentStep = activeIndex !== -1 ? activeIndex : generatedSteps.length;
+
+    return {
+      steps: generatedSteps.map(s => ({ id: s.id, title: s.title, description: s.description })),
+      currentStep
+    };
+  };
+
+  const timeline = getTimelineSteps();
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -89,12 +215,8 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
             ) : (
               <div className="w-full bg-muted/5 border border-border/50 rounded-xl p-4">
                 <Stepper 
-                  steps={[...history].reverse().map(item => ({
-                    id: item.id,
-                    title: getTitle(item.type),
-                    description: `${new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} ${getDescription(item) || ''}`
-                  }))} 
-                  currentStep={history.length - 1} 
+                  steps={timeline.steps} 
+                  currentStep={timeline.currentStep} 
                 />
               </div>
             )}
