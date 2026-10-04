@@ -4036,6 +4036,41 @@ export const bulkDeleteAgentReviews = async (req, res) => {
 export const generateImage = async (req, res) => {
     try {
         const { prompt, sessionId, userEmail, isIncognito } = req.body;
+        const isInternalCall = req.body.isInternalCall === true;
+
+        let authUserForImage = null;
+
+        if (!isIncognito && !isInternalCall && userEmail) {
+            const User = (await import('../models/User.js')).default;
+            const Organization = (await import('../models/Organization.js')).default;
+            const GlobalAiConfig = (await import('../models/GlobalAiConfig.js')).default;
+            
+            authUserForImage = await User.findOne({ email: userEmail });
+            if (!authUserForImage) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+
+            let imageLimit = 20; // fallback default
+            
+            // Determine limit based on organization or global config
+            if (authUserForImage.organization_id) {
+                const org = await Organization.findById(authUserForImage.organization_id);
+                if (org && org.ai_config && org.ai_config.custom_limits_enabled) {
+                    imageLimit = org.ai_config.image_generation_limit !== undefined ? org.ai_config.image_generation_limit : 20;
+                } else {
+                    const globalConfig = await GlobalAiConfig.findOne({ key: 'singleton' }).lean();
+                    imageLimit = globalConfig?.global_image_weekly_limit !== undefined ? globalConfig.global_image_weekly_limit : 20;
+                }
+            } else {
+                const globalConfig = await GlobalAiConfig.findOne({ key: 'singleton' }).lean();
+                imageLimit = globalConfig?.global_image_weekly_limit !== undefined ? globalConfig.global_image_weekly_limit : 20;
+            }
+
+            // Check if user has exceeded their image generation limit
+            if ((authUserForImage.ai_image_free_weekly_used || 0) >= imageLimit) {
+                return res.status(403).json({ error: "Image generation limit reached." });
+            }
+        }
         // Call Cloudflare Workers AI (Flux-1-Schnell)
         let imageRes;
         let imageBuffer;
@@ -4135,8 +4170,6 @@ export const generateImage = async (req, res) => {
 
         let activeSessionId = sessionId;
 
-        const isInternalCall = req.body.isInternalCall === true;
-
         if (!isIncognito && !isInternalCall) {
             if (!activeSessionId && userEmail) {
                 const newSession = await createSession(userEmail, prompt.substring(0, 50));
@@ -4160,6 +4193,8 @@ export const generateImage = async (req, res) => {
                 
                 const user = await User.findOne({ email: userEmail });
                 if (user) {
+                    user.ai_image_free_weekly_used = (user.ai_image_free_weekly_used || 0) + 1;
+                    await user.save();
                     await AiUsageLog.create({
                         organization_id: user.organization_id || null,
                         userId: user._id,
@@ -4505,3 +4540,4 @@ export const updatePreferences = async (req, res) => {
         res.status(500).json({ error: "Failed to update preferences" });
     }
 };
+
