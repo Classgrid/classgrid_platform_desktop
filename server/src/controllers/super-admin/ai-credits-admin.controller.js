@@ -689,11 +689,17 @@ export const pauseGrantedCredits = async (req, res) => {
         if (isPaused && txn.status !== "paused") {
             txn.status = "paused";
             await txn.save();
-            await User.findByIdAndUpdate(userId, { $inc: { "ai_tokens.promotion_credits_balance": -(txn.credits_added || 0) } });
+            await User.findByIdAndUpdate(userId, { $inc: { 
+                "ai_tokens.promotion_credits_balance": -(txn.credits_added || 0),
+                "ai_tokens.total_promotion_credits_granted": -(txn.credits_added || 0)
+            } });
         } else if (!isPaused && txn.status === "paused") {
             txn.status = "success";
             await txn.save();
-            await User.findByIdAndUpdate(userId, { $inc: { "ai_tokens.promotion_credits_balance": (txn.credits_added || 0) } });
+            await User.findByIdAndUpdate(userId, { $inc: { 
+                "ai_tokens.promotion_credits_balance": (txn.credits_added || 0),
+                "ai_tokens.total_promotion_credits_granted": (txn.credits_added || 0)
+            } });
         }
 
         if (user && user.email) {
