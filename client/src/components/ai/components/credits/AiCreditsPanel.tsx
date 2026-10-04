@@ -237,10 +237,9 @@ export function AiCreditsPanel() {
                       <TableRow key={txn._id} className="hover:bg-muted/30 transition-colors">
                         <TableCell className="whitespace-nowrap">
                           {format(new Date(txn.createdAt), "MMM dd, yyyy h:mm a")}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {txn.type === "topup" ? "Top-Up" : txn.type === "grant" ? "Credit Grant" : "Adjustment"}
-                        </TableCell>
+                        </TableCell>                          <TableCell className="font-medium">
+                            {txn.type === "topup" ? "Top-Up" : txn.type === "grant" ? "Credit Grant" : txn.type === "revoke" ? "Revoked" : txn.type === "pause" ? "Paused" : txn.type === "resume" ? "Resumed" : txn.type === "extend" ? "Extended" : "System Adjustment"}
+                          </TableCell>
                         <TableCell className="text-muted-foreground">
                           {txn.amount_inr ? `₹${formatNumber(txn.amount_inr)}` : "-"}
                         </TableCell>
