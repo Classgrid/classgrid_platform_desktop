@@ -49,7 +49,12 @@ export const getMyCredits = async (req, res) => {
         const promoPaused = tokens.promotion_credits_paused || false;
         
         // Determine correct status
-        if (promoBalance <= 0 && totalPromoGranted > 0) {
+        const promoRevoked = tokens.promotion_credits_revoked || false;
+        
+        if (promoRevoked) {
+            promoStatus = "Revoked";
+            promoBalance = 0;
+        } else if (promoBalance <= 0 && totalPromoGranted > 0) {
             promoStatus = "Expired";
             promoBalance = 0;
         } else if (promoEndDate && promoEndDate.getTime() < now.getTime()) {
