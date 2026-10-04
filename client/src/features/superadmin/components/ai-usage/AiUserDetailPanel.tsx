@@ -84,7 +84,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
         let displayStatus = (row.status || '').toLowerCase();
         let colorClass = 'bg-muted text-muted-foreground';
 
-        const allTopups = (userDetail.topupHistory || [])
+        const allTopups = [...(userDetail.topupHistory || [])]
           .sort((a: any, b: any) => new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime());
         
         const totalPurchased = allTopups.reduce((s: number, t: any) => s + (t.credits_added || 0), 0);
