@@ -1,17 +1,6 @@
-// CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import { useState } from "react";
+import { Info, Check, X, Clock, CalendarDays } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/marketing_ui/dialog";
-import { Info, Play, Pause, Trash2, Gift, Clock, CalendarDays } from "lucide-react";
-import { formatNumber } from "@/lib/utils";
-import { Stepper } from "@/components/marketing_ui/stepper";
 
 interface ViewGrantedCreditsDetailsProps {
   used: number;
@@ -28,205 +17,214 @@ interface ViewGrantedCreditsDetailsProps {
 
 export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedCreditsDetailsProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const percent = limit > 0 ? Math.min(100, Math.max(0, (used / limit) * 100)) : 0;
-
-  const getIcon = (type: string) => {
-    switch(type) {
-      case "grant": return <Gift className="w-4 h-4 text-emerald-500" />;
-      case "pause": return <Pause className="w-4 h-4 text-amber-500" />;
-      case "resume": return <Play className="w-4 h-4 text-blue-500" />;
-      case "revoke": return <Trash2 className="w-4 h-4 text-red-500" />;
-      case "extend": return <CalendarDays className="w-4 h-4 text-purple-500" />;
-      default: return <Info className="w-4 h-4 text-muted-foreground" />;
-    }
-  };
-
-  const getTitle = (type: string) => {
-    switch(type) {
-      case "grant": return "Credits Granted";
-      case "pause": return "Access Paused";
-      case "resume": return "Access Resumed";
-      case "revoke": return "Credits Revoked";
-      case "extend": return "Duration Extended";
-      case "block": return "User Blocked";
-      case "purchase": return "Credits Purchased";
-      default: return "Action Recorded";
-    }
-  };
-
-  const getDescription = (item: any) => {
-    switch(item.type) {
-      case "grant": return `Granted ${formatNumber(item.credits_added)} credits.`;
-      case "extend": return `Extended to ${item.metadata?.newEndDate ? new Date(item.metadata.newEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}.`;
-      default: return null;
-    }
-  };
 
   const getTimelineSteps = () => {
     if (!history || history.length === 0) return { steps: [], currentStep: 0 };
-    
-    const generatedSteps: { title: string; description: string; isCompleted: boolean; isActive: boolean; id: string }[] = [];
-    
-    // 1. Granted
-    const grantEvent = history.find(h => h.type === "grant");
-    generatedSteps.push({
-      id: "grant",
-      title: "Credits Granted",
-      description: grantEvent ? new Date(grantEvent.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "Unknown",
-      isCompleted: true,
-      isActive: false,
-    });
 
-    // 2. Process chronological events
-    const sortedHistory = [...history].filter(h => h.type !== "grant").sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    let isCurrentlyPaused = false;
-    
-    sortedHistory.forEach((ev, idx) => {
-      if (ev.type === "pause") {
-         isCurrentlyPaused = true;
-         generatedSteps.push({
-           id: `pause-${idx}`,
-           title: "Paused",
-           description: new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-           isCompleted: true,
-           isActive: false,
-         });
-      } else if (ev.type === "resume") {
-         isCurrentlyPaused = false;
-         generatedSteps.push({
-           id: `resume-${idx}`,
-           title: "Resumed",
-           description: new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-           isCompleted: true,
-           isActive: false,
-         });
-      } else if (ev.type === "extend") {
-         generatedSteps.push({
-           id: `extend-${idx}`,
-           title: "Extended",
-           description: `${new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} ${getDescription(ev) || ''}`,
-           isCompleted: true,
-           isActive: false,
-         });
-      } else if (ev.type === "revoke") {
-         generatedSteps.push({
-           id: `revoke-${idx}`,
-           title: "Revoked",
-           description: new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-           isCompleted: true,
-           isActive: false,
-         });
-      } else {
-         generatedSteps.push({
-           id: `event-${idx}`,
-           title: getTitle(ev.type),
-           description: new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-           isCompleted: true,
-           isActive: false,
-         });
-      }
-    });
+    const sortedHistory = [...history].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const isExhausted = used >= limit;
+    const isCurrentlyPaused = sortedHistory.length > 0 && sortedHistory[sortedHistory.length - 1].type === "paused";
+    const isRevoked = sortedHistory.length > 0 && sortedHistory.some(s => s.type === "revoked");
 
-    // 3. Determine terminal/current state
-    const isRevoked = history.some(h => h.type === "revoke");
-    const isExhausted = limit > 0 && used >= limit;
+    const generatedSteps = [];
 
-    if (isRevoked) {
-      const last = generatedSteps[generatedSteps.length - 1];
-      if (last.title === "Revoked") {
-         last.isActive = true;
-         last.isCompleted = false;
-      }
-    } else if (isExhausted) {
+    // Step 1: Grant
+    const grantEvent = sortedHistory.find(h => h.type === "granted");
+    if (grantEvent) {
       generatedSteps.push({
-        id: "exhausted",
-        title: "Exhausted",
-        description: "All credits used",
-        isCompleted: false,
-        isActive: true,
-      });
-    } else if (isCurrentlyPaused) {
-      const last = generatedSteps.filter(s => s.title === "Paused").pop();
-      if (last) {
-         last.isActive = true;
-         last.isCompleted = false;
-      }
-      generatedSteps.push({
-        id: "expiration",
-        title: "Expiration",
-        description: "Pending",
-        isCompleted: false,
+        id: "granted",
+        title: "Granted",
+        description: new Date(grantEvent.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        isCompleted: true,
         isActive: false,
       });
     } else {
       generatedSteps.push({
-        id: "active",
-        title: "Active",
-        description: "Consuming credits",
-        isCompleted: false,
-        isActive: true,
-      });
-      generatedSteps.push({
-        id: "expiration",
-        title: "Expiration",
-        description: "Pending",
-        isCompleted: false,
+        id: "granted",
+        title: "Granted",
+        description: "Initial Grant",
+        isCompleted: true,
         isActive: false,
       });
+    }
+
+    // Step 2 & Middle Steps
+    const middleEvents = sortedHistory.filter(h => h.type !== "granted");
+    for (const event of middleEvents) {
+      generatedSteps.push({
+        id: event.id,
+        title: event.type === "paused" ? "Paused" : event.type === "resumed" ? "Resumed" : event.type === "revoked" ? "Revoked" : event.type === "extended" ? "Extended" : event.type,
+        description: new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        isCompleted: true,
+        isActive: false,
+      });
+    }
+
+    // Final Status Step
+    if (!isRevoked) {
+      if (isExhausted) {
+        generatedSteps.push({
+          id: "exhausted",
+          title: "Exhausted",
+          description: "All credits used",
+          isCompleted: false,
+          isActive: true,
+        });
+      } else if (isCurrentlyPaused) {
+        const last = generatedSteps.filter(s => s.title === "Paused").pop();
+        if (last) {
+           last.isActive = true;
+           last.isCompleted = false;
+        }
+        generatedSteps.push({
+          id: "expiration",
+          title: "Expiration",
+          description: "Pending",
+          isCompleted: false,
+          isActive: false,
+        });
+      } else {
+        generatedSteps.push({
+          id: "active",
+          title: "Active",
+          description: "Consuming credits",
+          isCompleted: false,
+          isActive: true,
+        });
+        generatedSteps.push({
+          id: "expiration",
+          title: "Expiration",
+          description: "Pending",
+          isCompleted: false,
+          isActive: false,
+        });
+      }
     }
 
     const activeIndex = generatedSteps.findIndex(s => s.isActive);
     const currentStep = activeIndex !== -1 ? activeIndex : generatedSteps.length;
 
     return {
-      steps: generatedSteps.map(s => ({ id: s.id, title: s.title, description: s.description })),
+      steps: generatedSteps.map(s => ({ ...s })),
       currentStep
     };
   };
 
   const timeline = getTimelineSteps();
+  const totalSteps = timeline.steps.length;
+  const progressPercentage = totalSteps > 1 ? Math.min(100, Math.max(0, (timeline.currentStep / (totalSteps - 1)) * 100)) : 100;
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8">
-          <Info className="w-4 h-4 mr-2" />
-          Details
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="!max-w-5xl !w-[90vw] bg-[#0a0a0a] border-border text-foreground p-10 overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="text-xl">Promotional Credit Details</DialogTitle>
-          <DialogDescription>
-            View consumption and the lifecycle timeline of these promotional credits.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Button variant="outline" size="sm" className="h-8" onClick={() => setIsOpen(true)}>
+        <Info className="w-4 h-4 mr-2" />
+        Details
+      </Button>
 
-        <div className="flex flex-col gap-8 mt-4">
+      {isOpen && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-10 animate-in fade-in duration-200">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
+            onClick={() => setIsOpen(false)}
+          />
           
-          {/* Timeline Section */}
-          <div className="w-full">
-            <h4 className="text-sm font-medium mb-4 flex items-center text-muted-foreground"><Clock className="w-4 h-4 mr-2"/> Audit Timeline</h4>
+          {/* Custom Modal Card */}
+          <div className="relative w-full max-w-6xl bg-background border border-border shadow-2xl rounded-2xl overflow-hidden animate-in zoom-in-95 duration-300">
             
-            {(!history || history.length === 0) ? (
-              <div className="text-sm text-muted-foreground italic bg-muted/10 p-4 rounded-lg border border-border/30 text-center">
-                No timeline records found for this promotional grant.
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-border/50 bg-muted/20">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-500">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-foreground tracking-tight">Audit Timeline</h2>
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+                    {timeline.currentStep} of {totalSteps} completed
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div className="w-full mt-8 pl-4">
-                <Stepper 
-                  steps={timeline.steps} 
-                  currentStep={timeline.currentStep} 
+              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="rounded-full hover:bg-muted">
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Custom Scratch-Built Timeline */}
+            <div className="p-10 pb-20 overflow-x-auto">
+              {(!history || history.length === 0) ? (
+                <div className="text-sm text-muted-foreground italic bg-muted/10 p-4 rounded-lg border border-border/30 text-center">
+                  No timeline records found.
+                </div>
+              ) : (
+                <div className="relative w-full flex items-center justify-between min-w-[600px] max-w-5xl mx-auto pt-10">
+                  
+                  {/* Background Track */}
+                  <div className="absolute left-0 right-0 top-16 h-[2px] bg-border/40 -z-10" />
+                  
+                  {/* Active Track */}
+                  <div 
+                    className="absolute left-0 top-16 h-[2px] bg-emerald-500 -z-10 transition-all duration-1000 ease-in-out" 
+                    style={{ width: `${progressPercentage}%` }} 
+                  />
+
+                  {/* Steps */}
+                  {timeline.steps.map((step, index) => {
+                    const isCompleted = index < timeline.currentStep;
+                    const isActive = index === timeline.currentStep;
+                    
+                    return (
+                      <div key={index} className="flex flex-col items-center relative group w-32">
+                        {/* Circle */}
+                        <div 
+                          className={`flex items-center justify-center w-12 h-12 rounded-full border-[3px] shadow-sm transition-all duration-500 bg-background
+                            ${isCompleted ? "border-emerald-500 text-emerald-500" : 
+                              isActive ? "border-emerald-500 text-emerald-500 ring-4 ring-emerald-500/20" : 
+                              "border-border text-muted-foreground"}
+                          `}
+                        >
+                          {isCompleted ? (
+                            <Check className="w-6 h-6 stroke-[3]" />
+                          ) : (
+                            <span className={`text-lg font-bold ${isActive ? "animate-pulse" : ""}`}>{index + 1}</span>
+                          )}
+                        </div>
+
+                        {/* Text */}
+                        <div className="absolute top-16 mt-4 flex flex-col items-center text-center w-40">
+                          <span className={`text-sm font-bold tracking-wide uppercase transition-colors
+                            ${isActive || isCompleted ? "text-foreground" : "text-muted-foreground/50"}`}
+                          >
+                            {step.title}
+                          </span>
+                          {step.description && (
+                            <span className="text-xs text-muted-foreground mt-2 font-medium">
+                              {step.description}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Progress Bar */}
+            <div className="p-6 border-t border-border/50 bg-muted/10 flex items-center gap-4">
+              <div className="h-2 w-full bg-border/40 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-emerald-500 transition-all duration-1000" 
+                  style={{ width: `${progressPercentage}%` }}
                 />
               </div>
-            )}
+              <span className="text-sm font-semibold text-muted-foreground min-w-[3rem] text-right">
+                {Math.round(progressPercentage)}%
+              </span>
+            </div>
           </div>
         </div>
-
-        <div className="flex justify-end pt-4 border-t border-border mt-4">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    </>
   );
 }
