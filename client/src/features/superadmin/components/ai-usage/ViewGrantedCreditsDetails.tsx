@@ -13,6 +13,7 @@ interface ViewGrantedCreditsDetailsProps {
     date: string;
     metadata: any;
   }>;
+  status?: string;
 }
 
 const formatDateTime = (dateString: string) => {
@@ -21,7 +22,7 @@ const formatDateTime = (dateString: string) => {
   });
 };
 
-export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedCreditsDetailsProps) {
+export function ViewGrantedCreditsDetails({ used, limit, history, status }: ViewGrantedCreditsDetailsProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const getTimelineSteps = () => {
@@ -81,46 +82,59 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
     // Final Status Step
     const lastDate = sortedHistory.length > 0 ? formatDateTime(sortedHistory[sortedHistory.length - 1].date) : "Today";
     
-    if (!isRevoked) {
-      if (isExhausted) {
-        generatedSteps.push({
-          id: "exhausted",
-          title: "Exhausted",
-          description: "All credits consumed.",
-          date: lastDate,
-          isCompleted: false,
-          isActive: true,
-        });
-      } else if (isCurrentlyPaused) {
-        const last = generatedSteps.filter(s => s.title.includes("Pause")).pop();
-        if (last) {
-           last.isActive = true;
-           last.isCompleted = false;
+    if (status) {
+      const normalizedStatus = status.toUpperCase();
+      generatedSteps.push({
+        id: normalizedStatus.toLowerCase(),
+        title: normalizedStatus.charAt(0) + normalizedStatus.slice(1).toLowerCase(),
+        description: normalizedStatus === "EXHAUSTED" ? "All credits consumed." : normalizedStatus === "EXPIRED" ? "Time validity expired." : normalizedStatus === "REVOKED" ? "Credits were cancelled." : normalizedStatus === "PAUSED" ? "Credits are currently suspended." : "Consuming credits.",
+        date: lastDate,
+        isCompleted: false,
+        isActive: true,
+      });
+    } else {
+      if (!isRevoked) {
+        if (isExhausted) {
+          generatedSteps.push({
+            id: "exhausted",
+            title: "Exhausted",
+            description: "All credits consumed.",
+            date: lastDate,
+            isCompleted: false,
+            isActive: true,
+          });
+        } else if (isCurrentlyPaused) {
+          const last = generatedSteps.filter(s => s.title.includes("Pause")).pop();
+          if (last) {
+             last.isActive = true;
+             last.isCompleted = false;
+          }
+          generatedSteps.push({
+            id: "expiration",
+            title: "Expiration",
+            description: "Pending",
+            date: "Future",
+            isCompleted: false,
+            isActive: false,
+          });
+        } else {
+          generatedSteps.push({
+            id: "active",
+            title: "Active",
+            description: "Consuming credits",
+            date: lastDate,
+            isCompleted: false,
+            isActive: true,
+          });
         }
-        generatedSteps.push({
-          id: "expiration",
-          title: "Expiration",
-          description: "Pending",
-          date: "Future",
-          isCompleted: false,
-          isActive: false,
-        });
       } else {
         generatedSteps.push({
-          id: "active",
-          title: "Active",
-          description: "Consuming credits",
+          id: "revoked",
+          title: "Revoked",
+          description: "Credits cancelled.",
           date: lastDate,
           isCompleted: false,
           isActive: true,
-        });
-        generatedSteps.push({
-          id: "expiration",
-          title: "Expiration",
-          description: "Pending",
-          date: "Future",
-          isCompleted: false,
-          isActive: false,
         });
       }
     }
