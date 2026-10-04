@@ -103,7 +103,8 @@ export const getUserAiDetail = async (req, res) => {
 
         let totalActive = 0;
         promotionHistory.forEach(g => {
-            if (g.type === "grant" && g.status === "success") {
+            const s = (g.status || '').toLowerCase();
+            if (g.type === "grant" && (s === "success" || s === "active" || s === "pending")) {
                 totalActive += (g.credits_added || 0);
             }
         });

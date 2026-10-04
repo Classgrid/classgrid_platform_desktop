@@ -40,7 +40,7 @@ const aiCreditTransactionSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ["success", "failed", "pending", "paused", "revoked", "expired"],
+            enum: ["success", "failed", "pending", "paused", "revoked", "expired", "active"],
             default: "pending",
         },
         metadata: {
