@@ -4319,7 +4319,9 @@ export const getMyUsage = async (req, res) => {
 
         const remaining = freeLimit - (userTokens.ai_tokens.used_this_week || 0);
 
-        if (false) { // Disabled fallback logic
+        // NOTE: Granted/Paid credits have their own dedicated progress bars in AI Credits tab.
+        // The AI Usage bar ONLY shows free weekly usage. Never mix pools here.
+        if (false) {
             const now = new Date().getTime();
             
             let promoBalance = userTokens.ai_tokens.promotion_credits_balance || 0;

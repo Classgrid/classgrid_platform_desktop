@@ -152,42 +152,78 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
 export const deductTokens = async (userId, orgId, tokenAmount, source) => {
     try {
         let result = { success: false, remaining: 0, type: "unknown" };
+
         if (source === "personal") {
+            // Read current balance FIRST, then cap the deduction
+            const user = await User.findById(userId).select("ai_tokens.ai_credits_balance");
+            const currentBalance = Math.max(0, user?.ai_tokens?.ai_credits_balance || 0);
+            const actualDeduction = Math.min(tokenAmount, currentBalance);
+            if (actualDeduction <= 0) {
+                return { success: true, remaining: 0, limit: 0, type: "personal" };
+            }
             const updatedUser = await User.findByIdAndUpdate(userId, {
                 $inc: {
-                    "ai_tokens.ai_credits_balance": -tokenAmount,
-                    "ai_tokens.total_ai_tokens_used": tokenAmount
+                    "ai_tokens.ai_credits_balance": -actualDeduction,
+                    "ai_tokens.total_ai_tokens_used": actualDeduction
                 }
             }, { new: true });
-            result = { success: true, remaining: updatedUser.ai_tokens.ai_credits_balance, limit: updatedUser.ai_tokens.ai_credits_balance + tokenAmount, type: "personal" };
+            result = { success: true, remaining: Math.max(0, updatedUser.ai_tokens.ai_credits_balance), limit: updatedUser.ai_tokens.ai_credits_balance + actualDeduction, type: "personal" };
+
         } else if (source === "promotion") {
+            // Read current balance FIRST, then cap the deduction
+            const user = await User.findById(userId).select("ai_tokens.promotion_credits_balance");
+            const currentBalance = Math.max(0, user?.ai_tokens?.promotion_credits_balance || 0);
+            const actualDeduction = Math.min(tokenAmount, currentBalance);
+            if (actualDeduction <= 0) {
+                return { success: true, remaining: 0, limit: 0, type: "promotion" };
+            }
             const updatedUser = await User.findByIdAndUpdate(userId, {
                 $inc: {
-                    "ai_tokens.promotion_credits_balance": -tokenAmount,
-                    "ai_tokens.total_ai_tokens_used": tokenAmount
+                    "ai_tokens.promotion_credits_balance": -actualDeduction,
+                    "ai_tokens.total_ai_tokens_used": actualDeduction
                 }
             }, { new: true });
-            result = { success: true, remaining: updatedUser.ai_tokens.promotion_credits_balance, limit: updatedUser.ai_tokens.promotion_credits_balance + tokenAmount, type: "promotion" };
+            result = { success: true, remaining: Math.max(0, updatedUser.ai_tokens.promotion_credits_balance), limit: updatedUser.ai_tokens.promotion_credits_balance + actualDeduction, type: "promotion" };
+
         } else if (source === "weekly_free") {
+            // For free tier: cap so used_this_week never exceeds the weekly limit
+            const user = await User.findById(userId).select("ai_tokens.used_this_week ai_tokens.free_weekly_limit");
+            const weeklyLimit = user?.ai_tokens?.free_weekly_limit || 100000;
+            const currentUsed = user?.ai_tokens?.used_this_week || 0;
+            const headroom = Math.max(0, weeklyLimit - currentUsed);
+            const actualDeduction = Math.min(tokenAmount, headroom);
+            if (actualDeduction <= 0) {
+                return { success: true, remaining: 0, limit: weeklyLimit, type: "free" };
+            }
             const updatedUser = await User.findByIdAndUpdate(userId, {
                 $inc: {
-                    "ai_tokens.used_this_week": tokenAmount,
-                    "ai_tokens.total_ai_tokens_used": tokenAmount
+                    "ai_tokens.used_this_week": actualDeduction,
+                    "ai_tokens.total_ai_tokens_used": actualDeduction
                 }
             }, { new: true });
-            result = { success: true, remaining: updatedUser.ai_tokens.free_weekly_limit - updatedUser.ai_tokens.used_this_week, limit: updatedUser.ai_tokens.free_weekly_limit, type: "free" };
+            result = { success: true, remaining: Math.max(0, updatedUser.ai_tokens.free_weekly_limit - updatedUser.ai_tokens.used_this_week), limit: updatedUser.ai_tokens.free_weekly_limit, type: "free" };
+
         } else if (source === "org_pool") {
+            // For org pool: cap so pro_used_this_period never exceeds pro_pool_limit
             const Organization = (await import("../models/Organization.js")).default;
+            const org = await Organization.findById(orgId).select("ai_config.pro_used_this_period ai_config.pro_pool_limit");
+            const orgLimit = org?.ai_config?.pro_pool_limit || 0;
+            const orgUsed = org?.ai_config?.pro_used_this_period || 0;
+            const headroom = Math.max(0, orgLimit - orgUsed);
+            const actualDeduction = Math.min(tokenAmount, headroom);
+            if (actualDeduction <= 0) {
+                return { success: true, remaining: 0, limit: orgLimit, type: "pro" };
+            }
             const updatedOrg = await Organization.findByIdAndUpdate(orgId, {
                 $inc: {
-                    "ai_config.pro_used_this_period": tokenAmount,
-                    "ai_config.total_ai_tokens_used": tokenAmount
+                    "ai_config.pro_used_this_period": actualDeduction,
+                    "ai_config.total_ai_tokens_used": actualDeduction
                 }
             }, { new: true });
             await User.findByIdAndUpdate(userId, {
-                $inc: { "ai_tokens.total_ai_tokens_used": tokenAmount }
+                $inc: { "ai_tokens.total_ai_tokens_used": actualDeduction }
             });
-            result = { success: true, remaining: updatedOrg.ai_config.pro_pool_limit - updatedOrg.ai_config.pro_used_this_period, limit: updatedOrg.ai_config.pro_pool_limit, type: "pro" };
+            result = { success: true, remaining: Math.max(0, updatedOrg.ai_config.pro_pool_limit - updatedOrg.ai_config.pro_used_this_period), limit: updatedOrg.ai_config.pro_pool_limit, type: "pro" };
         }
 
         if (result.success) {
