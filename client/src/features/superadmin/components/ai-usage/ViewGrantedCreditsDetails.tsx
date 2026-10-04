@@ -136,10 +136,10 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
           />
           
           {/* Main Card */}
-          <div className="relative w-full max-w-6xl bg-background border border-border shadow-2xl rounded-lg flex flex-col">
+          <div className="relative w-full max-w-6xl bg-card border border-border shadow-2xl rounded-lg flex flex-col">
             
             {/* Header matching the Pipeline screenshot */}
-            <div className="flex items-center justify-between p-4 px-6 border-b border-border bg-background rounded-t-lg">
+            <div className="flex items-center justify-between p-4 px-6 border-b border-border bg-card rounded-t-lg">
               <div className="flex items-center gap-2">
                 <Rocket className="w-4 h-4 text-muted-foreground" />
                 <h2 className="text-sm font-semibold text-foreground tracking-tight">Audit Timeline</h2>
@@ -154,7 +154,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
             </div>
 
             {/* Stepper Content Area */}
-            <div className="p-10 pt-16 pb-16 bg-background flex flex-col w-full overflow-x-auto">
+            <div className="p-10 pt-16 pb-16 bg-card flex flex-col w-full overflow-x-auto">
               {(!history || history.length === 0) ? (
                 <div className="text-sm text-muted-foreground italic bg-muted/10 p-4 rounded-lg border border-border/30 text-center">
                   No timeline records found.
@@ -175,17 +175,17 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
                              {/* Base inactive line */}
                              <div className="absolute inset-0 bg-border/40" />
                              {/* Active overlay line */}
-                             <div className={`absolute inset-y-0 left-0 bg-primary transition-all duration-700 ${isCompleted ? 'w-full' : 'w-0'}`} />
+                             <div className={`absolute inset-y-0 left-0 bg-foreground transition-all duration-700 ${isCompleted ? 'w-full' : 'w-0'}`} />
                           </div>
                         )}
 
                         {/* Node Circle */}
                         <div 
-                          className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 bg-background transition-colors duration-300
+                          className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 bg-card transition-colors duration-300
                             ${isCompleted 
-                              ? "bg-primary border-primary text-white" 
+                              ? "bg-foreground border-foreground text-background" 
                               : isActive 
-                                ? "border-primary text-primary shadow-[0_0_0_4px_rgba(16,185,129,0.1)] dark:shadow-[0_0_0_4px_rgba(16,185,129,0.2)]" 
+                                ? "border-foreground text-foreground shadow-[0_0_0_4px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_4px_rgba(255,255,255,0.1)]" 
                                 : "border-border text-muted-foreground"}
                           `}
                         >
@@ -217,10 +217,10 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
             </div>
 
             {/* Bottom Progress Bar area */}
-            <div className="p-4 px-6 border-t border-border bg-background rounded-b-lg flex items-center gap-4">
+            <div className="p-4 px-6 border-t border-border bg-card rounded-b-lg flex items-center gap-4">
               <div className="h-1.5 w-full bg-border/40 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-primary transition-all duration-1000" 
+                  className="h-full bg-foreground transition-all duration-1000" 
                   style={{ width: `${progressPercentage}%` }}
                 />
               </div>
