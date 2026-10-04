@@ -172,7 +172,9 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
             </div>
 
             {/* Stepper Content Area */}
-            <div className="p-10 pt-16 pb-16 bg-card flex flex-col w-full overflow-x-auto">
+            <div className="p-10 pt-16 pb-16 bg-card flex flex-col w-full overflow-x-auto
+              scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent hover:scrollbar-thumb-muted-foreground/40
+            ">
               {(!history || history.length === 0) ? (
                 <div className="text-sm text-muted-foreground italic bg-muted/10 p-4 rounded-lg border border-border/30 text-center">
                   No timeline records found.
@@ -185,7 +187,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
                     const isNextCompleted = (index + 1) < timeline.currentStep;
                     
                     return (
-                      <div key={index} className="flex flex-col items-center relative flex-1">
+                      <div key={index} className="flex flex-col items-center relative flex-1 min-w-[160px]">
                         
                         {/* Connecting Line (drawn to the right of the current node, except for the last node) */}
                         {index !== totalSteps - 1 && (
