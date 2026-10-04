@@ -81,29 +81,56 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
       header: "Status",
       width: "w-[25%]",
       render: (_: any, row: any) => {
-        let displayStatus = row.status?.toLowerCase() || '';
+        let displayStatus = (row.status || '').toLowerCase();
         let colorClass = 'bg-muted text-muted-foreground';
 
-        if (displayStatus === 'success' || displayStatus === 'active') {
-            const now = new Date().getTime();
-            const endDateStr = userDetail?.ai_tokens?.ai_credits_end_date;
-            const remaining = userDetail?.ai_tokens?.ai_credits_balance || 0;
+        const allTopups = (userDetail.topupHistory || [])
+          .sort((a: any, b: any) => new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime());
+        
+        const totalPurchased = allTopups.reduce((s: number, t: any) => s + (t.credits_added || 0), 0);
+        const remaining = userDetail?.ai_tokens?.ai_credits_balance || 0;
+        let usedBudget = Math.max(0, totalPurchased - remaining);
+        const endDateStr = userDetail?.ai_tokens?.ai_credits_end_date;
+        const isExpired = endDateStr && new Date(endDateStr).getTime() < Date.now();
+
+        displayStatus = 'Active';
+        colorClass = 'bg-emerald-500/10 text-emerald-600';
+
+        for (const t of allTopups) {
+          const amt = t.credits_added || 0;
+          const tId = t._id || t.id;
+          const rowId = row._id || row.id;
+          
+          if (tId === rowId || String(tId) === String(rowId)) {
+            const rowStatus = (row.status || t.status || '').toLowerCase();
             
-            if (remaining <= 0) {
-                displayStatus = 'Exhausted';
-                colorClass = 'bg-slate-500/10 text-slate-600 dark:text-slate-400';
-            } else if (endDateStr && new Date(endDateStr).getTime() < now) {
-                displayStatus = 'Expired';
-                colorClass = 'bg-red-500/10 text-red-600';
+            if (rowStatus === 'revoked') {
+              displayStatus = 'Revoked';
+              colorClass = 'bg-red-500/10 text-red-600';
+            } else if (rowStatus === 'paused') {
+              displayStatus = 'Paused';
+              colorClass = 'bg-amber-500/10 text-amber-500';
+            } else if (usedBudget >= amt) {
+              displayStatus = 'Exhausted';
+              colorClass = 'bg-slate-500/10 text-slate-600 dark:text-slate-400';
+            } else if (isExpired || rowStatus === 'expired') {
+              displayStatus = 'Expired';
+              colorClass = 'bg-red-500/10 text-red-600';
             } else {
-                displayStatus = 'Active';
-                colorClass = 'bg-emerald-500/10 text-emerald-600';
+              displayStatus = 'Active';
+              colorClass = 'bg-emerald-500/10 text-emerald-600';
             }
-        } else if (displayStatus === 'failed') {
-            displayStatus = 'Failed';
-            colorClass = 'bg-red-500/10 text-red-600';
+            break;
+          }
+          
+          if (usedBudget >= amt) {
+            usedBudget -= amt;
+          } else {
+            usedBudget = 0;
+          }
         }
 
+        // Just to visually match the case you want (e.g., "Active" instead of "ACTIVE")
         return (
           <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
             {displayStatus}
@@ -417,18 +444,21 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                       const gId = g._id || g.id;
                       const rowId = row._id || row.id;
                       if (gId === rowId || String(gId) === String(rowId)) {
-                        if (isRevoked) {
+                        // Check individual row status AND global flags
+                        const rowStatus = (row.status || g.status || '').toLowerCase();
+                        
+                        if (isRevoked || rowStatus === 'revoked') {
                           statusLabel = "REVOKED";
                           statusClass = "bg-red-500/10 text-red-500";
+                        } else if (isPaused || rowStatus === 'paused') {
+                          statusLabel = "PAUSED";
+                          statusClass = "bg-amber-500/10 text-amber-500";
                         } else if (usedBudget >= amt) {
                           statusLabel = "EXHAUSTED";
                           statusClass = "bg-slate-500/10 text-slate-600 dark:text-slate-400";
-                        } else if (isExpired) {
+                        } else if (isExpired || rowStatus === 'expired') {
                           statusLabel = "EXPIRED";
                           statusClass = "bg-red-500/10 text-red-500";
-                        } else if (isPaused) {
-                          statusLabel = "PAUSED";
-                          statusClass = "bg-amber-500/10 text-amber-500";
                         }
                         break;
                       }
