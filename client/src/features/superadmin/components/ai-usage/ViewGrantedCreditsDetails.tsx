@@ -40,7 +40,8 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
       generatedSteps.push({
         id: "granted",
         title: "Granted",
-        description: formatDateTime(grantEvent.date),
+        description: "Initial credit allocation for AI operations.",
+        date: formatDateTime(grantEvent.date),
         isCompleted: true,
         isActive: false,
       });
@@ -60,7 +61,8 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
       generatedSteps.push({
         id: event.id,
         title: event.type === "paused" ? "Paused" : event.type === "resumed" ? "Resumed" : event.type === "revoked" ? "Revoked" : event.type === "extended" ? "Extended" : event.type,
-        description: formatDateTime(event.date),
+        description: `Credits were ${event.type} by system administrator.`,
+        date: formatDateTime(event.date),
         isCompleted: true,
         isActive: false,
       });
@@ -70,9 +72,9 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
     if (!isRevoked) {
       if (isExhausted) {
         generatedSteps.push({
-          id: "exhausted",
-          title: "Exhausted",
-          description: "All credits used",
+          id: "expired",
+          title: "Expired",
+          description: "All credits consumed or reached expiry date.",
           isCompleted: false,
           isActive: true,
         });
@@ -142,7 +144,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
             <div className="flex items-center justify-between p-4 px-6 border-b border-border bg-card rounded-t-lg">
               <div className="flex items-center gap-2">
                 <Rocket className="w-4 h-4 text-muted-foreground" />
-                <h2 className="text-sm font-semibold text-foreground tracking-tight">Audit Timeline</h2>
+                <h2 className="text-sm font-semibold text-foreground tracking-tight">Deployment Pipeline</h2>
                 <span className="text-muted-foreground text-xs ml-2">·</span>
                 <span className="text-xs text-muted-foreground ml-2">
                   {timeline.currentStep} of {totalSteps} completed
@@ -185,7 +187,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
                             ${isCompleted 
                               ? "bg-foreground border-foreground text-background" 
                               : isActive 
-                                ? "border-foreground text-foreground shadow-[0_0_0_4px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_4px_rgba(255,255,255,0.1)]" 
+                                ? "border-foreground text-foreground shadow-none ring-2 ring-foreground ring-offset-2 ring-offset-card" 
                                 : "border-border text-muted-foreground"}
                           `}
                         >
@@ -206,6 +208,11 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
                           {step.description && (
                             <span className="text-xs text-muted-foreground mt-2 leading-relaxed">
                               {step.description}
+                            </span>
+                          )}
+                          {step.date && (
+                            <span className="text-xs font-medium text-muted-foreground mt-3">
+                              {step.date}
                             </span>
                           )}
                         </div>
