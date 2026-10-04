@@ -621,10 +621,14 @@ export const verifySecurityCode = async (req, res) => {
 export const removeGrantedCredits = async (req, res) => {
     try {
         const { userId } = req.params;
-        const User = (await import("../../models/User.js")).default;
-        
-        const user = await User.findByIdAndUpdate(userId, {
-            $set: { "ai_tokens.promotion_credits_balance": 0 }
+        const User = (await import("../../models/User.js")).default;        const user = await User.findByIdAndUpdate(userId, {
+            $set: { 
+                "ai_tokens.promotion_credits_balance": 0,
+                "ai_tokens.total_promotion_credits_granted": 0,
+                "ai_tokens.promotion_credits_start_date": null,
+                "ai_tokens.promotion_credits_end_date": null,
+                "ai_tokens.promotion_credits_paused": false
+            }
         });
         
         if (user) {
