@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 // CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 /*
  * =========================================================================================
@@ -63,7 +64,7 @@ export function CheckoutPage() {
   const [token, setToken] = useState<string | null>(null);
   const [returnUrl, setReturnUrl] = useState<string | null>(null);
   // "email_step" = show name+email first, "otp_step" = OTP sent, show OTP input
-  const [step, setStep] = useState<"loading" | "email_step" | "otp_step" | "invalid" | "success">("loading");
+  const [step, setStep] = useState<"loading" | "email_step" | "otp_step" | "invalid" | "success" | "failed" | "verifying">("loading");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -219,6 +220,7 @@ export function CheckoutPage() {
         order_id: razorpay_order_id,
         handler: async function (response: any) {
           try {
+            setStep("verifying");
             toast.loading("Verifying payment...", { id: "payment-verify" });
             const confirmRes = await apiClient.post("/api/billing/checkout/confirm", {
               token,
@@ -236,12 +238,23 @@ export function CheckoutPage() {
               txnId: confirmRes.data?.data?.providerPaymentId || response.razorpay_payment_id,
               paidAt: now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' - ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
             });
-            if (return_url === "close_window") {
-              setReturnUrl("close_window");
-              if (window.opener) {
-                window.opener.postMessage({ type: "CLASSGRID_PAYMENT_SUCCESS" }, "*");
+            let finalReturnUrl = return_url;
+            if (return_url !== "close_window" && return_url) {
+              try {
+                const urlObj = new URL(return_url, window.location.origin);
+                urlObj.searchParams.set("ai_payment", "success");
+                finalReturnUrl = urlObj.toString();
+              } catch(e) {
+                finalReturnUrl = return_url + (return_url.includes("?") ? "&" : "?") + "ai_payment=success";
               }
-            } else if (return_url === "close_window") { setReturnUrl("close_window"); if (window.opener) { window.opener.postMessage({ type: "CLASSGRID_PAYMENT_SUCCESS" }, "*"); } } else if (return_url) { setReturnUrl(return_url); } setStep("success");
+              setReturnUrl(finalReturnUrl);
+            } else {
+              setReturnUrl(return_url);
+            }
+            if (return_url === "close_window" && window.opener) {
+              window.opener.postMessage({ type: "CLASSGRID_PAYMENT_SUCCESS" }, "*");
+            }
+            setStep("success");
           } catch (confirmError: any) {
             console.error("Confirmation error", confirmError);
             toast.error("Payment verification failed.", { id: "payment-verify" });
@@ -259,10 +272,23 @@ export function CheckoutPage() {
         modal: {
           ondismiss: function() {
             setLoading(false);
+            setStep((prev) => {
+              if (prev !== "verifying" && prev !== "success") {
+                setTimeout(() => setError("Payment was cancelled."), 0);
+                return "failed";
+              }
+              return prev;
+            });
           }
         }
       };
       const rzp = new (window as any).Razorpay(options);
+      
+      rzp.on('payment.failed', function (response: any) {
+        toast.error("Payment failed. Please try again.");
+        setError(response.error.description || "Payment failed");
+        setStep("failed");
+      });
       
       rzp.open();
     } catch (err: any) {
@@ -325,9 +351,23 @@ export function CheckoutPage() {
     );
   }
 
+  if (step === "verifying") {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
+        <Spinner className="w-8 h-8 text-emerald-500 mb-6" />
+        <h2 className="text-2xl font-bold tracking-tight mb-2">Verifying Payment...</h2>
+        <p className="text-muted-foreground text-sm text-center">
+          Please wait while we confirm your transaction.<br />
+          Do not close this window.
+        </p>
+      </div>
+    );
+  }
+
   if (step === "success") {
     return (
       <div className="relative min-h-screen overflow-hidden bg-background text-foreground flex items-center justify-center p-4">
+        <SuccessRedirect returnUrl={returnUrl} />
         {/* Confetti or subtle background */}
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_55%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.12),transparent_45%)]" />
@@ -397,6 +437,9 @@ export function CheckoutPage() {
 
               <p className="text-muted-foreground text-sm leading-relaxed">
                 A confirmation email has been sent.
+              </p>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-1 animate-pulse text-emerald-600 dark:text-emerald-400">
+                Redirecting automatically...
               </p>
               {returnUrl === "close_window" ? (
                 <button onClick={() => window.close()} className="mt-4 flex w-full items-center justify-center rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-white transition-all hover:bg-emerald-600">
@@ -630,6 +673,16 @@ export function CheckoutPage() {
   );
 }
 
-
-
-
+function SuccessRedirect({ returnUrl }: { returnUrl: string | null }) {
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (returnUrl === "close_window") {
+        window.close();
+      } else if (returnUrl) {
+        window.location.href = returnUrl;
+      }
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [returnUrl]);
+  return null;
+}
