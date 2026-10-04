@@ -96,6 +96,53 @@ export function AiCreditsPanel() {
             const isPromo = pool.creditType === "Promotion";
             const isPaid = pool.creditType === "Paid";
             
+            // Calculate dynamic status based on the "current" (oldest unexhausted) transaction
+            let dynamicStatus = pool.status;
+            
+            if (isPromo && history) {
+              const allGrants = history
+                .filter((t: any) => t.type === 'grant' && !['failed', 'pending'].includes(t.status?.toLowerCase() || ''))
+                .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+              const totalGranted = allGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
+              let usedBudget = Math.max(0, totalGranted - (pool.amountRemaining || 0));
+              
+              for (const g of allGrants) {
+                const amt = g.credits_added || 0;
+                if (usedBudget < amt) {
+                  const lowerStatus = g.status?.toLowerCase() || '';
+                  if (lowerStatus === 'revoked') dynamicStatus = 'Revoked';
+                  else if (lowerStatus === 'paused') dynamicStatus = 'Paused';
+                  else if (lowerStatus === 'expired') dynamicStatus = 'Expired';
+                  break;
+                }
+                usedBudget -= amt;
+              }
+            } else if (isPaid && history) {
+              const allTopups = history
+                .filter((t: any) => t.type === 'topup' && !['failed', 'pending'].includes(t.status?.toLowerCase() || ''))
+                .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+              const totalPurchased = allTopups.reduce((s: number, t: any) => s + (t.credits_added || 0), 0);
+              let usedBudget = Math.max(0, totalPurchased - (pool.amountRemaining || 0));
+              
+              for (const t of allTopups) {
+                const amt = t.credits_added || 0;
+                if (usedBudget < amt) {
+                  const lowerStatus = t.status?.toLowerCase() || '';
+                  if (lowerStatus === 'revoked') dynamicStatus = 'Revoked';
+                  else if (lowerStatus === 'paused') dynamicStatus = 'Paused';
+                  else if (lowerStatus === 'expired') dynamicStatus = 'Expired';
+                  break;
+                }
+                usedBudget -= amt;
+              }
+            }
+
+            let finalDisplayStatus = dynamicStatus;
+            if (dynamicStatus === 'Active') {
+              if (pool.amountRemaining <= 0) finalDisplayStatus = 'Exhausted';
+              else if (pool.expirationDate && new Date(pool.expirationDate).getTime() < new Date().getTime()) finalDisplayStatus = 'Expired';
+            }
+            
             // User requested to only use blue bar (bg-blue-500) to match the main Usage page
             let typeColorClass = "text-blue-500";
             let typeBgClass = "bg-blue-500";
@@ -120,11 +167,7 @@ export function AiCreditsPanel() {
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Status</div>
                     <div className="font-medium text-foreground">
-                      {pool.status === 'Active' && pool.amountRemaining <= 0 
-                        ? 'Exhausted' 
-                        : pool.status === 'Active' && pool.expirationDate && new Date(pool.expirationDate).getTime() < new Date().getTime()
-                          ? 'Expired'
-                          : pool.status}
+                      {finalDisplayStatus}
                     </div>
                   </div>
                   <div>
