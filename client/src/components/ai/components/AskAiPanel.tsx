@@ -4261,6 +4261,20 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     }}
                                   />
                                 </div>
+                              ) : message.content.trim() === "ai_blocked" ? (
+                                <div className="mt-2 w-full flex justify-start">
+                                  <div className="flex flex-col gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 p-5 max-w-[400px]">
+                                    <div className="flex items-center gap-2">
+                                      <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                      </svg>
+                                      <h3 className="font-semibold text-red-500">Access Blocked</h3>
+                                    </div>
+                                    <p className="text-sm text-foreground/80">
+                                      Your AI access has been suspended. Please contact your organization's support for more information.
+                                    </p>
+                                  </div>
+                                </div>
                               ) : (
                                 <AssistantMessageContent
                                   content={message.content}
@@ -4276,7 +4290,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               )}
                             </div>
                           )}
-                          {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && !message.content.startsWith("[IMAGE_GENERATION") && !message.content.trim().startsWith("ai_quota_exceeded") && (
+                          {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && !message.content.startsWith("[IMAGE_GENERATION") && !message.content.trim().startsWith("ai_quota_exceeded") && message.content.trim() !== "ai_blocked" && (
                             <div className="pl-1 mt-3">
                               <MessageActions content={message.content} messageId={message.id} />
                             </div>
