@@ -194,7 +194,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
           Details
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl bg-[#0a0a0a] border-border text-foreground">
+      <DialogContent className="max-w-4xl bg-[#0a0a0a] border-border text-foreground">
         <DialogHeader>
           <DialogTitle className="text-xl">Promotional Credit Details</DialogTitle>
           <DialogDescription>

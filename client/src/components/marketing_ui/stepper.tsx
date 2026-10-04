@@ -93,7 +93,7 @@ export function Stepper({ steps, currentStep, className = "" }: StepperProps) {
             <div
               key={step.id}
               data-step={index}
-              className="flex items-center snap-center shrink-0"
+              className={`flex items-center snap-center ${hasNext ? "flex-1 min-w-[8rem]" : "shrink-0"}`}
             >
               <div className="flex flex-col items-center relative z-10">
                 {/* The Circle */}
@@ -145,7 +145,7 @@ export function Stepper({ steps, currentStep, className = "" }: StepperProps) {
 
               {/* The Connector Line */}
               {hasNext && (
-                <div className="relative w-12 sm:w-16 md:w-24 h-[2px] mx-2 shrink-0 -translate-y-[1.25rem]">
+                <div className="relative w-full h-[2px] mx-2 -translate-y-[1.25rem]">
                   {/* Background track line */}
                   <div className="absolute inset-0 bg-muted-foreground/20 rounded-full" />
                   
