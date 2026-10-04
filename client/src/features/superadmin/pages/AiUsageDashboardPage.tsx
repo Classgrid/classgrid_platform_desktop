@@ -962,8 +962,7 @@ export function AiUsageDashboardPage() {
                 header: "Status",
                 width: "w-[20%]",
                 render: (_: any, row: any) => {
-                  const isExpired = row.expirationDate && new Date(row.expirationDate).getTime() < Date.now();
-                  const isRevoked = row.granted === 0;
+                  const isExpired = row.expirationDate && new Date(row.expirationDate).getTime() < Date.now();                  const isRevoked = row.isRevoked;
 
                   let statusLabel = "ACTIVE";
                   let statusClass = "bg-green-500/10 text-green-500";

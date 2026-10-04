@@ -379,8 +379,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                     const remaining = userDetail.ai_tokens?.promotion_credits_balance || 0;
                     const used = Math.max(0, limit - remaining);
                     const endDate = userDetail.ai_tokens?.promotion_credits_end_date;
-                    const isExpired = endDate && new Date(endDate).getTime() < Date.now();
-                    const isRevoked = limit === 0 && userDetail.promotionHistory && userDetail.promotionHistory.length > 0;
+                    const isExpired = endDate && new Date(endDate).getTime() < Date.now();                    const isRevoked = userDetail.ai_tokens?.promotion_credits_revoked;
 
                     let statusLabel = "ACTIVE";
                     let statusClass = "bg-green-500/10 text-green-500";

@@ -116,10 +116,10 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     // 3. FIFO LOGIC: Determine which came FIRST between Top-Up (Paid) and Granted (Promotion)
     const now = new Date().getTime();
     
-    // Check if Promotion credits are expired or paused
+    // Check if Promotion credits are expired, paused, or revoked
     let promoBalance = user.ai_tokens?.promotion_credits_balance || 0;
-    if (user.ai_tokens?.promotion_credits_paused) {
-        promoBalance = 0; // Paused
+    if (user.ai_tokens?.promotion_credits_paused || user.ai_tokens?.promotion_credits_revoked) {
+        promoBalance = 0; // Paused or Revoked
     } else if (user.ai_tokens?.promotion_credits_end_date && new Date(user.ai_tokens.promotion_credits_end_date).getTime() < now) {
         promoBalance = 0; // Expired
     }

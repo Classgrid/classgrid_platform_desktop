@@ -194,6 +194,7 @@ export const grantCredits = async (req, res) => {
         
         updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date(startDate);
         updateObj.$set["ai_tokens.promotion_credits_end_date"] = new Date(endDate);
+        updateObj.$set["ai_tokens.promotion_credits_revoked"] = false;
 
         const user = await User.findByIdAndUpdate(userId, updateObj, { new: true });
 
@@ -313,6 +314,7 @@ export const grantOrgCredits = async (req, res) => {
         
         updateObj.$set["ai_tokens.promotion_credits_start_date"] = new Date(startDate);
         updateObj.$set["ai_tokens.promotion_credits_end_date"] = new Date(endDate);
+        updateObj.$set["ai_tokens.promotion_credits_revoked"] = false;
 
         user = await User.findByIdAndUpdate(user._id, updateObj, { new: true });
 
@@ -623,11 +625,7 @@ export const removeGrantedCredits = async (req, res) => {
         const { userId } = req.params;
         const User = (await import("../../models/User.js")).default;        const user = await User.findByIdAndUpdate(userId, {
             $set: { 
-                "ai_tokens.promotion_credits_balance": 0,
-                "ai_tokens.total_promotion_credits_granted": 0,
-                "ai_tokens.promotion_credits_start_date": null,
-                "ai_tokens.promotion_credits_end_date": null,
-                "ai_tokens.promotion_credits_paused": false
+                "ai_tokens.promotion_credits_revoked": true
             }
         });
         

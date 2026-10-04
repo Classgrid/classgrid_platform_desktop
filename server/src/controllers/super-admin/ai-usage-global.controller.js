@@ -352,8 +352,8 @@ export const listActiveGrantedCredits = async (req, res) => {
         const formatted = users.map(u => {
             const tokens = u.ai_tokens || {};
             const granted = tokens.total_promotion_credits_granted || 0;
-            const remaining = tokens.promotion_credits_balance || 0;
-            const paused = tokens.promotion_credits_paused || false;
+            const remaining = tokens.promotion_credits_balance || 0;            const paused = tokens.promotion_credits_paused || false;
+            const revoked = tokens.promotion_credits_revoked || false;
             
             return {
                 id: u._id.toString(),
@@ -365,6 +365,7 @@ export const listActiveGrantedCredits = async (req, res) => {
                 remaining: remaining,
                 used: Math.max(0, granted - remaining),
                 isPaused: paused,
+                isRevoked: revoked,
                 startDate: tokens.promotion_credits_start_date || null,
                 expirationDate: tokens.promotion_credits_end_date || null
             };
