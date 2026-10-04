@@ -265,7 +265,7 @@ export function AiCreditsPanel() {
                             } else if (lowerStatus === 'success' || lowerStatus === 'active') {
                               const now = new Date().getTime();
                               const isTopup = txn.type === "topup";
-                              const endDateStr = isTopup ? balanceData?.ai_credits_end_date : balanceData?.promotion_credits_end_date;
+                              const endDateStr = isTopup ? balance?.ai_credits_end_date : balance?.promotion_credits_end_date;
                               
                               if (endDateStr && new Date(endDateStr).getTime() < now) {
                                   displayStatus = 'Expired';
