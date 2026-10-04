@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
-export function PauseUserGrantedCredits({ userId, isPaused }: { userId: string, isPaused: boolean }) {
+export function PauseUserGrantedCredits({ userId, transactionId, isPaused }: { userId: string, transactionId: string, isPaused: boolean }) {
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
 

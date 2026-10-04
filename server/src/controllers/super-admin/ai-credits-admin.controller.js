@@ -622,20 +622,24 @@ export const verifySecurityCode = async (req, res) => {
 
 export const removeGrantedCredits = async (req, res) => {
     try {
-        const { userId } = req.params;
-        const User = (await import("../../models/User.js")).default;        const user = await User.findByIdAndUpdate(userId, {
-            $set: { 
-                "ai_tokens.promotion_credits_revoked": true
-            }
-        });
+        const { userId, transactionId } = req.params;
+        const AiCreditTransaction = (await import("../../models/AiCreditTransaction.js")).default;
         
-        if (user) {
-            const AiCreditTransaction = (await import("../../models/AiCreditTransaction.js")).default;
-            await AiCreditTransaction.updateMany(
-                { userId: user._id, type: "grant" },
-                { $set: { status: "revoked" } }
-            );
+        const txn = await AiCreditTransaction.findOne({ _id: transactionId, userId, type: "grant" });
+        if (!txn || txn.status === "revoked") {
+            return res.status(400).json({ success: false, error: "Transaction not found or already revoked" });
         }
+
+        txn.status = "revoked";
+        await txn.save();
+
+        const User = (await import("../../models/User.js")).default;
+        const user = await User.findByIdAndUpdate(userId, {
+            $inc: { 
+                "ai_tokens.promotion_credits_balance": -(txn.credits_added || 0),
+                "ai_tokens.total_promotion_credits_granted": -(txn.credits_added || 0)
+            }
+        }, { new: true });
 
         if (user && user.email) {
             try {
@@ -659,9 +663,8 @@ export const removeGrantedCredits = async (req, res) => {
         if (io) {
             io.to("superadmin:ai_usage").emit("ai_usage_updated");
             if (typeof userId !== "undefined" && userId) io.to(userId.toString()).emit("ai_token_update");
-            if (typeof orgId !== "undefined" && orgId) io.to(`org:${orgId}`).emit("ai_token_update");
         }
-        res.status(200).json({ success: true, message: "Granted credits removed successfully" });
+        res.status(200).json({ success: true, message: "Granted credits revoked successfully" });
     } catch (error) {
         console.error("Remove Granted Credits Error:", error);
         res.status(500).json({ success: false, error: "Internal server error" });
@@ -670,21 +673,27 @@ export const removeGrantedCredits = async (req, res) => {
 
 export const pauseGrantedCredits = async (req, res) => {
     try {
-        const { userId } = req.params;
+        const { userId, transactionId } = req.params;
         const { isPaused } = req.body; // true to pause, false to unpause
         
-        const User = (await import("../../models/User.js")).default;
+        const AiCreditTransaction = (await import("../../models/AiCreditTransaction.js")).default;
+        const txn = await AiCreditTransaction.findOne({ _id: transactionId, userId, type: "grant" });
         
-        const user = await User.findByIdAndUpdate(userId, {
-            $set: { "ai_tokens.promotion_credits_paused": isPaused }
-        });
-
-        if (user) {
-            const AiCreditTransaction = (await import("../../models/AiCreditTransaction.js")).default;
-            await AiCreditTransaction.updateMany(
-                { userId: user._id, type: "grant" },
-                { $set: { status: isPaused ? "paused" : "active" } }
-            );
+        if (!txn || txn.status === "revoked") {
+            return res.status(400).json({ success: false, error: "Transaction not found or revoked" });
+        }
+        
+        const User = (await import("../../models/User.js")).default;
+        const user = await User.findById(userId);
+        
+        if (isPaused && txn.status !== "paused") {
+            txn.status = "paused";
+            await txn.save();
+            await User.findByIdAndUpdate(userId, { $inc: { "ai_tokens.promotion_credits_balance": -(txn.credits_added || 0) } });
+        } else if (!isPaused && txn.status === "paused") {
+            txn.status = "success";
+            await txn.save();
+            await User.findByIdAndUpdate(userId, { $inc: { "ai_tokens.promotion_credits_balance": (txn.credits_added || 0) } });
         }
 
         if (user && user.email) {
