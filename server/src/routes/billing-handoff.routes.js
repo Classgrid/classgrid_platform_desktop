@@ -194,7 +194,7 @@ router.post("/initiate", generalLimiter, isAuthenticated, async (req, res) => {
             stage: PAYMENT_ATTEMPT_STAGE.OTP_PENDING,
             amountPaise: payable.amountPaise,
             ipAddress: req.ip,
-            userAgent: String(req.headers["user-agent"] || "").slice(0, 300),
+            
             createdBy: req.user._id,
         });
 
@@ -219,8 +219,8 @@ router.post("/initiate", generalLimiter, isAuthenticated, async (req, res) => {
             razorpay_key_id: frontendKeyId(organization, payable.providerModule),
             payment_type: paymentType,
             return_url: safeReturnUrl,
-            clientIp: req.ip,
-            userAgent: String(req.headers["user-agent"] || "").slice(0, 300),
+            
+            
             context: { label: payable.label, payerName: payerName, phone: organization.billing_settings?.phone || "" },
             expiresAt: new Date(Date.now() + HANDOFF_TTL_MS),
         });
@@ -265,8 +265,8 @@ router.post("/resend-otp", generalLimiter, async (req, res) => {
             verified: false,
             consumedAt: null,
             expiresAt: { $gt: new Date() },
-            clientIp: req.ip,
-            userAgent: String(req.headers["user-agent"] || "").slice(0, 300),
+            
+            
         }).select("+token +otp");
         if (!handoff) return res.status(404).json({ success: false, error: "Invalid or expired session" });
         if (handoff.resendCount >= MAX_OTP_RESENDS) {

@@ -49,7 +49,7 @@ import { apiClient } from "@/lib/apiClient";
 import { Spinner } from "@/components/marketing_ui/spinner";
 import { NotFoundPage } from "@/features/system/pages/NotFoundPage";
 
-const OTP_TTL_SECONDS = 60;
+const OTP_TTL_SECONDS = 600;
 const API_BASE = import.meta.env.VITE_API_URL || "https://api.classgrid.in";
 
 function formatCountdown(seconds: number) {

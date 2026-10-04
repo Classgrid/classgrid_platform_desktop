@@ -82,8 +82,8 @@ function activeTokenQuery(rawToken, req) {
         verified: false,
         consumedAt: null,
         expiresAt: { $gt: new Date() },
-        clientIp: req.ip,
-        userAgent: String(req.headers["user-agent"] || "").slice(0, 300),
+        
+        
     };
 }
 
