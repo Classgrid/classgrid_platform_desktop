@@ -261,6 +261,7 @@ export function CheckoutPage() {
             setError(confirmError.response?.data?.error || "Payment verification failed.");
             setStep("failed");
             setLoading(false);
+            apiClient.post("/api/billing/checkout/failed", { token, error_description: confirmError.response?.data?.error || "Payment verification failed" }).catch(e => console.error(e));
           }
         },
         prefill: { email: customerEmail, name: payerName },
@@ -275,6 +276,7 @@ export function CheckoutPage() {
             setStep((prev) => {
               if (prev !== "verifying" && prev !== "success") {
                 setTimeout(() => setError("Payment was cancelled."), 0);
+                apiClient.post("/api/billing/checkout/failed", { token, error_description: "Payment was cancelled by user." }).catch(e => console.error(e));
                 return "failed";
               }
               return prev;
@@ -288,6 +290,7 @@ export function CheckoutPage() {
         toast.error("Payment failed. Please try again.");
         setError(response.error.description || "Payment failed");
         setStep("failed");
+        apiClient.post("/api/billing/checkout/failed", { token, error_description: response.error.description || "Payment failed" }).catch(e => console.error(e));
       });
       
       rzp.open();
@@ -341,7 +344,7 @@ export function CheckoutPage() {
               <p className="text-muted-foreground text-sm leading-relaxed mb-6">
                 {error || "Your payment could not be processed. If money was deducted, it will be automatically refunded."}
               </p>
-              <button onClick={() => window.history.back()} className="h-12 w-full rounded-xl bg-slate-900 px-6 font-semibold text-white transition hover:bg-slate-800 dark:bg-[#2a2a2a] dark:hover:bg-[#333]">
+              <button onClick={() => { if (returnUrl) { if (returnUrl === "close_window") { window.close(); } else { try { const urlObj = new URL(returnUrl, window.location.origin); urlObj.searchParams.set("ai_payment", "failed"); window.location.href = urlObj.toString(); } catch(e) { window.location.href = returnUrl + (returnUrl.includes("?") ? "&" : "?") + "ai_payment=failed"; } } } else { window.history.back(); } }} className="h-12 w-full rounded-xl bg-slate-900 px-6 font-semibold text-white transition hover:bg-slate-800 dark:bg-[#2a2a2a] dark:hover:bg-[#333]">
                 Go Back
               </button>
             </div>
@@ -686,3 +689,4 @@ function SuccessRedirect({ returnUrl }: { returnUrl: string | null }) {
   }, [returnUrl]);
   return null;
 }
+\n      setReturnUrl(return_url);

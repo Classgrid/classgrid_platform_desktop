@@ -1614,6 +1614,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       toast.success("Payment successful! AI Credits have been added to your account.");
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
+    } else if (searchParams.get("ai_payment") === "failed") {
+      setAiHubInitialTab("upgrade");
+      setIsAiHubOpen(true);
+      toast.error("Payment failed or was cancelled.");
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
     }
 
     return () => window.removeEventListener('open-ai-hub', handleOpenAiHub);
