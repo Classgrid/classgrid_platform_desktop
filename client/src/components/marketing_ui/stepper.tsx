@@ -81,7 +81,7 @@ export function Stepper({ steps, currentStep, className = "" }: StepperProps) {
       {/* Scrollable Container for massive forms (up to 18 steps) */}
       <div
         ref={scrollRef}
-        className="flex items-start w-full overflow-x-auto py-6 px-4 pb-12 snap-x snap-mandatory 
+        className="flex items-start w-full overflow-x-auto py-6 px-4 pb-32 snap-x snap-mandatory 
                    [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         {steps.map((step, index) => {
@@ -135,7 +135,7 @@ export function Stepper({ steps, currentStep, className = "" }: StepperProps) {
                   >
                     {step.title}
                   </span>
-                  {step.description && isActive && (
+                  {step.description && (
                     <span className="text-[10px] text-muted-foreground mt-1 px-1 leading-tight line-clamp-2 animate-in slide-in-from-top-1 fade-in duration-300">
                       {step.description}
                     </span>

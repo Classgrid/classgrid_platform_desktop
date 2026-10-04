@@ -194,7 +194,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
           Details
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl bg-[#0a0a0a] border-border text-foreground">
+      <DialogContent className="!max-w-5xl !w-[90vw] bg-[#0a0a0a] border-border text-foreground p-10 overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-xl">Promotional Credit Details</DialogTitle>
           <DialogDescription>
@@ -213,7 +213,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history }: ViewGrantedC
                 No timeline records found for this promotional grant.
               </div>
             ) : (
-              <div className="w-full bg-muted/5 border border-border/50 rounded-xl p-4">
+              <div className="w-full mt-8 pl-4">
                 <Stepper 
                   steps={timeline.steps} 
                   currentStep={timeline.currentStep} 
