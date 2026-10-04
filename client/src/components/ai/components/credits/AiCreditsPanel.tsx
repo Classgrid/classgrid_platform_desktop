@@ -101,7 +101,7 @@ export function AiCreditsPanel() {
             
             if (isPromo && history) {
               const allGrants = history
-                .filter((t: any) => t.type === 'grant' && !['failed', 'pending'].includes(t.status?.toLowerCase() || ''))
+                .filter((t: any) => t.type === 'grant')
                 .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
               const totalGranted = allGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
               let usedBudget = Math.max(0, totalGranted - (pool.amountRemaining || 0));
@@ -119,7 +119,7 @@ export function AiCreditsPanel() {
               }
             } else if (isPaid && history) {
               const allTopups = history
-                .filter((t: any) => t.type === 'topup' && !['failed', 'pending'].includes(t.status?.toLowerCase() || ''))
+                .filter((t: any) => t.type === 'topup')
                 .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
               const totalPurchased = allTopups.reduce((s: number, t: any) => s + (t.credits_added || 0), 0);
               let usedBudget = Math.max(0, totalPurchased - (pool.amountRemaining || 0));
@@ -323,18 +323,12 @@ export function AiCreditsPanel() {
                                   displayStatus = 'Active';
                                   colorClass = 'bg-emerald-500/10 text-emerald-600';
                               }
-                            } else if (lowerStatus === 'pending') {
-                              displayStatus = 'Pending';
-                              colorClass = 'bg-amber-500/10 text-amber-600';
-                            } else if (lowerStatus === 'failed') {
-                              displayStatus = 'Failed';
-                              colorClass = 'bg-red-500/10 text-red-600';
                             }
 
-                            if (txn.type === 'grant' && !['failed', 'pending'].includes(lowerStatus)) {
+                            if (txn.type === 'grant') {
                               // Waterfall: walk through all valid grants oldest-first
                               const allGrants = (filteredHistory || [])
-                                .filter((t: any) => t.type === 'grant' && !['failed', 'pending'].includes(t.status?.toLowerCase() || ''))
+                                .filter((t: any) => t.type === 'grant')
                                 .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
                               const promoPool = balance?.pools?.find((p: any) => p.creditType === "Promotion");
                               const totalGranted = allGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
@@ -371,10 +365,10 @@ export function AiCreditsPanel() {
                                   usedBudget = 0;
                                 }
                               }
-                            } else if (txn.type === 'topup' && !['failed', 'pending'].includes(lowerStatus)) {
+                            } else if (txn.type === 'topup') {
                               // Waterfall: walk through all valid topups oldest-first
                               const allTopups = (filteredHistory || [])
-                                .filter((t: any) => t.type === 'topup' && !['failed', 'pending'].includes(t.status?.toLowerCase() || ''))
+                                .filter((t: any) => t.type === 'topup')
                                 .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
                               const paidPool = balance?.pools?.find((p: any) => p.creditType === "Paid");
                               const totalPurchased = allTopups.reduce((s: number, t: any) => s + (t.credits_added || 0), 0);
