@@ -4315,7 +4315,7 @@ export const getMyUsage = async (req, res) => {
 
         const remaining = freeLimit - (userTokens.ai_tokens.used_this_week || 0);
 
-        if (remaining <= 0) {
+        if (false) { // Disabled fallback logic
             const now = new Date().getTime();
             
             let promoBalance = userTokens.ai_tokens.promotion_credits_balance || 0;
