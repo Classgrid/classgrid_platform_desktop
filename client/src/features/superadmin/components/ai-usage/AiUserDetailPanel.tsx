@@ -480,7 +480,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                   key: "actions",
                   header: "Pool Actions",
                   width: "w-[25%]",
-                  render: () => {
+                  render: (_: any, row: any) => {
                     const isPaused = userDetail.ai_tokens?.promotion_credits_paused;
                     const limit = userDetail.ai_tokens?.total_promotion_credits_granted || 0;
                     const remaining = userDetail.ai_tokens?.promotion_credits_balance || 0;
@@ -499,8 +499,8 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
                           {!isRevoked && (
                             <>
                               <ExtendUserGrantedCredits userId={userDetail.id} currentExpiry={userDetail.ai_tokens?.promotion_credits_end_date} />
-                              <PauseUserGrantedCredits userId={userDetail.id} isPaused={isPaused} />
-                              <RemoveUserGrantedCredits userId={userDetail.id} />
+                              <PauseUserGrantedCredits userId={userDetail.id} transactionId={row.id || row._id} isPaused={(row.status || '').toLowerCase() === 'paused'} />
+                              <RemoveUserGrantedCredits userId={userDetail.id} transactionId={row.id || row._id} />
                             </>
                           )}
                         </div>
