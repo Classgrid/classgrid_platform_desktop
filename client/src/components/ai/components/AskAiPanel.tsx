@@ -674,7 +674,7 @@ function renderInlineText(rawText: string) {
   // Pre-process to fix **[Link](url)** being caught as bold instead of a link
   const text = rawText.replace(/\*\*(\[[^\]]+\]\s*\((?:https?:\/\/|\/|#)[^\s)]*\))\*\*/g, "$1");
 
-  const pattern = /(\[([^\]]+)\]\s*\(((?:https?:\/\/|\/|#)[^\s)]*)\)|\*\*([^*]+)\*\*)/g;
+  const pattern = /(\[([^\]]+)\]\s*\(((?:https?:\/\/|\/|#)[^\s)]*)\)|\*\*([^*]+)\*\*|`([^`]+)`)/g;
   const nodes: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -688,6 +688,7 @@ function renderInlineText(rawText: string) {
     const label = match[2];
     const href = match[3];
     const boldText = match[4];
+    const inlineCode = match[5];
 
     if (label && href && isSafeAssistantHref(href)) {
       const external = /^https?:\/\//i.test(href);
@@ -710,6 +711,15 @@ function renderInlineText(rawText: string) {
         <strong key={`bold-${match.index}`} className="font-semibold text-slate-900 dark:text-white">
           {boldText}
         </strong>
+      );
+    } else if (inlineCode) {
+      nodes.push(
+        <code
+          key={`code-${match.index}`}
+          className="font-mono text-[13px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-md mx-0.5"
+        >
+          {inlineCode}
+        </code>
       );
     } else {
       nodes.push(<span key={`raw-${match.index}`}>{fullMatch}</span>);
