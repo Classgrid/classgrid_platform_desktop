@@ -37,7 +37,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history, status, transa
     const generatedSteps = [];
 
     // Step 1: Grant
-    const grantEvent = sortedHistory.find(h => h.type === "granted");
+    const grantEvent = sortedHistory.find(h => h.type === "grant" || h.type === "granted");
     if (grantEvent) {
       generatedSteps.push({
         id: "granted",
@@ -62,6 +62,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history, status, transa
     const middleEvents = sortedHistory.filter(h => 
       h.type !== "grant" && 
       h.type !== "granted" && 
+      h.type !== "revoke" &&
       (h.metadata?.transactionId === transactionId || !h.metadata?.transactionId)
     );
     for (const event of middleEvents) {
