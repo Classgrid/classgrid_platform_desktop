@@ -2032,13 +2032,16 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
       const savedContext = localStorage.getItem("askAiDraftContext");
       if (savedContext) setLastSentDocsPath(savedContext);
+
+      const savedPasted = localStorage.getItem("askAiDraftPastedTexts");
+      if (savedPasted) setPastedTexts(JSON.parse(savedPasted));
     } catch (err) {
       console.error("Failed to restore Ask AI draft:", err);
     }
   }, []);
 
   useEffect(() => {
-    if (input.trim() || attachedFiles.length > 0) {
+    if (input.trim() || attachedFiles.length > 0 || pastedTexts.length > 0) {
       localStorage.setItem("askAiDraftInput", input);
 
       const filesToSave = attachedFiles
@@ -2052,9 +2055,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           url: f.url
         }));
       localStorage.setItem("askAiDraftFiles", JSON.stringify(filesToSave));
+      localStorage.setItem("askAiDraftPastedTexts", JSON.stringify(pastedTexts));
     } else {
       localStorage.removeItem("askAiDraftInput");
       localStorage.removeItem("askAiDraftFiles");
+      localStorage.removeItem("askAiDraftPastedTexts");
     }
 
     if (lastSentDocsPath) {
@@ -2062,7 +2067,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     } else {
       localStorage.removeItem("askAiDraftContext");
     }
-  }, [input, attachedFiles, lastSentDocsPath]);
+  }, [input, attachedFiles, pastedTexts, lastSentDocsPath]);
 
   const MAX_FILE_SIZE = 150 * 1024 * 1024; // 150MB
   const ACCEPTED_FILE_TYPES = "image/*,audio/*,video/*,.pdf,.md,.txt,.csv,.doc,.docx,.xlsx,.pptx";
@@ -2976,6 +2981,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     setPastedTexts([]);
     localStorage.removeItem("askAiDraftInput");
     localStorage.removeItem("askAiDraftFiles");
+    localStorage.removeItem("askAiDraftPastedTexts");
     localStorage.removeItem("askAiDraftContext");
 
     // CLEAR BUFFERS SO OLD STREAM DOESN'T BLEED IN
@@ -3512,6 +3518,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setPastedTexts([]);
       localStorage.removeItem("askAiDraftInput");
       localStorage.removeItem("askAiDraftFiles");
+      localStorage.removeItem("askAiDraftPastedTexts");
       return;
     }
 
