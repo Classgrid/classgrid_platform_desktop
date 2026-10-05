@@ -639,6 +639,21 @@ export const removeGrantedCredits = async (req, res) => {
             }
         }, { new: true });
 
+        await AiCreditTransaction.create({
+            userId: user._id,
+            orgId: user.organization_id || null,
+            amount_inr: 0,
+            credits_added: 0,
+            razorpay_payment_id: "REVOKE_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+            razorpay_order_id: "REVOKE_ORDER",
+            type: "revoke",
+            status: "success",
+            metadata: {
+                action: "revoked",
+                transactionId: txn._id
+            }
+        });
+
         if (user && user.email) {
             try {
                 const { getGrantedCreditsRemovedHtml, getGrantedCreditsRemovedPlainText } = await import("../../services/email-templates.service.js");
