@@ -501,7 +501,7 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
 
                       return (
                         <div className="flex items-center gap-2 overflow-x-auto pb-1 min-w-0 max-w-full scrollbar-thin scrollbar-thumb-muted-foreground/20 [&>*]:shrink-0">
-                          <ViewGrantedCreditsDetails used={0} limit={limit} history={userDetail.promotionHistory || []} status={statusLabel} />
+                          <ViewGrantedCreditsDetails used={0} limit={limit} history={userDetail.promotionHistory || []} status={statusLabel} transactionId={row.id || row._id} />
                           {!isRowRevoked && (
                             <>
                               <ExtendUserGrantedCredits userId={userDetail.id} currentExpiry={row.metadata?.endDate || row.endDate || userDetail.ai_tokens?.promotion_credits_end_date} />

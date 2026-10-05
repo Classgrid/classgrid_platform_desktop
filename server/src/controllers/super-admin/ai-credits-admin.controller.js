@@ -693,6 +693,20 @@ export const pauseGrantedCredits = async (req, res) => {
                     "ai_tokens.total_promotion_credits_granted": -(txn.credits_added || 0)
                 }
             });
+            await AiCreditTransaction.create({
+                userId: user._id,
+                orgId: user.organization_id || null,
+                amount_inr: 0,
+                credits_added: 0,
+                razorpay_payment_id: "PAUSE_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+                razorpay_order_id: "PAUSE_ORDER",
+                type: "pause",
+                status: "success",
+                metadata: {
+                    action: "paused",
+                    transactionId: txn._id
+                }
+            });
         } else if (!isPaused && txn.status === "paused") {
             txn.status = "success";
             await txn.save();
@@ -700,6 +714,20 @@ export const pauseGrantedCredits = async (req, res) => {
                 $inc: {
                     "ai_tokens.promotion_credits_balance": (txn.credits_added || 0),
                     "ai_tokens.total_promotion_credits_granted": (txn.credits_added || 0)
+                }
+            });
+            await AiCreditTransaction.create({
+                userId: user._id,
+                orgId: user.organization_id || null,
+                amount_inr: 0,
+                credits_added: 0,
+                razorpay_payment_id: "RESUME_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+                razorpay_order_id: "RESUME_ORDER",
+                type: "resume",
+                status: "success",
+                metadata: {
+                    action: "resumed",
+                    transactionId: txn._id
                 }
             });
         }
@@ -757,7 +785,7 @@ export const extendGrantedCredits = async (req, res) => {
         }, { new: true });
 
         const AiCreditTransaction = (await import("../../models/AiCreditTransaction.js")).default;
-        await AiCreditTransaction.findOneAndUpdate(
+        const txn = await AiCreditTransaction.findOneAndUpdate(
             { userId: user._id, type: "grant" },
             { $set: { status: "active" } },
             { sort: { createdAt: -1 }, returnDocument: "after" }
@@ -765,7 +793,7 @@ export const extendGrantedCredits = async (req, res) => {
 
         await AiCreditTransaction.create({
             userId: user._id,
-            orgId: user.organization_id,
+            orgId: user.organization_id || null,
             amount_inr: 0,
             credits_added: 0,
             razorpay_payment_id: "EXTEND_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9),
@@ -774,7 +802,8 @@ export const extendGrantedCredits = async (req, res) => {
             status: "success",
             metadata: {
                 oldEndDate: oldEndDate,
-                newEndDate: new Date(endDate)
+                newEndDate: new Date(endDate),
+                transactionId: txn ? txn._id : null
             }
         });
 

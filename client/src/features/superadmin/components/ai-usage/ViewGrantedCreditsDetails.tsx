@@ -14,6 +14,7 @@ interface ViewGrantedCreditsDetailsProps {
     metadata: any;
   }>;
   status?: string;
+  transactionId: string;
 }
 
 const formatDateTime = (dateString: string) => {
@@ -22,7 +23,7 @@ const formatDateTime = (dateString: string) => {
   });
 };
 
-export function ViewGrantedCreditsDetails({ used, limit, history, status }: ViewGrantedCreditsDetailsProps) {
+export function ViewGrantedCreditsDetails({ used, limit, history, status, transactionId }: ViewGrantedCreditsDetailsProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const getTimelineSteps = () => {
@@ -58,7 +59,11 @@ export function ViewGrantedCreditsDetails({ used, limit, history, status }: View
     }
 
     // Middle Steps
-    const middleEvents = sortedHistory.filter(h => h.type !== "grant" && h.type !== "granted");
+    const middleEvents = sortedHistory.filter(h => 
+      h.type !== "grant" && 
+      h.type !== "granted" && 
+      (h.metadata?.transactionId === transactionId || !h.metadata?.transactionId)
+    );
     for (const event of middleEvents) {
       const displayTitle = event.type.charAt(0).toUpperCase() + event.type.slice(1) + (event.type.endsWith("e") ? "d" : event.type.endsWith("t") ? "ed" : "ed");
       
