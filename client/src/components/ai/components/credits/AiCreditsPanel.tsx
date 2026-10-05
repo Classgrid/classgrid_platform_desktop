@@ -341,14 +341,22 @@ export function AiCreditsPanel() {
                               const allGrants = (filteredHistory || [])
                                 .filter((t: any) => t.type === 'grant')
                                 .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                              
+                              const activeGrants = allGrants.filter((g: any) => {
+                                const s = (g.status || '').toLowerCase();
+                                return s !== 'revoked' && s !== 'paused';
+                              });
+                              
                               const promoPool = balance?.pools?.find((p: any) => p.creditType === "Promotion");
-                              const totalGranted = allGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
+                              const totalGranted = activeGrants.reduce((s: number, g: any) => s + (g.credits_added || 0), 0);
                               const poolRemaining = promoPool?.amountRemaining ?? 0;
                               let usedBudget = Math.max(0, totalGranted - poolRemaining);
 
                               // Walk oldest-first and consume
                               for (const g of allGrants) {
                                 const amt = g.credits_added || 0;
+                                const isGrantActive = (g.status || '').toLowerCase() !== 'revoked' && (g.status || '').toLowerCase() !== 'paused';
+                                
                                 if (g._id === txn._id) {
                                   // This is the current row
                                   if (promoPool?.status === 'Revoked' || lowerStatus === 'revoked') {
@@ -369,11 +377,13 @@ export function AiCreditsPanel() {
                                   }
                                   break;
                                 }
-                                // Consume this grant's credits from the used budget
-                                if (usedBudget >= amt) {
-                                  usedBudget -= amt;
-                                } else {
-                                  usedBudget = 0;
+                                // Consume this grant's credits from the used budget ONLY if it is an active grant
+                                if (isGrantActive) {
+                                  if (usedBudget >= amt) {
+                                    usedBudget -= amt;
+                                  } else {
+                                    usedBudget = 0;
+                                  }
                                 }
                               }
                             } else if (txn.type === 'topup') {
