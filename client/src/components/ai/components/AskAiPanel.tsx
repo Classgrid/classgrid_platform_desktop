@@ -1348,7 +1348,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                       headers: { "Content-Type": "application/json" },
                       credentials: "include",
                       body: JSON.stringify({
-                        sessionId: typeof sessionId !== 'undefined' ? sessionId : (typeof pageContext !== 'undefined' ? pageContext?.sessionId : "default"),
+                        sessionId: "default",
                         projectName,
                         plan: parsedProps.plan
                       })

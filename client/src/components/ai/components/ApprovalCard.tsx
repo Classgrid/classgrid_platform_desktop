@@ -334,19 +334,19 @@ export function ApprovalCard({
   };
 
   useEffect(() => {
-    if (variant !== "plan" || autoUI !== "active") return;
+    if (variant !== "plan" || autoUI !== "active" || isHistorical || isSubmitted) return;
     const id = window.setInterval(() => {
       setAutoSecs((s) => Math.max(0, s - 1));
     }, 1000);
     return () => window.clearInterval(id);
-  }, [variant, autoUI]);
+  }, [variant, autoUI, isHistorical, isSubmitted]);
 
   useEffect(() => {
-    if (variant !== "plan" || autoUI !== "active") return;
+    if (variant !== "plan" || autoUI !== "active" || isHistorical || isSubmitted) return;
     if (autoSecs > 0 || autoFired.current) return;
     autoFired.current = true;
     onApprove?.();
-  }, [autoSecs, variant, autoUI, onApprove]);
+  }, [autoSecs, variant, autoUI, onApprove, isHistorical, isSubmitted]);
 
   const selectOption = (questionId: string, opt: string) => {
     setOtherSelected((prev) => ({ ...prev, [questionId]: false }));
