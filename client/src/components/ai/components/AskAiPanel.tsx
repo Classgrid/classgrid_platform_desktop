@@ -1175,7 +1175,7 @@ const MarkdownComponents = {
     }
 
     return (
-      <code className="bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm text-[#c92a2a] dark:text-[#ff6b6b] px-1.5 py-[2px] rounded-md text-[13px] font-mono break-words mx-0.5" {...props}>
+      <code className="bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm text-[#c92a2a] dark:text-[#ff6b6b] px-[5px] py-[2px] rounded-[3px] text-[13px] font-mono break-words mx-0.5" {...props}>
         {children}
       </code>
     );
@@ -2056,6 +2056,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     } finally {
       setTimeout(() => {
         isRestoredRef.current = true;
+        console.log("[AskAiPanel] isRestoredRef is now true");
       }, 0);
     }
   }, []);
@@ -2078,10 +2079,17 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         }));
       localStorage.setItem("askAiDraftFiles", JSON.stringify(filesToSave));
       localStorage.setItem("askAiDraftPastedTexts", JSON.stringify(pastedTexts));
+      
+      console.log("[AskAiPanel] Saved drafts to localStorage:", {
+        input, 
+        filesSaved: filesToSave.length, 
+        pastedTexts: pastedTexts.length 
+      });
     } else {
       localStorage.removeItem("askAiDraftInput");
       localStorage.removeItem("askAiDraftFiles");
       localStorage.removeItem("askAiDraftPastedTexts");
+      console.log("[AskAiPanel] Cleared drafts from localStorage (empty)");
     }
 
     if (lastSentDocsPath) {
