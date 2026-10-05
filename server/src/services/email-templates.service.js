@@ -154,22 +154,22 @@ export const baseTemplate = ({ content, title = "Notification", ignoreText = nul
     }
   </style>
 </head>
-<body style="margin:0;padding:0;background:#f5f5f5;">
+<body style="margin:0;padding:0;background:#f5f5f5;" class="wrapper">
 
-<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;background:#f5f5f5;width:100%;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;background:#f5f5f5;width:100%;" class="wrapper">
 <tr>
 <td align="center">
 
-<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #eaeaea;border-radius:12px;overflow:hidden;margin:0 auto;max-width:600px;width:100%;">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #eaeaea;border-radius:12px;overflow:hidden;margin:0 auto;max-width:600px;width:100%;" class="container">
 
 <tr>
-<td style="padding:30px;border-bottom:1px solid #eaeaea;text-align:center;">
+<td style="padding:30px;border-bottom:1px solid #eaeaea;text-align:center;" class="header">
 <img src="${PLATFORM_LOGO_URL}" alt="Classgrid" width="48" height="48" style="display:block;margin:0 auto;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
 </td>
 </tr>
 
 <tr>
-<td style="padding:30px;color:#374151;font-size:14px;line-height:1.7;">
+<td style="padding:30px;color:#374151;font-size:14px;line-height:1.7;" class="content">
 
 ${content}
 
@@ -181,8 +181,8 @@ ${content}
 </tr>
 
 <tr>
-<td style="padding:20px;text-align:center;border-top:1px solid #eaeaea;color:#9ca3af;font-size:12px;">
-${ignoreText ? `<p style="margin-bottom:12px;color:#9ca3af;font-size:12px;">${ignoreText}</p>` : ''}
+<td style="padding:20px;text-align:center;border-top:1px solid #eaeaea;color:#9ca3af;font-size:12px;" class="footer footer-text">
+${ignoreText ? `<p style="margin-bottom:12px;color:#9ca3af;font-size:12px;" class="footer-text">${ignoreText}</p>` : ''}
 Â© ${new Date().getFullYear()} Classgrid. All rights reserved.
 </td>
 </tr>
@@ -3051,4 +3051,140 @@ export const getGrantedCreditsExpiryWarningHtml = (userName, expiryDate, remaini
 export const getGrantedCreditsExpiryWarningPlainText = (userName, expiryDate, remainingCredits, dashboardUrl = null) => {
   const url = dashboardUrl || (getFrontendUrl() + '/student/agent');
   return 'AI Credits Expiring Soon\n\nHi ' + (userName || 'there') + ',\n\nThis is a friendly reminder that your Classgrid AI granted credits are expiring soon.\n\nExpiration Date: ' + formatDate(expiryDate) + '\nRemaining Credits: ' + remainingCredits + '\n\nMake sure to use your remaining credits before they expire. After expiration, your granted credit balance will be set to zero.\n\nTo use your credits: ' + url + '\n\nBest regards,\nThe Classgrid Team';
+};
+
+// ============================================================================
+// AI CREDITS - LOW BALANCE & EXHAUSTION TEMPLATES
+// ============================================================================
+
+export const getGrantedCreditsLowEmailHtml = (userName, expirationDate, subdomain) => {
+    const dashboardLink = subdomain ? `https://${subdomain}.classgrid.in` : `https://classgrid.in`;
+    const checkoutLink = subdomain ? `https://${subdomain}.classgrid.in/checkout` : `https://classgrid.in/checkout`;
+    
+    const content = `
+      <p>Hello ${userName},</p>${p1}The Classgrid Team</p>
+    `;
+    return baseTemplate({ content, title: "Action Required: You have used 80% of your Granted AI Credits" });
+};
+
+export const getTopUpCreditsLowEmailHtml = (userName, subdomain) => {
+    const dashboardLink = subdomain ? `https://${subdomain}.classgrid.in` : `https://classgrid.in`;
+    const checkoutLink = subdomain ? `https://${subdomain}.classgrid.in/checkout` : `https://classgrid.in/checkout`;
+    
+    const content = `
+      <p>Hello ${userName},</p>${p1}The Classgrid Team</p>
+    `;
+    return baseTemplate({ content, title: "Action Required: You have used 80% of your Top-Up AI Credits" });
+};
+
+export const getFreeLimitsExhaustedEmailHtml = (userName, resetDate, subdomain) => {
+    const checkoutLink = subdomain ? `https://${subdomain}.classgrid.in/checkout` : `https://classgrid.in/checkout`;
+    
+    const content = `
+      <p>Hello ${userName},</p>${p1}The Classgrid Team</p>
+    `;
+    return baseTemplate({ content, title: "Action Required: You have reached 100% of your Free AI Usage" });
+};
+
+export const getGrantedCreditsExhaustedEmailHtml = (userName, resetDate, subdomain) => {
+    const checkoutLink = subdomain ? `https://${subdomain}.classgrid.in/checkout` : `https://classgrid.in/checkout`;
+    
+    const content = `
+      <p>Hello ${userName},</p>${p1}The Classgrid Team</p>
+    `;
+    return baseTemplate({ content, title: "Action Required: You have reached 100% of your Granted AI Credits" });
+};
+
+export const getTopUpCreditsExhaustedEmailHtml = (userName, resetDate, subdomain) => {
+    const checkoutLink = subdomain ? `https://${subdomain}.classgrid.in/checkout` : `https://classgrid.in/checkout`;
+    
+    const content = `
+      <p>Hello ${userName},</p>${p1}The Classgrid Team</p>
+    `;
+    return baseTemplate({ content, title: "Action Required: You have reached 100% of your Top-Up AI Credits" });
+};
+
+
+// ------------- AI CREDITS USAGE ALERTS -------------
+
+export const getGrantedCreditsWarningHtml = (userName, expirationDate, dashboardUrl) => {
+  return baseTemplate({
+    title: "Action Required: You have used 80% of your Granted AI Credits",
+    content: `
+      <h2>Hello ${userName},</h2>
+      <p>Your account has used <strong>80%</strong> of its <strong>Granted AI Credits</strong>. This usage covers all AI-powered tools and generations across the Classgrid platform, and your current grant is scheduled to expire on <strong>${formatDate(expirationDate)}</strong>.</p>
+      <p>Once your Granted AI Credits are fully consumed, your AI access will be automatically paused unless you have a Top-Up Credit balance available on your account.</p>
+      <p>To ensure your workflow isn't interrupted, you can easily purchase Top-Up Credits or check your current balance in your AI Dashboard.</p>
+      <a href="${dashboardUrl}" class="btn">Check My AI Usage & Balance</a>
+      
+      <div class="box" style="margin-top: 30px;">
+        <h3 style="margin-bottom: 8px;">Need more AI capacity for your classroom?</h3>
+        <p>Top-Up Credits never expire and seamlessly take over once your granted promotional credits run out. Head over to your dashboard to secure additional credits and keep your AI tools running smoothly.</p>
+      </div>
+    `
+  });
+};
+
+export const getTopUpCreditsWarningHtml = (userName, dashboardUrl) => {
+  return baseTemplate({
+    title: "Action Required: You have used 80% of your Top-Up AI Credits",
+    content: `
+      <h2>Hello ${userName},</h2>
+      <p>Your account has used <strong>80%</strong> of its <strong>Top-Up AI Credits</strong>. This usage covers all AI-powered tools and generations across the Classgrid platform.</p>
+      <p>Since Top-Up credits never expire, they will remain active until they are fully depleted. However, once your remaining Top-Up Credits are completely consumed, your AI access will be automatically paused.</p>
+      <p>To ensure your workflow isn't interrupted and your AI tools keep running smoothly, you can easily purchase additional Top-Up Credits right now.</p>
+      <a href="${dashboardUrl}" class="btn">Check My AI Usage & Balance</a>
+    `
+  });
+};
+
+export const getFreeLimitsExhaustedHtml = (userName, resetDate, dashboardUrl) => {
+  return baseTemplate({
+    title: "Action Required: You have reached 100% of your Free AI Usage",
+    content: `
+      <h2>Hello ${userName},</h2>
+      <p>Your account has reached <strong>100%</strong> of its <strong>Personal Free Limits</strong> for AI usage.</p>
+      <p>Your AI access has been temporarily paused. Don't worry—your free limits automatically reset every 7 days, and your access will be fully restored on <strong>${formatDate(resetDate)}</strong>.</p>
+      
+      <div class="box" style="margin-top: 30px;">
+        <h3 style="margin-bottom: 8px;">Don't want to wait 7 days?</h3>
+        <p>If you need to keep using Classgrid's AI tools right now, you can purchase Top-Up Credits. Top-Up Credits never expire and instantly restore your access so you can continue your work without any interruptions.</p>
+        <a href="${dashboardUrl}" class="btn" style="margin-top: 15px;">Purchase Top-Up Credits</a>
+      </div>
+    `
+  });
+};
+
+export const getGrantedCreditsExhaustedHtml = (userName, resetDate, dashboardUrl) => {
+  return baseTemplate({
+    title: "Action Required: You have reached 100% of your Granted AI Credits",
+    content: `
+      <h2>Hello ${userName},</h2>
+      <p>Your account has reached <strong>100%</strong> of its <strong>Granted AI Credits</strong>.</p>
+      <p>Because your granted promotional credits have been fully consumed, your AI access has been paused. However, your access will be automatically restored when your <strong>Personal Free Limits</strong> reset on <strong>${formatDate(resetDate)}</strong>.</p>
+      
+      <div class="box" style="margin-top: 30px;">
+        <h3 style="margin-bottom: 8px;">Don't want to wait?</h3>
+        <p>You can instantly restore your access right now by adding a Top-Up Credit balance to your account. Top-Up Credits seamlessly take over when your free limits or grants run out, ensuring your workflow is never interrupted.</p>
+        <a href="${dashboardUrl}" class="btn" style="margin-top: 15px;">Purchase Top-Up Credits</a>
+      </div>
+    `
+  });
+};
+
+export const getTopUpCreditsExhaustedHtml = (userName, resetDate, dashboardUrl) => {
+  return baseTemplate({
+    title: "Action Required: You have reached 100% of your Top-Up AI Credits",
+    content: `
+      <h2>Hello ${userName},</h2>
+      <p>Your account has reached <strong>100%</strong> of its <strong>Top-Up AI Credits</strong>.</p>
+      <p>Because your purchased balance has been fully depleted, your AI access has been paused. However, your access will automatically resume as soon as your <strong>Personal Free Limits</strong> reset on <strong>${formatDate(resetDate)}</strong>.</p>
+      
+      <div class="box" style="margin-top: 30px;">
+        <h3 style="margin-bottom: 8px;">Need to keep working right now?</h3>
+        <p>If you don't want to wait for your free limits to reset, you can easily purchase a new bundle of Top-Up Credits today to instantly restore your access to Classgrid's advanced AI features.</p>
+        <a href="${dashboardUrl}" class="btn" style="margin-top: 15px;">Purchase Top-Up Credits</a>
+      </div>
+    `
+  });
 };
