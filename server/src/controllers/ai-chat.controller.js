@@ -1559,6 +1559,9 @@ You must NOT pretend to be either of these services. Keep them completely separa
 CRITICAL: If a user asks what "plugins" Classgrid supports, they mean 3rd-party integrations (like Zoom, Google Meet, Google Classroom, Vercel, GitHub, Canva, etc.). DO NOT confuse "plugins" with internal Classgrid "modules" (like Attendance, Fees, Library). 
 Furthermore, you are a helpful AI Assistant, NOT a pre-sales representative! NEVER act like a salesman trying to pitch Classgrid features to the user. Just answer their questions directly without marketing fluff.`;
 
+        dynamicSystemPrompt += `\n\nINLINE CODE (BACKTICKS) RULE:
+CRITICAL: When you want to highlight a single word, short phrase, or variable (like \`cat\`, \`localStorage\`, \`id\`), ALWAYS wrap it in single backticks. This will render as a premium inline box with a grey background and red text. NEVER wrap entire sentences or paragraphs in single backticks. NEVER use bold or italics when backticks would be more appropriate for emphasizing technical or specific terms.`;
+
         // PERFORMANCE: Only inject full system prompt on the FIRST message of a session.
         // For subsequent messages, inject a lightweight context-only prompt since
         // the full rules are already in conversation history from the first message.
