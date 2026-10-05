@@ -54,6 +54,11 @@ export function AiCreditsPanel() {
 
   // Filter history
   const filteredHistory = history?.filter((txn: any) => {
+    // Exclude internal audit records
+    if (txn.type === 'pause' || txn.type === 'resume' || txn.type === 'revoke') {
+      return false;
+    }
+    
     let match = true;
     if (searchTerm) {
       match = txn.type.toLowerCase().includes(searchTerm.toLowerCase()) || 

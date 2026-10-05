@@ -11,6 +11,9 @@ import Organization from "../models/Organization.js";
  */
 
 import GlobalAiConfig from "../models/GlobalAiConfig.js";
+import { enqueueEmail } from "./email-queue.service.js";
+import { getGrantedCreditsLowEmailHtml, getTopUpCreditsLowEmailHtml, getFreeLimitsExhaustedEmailHtml, getGrantedCreditsExhaustedEmailHtml, getTopUpCreditsExhaustedEmailHtml } from "./email-templates.service.js";
+
 
 
 export const calculateCreditsFromAmount = async (amountInr) => {
@@ -149,6 +152,85 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     return { allowed: false, reason: "Insufficient tokens." };
 };
 
+
+// HELPER TO TRIGGER ALERTS
+const triggerEmailAlerts = async (userId, orgId, type, oldBalance, currentBalance, totalLimit) => {
+    try {
+        const user = await User.findById(userId).select('email first_name last_name ai_tokens');
+        if (!user || !user.email) return;
+
+        let subdomain = '';
+        if (orgId) {
+            const org = await Organization.findById(orgId).select('subdomain');
+            if (org && org.subdomain) subdomain = org.subdomain;
+        }
+
+        const userName = user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Classgrid User';
+        let resetDate = user.ai_tokens?.week_reset_date ? new Date(user.ai_tokens.week_reset_date).toLocaleDateString('en-IN') : 'next week';
+        const threshold20 = totalLimit * 0.2;
+
+        // Top-Up Alerts
+        if (type === 'personal') {
+            if (oldBalance > threshold20 && currentBalance <= threshold20 && currentBalance > 0) {
+                await enqueueEmail({
+                    to: user.email,
+                    subject: "Action Required: You have used 80% of your Top-Up AI Credits",
+                    html: getTopUpCreditsLowEmailHtml(userName, subdomain),
+                    type: "billing_alert",
+                    userId, organizationId: orgId
+                });
+            }
+            if (oldBalance > 0 && currentBalance <= 0) {
+                await enqueueEmail({
+                    to: user.email,
+                    subject: "Action Required: You have reached 100% of your Top-Up AI Credits",
+                    html: getTopUpCreditsExhaustedEmailHtml(userName, resetDate, subdomain),
+                    type: "billing_alert",
+                    userId, organizationId: orgId
+                });
+            }
+        }
+
+        // Granted Credits Alerts
+        if (type === 'promotion') {
+            if (oldBalance > threshold20 && currentBalance <= threshold20 && currentBalance > 0) {
+                const expDate = user.ai_tokens?.promotion_credits_end_date ? new Date(user.ai_tokens.promotion_credits_end_date).toLocaleDateString('en-IN') : 'soon';
+                await enqueueEmail({
+                    to: user.email,
+                    subject: "Action Required: You have used 80% of your Granted AI Credits",
+                    html: getGrantedCreditsLowEmailHtml(userName, expDate, subdomain),
+                    type: "billing_alert",
+                    userId, organizationId: orgId
+                });
+            }
+            if (oldBalance > 0 && currentBalance <= 0) {
+                await enqueueEmail({
+                    to: user.email,
+                    subject: "Action Required: You have reached 100% of your Granted AI Credits",
+                    html: getGrantedCreditsExhaustedEmailHtml(userName, resetDate, subdomain),
+                    type: "billing_alert",
+                    userId, organizationId: orgId
+                });
+            }
+        }
+
+        // Free Limits Alert
+        if (type === 'free') {
+            if (oldBalance > 0 && currentBalance <= 0) {
+                await enqueueEmail({
+                    to: user.email,
+                    subject: "Action Required: You have reached 100% of your Free AI Usage",
+                    html: getFreeLimitsExhaustedEmailHtml(userName, resetDate, subdomain),
+                    type: "billing_alert",
+                    userId, organizationId: orgId
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Failed to trigger email alerts:', error);
+    }
+};
+
 export const deductTokens = async (userId, orgId, tokenAmount, source) => {
     try {
         let result = { success: false, remaining: 0, type: "unknown" };
@@ -168,6 +250,7 @@ export const deductTokens = async (userId, orgId, tokenAmount, source) => {
                 }
             }, { new: true });
             result = { success: true, remaining: Math.max(0, updatedUser.ai_tokens.ai_credits_balance), limit: updatedUser.ai_tokens.ai_credits_balance + actualDeduction, type: "personal" };
+            triggerEmailAlerts(userId, orgId, "personal", currentBalance, result.remaining, user?.ai_tokens?.total_ai_credits_purchased || currentBalance);
 
         } else if (source === "promotion") {
             // Read current balance FIRST, then cap the deduction
@@ -184,6 +267,7 @@ export const deductTokens = async (userId, orgId, tokenAmount, source) => {
                 }
             }, { new: true });
             result = { success: true, remaining: Math.max(0, updatedUser.ai_tokens.promotion_credits_balance), limit: updatedUser.ai_tokens.promotion_credits_balance + actualDeduction, type: "promotion" };
+            triggerEmailAlerts(userId, orgId, "promotion", currentBalance, result.remaining, user?.ai_tokens?.total_promotion_credits_granted || currentBalance);
 
         } else if (source === "weekly_free") {
             // For free tier: cap so used_this_week never exceeds the weekly limit
@@ -202,6 +286,7 @@ export const deductTokens = async (userId, orgId, tokenAmount, source) => {
                 }
             }, { new: true });
             result = { success: true, remaining: Math.max(0, updatedUser.ai_tokens.free_weekly_limit - updatedUser.ai_tokens.used_this_week), limit: updatedUser.ai_tokens.free_weekly_limit, type: "free" };
+            triggerEmailAlerts(userId, orgId, "free", headroom, result.remaining, weeklyLimit);
 
         } else if (source === "org_pool") {
             // For org pool: cap so pro_used_this_period never exceeds pro_pool_limit

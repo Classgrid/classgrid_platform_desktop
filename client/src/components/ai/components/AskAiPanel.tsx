@@ -209,18 +209,18 @@ async function recordAiFilesSent(_count: number): Promise<void> { }
 
 const LiveWaveform = ({ stream }: { stream: MediaStream | null }) => {
   const [bars, setBars] = useState<number[]>(Array(100).fill(4));
-  
+
   useEffect(() => {
     if (!stream) {
       setBars(Array(100).fill(4));
       return;
     }
-    
+
     let audioCtx: AudioContext;
     let analyser: AnalyserNode;
     let dataArray: Uint8Array;
     let animationFrame: number;
-    
+
     try {
       audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       analyser = audioCtx.createAnalyser();
@@ -228,19 +228,19 @@ const LiveWaveform = ({ stream }: { stream: MediaStream | null }) => {
       source.connect(analyser);
       analyser.fftSize = 128;
       dataArray = new Uint8Array(analyser.frequencyBinCount);
-      
+
       const update = () => {
         analyser.getByteFrequencyData(dataArray);
-        
+
         // Calculate average volume to ensure it's completely flat when silent
         let sum = 0;
         for (let i = 0; i < dataArray.length; i++) {
           sum += dataArray[i];
         }
         const avgVolume = sum / dataArray.length;
-        
+
         const newBars = [];
-        
+
         for (let i = 0; i < 100; i++) {
           if (avgVolume > 2) {
             // Scatter the 30 active voice frequency bins across the 100 bars.
@@ -248,7 +248,7 @@ const LiveWaveform = ({ stream }: { stream: MediaStream | null }) => {
             // (sometimes left, sometimes right, sometimes middle) naturally!
             const binIndex = (i * 7) % 30;
             const value = dataArray[binIndex] || 0;
-            const height = 4 + (value / 255) * 18; 
+            const height = 4 + (value / 255) * 18;
             newBars.push(height);
           } else {
             // Silence
@@ -259,23 +259,23 @@ const LiveWaveform = ({ stream }: { stream: MediaStream | null }) => {
         animationFrame = requestAnimationFrame(update);
       };
       update();
-    } catch(e) {
+    } catch (e) {
       console.error(e);
     }
-    
+
     return () => {
       if (animationFrame) cancelAnimationFrame(animationFrame);
-      if (audioCtx) audioCtx.close().catch(()=>{});
+      if (audioCtx) audioCtx.close().catch(() => { });
     };
   }, [stream]);
 
   return (
     <div className="flex-1 flex items-center justify-start gap-[3px] overflow-hidden px-2 h-8">
       {bars.map((height, i) => (
-        <div 
-          key={i} 
-          className="w-1 bg-foreground rounded-full shrink-0" 
-          style={{ height: `${height}px`, opacity: height > 5 ? 0.8 : 0.4 }} 
+        <div
+          key={i}
+          className="w-1 bg-foreground rounded-full shrink-0"
+          style={{ height: `${height}px`, opacity: height > 5 ? 0.8 : 0.4 }}
         />
       ))}
     </div>
@@ -1087,7 +1087,7 @@ const MarkdownComponents = {
   },
   code({ node, inline, className, children, ...props }: any, isTyping?: boolean, onRetry?: (errorMsg: string) => void) {
     const codeString = String(children).replace(/\n$/, "");
-    
+
     // In react-markdown v9+, the 'inline' prop is removed and undefined.
     // We can reliably determine if it's inline if it lacks a language class and has no newlines.
     const isActuallyInline = !className?.includes('language-') && !codeString.includes('\n');
@@ -1288,10 +1288,10 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
           try {
             const skillData = JSON5.parse(String(children));
             return (
-              <div 
+              <div
                 className="my-4 w-full rounded-xl border border-border/50 hover:border-border hover:bg-muted/10 bg-card p-4 shadow-sm relative z-10 overflow-hidden cursor-pointer transition-colors"
                 onClick={() => {
-                   window.dispatchEvent(new CustomEvent('open-ai-hub', { detail: { tab: 'skills' } }));
+                  window.dispatchEvent(new CustomEvent('open-ai-hub', { detail: { tab: 'skills' } }));
                 }}
               >
                 <div className="flex items-center gap-3 mb-1.5">
@@ -1356,7 +1356,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                       .then(r => r.json())
                       .then(data => {
                         if (data.sessionId) {
-                           window.dispatchEvent(new CustomEvent('classgrid-build-session', { detail: data.sessionId }));
+                          window.dispatchEvent(new CustomEvent('classgrid-build-session', { detail: data.sessionId }));
                         }
                       })
                       .catch(err => console.error("Failed to start build", err));
@@ -1767,17 +1767,17 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           setRecordingTime(0);
           return;
         }
-        
+
         setIsTranscribing(true);
         try {
           const formData = new FormData();
           const ext = recordedMimeType.includes('mp4') ? 'mp4' : recordedMimeType.includes('ogg') ? 'ogg' : 'webm';
           formData.append('audio', new window.File([blob], `dictation.${ext}`, { type: recordedMimeType }));
-          
+
           const endpoint = typeof import.meta !== "undefined" && import.meta.env
             ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in") + "/api/voice/transcribe"
             : "/api/voice/transcribe";
-            
+
           const token = localStorage.getItem("token");
           const res = await fetch(endpoint, {
             method: "POST",
@@ -1785,24 +1785,24 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             credentials: "include",
             headers: token ? { "Authorization": `Bearer ${token}` } : {}
           });
-          
+
           if (!res.ok) {
             const errorText = await res.text().catch(() => "");
             console.error("Transcription API error:", res.status, errorText);
             throw new Error(`API error: ${res.status}`);
           }
-          
+
           const data = await res.json();
           if (data.success && data.text) {
-             setInput(prev => prev ? prev + " " + data.text : data.text);
-             setTimeout(() => {
-                if (inputRef.current) {
-                  inputRef.current.style.height = 'auto';
-                  inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 180)}px`;
-                }
-             }, 100);
+            setInput(prev => prev ? prev + " " + data.text : data.text);
+            setTimeout(() => {
+              if (inputRef.current) {
+                inputRef.current.style.height = 'auto';
+                inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 180)}px`;
+              }
+            }, 100);
           } else {
-             toast.error("Failed to transcribe audio");
+            toast.error("Failed to transcribe audio");
           }
         } catch (err) {
           console.error("Transcription fetch error:", err);
@@ -2079,11 +2079,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         }));
       localStorage.setItem("askAiDraftFiles", JSON.stringify(filesToSave));
       localStorage.setItem("askAiDraftPastedTexts", JSON.stringify(pastedTexts));
-      
+
       console.log("[AskAiPanel] Saved drafts to localStorage:", {
-        input, 
-        filesSaved: filesToSave.length, 
-        pastedTexts: pastedTexts.length 
+        input,
+        filesSaved: filesToSave.length,
+        pastedTexts: pastedTexts.length
       });
     } else {
       localStorage.removeItem("askAiDraftInput");
@@ -2310,13 +2310,20 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       }
     }
 
-    // Fresh start â€” clear everything
+    // Fresh start â€” clear chat history
     setMessages([]);
     setSessionId(null);
-    setInput("");
-    setAttachedFiles([]);
     setLastSentDocsPath(null);
 
+    // ONLY clear drafts if the user actually changed (security)
+    if (userChanged) {
+      setInput("");
+      setAttachedFiles([]);
+      setPastedTexts([]);
+      localStorage.removeItem("askAiDraftInput");
+      localStorage.removeItem("askAiDraftFiles");
+      localStorage.removeItem("askAiDraftPastedTexts");
+    }
 
     localStorage.removeItem("askAiDraftContext");
     if (currentEmail) {
@@ -2348,11 +2355,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         // Check if there is an attached file waiting to be added
         const attachUrl = sessionStorage.getItem("agent:attach_file_url");
         const attachName = sessionStorage.getItem("agent:attach_file_name");
-        
+
         if (attachUrl) {
           sessionStorage.removeItem("agent:attach_file_url");
           sessionStorage.removeItem("agent:attach_file_name");
-          
+
           const newFile: UIFileAttachment = {
             id: Math.random().toString(36).substring(7),
             name: attachName || attachUrl.split('/').pop() || "attached_file",
@@ -4969,13 +4976,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   />
 
                   {isRecording && (
-                      <div className="absolute left-14 right-4 top-4 flex items-center pointer-events-none z-10">
-                        <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
-                        <span className="text-sm font-mono mr-3 text-foreground shrink-0">
-                          {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
-                        </span>
-                        <LiveWaveform stream={micStream} />
-                      </div>
+                    <div className="absolute left-14 right-4 top-4 flex items-center pointer-events-none z-10">
+                      <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
+                      <span className="text-sm font-mono mr-3 text-foreground shrink-0">
+                        {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+                      </span>
+                      <LiveWaveform stream={micStream} />
+                    </div>
                   )}
 
                   {/* Bottom Left action bar: paperclip and AI Hub */}
@@ -5475,110 +5482,110 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               ref={inputRef as any}
                               disabled={isRecording || isTranscribing}
                               value={input}
-                                  onChange={(event) => {
-                                    const val = event.target.value;
-                                    setInput(val);
-                                    const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
-                                    if (isExpandedBox && wordCount < 90) {
-                                      setIsExpandedBox(false);
-                                    }
-                                    if (val.length === 0) {
-                                      event.target.style.height = '';
-                                    } else if (!isExpandedBox || wordCount < 90) {
-                                      event.target.style.height = 'auto';
-                                      event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
-                                    }
-  
-                                    // @ mention logic
-                                    const cursorPosition = event.target.selectionStart;
-                                    const textBeforeCursor = val.slice(0, cursorPosition);
-                                    const atMatch = textBeforeCursor.match(/(?:^|\s)@(\S*)$/);
-                                    if (atMatch) {
-                                      setAtMenuOpen(true);
-                                      setAtMenuQuery(atMatch[1]);
-                                      setAtMenuSelectedIndex(0);
-                                    } else {
-                                      setAtMenuOpen(false);
-                                    }
-                                  }}
-                                  onPaste={handlePaste}
-                                  onKeyDown={(e) => {
-                                    if (atMenuOpen) {
-                                      const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
-                                        item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
-                                        (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
-                                      );
-                                      const baseItems = [
-                                        { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
-                                        { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
-                                        { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
-                                        { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
-                                        { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
-                                        { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
-                                      ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
-                                      const menuItems = [...baseItems, ...filteredIntegrations];
-  
-                                      if (e.key === 'ArrowDown') {
-                                        e.preventDefault();
-                                        setAtMenuSelectedIndex(prev => (prev + 1) % menuItems.length);
-                                        return;
-                                      }
-                                      if (e.key === 'ArrowUp') {
-                                        e.preventDefault();
-                                        setAtMenuSelectedIndex(prev => (prev - 1 + menuItems.length) % menuItems.length);
-                                        return;
-                                      }
-                                      if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        const selectedItem = menuItems[atMenuSelectedIndex];
-                                        if (selectedItem) {
-                                          if (selectedItem.action) {
-                                            selectedItem.action();
-                                          } else {
-                                            const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
-                                            const textBeforeCursor = input.slice(0, cursorPosition);
-                                            const textAfterCursor = input.slice(cursorPosition);
-                                            const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-                                            const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + selectedItem.name + ' ' + textAfterCursor;
-                                            setInput(newInput);
-                                            setTimeout(() => (inputRef.current as any)?.focus(), 0);
-                                          }
-                                        }
-                                        setAtMenuOpen(false);
-                                        return;
-                                      }
-                                      if (e.key === 'Escape') {
-                                        setAtMenuOpen(false);
-                                        return;
+                              onChange={(event) => {
+                                const val = event.target.value;
+                                setInput(val);
+                                const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
+                                if (isExpandedBox && wordCount < 90) {
+                                  setIsExpandedBox(false);
+                                }
+                                if (val.length === 0) {
+                                  event.target.style.height = '';
+                                } else if (!isExpandedBox || wordCount < 90) {
+                                  event.target.style.height = 'auto';
+                                  event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`;
+                                }
+
+                                // @ mention logic
+                                const cursorPosition = event.target.selectionStart;
+                                const textBeforeCursor = val.slice(0, cursorPosition);
+                                const atMatch = textBeforeCursor.match(/(?:^|\s)@(\S*)$/);
+                                if (atMatch) {
+                                  setAtMenuOpen(true);
+                                  setAtMenuQuery(atMatch[1]);
+                                  setAtMenuSelectedIndex(0);
+                                } else {
+                                  setAtMenuOpen(false);
+                                }
+                              }}
+                              onPaste={handlePaste}
+                              onKeyDown={(e) => {
+                                if (atMenuOpen) {
+                                  const filteredIntegrations = INTEGRATIONS_LIST.filter(item =>
+                                    item.name.toLowerCase().includes(atMenuQuery.toLowerCase()) ||
+                                    (item.description && item.description.toLowerCase().includes(atMenuQuery.toLowerCase()))
+                                  );
+                                  const baseItems = [
+                                    { id: "add-photos", name: "Add photos & files", description: "Upload from computer", icon: Paperclip, action: () => fileInputRef.current?.click() },
+                                    { id: "add-library", name: "Add from library", description: "Browse and search your files", icon: FileText, action: () => setShowFilesPanel(true) },
+                                    { id: "create-image", name: "Create image", description: "Visualize anything", icon: FileImage },
+                                    { id: "sketch", name: "Sketch", description: "Draw and attach an image", icon: FileImage },
+                                    { id: "web-search", name: "Web search", description: "Find real-time news and info", icon: Globe2 },
+                                    { id: "deep-research", name: "Deep research", description: "Get a detailed report", icon: Globe2 },
+                                  ].filter(item => item.name.toLowerCase().includes(atMenuQuery.toLowerCase()));
+                                  const menuItems = [...baseItems, ...filteredIntegrations];
+
+                                  if (e.key === 'ArrowDown') {
+                                    e.preventDefault();
+                                    setAtMenuSelectedIndex(prev => (prev + 1) % menuItems.length);
+                                    return;
+                                  }
+                                  if (e.key === 'ArrowUp') {
+                                    e.preventDefault();
+                                    setAtMenuSelectedIndex(prev => (prev - 1 + menuItems.length) % menuItems.length);
+                                    return;
+                                  }
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const selectedItem = menuItems[atMenuSelectedIndex];
+                                    if (selectedItem) {
+                                      if (selectedItem.action) {
+                                        selectedItem.action();
+                                      } else {
+                                        const cursorPosition = (inputRef.current as any)?.selectionStart || input.length;
+                                        const textBeforeCursor = input.slice(0, cursorPosition);
+                                        const textAfterCursor = input.slice(cursorPosition);
+                                        const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+                                        const newInput = textBeforeCursor.slice(0, lastAtIndex) + '@' + selectedItem.name + ' ' + textAfterCursor;
+                                        setInput(newInput);
+                                        setTimeout(() => (inputRef.current as any)?.focus(), 0);
                                       }
                                     }
-  
-                                    if (e.key === "Enter" && !e.shiftKey) {
-                                      e.preventDefault();
-                                      if (canSubmit) {
-                                        submitInput();
-                                        setIsExpandedBox(false);
-                                        setAtMenuOpen(false);
-                                      }
-                                    }
-                                  }}
-                                  placeholder="Ask a question..."
-                                  autoComplete="off"
-                                  className={cn(
-                                    "w-full resize-none bg-transparent pb-12 pr-20 pl-24 pt-4 rounded-2xl text-sm focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
-                                    (isRecording || isTranscribing) ? "text-transparent placeholder:text-transparent" : "text-foreground",
-                                    isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]"
-                                  )}
-                                />
+                                    setAtMenuOpen(false);
+                                    return;
+                                  }
+                                  if (e.key === 'Escape') {
+                                    setAtMenuOpen(false);
+                                    return;
+                                  }
+                                }
+
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  if (canSubmit) {
+                                    submitInput();
+                                    setIsExpandedBox(false);
+                                    setAtMenuOpen(false);
+                                  }
+                                }
+                              }}
+                              placeholder="Ask a question..."
+                              autoComplete="off"
+                              className={cn(
+                                "w-full resize-none bg-transparent pb-12 pr-20 pl-24 pt-4 rounded-2xl text-sm focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                                (isRecording || isTranscribing) ? "text-transparent placeholder:text-transparent" : "text-foreground",
+                                isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]"
+                              )}
+                            />
 
                             {isRecording && (
-                                <div className="absolute left-14 right-4 top-4 flex items-center pointer-events-none z-10">
-                                  <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
-                                  <span className="text-sm font-mono mr-3 text-foreground shrink-0">
-                                    {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
-                                  </span>
-                                  <LiveWaveform stream={micStream} />
-                                </div>
+                              <div className="absolute left-14 right-4 top-4 flex items-center pointer-events-none z-10">
+                                <div className="w-2 h-2 bg-foreground rounded-full animate-pulse mr-3 shrink-0" />
+                                <span className="text-sm font-mono mr-3 text-foreground shrink-0">
+                                  {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+                                </span>
+                                <LiveWaveform stream={micStream} />
+                              </div>
                             )}
 
                             {/* Bottom left: paperclip */}
