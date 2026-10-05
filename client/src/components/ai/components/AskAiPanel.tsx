@@ -2022,6 +2022,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [editingMode, setEditingMode] = useState<'input' | number | null>(null);
   const [previewFile, setPreviewFile] = useState<FilePreviewSource | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const isRestoredRef = useRef(false);
 
   // â”€â”€ Local Storage Draft Persistence â”€â”€
   useEffect(() => {
@@ -2047,10 +2048,16 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       if (savedPasted) setPastedTexts(JSON.parse(savedPasted));
     } catch (err) {
       console.error("Failed to restore Ask AI draft:", err);
+    } finally {
+      setTimeout(() => {
+        isRestoredRef.current = true;
+      }, 0);
     }
   }, []);
 
   useEffect(() => {
+    if (!isRestoredRef.current) return;
+
     if (input.trim() || attachedFiles.length > 0 || pastedTexts.length > 0) {
       localStorage.setItem("askAiDraftInput", input);
 
