@@ -367,10 +367,10 @@ export function AiUserDetailPanel({ userDetail }: { userDetail: any }) {
         </div>
       </div>
 
-      {userDetail.ai_tokens?.total_promotion_credits_granted > 0 && (
+      {((userDetail.promotionHistory || []).filter((h: any) => h.type === 'grant' || h.type === 'granted').length > 0 || userDetail.ai_tokens?.total_promotion_credits_granted > 0) && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-purple-500">Active Granted Credits</CardTitle>
+            <CardTitle className="text-purple-500">Granted Credits</CardTitle>
             <CardDescription>Promotional AI credits granted to this user</CardDescription>
           </CardHeader>
           <CardContent>
