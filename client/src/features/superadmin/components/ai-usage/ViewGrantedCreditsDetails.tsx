@@ -29,7 +29,12 @@ export function ViewGrantedCreditsDetails({ used, limit, history, status, transa
   const getTimelineSteps = () => {
     if (!history || history.length === 0) return { steps: [], currentStep: 0 };
 
-    const sortedHistory = [...history].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const relevantHistory = history.filter(h => 
+      h.id === transactionId || 
+      h._id === transactionId || 
+      h.metadata?.transactionId === transactionId
+    );
+    const sortedHistory = [...relevantHistory].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const isExhausted = used >= limit;
     const isCurrentlyPaused = sortedHistory.length > 0 && sortedHistory[sortedHistory.length - 1].type === "paused";
     const isRevoked = sortedHistory.length > 0 && sortedHistory.some(s => s.type === "revoked");
@@ -62,8 +67,7 @@ export function ViewGrantedCreditsDetails({ used, limit, history, status, transa
     const middleEvents = sortedHistory.filter(h => 
       h.type !== "grant" && 
       h.type !== "granted" && 
-      h.type !== "revoke" &&
-      (h.metadata?.transactionId === transactionId || !h.metadata?.transactionId)
+      h.type !== "revoke"
     );
     for (const event of middleEvents) {
       const displayTitle = event.type.charAt(0).toUpperCase() + event.type.slice(1) + (event.type.endsWith("e") ? "d" : event.type.endsWith("t") ? "ed" : "ed");
