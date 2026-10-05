@@ -1120,9 +1120,10 @@ const MarkdownComponents = {
     }
 
     // 🚨 Intercept Hallucinated Single Words (like `teacher` or emails inside tables) 🚨
-    const isSingleWordHallucination = !language && !codeString.includes('\n') && codeString.length < 50 && !/[{}();=<>\[\]\/\\]/.test(codeString) && !/const|let|var|function|import|export|if|for|while/.test(codeString);
+    // We only strip if it's NOT inline. If it's inline, it was deliberately wrapped in single backticks.
+    const isSingleWordHallucination = !inline && !language && !codeString.includes('\n') && codeString.length < 50 && !/[{}();=<>\[\]\/\\]/.test(codeString) && !/const|let|var|function|import|export|if|for|while/.test(codeString);
     if (isSingleWordHallucination) {
-      return <span className={!inline ? "block mb-4" : ""}>{codeString}</span>;
+      return <span className="block mb-4">{codeString}</span>;
     }
 
     const isMermaid = language === "mermaid";
@@ -1170,7 +1171,7 @@ const MarkdownComponents = {
     }
 
     return (
-      <code className="bg-slate-100 dark:bg-white/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md text-[13px] font-mono break-words" {...props}>
+      <code className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-md text-[13px] font-mono break-words mx-0.5" {...props}>
         {children}
       </code>
     );
