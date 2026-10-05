@@ -1175,7 +1175,7 @@ const MarkdownComponents = {
     }
 
     return (
-      <code className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-md text-[13px] font-mono break-words mx-0.5" {...props}>
+      <code className="bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm text-[#c92a2a] dark:text-[#ff6b6b] px-1.5 py-[2px] rounded-md text-[13px] font-mono break-words mx-0.5" {...props}>
         {children}
       </code>
     );
