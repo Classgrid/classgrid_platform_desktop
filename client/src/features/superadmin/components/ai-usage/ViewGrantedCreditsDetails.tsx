@@ -93,7 +93,11 @@ export function ViewGrantedCreditsDetails({ used, limit, history, status, transa
     const lastDate = sortedHistory.length > 0 ? formatDateTime(sortedHistory[sortedHistory.length - 1].date) : "Today";
     
     if (status) {
-      const normalizedStatus = status.toUpperCase();
+      let normalizedStatus = status.toUpperCase();
+      if (normalizedStatus === "ACTIVE" && isExhausted) {
+        normalizedStatus = "EXHAUSTED";
+      }
+      
       generatedSteps.push({
         id: normalizedStatus.toLowerCase(),
         title: normalizedStatus.charAt(0) + normalizedStatus.slice(1).toLowerCase(),
