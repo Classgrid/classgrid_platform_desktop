@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 /**
  * CombinedReasoningBlock - Shows AI reasoning LIVE as it streams in.
@@ -118,12 +119,61 @@ export function CombinedReasoningBlock({ sentences, isStreaming = true, autoFini
                 <style>{`.overflow-y-auto::-webkit-scrollbar { display: none; }`}</style>
                 <div className="flex flex-col gap-2">
                   {sentences.map((line, i) => (
-                    <p
+                    <div
                       key={i}
-                      className="m-0 leading-[20px] text-[13px] font-[425] text-slate-500 dark:text-[#737373] tracking-tight animate-[fadeIn_420ms_cubic-bezier(0.22,1,0.36,1)]"
+                      className="m-0 leading-[20px] text-[13px] font-[425] text-slate-500 dark:text-[#737373] tracking-tight animate-[fadeIn_420ms_cubic-bezier(0.22,1,0.36,1)] [&>p]:inline [&>p]:m-0"
                     >
-                      {line}
-                    </p>
+                      <ReactMarkdown
+                        components={{
+                          p({ children, ...props }) {
+                            return <span {...props}>{children}</span>;
+                          },
+                          strong({ children, ...props }) {
+                            return <strong className="font-semibold text-slate-600 dark:text-slate-400" {...props}>{children}</strong>;
+                          },
+                          em({ children, ...props }) {
+                            return <em className="italic" {...props}>{children}</em>;
+                          },
+                          a({ href, children, ...props }) {
+                            const external = href && /^https?:\/\//i.test(href);
+                            return (
+                              <a
+                                href={href}
+                                target={external ? "_blank" : undefined}
+                                rel={external ? "noreferrer" : undefined}
+                                className="inline-flex items-center gap-0.5 font-medium text-blue-500 dark:text-blue-400 underline underline-offset-2 hover:text-blue-600 dark:hover:text-blue-300"
+                                {...props}
+                              >
+                                {children}
+                                {external && <svg className="inline w-3 h-3 shrink-0" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3.5 3H9v5.5M9 3L3 9" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                              </a>
+                            );
+                          },
+                          code({ node, inline, className, children, ...props }: any) {
+                            const codeString = String(children).replace(/\n$/, "");
+                            const isActuallyInline = !className?.includes('language-') && !codeString.includes('\n');
+                            
+                            if (isActuallyInline) {
+                              return (
+                                <code className="bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 shadow-sm text-[#c92a2a] dark:text-[#ff6b6b] px-[5px] py-[2px] rounded-[3px] text-[13px] font-mono break-words mx-0.5" {...props}>
+                                  {children}
+                                </code>
+                              );
+                            }
+                            return (
+                              <code className="bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 px-[5px] py-[2px] rounded-[3px] text-[12px] font-mono" {...props}>
+                                {children}
+                              </code>
+                            );
+                          },
+                          pre({ children, ...props }) {
+                            return <pre className="my-1 overflow-x-auto" {...props}>{children}</pre>;
+                          }
+                        }}
+                      >
+                        {line}
+                      </ReactMarkdown>
+                    </div>
                   ))}
                 </div>
               </div>

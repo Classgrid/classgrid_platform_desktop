@@ -2056,7 +2056,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     } finally {
       setTimeout(() => {
         isRestoredRef.current = true;
-        console.log("[AskAiPanel] isRestoredRef is now true");
       }, 0);
     }
   }, []);
@@ -2079,17 +2078,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         }));
       localStorage.setItem("askAiDraftFiles", JSON.stringify(filesToSave));
       localStorage.setItem("askAiDraftPastedTexts", JSON.stringify(pastedTexts));
-
-      console.log("[AskAiPanel] Saved drafts to localStorage:", {
-        input,
-        filesSaved: filesToSave.length,
-        pastedTexts: pastedTexts.length
-      });
     } else {
       localStorage.removeItem("askAiDraftInput");
       localStorage.removeItem("askAiDraftFiles");
       localStorage.removeItem("askAiDraftPastedTexts");
-      console.log("[AskAiPanel] Cleared drafts from localStorage (empty)");
     }
 
     if (lastSentDocsPath) {
