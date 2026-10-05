@@ -2199,8 +2199,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     const pastedText = e.clipboardData?.getData("text/plain");
     const wordCount = pastedText ? pastedText.trim().split(/\s+/).length : 0;
 
-    // Create chip only if the pasted text has more than 2000 WORDS
-    if (pastedText && wordCount > 2000) {
+    // Create chip only if the pasted text has more than 600 WORDS
+    if (pastedText && wordCount > 600) {
       e.preventDefault();
       setPastedTexts(prev => {
         if (prev.length >= 2) {
