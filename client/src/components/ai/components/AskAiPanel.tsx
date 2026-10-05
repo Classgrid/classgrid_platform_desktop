@@ -1087,6 +1087,10 @@ const MarkdownComponents = {
   },
   code({ node, inline, className, children, ...props }: any, isTyping?: boolean, onRetry?: (errorMsg: string) => void) {
     const codeString = String(children).replace(/\n$/, "");
+    
+    // In react-markdown v9+, the 'inline' prop is removed and undefined.
+    // We can reliably determine if it's inline if it lacks a language class and has no newlines.
+    const isActuallyInline = !className?.includes('language-') && !codeString.includes('\n');
 
     // 🚨 Intercept Emails that the AI hallucinates into code blocks (e.g. inside tables) 🚨
     const isJustAnEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(codeString.trim());
@@ -1116,19 +1120,19 @@ const MarkdownComponents = {
     // If the AI wraps an entire normal sentence in backticks, un-wrap it so the user doesn't see a random grey box.
     const isProse = !language && codeString.length > 15 && codeString.includes(" ") && !/[{}();=<>\[\]\/\\]/.test(codeString) && !/const|let|var|function|import|export|if|for|while/.test(codeString);
     if (isProse) {
-      return <span className={!inline ? "block mb-4" : ""}>{codeString}</span>;
+      return <span className={!isActuallyInline ? "block mb-4" : ""}>{codeString}</span>;
     }
 
     // 🚨 Intercept Hallucinated Single Words (like `teacher` or emails inside tables) 🚨
     // We only strip if it's NOT inline. If it's inline, it was deliberately wrapped in single backticks.
-    const isSingleWordHallucination = !inline && !language && !codeString.includes('\n') && codeString.length < 50 && !/[{}();=<>\[\]\/\\]/.test(codeString) && !/const|let|var|function|import|export|if|for|while/.test(codeString);
+    const isSingleWordHallucination = !isActuallyInline && !language && !codeString.includes('\n') && codeString.length < 50 && !/[{}();=<>\[\]\/\\]/.test(codeString) && !/const|let|var|function|import|export|if|for|while/.test(codeString);
     if (isSingleWordHallucination) {
       return <span className="block mb-4">{codeString}</span>;
     }
 
     const isMermaid = language === "mermaid";
 
-    if (!inline && language === "chart") {
+    if (!isActuallyInline && language === "chart") {
       try {
         const chartConfig = JSON5.parse(codeString);
         return (
@@ -1141,21 +1145,21 @@ const MarkdownComponents = {
       }
     }
 
-    if (!inline && isMermaid) {
+    if (!isActuallyInline && isMermaid) {
       return <MermaidViewer chart={codeString} onRetry={onRetry} isTyping={isTyping} />;
     }
 
-    if (!inline && language === "carousel") {
+    if (!isActuallyInline && language === "carousel") {
       return <MarkdownCarousel content={String(children).replace(/\n$/, "")} components={MarkdownComponents} />;
     }
 
 
 
-    if (!inline && ["prompt", "email", "message", "copy"].includes(language)) {
+    if (!isActuallyInline && ["prompt", "email", "message", "copy"].includes(language)) {
       return <CopyBlockClient text={String(children).replace(/\n$/, "")} label={language} />;
     }
 
-    if (!inline) {
+    if (!isActuallyInline) {
       return (
         <div className="w-full pb-2 overflow-hidden not-prose">
           <CodeBlockClient
