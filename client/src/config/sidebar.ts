@@ -733,7 +733,7 @@ export const dashboardConfigs: DashboardConfig[] = [
   // ───────────────────────────────────────────────
   {
     role: "public_chat",
-    logo: "Classgrid AI",
+    logo: "Classgrid",
     sections: [
       {
         label: "AI Platform",
