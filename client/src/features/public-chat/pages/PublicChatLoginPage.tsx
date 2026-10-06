@@ -11,7 +11,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { customArray } from "country-codes-list";
 import * as Flags from 'country-flag-icons/react/3x2';
 import { motion, AnimatePresence } from "framer-motion";
-
+import { toast } from "react-hot-toast";
+import { getGoogleAuthUrl } from "../../auth/api";
 const Confetti = lazy(() => import("react-confetti"));
 
 const ROLES = [
@@ -156,23 +157,11 @@ function LoginContent() {
   }, []);
 
   const handleGoogle = () => {
-    setEmail("google-user@example.com");
-    setLoading(true);
-    setTimeout(() => {
-       setLoading(false);
-       setStep("otp");
-       startCountdown();
-    }, 800);
+    window.location.assign(getGoogleAuthUrl({ audience: "user", role: "student" }));
   };
 
   const handleGithub = () => {
-    setEmail("github-user@example.com");
-    setLoading(true);
-    setTimeout(() => {
-       setLoading(false);
-       setStep("otp");
-       startCountdown();
-    }, 800);
+    toast.error("GitHub login is currently not available.");
   };
 
   // ── Redirect already-logged-in users ──
@@ -336,32 +325,19 @@ function LoginContent() {
     setLoading(true);
     try {
       const res = await apiClient.post("/api/auth/chat/verify-email-otp", {
-        redirect: false,
         email,
         otp,
         name: mode === "signup" ? `${firstName} ${lastName}`.trim() : undefined,
       });
 
-      if (!res) {
-        setError("Something went wrong. Please try again.");
+      if (res.data?.token) {
+        localStorage.setItem("token", res.data.token);
+        // Refresh the page or redirect so the app picks up the token and loads the chat session
+        window.location.href = "/";
+      } else {
+        setError("Failed to retrieve login session.");
         setLoading(false);
-        return;
       }
-
-      if (res.error) {
-        const errorMap: Record<string, string> = {
-          "OTP has expired": "Your code has expired. Please resend.",
-          "Invalid OTP": "Incorrect code. Please try again.",
-          "Too many attempts. Please request a new OTP.": "Too many wrong attempts. Please resend.",
-          "Invalid or expired OTP": "Code not found. Please resend.",
-        };
-        setError(Object.prototype.hasOwnProperty.call(errorMap, res.error) ? errorMap[res.error] : (typeof res.error === "string" ? res.error : "Sign-in error"));
-        setLoading(false);
-        return;
-      }
-
-      setLoading(false);
-      setStep("otp_verified");
     } catch (err: any) {
       setError(err?.message && typeof err.message === "string" ? err.message : "Something went wrong.");
       setLoading(false);

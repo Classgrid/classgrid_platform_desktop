@@ -3093,7 +3093,7 @@ export const chatSendEmailOtp = async (req, res) => {
 
 export const chatVerifyEmailOtp = async (req, res) => {
     try {
-        const { email, otp } = req.body;
+        const { email, otp, name } = req.body;
         const OnboardingOTP = (await import('../models/OnboardingOTP.js')).default;
         const record = await OnboardingOTP.findOne({ target: email.toLowerCase(), type: 'email' });
         
@@ -3101,7 +3101,32 @@ export const chatVerifyEmailOtp = async (req, res) => {
             return res.status(400).json({ message: 'Invalid or expired OTP' });
         }
         await OnboardingOTP.deleteOne({ _id: record._id });
-        res.json({ message: 'Email verified' });
+
+        // Find or create user
+        let user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            user = await User.create({
+                email: email.toLowerCase(),
+                name: name || email.split('@')[0],
+                role: 'student', // Default role for public chat
+                password: crypto.randomBytes(16).toString('hex'), // Random password, they login via OTP
+            });
+        }
+
+        const token = generateToken(user, req);
+        setTokenCookie(res, token, req);
+
+        res.json({
+            message: 'Email verified',
+            token,
+            user: {
+                id: user._id,
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                organization_id: user.organization_id || null,
+            }
+        });
     } catch (e) {
         console.error('chatVerifyEmailOtp Error:', e);
         res.status(500).json({ message: e.message });
@@ -3240,33 +3265,22 @@ export const chatSendWhatsAppOtp = async (req, res) => {
         const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_ID; 
         const TEMPLATE_NAME = "classgrid_otp"; 
 
-        const url = "https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages";
+        const url = `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`;
         const data = {
             messaging_product: "whatsapp",
+            recipient_type: "individual",
             to: phone.replace("+", ""),
-            type: "template",
-            template: {
-                name: TEMPLATE_NAME,
-                language: { code: "en" },
-                components: [
-                    {
-                        type: "body",
-                        parameters: [{ type: "text", text: otp }]
-                    },
-                    {
-                        type: "button",
-                        sub_type: "url",
-                        index: "0",
-                        parameters: [{ type: "text", text: otp }]
-                    }
-                ]
+            type: "text",
+            text: {
+                preview_url: false,
+                body: `Your Classgrid AI verification code is: *${otp}*`
             }
         };
 
         const axios = (await import('axios')).default;
         await axios.post(url, data, {
             headers: {
-                Authorization: "Bearer ${WHATSAPP_TOKEN}",
+                Authorization: `Bearer ${WHATSAPP_TOKEN}`,
                 "Content-Type": "application/json"
             }
         });
