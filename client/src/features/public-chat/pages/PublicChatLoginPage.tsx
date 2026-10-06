@@ -725,20 +725,7 @@ function LoginContent() {
               >
                 Start Chatting <ChevronRight className="ml-2 size-5" />
               </button>
-              <button
-                onClick={() => {
-                  setStep("email");
-                  setEmail("");
-                  setWhatsappPhone("");
-                  setPassword("");
-                  setConfirmPassword("");
-                  setRole("");
-                  setAge("");
-                }}
-                className="text-white/50 hover:text-white text-sm font-medium transition-colors cursor-pointer"
-              >
-                Test Again (Restart Sandbox)
-              </button>
+
             </motion.div>
           </motion.div>
           <style>{`@keyframes pulse { 0%, 100% { opacity: 0.1; } 50% { opacity: 0.7; } }`}</style>
