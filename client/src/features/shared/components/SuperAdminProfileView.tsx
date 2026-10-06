@@ -222,6 +222,43 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
               className={cn("w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10", !isEditing && "pointer-events-none opacity-60")}
             />
           </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">Age</label>
+            <input 
+              type="number"
+              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" 
+              value={formData["age"] || ""} 
+              onChange={e => handleInputChange("age", e.target.value)} 
+              disabled={!isEditing} 
+              placeholder="e.g. 24" 
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">Role</label>
+            <Select 
+              value={formData["job_role"] || ""} 
+              onValueChange={val => handleInputChange("job_role", val)}
+              disabled={!isEditing}
+            >
+              <SelectTrigger className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm transition-all outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:text-foreground disabled:bg-muted/10" size="default">
+                <SelectValue placeholder="Select your role" />
+              </SelectTrigger>
+              <SelectContent>
+                {ROLES.map((r) => {
+                  const Icon = r.icon;
+                  return (
+                    <SelectItem key={r.value} value={r.value}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4 text-muted-foreground" />
+                        <span>{r.label}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-1.5 md:col-span-2">
             <label className="text-sm font-medium text-foreground">Bio</label>
             <textarea className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10 resize-none" rows={3} value={formData["bio"] || formData.bio || ""} onChange={e => handleInputChange("bio", e.target.value)} disabled={!isEditing} placeholder="A short bio about yourself" />
