@@ -345,9 +345,7 @@ router.put("/update", isAuthenticated, attachInstitutionProfile({ required: fals
     if (admission_type !== undefined) updateData.admission_type = admission_type;
     if (category !== undefined) updateData.category = category;
 
-    if (metadata !== undefined && typeof metadata === 'object') {
-      updateData.metadata = { ...req.user.metadata, ...metadata };
-    }
+
 
     // Push Notifications Toggle
     if (req.body.pushNotifications !== undefined && typeof req.body.pushNotifications.global === 'boolean') {
