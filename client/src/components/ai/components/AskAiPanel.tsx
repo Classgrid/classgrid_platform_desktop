@@ -3190,11 +3190,15 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         if (data.sessionId && !sessionId) {
           setSessionId(data.sessionId);
           
-          const pathParts = window.location.pathname.split('/');
-          const agentIndex = pathParts.indexOf('agent');
-          const baseAgentPath = agentIndex !== -1 ? pathParts.slice(0, agentIndex + 1).join('/') : '/agent';
-          
-          window.history.pushState({}, "", `${baseAgentPath}?session=${data.sessionId}`);
+          if (variant === "full-page") {
+            const pathParts = window.location.pathname.split('/');
+            const agentIndex = pathParts.indexOf('agent');
+            // If we are in superadmin context but 'agent' is not in path, default to /superadmin/agent
+            const fallbackPath = window.location.pathname.includes('/superadmin') ? '/superadmin/agent' : '/agent';
+            const baseAgentPath = agentIndex !== -1 ? pathParts.slice(0, agentIndex + 1).join('/') : fallbackPath;
+            
+            window.history.pushState({}, "", `${baseAgentPath}?session=${data.sessionId}`);
+          }
           window.dispatchEvent(new Event("agent:refresh-sessions"));
         }
 
