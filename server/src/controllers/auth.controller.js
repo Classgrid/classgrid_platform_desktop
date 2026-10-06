@@ -3126,6 +3126,7 @@ export const chatVerifyEmailOtp = async (req, res) => {
                 name: user.name,
                 role: user.role,
                 organization_id: user.organization_id || null,
+                metadata: user.metadata || {}
             }
         });
     } catch (e) {

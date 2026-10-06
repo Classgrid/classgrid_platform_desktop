@@ -451,7 +451,10 @@ function LoginContent() {
       });
 
       if (res.data?.token) {
-        if (mode === "signup") {
+        const user = res.data.user;
+        const needsOnboarding = mode === "signup" || (user?.role === 'student' && (!user?.metadata?.whatsappPhone || !user?.metadata?.age));
+
+        if (needsOnboarding) {
           setStep("otp_verified");
           setLoading(false);
         } else {

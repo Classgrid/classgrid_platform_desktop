@@ -173,9 +173,23 @@ router.get(
     }
 );
 router.get(
-    "/chat/github/callback",
+    "/github/callback",
     async (req, res, next) => {
         const stateRaw = req.query.state || null;
+        
+        // Detect if this is a GitHub Integration request (which has base64 JSON state)
+        if (stateRaw) {
+            try {
+                const decoded = JSON.parse(Buffer.from(stateRaw, 'base64').toString('utf8'));
+                if (decoded && decoded.userId) {
+                    // It's an integration request! Pass to auth.github.routes.js
+                    return next();
+                }
+            } catch (e) {
+                // Not base64 JSON. Proceed as Login.
+            }
+        }
+        
         const defaultFrontendUrl = process.env.FRONTEND_URL?.trim() || (process.env.NODE_ENV === "production" ? "https://classgrid.in" : "https://classgrid.in");
         let oauthState;
         try {
