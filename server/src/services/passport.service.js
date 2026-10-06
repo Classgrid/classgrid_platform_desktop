@@ -178,8 +178,8 @@ const passportConfig = () => {
                     clientID: process.env.GOOGLE_CLIENT_ID,
                     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
                     callbackURL: process.env.NODE_ENV === "production"
-                        ? "https://api.classgrid.in/api/auth/chat/google/callback"
-                        : "http://localhost:5000/api/auth/chat/google/callback",
+                        ? "https://api.classgrid.in/api/auth/google/callback"
+                        : "http://localhost:5000/api/auth/google/callback",
                     passReqToCallback: true,
                 },
                 async (req, accessToken, refreshToken, profile, done) => {

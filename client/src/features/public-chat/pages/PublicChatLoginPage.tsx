@@ -160,7 +160,7 @@ function LoginContent() {
   const handleGoogle = () => {
     const loginTab = encodeURIComponent("student");
     const host = encodeURIComponent(window.location.hostname);
-    const path = `/api/auth/chat/google?loginTab=${loginTab}&host=${host}`;
+    const path = `/api/auth/google?loginTab=${loginTab}&host=${host}`;
     const url = (API_BASE_URL && !API_BASE_URL.startsWith('/')) ? new URL(path, API_BASE_URL).toString() : path;
     window.location.assign(url);
   };
@@ -1093,6 +1093,7 @@ function LoginContent() {
                 disabled={loading}
                 className="mt-2 flex w-full items-center justify-center rounded-md bg-slate-900 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2a2a2a] dark:text-[#f1f1f1] dark:hover:bg-[#333]"
               >
+                {loading ? <><Spinner className="w-4 h-4 text-inherit mr-2" /> Continue</> : "Continue"}
               </button>
             </form>
             </div>

@@ -205,9 +205,10 @@ router.get(
         const TARGET_URL = host ? `${scheme}${host}` : defaultFrontendUrl;
         const errorPath = loginTab === 'super_admin' ? '/superadmin/login' : '/login';
 
-        passport.authenticate("google", { session: false }, (err, user) => {
+        const strategy = (host && host.startsWith('chat.')) ? "google-chat" : "google";
+        passport.authenticate(strategy, { session: false }, (err, user) => {
             if (err) {
-                console.error("Google OAuth Error Trace:", err.stack || err);
+                console.error(`Google OAuth Error Trace (${strategy}):`, err.stack || err);
                 return res.redirect(`${TARGET_URL}${errorPath}?error=google_blocked&message=${encodeURIComponent(err.message)}`);
             }
             if (!user) {
