@@ -183,7 +183,7 @@ ${content}
 <tr>
 <td style="padding:20px;text-align:center;border-top:1px solid #eaeaea;color:#9ca3af;font-size:12px;" class="footer footer-text">
 ${ignoreText ? `<p style="margin-bottom:12px;color:#9ca3af;font-size:12px;" class="footer-text">${ignoreText}</p>` : ''}
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.
 </td>
 </tr>
 
@@ -260,7 +260,7 @@ Go to Dashboard
 
 <tr>
 <td style="padding:20px;text-align:center;border-top:1px solid #eaeaea;color:#9ca3af;font-size:12px;">
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.
 </td>
 </tr>
 
@@ -333,7 +333,7 @@ Join Classroom
 
 <tr>
 <td style="padding:20px;text-align:center;border-top:1px solid #eaeaea;color:#9ca3af;font-size:12px;">
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.
 </td>
 </tr>
 
@@ -941,7 +941,7 @@ Best regards,<br>
 <!-- Footer -->
 <tr>
 <td style="padding:20px;text-align:center;border-top:1px solid #eaeaea;font-size:12px;color:#9ca3af;">
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.<br>
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.<br>
 support@classgrid.in
 </td>
 </tr>
@@ -994,7 +994,7 @@ support@classgrid.in
 Best regards,
 The Classgrid Team
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 
@@ -1029,7 +1029,7 @@ Go to Dashboard: ${dashboardUrl}
 
 
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getStudentWelcomePlainText = (userName, dashboardUrl) => {
@@ -1059,7 +1059,7 @@ Join Classroom: ${dashboardUrl}
 
 
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getLoginNotificationPlainText = (user, provider = "manual") => {
@@ -1075,7 +1075,7 @@ If this was you, you can safely ignore this email.
 
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getVerificationEmailPlainText = (name, verifyLink) => {
@@ -1090,7 +1090,7 @@ If you did not sign up for Classgrid, please ignore this email.
 
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getPasswordResetEmailPlainText = (resetLink) => {
@@ -1104,7 +1104,7 @@ If you did not request this password reset, you can safely ignore this email. Yo
 
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getFacultyInviteEmailPlainText = (facultyName, orgName, verifyLink, orgCode = null, adminName = "Admin", adminEmail = "") => {
@@ -1126,7 +1126,7 @@ Activate your Faculty account: ${verifyLink}
 
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getOrgApprovalEmailPlainText = (orgName, ownerName, organizationCode, honorCode, facultyLimit, frontendUrl) => {
@@ -1216,7 +1216,7 @@ Bookmarking ensures you can return directly without navigating through the main 
 If you need assistance during setup, our support team is always available at:
 support@classgrid.in
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getOrgAdminInvitePlainText = (adminName, orgName, activationLink) => {
@@ -1239,7 +1239,7 @@ If you did not apply for a Classgrid organization, please raise a ticket at http
 
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getAdminOrgApplicationNotificationPlainText = (data) => {
@@ -1253,7 +1253,7 @@ Review Application: ${getFrontendUrl()}/superadmin/login
 
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getAdminOrgApprovalNotificationPlainText = (orgName, ownerEmail, organizationCode, honorCode, dashboardUrl) => {
@@ -1266,7 +1266,7 @@ View in Admin Panel: ${dashboardUrl}
 
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getOrgApplicationConfirmationPlainText = (ownerName, instituteName, plan = "FREE") => {
@@ -1300,7 +1300,7 @@ The Classgrid Team
 
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getOrgRejectionEmailPlainText = (ownerName, instituteName, reason = null) => {
@@ -1311,7 +1311,7 @@ We have reviewed your application for ${instituteName}. Unfortunately, we are un
 ${reason ? `\nReason: ${reason}\n` : ''}
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getOrgAdminActivatedPlainText = (userName, dashboardLink, adminLoginLink) => {
@@ -1330,7 +1330,7 @@ Go to Admin Dashboard: ${dashboardLink}
 
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getSuperAdminCredentialsPlainText = (name, email, password, loginLink) => {
@@ -1354,7 +1354,7 @@ Login to Super Admin Dashboard: ${loginLink}
 
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getOrgDeleteVerificationEmailPlainText = (orgName, ownerName, verifyLink) => {
@@ -1408,7 +1408,7 @@ If you did not request this code, you can safely ignore this email.
 
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- CLASSROOM ACTIVITY NOTIFICATION -------------
@@ -1459,7 +1459,7 @@ To manage email notifications, visit: ${getFrontendUrl()}/settings
 
 For contact, mail us at: support @classgrid.in
 
-Â© ${new Date().getFullYear()} Classgrid.All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid.All rights reserved.`;
 };
 
 // ------------- JOIN REQUEST NOTIFICATION (to Faculty) -------------
@@ -1489,7 +1489,7 @@ To manage email notifications, visit: ${getFrontendUrl()}/settings
 
 For contact, mail us at: support @classgrid.in
 
-Â© ${new Date().getFullYear()} Classgrid.All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid.All rights reserved.`;
 };
 
 // ------------- JOIN APPROVED NOTIFICATION (to Student) -------------
@@ -1518,7 +1518,7 @@ To manage email notifications, visit: ${getFrontendUrl()}/settings
 
 For contact, mail us at: support @classgrid.in
 
-Â© ${new Date().getFullYear()} Classgrid.All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid.All rights reserved.`;
 };
 
 // ------------- ATTENDANCE STARTED NOTIFICATION (to Students) -------------
@@ -1555,7 +1555,7 @@ This session expires in 4 minutes. Act quickly!
 
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- ABSENCE NOTIFICATION (to Students) -------------
@@ -1593,7 +1593,7 @@ View Classroom: ${classroomUrl}
 
 For contact, visit: https://app.classgrid.in/support
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // -------------------------------------------------
@@ -1665,7 +1665,7 @@ export const getDailyDigestEmailPlainText = ({ userName, notifications, totalCou
 
   lines.push(`\nOpen Dashboard: ${getFrontendUrl()}/classroom`);
   lines.push(`Change preferences: ${settingsUrl}`);
-  lines.push(`\nÂ© ${new Date().getFullYear()} Classgrid. All rights reserved.`);
+  lines.push(`\n&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`);
 
   return lines.join("\n");
 };
@@ -1771,7 +1771,7 @@ Classgrid pricing is handled separately from this reminder flow. Use the dashboa
 
 
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 // ------------- CONSOLIDATED APPROVAL + ACTIVATION + PLAN EMAIL -------------
 // Merges: getOrgApprovalEmailHtml + getOrgAdminInviteHtml + getPlanActivationHtml
@@ -1932,7 +1932,7 @@ Contact Classgrid Support: https://app.classgrid.in/support
 Nikhil Shinde | CEO
 Classgrid
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- ACCOUNT SUSPENSION NOTIFICATION -------------
@@ -1972,7 +1972,7 @@ While your account is suspended, you will not be able to log in or access any Cl
 If you believe this is a mistake or would like to appeal, please contact our support team at:
 support@classgrid.in
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- ACCOUNT DELETION NOTIFICATION -------------
@@ -2012,7 +2012,7 @@ All your data, including classroom memberships, sessions, and tokens, has been r
 If you believe this was done in error, please contact our support team immediately at:
 support@classgrid.in
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- GENERIC NOTIFICATION -------------
@@ -2032,7 +2032,7 @@ ${message || "You have a new Classgrid notification."}
 
 ${link ? `Open: ${link}` : ""}
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- DEMO LEAD NOTIFICATIONS -------------
@@ -2062,7 +2062,7 @@ Location: ${[data.city, data.state].filter(Boolean).join(", ") || "Not provided"
 
 ${data.dashboardUrl ? `Open Lead: ${data.dashboardUrl}` : ""}
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getWelcomeProspectHtml = (data = {}) => {
@@ -2084,7 +2084,7 @@ We received your demo request for ${data.institutionName || "your institution"}.
 
 ${data.bookingUrl ? `Book Demo Slot: ${data.bookingUrl}` : ""}
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 export const getDemoMeetingScheduledHtml = (data = {}) => {
@@ -2142,7 +2142,7 @@ ${data.repEmail ? `${data.repEmail}` : ""}
 
 
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- ADMISSION FEE RECEIPT -------------
@@ -2195,7 +2195,7 @@ Enrollment Status: Confirmed
 
 This is a computer-generated receipt and does not require a physical signature.
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- NO ACCOUNT SIGN-IN ATTEMPT -------------
@@ -2253,7 +2253,7 @@ Why did this happen?
 Next Steps
 If you believe you should have access, please reach out to your institution administrator directly.
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- NEW DEVICE OTP -------------
@@ -2290,7 +2290,7 @@ This code expires in 30 seconds. Enter it on the login page to verify your devic
 
 If you did not attempt to log in, please reset your password immediately.
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- BILLING EMAIL OTP -------------
@@ -2327,7 +2327,7 @@ This code expires in 60 seconds. Enter it in your Billing Profile to verify this
 
 If you did not make this request, please review your organization settings.
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ----------------------------------------------------------------------
@@ -2926,7 +2926,7 @@ This code will expire in ${expiryMinutes} minutes.
 
 Security Warning: If you did not request this code, immediately secure your account. Never share this code with anyone.
 
-Â© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
+&copy; ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
 
 // ------------- GRANTED CREDITS EXTENDED -------------
