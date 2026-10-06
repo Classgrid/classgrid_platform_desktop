@@ -277,9 +277,9 @@ export function AppRouter() {
       <Route path="/dept/library/login" element={<AdminLoginRouter />} />
       <Route path="/superadmin" element={<SuperAdminLoginPage />} />
       <Route path="/superadmin/login" element={<SuperAdminLoginPage />} />
-      <Route path="/terms" element={<GenericPage title="Terms of Service" />} />
-      <Route path="/privacy" element={<GenericPage title="Privacy Policy" />} />
-      <Route path="/privacy-policy" element={<GenericPage title="Privacy Policy" />} />
+
+
+
       {/* TODO: Build ForgotPasswordPage */}
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/activate" element={<ResetPasswordPage />} />
