@@ -12,7 +12,8 @@ import { customArray } from "country-codes-list";
 import * as Flags from 'country-flag-icons/react/3x2';
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
-import { getGoogleAuthUrl, loginWithPassword, verifyDeviceOtp, resendDeviceOtp, requestPasswordReset } from "../../auth/api";
+import { getGoogleAuthUrl } from "../../auth/api";
+import { API_BASE_URL, apiClient } from "@/lib/apiClient";
 const Confetti = lazy(() => import("react-confetti"));
 
 const ROLES = [
@@ -159,7 +160,9 @@ function LoginContent() {
   const handleGoogle = () => {
     const loginTab = encodeURIComponent("student");
     const host = encodeURIComponent(window.location.hostname);
-    window.location.assign(`/api/auth/chat/google?loginTab=${loginTab}&host=${host}`);
+    const path = `/api/auth/chat/google?loginTab=${loginTab}&host=${host}`;
+    const url = (API_BASE_URL && !API_BASE_URL.startsWith('/')) ? new URL(path, API_BASE_URL).toString() : path;
+    window.location.assign(url);
   };
 
   const handleGithub = () => {
@@ -237,7 +240,6 @@ function LoginContent() {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [otpExpired, setOtpExpired] = useState(false);
-  const [deviceOtpMode, setDeviceOtpMode] = useState(false);
 
   useEffect(() => {
     if (targetShortCode) {
@@ -298,46 +300,6 @@ function LoginContent() {
       return;
     }
 
-    if (mode === "signin") {
-      if (!password) {
-        setError("Please enter your password");
-        return;
-      }
-      setLoading(true);
-      try {
-        const result = await loginWithPassword({
-          email: email.trim(),
-          password,
-          audience: "user",
-          role: "student",
-          rememberMe: true,
-        });
-
-        if (result.needsDeviceOtp) {
-          setDeviceOtpMode(true);
-          setStep("otp");
-          startCountdown(); // Use existing countdown UI for device OTP
-          return;
-        }
-
-        if (result.token) {
-          localStorage.setItem("token", result.token);
-        }
-        window.location.href = "/";
-      } catch (err: any) {
-        if (err && typeof err === "object" && "needsDeviceOtp" in err) {
-          setDeviceOtpMode(true);
-          setStep("otp");
-          startCountdown();
-          return;
-        }
-        setError(err?.message || "Login failed. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
     if (mode === "signup" && (!firstName || !lastName)) {
       setError("Please enter your first and last name");
       return;
@@ -345,12 +307,56 @@ function LoginContent() {
 
     setLoading(true);
     try {
-      await apiClient.post("/api/auth/chat/send-email-otp", { email: email.toLowerCase() });
-      setDeviceOtpMode(false);
-      setStep("otp");
-      startCountdown();
+      if (mode === "signin") {
+        setStep("login_password");
+      } else {
+        await apiClient.post("/api/auth/chat/send-email-otp", { email: email.toLowerCase() });
+        setStep("otp");
+        startCountdown();
+      }
     } catch (err: any) {
       setError(err?.message && typeof err.message === "string" ? err.message : "Failed to send OTP.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoginWithPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!password) {
+      setError("Please enter your password");
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await loginWithPassword({
+        email: email.trim(),
+        password,
+        audience: "user",
+        role: "student",
+        rememberMe: true,
+      });
+
+      if (result.needsDeviceOtp) {
+        setDeviceOtpMode(true);
+        setStep("otp");
+        startCountdown();
+        return;
+      }
+
+      if (result.token) {
+        localStorage.setItem("token", result.token);
+      }
+      window.location.href = "/";
+    } catch (err: any) {
+      if (err && typeof err === "object" && "needsDeviceOtp" in err) {
+        setDeviceOtpMode(true);
+        setStep("otp");
+        startCountdown();
+        return;
+      }
+      setError(err?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -381,13 +387,6 @@ function LoginContent() {
 
     setLoading(true);
     try {
-      if (deviceOtpMode) {
-        const result = await verifyDeviceOtp({ email: email.trim(), otp: otp.trim() });
-        if (result.token) localStorage.setItem("token", result.token);
-        window.location.href = "/";
-        return;
-      }
-
       const res = await apiClient.post("/api/auth/chat/verify-email-otp", {
         email,
         otp,
@@ -396,6 +395,7 @@ function LoginContent() {
 
       if (res.data?.token) {
         localStorage.setItem("token", res.data.token);
+        // Refresh the page or redirect so the app picks up the token and loads the chat session
         window.location.href = "/";
       } else {
         setError("Failed to retrieve login session.");
@@ -926,7 +926,7 @@ function LoginContent() {
                       setWhatsappOtp("");
                       setLoading(true);
                       try {
-                        await apiClient.post("/api/auth/chat/send-whatsapp-otp", { phoneNumber: `+${whatsappCountryCode}${whatsappPhone}` });
+                        await new Promise(r => setTimeout(r, 800));
                         startWhatsappCountdown();
                       } catch (err: any) {
                         setError("Failed to resend code.");
@@ -1086,11 +1086,32 @@ function LoginContent() {
                 />
               </div>
 
-              {mode === "signin" && (
+              {error && <p className="text-red-400 text-sm font-medium">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-2 flex w-full items-center justify-center rounded-md bg-slate-900 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2a2a2a] dark:text-[#f1f1f1] dark:hover:bg-[#333]"
+              >
+              </button>
+            </form>
+            </div>
+          ) : step === "login_password" ? (
+            <div className="animate-in fade-in duration-300">
+              <div className="mb-6 space-y-1 text-center">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-[#f1f1f1]">Enter Password</h3>
+                <p className="text-sm text-slate-500 dark:text-[#888888] flex items-center justify-center gap-1">
+                  {email}
+                  <button type="button" onClick={() => setStep("email")} className="text-blue-600 hover:underline dark:text-blue-400">
+                    Change
+                  </button>
+                </p>
+              </div>
+              <form onSubmit={handleLoginWithPassword} className="space-y-4">
                 <div className="space-y-1.5 mt-4">
                   <div className="flex items-center justify-between">
                     <label htmlFor="password" className="text-[13px] font-medium text-slate-500 dark:text-[#888888]">Password</label>
-                    <button type="button" onClick={handleForgotPassword} className="text-[13px] font-medium text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300">Forgot password?</button>
+                    <button type="button" onClick={handleForgotPassword} className="text-[13px] font-medium text-slate-600 hover:text-slate-900 dark:text-[#888888] dark:hover:text-[#f1f1f1]">Forgot password?</button>
                   </div>
                   <div className="relative">
                     <input
@@ -1110,18 +1131,15 @@ function LoginContent() {
                     </button>
                   </div>
                 </div>
-              )}
-
-              {error && <p className="text-red-400 text-sm font-medium">{error}</p>}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="mt-2 flex w-full items-center justify-center rounded-md bg-slate-900 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2a2a2a] dark:text-[#f1f1f1] dark:hover:bg-[#333]"
-              >
-                {loading ? <><Spinner className="w-4 h-4 text-inherit mr-2" /> Continue</> : "Continue"}
-              </button>
-            </form>
+                {error && <p className="text-red-400 text-sm font-medium">{error}</p>}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-2 flex w-full items-center justify-center rounded-md bg-slate-900 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2a2a2a] dark:text-[#f1f1f1] dark:hover:bg-[#333]"
+                >
+                  {loading ? <><Spinner className="w-4 h-4 text-inherit mr-2" /> Signing in...</> : "Sign in"}
+                </button>
+              </form>
             </div>
           ) : (
             <form onSubmit={handleVerifyOTP} className="space-y-5">
@@ -1167,14 +1185,10 @@ function LoginContent() {
                       setOtp("");
                       setLoading(true);
                       try {
-                        if (deviceOtpMode) {
-                          await resendDeviceOtp(email.trim());
-                        } else {
-                          await apiClient.post("/api/auth/chat/send-email-otp", { email: email.toLowerCase() });
-                        }
+                        await new Promise(r => setTimeout(r, 800));
                         startCountdown();
                       } catch (err: any) {
-                        setError(err?.message && typeof err.message === "string" ? err.message : "Failed to resend code.");
+                        setError(err.message);
                       } finally {
                         setLoading(false);
                       }
@@ -1232,9 +1246,9 @@ function LoginContent() {
 
       <div className="absolute bottom-6 w-full text-center">
         <p className="text-[13px] text-slate-400 dark:text-[#666666]">
-          <Link to="/terms" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Terms of Service</Link>
+          <a href="https://classgrid.in/terms" target="_blank" rel="noreferrer" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Terms of Service</a>
           {" "}and{" "}
-          <Link to="/privacy" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Privacy Policy</Link>
+          <a href="https://classgrid.in/privacy" target="_blank" rel="noreferrer" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Privacy Policy</a>
         </p>
       </div>
 
